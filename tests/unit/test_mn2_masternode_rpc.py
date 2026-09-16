@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from backend.services import mn2_rpc_client as rpc
 @pytest.fixture(autouse=True)
 def _rpc_ready(monkeypatch):
     monkeypatch.setattr(mn, "_wait_for_rpc_ready", lambda timeout_sec=None: None)
+    monkeypatch.setattr(mn, "_relay_network_broadcast", lambda alias: None)
     monkeypatch.setattr(
         rpc,
         "getblockcount",
@@ -380,3 +382,100 @@ def test_provision_uses_createmasternodekey(monkeypatch):
     assert out.get("success") is True
     assert start_calls and start_calls[0][0] == "platformmn9"
     assert start_calls[0][1] == "93HaYBVUCYjEMeeH1Y4sBGLALQZE1Yc1K64xiqgX37tGBDQL8Xg"
+
+
+def test_provision_keeps_collateral_when_rpc_busy(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "mn2_masternode_config.json").write_text(
+        '{"max_hosted_nodes": 100, "auto_provision": true, "collateral_mn2": 5000}',
+        encoding="utf-8",
+    )
+    (data_dir / "mn2_masternode_hosts.json").write_text(
+        json.dumps({
+            "hosts": [{
+                "id": "user-shopmnpu-2f558c",
+                "label": "Hosted",
+                "status": "provisioning",
+                "collateral_txid": "deadbeef" * 8,
+                "collateral_vout": 0,
+            }],
+        }),
+        encoding="utf-8",
+    )
+
+    def _data_path(name: str) -> str:
+        return str(data_dir / name)
+
+    monkeypatch.setattr(mn, "_data_path", _data_path)
+    monkeypatch.setattr(mn, "_CONFIG_FILE", "mn2_masternode_config.json")
+    monkeypatch.setattr(mn, "_HOSTS_FILE", "mn2_masternode_hosts.json")
+    monkeypatch.setattr(mn, "network_masternodes", lambda **kw: {"list": []})
+    monkeypatch.setattr(
+        mn,
+        "list_collateral_outputs",
+        lambda: {"success": False, "error": "HTTP 500: Work queue depth exceeded", "outputs": []},
+    )
+
+    out = mn.provision_host("user-shopmnpu-2f558c")
+    assert out.get("success") is True
+    assert out.get("status") == "provisioning"
+    assert "rpc" in (out.get("message") or "").lower() or out.get("rpc_error")
+    hosts = mn.list_hosts(include_internal=True)
+    row = next(h for h in hosts if h.get("id") == "user-shopmnpu-2f558c")
+    assert row.get("collateral_txid") == "deadbeef" * 8
+    assert row.get("collateral_vout") == 0
+
+
+def test_process_pending_skips_ping_when_rpc_unhealthy(monkeypatch):
+    monkeypatch.setattr(mn, "_rpc_is_healthy", lambda: False)
+    monkeypatch.setattr(mn, "_rpc_probe_detail", lambda: {"ok": False, "error": "busy"})
+    monkeypatch.setattr(mn, "relay_missing_masternode_broadcasts", lambda **kw: {"success": False, "relayed": []})
+    monkeypatch.setattr(mn, "list_hosts", lambda include_internal=False: [])
+    monkeypatch.setattr(mn, "maintain_ping_loop", lambda: (_ for _ in ()).throw(AssertionError("ping should not run")))
+    out = mn.process_pending_hosts(limit=5)
+    assert out["ping_loop"]["skipped"] is True
+    assert "RPC unavailable" in out["ping_loop"]["reason"]
+
+
+def test_relay_network_broadcast_success(monkeypatch):
+    monkeypatch.setattr(
+        rpc,
+        "createmasternodebroadcast",
+        lambda cmd, alias=None: {"result": {"success": True, "hex": "abc123"}, "error": None},
+    )
+    monkeypatch.setattr(
+        rpc,
+        "relaymasternodebroadcast",
+        lambda hx: {"result": "Masternode broadcast sent", "error": None},
+    )
+    assert mn._relay_network_broadcast("platformmn2") is None
+
+
+def test_relay_missing_targets_missing_status(monkeypatch):
+    monkeypatch.setattr(mn, "_rpc_is_healthy", lambda: True)
+    monkeypatch.setattr(
+        rpc,
+        "listmasternodeconf",
+        lambda: {
+            "result": [
+                {"alias": "platformmn2", "status": "MISSING", "txHash": "aa" * 32},
+                {"alias": "platformmn3", "status": "ACTIVE", "txHash": "bb" * 32},
+            ],
+            "error": None,
+        },
+    )
+    monkeypatch.setattr(rpc, "listmasternodes", lambda timeout_sec=None: {
+        "result": [{"txhash": "b" * 64, "status": "ACTIVE"}],
+        "error": None,
+    })
+    relayed = []
+
+    def fake_relay(alias: str):
+        relayed.append(alias)
+        return None
+
+    monkeypatch.setattr(mn, "_relay_network_broadcast", fake_relay)
+    out = mn.relay_missing_masternode_broadcasts(limit=10)
+    assert relayed == ["platformmn2"]
+    assert out["relayed"] == ["platformmn2"]

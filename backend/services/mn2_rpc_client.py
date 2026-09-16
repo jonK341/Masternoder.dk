@@ -131,6 +131,30 @@ def _get_requests_session() -> "requests.Session":
     return _SESSION
 
 
+def is_transient_rpc_error(err: Any) -> bool:
+    """True for daemon overload / warmup errors that may succeed on retry."""
+    if err is None:
+        return False
+    low = str(err).strip().lower()
+    if not low:
+        return False
+    return any(
+        token in low
+        for token in (
+            "work queue depth exceeded",
+            "work queue",
+            "loading block index",
+            "verifying blocks",
+            "rescanning",
+            "still warming up",
+            "warmup",
+            "try again",
+            "timeout",
+            "temporarily unavailable",
+        )
+    )
+
+
 def _parse_rpc_response(status_code: int, body: str) -> Tuple[Optional[Any], Optional[str]]:
     if status_code != 200:
         raw = f"HTTP {status_code}: {body[:200]}" if body else f"HTTP {status_code}"
@@ -265,29 +289,45 @@ def _call(
     params = params if params is not None else []
     timeout = _resolve_timeout(timeout_sec)
     payload = {"jsonrpc": "1.0", "id": "mn2", "method": method, "params": params}
-    t0 = time.perf_counter()
-    try:
-        status, body = _post_json_rpc(
-            url, payload, user=user, password=password, timeout_sec=timeout,
-        )
-        duration_ms = (time.perf_counter() - t0) * 1000
-        if _profile_log_enabled():
-            _write_profile_log(method, duration_ms, status == 200)
-        if status == 0:
-            err = _normalize_connection_error(body)
+    retries = _rpc_max_retries()
+    last_err: Optional[str] = None
+    for attempt in range(retries + 1):
+        t0 = time.perf_counter()
+        try:
+            status, body = _post_json_rpc(
+                url, payload, user=user, password=password, timeout_sec=timeout,
+            )
+            duration_ms = (time.perf_counter() - t0) * 1000
+            if _profile_log_enabled():
+                _write_profile_log(method, duration_ms, status == 200)
+            if status == 0:
+                err = _normalize_connection_error(body)
+                last_err = err
+                if is_transient_rpc_error(err) and attempt < retries:
+                    time.sleep(min(2.0 ** attempt, 8.0))
+                    continue
+                if _profile_log_enabled():
+                    _write_profile_log(method, duration_ms, False, err)
+                return {"error": err, "result": None}
+            result, err = _parse_rpc_response(status, body)
+            if err:
+                last_err = err
+                if is_transient_rpc_error(err) and attempt < retries:
+                    time.sleep(min(2.0 ** attempt, 8.0))
+                    continue
+                return {"error": err, "result": None}
+            return {"result": result, "error": None}
+        except Exception as e:
+            duration_ms = (time.perf_counter() - t0) * 1000
+            err = _normalize_connection_error(e)
+            last_err = err
+            if is_transient_rpc_error(err) and attempt < retries:
+                time.sleep(min(2.0 ** attempt, 8.0))
+                continue
             if _profile_log_enabled():
                 _write_profile_log(method, duration_ms, False, err)
             return {"error": err, "result": None}
-        result, err = _parse_rpc_response(status, body)
-        if err:
-            return {"error": err, "result": None}
-        return {"result": result, "error": None}
-    except Exception as e:
-        duration_ms = (time.perf_counter() - t0) * 1000
-        err = _normalize_connection_error(e)
-        if _profile_log_enabled():
-            _write_profile_log(method, duration_ms, False, err)
-        return {"error": err, "result": None}
+    return {"error": last_err or "rpc failed", "result": None}
 
 
 def getblockcount(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
@@ -501,6 +541,28 @@ def masternode_command(*args: Any) -> Dict[str, Any]:
 def createmasternodekey() -> Dict[str, Any]:
     """Create a new masternode private key (replaces legacy ``masternode genkey``)."""
     return _call("createmasternodekey")
+
+
+def listmasternodeconf() -> Dict[str, Any]:
+    """Local masternode.conf entries with network status (ENABLED/ACTIVE/MISSING)."""
+    return _call("listmasternodeconf")
+
+
+def createmasternodebroadcast(command: str, alias: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Build a signed masternode broadcast for ``masternode.conf`` entries.
+
+    command: ``alias`` (requires alias) or ``all``.
+    """
+    params: List[Any] = [command]
+    if alias is not None:
+        params.append(alias)
+    return _call("createmasternodebroadcast", params)
+
+
+def relaymasternodebroadcast(hex_message: str) -> Dict[str, Any]:
+    """Relay a hex broadcast from ``createmasternodebroadcast`` to the P2P network."""
+    return _call("relaymasternodebroadcast", [hex_message])
 
 
 def startmasternode(
