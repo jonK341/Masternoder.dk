@@ -3,6 +3,7 @@
 Restart uWSGI service properly
 """
 
+import os
 import paramiko
 import sys
 
@@ -88,5 +89,3 @@ def restart_uwsgi_service():
 
 if __name__ == '__main__':
     restart_uwsgi_service()
-
-import os

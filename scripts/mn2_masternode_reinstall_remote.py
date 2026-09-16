@@ -15,12 +15,10 @@ import json
 import os
 import sys
 
-import paramiko
-
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 
 WEB = "/var/www/html"
 DEFAULT_HOSTS = ["platform-mn-2", "platform-mn-3", "platform-mn-4", "platform-mn-5"]
@@ -463,10 +461,8 @@ def main() -> int:
     timeout = max(900, args.wait_minutes * 60 + 120)
 
     pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
-    print(f"== Connected {deploy_user()}@{deploy_host()} ==")
+    ssh, auth_method, _ = connect_deploy_ssh(pw)
+    print(f"== Connected {deploy_user()}@{deploy_host()} (auth={auth_method}) ==")
     print(f"== Hosts: {', '.join(host_ids)} | fund={fund_missing} reinstall={reinstall} ==\n")
 
     out = sh(

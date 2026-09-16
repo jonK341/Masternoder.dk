@@ -52,6 +52,8 @@
       { title: 'Profit Oracle Agent', href: '/exchange/#cex-profit-oracle', desc: 'Estimated P/L, fee drag, ROI, projections', reward: 'Better decisions' },
       { title: '25-asset exchange', href: '/exchange/', desc: 'Swap, limits, staking, tax records', reward: 'Trading fees' },
       { title: 'Bot daemon', href: '/exchange/#cex-agent-cross-trading', desc: 'Cross-trading agents and performance monitor', reward: 'Liquidity automation' },
+      { title: 'Trader leveling', href: '/exchange/#cex-leveling', desc: 'XP, level ranks, fee discounts, achievements', reward: 'Fee reduction' },
+      { title: 'Trust tier', href: '/exchange/#cex-trust', desc: 'Trust score, tier, agent activation gates', reward: 'Higher limits' },
       { title: 'Internal MN2 market', href: '/explorer?tab=market', desc: 'MN2 / coins order book', reward: 'Market activity' },
       { title: 'Profile wallet', href: '/profile#mn2-wallet', desc: 'Deposits, withdrawals, statements', reward: 'Retention' },
     ],
@@ -60,6 +62,8 @@
       { title: 'Contest table', href: '/casino/#casino-tab-leaderboard', desc: 'Leaderboards, tournaments, streak quests', reward: 'Competition' },
       { title: 'Camgirls lounge', href: '/camgirls/', desc: 'MN2 unlocks, tips, fan clubs', reward: 'Premium spend' },
       { title: 'Social casino', href: '/casino/#casino-tab-social', desc: 'Share wins, referrals, Discord', reward: 'Viral loop' },
+      { title: 'Cross quests', href: '/exchange/#cex-casino-bridge', desc: 'Bet + trade combo quests, fused leaderboard', reward: 'Combo XP' },
+      { title: 'High-roller table', href: '/casino/#casino-tab-leaderboard', desc: 'MN2 trust-gated VIP leaderboard', reward: 'Trust MN2 edge' },
     ],
     agents: [
       { title: 'Agents control', href: '/agents/', desc: 'Assign agents', reward: 'Automation' },
@@ -202,6 +206,47 @@
       });
   }
 
+  function loadExchangeLeveling() {
+    var u = uid();
+    Promise.all([
+      fetch('/api/exchange/leveling/me?user_id=' + encodeURIComponent(u)).then(function (r) { return r.ok ? r.json() : {}; }),
+      fetch('/api/exchange/trust/me?user_id=' + encodeURIComponent(u)).then(function (r) { return r.ok ? r.json() : {}; }),
+    ]).then(function (res) {
+      var lv = res[0] || {};
+      var tr = res[1] || {};
+
+      var lvNum = document.getElementById('cc-lvl-num');
+      var lvRank = document.getElementById('cc-lvl-rank');
+      var xpLabel = document.getElementById('cc-xp-label');
+      var xpFill = document.getElementById('cc-xp-fill');
+      var feeDisc = document.getElementById('cc-fee-disc');
+      var claimHint = document.getElementById('cc-claim-hint');
+      var trustBadge = document.getElementById('cc-trust-badge');
+
+      if (lv.level) {
+        if (lvNum) lvNum.textContent = lv.level;
+        var rankName = (lv.rank && lv.rank.name) || 'Trader';
+        var rankIcon = (lv.rank && lv.rank.icon) || '';
+        if (lvRank) lvRank.textContent = rankIcon + ' ' + rankName;
+        if (xpLabel) xpLabel.textContent = 'XP ' + Number(lv.xp_into_level || 0).toFixed(0) + ' / ' + Number(lv.xp_for_next || 1).toFixed(0) + '  (' + Number(lv.progress_pct || 0).toFixed(1) + '%)';
+        if (xpFill) xpFill.style.width = Math.min(100, Number(lv.progress_pct || 0)) + '%';
+        if (feeDisc) feeDisc.textContent = 'Fee discount: ' + Number(lv.fee_discount_bps || 0) + ' bps';
+        if (claimHint && (lv.claimable_levels || []).length > 0) claimHint.style.display = '';
+      } else {
+        if (xpLabel) xpLabel.textContent = 'Make your first trade to start earning XP → Exchange';
+      }
+
+      if (tr.trust_score !== undefined && trustBadge) {
+        var tier = tr.tier || 'Unverified';
+        trustBadge.textContent = 'Trust: ' + tier + ' (' + Number(tr.trust_score || 0).toFixed(0) + ')';
+        trustBadge.className = 'cc-trust-badge tier-' + tier;
+      }
+    }).catch(function () {
+      var xpLabel = document.getElementById('cc-xp-label');
+      if (xpLabel) xpLabel.textContent = 'Leveling data unavailable.';
+    });
+  }
+
   function init() {
     Object.keys(LINKS).forEach(function (k) {
       renderGrid('cc-' + k + '-grid', LINKS[k]);
@@ -212,6 +257,7 @@
     loadAgents();
     loadExchangeMonitor();
     loadCasinoMonitor();
+    loadExchangeLeveling();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

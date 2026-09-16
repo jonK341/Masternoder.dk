@@ -105,6 +105,14 @@ def run_once(auto_sweep: bool = False) -> dict:
     except Exception as exc:
         out["arb_rebalance"] = {"success": False, "error": str(exc)}
 
+    # Refresh live price feed every tick so drift multipliers stay current.
+    try:
+        from backend.services.exchange_live_price_service import refresh as _price_refresh
+        snap = _price_refresh(force=True)
+        out["live_prices"] = {"success": snap.get("success"), "symbols": snap.get("symbol_count", 0)}
+    except Exception as exc:
+        out["live_prices"] = {"success": False, "error": str(exc)}
+
     return out
 
 

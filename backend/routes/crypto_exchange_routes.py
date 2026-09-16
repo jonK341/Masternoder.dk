@@ -893,6 +893,69 @@ def exchange_trust_agent_activate():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/trust/check-alerts", methods=["POST"])
+def exchange_trust_check_alerts():
+    """Manually trigger a trust-tier check and emit Discord/email alerts if the tier changed."""
+    from backend.services.exchange_trust_service import check_and_emit_trust_alerts
+
+    data = request.get_json(silent=True) or {}
+    previous_tier = (data.get("previous_tier") or "").strip() or None
+    return jsonify(check_and_emit_trust_alerts(_uid(from_body=True), previous_tier=previous_tier))
+
+
+@crypto_exchange_bp.route("/api/exchange/trust/auto-activate", methods=["POST"])
+def exchange_trust_auto_activate():
+    """Auto-activate pending agents for users who are Gold tier or above."""
+    from backend.services.exchange_trust_service import auto_activate_gold
+
+    return jsonify(auto_activate_gold(_uid(from_body=True)))
+
+
+@crypto_exchange_bp.route("/api/exchange/paypal/webhook", methods=["POST"])
+def exchange_paypal_webhook():
+    """PayPal webhook receiver for PAYMENT.CAPTURE.COMPLETED events.
+
+    Verifies the PayPal signature and auto-fulfills pending exchange orders
+    (crypto buys or MN2 packs) without requiring the buyer to be online.
+    Always returns HTTP 200 on application-level errors so PayPal stops retrying.
+    """
+    from backend.services.exchange_paypal_webhook_service import process_paypal_webhook
+
+    body = request.get_json(silent=True, force=True) or {}
+    result, status = process_paypal_webhook(request.headers, body)
+    return jsonify(result), status
+
+
+@crypto_exchange_bp.route("/api/exchange/prices/live", methods=["GET"])
+def exchange_prices_live():
+    """Return live mid-prices for all tracked symbols (30-second TTL cache).
+
+    ?symbols=BTC,ETH,DOGE  — comma-separated filter (optional)
+    ?force=1               — bypass cache and trigger a fresh network fetch
+    """
+    from backend.services.exchange_live_price_service import get_snapshot, refresh
+
+    raw_syms = (request.args.get("symbols") or "").strip()
+    symbols = [s.strip().upper() for s in raw_syms.split(",") if s.strip()] or None
+    force = request.args.get("force") in ("1", "true", "yes")
+    try:
+        snap = refresh(symbols=symbols, force=force) if force else get_snapshot(symbols=symbols)
+        return jsonify(snap)
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)[:200]}), 500
+
+
+@crypto_exchange_bp.route("/api/exchange/prices/refresh", methods=["POST"])
+def exchange_prices_refresh():
+    """Force a live price refresh (daemon/admin endpoint)."""
+    from backend.services.exchange_live_price_service import refresh
+
+    try:
+        return jsonify(refresh(force=True))
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)[:200]}), 500
+
+
 @crypto_exchange_bp.route("/api/exchange/live-watch", methods=["GET"])
 def exchange_live_watch_user():
     try:

@@ -109,18 +109,32 @@ class XpHistory(db.Model):
 
 
 class SystemPointSnapshot(db.Model):
-    """Point snapshots for analytics."""
+    """Point snapshots for analytics.
+
+    Schema must match the raw SQL used at runtime in
+    ``backend/services/unified_points_database.py`` (and the canonical migration in
+    ``scripts/unified_points_database_migration.py``): columns ``system_name`` /
+    ``point_value`` etc. Previously this model declared ``point_type`` / ``total`` instead,
+    so ``db.create_all()`` built an incompatible table and every points write/read raised
+    ``sqlite3.OperationalError: no such column: system_name`` on fresh databases.
+    """
     __tablename__ = "system_point_snapshots"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.String(64), nullable=False, index=True)
-    point_type = db.Column(db.String(64), nullable=False)
-    total = db.Column(db.Float, default=0)
+    user_id = db.Column(db.String(100), nullable=False, index=True)
+    system_name = db.Column(db.String(100), nullable=False)
+    point_value = db.Column(db.Numeric(15, 2), default=0)
+    previous_value = db.Column(db.Numeric(15, 2), default=0)
+    delta = db.Column(db.Numeric(15, 2), default=0)
     snapshot_data = db.Column(db.Text, default="{}")
+    source = db.Column(db.String(100), nullable=True)
+    # "metadata" is reserved on declarative models, so map the attribute name to the column name.
+    snapshot_metadata = db.Column("metadata", db.Text, nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now())
 
     __table_args__ = (
-        Index("ix_snapshot_user_type", "user_id", "point_type"),
+        Index("ix_snapshot_user_system", "user_id", "system_name"),
     )
 
 
