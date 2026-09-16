@@ -244,9 +244,21 @@
   }
 
   function renderMonitor(d) {
-    if (!d || !d.success) return;
-    var t = d.totals || {};
+    var dot = $("cex-live-dot");
     var tot = $("cex-monitor-totals");
+    if (!d || !d.success) {
+      if (dot) dot.style.background = "#ffaa44";
+      if (tot) {
+        tot.innerHTML = '<span class="cex-muted">Monitor unavailable — use Refresh on the live monitor bar above.</span>';
+      }
+      var bcFail = $("cex-monitor-bots");
+      if (bcFail) bcFail.innerHTML = "";
+      var fcFail = $("cex-monitor-feed");
+      if (fcFail) fcFail.innerHTML = '<div class="cex-mon-empty">Could not load bot monitor.</div>';
+      return;
+    }
+    if (dot) dot.style.background = "#00ff88";
+    var t = d.totals || {};
     if (tot) tot.innerHTML =
       '<span class="cex-mon-kpi"><b>' + money(t.realized_profit_usd) + "</b> realized</span>" +
       '<span class="cex-mon-kpi"><b>' + money(t.projected_daily_usd) + "</b>/day est</span>" +

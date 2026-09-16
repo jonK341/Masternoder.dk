@@ -12,6 +12,53 @@
     venues: 'Venues',
   };
 
+  var HUB_ACCENT = {
+    trade: '#00d4ff',
+    overview: '#5dffb0',
+    bots: '#c4b5fd',
+    liquidity: '#60a5fa',
+    treasury: '#fbbf24',
+    marketplace: '#f472b6',
+    venues: '#94a3b8',
+  };
+
+  var SUB_SECTIONS = {
+    trade: [
+      { key: 'markets', label: 'Markets', tradePane: 'markets' },
+      { key: 'swap', label: 'Swap', tradePane: 'trade', tradeTab: 'swap' },
+      { key: 'onramp', label: 'PayPal', tradePane: 'trade', tradeTab: 'onramp' },
+      { key: 'wallet', label: 'Wallet', tradePane: 'wallet' },
+    ],
+    overview: [
+      { key: 'health', label: 'Health' },
+      { key: 'blockers', label: 'Blockers' },
+      { key: 'progress', label: 'Progress' },
+      { key: 'profit', label: 'Profit Oracle' },
+      { key: 'gateway', label: 'Gateway' },
+      { key: 'social', label: 'Social' },
+    ],
+    bots: [
+      { key: 'checklist', label: 'Checklist' },
+      { key: 'monitor', label: 'Monitor' },
+      { key: 'watch', label: 'Live watch' },
+      { key: 'agents', label: 'Agents' },
+      { key: 'daemon', label: 'Daemon' },
+      { key: 'ai', label: 'AI trader' },
+      { key: 'ppp', label: 'PPP research' },
+    ],
+    marketplace: [
+      { key: 'market', label: 'Catalog', scroll: 'cex-market-catalog' },
+      { key: 'control', label: 'Control', scroll: 'cex-control-center' },
+      { key: 'rent', label: 'Rentals', scroll: 'cex-rental-hub' },
+      { key: 'shop', label: 'Shop', scroll: 'cex-exchange-shop' },
+    ],
+    liquidity: [{ key: 'pool', label: 'Sales pool', scroll: 'cex-liquidity-summary' }],
+    treasury: [{ key: 'treasury', label: 'Treasury', scroll: 'cex-treasury-summary' }],
+    venues: [{ key: 'venues', label: 'Venues', scroll: 'cex-venues-summary' }],
+  };
+
+  var currentFocusKey = null;
+
   var loaded = {};
   var handlers = {};
   var pollTimers = {};
@@ -126,6 +173,143 @@
     pollTimers[tabId] = setInterval(fn, ms || 15000);
   }
 
+  function setBodyHub(tabId) {
+    var body = document.body;
+    if (!body) return;
+    Array.prototype.slice.call(body.classList).forEach(function (c) {
+      if (c.indexOf('cex-hub-') === 0) body.classList.remove(c);
+    });
+    body.classList.add('cex-hub-' + tabId);
+    body.classList.toggle('cex-compact-header', tabId !== 'trade');
+    var dock = q('cex-nav-dock');
+    if (dock) {
+      dock.style.setProperty('--cex-accent', HUB_ACCENT[tabId] || HUB_ACCENT.trade);
+      dock.setAttribute('data-active-hub', tabId);
+    }
+    var pin = q('cex-overview-pin');
+    if (pin) pin.classList.toggle('active', tabId === 'overview');
+  }
+
+  function updateBreadcrumb(tabId, sectionLabel) {
+    var hubEl = q('cex-breadcrumb-hub');
+    var secEl = q('cex-breadcrumb-section');
+    var sep = q('cex-breadcrumb-section-sep');
+    if (hubEl) hubEl.textContent = TAB_LABELS[tabId] || tabId;
+    if (secEl && sep) {
+      if (sectionLabel) {
+        secEl.textContent = sectionLabel;
+        sep.hidden = false;
+        secEl.hidden = false;
+      } else {
+        secEl.textContent = '';
+        sep.hidden = true;
+        secEl.hidden = true;
+      }
+    }
+    var note = q('cex-route-note');
+    if (note) {
+      note.textContent = (TAB_LABELS[tabId] || tabId) +
+        (sectionLabel ? ' · ' + sectionLabel : '') +
+        ' — use the colored bars above; two panels max on Trade.';
+    }
+  }
+
+  function setFocusBlock(tabId, blockKey) {
+    var sh = shell(tabId);
+    if (!sh || sh.getAttribute('data-cex-focus') === 'off') return;
+    var blocks = sh.querySelectorAll('.cex-focus-block');
+    if (!blocks.length) return;
+    sh.classList.add('cex-focus-mode');
+    currentFocusKey = blockKey;
+    blocks.forEach(function (b) {
+      var on = b.getAttribute('data-cex-block') === blockKey;
+      b.classList.toggle('cex-focus-block--active', on);
+    });
+    var sections = SUB_SECTIONS[tabId] || [];
+    var match = sections.filter(function (s) { return s.key === blockKey; })[0];
+    updateBreadcrumb(tabId, match ? match.label : null);
+    syncSubNavActive(tabId, blockKey);
+  }
+
+  function syncSubNavActive(tabId, activeKey) {
+    var sub = q('cex-sub-nav');
+    if (!sub) return;
+    sub.querySelectorAll('[data-sub-key]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-sub-key') === activeKey);
+    });
+  }
+
+  function renderSubNav(tabId) {
+    var sub = q('cex-sub-nav');
+    if (!sub) return;
+    var items = SUB_SECTIONS[tabId] || [];
+    if (!items.length) {
+      sub.hidden = true;
+      sub.innerHTML = '';
+      return;
+    }
+    sub.hidden = false;
+    sub.innerHTML = items.map(function (it) {
+      return '<button type="button" class="cex-sub-nav-btn" data-sub-key="' + it.key + '">' + it.label + '</button>';
+    }).join('');
+    sub.querySelectorAll('.cex-sub-nav-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        onSubNavClick(tabId, btn.getAttribute('data-sub-key'));
+      });
+    });
+  }
+
+  function onSubNavClick(tabId, key) {
+    var items = SUB_SECTIONS[tabId] || [];
+    var it = items.filter(function (s) { return s.key === key; })[0];
+    if (!it) return;
+    if (tabId === 'trade') {
+      if (it.tradePane && window.CexTradeFocus) {
+        window.CexTradeFocus.showPane(it.tradePane, it.tradeTab);
+      }
+      updateBreadcrumb(tabId, it.label);
+      syncSubNavActive(tabId, key);
+      return;
+    }
+    if (it.scroll) {
+      var target = document.getElementById(it.scroll);
+      if (target) {
+        target.classList.add('cex-scroll-flash');
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(function () { target.classList.remove('cex-scroll-flash'); }, 2200);
+      }
+      updateBreadcrumb(tabId, it.label);
+      syncSubNavActive(tabId, key);
+      return;
+    }
+    setFocusBlock(tabId, key);
+  }
+
+  function activateHashTarget(el) {
+    if (!el || !el.id) return;
+    var tabId = tabFromHashTarget(el);
+    if (!tabId) return;
+    if (tabId === 'trade' && window.CexTradeFocus) {
+      window.CexTradeFocus.showPane('trade', null);
+      return;
+    }
+    var block = el.closest('.cex-focus-block');
+    if (block && block.getAttribute('data-cex-block')) {
+      setFocusBlock(tabId, block.getAttribute('data-cex-block'));
+      return;
+    }
+    var sections = SUB_SECTIONS[tabId] || [];
+    sections.forEach(function (s) {
+      if (s.scroll === el.id) onSubNavClick(tabId, s.key);
+    });
+  }
+
+  function tabFromHashTarget(el) {
+    if (!el) return null;
+    var sh = el.closest('.cex-tab-shell');
+    return sh ? sh.getAttribute('data-cex-tab') : null;
+  }
+
   function applyTab(tabId) {
     if (!TAB_LABELS[tabId]) tabId = 'trade';
     document.querySelectorAll('.cex-tab-shell[data-cex-tab]').forEach(function (el) {
@@ -141,8 +325,22 @@
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
       });
     }
-    var note = q('cex-route-note');
-    if (note) note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Data loads when you open each tab.';
+    setBodyHub(tabId);
+    renderSubNav(tabId);
+    var monitor = q('cex-top-monitor');
+    if (monitor) {
+      monitor.classList.toggle('cex-top-monitor--compact', tabId !== 'overview' && tabId !== 'trade');
+    }
+    if (tabId !== 'trade' && shell(tabId) && shell(tabId).getAttribute('data-cex-focus') !== 'off') {
+      var first = (SUB_SECTIONS[tabId] || [])[0];
+      if (first && first.key) setFocusBlock(tabId, first.key);
+    } else if (tabId === 'trade') {
+      updateBreadcrumb(tabId, 'Swap');
+      syncSubNavActive(tabId, 'swap');
+      if (window.CexTradeFocus) window.CexTradeFocus.showPane('trade', null);
+    } else {
+      updateBreadcrumb(tabId, null);
+    }
     try {
       var url = new URL(window.location.href);
       if (tabId === 'trade') url.searchParams.delete('hub');
@@ -158,6 +356,7 @@
     if (tabId === 'bots') {
       startPoll('bots', function () {
         if (window.CexMarketplace && window.CexMarketplace.pollBots) window.CexMarketplace.pollBots();
+        loadTopMonitor();
       }, 15000);
     }
   }
@@ -184,13 +383,40 @@
         var hash = a.getAttribute('href');
         if (hash && hash.charAt(0) === '#') {
           var target = document.querySelector(hash);
-          if (target) setTimeout(function () { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+          if (target) {
+            setTimeout(function () {
+              activateHashTarget(target);
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 120);
+          }
         }
       });
     });
-    var hub = new URLSearchParams(window.location.search).get('hub');
-    var valid = Object.prototype.hasOwnProperty.call(TAB_LABELS, hub);
-    applyTab(valid ? hub : 'trade');
+    var params = new URLSearchParams(window.location.search);
+    var hub = params.get('hub');
+    var innerTab = params.get('tab');
+    if (innerTab && Object.prototype.hasOwnProperty.call({
+      swap: 1, onramp: 1, limit: 1, staking: 1, tax: 1,
+    }, innerTab)) {
+      hub = 'trade';
+    }
+    var valid = hub && Object.prototype.hasOwnProperty.call(TAB_LABELS, hub);
+    var chosen = valid ? hub : 'trade';
+    applyTab(chosen);
+    var hashEl = (window.location.hash || '').replace(/^#/, '');
+    if (hashEl) {
+      var target = document.getElementById(hashEl);
+      if (target) {
+        setTimeout(function () { activateHashTarget(target); }, 80);
+      }
+    }
+  }
+
+  function scheduleInitNav() {
+    setTimeout(function () {
+      initNav();
+      initTopMonitor();
+    }, 0);
   }
 
   function renderProfitBlockers(data, listId, countId) {
@@ -224,6 +450,104 @@
         renderProfitBlockers(data, 'cex-blockers-list-overview', 'cex-blockers-open-count');
         renderProfitBlockers(data, 'cex-blockers-list-bots', 'cex-blockers-open-count-bots');
       });
+  }
+
+  function fmtNum(n, d) {
+    var x = Number(n);
+    if (!isFinite(x)) return '—';
+    return x.toLocaleString(undefined, {
+      minimumFractionDigits: d == null ? 0 : d,
+      maximumFractionDigits: d == null ? 2 : d,
+    });
+  }
+
+  function topKpi(label, value, tone) {
+    return '<div class="cex-top-kpi' + (tone ? ' cex-top-kpi--' + tone : '') + '">' +
+      '<span>' + label + '</span><strong>' + value + '</strong></div>';
+  }
+
+  function renderTopMonitor(health, live, gateway) {
+    var kpis = q('cex-top-monitor-kpis');
+    var feedEl = q('cex-top-monitor-feed');
+    var updated = q('cex-top-monitor-updated');
+    var dot = q('cex-top-live-dot');
+    if (!kpis) return;
+
+    var h = health || {};
+    var g = (gateway && gateway.success) ? gateway : {};
+    var gt = g.totals || {};
+    var liveOk = live && live.success !== false;
+    var t = (liveOk && live.totals) ? live.totals : {};
+
+    var status = (h.status || 'unknown').toString();
+    var statusTone = status === 'healthy' ? 'ok' : (status === 'degraded' ? 'warn' : 'bad');
+    var markets = h.asset_count != null ? h.asset_count : '—';
+    var bots = liveOk
+      ? (fmtNum(t.active_bots, 0) + ' / ' + fmtNum(t.bot_count, 0) + ' live')
+      : '—';
+    var gatewayLine = g.ready
+      ? ('Ready · ' + fmtNum(gt.pending_count, 0) + ' pending')
+      : (g.success === false ? 'Check ops' : (fmtNum(gt.pending_count, 0) + ' pending'));
+
+    kpis.innerHTML =
+      topKpi('Service', status, statusTone) +
+      topKpi('Markets', fmtNum(markets, 0), 'ok') +
+      topKpi('Bots', bots, liveOk ? 'ok' : 'warn') +
+      topKpi('Gateway', gatewayLine, g.ready ? 'ok' : 'warn') +
+      topKpi('Treasury fees', fmtNum(h.treasury_fees_mn2, 2) + ' MN2', '');
+
+    if (feedEl) {
+      var rows = (liveOk && live.feed) ? live.feed.slice(0, 6) : [];
+      if (!rows.length) {
+        feedEl.innerHTML = '<div class="cex-mon-empty">' +
+          (liveOk ? 'No recent activity — run bots or place a trade.' : 'Activity feed unavailable.') +
+          '</div>';
+      } else {
+        feedEl.innerHTML = rows.map(function (f) {
+          var when = f.ts ? new Date(f.ts).toLocaleTimeString() : '';
+          return '<div class="cex-mon-feed-row ' + (f.scope === 'you' ? 'you' : 'market') + '">' +
+            '<span class="cex-mon-feed-ic">' + (f.icon || '•') + '</span>' +
+            '<span class="cex-mon-feed-tx">' + (f.text || '') + '</span>' +
+            '<span class="cex-mon-feed-ts">' + when + '</span></div>';
+        }).join('');
+      }
+    }
+
+    if (updated) updated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    if (dot) {
+      dot.style.background = liveOk ? '#00ff88' : '#ffaa44';
+      dot.style.boxShadow = liveOk ? '0 0 8px #00ff88' : '0 0 8px #ffaa44';
+    }
+  }
+
+  function loadTopMonitor() {
+    if (!q('cex-top-monitor')) return Promise.resolve();
+    return Promise.all([
+      fetchJson('/api/exchange/health', { timeout: 8000 }).catch(function () { return {}; }),
+      fetchJson('/api/exchange/monitor/live?limit=12', { timeout: 12000 }).catch(function () { return {}; }),
+      fetchJson('/api/exchange/gateway/status', { timeout: 8000 }).catch(function () { return {}; }),
+    ]).then(function (res) {
+      renderTopMonitor(res[0], res[1], res[2]);
+    }).catch(function () {
+      renderTopMonitor({}, { success: false }, { success: false });
+    });
+  }
+
+  var topMonitorTimer = null;
+
+  function initTopMonitor() {
+    if (!q('cex-top-monitor')) return;
+    loadTopMonitor();
+    if (topMonitorTimer) clearInterval(topMonitorTimer);
+    topMonitorTimer = setInterval(loadTopMonitor, 30000);
+    var btn = q('cex-top-monitor-refresh');
+    if (btn && !btn._cexTopBound) {
+      btn._cexTopBound = true;
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        loadTopMonitor().finally(function () { btn.disabled = false; });
+      });
+    }
   }
 
   function renderHealth(data) {
@@ -441,12 +765,16 @@
     setLoading: setLoading,
     setError: setError,
     clearSlot: clearSlot,
+    loadTopMonitor: loadTopMonitor,
+    setFocusBlock: setFocusBlock,
+    updateBreadcrumb: updateBreadcrumb,
+    syncSubNavActive: syncSubNavActive,
     TAB_LABELS: TAB_LABELS,
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initNav);
+    document.addEventListener('DOMContentLoaded', scheduleInitNav);
   } else {
-    initNav();
+    scheduleInitNav();
   }
 })();
