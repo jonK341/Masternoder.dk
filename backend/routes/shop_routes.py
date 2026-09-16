@@ -2158,6 +2158,58 @@ def shop_trophy_provenance(edition_key):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@shop_bp.route('/api/shop/trophies/equip-profile', methods=['POST'])
+def shop_trophy_equip_profile():
+    """Feature an owned trophy edition on the user profile header."""
+    try:
+        data = request.get_json() or {}
+        user_id = (data.get('user_id') or '').strip() or _resolve_user_id()
+        edition_key = (data.get('edition_key') or '').strip()
+        from backend.services.trophy_profile_service import equip_trophy_on_profile
+
+        result = equip_trophy_on_profile(user_id, edition_key)
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/unequip-profile', methods=['POST'])
+def shop_trophy_unequip_profile():
+    try:
+        data = request.get_json() or {}
+        user_id = (data.get('user_id') or '').strip() or _resolve_user_id()
+        from backend.services.trophy_profile_service import unequip_trophy_from_profile
+
+        result = unequip_trophy_from_profile(user_id)
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/ipfs/<edition_key>', methods=['GET'])
+def shop_trophy_ipfs_status(edition_key):
+    try:
+        from backend.services.trophy_ipfs_service import get_pin_status
+
+        return jsonify(get_pin_status((edition_key or '').strip())), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/ipfs/pin', methods=['POST'])
+def shop_trophy_ipfs_pin():
+    try:
+        data = request.get_json() or {}
+        edition_key = (data.get('edition_key') or '').strip()
+        force = str(data.get('force') or '').lower() in ('1', 'true', 'yes')
+        from backend.services.trophy_ipfs_service import pin_edition_metadata
+
+        result = pin_edition_metadata(edition_key, force=force)
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @shop_bp.route('/api/shop/trophies/share-discord', methods=['POST'])
 def shop_trophy_share_discord():
     try:
@@ -2212,6 +2264,21 @@ def shop_block_mint_backfill_status():
         from backend.services.block_mint_service import get_genesis_backfill_status
 
         return jsonify(get_genesis_backfill_status()), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/block-mint/backfill/media', methods=['POST'])
+def shop_block_mint_backfill_media():
+    """Ops: batch-generate missing block trophy GIFs (lazy worker)."""
+    try:
+        data = request.get_json() or {}
+        batch = min(int(data.get('batch') or data.get('limit') or 50), 200)
+        from_h = int(data.get('from') or data.get('from_height') or 1)
+        force = str(data.get('force') or '').lower() in ('1', 'true', 'yes')
+        from backend.services.block_mint_service import run_media_backfill_batch
+
+        return jsonify(run_media_backfill_batch(from_height=from_h, batch=batch, force=force)), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

@@ -46,7 +46,8 @@
             ${ed.battle_stats ? `<p>Combat rating: <strong>${ed.battle_stats.combat_rating ?? '—'}</strong> · ${ed.battle_stats.rarity || ''}</p>` : ''}
             <div>${attrs}</div>
             ${meta.anchor ? `<p>Anchor: <strong>${meta.anchor.status}</strong>${meta.anchor.explorer_url ? ` · <a href="${meta.anchor.explorer_url}">explorer</a>` : ''}</p>` : ''}
-            <p><a href="/api/shop/trophies/metadata/${encodeURIComponent(editionKey)}">Metadata JSON</a> · <a href="/wallets?tab=trophies">Wallet</a></p>
+            <p><a href="/api/shop/trophies/metadata/${encodeURIComponent(editionKey)}">Metadata JSON</a> · <a href="/wallets?tab=trophies">Wallet</a>
+            ${data.ipfs_uri ? ` · <a href="${data.ipfs_gateway_url || data.ipfs_uri}">Permanent copy</a> (<code>${data.ipfs_uri}</code>)` : ''}</p>
             ${prov ? `<h3>Provenance</h3><ul>${prov}</ul>` : ''}
           `;
         })

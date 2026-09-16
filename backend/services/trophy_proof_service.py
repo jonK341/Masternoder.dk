@@ -45,4 +45,6 @@ def build_proof_page(edition_key: str) -> Dict[str, Any]:
         "on_chain_mint": False,
         "proof_url": f"/trophy/proof?edition_key={edition_key}",
         "metadata_url": f"/api/shop/trophies/metadata/{edition_key}",
+        "ipfs_uri": (meta.get("metadata") or {}).get("ipfs"),
+        "ipfs_gateway_url": (meta.get("metadata") or {}).get("ipfs_gateway_url"),
     }

@@ -75,6 +75,19 @@ Global `data/trophy_provenance.jsonl` events: `minted`, `peer_transfer`, `auctio
 | WR-UPG-255 | Provenance timeline |
 | WR-UPG-256 | Genesis set badge |
 | WR-UPG-257 | Anchor badge glow |
+| WR-UPG-258 | Featured profile trophy equip |
+| WR-UPG-259 | Permanent IPFS metadata pin |
+
+### Permanent storage (L2.5)
+
+- `trophy_ipfs_service.py` — SHA-256 content-addressed JSON at `/static/trophy-ipfs/cid/{digest}.json`
+- `ipfs://{digest}` URI on metadata + proof page; optional remote pin via `IPFS_PIN_API_URL`
+- Auto-pin on grant enrichment and proof/metadata view
+
+### Profile equip
+
+- `POST /api/shop/trophies/equip-profile` — feature owned edition on `/profile` header
+- Wallet Trophies tab **Feature** button (WR-UPG-258)
 
 ## L3 — Deferred
 

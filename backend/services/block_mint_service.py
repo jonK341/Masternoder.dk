@@ -251,6 +251,47 @@ def sync_block_height() -> Dict[str, Any]:
     }
 
 
+def run_media_backfill_batch(*, from_height: int = 1, batch: int = 50, force: bool = False) -> Dict[str, Any]:
+    """Ops worker: generate block-level smiley media for manifest drops missing GIFs."""
+    sync_block_height()
+    doc = _read_json(_MANIFEST_PATH, {"drops": {}})
+    drops = doc.get("drops") or {}
+    heights = sorted(int(k) for k in drops.keys() if int(k) >= int(from_height))
+
+    from backend.services.block_trophy_media_service import block_media_exists, ensure_block_media
+
+    processed = 0
+    generated = 0
+    skipped = 0
+    errors = 0
+    for h in heights:
+        if processed >= max(1, min(int(batch or 50), 200)):
+            break
+        processed += 1
+        if not force and block_media_exists(h):
+            skipped += 1
+            continue
+        result = ensure_block_media(h, force=force)
+        if result.get("success"):
+            if result.get("skipped"):
+                skipped += 1
+            else:
+                generated += 1
+        else:
+            errors += 1
+
+    status = get_genesis_backfill_status()
+    return {
+        "success": True,
+        "processed": processed,
+        "generated": generated,
+        "skipped": skipped,
+        "errors": errors,
+        "remaining_estimate": max(0, len(heights) - processed),
+        **{k: status[k] for k in ("media_generated_count", "media_pending_count", "media_percent_complete") if k in status},
+    }
+
+
 def get_genesis_backfill_status() -> Dict[str, Any]:
     cfg = get_config()
     doc = _read_json(_MANIFEST_PATH, {"drops": {}, "last_height": 0})

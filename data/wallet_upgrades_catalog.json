@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generated_at": "2026-09-16",
-  "total": 257,
+  "total": 259,
   "categories": [
     "speed",
     "network_visibility",
@@ -3096,6 +3096,30 @@
         "type": "mn2_spent",
         "value": 2425,
         "label": "Spend 2425 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-258",
+      "name": "Featured profile trophy",
+      "effect": "Equip a owned trophy edition on your public profile header with proof link.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2450,
+        "label": "Spend 2450 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-259",
+      "name": "Permanent IPFS proof",
+      "effect": "Trophy metadata is content-addressed (ipfs:// digest) with gateway mirror on grant and proof view.",
+      "category": "trophies",
+      "tier": "legendary",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2475,
+        "label": "Spend 2475 MN2 in wallet actions"
       }
     }
   ]

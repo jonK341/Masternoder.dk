@@ -198,6 +198,22 @@ export async function battleBlockTrophy(edition_key: string): Promise<{
   return data;
 }
 
+export async function equipTrophyOnProfile(edition_key: string): Promise<{
+  success: boolean;
+  error?: string;
+  equipped_trophy_name?: string;
+}> {
+  const res = await fetch('/api/shop/trophies/equip-profile', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ edition_key }),
+  });
+  const data = await res.json();
+  if (!res.ok && !data.error) throw new Error(`Equip failed (${res.status})`);
+  return data;
+}
+
 export async function shareTrophyDiscord(edition_key: string): Promise<{ success: boolean; error?: string }> {
   const res = await fetch('/api/shop/trophies/share-discord', {
     method: 'POST',

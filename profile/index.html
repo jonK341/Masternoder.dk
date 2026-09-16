@@ -83,8 +83,28 @@
 
         .profile-badges {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 15px;
+        }
+
+        .profile-equipped-trophy {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.35);
+            background: rgba(0, 212, 255, 0.06);
+            max-width: 360px;
+        }
+
+        .profile-equipped-trophy img {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            object-fit: cover;
         }
 
         .badge {
@@ -3220,6 +3240,12 @@
                 if (trophyBadges.equipped_trophy_key) {
                     trophyBadgeHtml += '<span class="badge" title="Equipped trophy">🎖 Featured trophy</span>';
                 }
+                const equippedTrophyHtml = (trophyBadges.equipped_trophy_key && trophyBadges.equipped_trophy_gif)
+                    ? '<div class="profile-equipped-trophy" title="Featured on profile">' +
+                      '<img src="' + profileEscapeHtml(trophyBadges.equipped_trophy_gif) + '" alt="" />' +
+                      '<div><strong>' + profileEscapeHtml(trophyBadges.equipped_trophy_name || 'Featured trophy') + '</strong>' +
+                      '<div style="font-size:0.82rem;opacity:0.75;"><a href="/trophy/proof?edition_key=' + encodeURIComponent(trophyBadges.equipped_trophy_key) + '" style="color:#6eb5ff;">View proof</a></div></div></div>'
+                    : '';
                 const fallbackInitial = profileEscapeHtml(String(displayName || 'U').charAt(0).toUpperCase() || 'U');
                 const fallbackAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Crect fill=%22%2300ff88%22 width=%22120%22 height=%22120%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23000%22 font-size=%2240%22%3E' + encodeURIComponent(fallbackInitial) + '%3C/text%3E%3C/svg%3E';
                 header.innerHTML = `
@@ -3233,6 +3259,7 @@
                     </div>
                     <div class="profile-info">
                         <h1 class="display-name">${profileEscapeHtml(displayName)}</h1>
+                        ${equippedTrophyHtml}
                         <div class="profile-badges">
                             <span class="badge">Level ${profileEscapeHtml(level)}</span>
                             <span class="badge">${profileEscapeHtml(skillPathName)}</span>

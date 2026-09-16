@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import {
   battleBlockTrophy,
   fetchWalletTrophies,
+  equipTrophyOnProfile,
   shareTrophyDiscord,
   transferTrophyEdition,
   type TrophyEdition,
@@ -177,10 +178,26 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
   const [battleMsg, setBattleMsg] = useState<string | null>(null);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [equipMsg, setEquipMsg] = useState<string | null>(null);
+  const [equipping, setEquipping] = useState(false);
   const canTransfer = !edition.hold_until && !edition.legacy_stack && edition.trade_actions?.peer_transfer;
   const isBlockTrophy = edition.platform_trophy || edition.item_id?.startsWith('block-') || edition.series === 'block_mint';
   const stats = edition.battle_stats;
   const mediaSrc = edition.gif_url || edition.image_url;
+
+  const runEquip = async () => {
+    if (!edition.edition_key) return;
+    setEquipping(true);
+    setEquipMsg(null);
+    try {
+      const res = await equipTrophyOnProfile(edition.edition_key);
+      setEquipMsg(res.success ? 'Featured on profile' : (res.error || 'Equip failed'));
+    } catch (err) {
+      setEquipMsg((err as Error).message || 'Equip failed');
+    } finally {
+      setEquipping(false);
+    }
+  };
 
   const runShare = async () => {
     if (!edition.edition_key) return;
@@ -351,9 +368,20 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
               {sharing ? 'Sharing…' : 'Share'}
             </button>
           )}
+          {edition.edition_key && (
+            <button
+              type="button"
+              class="wallet-trophy-cta wallet-trophy-cta--btn"
+              disabled={equipping}
+              onClick={runEquip}
+            >
+              {equipping ? 'Saving…' : 'Feature'}
+            </button>
+          )}
         </div>
         {battleMsg ? <div class="wallet-trophy-gallery-meta wallet-trophy-battle-msg">{battleMsg}</div> : null}
         {shareMsg ? <div class="wallet-trophy-gallery-meta wallet-trophy-battle-msg">{shareMsg}</div> : null}
+        {equipMsg ? <div class="wallet-trophy-gallery-meta wallet-trophy-battle-msg">{equipMsg}</div> : null}
         {showTransfer && (
           <div class="wallet-trophy-transfer-modal">
             <label class="wallet-trophy-transfer-label">

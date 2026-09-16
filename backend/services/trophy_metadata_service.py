@@ -91,4 +91,20 @@ def build_metadata(edition_key: str) -> Dict[str, Any]:
     except Exception:
         pass
 
+    if edition.get("ipfs_uri"):
+        meta["ipfs"] = edition.get("ipfs_uri")
+        meta["ipfs_gateway_url"] = edition.get("ipfs_gateway_url")
+    else:
+        try:
+            from backend.services.trophy_ipfs_service import get_config, pin_edition_metadata
+
+            cfg = get_config()
+            if cfg.get("enabled", True) and cfg.get("auto_pin_on_proof_view", True):
+                pin = pin_edition_metadata(edition_key)
+                if pin.get("success"):
+                    meta["ipfs"] = pin.get("ipfs_uri")
+                    meta["ipfs_gateway_url"] = pin.get("gateway_url")
+        except Exception:
+            pass
+
     return {"success": True, "metadata": meta, "edition": edition, "owner_id": owner}

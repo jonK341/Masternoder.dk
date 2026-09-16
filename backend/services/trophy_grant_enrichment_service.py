@@ -245,6 +245,16 @@ def enrich_block_trophy_grant(
         except Exception as exc:
             result["steps"]["discord"] = {"success": False, "error": str(exc)}
 
+    if cfg.get("auto_ipfs_pin", True):
+        try:
+            from backend.services.trophy_ipfs_service import get_config, pin_edition_metadata
+
+            ipfs_cfg = get_config()
+            if ipfs_cfg.get("enabled", True) and ipfs_cfg.get("auto_pin_on_grant", True):
+                result["steps"]["ipfs_pin"] = pin_edition_metadata(edition_key)
+        except Exception as exc:
+            result["steps"]["ipfs_pin"] = {"success": False, "error": str(exc)}
+
     if cfg.get("battle_ready_notification", True):
         try:
             if acquired_via == "staking_winner":

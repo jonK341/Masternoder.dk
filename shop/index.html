@@ -1568,8 +1568,33 @@
                 '<div><div>AI GIF media</div><div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;margin:6px 0;"><div style="height:8px;width:' + Math.min(100, mediaPct) + '%;background:linear-gradient(90deg,#ffd54f,#ff7043);border-radius:4px;"></div></div>' +
                 '<strong>' + mediaPct + '%</strong> · ' + (data.media_generated_count || 0) + '/' + (data.media_total_drops || 0) + ' generated · lazy ' + lazy + '</div>' +
                 '<div><div>Drops</div><strong>' + (data.total_drops || 0) + '</strong> indexed · ' + (data.claimed_drops || 0) + ' claimed · tip #' + (data.last_height || '—') +
-                (milestone ? '<br><span style="opacity:0.85;">Milestone block ' + milestone + '</span>' : '') + '</div>' +
+                (milestone ? '<br><span style="opacity:0.85;">Milestone block ' + milestone + '</span>' : '') +
+                '<br><button type="button" id="shop-block-gallery-media-batch" class="shop-hub-link" style="margin-top:8px;border:none;background:none;cursor:pointer;padding:0;">Generate next media batch →</button></div>' +
                 '</div>';
+            const batchBtn = document.getElementById('shop-block-gallery-media-batch');
+            if (batchBtn) {
+                batchBtn.addEventListener('click', async () => {
+                    batchBtn.disabled = true;
+                    batchBtn.textContent = 'Generating…';
+                    try {
+                        const rr = await fetch(`${BASE_URL}/api/shop/block-mint/backfill/media`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ batch: 25 })
+                        });
+                        const rd = await rr.json();
+                        batchBtn.textContent = rd.success
+                            ? `Done: ${rd.generated || 0} new · ${rd.skipped || 0} skipped`
+                            : (rd.error || 'Batch failed');
+                        loadBlockGalleryOps();
+                        loadBlockGallery();
+                    } catch (e) {
+                        batchBtn.textContent = 'Batch failed';
+                    } finally {
+                        setTimeout(() => { batchBtn.disabled = false; batchBtn.textContent = 'Generate next media batch →'; }, 4000);
+                    }
+                });
+            }
         }
 
         async function loadBlockGalleryOps() {

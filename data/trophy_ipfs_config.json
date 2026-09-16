@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "auto_pin_on_grant": true,
+  "auto_pin_on_proof_view": true,
+  "gateway_base": "/static/trophy-ipfs/cid",
+  "pin_api_url": ""
+}
