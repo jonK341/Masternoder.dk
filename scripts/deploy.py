@@ -1027,6 +1027,16 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
             _sync_well_known_webroot(ssh)
             print()
 
+        if "create_app_release" in _manifests and not upload_only:
+            print("[2aa] Create App writable data permissions...")
+            ssh.exec_command(
+                f"chown www-data:www-data {REMOTE_BASE}/data/encoder_v2_progress.json "
+                f"&& chmod 664 {REMOTE_BASE}/data/encoder_v2_progress.json 2>/dev/null || true",
+                timeout=10,
+            )
+            print("  [OK] encoder_v2_progress.json -> www-data (v2 unlock writes)")
+            print()
+
         # If we uploaded systemd units, install them so EnvironmentFile=.env is used
         systemd_units = [f for f in files if f.replace("\\", "/").startswith("systemd/") and f.endswith(".service")]
         if systemd_units and not upload_only:
