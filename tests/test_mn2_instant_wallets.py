@@ -74,10 +74,12 @@ class TestSettlementService(unittest.TestCase):
     def test_settlement_dry_run_structure(self):
         from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
 
-        with patch("backend.services.agent_mn2_settlement_service._settle_battle_crypto", return_value={"claims": 0, "users": 0, "errors": []}):
-            with patch("backend.services.agent_mn2_settlement_service._scan_chain_payout_queue", return_value={"payouts": 0, "skipped": 0, "errors": []}):
-                with patch("backend.services.mn2_deposit_scanner.run_scanner", return_value={"success": True, "credits_applied": 0}):
-                    res = run_mn2_ecosystem_settlement(systems=["all"], dry_run=True)
+        with patch("backend.services.agent_mn2_settlement_service._test_daemon", return_value={"healthy": True, "health": {"block_height": 1}}):
+            with patch("backend.services.agent_mn2_settlement_service._settle_battle_crypto", return_value={"claims": 0, "users": 0, "errors": []}):
+                with patch("backend.services.agent_mn2_settlement_service._scan_chain_payout_queue", return_value={"payouts": 0, "skipped": 0, "errors": []}):
+                    with patch("backend.services.mn2_deposit_scanner.run_scanner", return_value={"success": True, "credits_applied": 0}):
+                        with patch("backend.services.mn2_masternode_service.rented_masternodes_snapshot", return_value={"success": True, "rented_count": 0}):
+                            res = run_mn2_ecosystem_settlement(systems=["all"], dry_run=True)
         self.assertTrue(res.get("success"))
         self.assertIn("battle", res.get("results", {}))
 
