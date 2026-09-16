@@ -171,7 +171,8 @@ class TestNavToolbarGroupLayout(unittest.TestCase):
         from pathlib import Path
         css = (Path(BASE) / "static/css/navigation-toolbar.css").read_text(encoding="utf-8")
         self.assertIn("flex-direction: column", css)
-        self.assertIn("body:has(#navToolbarGroups)", css)
+        self.assertIn("body.nav-has-groups", css)
+        self.assertIn("--nav-toolbar-offset", css)
         self.assertNotIn(".nav-toolbar-navcol", css)
 
 

@@ -268,14 +268,20 @@
 }
 
 /* Page Content Offset — extra room when group chips sit on a second toolbar row */
-body {
-    padding-top: 48px;
+:root {
+    --nav-toolbar-offset: 48px;
 }
 
-@media (min-width: 969px) {
-    body:has(#navToolbarGroups) {
-        padding-top: 76px;
-    }
+body {
+    padding-top: var(--nav-toolbar-offset);
+}
+
+body.nav-has-groups {
+    --nav-toolbar-offset: 96px;
+}
+
+.page-nav {
+    top: var(--nav-toolbar-offset);
 }
 
 /* Responsive Design */
@@ -306,6 +312,10 @@ body {
     .nav-toolbar-user {
         margin-left: auto;
     }
+
+    body.nav-has-groups {
+        --nav-toolbar-offset: 48px;
+    }
 }
 
 @media (max-width: 640px) {
@@ -323,7 +333,7 @@ body {
     }
     
     body {
-        padding-top: 72px;
+        --nav-toolbar-offset: 44px;
     }
 }
 

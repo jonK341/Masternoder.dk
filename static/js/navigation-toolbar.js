@@ -330,6 +330,9 @@
         // Create and insert toolbar
         const toolbarHTML = createToolbarHTML();
         document.body.insertAdjacentHTML('afterbegin', toolbarHTML);
+        if (document.getElementById('navToolbarGroups')) {
+            document.body.classList.add('nav-has-groups');
+        }
 
         setupNavGroups();
 
