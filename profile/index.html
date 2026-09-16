@@ -1006,7 +1006,7 @@
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
                     <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
                         <h2 class="section-title" style="color: #00d4ff;">MN2 Wallet</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>MN2-only showcase</strong> — no other coin balances shown here.</p>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, swoop USDT/USDC on the <a href="/exchange?swoop=USDT,MN2" style="color:#00d4ff;">exchange desk</a>, or withdraw to your own address.</p>
                         <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
                             <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
                             <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
@@ -1019,6 +1019,7 @@
                             <button type="button" class="tab-btn" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
                             <button type="button" class="tab-btn" data-wallet-tab="security" role="tab" aria-selected="false">Withdraw 2FA</button>
                             <button type="button" class="tab-btn" data-wallet-tab="settings" role="tab" aria-selected="false">Wallet settings</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="swoop" role="tab" aria-selected="false">Swoop pool</button>
                         </nav>
                         <div data-wallet-panel="overview" style="margin-bottom: 14px;">
                             <strong style="color: #00d4ff;">Balance:</strong>
@@ -1113,6 +1114,14 @@
                             <div id="mn2-statement-summary" style="font-size: 0.75rem; opacity: 0.75; margin-top: 4px;"></div>
                             <div id="mn2-statement-rows" style="margin-top: 6px; max-height: 260px; overflow-y: auto; font-size: 0.8rem; opacity: 0.92;">Loading…</div>
                         </div>
+                        </div>
+                        <div data-wallet-panel="swoop" style="display:none; margin-bottom:14px;">
+                            <strong style="color:#00d4ff;">MN2 · USDT · USDC swoop</strong>
+                            <p style="font-size:0.82rem; opacity:0.8; margin:6px 0 10px;">Your MN2 balance is shared with the exchange. USDT and USDC stables swoop through the MN2 liquidity pool (2% reserve per pool swoop).</p>
+                            <div id="profile-wallet-swoop-balances" style="margin-bottom:12px;">Loading balances…</div>
+                            <div id="profile-wallet-swoop-pool" style="margin-bottom:12px;">Loading pool…</div>
+                            <div id="profile-wallet-swoop-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+                            <a href="/exchange?swoop=USDT,MN2" style="display:inline-block;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,215,0,0.45);color:#ffd700;background:rgba(255,215,0,0.1);text-decoration:none;font-weight:700;font-size:0.85rem;">Open MN2 Swoop desk</a>
                         </div>
                         <div data-wallet-panel="security" style="display:none; margin-bottom:14px;">
                             <div id="mn2-withdraw-security">
@@ -1662,7 +1671,9 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
+        <script src="/static/js/mn2-site-bridge.js?v=20260916a"></script>
+        <script src="/static/js/wallet-swoop-hub.js?v=20260916a"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260916a"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>

@@ -4,7 +4,7 @@
     <script>window.APP_BASE = '';</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MasterNoder wallet portal for MN2 balance, deposits, withdrawals, trusted addresses, and wallet downloads.">
+    <meta name="description" content="MasterNoder wallet portal — MN2 balance, USDT/USDC stables, swoop pool, deposits, withdrawals, and wallet downloads.">
     <title>Wallets - MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
@@ -22,22 +22,53 @@
         .wallet-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
         .wallet-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(0,255,136,0.42); color: #00ff88; background: rgba(0,255,136,0.12); text-decoration: none; font-weight: 800; }
         .wallet-btn.secondary { border-color: rgba(0,212,255,0.42); color: #00d4ff; background: rgba(0,212,255,0.12); }
+        .wallet-btn.accent { border-color: rgba(255,215,0,0.45); color: #ffd700; background: rgba(255,215,0,0.1); }
+        .wallet-balance-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem; }
+        .wallet-swoop-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .wallet-swoop-chip { padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(125,249,255,0.35); color: #7df9ff; background: rgba(0,212,255,0.08); text-decoration: none; font-size: 0.78rem; font-weight: 700; }
+        .wallet-swoop-chip:hover, .wallet-swoop-chip.active { border-color: #00d4ff; background: rgba(0,212,255,0.2); }
+        .wallet-hub-card { grid-column: 1 / -1; }
         code { color: #9be7ff; }
     </style>
 </head>
 <body class="layout-standard">
     <main class="wallet-page">
         <section class="wallet-hero">
-            <p class="wallet-muted">MN2 wallet portal</p>
+            <p class="wallet-muted">MN2 wallet portal · swoop pool integrated</p>
             <h1>Wallets</h1>
-            <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, Binance USDT/USDC exchange wallets, and daemon downloads.</p>
+            <p class="wallet-muted">One place for MN2 balance, USDT/USDC stables, pool-backed swoops, deposits, withdrawals, trusted addresses, and daemon downloads.</p>
             <div class="wallet-actions">
                 <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Open profile wallet</a>
-                <a class="wallet-btn secondary" href="/exchange">Open exchange wallet</a>
+                <a class="wallet-btn accent" href="/exchange?swoop=USDT,MN2">Swoop USDT → MN2</a>
+                <a class="wallet-btn secondary" href="/exchange">Open exchange desk</a>
                 <a class="wallet-btn secondary" href="/explorer">Explorer</a>
             </div>
         </section>
-        <section class="wallet-grid" aria-label="Wallet sections">
+
+        <section class="wallet-grid" aria-label="Wallet hub">
+            <article class="wallet-card wallet-hub-card">
+                <h2>Your balances (MN2 · USDT · USDC)</h2>
+                <p class="wallet-muted">Same MN2 balance as profile wallet. USDT and USDC live on the exchange wallet and can be swooped via the liquidity pool.</p>
+                <div id="wallet-user-balances">Loading balances…</div>
+                <div class="wallet-actions">
+                    <a class="wallet-btn accent" href="/exchange">Open MN2 Swoop desk</a>
+                </div>
+            </article>
+
+            <article class="wallet-card wallet-hub-card">
+                <h2>MN2 liquidity pool</h2>
+                <p class="wallet-muted">Customer swoops between MN2 and stables draw from this pool. A 2% reserve is set aside on each pool swoop.</p>
+                <div id="wallet-pool-status">Loading pool…</div>
+            </article>
+
+            <article class="wallet-card wallet-hub-card">
+                <h2>Swoop shortcuts</h2>
+                <p class="wallet-muted">Enchant your MN2 — quick links to the exchange swoop desk for all six routes.</p>
+                <div id="wallet-swoop-chips" class="wallet-swoop-chips">Loading…</div>
+            </article>
+        </section>
+
+        <section class="wallet-grid" aria-label="Wallet sections" style="margin-top:16px">
             <article class="wallet-card">
                 <h2>Deposit & withdraw</h2>
                 <p class="wallet-muted">Request a deposit address, submit withdrawals, manage trusted addresses, and review wallet transactions from the profile wallet card.</p>
@@ -45,31 +76,41 @@
             </article>
             <article class="wallet-card">
                 <h2>Binance USDT</h2>
-                <p class="wallet-muted" id="wallet-usdt-status">Platform USDT wallet connected to Binance spot. Buy USDT with MN2 coins on the exchange.</p>
+                <p class="wallet-muted" id="wallet-usdt-status">Platform USDT wallet connected to Binance spot.</p>
                 <p class="wallet-muted">Address: <code id="wallet-usdt-addr">—</code></p>
-                <a class="wallet-btn" href="/exchange?asset=USDT&quote=MN2">Trade USDT with MN2</a>
+                <a class="wallet-btn" href="/exchange?swoop=USDT,MN2">Swoop USDT → MN2</a>
             </article>
             <article class="wallet-card">
                 <h2>Binance USDC</h2>
-                <p class="wallet-muted" id="wallet-usdc-status">Platform USDC wallet connected to Binance spot. Buy USDC with MN2 coins on the exchange.</p>
+                <p class="wallet-muted" id="wallet-usdc-status">Platform USDC wallet connected to Binance spot.</p>
                 <p class="wallet-muted">Address: <code id="wallet-usdc-addr">—</code></p>
-                <a class="wallet-btn" href="/exchange?asset=USDC&quote=MN2">Trade USDC with MN2</a>
+                <a class="wallet-btn" href="/exchange?swoop=USDC,MN2">Swoop USDC → MN2</a>
             </article>
             <article class="wallet-card">
                 <h2>Spend MN2</h2>
-                <p class="wallet-muted">Use the same balance for shop checkout, casino, exchange swaps, hosting, and creator tools.</p>
+                <p class="wallet-muted">Use the same balance for shop checkout, casino, exchange swoops, hosting, and creator tools.</p>
                 <a class="wallet-btn secondary" href="/shop#shop-mn2">Shop with MN2</a>
             </article>
             <article class="wallet-card">
                 <h2>Daemon & Qt wallet</h2>
-                <p class="wallet-muted">Daemon setup is tracked in the MN2 daemon setup guide. Use the explorer and profile wallet for live app operations.</p>
+                <p class="wallet-muted">Daemon setup is tracked in the MN2 daemon setup guide. Deposits credit your in-app MN2 balance; swoop stables on the exchange desk.</p>
                 <a class="wallet-btn secondary" href="/news">Read wallet updates</a>
             </article>
         </section>
     </main>
+    <script src="/static/js/mn2-site-bridge.js?v=20260916a"></script>
+    <script src="/static/js/wallet-swoop-hub.js?v=20260916a"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
     <script>
     (function () {
+      if (window.WalletSwoopHub) {
+        window.WalletSwoopHub.loadHub().then(function (hub) {
+          window.WalletSwoopHub.renderBalances(document.getElementById('wallet-user-balances'), hub.wallet);
+          window.WalletSwoopHub.renderPool(document.getElementById('wallet-pool-status'), hub.pool);
+          window.WalletSwoopHub.renderSwoopChips(document.getElementById('wallet-swoop-chips'));
+        });
+      }
+
       fetch('/api/exchange/binance/stable-wallets', { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -81,7 +122,7 @@
             if (status) {
               status.textContent = (w.connected ? 'Connected to Binance' : 'Waiting for Binance API') +
                 ' · ' + (w.network || 'TRC20') +
-                (w.tradeable ? ' · tradable vs MN2' : '');
+                (w.tradeable ? ' · tradable vs MN2 via swoop pool' : '');
             }
             if (addr) addr.textContent = w.address_masked || 'sync from Business Control → Binance';
           });

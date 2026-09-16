@@ -356,6 +356,23 @@
     });
   }
 
+  function loadSwoopHub() {
+    if (!global.WalletSwoopHub) return;
+    global.WalletSwoopHub.loadHub().then(function (hub) {
+      global.WalletSwoopHub.renderBalances(
+        document.getElementById('profile-wallet-swoop-balances'),
+        hub.wallet
+      );
+      global.WalletSwoopHub.renderPool(
+        document.getElementById('profile-wallet-swoop-pool'),
+        hub.pool
+      );
+      global.WalletSwoopHub.renderSwoopChips(
+        document.getElementById('profile-wallet-swoop-chips')
+      );
+    }).catch(function () {});
+  }
+
   function load() {
     var user = uid();
     var q = encodeURIComponent(user);
@@ -386,6 +403,7 @@
     fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
       renderActivity(res.data);
     });
+    loadSwoopHub();
   }
 
   global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress };

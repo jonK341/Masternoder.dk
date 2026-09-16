@@ -129,6 +129,16 @@
             </div>
             <div id="binWalletStatus" class="muted" style="margin-top:8px">USDT and USDC wallets sync from your Binance account deposit addresses.</div>
           </details>
+          <div class="section" style="margin-top:16px">
+            <h3 style="margin:0 0 8px">MN2 swoop liquidity pool</h3>
+            <p class="muted" style="font-size:12px;margin:0 0 8px">Customer MN2↔USDT/USDC swoops draw from <code>exchange_sales_pool</code>. Agent cron tops up MN2 and rebalances stables every 3 minutes.</p>
+            <div id="mn2PoolStatus" class="muted">Loading pool…</div>
+            <div class="bar" style="margin-top:8px">
+              <button class="btn small" id="mn2PoolRefresh">Refresh pool</button>
+              <button class="btn small primary" id="mn2PoolTick">Run pool agent tick</button>
+            </div>
+            <div id="mn2PoolResult" class="muted" style="margin-top:8px"></div>
+          </div>
           <p class="warn" style="font-size:12px;margin-top:10px">Paper mode records sweeps until live gates are on. PayPal needs Payouts enabled on your PayPal app.</p>
         </div>
       </div>

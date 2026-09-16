@@ -1242,6 +1242,40 @@ def exchange_payout_configure_binance():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/wallet-hub", methods=["GET"])
+def exchange_wallet_hub():
+    """Unified wallet + swoop pool snapshot for site wallet software."""
+    from backend.services.exchange_mn2_pool_service import mn2_pool_status, pool_swap_reserve_bps
+    from backend.services.exchange_swoop_service import swoop_assets, swoop_balance_hint
+
+    uid = _uid()
+    wallet = ex.get_wallet(uid)
+    pool = mn2_pool_status()
+    return jsonify({
+        "success": bool(wallet.get("success")),
+        "user_id": uid,
+        "mn2_balance": wallet.get("mn2_balance"),
+        "assets": wallet.get("assets") or {},
+        "balances": {
+            "MN2": swoop_balance_hint(wallet, "MN2"),
+            "USDT": swoop_balance_hint(wallet, "USDT"),
+            "USDC": swoop_balance_hint(wallet, "USDC"),
+        },
+        "swoop_assets": swoop_assets(),
+        "pool_swap_reserve_bps": pool_swap_reserve_bps(),
+        "pool": pool if pool.get("success") else None,
+        "swap_back_hint": pool.get("swap_back_hint") if pool.get("success") else None,
+        "swoop_urls": {
+            "usdt_mn2": "/exchange?swoop=USDT,MN2",
+            "usdc_mn2": "/exchange?swoop=USDC,MN2",
+            "mn2_usdt": "/exchange?swoop=MN2,USDT",
+            "mn2_usdc": "/exchange?swoop=MN2,USDC",
+            "usdt_usdc": "/exchange?swoop=USDT,USDC",
+            "usdc_usdt": "/exchange?swoop=USDC,USDT",
+        },
+    })
+
+
 @crypto_exchange_bp.route("/api/exchange/swoop/assets", methods=["GET"])
 def exchange_swoop_assets():
     from backend.services.exchange_swoop_service import swoop_assets

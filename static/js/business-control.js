@@ -778,6 +778,43 @@
   function loadPayout() {
     api("/api/exchange/payout/status").then(renderPayout);
     loadBinanceWallets();
+    loadMn2Pool();
+  }
+
+  function loadMn2Pool() {
+    var el = $("mn2PoolStatus");
+    if (!el) return;
+    api("/api/exchange/mn2-pool/status").then(function (st) {
+      if (!st || !st.success) {
+        el.textContent = "Could not load MN2 pool status.";
+        return;
+      }
+      var assets = st.pool_assets || {};
+      var gaps = st.pool_gaps || {};
+      var reserve = st.reserve_assets || {};
+      var bps = st.pool_swap_reserve_bps || 200;
+      el.innerHTML = ["MN2", "USDT", "USDC"].map(function (sym) {
+        var gap = gaps[sym];
+        return sym + ": " + Number(assets[sym] || 0).toFixed(4) + (gap ? " (need " + Number(gap).toFixed(4) + ")" : "");
+      }).join(" · ") +
+        "<br>Reserve (" + (bps / 100).toFixed(1) + "%): MN2 " + Number(reserve.MN2 || 0).toFixed(4) +
+        " · USDT " + Number(reserve.USDT || 0).toFixed(4) +
+        " · USDC " + Number(reserve.USDC || 0).toFixed(4) +
+        (st.swap_back_hint ? "<br><span class=\"muted\">" + st.swap_back_hint + "</span>" : "");
+    });
+  }
+
+  function tickMn2Pool() {
+    var out = $("mn2PoolResult");
+    if (out) out.textContent = "Running pool agent tick…";
+    api("/api/exchange/mn2-pool/tick", { method: "POST", body: { force: true } }).then(function (r) {
+      if (out) {
+        out.textContent = r && r.success
+          ? ("Pool tick OK — actions: " + ((r.actions || []).length) + " · " + JSON.stringify(r.actions || []).slice(0, 200))
+          : ("Pool tick failed: " + ((r && r.error) || "error"));
+      }
+      loadMn2Pool();
+    });
   }
 
   function savePayPal() {
@@ -955,6 +992,8 @@
     var pw = $("ppSweep"); if (pw) pw.addEventListener("click", doSweep);
     var bs = $("binSave"); if (bs) bs.addEventListener("click", saveBinance);
     var bsync = $("binSyncWallets"); if (bsync) bsync.addEventListener("click", syncBinanceWallets);
+    var mpr = $("mn2PoolRefresh"); if (mpr) mpr.addEventListener("click", loadMn2Pool);
+    var mpt = $("mn2PoolTick"); if (mpt) mpt.addEventListener("click", tickMn2Pool);
     bindLocalPanel();
 
     if (getKey()) { showApp(); load(); } else { showGate(); }

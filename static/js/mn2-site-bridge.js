@@ -48,5 +48,66 @@
         loadStatsSummary: function () {
             return fetchJson(BASE + '/api/stats/summary');
         },
+        loadExchangeWallet: function (userId) {
+            var u = userId || uid();
+            return fetchJson(BASE + '/api/exchange/wallet?user_id=' + encodeURIComponent(u));
+        },
+        loadMn2PoolStatus: function () {
+            return fetchJson(BASE + '/api/exchange/mn2-pool/status');
+        },
+        loadSwoopAssets: function () {
+            return fetchJson(BASE + '/api/exchange/swoop/assets');
+        },
+        loadWalletHub: function (userId) {
+            var u = userId || uid();
+            return fetchJson(BASE + '/api/exchange/wallet-hub?user_id=' + encodeURIComponent(u))
+                .then(function (hub) {
+                    if (!hub || !hub.success) {
+                        return global.Mn2SiteBridge.loadExchangeWallet(u).then(function (wallet) {
+                            return { success: !!(wallet && wallet.success), wallet: wallet, pool: null, swoop: null };
+                        });
+                    }
+                    return {
+                        success: true,
+                        hub: hub,
+                        wallet: {
+                            success: true,
+                            mn2_balance: hub.balances && hub.balances.MN2,
+                            assets: { USDT: hub.balances && hub.balances.USDT, USDC: hub.balances && hub.balances.USDC },
+                        },
+                        pool: hub.pool,
+                        swoop: { success: true, assets: hub.swoop_assets, pool_swap_reserve_bps: hub.pool_swap_reserve_bps, swap_back_hint: hub.swap_back_hint },
+                    };
+                });
+        },
+        swoopQuote: function (fromAsset, toAsset, amount, userId) {
+            var u = userId || uid();
+            return fetch(BASE + '/api/exchange/swoop/quote', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: u,
+                    from_asset: fromAsset,
+                    to_asset: toAsset,
+                    amount: amount,
+                }),
+            }).then(function (r) { return r.json(); });
+        },
+        swoopExecute: function (fromAsset, toAsset, amount, quoteId, userId) {
+            var u = userId || uid();
+            return fetch(BASE + '/api/exchange/swoop', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: u,
+                    from_asset: fromAsset,
+                    to_asset: toAsset,
+                    amount: amount,
+                    quote_id: quoteId || '',
+                }),
+            }).then(function (r) { return r.json(); });
+        },
     };
 })(window);

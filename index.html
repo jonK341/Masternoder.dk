@@ -54,11 +54,12 @@
         <section class="fp-mn2-band" aria-labelledby="fp-mn2-title">
             <div class="fp-mn2-band-copy">
                 <h2 id="fp-mn2-title">MN2 crypto ecosystem</h2>
-                <p>Deposit, earn, and spend MasterNoder2 (MN2) across shop, casino, game, and generator. Wallet lives on your profile.</p>
-                <p class="fp-mn2-balance-pill" id="fp-mn2-balance-pill">Wallet: <strong id="fp-mn2-balance">—</strong> MN2 <span id="fp-mn2-usd" style="opacity:0.75;"></span></p>
+                <p>Deposit, earn, and spend MasterNoder2 (MN2) across shop, casino, game, and generator. Swoop USDT/USDC via the MN2 liquidity pool on the exchange desk.</p>
+                <p class="fp-mn2-balance-pill" id="fp-mn2-balance-pill">Wallet: <strong id="fp-mn2-balance">—</strong> MN2 <span id="fp-mn2-usd" style="opacity:0.75;"></span> <span id="fp-mn2-stables" style="opacity:0.75;"></span></p>
             </div>
             <div class="fp-mn2-band-actions">
                 <a class="fp-mn2-badge" href="/wallets">Wallets</a>
+                <a class="fp-mn2-badge" href="/exchange?swoop=USDT,MN2">Swoop pool</a>
                 <a class="fp-mn2-badge" href="/shop">Shop &amp; pay MN2</a>
                 <a class="fp-mn2-link" href="/staking-leaderboard">Staking leaderboard</a>
                 <a class="fp-mn2-link" href="/staking-teams">Staking teams</a>
@@ -197,19 +198,31 @@
 
         async function loadMn2Surface() {
             try {
-                const [balRes, priceRes] = await Promise.all([
+                const [balRes, priceRes, walletRes] = await Promise.all([
                     fetch(`${BASE_URL || ''}/api/mn2/balance?user_id=${encodeURIComponent(userId)}`),
-                    fetch(`${BASE_URL || ''}/api/mn2/price`)
+                    fetch(`${BASE_URL || ''}/api/mn2/price`),
+                    fetch(`${BASE_URL || ''}/api/exchange/wallet?user_id=${encodeURIComponent(userId)}`)
                 ]);
                 if (balRes.ok) {
                     const bal = await balRes.json();
                     const el = document.getElementById('fp-mn2-balance');
                     const usdEl = document.getElementById('fp-mn2-usd');
+                    const stablesEl = document.getElementById('fp-mn2-stables');
                     if (el && bal.success) {
                         el.textContent = (bal.mn2_balance || 0).toLocaleString(undefined, { maximumFractionDigits: 4 });
                     }
                     if (usdEl && bal.mn2_usd_price != null) {
                         usdEl.textContent = '(≈ $' + Number(bal.mn2_usd_price).toFixed(6) + ')';
+                    }
+                    if (walletRes.ok) {
+                        const wallet = await walletRes.json();
+                        if (stablesEl && wallet && wallet.success) {
+                            const usdt = Number((wallet.assets || {}).USDT || 0);
+                            const usdc = Number((wallet.assets || {}).USDC || 0);
+                            if (usdt > 0 || usdc > 0) {
+                                stablesEl.textContent = '· USDT ' + usdt.toFixed(4) + ' · USDC ' + usdc.toFixed(4);
+                            }
+                        }
                     }
                 }
                 if (priceRes.ok) {

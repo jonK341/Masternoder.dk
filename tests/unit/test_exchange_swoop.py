@@ -124,3 +124,13 @@ def test_swoop_assets_route(pool_env):
     assert body["success"] is True
     assert set(body["assets"]) == {"MN2", "USDC", "USDT"}
     assert body["pool_swap_reserve_bps"] == 200
+
+
+def test_wallet_hub_route(pool_env):
+    client = pool_env["client"]
+    r = client.get("/api/exchange/wallet-hub?user_id=hub_user")
+    body = r.get_json()
+    assert body["success"] is True
+    assert set(body["balances"].keys()) == {"MN2", "USDC", "USDT"}
+    assert body["pool"]["success"] is True
+    assert "/exchange?swoop=USDT,MN2" in body["swoop_urls"]["usdt_mn2"]

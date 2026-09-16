@@ -378,6 +378,7 @@ FILES_TO_DEPLOY = [
     "static/css/mn2-page-strip.css",
     "static/css/casino.css",
     "static/js/mn2-site-bridge.js",
+    "static/js/wallet-swoop-hub.js",
     "static/js/mn2-page-strip-init.js",
     "static/js/mn2-global-bar.js",
     "static/js/mn2-activity-stream.js",

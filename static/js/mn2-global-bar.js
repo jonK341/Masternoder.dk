@@ -19,9 +19,12 @@
         bar.innerHTML =
             '<span class="mn2-global-label">MN2</span>' +
             '<strong id="mn2-global-balance">—</strong>' +
+            '<span id="mn2-global-stables" class="mn2-global-rate"></span>' +
             '<span id="mn2-global-rate" class="mn2-global-rate"></span>' +
+            '<a href="/wallets">Wallets</a>' +
+            '<a href="/exchange?swoop=USDT,MN2">Swoop</a>' +
             '<a href="/market">Market</a>' +
-            '<a href="/profile#mn2-wallet">Wallet</a>';
+            '<a href="/profile#profile-mn2-wallet-card">Wallet</a>';
         bar.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 16px 0;padding:8px 14px;border-radius:999px;border:1px solid rgba(0,212,255,0.25);background:rgba(0,20,30,0.55);font-size:0.82rem;position:relative;z-index:50;';
         bar.querySelectorAll('a').forEach(function (a) {
             a.style.cssText = 'color:#00d4ff;text-decoration:none;font-weight:700;';
@@ -44,6 +47,18 @@
             var el = global.document.getElementById('mn2-global-rate');
             if (el && p != null) el.textContent = '$' + Number(p).toFixed(4);
         }).catch(function () {});
+        if (global.Mn2SiteBridge.loadExchangeWallet) {
+            global.Mn2SiteBridge.loadExchangeWallet().then(function (w) {
+                var el = global.document.getElementById('mn2-global-stables');
+                if (!el || !w || !w.success) return;
+                var assets = w.assets || {};
+                var usdt = Number(assets.USDT || 0);
+                var usdc = Number(assets.USDC || 0);
+                if (usdt > 0 || usdc > 0) {
+                    el.textContent = '· USDT ' + fmt(usdt) + ' · USDC ' + fmt(usdc);
+                }
+            }).catch(function () {});
+        }
     }
 
     function loadScripts(cb) {
