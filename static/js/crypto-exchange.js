@@ -473,22 +473,28 @@
 
   function handlePayPalReturn() {
     var params = new URLSearchParams(window.location.search);
-    if (params.get('exchange_paypal') !== 'success') return;
+    if (params.get('exchange_paypal') === 'cancel' || params.get('paypal') === 'cancel') return;
     var orderId = params.get('token') || params.get('order_id');
     var packId = params.get('pack_id');
+    var storedOrder = '';
     try {
-      orderId = orderId || sessionStorage.getItem('cex_paypal_order');
+      storedOrder = sessionStorage.getItem('cex_paypal_order') || '';
+      orderId = orderId || storedOrder;
       packId = packId || sessionStorage.getItem('cex_paypal_pack');
     } catch (e) {}
-    if (!orderId || !packId) {
-      msg('PayPal returned without an order id or pack id.');
+    var payerId = params.get('PayerID') || params.get('PayerId');
+    var flagged = params.get('exchange_paypal') === 'success';
+    var approved = flagged || params.get('paypal') === 'success' || !!payerId;
+    if (params.get('crypto_paypal') === 'success' && !flagged) return;
+    if (!approved && !storedOrder) return;
+    if (!orderId) {
+      if (flagged) msg('PayPal returned without an order id.');
       return;
     }
     msg('Confirming PayPal payment…');
-    postJson('/api/exchange/paypal/capture-mn2-order', {
-      order_id: orderId,
-      pack_id: packId,
-    }).then(function (res) {
+    var body = { order_id: orderId };
+    if (packId) body.pack_id = packId;
+    postJson('/api/exchange/paypal/capture-mn2-order', body).then(function (res) {
       if (res && res.success) {
         msg('PayPal captured. +' + fmt(res.mn2_granted, 4) + ' MN2 credited.');
         try {
@@ -496,6 +502,9 @@
           sessionStorage.removeItem('cex_paypal_order');
         } catch (e) {}
         refresh();
+      } else if (!flagged && (res && (res.error === 'pending_order_not_found' || res.error === 'order_not_found'))) {
+        handleCryptoPayPalReturn(true);
+        return;
       } else {
         msg((res && res.error) || 'PayPal capture failed');
       }
@@ -503,15 +512,22 @@
     });
   }
 
-  function handleCryptoPayPalReturn() {
+  function handleCryptoPayPalReturn(fromMn2Fallback) {
     var params = new URLSearchParams(window.location.search);
-    if (params.get('crypto_paypal') !== 'success') return;
+    if (params.get('crypto_paypal') === 'cancel' || params.get('paypal') === 'cancel') return;
     var orderId = params.get('token') || params.get('order_id');
+    var storedOrder = '';
     try {
-      orderId = orderId || sessionStorage.getItem('cex_crypto_paypal_order');
+      storedOrder = sessionStorage.getItem('cex_crypto_paypal_order') || '';
+      orderId = orderId || storedOrder;
     } catch (e) {}
+    var payerId = params.get('PayerID') || params.get('PayerId');
+    var flagged = params.get('crypto_paypal') === 'success';
+    var approved = flagged || params.get('paypal') === 'success' || !!payerId || !!fromMn2Fallback;
+    if (!fromMn2Fallback && !flagged && !storedOrder) return;
+    if (!approved && !storedOrder) return;
     if (!orderId) {
-      msg('PayPal returned without an order id.');
+      if (flagged) msg('PayPal returned without an order id.');
       return;
     }
     msg('Confirming PayPal crypto purchase…');

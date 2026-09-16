@@ -127,14 +127,24 @@ def create_paypal_order(
         item_name += f"_{quote['gift_id']}"
 
     from backend.services.paypal_service import create_order as pp_create
+    import urllib.parse
 
+    if base_url.endswith("/vidgenerator"):
+        base_url = base_url.rsplit("/vidgenerator", 1)[0]
+    return_url = (
+        f"{base_url}/camgirls/?paypal=success"
+        f"&user_id={urllib.parse.quote(str(user_id))}"
+        f"&performer_id={urllib.parse.quote(str(performer_id))}"
+    )
     result = pp_create(
         quote["amount_usd"],
         currency="USD",
         item_name=item_name,
-        return_url=f"{base_url}/camgirls/?paypal=success",
+        return_url=return_url,
         cancel_url=f"{base_url}/camgirls/?paypal=cancel",
         metadata={
+            "item_id": item_name[:127],
+            "user_id": user_id,
             "product": "camgirls",
             "action": quote["action"],
             "performer_id": performer_id,
@@ -196,7 +206,10 @@ def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
         return {"success": False, "error": "order_not_found"}
 
     uid = (user_id or pending.get("user_id") or "").strip()
-    if pending.get("user_id") != uid:
+    pending_uid = str(pending.get("user_id") or "").strip()
+    if not uid or uid.lower() == "default_user":
+        uid = pending_uid or uid
+    elif pending_uid and pending_uid != uid:
         return {"success": False, "error": "user_mismatch"}
 
     from backend.services.paypal_service import capture_order
@@ -236,3 +249,54 @@ def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
     rows.get("pending", {}).pop(order_id, None)
     _write_orders(rows)
     return {"success": True, **cap}
+
+
+def list_pending_paypal_payments() -> list:
+    out = []
+    for oid, row in (_read_orders().get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "camgirls",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": row.get("user_id"),
+        })
+    return out
+
+
+def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
+    """Capture APPROVED camgirls checkouts without depending on sessionStorage."""
+    if not signature_ok:
+        return {"success": False, "error": "Webhook signature not verified"}
+    event_type = str((event or {}).get("event_type") or "").upper()
+    resource = event.get("resource") if isinstance((event or {}).get("resource"), dict) else {}
+    related = ((resource.get("supplementary_data") or {}).get("related_ids") or {})
+    if not isinstance(related, dict):
+        related = {}
+    pp_oid = str(
+        related.get("order_id")
+        or (resource.get("id") if event_type.startswith("CHECKOUT.ORDER.") else "")
+        or ""
+    ).strip()
+    rows = _read_orders()
+    captured = rows.get("captured") or {}
+    pending_rows = rows.get("pending") or {}
+    if pp_oid and pp_oid in captured:
+        return {"success": True, "already_fulfilled": True, "order_id": pp_oid}
+    oid = ""
+    pending = None
+    if pp_oid and isinstance(pending_rows.get(pp_oid), dict):
+        oid, pending = pp_oid, pending_rows[pp_oid]
+    else:
+        for key, row in pending_rows.items():
+            if not isinstance(row, dict):
+                continue
+            if pp_oid and (row.get("order_id") == pp_oid or key == pp_oid):
+                oid, pending = key, row
+                break
+    if not pending:
+        return {"success": True, "ignored": True, "reason": "no matching camgirls order"}
+    if event_type in ("CHECKOUT.ORDER.APPROVED", "CHECKOUT.ORDER.COMPLETED", "PAYMENT.CAPTURE.COMPLETED"):
+        return fulfill_capture(oid, user_id=str(pending.get("user_id") or ""))
+    return {"success": True, "ignored": True, "event_type": event_type}

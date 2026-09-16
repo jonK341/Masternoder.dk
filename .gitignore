@@ -68,3 +68,4 @@ tools/mn2-daemon/
 data/mn2_verified_users.json
 
 data/crypto_exchange/grid_bot_state.json
+data/paypal_shop_orders.json

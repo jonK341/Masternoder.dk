@@ -2664,6 +2664,10 @@
                 });
                 const data = await response.json();
                 if (data.success && data.approve_url) {
+                    try {
+                        sessionStorage.setItem('shop_paypal_order', data.order_id || '');
+                        sessionStorage.setItem('shop_paypal_item', itemId || '');
+                    } catch (e) {}
                     window.location.href = data.approve_url;
                 } else {
                     const errMsg = data.code === 'ACCOUNT_REQUIRED' ? 'Create an account or log in in Profile first.' : (data.error || 'Could not start PayPal checkout');
@@ -2705,6 +2709,10 @@
                 });
                 const data = await response.json();
                 if (data.success && data.approve_url) {
+                    try {
+                        sessionStorage.setItem('shop_paypal_order', data.order_id || '');
+                        sessionStorage.setItem('shop_paypal_item', itemId || '');
+                    } catch (e) {}
                     window.location.href = data.approve_url;
                 } else {
                     const errMsg = data.code === 'ACCOUNT_REQUIRED' 
@@ -2955,15 +2963,22 @@
         async function handlePayPalReturn() {
             const params = new URLSearchParams(window.location.search);
             const paypalStatus = params.get('paypal');
-            const token = params.get('token');
-            const itemId = params.get('item_id');
+            const token = params.get('token') || (function () {
+                try { return sessionStorage.getItem('shop_paypal_order') || ''; } catch (e) { return ''; }
+            })();
+            const itemId = params.get('item_id') || (function () {
+                try { return sessionStorage.getItem('shop_paypal_item') || ''; } catch (e) { return ''; }
+            })();
             const returnUserId = params.get('user_id');
+            const payerId = params.get('PayerID') || params.get('PayerId');
             if (paypalStatus === 'cancel') {
                 if (typeof toast !== 'undefined') toast.info('PayPal payment cancelled');
+                try { sessionStorage.removeItem('shop_paypal_order'); sessionStorage.removeItem('shop_paypal_item'); } catch (e) {}
                 window.history.replaceState({}, '', window.location.pathname);
                 return;
             }
-            if (paypalStatus === 'success' && token) {
+            const approved = paypalStatus === 'success' || !!payerId;
+            if (token && approved) {
                 try {
                     const response = await fetch(`${BASE_URL}/api/paypal/capture`, {
                         method: 'POST',
@@ -2995,6 +3010,7 @@
                 } catch (e) {
                     if (typeof toast !== 'undefined') toast.error('Failed to complete payment');
                 }
+                try { sessionStorage.removeItem('shop_paypal_order'); sessionStorage.removeItem('shop_paypal_item'); } catch (e) {}
                 window.history.replaceState({}, '', window.location.pathname);
             }
         }

@@ -257,7 +257,6 @@ def record_paypal_order(order_id: str, user_id: str, payload: Dict[str, Any], *,
 
 
 def fulfill_paypal_order(user_id: str, order_id: str, capture: Dict[str, Any]) -> Dict[str, Any]:
-    uid = (user_id or "").strip()
     order_id = (order_id or "").strip()
     rows = ex._read_json(_PAYPAL_ORDERS, {"pending": {}, "captured": {}})
     if order_id in rows.get("captured", {}):
@@ -265,8 +264,9 @@ def fulfill_paypal_order(user_id: str, order_id: str, capture: Dict[str, Any]) -
     pending = (rows.get("pending") or {}).get(order_id)
     if not pending:
         return {"success": False, "error": "order_not_found"}
-    if pending.get("user_id") != uid:
-        return {"success": False, "error": "user_mismatch"}
+    uid, buyer_err = ex.paypal_buyer_id(user_id, str(pending.get("user_id") or ""))
+    if buyer_err:
+        return {"success": False, "error": "user_mismatch" if buyer_err == "user_mismatch" else buyer_err}
     if not capture.get("success"):
         return {"success": False, "error": capture.get("error", "capture_failed")}
 
@@ -287,6 +287,47 @@ def fulfill_paypal_order(user_id: str, order_id: str, capture: Dict[str, Any]) -
     ex._write_json(_PAYPAL_ORDERS, rows)
     ex._audit("controller_paypal_capture", user_id=uid, order_id=order_id, purchase_kind=pl.get("action"))
     return {"success": True, **cap}
+
+
+def list_pending_paypal_payments() -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    rows = ex._read_json(_PAYPAL_ORDERS, {"pending": {}, "captured": {}})
+    for oid, row in (rows.get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "exchange_controller",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": row.get("user_id"),
+        })
+    return out
+
+
+def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
+    """Capture APPROVED controller checkouts without the browser return flag."""
+    if not signature_ok:
+        return {"success": False, "error": "Webhook signature not verified"}
+    event_type = str((event or {}).get("event_type") or "").upper()
+    if event_type not in (
+        "CHECKOUT.ORDER.APPROVED",
+        "CHECKOUT.ORDER.COMPLETED",
+        "PAYMENT.CAPTURE.COMPLETED",
+    ):
+        return {"success": True, "ignored": True, "event_type": event_type}
+    oid = ex._paypal_event_order_id(event or {})
+    if not oid:
+        return {"success": True, "ignored": True, "reason": "no_order_id"}
+    rows = ex._read_json(_PAYPAL_ORDERS, {"pending": {}, "captured": {}})
+    if oid in (rows.get("captured") or {}):
+        return {"success": True, "already_fulfilled": True, "order_id": oid}
+    pending = (rows.get("pending") or {}).get(oid)
+    if not isinstance(pending, dict):
+        return {"success": True, "ignored": True, "reason": "no matching controller order"}
+    from backend.services.paypal_service import finish_checkout_order
+
+    cap = finish_checkout_order(oid)
+    return fulfill_paypal_order(str(pending.get("user_id") or ""), oid, cap)
 
 
 def cash_out_profit(user_id: str, amount_usd: float, destination: str = "mn2") -> Dict[str, Any]:
