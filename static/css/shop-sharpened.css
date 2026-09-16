@@ -1,0 +1,324 @@
+/**
+ * Shop Sharpened Edges — design parity with wallet-app (wallet-sharpened.css).
+ * Applied to shop/index.html without rewriting the legacy page.
+ */
+:root {
+  --shop-radius: var(--wallet-radius, 2px);
+  --shop-edge: var(--wallet-edge, #2a2f3a);
+  --shop-border: 1px solid var(--shop-edge);
+  --shop-bg-panel: var(--wallet-bg-panel, #0d0f12);
+  --shop-bg-elevated: var(--wallet-bg-elevated, #141820);
+  --shop-text: var(--wallet-text, #e8ecf1);
+  --shop-muted: var(--wallet-muted, #8b95a8);
+  --shop-accent: var(--wallet-accent, #00e5a0);
+  --shop-accent-dim: var(--wallet-accent-dim, rgba(0, 229, 160, 0.15));
+  --shop-font-mono: var(--wallet-font-mono, ui-monospace, 'JetBrains Mono', 'SF Mono', monospace);
+}
+
+/* --- Site hub strip (mirrors wallet SiteFeaturesHub primary row) --- */
+.shop-site-hub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--spacing-md, 16px);
+  padding: 10px 12px;
+  background: var(--shop-bg-panel);
+  border: var(--shop-border);
+  border-radius: var(--shop-radius);
+}
+
+.shop-hub-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: var(--shop-border);
+  border-radius: var(--shop-radius);
+  background: var(--shop-bg-elevated);
+  color: var(--shop-text);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+
+.shop-hub-link:hover {
+  border-color: var(--shop-accent);
+}
+
+.shop-hub-link--active,
+.shop-hub-link[aria-current="page"] {
+  border-color: var(--shop-accent);
+  background: var(--shop-accent-dim);
+  color: var(--shop-accent);
+}
+
+.shop-hub-link--primary {
+  font-weight: 800;
+}
+
+/* --- Sharpened panels, tabs, cards --- */
+.shop-sharpened-panel {
+  background: var(--shop-bg-panel);
+  border: var(--shop-border);
+  border-radius: var(--shop-radius);
+  padding: 16px;
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.shop-sharpened-panel h2,
+.shop-sharpened-panel h3 {
+  margin: 0 0 8px;
+  letter-spacing: 0.02em;
+}
+
+.shop-sharpened-disclaimer {
+  font-size: 0.8rem;
+  color: var(--shop-muted);
+  line-height: 1.45;
+  margin: 0 0 12px;
+}
+
+.shop-page.shop-sharpened .shop-tab-btn {
+  border-radius: var(--shop-radius);
+}
+
+.shop-page.shop-sharpened .shop-tab-btn.active {
+  background: var(--shop-accent-dim);
+  color: var(--shop-accent);
+  border-color: var(--shop-accent);
+}
+
+.shop-page.shop-sharpened .shop-item,
+.shop-page.shop-sharpened .shop-account-bar,
+.shop-page.shop-sharpened .shop-payment-strip,
+.shop-page.shop-sharpened .shop-vision-bar,
+.shop-page.shop-sharpened .auction-card {
+  border-radius: var(--shop-radius);
+}
+
+.shop-page.shop-sharpened .item-price,
+.shop-page.shop-sharpened .auction-price,
+.shop-page.shop-sharpened .shop-trophy-price {
+  font-family: var(--shop-font-mono);
+}
+
+.shop-page.shop-sharpened .shop-version-badge {
+  border-radius: var(--shop-radius);
+}
+
+/* --- Wallet balance strip (MN2 tab) --- */
+.shop-wallet-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  margin-bottom: var(--spacing-md, 16px);
+  background: var(--shop-bg-elevated);
+  border: var(--shop-border);
+  border-radius: var(--shop-radius);
+  font-size: 0.85rem;
+}
+
+.shop-wallet-strip[hidden] {
+  display: none !important;
+}
+
+.shop-wallet-strip-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 100px;
+}
+
+.shop-wallet-strip-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--shop-muted);
+}
+
+.shop-wallet-strip-value {
+  font-family: var(--shop-font-mono);
+  color: var(--shop-accent);
+  font-weight: 600;
+}
+
+.shop-wallet-strip-link {
+  margin-left: auto;
+  color: var(--shop-accent);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* --- Trophy tab --- */
+.shop-trophy-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.shop-trophy-chip {
+  border: var(--shop-border);
+  background: var(--shop-bg-elevated);
+  color: var(--shop-muted);
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-radius: var(--shop-radius);
+  font-weight: 600;
+}
+
+.shop-trophy-chip--active {
+  color: var(--shop-accent);
+  border-color: var(--shop-accent);
+}
+
+.shop-trophy-card {
+  text-align: left;
+}
+
+.shop-trophy-card .shop-trophy-edition {
+  font-family: var(--shop-font-mono);
+  font-size: 0.72rem;
+  color: var(--shop-muted);
+}
+
+.shop-trophy-paypal-first {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.shop-trophy-paypal-first .btn-paypal-item {
+  order: -1;
+}
+
+/* --- Responsive tables --- */
+.shop-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 8px;
+}
+
+.shop-data-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  table-layout: auto;
+  font-size: 0.85rem;
+}
+
+.shop-data-table th,
+.shop-data-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--shop-edge, var(--border-primary));
+  vertical-align: top;
+  text-align: left;
+}
+
+.shop-data-table thead th {
+  color: var(--shop-muted, var(--text-secondary));
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.shop-data-table td.shop-table-mono {
+  font-family: var(--shop-font-mono);
+  white-space: nowrap;
+}
+
+.shop-data-table td.shop-table-wrap {
+  word-break: break-word;
+  min-width: 120px;
+  max-width: 280px;
+}
+
+#shop-v9-api-test-table .shop-data-table {
+  min-width: 520px;
+}
+
+#shop-v9-api-test-table table:not(.shop-data-table) {
+  min-width: 520px;
+  table-layout: auto;
+}
+
+/* Stall / inventory rows as responsive grid-table hybrid */
+.shop-stall-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.shop-stall-table .stall-row {
+  grid-template-columns: minmax(0, 1.4fr) 56px minmax(90px, 110px) auto;
+}
+
+@media (max-width: 760px) {
+  .shop-site-hub {
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .shop-hub-link {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  .shop-data-table {
+    min-width: 360px;
+    font-size: 0.8rem;
+  }
+
+  .shop-data-table th,
+  .shop-data-table td {
+    padding: 6px 8px;
+  }
+
+  .shop-stall-table .stall-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 12px 0;
+  }
+
+  .shop-stall-table .stall-row input[type="number"] {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-data-table--stack thead {
+    display: none;
+  }
+
+  .shop-data-table--stack tbody tr {
+    display: block;
+    border-bottom: 1px solid var(--shop-edge, var(--border-primary));
+    padding: 8px 0;
+  }
+
+  .shop-data-table--stack tbody td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: none;
+    padding: 4px 0;
+  }
+
+  .shop-data-table--stack tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--shop-muted, var(--text-secondary));
+    flex: 0 0 40%;
+  }
+}

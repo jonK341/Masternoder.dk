@@ -13,7 +13,7 @@ USE_SHOP_V3 = os.environ.get("USE_SHOP_V3", "true").strip().lower() in ("1", "tr
 
 # Shop front-end generation (bump when navigation/layout changes; exposed in /api/shop/config)
 # Product line: Shop V.9 tabbed UI + unified purchase/inventory APIs — keep in sync with shop/index.html.
-SHOP_UI_VERSION = "9.2.0"
+SHOP_UI_VERSION = "9.3.0"
 
 
 def _resolve_user_id():
@@ -1559,6 +1559,55 @@ def _get_shop_items():
     return items
 
 
+def _is_trophy_catalog_item(item: dict) -> bool:
+    """True when item belongs on the Trophies tab (plan 001 kind=trophy)."""
+    if not isinstance(item, dict):
+        return False
+    if item.get("kind") == "trophy":
+        return True
+    iid = str(item.get("id") or "")
+    if iid.startswith("top25-") or iid.startswith("bundle-top25-"):
+        return True
+    tags = item.get("tags") or []
+    if "top25" in tags or "series_top25" in tags:
+        return True
+    if item.get("category") in ("top25", "trophies"):
+        return True
+    return False
+
+
+def _enrich_trophy_listing(item: dict) -> dict:
+    """Attach trophy pricing fields for shop/wallet cards (P-U1 stub: effective == base)."""
+    row = dict(item)
+    row["kind"] = "trophy"
+    base = row.get("base_price_usd")
+    if base is None:
+        base = row.get("price_usd")
+    if base is None and isinstance(row.get("price"), (int, float)) and row["price"] > 0:
+        base = max(0.99, round(float(row["price"]) / 100, 2))
+    row["base_price_usd"] = float(base) if base is not None else None
+    row["effective_price_usd"] = row["base_price_usd"]
+    row["price_factors"] = {
+        "demand_multiplier": 1.0,
+        "popularity_factor": 1.0,
+    }
+    row["on_chain_mint"] = False
+    if row.get("effective_price_usd") is not None and row["effective_price_usd"] > 0:
+        row["price_usd"] = row["effective_price_usd"]
+    return row
+
+
+def _list_trophy_items(series=None):
+    items = [_enrich_trophy_listing(i) for i in (_get_shop_items() or []) if _is_trophy_catalog_item(i)]
+    if series:
+        key = series.strip().lower().replace("_", "-")
+        if key in ("top25", "top-25", "series-top25"):
+            items = [i for i in items if "top25" in (i.get("tags") or []) or str(i.get("id", "")).startswith("top25-")]
+        elif key in ("block-mint", "block_mint", "blockmint"):
+            items = [i for i in items if i.get("series") == "block_mint" or "block_mint" in (i.get("tags") or [])]
+    return items
+
+
 def _super_stack_bundle_entries():
     """Server-side bundle definition for one-click inventory stacking."""
     return [
@@ -1976,6 +2025,41 @@ def shop_inventory():
         return jsonify({'success': True, 'user_id': user_id, 'inventory': inventory}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'inventory': []}), 500
+
+
+@shop_bp.route('/api/shop/trophies', methods=['GET'])
+def shop_trophies():
+    """Trophy SKUs for Shop Trophies tab and wallet hub (plan 001 U1)."""
+    try:
+        series = (request.args.get('series') or '').strip() or None
+        user_id = (request.args.get('user_id') or '').strip() or None
+        items = _list_trophy_items(series=series)
+        owned_ids = set()
+        if user_id and user_id != 'default_user':
+            try:
+                from backend.services.shop_db_service import get_inventory
+
+                for row in get_inventory(user_id) or []:
+                    iid = row.get('item_id') or row.get('id')
+                    if iid:
+                        owned_ids.add(iid)
+            except Exception:
+                pass
+        for item in items:
+            item['owned'] = item.get('id') in owned_ids
+        top25_owned = sum(1 for i in items if str(i.get('id', '')).startswith('top25-') and i.get('owned'))
+        return jsonify({
+            'success': True,
+            'items': items,
+            'count': len(items),
+            'on_chain_mint': False,
+            'series': series,
+            'top25_owned': top25_owned,
+            'top25_total': sum(1 for i in items if str(i.get('id', '')).startswith('top25-')),
+            'shop_ui_version': SHOP_UI_VERSION,
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'items': [], 'on_chain_mint': False}), 500
 
 
 @shop_bp.route('/api/shop/auction/listings', methods=['GET'])

@@ -851,3 +851,19 @@ Per track:
 - Q5. Normalize legacy inventory stacks into editions on read vs one-time migration job.
 - Q6. PayPal dispute clawback for trophy editions (webhook) — deferred.
 - Q7–Q9. Block trophy pricing, milestone-only mints, encoder templates — same as prior block mint section.
+
+---
+
+## Shop v2 Extension (SHOP-EXT) — 2026-09-16
+
+Incremental HTML/CSS/JS on `shop/index.html` (no React rewrite). Aligns shop UX with wallet Sharpened Edges design and hub navigation from plan 002.
+
+| Unit | Goal | Files |
+|------|------|-------|
+| **SHOP-EXT-1** | Sharpened Edges CSS tokens (`--shop-radius: 2px`), sharp cards, monospace prices | `static/css/shop-sharpened.css`, `shop/index.html` import |
+| **SHOP-EXT-2** | Site hub strip: Trophies · Shop · Exchange · Portal · Rewards · Wallet quick links | `shop/index.html` nav `#shop-site-hub` |
+| **SHOP-EXT-3** | Trophies tab at `/shop?tab=trophies`, PayPal-first cards, `GET /api/shop/trophies` | `shop/index.html`, `backend/routes/shop_routes.py`, bump `SHOP_UI_VERSION` → 9.3.0 |
+| **SHOP-EXT-4** | Responsive tables: `.shop-table-scroll`, `.shop-data-table`, purchase history table, API test table, stall rows | `shop-sharpened.css`, `shop/index.html` |
+| **SHOP-EXT-5** | Lazy MN2 wallet load (W-U5); optional balance strip via `GET /api/wallet/v2/summary` on MN2 tab | `shop/index.html` |
+
+**Verification:** `/shop?tab=trophies` shows Top 25 SKUs with PayPal CTA; hub links resolve; purchase history scrolls on narrow viewports; MN2 tab shows wallet strip without eager deposit RPC on catalog load.

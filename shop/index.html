@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
+    <link rel="stylesheet" href="/static/css/shop-sharpened.css?v=20260916">
     <style>
         .shop-page {
             min-height: 100vh;
@@ -521,9 +522,9 @@
         </div>
     </nav>
     
-    <div class="container shop-page">
+    <div class="container shop-page shop-sharpened">
         <header class="shop-header">
-            <h1><span class="shop-title-gradient">🛍️ Game Shop</span> <span class="shop-version-badge" id="shop-version-badge">v9.2.0</span></h1>
+            <h1><span class="shop-title-gradient">🛍️ Game Shop</span> <span class="shop-version-badge" id="shop-version-badge">v9.3.0</span></h1>
             <p class="subtitle">Themes, boosters, cosmetics — <strong style="color: var(--text-primary); font-weight: 600;">one catalog</strong>, your choice of <strong style="color: var(--secondary); font-weight: 600;">coins, unified points, PayPal packs, or MN2</strong></p>
             <p id="shop-service-status" style="text-align:center;font-size:0.9rem;color:var(--text-secondary);margin-top:8px;" aria-live="polite">Loading catalog…</p>
         </header>
@@ -536,8 +537,29 @@
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
                 <a href="/profile">Profile &amp; wallet settings</a>
-                <span class="shop-version-badge" id="shop-config-version">v9.2.0</span>
+                <span class="shop-version-badge" id="shop-config-version">v9.3.0</span>
             </div>
+        </div>
+
+        <nav class="shop-site-hub" aria-label="Commerce and wallet hubs" id="shop-site-hub">
+            <a href="/shop?tab=trophies" class="shop-hub-link shop-hub-link--primary" data-hub="trophies">🏆 Trophies</a>
+            <a href="/shop" class="shop-hub-link shop-hub-link--active" data-hub="shop" aria-current="page">🛍️ Shop</a>
+            <a href="/exchange" class="shop-hub-link" data-hub="exchange">💱 Exchange</a>
+            <a href="/command-center" class="shop-hub-link" data-hub="portal">🌀 Portal</a>
+            <a href="/profile?tab=points" class="shop-hub-link" data-hub="rewards">🎁 Rewards</a>
+            <a href="/wallets" class="shop-hub-link" data-hub="wallet">👛 Wallet</a>
+        </nav>
+
+        <div id="shop-wallet-balance-strip" class="shop-wallet-strip" hidden aria-live="polite">
+            <div class="shop-wallet-strip-kpi">
+                <span class="shop-wallet-strip-label">MN2 balance</span>
+                <span class="shop-wallet-strip-value" id="shop-wallet-strip-mn2">—</span>
+            </div>
+            <div class="shop-wallet-strip-kpi">
+                <span class="shop-wallet-strip-label">Trophies owned</span>
+                <span class="shop-wallet-strip-value" id="shop-wallet-strip-trophies">—</span>
+            </div>
+            <a href="/wallets" class="shop-wallet-strip-link">Open wallet →</a>
         </div>
         <div id="shop-payment-strip" class="shop-payment-strip" aria-live="polite">Loading payment rails (MN2 node + PayPal)…</div>
 
@@ -581,6 +603,7 @@
         </div>
 
         <div class="shop-tabs" role="tablist" aria-label="Shop sections">
+            <button type="button" class="shop-tab-btn" data-tab="trophies" role="tab" aria-selected="false">🏆 Trophies</button>
             <button type="button" class="shop-tab-btn active" data-tab="catalog" role="tab" aria-selected="true">Catalog</button>
             <button type="button" class="shop-tab-btn" data-tab="auction" role="tab" aria-selected="false">Auction House</button>
             <button type="button" class="shop-tab-btn" data-tab="coins" role="tab" aria-selected="false">PayPal &amp; coins</button>
@@ -588,6 +611,23 @@
             <button type="button" class="shop-tab-btn" data-tab="boosters" role="tab" aria-selected="false">Boosters &amp; events</button>
             <button type="button" class="shop-tab-btn" data-tab="deals" role="tab" aria-selected="false">⭐ Deals &amp; VIP</button>
             <button type="button" class="shop-tab-btn" data-tab="account" role="tab" aria-selected="false">My Stall &amp; inventory</button>
+        </div>
+
+        <div id="shop-panel-trophies" class="shop-panel" role="tabpanel" data-panel="trophies">
+            <section class="shop-sharpened-panel" aria-labelledby="shop-trophies-heading">
+                <h2 id="shop-trophies-heading">🏆 Trophies</h2>
+                <p class="shop-sharpened-disclaimer">
+                    Licensed digital collectible trophies on the platform ledger — <strong>not</strong> on-chain mint.
+                    PayPal checkout is the primary rail; coins and MN2 remain available on the same SKUs.
+                </p>
+                <div class="shop-trophy-chips" role="group" aria-label="Trophy series filter">
+                    <button type="button" class="shop-trophy-chip shop-trophy-chip--active" data-trophy-series="">All series</button>
+                    <button type="button" class="shop-trophy-chip" data-trophy-series="top25">Top 25 Legends</button>
+                    <button type="button" class="shop-trophy-chip" data-trophy-series="block-mint">Block Trophies</button>
+                </div>
+                <div id="shop-trophy-status" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px;" aria-live="polite">Loading trophies…</div>
+                <div id="shop-trophy-grid" class="shop-grid">Loading…</div>
+            </section>
         </div>
 
         <div id="shop-panel-catalog" class="shop-panel active" role="tabpanel" data-panel="catalog">
@@ -1077,7 +1117,7 @@
         let mn2HostingCheckoutConfig = null;
         let useShopV3 = true;  // From GET /api/shop/config
 
-        let shopUiVersion = '9.2.0';
+        let shopUiVersion = '9.3.0';
 
         /**
          * Shop V.9: local shadow backup + merge with API so profile/shop stay useful if the server
@@ -1280,6 +1320,16 @@
             });
         }
 
+        function updateShopHubActive(tabName) {
+            document.querySelectorAll('.shop-hub-link').forEach(link => {
+                const hub = link.dataset.hub || '';
+                const on = tabName === 'trophies' ? hub === 'trophies' : (hub === 'shop' && tabName !== 'trophies');
+                link.classList.toggle('shop-hub-link--active', on);
+                if (on) link.setAttribute('aria-current', 'page');
+                else link.removeAttribute('aria-current');
+            });
+        }
+
         function showShopTab(name) {
             document.querySelectorAll('.shop-tab-btn').forEach(btn => {
                 const on = btn.dataset.tab === name;
@@ -1290,6 +1340,22 @@
                 const t = panel.dataset.panel;
                 panel.classList.toggle('active', t === name);
             });
+            updateShopHubActive(name);
+            const strip = document.getElementById('shop-wallet-balance-strip');
+            if (strip) strip.hidden = name !== 'mn2';
+            if (name === 'trophies') loadTrophies();
+            if (name === 'mn2') {
+                loadShopWalletStrip();
+                loadMn2Wallet();
+            }
+            try {
+                if (history.replaceState) {
+                    const url = new URL(window.location.href);
+                    if (name && name !== 'catalog') url.searchParams.set('tab', name);
+                    else url.searchParams.delete('tab');
+                    history.replaceState(null, '', url.pathname + url.search + (location.hash || ''));
+                }
+            } catch (e) {}
             try {
                 if (history.replaceState) history.replaceState(null, '', '#shop-' + name);
             } catch (e) {}
@@ -1305,6 +1371,13 @@
                     if (btn.dataset.tab === 'mn2') { loadMn2HostingStatus(); loadTierBOnrampPanel(); }
                 });
             });
+            document.querySelectorAll('.shop-trophy-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.querySelectorAll('.shop-trophy-chip').forEach(c => c.classList.remove('shop-trophy-chip--active'));
+                    chip.classList.add('shop-trophy-chip--active');
+                    loadTrophies(chip.dataset.trophySeries || '');
+                });
+            });
             const h = (location.hash || '').replace(/^#/, '');
             if (h.startsWith('shop-')) {
                 showShopTab(h.slice(5));
@@ -1312,6 +1385,91 @@
             }
         }
         window.showShopTab = showShopTab;
+
+        let trophySeriesFilter = '';
+
+        async function loadShopWalletStrip() {
+            const mn2El = document.getElementById('shop-wallet-strip-mn2');
+            const trEl = document.getElementById('shop-wallet-strip-trophies');
+            if (!mn2El && !trEl) return;
+            try {
+                const r = await fetch(`${BASE_URL}/api/wallet/v2/summary?user_id=${encodeURIComponent(userId)}&sections=balance,trophy_counts`);
+                const d = r.ok ? await r.json() : {};
+                const bal = d.balance || {};
+                const mn2 = bal.mn2 != null ? bal.mn2 : (d.mn2_balance != null ? d.mn2_balance : null);
+                if (mn2El) mn2El.textContent = mn2 != null ? Number(mn2).toFixed(4) + ' MN2' : '—';
+                const tc = d.trophy_counts || {};
+                const owned = tc.total_editions ?? tc.top25_owned ?? tc.owned ?? 0;
+                if (trEl) trEl.textContent = owned + ' edition' + (owned === 1 ? '' : 's');
+            } catch (e) {
+                if (mn2El) mn2El.textContent = '—';
+                if (trEl) trEl.textContent = '—';
+            }
+        }
+
+        function renderTrophyCard(item) {
+            const priceUsd = item.effective_price_usd != null ? item.effective_price_usd : item.price_usd;
+            const priceCoins = typeof item.price === 'number' ? item.price : 0;
+            const priceMn2 = coinsPerMn2 > 0 && priceCoins > 0 ? (priceCoins / coinsPerMn2) : 0;
+            const owned = item.owned ? '<span style="display:inline-block;padding:2px 8px;border:1px solid var(--shop-accent,#00e5a0);color:var(--shop-accent,#00e5a0);font-size:0.7rem;margin-bottom:6px;border-radius:2px;">Owned</span>' : '';
+            const payPalBtn = (priceUsd != null && priceUsd > 0)
+                ? `<button type="button" class="btn-purchase btn-paypal-item" data-item-id="${shopEscape(item.id)}" data-amount="${priceUsd}" data-name="${shopEscape(item.name || item.id)}" style="background:linear-gradient(135deg,#0070ba,#1546a0);">
+                    <i class="fab fa-paypal"></i> Pay $${Number(priceUsd).toFixed(2)}
+                   </button>`
+                : '';
+            const coinBtn = priceCoins > 0
+                ? `<button type="button" class="btn-purchase" onclick="purchaseItem('${shopEscape(item.id)}')" style="margin-top:0;">${priceCoins.toLocaleString()} 🪙</button>`
+                : '';
+            const mn2Btn = priceMn2 > 0
+                ? `<button type="button" class="btn-purchase btn-mn2" data-item-id="${shopEscape(item.id)}" data-price-coins="${priceCoins}" data-quantity="1" style="background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">${priceMn2.toFixed(4)} MN2</button>`
+                : '';
+            return `<article class="shop-item shop-trophy-card" style="text-align:left;border:1px solid rgba(255,215,0,0.35);">
+                ${owned}
+                <div class="item-icon">${item.icon || '🏆'}</div>
+                <div class="item-name">${shopEscape(item.name || item.id)}</div>
+                <div class="shop-trophy-edition">${shopEscape(item.serial_key || item.id)}</div>
+                <div class="shop-trophy-price item-price" style="text-align:left;margin:8px 0;">$${priceUsd != null ? Number(priceUsd).toFixed(2) : '—'} USD</div>
+                <div style="font-size:0.82rem;color:var(--text-secondary);min-height:40px;margin-bottom:8px;">${shopEscape(item.description || '')}</div>
+                <div class="shop-trophy-paypal-first">${payPalBtn}${coinBtn}${mn2Btn}</div>
+            </article>`;
+        }
+
+        async function loadTrophies(seriesOverride) {
+            const grid = document.getElementById('shop-trophy-grid');
+            const status = document.getElementById('shop-trophy-status');
+            if (!grid) return;
+            const chip = document.querySelector('.shop-trophy-chip.shop-trophy-chip--active');
+            const series = seriesOverride != null ? seriesOverride : (chip ? (chip.dataset.trophySeries || '') : trophySeriesFilter);
+            trophySeriesFilter = series;
+            grid.innerHTML = '<p style="grid-column:1/-1;color:var(--text-secondary);">Loading trophies…</p>';
+            try {
+                let url = `${BASE_URL}/api/shop/trophies?user_id=${encodeURIComponent(userId)}`;
+                if (series) url += '&series=' + encodeURIComponent(series);
+                const r = await fetch(url);
+                const d = await r.json();
+                const items = (d.success && d.items) ? d.items : [];
+                if (status) {
+                    const owned = d.top25_owned != null ? d.top25_owned : 0;
+                    const total = d.top25_total != null ? d.top25_total : 25;
+                    status.textContent = items.length + ' trophy SKU' + (items.length === 1 ? '' : 's')
+                        + (owned ? ` · You own ${owned}/${total} Top 25 editions` : '');
+                }
+                if (!items.length) {
+                    grid.innerHTML = '<p style="grid-column:1/-1;color:var(--text-secondary);">No trophies in this series yet.</p>';
+                    return;
+                }
+                grid.innerHTML = items.map(renderTrophyCard).join('');
+                grid.querySelectorAll('.btn-paypal-item').forEach(btn => {
+                    btn.addEventListener('click', () => buyItemWithPayPal(btn.dataset.itemId, parseFloat(btn.dataset.amount), btn.dataset.name));
+                });
+                grid.querySelectorAll('.btn-mn2').forEach(btn => {
+                    btn.addEventListener('click', () => purchaseWithMN2(btn.dataset.itemId, parseInt(btn.dataset.priceCoins, 10), parseInt(btn.dataset.quantity, 10) || 1));
+                });
+            } catch (e) {
+                grid.innerHTML = '<p style="grid-column:1/-1;color:#f88;">Could not load trophies.</p>';
+                if (status) status.textContent = '';
+            }
+        }
 
         function nextSundayArenaUtc() {
             const t = new Date();
@@ -2128,7 +2286,7 @@
                 if (countEl) countEl.textContent = userInventory.length + ' item' + (userInventory.length !== 1 ? 's' : '');
                 if (el) {
                     if (userInventory.length === 0) el.innerHTML = '<p style="margin:0;">No items in inventory yet. Purchase items from the shop above.</p>';
-                    else el.innerHTML = userInventory.map(i => {
+                    else el.innerHTML = '<div class="shop-stall-table">' + userInventory.map(i => {
                         const dl = i.download_url
                             ? `<a href="${shopEscape(i.download_url)}" class="btn-purchase" style="width:auto;padding:6px 10px;font-size:0.8rem;margin-top:4px;text-decoration:none;display:inline-block;" download>⬇ Download</a>`
                             : '';
@@ -2139,7 +2297,7 @@
                             <input type="number" min="1" step="1" value="${Math.max(1, Math.ceil(Number(i.quantity || 1) * 35))}" data-auction-price="${shopEscape(i.item_id)}" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.25);color:var(--text-primary);" aria-label="Listing price in coins">
                             <button type="button" class="btn-purchase btn-list-auction" data-item-id="${shopEscape(i.item_id)}" data-quantity="1" style="width:auto;padding:8px 12px;">Sell 1</button>
                         </div>`;
-                    }).join('');
+                    }).join('') + '</div>';
                     el.querySelectorAll('.btn-list-auction').forEach(btn => {
                         btn.addEventListener('click', () => createAuctionListing(btn.dataset.itemId, parseInt(btn.dataset.quantity, 10) || 1));
                     });
@@ -2192,7 +2350,8 @@
                 if (countEl) countEl.textContent = userPurchases.length + ' purchase' + (userPurchases.length !== 1 ? 's' : '');
                 if (el) {
                     if (userPurchases.length === 0) el.innerHTML = '<p style="margin:0;">No purchases yet.</p>';
-                    else el.innerHTML = '<ul style="margin:0; padding-left: 1.2rem;">' + userPurchases.map(p => {
+                    else {
+                        const rows = userPurchases.map(p => {
                         const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
                         let price = '';
                         if (p.price_type === 'coins') price = (p.price_paid_coins || 0) + ' coins';
@@ -2204,8 +2363,16 @@
                             const mn2Paid = (p.price_paid_points && typeof p.price_paid_points === 'object' && p.price_paid_points.mn2 != null) ? p.price_paid_points.mn2 : (p.price_paid_points || '');
                             price = (typeof mn2Paid === 'number' ? mn2Paid.toFixed(4) : mn2Paid) + ' MN2' + (p.price_type === 'mn2_onchain' ? ' (on-chain)' : '');
                         } else if (p.price_paid_points) price = 'points';
-                        return `<li><strong>${p.item_name || p.item_id}</strong> × ${p.quantity || 1} ${price ? ' — ' + price : ''} ${date ? ' (' + date + ')' : ''}</li>`;
-                    }).join('') + '</ul>';
+                        else if (p.price_type === 'paypal') price = 'PayPal';
+                        return `<tr>
+                            <td data-label="Item"><strong>${shopEscape(p.item_name || p.item_id)}</strong></td>
+                            <td class="shop-table-mono" data-label="Qty">× ${p.quantity || 1}</td>
+                            <td class="shop-table-wrap" data-label="Price">${shopEscape(price || '—')}</td>
+                            <td class="shop-table-mono" data-label="Date">${shopEscape(date || '—')}</td>
+                        </tr>`;
+                    }).join('');
+                        el.innerHTML = '<div class="shop-table-scroll"><table class="shop-data-table shop-data-table--stack"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Date</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+                    }
                 }
             } catch (e) {
                 userPurchases = [];
@@ -2983,6 +3150,10 @@
                         } else if (itemGranted) {
                             if (typeof toast !== 'undefined') toast.success('Item purchased! Check your inventory.');
                             loadInventory();
+                            if (itemId && (String(itemId).startsWith('top25-') || String(itemId).startsWith('bundle-top25-'))) {
+                                showShopTab('trophies');
+                                loadTrophies();
+                            }
                         } else {
                             if (typeof toast !== 'undefined') toast.success('Payment completed!');
                         }
@@ -3542,9 +3713,13 @@
                 if (catParam === 'mn2_services') showShopTab('mn2');
             }
             const tabParam = (params.get('tab') || '').trim().toLowerCase();
-            if (tabParam) showShopTab(tabParam);
+            if (tabParam) {
+                showShopTab(tabParam);
+            }
             if (params.get('bundle') === 'hosting') {
                 showShopTab('mn2');
+                loadShopWalletStrip();
+                loadMn2Wallet();
                 if (typeof toast !== 'undefined') toast.info('On-ramp bundle: reserve hosting — promo HOSTMN5 applies when eligible.');
             }
             initShopTabs();
@@ -3577,10 +3752,10 @@
                     const okN = rows.filter(function(x) { return x.ok; }).length;
                     if (summary) summary.textContent = okN + '/' + rows.length + ' OK' + (okN < rows.length ? ' — inspect failing rows' : '');
                     if (table) {
-                        table.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><thead><tr><th align="left">Endpoint</th><th>OK</th><th>ms</th><th align="left">Note</th></tr></thead><tbody>' +
+                        table.innerHTML = '<div class="shop-table-scroll"><table class="shop-data-table"><thead><tr><th>Endpoint</th><th>OK</th><th>ms</th><th>Note</th></tr></thead><tbody>' +
                             rows.map(function(r) {
-                                return '<tr><td>' + String(r.label).replace(/</g, '') + '</td><td>' + (r.ok ? '✓' : '✗') + '</td><td>' + r.ms + '</td><td style="word-break:break-all;">' + String(r.detail).replace(/</g, '') + '</td></tr>';
-                            }).join('') + '</tbody></table>';
+                                return '<tr><td class="shop-table-wrap">' + String(r.label).replace(/</g, '') + '</td><td class="shop-table-mono">' + (r.ok ? '✓' : '✗') + '</td><td class="shop-table-mono">' + r.ms + '</td><td class="shop-table-wrap">' + String(r.detail).replace(/</g, '') + '</td></tr>';
+                            }).join('') + '</tbody></table></div>';
                     }
                 } catch (e) {
                     if (table) table.innerHTML = '<p style="color:#ff6666;">' + String(e.message || e).replace(/</g, '') + '</p>';
@@ -3628,7 +3803,7 @@
             loadAuctionListings();
             loadMyAuctionState();
             loadShopItems();
-            loadMn2Wallet();
+            /* MN2 wallet loads lazily when MN2 tab opens — not on every shop page load (plan W-U5) */
             loadTierBOnrampPanel();
             initMn2WalletHandlers();
             initDealsHandlers();
