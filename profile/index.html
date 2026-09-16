@@ -3430,14 +3430,14 @@
                         var cards = groups[key].map(function (i) {
                         var itemId = String(i.item_id || '').replace(/"/g, '&quot;').replace(/</g, '');
                         var itemName = String(i.item_name || i.item_id || '').replace(/</g, '&lt;');
-                        return '<div style="display:grid;grid-template-columns:1fr auto minmax(120px,180px) auto;gap:8px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;background:rgba(255,255,255,0.04);">' +
+                        return '<div class="stall-row">' +
                             '<div><strong>' + itemName + '</strong><div style="font-size:0.78rem;opacity:0.7;">' + itemId + ' · ' + label + '</div></div>' +
                             '<div>× ' + (i.quantity || 1) + '</div>' +
-                            '<input type="number" min="1" step="1" value="' + Math.max(1, Math.ceil(Number(i.quantity || 1) * 35)) + '" data-profile-auction-price="' + itemId + '" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.25);color:#fff;" aria-label="Listing price in coins">' +
+                            '<input type="number" min="1" step="1" value="' + Math.max(1, Math.ceil(Number(i.quantity || 1) * 35)) + '" data-profile-auction-price="' + itemId + '" aria-label="Listing price in coins">' +
                             '<button type="button" data-profile-auction-sell="' + itemId + '" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,215,0,0.45);background:rgba(255,215,0,0.16);color:#FFD700;cursor:pointer;">Sell 1</button>' +
                         '</div>';
                         }).join('');
-                        return '<h4 style="margin:14px 0 8px;color:#7ee8ff;font-size:0.92rem;">' + label + '</h4>' + cards;
+                        return '<h4 class="taxonomy-group-title">' + label + '</h4><div class="stall-table">' + cards + '</div>';
                     }).join('') + '<p style="margin-top:10px;font-size:0.85rem;opacity:0.78;">Profile sell controls list one item at a time in the Shop v5 Auction House.</p>';
                     el.querySelectorAll('[data-profile-auction-sell]').forEach((btn) => {
                         btn.addEventListener('click', async () => {

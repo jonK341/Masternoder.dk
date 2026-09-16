@@ -527,32 +527,52 @@
 .cex-daemon-badge-daemon { background: rgba(167,139,250,0.2); color: #c4b5fd; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; margin-left: 6px; }
 .cex-my-rentals { margin-top: 16px; }
 .cex-shop-active { font-size: 0.76rem; margin: 8px 0; color: rgba(255,255,255,0.65); }
-.cex-shop .shop-subnav, #cex-shop-subnav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 10px 0;
+/* Exchange shop chips use shared shop-taxonomy.css container + button styles */
+.cex-shop .shop-subnav,
+#cex-shop-subnav {
+    margin: 10px 0 14px;
 }
-.cex-shop .shop-subnav-btn, #cex-shop-subnav .shop-subnav-btn {
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.16);
-    background: rgba(255,255,255,0.04);
-    color: #cfe;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-.cex-shop .shop-subnav-btn.active { background: linear-gradient(135deg, #00d4ff, #0099cc); color: #000; border-color: transparent; }
 .cex-shop-cat { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; margin: 6px 0; }
 
 /* Profit Path Protocol (PPP) research */
 .cex-profit-path-card { border: 1px solid rgba(0,255,136,0.18); margin-top: 16px; }
 .cex-ppp-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; align-items: end; margin: 12px 0; }
-.cex-ppp-table-wrap { max-height: 320px; overflow: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; margin-bottom: 12px; }
-.cex-ppp-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
-.cex-ppp-table th, .cex-ppp-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
-.cex-ppp-table th { color: rgba(255,255,255,0.55); font-weight: 600; position: sticky; top: 0; background: rgba(8,12,24,0.95); }
+.cex-ppp-table-wrap {
+    max-height: 320px;
+    margin-bottom: 12px;
+}
+.cex-ppp-table-wrap {
+    overflow: auto;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.24);
+}
+.cex-ppp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+.cex-ppp-table th,
+.cex-ppp-table td {
+    padding: 9px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.cex-ppp-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(0, 212, 255, 0.14);
+}
+.cex-ppp-table tbody tr:last-child td {
+    border-bottom: none;
+}
 .cex-ppp-suggestions { display: flex; flex-direction: column; gap: 8px; }
 .cex-ppp-suggestion { font-size: 0.8rem; padding: 8px 10px; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); }
 .cex-ppp-suggestion--high { border-color: rgba(255,100,100,0.35); }
