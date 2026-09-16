@@ -232,6 +232,64 @@ def queue_edition_anchor(
     return {"success": True, "job_id": job_id, "anchor_commitment": commitment, "anchor_status": "pending"}
 
 
+def queue_transfer_reanchor(
+    *,
+    user_id: str,
+    item_id: str,
+    edition_no: int,
+    edition_key: str,
+    proof_hash: str,
+    source: str,
+    from_user_id: str = "",
+) -> Dict[str, Any]:
+    """Re-queue anchor after transfer/sale (plan 003 A-U3) — new job per transfer event."""
+    cfg = get_config()
+    if not cfg.get("enabled", True):
+        return {"success": False, "error": "anchor_disabled"}
+
+    uid = (user_id or "").strip()
+    ekey = (edition_key or "").strip()
+    phash = (proof_hash or "").strip()
+    if not uid or not ekey:
+        return {"success": False, "error": "missing_edition_fields"}
+
+    commitment = anchor_commitment(ekey, phash)
+    job_id = f"{ekey}:xfer:{_iso()}"
+
+    with _LOCK:
+        doc = _read_json(_QUEUE_PATH, {"jobs": []})
+        jobs = doc.setdefault("jobs", [])
+        jobs.append(
+            {
+                "job_id": job_id,
+                "user_id": uid,
+                "item_id": (item_id or "").strip(),
+                "edition_no": int(edition_no),
+                "edition_key": ekey,
+                "proof_hash": phash,
+                "anchor_commitment": commitment,
+                "source": (source or "transfer").strip(),
+                "from_user_id": (from_user_id or "").strip(),
+                "priority": max(_source_priority(source), 75),
+                "status": "pending",
+                "queued_at": _iso(),
+                "transfer_reanchor": True,
+            }
+        )
+        doc["updated_at"] = _iso()
+        _write_json(_QUEUE_PATH, doc)
+
+    _patch_edition_anchor(uid, item_id, int(edition_no), {"anchor_status": "pending", "anchor_commitment": commitment})
+
+    if cfg.get("auto_process_on_queue", True):
+        try:
+            process_anchor_queue(limit=1, job_id=job_id)
+        except Exception:
+            pass
+
+    return {"success": True, "job_id": job_id, "anchor_commitment": commitment, "transfer_reanchor": True}
+
+
 def _patch_edition_anchor(user_id: str, item_id: str, edition_no: int, fields: Dict[str, Any]) -> None:
     try:
         from backend.services.trophy_fulfillment_service import _editions_file_path

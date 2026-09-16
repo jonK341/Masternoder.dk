@@ -2122,6 +2122,100 @@ def shop_trophy_my_editions():
         return jsonify({'success': False, 'error': str(e), 'editions': []}), 500
 
 
+@shop_bp.route('/api/shop/trophies/metadata/<edition_key>', methods=['GET'])
+def shop_trophy_metadata(edition_key):
+    """Open-style metadata JSON for a trophy edition."""
+    try:
+        from backend.services.trophy_metadata_service import build_metadata
+
+        result = build_metadata((edition_key or '').strip())
+        status = 200 if result.get('success') else 404
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/proof/<edition_key>', methods=['GET'])
+def shop_trophy_proof(edition_key):
+    """Public proof page payload for a trophy edition."""
+    try:
+        from backend.services.trophy_proof_service import build_proof_page
+
+        result = build_proof_page((edition_key or '').strip())
+        status = 200 if result.get('success') else 404
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/provenance/<edition_key>', methods=['GET'])
+def shop_trophy_provenance(edition_key):
+    try:
+        from backend.services.trophy_provenance_service import get_chain
+
+        return jsonify(get_chain((edition_key or '').strip())), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/share-discord', methods=['POST'])
+def shop_trophy_share_discord():
+    try:
+        data = request.get_json() or {}
+        user_id = (data.get('user_id') or '').strip() or _resolve_user_id()
+        edition_key = (data.get('edition_key') or '').strip()
+        from backend.services.trophy_metadata_service import build_metadata
+        from backend.services.trophy_discord_fanout import post_trophy_share
+
+        meta = build_metadata(edition_key)
+        if not meta.get('success'):
+            return jsonify(meta), 404
+        result = post_trophy_share(edition_key, user_id, meta.get('metadata') or {})
+        return jsonify(result), 200 if result.get('success') else 502
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/burn', methods=['POST'])
+def shop_trophy_burn():
+    try:
+        data = request.get_json() or {}
+        user_id = (data.get('user_id') or '').strip() or _resolve_user_id()
+        from backend.services.trophy_burn_service import burn_edition
+
+        result = burn_edition(user_id, (data.get('item_id') or '').strip(), int(data.get('edition_no') or 0))
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/trophies/paypal-clawback', methods=['POST'])
+def shop_trophy_paypal_clawback():
+    """Ops: revoke trophy edition on PayPal dispute."""
+    try:
+        data = request.get_json() or {}
+        from backend.services.trophy_paypal_clawback_service import clawback_trophy_edition
+
+        result = clawback_trophy_edition(
+            (data.get('capture_id') or '').strip(),
+            (data.get('item_id') or '').strip(),
+            reason=(data.get('reason') or 'paypal_dispute').strip(),
+        )
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/block-mint/backfill/status', methods=['GET'])
+def shop_block_mint_backfill_status():
+    try:
+        from backend.services.block_mint_service import get_genesis_backfill_status
+
+        return jsonify(get_genesis_backfill_status()), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @shop_bp.route('/api/shop/trophies/anchor/status', methods=['GET'])
 def shop_trophy_anchor_status():
     """Chain anchor status for a trophy edition (plan 003 L2 — not on-chain mint)."""

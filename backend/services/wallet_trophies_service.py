@@ -78,6 +78,13 @@ def _expand_editions(
             ekey = ed.get("edition_key") or ""
             anchor_extra = _registry_anchor_fields(ekey) if not ed.get("anchor_txid") else {}
             anchor_status = ed.get("anchor_status") or anchor_extra.get("anchor_status")
+            set_badges: List[str] = []
+            try:
+                from backend.services.trophy_sets_service import edition_set_badges
+
+                set_badges = edition_set_badges(ed)
+            except Exception:
+                pass
             out.append(
                 {
                     "edition_no": ed.get("edition_no"),
@@ -107,6 +114,9 @@ def _expand_editions(
                     "image_url": ed.get("image_url") or ed.get("edition_image_url") or media.get("image_url"),
                     "gif_url": ed.get("gif_url") or ed.get("edition_gif_url") or media.get("gif_url"),
                     "per_edition_media": bool(ed.get("per_edition_media")),
+                    "proof_url": f"/trophy/proof?edition_key={ekey}" if ekey else None,
+                    "metadata_url": f"/api/shop/trophies/metadata/{ekey}" if ekey else None,
+                    "set_badges": set_badges,
                     "sound_url": media.get("sound_url"),
                     "trade_actions": {
                         "auction_list": "/shop?tab=auction",

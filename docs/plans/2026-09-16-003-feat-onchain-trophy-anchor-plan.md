@@ -1,76 +1,94 @@
 ---
-title: On-Chain Trophy Anchor — NFT Rethink
+title: On-Chain Trophy Anchor — NFT Rethink (updated)
 type: feat
 date: 2026-09-16
+status: L2 shipped · L3 deferred
 artifact_contract: ce-unified-plan/v1
 companion_plan: docs/plans/2026-09-16-001-feat-trophy-shop-wallet-plan.md
 ---
 
-# On-Chain Trophy Anchor — Rethinking the NFT Project
+# On-Chain Trophy Anchor — Plan 003 (complete L2 track)
 
 ## Executive summary
 
-The original **PayPal NFT purchase** plan was renamed to **Trophy** because MasterNoder2 has **no NFT opcode or unique-asset RPC today**. That decision stands for checkout and UX honesty.
-
-This plan adds a **second layer** without reversing the Trophy rebrand:
-
 | Layer | Name | Status | User-facing |
 |-------|------|--------|-------------|
-| **L1** | Platform Trophy | Shipped (plan 001) | Edition numbers, PayPal/MN2, auction, transfer |
-| **L2** | Chain Anchor | **Starting now** (BM-U6 Phase 1) | Optional proof commitment; explorer link when tx exists |
-| **L3** | Full on-chain NFT | **Deferred** | Requires daemon + wallet consensus |
+| **L1** | Platform Trophy | **Shipped** | Editions, PayPal/MN2, auction, transfer, proof page |
+| **L2** | Chain Anchor | **Shipped** | Commitment queue, transfer re-anchor, optional OP_RETURN |
+| **L3** | Full on-chain NFT | **Deferred** | Requires MN2 daemon unique-asset RPC |
 
-**Product language remains Trophy.** Do not resurrect "NFT" in shop/checkout copy until L3 is real. Internal code may use `trophy_anchor` / `anchor_commitment`.
+**Product language remains Trophy** in shop/checkout. Proof pages and metadata JSON use neutral “collectible” wording.
 
-## Why not call them NFTs yet?
+## L2 — Shipped capabilities
 
-- MN2 is UTXO/PIVX-style — no ERC-721 equivalent.
-- `mintzerocoin` is fungible privacy, not collectibles.
-- PayPal fulfillment must not send irreversible chain value as settlement.
+### Anchor pipeline (`trophy_anchor_service.py`)
 
-## L2 — Anchor model (Phase 1, starting)
+- `queue_edition_anchor` on mint (PayPal, block mint, staking, platform grant)
+- `queue_transfer_reanchor` on **peer transfer** and **auction sale** (plan A-U3 ✅)
+- Priority queue: staking_winner (100) > transfer (75) > block_mint (50) > default
+- Registry: `pending` → `committed` → `anchored` (when txid exists)
+- OP_RETURN broadcast via `broadcast_anchor_queue` (A-U5 ✅, `broadcast_on_chain` env/config)
 
-Each edition already has `proof_hash` and `edition_key`. L2 adds:
+### Proof & metadata (marketplace polish)
 
-1. **Queue** — on grant (PayPal, block mint, auction transfer), enqueue anchor job.
-2. **Commitment** — `anchor_commitment = SHA256("trophy-anchor-v1|{edition_key}|{proof_hash}")`.
-3. **Registry** — `data/trophy_anchor_registry.json` records status: `pending` → `committed` (ledger) → `anchored` (when txid known).
-4. **Edition metadata** — `anchor_status`, `anchor_commitment`, optional `anchor_txid`, `anchor_explorer_url`.
-5. **API** — `GET /api/shop/trophies/anchor/status`, `POST /api/shop/trophies/anchor/process` (ops).
+| API | Purpose |
+|-----|---------|
+| `GET /api/shop/trophies/metadata/{edition_key}` | Open-style JSON metadata |
+| `GET /api/shop/trophies/proof/{edition_key}` | Public proof payload |
+| `GET /api/shop/trophies/provenance/{edition_key}` | Ownership event chain |
+| `/trophy/proof?edition_key=…` | Human-readable proof page |
 
-Phase 1 does **not** require a successful OP_RETURN tx. It prepares verifiable commitments and ops tooling.
+### Provenance (`trophy_provenance_service.py`)
 
-## L2 — Phase 2 (next)
+Global `data/trophy_provenance.jsonl` events: `minted`, `peer_transfer`, `auction_sale`, `revoked`, `burned`.
 
-- `createrawtransaction` + OP_RETURN payload (80 bytes) with truncated commitment.
-- Hot-wallet `sendrawtransaction` from ops wallet; store `anchor_txid`.
-- Link from wallet/profile edition row to explorer tx.
+### Commerce polish
 
-## L3 — Full on-chain NFT (deferred)
+- **Resale royalty** — `royalty_bps` from `trading_profile` deducted on auction `buy_listing`
+- **PayPal clawback** — `POST /api/shop/trophies/paypal-clawback` revokes edition on dispute
+- **Burn** — `POST /api/shop/trophies/burn` for MN2 credit
+- **Discord** — share + auction sale fanout (`trophy_discord_fanout.py`)
+- **Genesis backfill** — lazy media + `scripts/backfill_block_trophy_media.py` + status API
 
-Requires MN2 daemon work: unique asset index, transfer RPC, wallet UI. Out of scope for this repo until daemon RFC lands.
+### Wallet (A-U4 ✅)
 
-## Units
+- Anchor badges on trophy cards (pending / committed / anchored + explorer link)
+- Proof + Share buttons on Trophies tab
+- Set badges: Genesis Set, Million Club, Interval Champion
 
-| Unit | Goal | Depends |
-|------|------|---------|
-| **A-U1** | `trophy_anchor_service` queue + registry + edition patch | U2 |
-| **A-U2** | API status + ops process endpoint | A-U1 |
-| **A-U3** | Hook grants (PayPal, block, auction, peer transfer) | A-U1 |
-| **A-U4** | Wallet/profile show anchor badge + explorer when txid | A-U2, U4 |
-| **A-U5** | OP_RETURN broadcast (daemon RPC) | A-U2, MN2 ops |
+## Units — status
+
+| Unit | Goal | Status |
+|------|------|--------|
+| **A-U1** | Queue + registry + edition patch | ✅ |
+| **A-U2** | API status + ops process/broadcast | ✅ |
+| **A-U3** | Hook grants **and transfers** | ✅ |
+| **A-U4** | Wallet/profile anchor badge + proof | ✅ |
+| **A-U5** | OP_RETURN broadcast | ✅ (ops-enabled) |
+
+## Wallet upgrades (253–257)
+
+| ID | Name |
+|----|------|
+| WR-UPG-253 | Trophy proof page |
+| WR-UPG-254 | Resale royalty rail |
+| WR-UPG-255 | Provenance timeline |
+| WR-UPG-256 | Genesis set badge |
+| WR-UPG-257 | Anchor badge glow |
+
+## L3 — Deferred
+
+Requires MN2 daemon: unique asset index, transfer RPC, wallet consensus. No user-facing “NFT” label until L3.
 
 ## Verification
 
 ```bash
-pytest tests/unit/test_trophy_anchor_service.py -q
+pytest tests/unit/test_trophy_anchor_service.py \
+       tests/unit/test_trophy_provenance_service.py \
+       tests/unit/test_trophy_metadata_service.py -q
 ```
 
-- New PayPal edition → `anchor_status: pending` then `committed` after process.
-- `GET /api/shop/trophies/anchor/status?edition_key=TRO-top25-01-1` returns commitment.
-- UI still shows `on_chain_mint: false` until L3.
-
-## Relationship to plan 001
-
-- Plan 001 **BM-U6** = this document's L2/L3 track.
-- All plan 001 Trophy units remain source of truth for commerce; anchor is additive audit trail.
+- Peer transfer → provenance event + transfer re-anchor job
+- Auction sale → royalty coins + Discord sale embed
+- `GET /api/shop/trophies/proof/TRO-block-1000-1` returns GIF + license + chain
+- UI: `on_chain_mint: false` until L3

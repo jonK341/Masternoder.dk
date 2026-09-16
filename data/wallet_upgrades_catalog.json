@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generated_at": "2026-09-16",
-  "total": 252,
+  "total": 257,
   "categories": [
     "speed",
     "network_visibility",
@@ -3036,6 +3036,66 @@
         "type": "mn2_spent",
         "value": 2300,
         "label": "Spend 2300 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-253",
+      "name": "Trophy proof page",
+      "effect": "Public proof URL per edition with license, GIF, anchor status, and provenance timeline.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2325,
+        "label": "Spend 2325 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-254",
+      "name": "Resale royalty rail",
+      "effect": "2.5% creator royalty on trophy auction resales via trading_profile.royalty_bps.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2350,
+        "label": "Spend 2350 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-255",
+      "name": "Provenance timeline",
+      "effect": "Full mint \u2192 transfer \u2192 sale \u2192 anchor event chain on proof page and wallet.",
+      "category": "trophies",
+      "tier": "rare",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2375,
+        "label": "Spend 2375 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-256",
+      "name": "Genesis set badge",
+      "effect": "Blocks #1\u20131000 and Million Club badges on trophy cards and metadata.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2400,
+        "label": "Spend 2400 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-257",
+      "name": "Anchor badge glow",
+      "effect": "Wallet trophy cards show anchor status glow and explorer link when L2 tx is on-chain.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2425,
+        "label": "Spend 2425 MN2 in wallet actions"
       }
     }
   ]

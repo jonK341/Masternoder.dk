@@ -8,5 +8,6 @@
   "auto_auction": true,
   "discord_webhook": true,
   "team_pool_notify": true,
-  "streak_bonus": true
+  "streak_bonus": true,
+  "team_pool_rotate": true
 }

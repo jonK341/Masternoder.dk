@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import {
   battleBlockTrophy,
   fetchWalletTrophies,
+  shareTrophyDiscord,
   transferTrophyEdition,
   type TrophyEdition,
   type WalletTrophiesResponse,
@@ -174,10 +175,26 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
   const [transferring, setTransferring] = useState(false);
   const [battling, setBattling] = useState(false);
   const [battleMsg, setBattleMsg] = useState<string | null>(null);
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
   const canTransfer = !edition.hold_until && !edition.legacy_stack && edition.trade_actions?.peer_transfer;
   const isBlockTrophy = edition.platform_trophy || edition.item_id?.startsWith('block-') || edition.series === 'block_mint';
   const stats = edition.battle_stats;
   const mediaSrc = edition.gif_url || edition.image_url;
+
+  const runShare = async () => {
+    if (!edition.edition_key) return;
+    setSharing(true);
+    setShareMsg(null);
+    try {
+      const res = await shareTrophyDiscord(edition.edition_key);
+      setShareMsg(res.success ? 'Shared to Discord' : (res.error || 'Share failed'));
+    } catch (err) {
+      setShareMsg((err as Error).message || 'Share failed');
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const runBattle = async () => {
     if (!edition.edition_key) return;
@@ -283,6 +300,16 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
           </div>
         ) : null}
         <div class="wallet-trophy-gallery-ctas">
+          {edition.edition_key ? (
+            <a
+              href={`/trophy/proof?edition_key=${encodeURIComponent(edition.edition_key)}`}
+              class="wallet-trophy-cta"
+              target="_blank"
+              rel="noopener"
+            >
+              Proof
+            </a>
+          ) : null}
           <a
             href={edition.trade_actions?.shop_detail || '/shop?tab=trophies'}
             class="wallet-trophy-cta"
@@ -314,8 +341,19 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
               {battling ? 'Fighting…' : 'Battle'}
             </button>
           )}
+          {edition.edition_key && (
+            <button
+              type="button"
+              class="wallet-trophy-cta wallet-trophy-cta--btn"
+              disabled={sharing}
+              onClick={runShare}
+            >
+              {sharing ? 'Sharing…' : 'Share'}
+            </button>
+          )}
         </div>
         {battleMsg ? <div class="wallet-trophy-gallery-meta wallet-trophy-battle-msg">{battleMsg}</div> : null}
+        {shareMsg ? <div class="wallet-trophy-gallery-meta wallet-trophy-battle-msg">{shareMsg}</div> : null}
         {showTransfer && (
           <div class="wallet-trophy-transfer-modal">
             <label class="wallet-trophy-transfer-label">

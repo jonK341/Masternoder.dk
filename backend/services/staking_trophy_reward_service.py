@@ -55,13 +55,39 @@ def _append_grant(row: Dict[str, Any]) -> None:
             f.write(json.dumps(row) + "\n")
 
 
-def _pick_winners(rows: List[Dict[str, Any]], limit: int, min_reward: float) -> List[Dict[str, Any]]:
+def _pick_winners(
+    rows: List[Dict[str, Any]],
+    limit: int,
+    min_reward: float,
+    *,
+    interval_id: str = "",
+) -> List[Dict[str, Any]]:
     eligible = [
         r for r in rows
         if float(r.get("reward_mn2") or 0) >= min_reward and (r.get("user_id") or "").strip()
     ]
     eligible.sort(key=lambda r: float(r.get("reward_mn2") or 0), reverse=True)
-    return eligible[: max(1, limit)]
+    winners = eligible[: max(1, limit)]
+    cfg = get_config()
+    if cfg.get("team_pool_rotate") and winners and interval_id:
+        try:
+            from backend.services.mn2_staking_teams import get_team_for_user
+
+            top = winners[0]
+            uid = (top.get("user_id") or "").strip()
+            team = get_team_for_user(uid) or {}
+            member_ids = []
+            for m in team.get("members") or []:
+                mid = (m.get("user_id") if isinstance(m, dict) else m) or ""
+                if mid:
+                    member_ids.append(str(mid).strip())
+            pool_rows = [r for r in eligible if (r.get("user_id") or "").strip() in member_ids]
+            if len(pool_rows) > 1:
+                idx = abs(hash(interval_id)) % len(pool_rows)
+                winners[0] = {**pool_rows[idx], "team_pool_rotate": True, "team_id": team.get("team_id")}
+        except Exception:
+            pass
+    return winners
 
 
 def _find_grant_height(prefer_tip: bool) -> Optional[int]:
@@ -121,6 +147,7 @@ def process_interval_winners(
         reward_rows,
         int(cfg.get("winners_per_interval") or 1),
         float(cfg.get("min_reward_mn2") or 0.001),
+        interval_id=interval_id,
     )
     if not winners:
         return {"success": True, "skipped": True, "reason": "no_eligible_winners"}

@@ -211,12 +211,13 @@ def sync_block_height() -> Dict[str, Any]:
                 pass
             drops[key] = entry
             added.append(h)
-            try:
-                from backend.services.block_trophy_media_service import ensure_block_media
+            if not cfg.get("lazy_media_generation", True):
+                try:
+                    from backend.services.block_trophy_media_service import ensure_block_media
 
-                ensure_block_media(h)
-            except Exception:
-                pass
+                    ensure_block_media(h)
+                except Exception:
+                    pass
     if genesis_mode and not doc.get("genesis_backfill_complete"):
         doc["genesis_backfill_cursor"] = end + 1
         if end >= height:
@@ -232,6 +233,27 @@ def sync_block_height() -> Dict[str, Any]:
         "genesis_backfill": genesis_mode,
         "genesis_backfill_complete": bool(doc.get("genesis_backfill_complete")),
         "genesis_backfill_cursor": doc.get("genesis_backfill_cursor"),
+    }
+
+
+def get_genesis_backfill_status() -> Dict[str, Any]:
+    cfg = get_config()
+    doc = _read_json(_MANIFEST_PATH, {"drops": {}, "last_height": 0})
+    drops = doc.get("drops") or {}
+    total = len(drops)
+    claimed = sum(1 for d in drops.values() if isinstance(d, dict) and d.get("claimed_by"))
+    return {
+        "success": True,
+        "milestone_block": int(cfg.get("milestone_block") or 0),
+        "genesis_block": int(cfg.get("genesis_block") or 1),
+        "lazy_media_generation": bool(cfg.get("lazy_media_generation", True)),
+        "genesis_backfill_started": bool(doc.get("genesis_backfill_started")),
+        "genesis_backfill_complete": bool(doc.get("genesis_backfill_complete")),
+        "genesis_backfill_cursor": doc.get("genesis_backfill_cursor"),
+        "last_height": doc.get("last_height"),
+        "total_drops": total,
+        "claimed_drops": claimed,
+        "unclaimed_drops": total - claimed,
     }
 
 

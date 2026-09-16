@@ -198,6 +198,30 @@ export async function battleBlockTrophy(edition_key: string): Promise<{
   return data;
 }
 
+export async function shareTrophyDiscord(edition_key: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch('/api/shop/trophies/share-discord', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ edition_key }),
+  });
+  const data = await res.json();
+  if (!res.ok && !data.error) throw new Error(`Share failed (${res.status})`);
+  return data;
+}
+
+export async function burnTrophyEdition(item_id: string, edition_no: number): Promise<{ success: boolean; error?: string; credit_mn2?: number }> {
+  const res = await fetch('/api/shop/trophies/burn', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ item_id, edition_no }),
+  });
+  const data = await res.json();
+  if (!res.ok && !data.error) throw new Error(`Burn failed (${res.status})`);
+  return data;
+}
+
 export async function transferTrophyEdition(payload: {
   recipient_id: string;
   item_id: string;

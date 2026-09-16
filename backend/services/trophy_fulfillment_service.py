@@ -105,6 +105,34 @@ def _editions_file_path(user_id: str) -> str:
     return os.path.join(root, f"{_safe_uid(user_id)}.json")
 
 
+def find_edition_by_key(edition_key: str) -> Dict[str, Any]:
+    """Scan edition stores for a global edition_key lookup (proof/metadata pages)."""
+    ekey = (edition_key or "").strip()
+    if not ekey:
+        return {"success": False, "error": "missing_edition_key"}
+    try:
+        from backend.services.shop_db_service import _shop_file_root
+
+        root = os.path.join(_shop_file_root(), "trophy_editions")
+        if not os.path.isdir(root):
+            return {"success": False, "error": "edition_not_found"}
+        for fname in os.listdir(root):
+            if not fname.endswith(".json"):
+                continue
+            uid = fname[:-5]
+            doc = _read_json(os.path.join(root, fname), {"editions": []})
+            for row in doc.get("editions") or []:
+                if not isinstance(row, dict):
+                    continue
+                if (row.get("edition_key") or "") == ekey:
+                    if row.get("revoked"):
+                        return {"success": False, "error": "edition_revoked", "edition_key": ekey}
+                    return {"success": True, "user_id": uid, "edition": row}
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}
+    return {"success": False, "error": "edition_not_found"}
+
+
 def get_trophy_editions(user_id: str, item_id: Optional[str] = None) -> List[Dict[str, Any]]:
     uid = (user_id or "").strip()
     if not uid:
@@ -297,6 +325,19 @@ def transfer_edition_peer(
     except Exception:
         pass
 
+    try:
+        from backend.services.trophy_transfer_hooks import on_edition_transferred
+
+        on_edition_transferred(
+            edition,
+            from_user_id=sender,
+            to_user_id=recipient,
+            transfer_type="peer_transfer",
+            extra={"note": (note or "").strip() or None},
+        )
+    except Exception:
+        pass
+
     return {
         "success": True,
         "edition": edition,
@@ -407,6 +448,23 @@ def transfer_edition_to_buyer(
         _write_json(seller_path, seller_doc)
         return {"success": False, "error": "buyer_update_failed"}
 
+    try:
+        from backend.services.trophy_transfer_hooks import on_edition_transferred
+
+        on_edition_transferred(
+            edition,
+            from_user_id=seller,
+            to_user_id=buyer,
+            transfer_type="auction_sale",
+            extra={
+                "listing_id": lid,
+                "price_coins": int(price_coins or 0),
+                "payment_method": payment_method,
+            },
+        )
+    except Exception:
+        pass
+
     return {"success": True, "edition": edition, "edition_no": eno, "edition_key": edition.get("edition_key")}
 
 
@@ -471,6 +529,13 @@ def grant_platform_edition(
             proof_hash=proof_hash,
             source=acquired_via,
         )
+    except Exception:
+        pass
+
+    try:
+        from backend.services.trophy_transfer_hooks import on_edition_granted
+
+        on_edition_granted(edition, uid, acquired_via)
     except Exception:
         pass
 
@@ -627,6 +692,13 @@ def fulfill_trophy_paypal(
             proof_hash=proof_hash,
             source="paypal",
         )
+    except Exception:
+        pass
+
+    try:
+        from backend.services.trophy_transfer_hooks import on_edition_granted
+
+        on_edition_granted(edition, uid, "paypal")
     except Exception:
         pass
 

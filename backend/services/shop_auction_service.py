@@ -319,7 +319,8 @@ def buy_listing(
         item_name = row.get("item_name") or item_id
         fee_rate = float(row.get("fee_rate") or MARKETPLACE_FEE_RATE)
         fee = int(round(price * fee_rate))
-        seller_payout = max(0, price - fee)
+        royalty_coins = 0
+        royalty_bps = 0
 
         escrow_bid: Optional[Dict[str, Any]] = None
         if escrow_bid_id:
@@ -356,7 +357,6 @@ def buy_listing(
                 raise AuctionError("MN2 price is not configured")
             price_mn2 = price / coins_per_mn2
             fee_mn2 = fee / coins_per_mn2
-            seller_payout_mn2 = max(0.0, seller_payout / coins_per_mn2)
             buyer_mn2 = float(buyer_points.get("mn2_balance", 0) or 0)
             if buyer_mn2 == 0 and isinstance(buyer_points.get("systems"), dict):
                 buyer_mn2 = float(buyer_points["systems"].get("mn2_balance", 0) or 0)
@@ -402,6 +402,11 @@ def buy_listing(
                 else:
                     _refund_buyer(unified_points_db, buyer, method, price, price_mn2, lid, item_id, "edition_transfer_failed")
                 raise AuctionError(edition_transfer.get("error") or "Could not transfer trophy edition")
+            edition_row = edition_transfer.get("edition") or {}
+            trading = edition_row.get("trading_profile") or {}
+            royalty_bps = int(trading.get("royalty_bps") or 0)
+            if royalty_bps > 0:
+                royalty_coins = int(round(price * royalty_bps / 10000.0))
             if not add_to_inventory(buyer, item_id, item_name, qty):
                 if escrow_bid:
                     _release_bid_escrow(unified_points_db, escrow_bid, lid, reason="buyer_inventory_failed")
@@ -415,13 +420,30 @@ def buy_listing(
                 _refund_buyer(unified_points_db, buyer, method, price, price_mn2, lid, item_id, "buyer_inventory_failed")
             raise AuctionError("Could not attach item to buyer inventory; payment refunded")
 
+        seller_payout = max(0, price - fee - royalty_coins)
+        if method == "mn2":
+            cpm = _coins_per_mn2()
+            seller_payout_mn2 = max(0.0, seller_payout / cpm) if cpm > 0 else 0.0
+
+        if royalty_coins > 0:
+            try:
+                unified_points_db.add_points(
+                    user_id="platform_trophy_royalty",
+                    point_type="coins",
+                    amount=royalty_coins,
+                    source="trophy_royalty",
+                    metadata={"listing_id": lid, "item_id": item_id, "royalty_bps": royalty_bps, "edition_key": row.get("edition_key")},
+                )
+            except Exception:
+                pass
+
         if method == "mn2":
             payout = unified_points_db.add_points(
                 user_id=seller,
                 point_type="mn2_balance",
                 amount=seller_payout_mn2,
                 source="auction_sale_mn2",
-                metadata={"listing_id": lid, "item_id": item_id, "buyer_id": buyer, "gross_mn2": price_mn2, "fee_mn2": fee_mn2, "price_coins": price},
+                metadata={"listing_id": lid, "item_id": item_id, "buyer_id": buyer, "gross_mn2": price_mn2, "fee_mn2": fee_mn2, "price_coins": price, "royalty_coins": royalty_coins},
             )
         else:
             payout = unified_points_db.add_points(
@@ -429,7 +451,7 @@ def buy_listing(
                 point_type="coins",
                 amount=seller_payout,
                 source="auction_sale",
-                metadata={"listing_id": lid, "item_id": item_id, "buyer_id": buyer, "gross": price, "fee": fee},
+                metadata={"listing_id": lid, "item_id": item_id, "buyer_id": buyer, "gross": price, "fee": fee, "royalty_coins": royalty_coins},
             )
         if not payout.get("success", True):
             if edition_transfer:
@@ -473,6 +495,8 @@ def buy_listing(
             "edition_no": row.get("edition_no"),
             "edition_key": row.get("edition_key"),
             "edition": (edition_transfer or {}).get("edition") if edition_transfer else None,
+            "royalty_coins": royalty_coins,
+            "royalty_bps": royalty_bps,
         }
 
 
