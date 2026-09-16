@@ -52,6 +52,8 @@ def main() -> None:
             "bio": f"{tagline}. SFW wallet card — full studio experience on the camgirls module.",
             "tier": TIERS[i % len(TIERS)],
             "price_mn2": price,
+            "tip_min_mn2": max(5, price // 2),
+            "wallet_user_id": f"camgirl_{pid}",
             "avatar_url": AVATARS[i % len(AVATARS)],
             "online": i % 3 != 2,
             "vibe": vibe,

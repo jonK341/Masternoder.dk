@@ -14,8 +14,11 @@ from backend.services.wallet_micro_earn_service import get_status as micro_earn_
 from backend.services.wallet_micro_earn_service import record_click as micro_earn_click
 from backend.services.camgirls_wallet_service import (
     get_progress as camgirls_get_progress,
+    get_wallet_detail as camgirls_get_wallet_detail,
+    list_all_wallets as camgirls_list_all_wallets,
     list_performers,
     list_upgrades as camgirls_list_upgrades,
+    tip_camgirl,
     unlock_upgrade as camgirls_unlock_upgrade,
 )
 from backend.services.network_chat_service import (
@@ -139,8 +142,37 @@ def wallet_v2_integration_hub():
 
 @wallet_v2_bp.route("/api/wallet/v2/camgirls/catalog", methods=["GET"])
 def wallet_v2_camgirls_catalog():
-    """25 camgirl wallet profiles — SFW cards with studio deep links."""
+    """25 camgirl wallet profiles — SFW cards with MN2 balance and studio deep links."""
     return jsonify(list_performers()), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/wallets", methods=["GET"])
+def wallet_v2_camgirls_all_wallets():
+    """All camgirl synthetic MN2 wallets — balances and wallet_user_ids."""
+    return jsonify(camgirls_list_all_wallets()), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/<camgirl_id>/wallet", methods=["GET"])
+def wallet_v2_camgirl_wallet(camgirl_id: str):
+    """Single camgirl MN2 wallet — balance, wallet_user_id, optional explorer link."""
+    result = camgirls_get_wallet_detail(camgirl_id)
+    status = 200 if result.get("success") else 404
+    return jsonify(result), status
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/<camgirl_id>/tip", methods=["POST"])
+def wallet_v2_camgirl_tip(camgirl_id: str):
+    """Tip MN2 from logged-in user to camgirl synthetic wallet."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    body = request.get_json(silent=True) or {}
+    amount = body.get("amount_mn2") or body.get("amount") or request.args.get("amount")
+    try:
+        amt = float(amount)
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "invalid_amount"}), 400
+    result = tip_camgirl(user_id, camgirl_id, amt)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
 
 
 @wallet_v2_bp.route("/api/wallet/v2/camgirls/upgrades", methods=["GET"])

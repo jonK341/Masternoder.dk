@@ -10,8 +10,10 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 _CATALOG_CACHE: Optional[Dict[str, Any]] = None
 _UPGRADES_CACHE: Optional[Dict[str, Any]] = None
+_WALLETS_PROVISIONED = False
 _LOCK = threading.RLock()
 _GUEST_IDS = frozenset({"", "default_user", "guest"})
+_WALLET_ID_PREFIX = "camgirl_"
 
 
 def _base() -> str:
@@ -24,6 +26,10 @@ def _catalog_path() -> str:
 
 def _upgrades_path() -> str:
     return os.path.join(_base(), "data", "camgirls_upgrades_catalog.json")
+
+
+def _wallet_registry_path() -> str:
+    return os.path.join(_base(), "data", "camgirls_wallet_registry.json")
 
 
 def _progress_dir() -> str:
@@ -110,10 +116,204 @@ def get_upgrade_by_id(upgrade_id: str) -> Optional[Dict[str, Any]]:
     return _upgrade_index().get((upgrade_id or "").strip())
 
 
+def _get_performer(camgirl_id: str) -> Optional[Dict[str, Any]]:
+    cid = (camgirl_id or "").strip()
+    if not cid:
+        return None
+    for p in load_performers_catalog().get("performers") or []:
+        if isinstance(p, dict) and str(p.get("id")) == cid:
+            return p
+    return None
+
+
+def wallet_user_id_for(camgirl_id: str) -> str:
+    """Synthetic ledger user id for a wallet-catalog camgirl."""
+    p = _get_performer(camgirl_id)
+    if p and p.get("wallet_user_id"):
+        return str(p["wallet_user_id"]).strip()
+    return f"{_WALLET_ID_PREFIX}{(camgirl_id or '').strip()}"
+
+
+def _load_wallet_registry() -> Dict[str, Dict[str, Any]]:
+    doc = _read_json(_wallet_registry_path())
+    wallets = doc.get("wallets") if isinstance(doc.get("wallets"), dict) else {}
+    return wallets
+
+
+def _save_wallet_registry(wallets: Dict[str, Dict[str, Any]]) -> None:
+    _write_json(_wallet_registry_path(), {"version": 1, "wallets": wallets, "updated_at": _iso_now()})
+
+
+def _deposit_address_optional(wallet_user_id: str) -> Optional[str]:
+    """Return deposit address only if already provisioned — no RPC in phase 1."""
+    try:
+        from backend.services.mn2_wallet_service import _load_addresses, _entry_primary
+        entry = _load_addresses().get(wallet_user_id)
+        return _entry_primary(entry) if entry else None
+    except Exception:
+        return None
+
+
+def _explorer_link_for_wallet(wallet_user_id: str) -> Optional[str]:
+    addr = _deposit_address_optional(wallet_user_id)
+    if not addr:
+        return None
+    try:
+        from backend.services.mn2_explorer_urls import explorer_address_url
+        return explorer_address_url(addr) or None
+    except Exception:
+        return None
+
+
+def ensure_wallet(camgirl_id: str) -> Dict[str, Any]:
+    """Ensure synthetic ledger account exists for a camgirl (0 balance start)."""
+    cid = (camgirl_id or "").strip()
+    if not cid:
+        return {"success": False, "error": "camgirl_id required"}
+    performer = _get_performer(cid)
+    if not performer:
+        return {"success": False, "error": "performer_not_found", "camgirl_id": cid}
+
+    wuid = wallet_user_id_for(cid)
+    with _LOCK:
+        wallets = _load_wallet_registry()
+        if cid not in wallets:
+            wallets[cid] = {
+                "wallet_user_id": wuid,
+                "camgirl_id": cid,
+                "name": performer.get("name"),
+                "provisioned_at": _iso_now(),
+            }
+            _save_wallet_registry(wallets)
+
+    from backend.services.mn2_wallet_service import get_balance
+    bal = get_balance(wuid)
+    return {
+        "success": True,
+        "camgirl_id": cid,
+        "wallet_user_id": wuid,
+        "mn2_balance": round(float(bal.get("mn2_balance") or 0), 8),
+        "deposit_address": _deposit_address_optional(wuid),
+        "explorer_url": _explorer_link_for_wallet(wuid),
+    }
+
+
+def provision_all_wallets() -> None:
+    """Auto-provision ledger accounts for all catalog camgirls on first catalog load."""
+    global _WALLETS_PROVISIONED
+    if _WALLETS_PROVISIONED:
+        return
+    with _LOCK:
+        if _WALLETS_PROVISIONED:
+            return
+        for p in load_performers_catalog().get("performers") or []:
+            if isinstance(p, dict) and p.get("id"):
+                ensure_wallet(str(p["id"]))
+        _WALLETS_PROVISIONED = True
+
+
+def get_camgirl_balance(camgirl_id: str) -> Dict[str, Any]:
+    detail = ensure_wallet(camgirl_id)
+    if not detail.get("success"):
+        return detail
+    return {
+        "success": True,
+        "camgirl_id": detail["camgirl_id"],
+        "wallet_user_id": detail["wallet_user_id"],
+        "mn2_balance": detail["mn2_balance"],
+    }
+
+
+def get_wallet_detail(camgirl_id: str) -> Dict[str, Any]:
+    """Full wallet snapshot for one camgirl."""
+    detail = ensure_wallet(camgirl_id)
+    if not detail.get("success"):
+        return detail
+    performer = _get_performer(camgirl_id) or {}
+    return {
+        **detail,
+        "name": performer.get("name"),
+        "tip_min_mn2": float(performer.get("tip_min_mn2") or 5),
+        "explorer_url": detail.get("explorer_url"),
+    }
+
+
+def list_all_wallets() -> Dict[str, Any]:
+    provision_all_wallets()
+    wallets = []
+    for p in load_performers_catalog().get("performers") or []:
+        if not isinstance(p, dict) or not p.get("id"):
+            continue
+        cid = str(p["id"])
+        bal = get_camgirl_balance(cid)
+        wallets.append({
+            "camgirl_id": cid,
+            "name": p.get("name"),
+            "wallet_user_id": bal.get("wallet_user_id"),
+            "mn2_balance": bal.get("mn2_balance", 0),
+        })
+    return {"success": True, "total": len(wallets), "wallets": wallets}
+
+
+def _enrich_performer(performer: Dict[str, Any]) -> Dict[str, Any]:
+    row = dict(performer)
+    cid = str(row.get("id") or "")
+    wuid = wallet_user_id_for(cid)
+    row["wallet_user_id"] = wuid
+    bal = get_camgirl_balance(cid)
+    row["mn2_balance"] = bal.get("mn2_balance", 0) if bal.get("success") else 0.0
+    row["explorer_url"] = _explorer_link_for_wallet(wuid)
+    row["deposit_address"] = _deposit_address_optional(wuid)
+    return row
+
+
+def tip_camgirl(from_user_id: str, camgirl_id: str, amount: float) -> Dict[str, Any]:
+    """Transfer MN2 from tipper to camgirl synthetic wallet."""
+    from_user_id = (from_user_id or "").strip()
+    if from_user_id in _GUEST_IDS:
+        return {"success": False, "error": "guest_cannot_tip", "message": "Sign in to send tips."}
+
+    performer = _get_performer(camgirl_id)
+    if not performer:
+        return {"success": False, "error": "performer_not_found"}
+
+    try:
+        amt = round(float(amount), 8)
+    except (TypeError, ValueError):
+        return {"success": False, "error": "invalid_amount"}
+
+    tip_min = float(performer.get("tip_min_mn2") or 5)
+    if amt < tip_min:
+        return {"success": False, "error": "below_minimum", "tip_min_mn2": tip_min}
+
+    wallet_detail = ensure_wallet(camgirl_id)
+    if not wallet_detail.get("success"):
+        return wallet_detail
+
+    recipient = wallet_detail["wallet_user_id"]
+    from backend.services.mn2_gift_service import transfer
+    note = f"camgirl_tip:{camgirl_id}"
+    result = transfer(from_user_id, recipient, amt, note=note)
+    if not result.get("success"):
+        return result
+
+    new_bal = get_camgirl_balance(camgirl_id)
+    return {
+        "success": True,
+        "camgirl_id": camgirl_id,
+        "wallet_user_id": recipient,
+        "amount_mn2": amt,
+        "from_user_id": from_user_id,
+        "camgirl_balance": new_bal.get("mn2_balance"),
+        "transfer": result,
+    }
+
+
 def list_performers() -> Dict[str, Any]:
+    provision_all_wallets()
     doc = load_performers_catalog()
-    performers = doc.get("performers") or []
-    online = sum(1 for p in performers if isinstance(p, dict) and p.get("online"))
+    performers = [_enrich_performer(p) for p in (doc.get("performers") or []) if isinstance(p, dict)]
+    online = sum(1 for p in performers if p.get("online"))
     return {
         "success": True,
         "version": doc.get("version", 1),
@@ -121,6 +321,7 @@ def list_performers() -> Dict[str, Any]:
         "online_count": online,
         "performers": performers,
         "studio_url": "/camgirls",
+        "wallet_user_id_pattern": f"{_WALLET_ID_PREFIX}{{camgirl_id}}",
     }
 
 
