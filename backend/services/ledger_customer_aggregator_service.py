@@ -189,18 +189,22 @@ def sync_ledger_customers_to_aggregator(*, limit: int = 500) -> Dict[str, Any]:
 def list_available_agents() -> Dict[str, Any]:
     """Platform agents available for ledger customer control."""
     agents: List[Dict[str, Any]] = []
-    try:
-        from backend.services.agent_controller import agent_controller
-
-        status = agent_controller.get_all_agents_status()
-        for agent_id, info in (status.get("agents") or {}).items():
-            agents.append({
-                "agent_id": agent_id,
-                "status": info.get("status"),
-                "label": agent_id.replace("_", " ").title(),
-            })
-    except Exception:
-        pass
+    controller_file = os.path.join(_BASE, "logs", "agents", "controller.json")
+    if os.path.isfile(controller_file):
+        try:
+            with open(controller_file, "r", encoding="utf-8") as f:
+                data = json.load(f) or {}
+            for agent_id in (data.get("agents_registered") or []):
+                aid = str(agent_id or "").strip()
+                if not aid:
+                    continue
+                agents.append({
+                    "agent_id": aid,
+                    "status": "registered",
+                    "label": aid.replace("_", " ").title(),
+                })
+        except Exception:
+            pass
 
     cfg = _config()
     default_agent = str(cfg.get("default_agent_id") or "master_fix")
