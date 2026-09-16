@@ -2789,47 +2789,47 @@ def generate_rich_video_sync(
                     voice_key=voice_key,
                 )
                 if narration_path and os.path.isfile(narration_path):
-                # Optional: DeepFilterNet noise reduction + FFmpeg loudnorm (env AUDIO_ENHANCE=1)
-                path_to_use = narration_path
-                enhanced_path = None
-                try:
-                    from backend.services.audio_enhancement_service import enhance_audio
-                    enhanced_path = enhance_audio(narration_path)
-                    if enhanced_path and enhanced_path != narration_path and os.path.isfile(enhanced_path):
-                        path_to_use = enhanced_path
-                except Exception:
-                    pass
-                try:
-                    from moviepy import AudioFileClip, CompositeAudioClip
-                    narration = AudioFileClip(path_to_use)
-                    vid_dur = float(getattr(final, "duration", 0) or 0)
-                    if vid_dur > 0:
-                        if narration.duration > vid_dur:
-                            narration = narration.subclipped(0, vid_dur)
-                        cur_audio = getattr(final, "audio", None)
-                        if cur_audio is not None:
-                            try:
-                                mixed = CompositeAudioClip([
-                                    cur_audio.with_volume_scaled(0.4),
-                                    narration.with_volume_scaled(0.9),
-                                ])
-                                final = final.with_audio(mixed)
-                            except Exception:
-                                final = final.with_audio(narration)
-                        else:
-                            final = final.with_audio(narration)
-                        add_audio = True
-                finally:
+                    # Optional: DeepFilterNet noise reduction + FFmpeg loudnorm (env AUDIO_ENHANCE=1)
+                    path_to_use = narration_path
+                    enhanced_path = None
                     try:
-                        if path_to_use and os.path.isfile(path_to_use):
-                            os.unlink(path_to_use)
+                        from backend.services.audio_enhancement_service import enhance_audio
+                        enhanced_path = enhance_audio(narration_path)
+                        if enhanced_path and enhanced_path != narration_path and os.path.isfile(enhanced_path):
+                            path_to_use = enhanced_path
                     except Exception:
                         pass
-                    if narration_path != path_to_use and narration_path and os.path.isfile(narration_path):
+                    try:
+                        from moviepy import AudioFileClip, CompositeAudioClip
+                        narration = AudioFileClip(path_to_use)
+                        vid_dur = float(getattr(final, "duration", 0) or 0)
+                        if vid_dur > 0:
+                            if narration.duration > vid_dur:
+                                narration = narration.subclipped(0, vid_dur)
+                            cur_audio = getattr(final, "audio", None)
+                            if cur_audio is not None:
+                                try:
+                                    mixed = CompositeAudioClip([
+                                        cur_audio.with_volume_scaled(0.4),
+                                        narration.with_volume_scaled(0.9),
+                                    ])
+                                    final = final.with_audio(mixed)
+                                except Exception:
+                                    final = final.with_audio(narration)
+                            else:
+                                final = final.with_audio(narration)
+                            add_audio = True
+                    finally:
                         try:
-                            os.unlink(narration_path)
+                            if path_to_use and os.path.isfile(path_to_use):
+                                os.unlink(path_to_use)
                         except Exception:
                             pass
+                        if narration_path != path_to_use and narration_path and os.path.isfile(narration_path):
+                            try:
+                                os.unlink(narration_path)
+                            except Exception:
+                                pass
         except Exception:
             pass
 

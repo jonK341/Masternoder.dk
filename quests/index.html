@@ -10,7 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quests - MasterNoder.dk</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <style>
         * {
@@ -94,6 +97,42 @@
             grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
             gap: 30px;
             margin-top: 40px;
+        }
+
+        .quest-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .quest-filter-btn {
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            border-radius: 999px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .quest-filter-btn.is-active {
+            border-color: rgba(0, 255, 136, 0.55);
+            background: rgba(0, 255, 136, 0.12);
+            color: #b8ffe0;
+        }
+
+        .quest-streak-bar {
+            max-width: 520px;
+            margin: 18px auto 0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 200, 80, 0.25);
+            background: rgba(255, 180, 40, 0.06);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
         }
 
         .quest-card {
@@ -264,10 +303,8 @@
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
-    <link rel="stylesheet" href="/static/css/modern-design-system.css">
 
 </head>
-    <link rel="stylesheet" href="/static/css/modern-design-system.css">
 <body>
     <div class="bg-animated"></div>
     <div class="quests-page">
@@ -314,6 +351,9 @@
             </div>
         </div>
 
+        <div id="quest-streak" class="quest-streak-bar" style="display:none;"></div>
+        <div id="quest-filters" class="quest-filters"></div>
+
         <div class="quests-container" id="quests-container">
             <div class="loading">Loading quests...</div>
         </div>
@@ -324,15 +364,69 @@
     <script>
         const userId = localStorage.getItem('game_user_id') || 'default_user';
         const BASE_URL = window.location.origin;
+        let questBoardData = null;
+        let questFilter = 'all';
+
+        function filterQuests(quests, filter) {
+            if (!quests) return [];
+            if (filter === 'all') return quests;
+            return quests.filter(q => q.source === filter);
+        }
+
+        function renderQuestFilters(data) {
+            const el = document.getElementById('quest-filters');
+            if (!el || !data) return;
+            const counts = {
+                all: (data.quests || []).length,
+                trophy: (data.trophy_quests || []).length,
+                platform: (data.platform_quests || []).length,
+                ai: (data.ai_quests || []).length,
+                casino: (data.casino_quests || []).length,
+            };
+            const filters = [
+                ['all', 'All'],
+                ['trophy', 'Trophy'],
+                ['platform', 'Platform'],
+                ['ai', 'AI daily'],
+                ['casino', 'Casino'],
+            ];
+            el.innerHTML = filters.map(([id, label]) => {
+                const n = counts[id] || 0;
+                if (id !== 'all' && n === 0) return '';
+                return `<button type="button" class="quest-filter-btn${questFilter === id ? ' is-active' : ''}" data-qf="${id}">${label}${n ? ' (' + n + ')' : ''}</button>`;
+            }).join('');
+            el.querySelectorAll('[data-qf]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    questFilter = btn.getAttribute('data-qf') || 'all';
+                    renderQuestFilters(questBoardData);
+                    renderQuests(filterQuests(questBoardData.quests, questFilter));
+                });
+            });
+        }
+
+        function renderQuestStreak(streak) {
+            const el = document.getElementById('quest-streak');
+            if (!el || !streak) return;
+            const days = streak.days || 0;
+            const target = streak.bonus_at_day || 7;
+            el.style.display = 'block';
+            el.textContent = `Claim streak: ${days}/${target} days — day ${target} awards +${streak.bonus_mn2 || 0.007} MN2`;
+        }
 
         async function loadQuests() {
             try {
-                const response = await fetch(`${BASE_URL}/api/quests/user/${userId}`);
+                const response = await fetch(`${BASE_URL}/api/game-hub/quests?user_id=${encodeURIComponent(userId)}`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    updateStats(data);
-                    renderQuests(data.quests || []);
+                    questBoardData = data;
+                    const quests = data.quests || [];
+                    const active = quests.filter(q => !q.claimed && !q.complete).length;
+                    const completed = quests.filter(q => q.complete).length;
+                    updateStats({ active_count: active, completed_count: completed });
+                    renderQuestStreak(data.claim_streak);
+                    renderQuestFilters(data);
+                    renderQuests(filterQuests(quests, questFilter));
                 } else {
                     document.getElementById('quests-container').innerHTML = 
                         '<div class="loading">Error loading quests: ' + (data.error || 'Unknown error') + '</div>';
@@ -342,6 +436,74 @@
                 document.getElementById('quests-container').innerHTML = 
                     '<div class="loading">Error loading quests. Please try again.</div>';
             }
+        }
+
+        async function claimQuest(questId) {
+            try {
+                const r = await fetch(`${BASE_URL}/api/game-hub/quests/claim`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, quest_id: questId }),
+                });
+                const d = await r.json();
+                if (d.success) loadQuests();
+                else alert(d.error || 'Claim failed');
+            } catch (e) {
+                console.error('Claim failed', e);
+            }
+        }
+
+        function renderQuests(quests) {
+            const container = document.getElementById('quests-container');
+            
+            if (quests.length === 0) {
+                container.innerHTML = '<div class="loading">No active quests. Quests will appear as you progress!</div>';
+                return;
+            }
+            
+            container.innerHTML = quests.map(quest => {
+                const pct = quest.target ? Math.min(100, Math.round(((quest.progress || 0) / quest.target) * 100)) : 0;
+                const isAi = quest.source === 'ai';
+                const canClaim = (quest.complete && !quest.claimed) || (isAi && !quest.claimed);
+                const scopeLabel = (quest.scope || quest.type || quest.source || 'quest').toUpperCase();
+                const icon = quest.source === 'trophy' ? '🏆' : quest.source === 'casino' ? '🎰' : quest.source === 'ai' ? '🤖' : '📋';
+                const mn2Line = quest.mn2_reward ? `<div class="reward-badge"><span>🪙</span><span>${quest.mn2_reward} MN2</span></div>` : '';
+                const xpLine = quest.xp_reward ? `<div class="reward-badge"><span>💫</span><span>${quest.xp_reward} XP</span></div>` : '';
+                const btnLabel = isAi && !quest.complete ? 'Complete' : 'Claim reward';
+                return `
+                <div class="quest-card ${quest.complete ? 'complete' : ''}">
+                    <div class="quest-header">
+                        <div class="quest-icon">${icon}</div>
+                        <div class="quest-title">
+                            <div class="quest-name">${quest.title || quest.name || 'Quest'}</div>
+                            <div class="quest-description">${quest.description || ''}</div>
+                        </div>
+                        <div class="quest-level">${scopeLabel}</div>
+                    </div>
+                    
+                    <div class="quest-progress">
+                        <div class="progress-label">
+                            <span>${quest.source || 'quest'} quest</span>
+                            <span>${pct}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${pct}%"></div>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.7);">
+                            ${quest.progress || 0} / ${quest.target}
+                        </div>
+                    </div>
+                    
+                    <div class="quest-stage">
+                        <div class="stage-rewards">
+                            <div class="reward-badge"><span>⭐</span><span>${quest.reward || 0} pts</span></div>
+                            ${xpLine}
+                            ${mn2Line}
+                        </div>
+                        ${canClaim ? `<button class="quest-claim-btn" onclick="claimQuest('${quest.id}')">${btnLabel}</button>` : (quest.claimed ? '<span style="color:#00ff88">Claimed ✓</span>' : '')}
+                    </div>
+                </div>
+            `}).join('');
         }
 
         function updateStats(data) {
@@ -370,55 +532,6 @@
             } catch (error) {
                 console.error('Error loading quest points:', error);
             }
-        }
-
-        function renderQuests(quests) {
-            const container = document.getElementById('quests-container');
-            
-            if (quests.length === 0) {
-                container.innerHTML = '<div class="loading">No active quests. Quests will appear as you progress!</div>';
-                return;
-            }
-            
-            container.innerHTML = quests.map(quest => `
-                <div class="quest-card">
-                    <div class="quest-header">
-                        <div class="quest-icon">${quest.icon || '📋'}</div>
-                        <div class="quest-title">
-                            <div class="quest-name">${quest.name}</div>
-                            <div class="quest-description">${quest.description}</div>
-                        </div>
-                        <div class="quest-level">${quest.level || 'Beginner'}</div>
-                    </div>
-                    
-                    <div class="quest-progress">
-                        <div class="progress-label">
-                            <span>Stage ${quest.current_stage + 1} of ${quest.total_stages}</span>
-                            <span>${Math.round(quest.progress.percent)}%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${quest.progress.percent}%"></div>
-                        </div>
-                        <div style="margin-top: 8px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.7);">
-                            ${quest.progress.value} / ${quest.progress.target} ${quest.current_objective.type.replace('_', ' ')}
-                        </div>
-                    </div>
-                    
-                    <div class="quest-stage">
-                        <div class="stage-info">
-                            <div class="stage-number">Stage ${quest.current_stage + 1} Rewards:</div>
-                        </div>
-                        <div class="stage-rewards">
-                            ${Object.entries(quest.rewards || {}).map(([type, amount]) => `
-                                <div class="reward-badge">
-                                    <span>${getRewardIcon(type)}</span>
-                                    <span>${amount.toLocaleString()} ${type.replace('_', ' ')}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
         }
 
         function getRewardIcon(type) {
@@ -691,6 +804,7 @@
         }
     });
     </script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="quests" defer></script>
 </body>
 </html>
 

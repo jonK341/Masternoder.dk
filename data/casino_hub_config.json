@@ -1,0 +1,18 @@
+{
+  "hub_id": "masternoder-main",
+  "network_label": "MasterNoder Network",
+  "global_sync": true,
+  "instances": [
+    {
+      "instance_id": "masternoder-main",
+      "label": "masternoder.dk",
+      "api_base": "https://masternoder.dk",
+      "is_local": true
+    }
+  ],
+  "peers": [],
+  "unified_auth": {
+    "user_id_source": "account_resolution_service",
+    "notes": "Same user_id across all hub instances; peers merge leaderboards on user_id."
+  }
+}

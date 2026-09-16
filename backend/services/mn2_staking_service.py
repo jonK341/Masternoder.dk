@@ -354,18 +354,32 @@ def effective_multiplier(user_id: str, rec: Dict[str, Any]) -> Dict[str, float]:
     up = uptime_weight(user_id)
     boost = active_boost_multiplier(user_id)
     ref = active_referral_multiplier(user_id)
+    team = 1.0
+    try:
+        from backend.services.mn2_staking_teams import team_multiplier
+        team = team_multiplier(user_id)
+    except Exception:
+        pass
     return {
         "longevity": lon * strk,
         "uptime": up,
         "boost": boost,
         "referral": ref,
-        "combined": lon * strk * up * boost * ref,
+        "team": team,
+        "combined": lon * strk * up * boost * ref * team,
     }
 
 
 # ------------------------------------------------------------- stake/unstake
 
 def _verification_ok(user_id: str) -> bool:
+    uid = str(user_id or "").strip()
+    try:
+        from backend.services.agent_trader_staking_service import is_trader_agent
+        if is_trader_agent(uid):
+            return True
+    except Exception:
+        pass
     if not get_config().get("requires_verification"):
         return True
     try:
@@ -401,6 +415,13 @@ def stake(user_id: str, amount: Any) -> Dict[str, Any]:
         if bal < amt:
             return {"success": False, "error": "Insufficient MN2 balance"}
         max_user = float(cfg.get("max_stake_per_user", 0) or 0)
+        try:
+            from backend.services.agent_trader_staking_service import is_trader_agent
+            if is_trader_agent(uid):
+                ta = cfg.get("trader_agents") if isinstance(cfg.get("trader_agents"), dict) else {}
+                max_user = float(ta.get("max_stake_per_user_override") or max_user or 50000)
+        except Exception:
+            pass
         if max_user > 0 and staked + amt > max_user:
             return {"success": False, "error": f"Max staked per user is {max_user} MN2"}
 
@@ -510,12 +531,15 @@ def get_stake(user_id: str) -> Dict[str, Any]:
         "streak_days": int(rec.get("streak_days", 0) or 0),
         "boost_multiplier": round(mults["boost"], 4),
         "referral_multiplier": round(mults["referral"], 4),
+        "team_multiplier": round(mults.get("team", 1.0), 4),
         "estimated_next_interval_reward": est_next,
         "accrual_interval_minutes": int(cfg.get("accrual_interval_minutes", 60)),
         "terms_accepted": has_accepted_terms(uid),
         "terms_version": cfg.get("terms_version", "1.0"),
         "instant_unstake": bool(cfg.get("instant_unstake", True)),
         "disclaimer": cfg.get("disclaimer", ""),
+        "managed_by_agent": (rec.get("managed_by_agent") or None),
+        "managed": bool(rec.get("managed_by_agent")),
     }
 
 
@@ -576,6 +600,66 @@ def estimate_rewards(amount: Any, days: Any = 30, uptime: Any = 1.0,
         "projected_reward_mn2": round(projected, 8),
         "projected_total_mn2": round(amt + projected, 8),
         "note": "Estimate only. Rewards are variable, not guaranteed, and depend on realized pool yield.",
+    }
+
+
+def goal_planner(
+    target_mn2: Any,
+    target_date: str,
+    current_mn2: Any = 0,
+    uptime: Any = 1.0,
+    boost: Any = 1.0,
+) -> Dict[str, Any]:
+    """
+    Given a target MN2 balance by date, estimate stake required today (Top-10 #10).
+    Uses the same APR/uptime model as estimate_rewards — informational only.
+    """
+    try:
+        target = max(0.0, float(target_mn2))
+    except (TypeError, ValueError):
+        return {"success": False, "error": "invalid target_mn2"}
+    try:
+        current = max(0.0, float(current_mn2))
+    except (TypeError, ValueError):
+        current = 0.0
+    need = max(0.0, target - current)
+    if need <= 0:
+        return {
+            "success": True,
+            "target_mn2": round(target, 8),
+            "current_mn2": round(current, 8),
+            "need_mn2": 0.0,
+            "required_stake_mn2": 0.0,
+            "days_remaining": 0.0,
+            "note": "You already meet or exceed the target.",
+        }
+
+    raw = (target_date or "").strip()
+    try:
+        end = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=timezone.utc)
+    except Exception:
+        return {"success": False, "error": "invalid target_date (use ISO YYYY-MM-DD)"}
+
+    now = _now()
+    days = max(0.001, (end - now).total_seconds() / 86400.0)
+    unit = estimate_rewards(1.0, days=1, uptime=uptime, boost=boost)
+    daily_per_mn2 = float(unit.get("effective_daily_mn2") or 0)
+    required_stake = round(need / (daily_per_mn2 * days), 8) if daily_per_mn2 > 0 else None
+    est = estimate_rewards(required_stake or 0, days=days, uptime=uptime, boost=boost) if required_stake else {}
+
+    return {
+        "success": True,
+        "target_mn2": round(target, 8),
+        "current_mn2": round(current, 8),
+        "need_mn2": round(need, 8),
+        "target_date": raw,
+        "days_remaining": round(days, 2),
+        "required_stake_mn2": required_stake,
+        "projected_reward_mn2": est.get("projected_reward_mn2"),
+        "apr_percent": unit.get("apr_percent"),
+        "note": "Estimate only — actual rewards depend on pool yield and multipliers.",
     }
 
 
@@ -767,6 +851,7 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
         for uid, rec in active.items():
             staked = float(rec.get("staked", 0) or 0)
             m = mults_by_user[uid]
+            prev_tier_id = longevity_tier(longevity_days(rec)).get("id")
             if use_realized and sum_weight > 0:
                 reward = budget * (weights[uid] / sum_weight)
             else:
@@ -797,6 +882,14 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
 
             bal_after, staked_after = get_balances(uid)
             tier = longevity_tier(longevity_days(rec))
+            tier_id = tier.get("id")
+            try:
+                from backend.services.mn2_staking_notifications import on_reward
+                on_reward(uid, reward, tier_id=tier_id, prev_tier_id=prev_tier_id,
+                          staked=round(staked_after, 8),
+                          total_earned=round(float(rec.get("total_earned", 0) or 0), 8))
+            except Exception:
+                pass
             rows.append({
                 "interval_id": interval_id,
                 "user_id": uid,
@@ -809,6 +902,7 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
                 "uptime_weight": round(m["uptime"], 4),
                 "boost_mult": round(m["boost"], 4),
                 "referral_mult": round(m["referral"], 4),
+                "team_mult": round(m.get("team", 1.0), 4),
                 "effective_apr": round(apr * m["combined"], 4),
                 "weight": round(weights[uid], 8),
                 "pool_share_pct": round((weights[uid] / sum_weight * 100.0) if sum_weight else 0.0, 6),
@@ -822,6 +916,13 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
                 "staked_after_mn2": round(staked_after, 8),
                 "source": "realized_yield" if use_realized else "apr_fallback",
             })
+            try:
+                from backend.services.agent_trader_staking_service import is_trader_agent
+                if is_trader_agent(uid):
+                    from backend.services.mn2_copy_trading import mirror_leader_reward
+                    mirror_leader_reward(uid, reward, interval_id=interval_id)
+            except Exception:
+                pass
 
         reserve["lifetime_paid"] = reserve.get("lifetime_paid", 0.0) + total_reward
         _save_reserve(reserve)
@@ -894,16 +995,37 @@ def get_staking_leaderboard(limit: int = 10) -> Dict[str, Any]:
         staked = float((r or {}).get("staked", 0) or 0)
         if staked <= 0:
             continue
+        settings: Dict[str, Any] = {}
+        try:
+            from backend.services.user_engagement import get_settings
+            settings = (get_settings(uid).get("settings") or {})
+        except Exception:
+            pass
+        if not settings.get("staking_leaderboard_opt_in"):
+            continue
         rec = _get_record(stakes, uid)
-        entries.append({
-            "display_id": _anon_id(uid),
-            "staked": round(staked, 8),
-            "total_earned": round(float(rec.get("total_earned", 0) or 0), 8),
+        tier = longevity_tier(longevity_days(rec))
+        dn = (settings.get("staking_display_name") or "").strip()
+        entry: Dict[str, Any] = {
+            "display_id": dn or _anon_id(uid),
             "longevity_days": round(longevity_days(rec), 2),
-            "longevity_tier": longevity_tier(longevity_days(rec)).get("id"),
-        })
-    entries.sort(key=lambda e: e["staked"], reverse=True)
-    return {"success": True, "leaderboard": entries[: max(1, min(int(limit or 10), 100))]}
+            "longevity_tier": tier.get("id"),
+            "longevity_label": tier.get("label"),
+            "_sort_staked": staked,
+        }
+        if settings.get("staking_show_amounts"):
+            entry["staked"] = round(staked, 8)
+            entry["total_earned"] = round(float(rec.get("total_earned", 0) or 0), 8)
+        entries.append(entry)
+    entries.sort(key=lambda e: e["_sort_staked"], reverse=True)
+    for e in entries:
+        e.pop("_sort_staked", None)
+    lim = max(1, min(int(limit or 10), 100))
+    return {
+        "success": True,
+        "leaderboard": entries[:lim],
+        "privacy": "Opt-in only. Amounts shown only when user enables staking_show_amounts.",
+    }
 
 
 _AGENT_ACTIVITY_FILE = "mn2_staking_agent_activity.jsonl"

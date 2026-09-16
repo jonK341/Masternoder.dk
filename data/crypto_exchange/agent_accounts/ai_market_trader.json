@@ -1,0 +1,49 @@
+{
+  "agent_id": "ai_market_trader",
+  "realized_profit_usd": 2.7195,
+  "trade_count": 2,
+  "notional_traded_usd": 325.0,
+  "by_venue": {
+    "nonkyc": 325.0,
+    "cryptocom": 250.0,
+    "binance": 75.0
+  },
+  "wallet_label": "",
+  "game_time_sec": 6872400,
+  "ticks": 1909,
+  "agent_level": 48,
+  "last_action": {
+    "agent_id": "ai_market_trader",
+    "executed": false,
+    "reason": "no_actionable_ai_signal",
+    "skip_reason": "no_signal",
+    "best": null,
+    "analysis_summary": {
+      "source": "live",
+      "opportunity_count": 1,
+      "profitable_count": 0,
+      "min_margin_bps": 14.0
+    }
+  },
+  "created_at": "2026-06-28T00:48:43.571110Z",
+  "name": "AI Multi-Venue Trader",
+  "skills": [
+    "spatial_arbitrage",
+    "sentiment_alpha",
+    "ml_price_forecast",
+    "kelly_sizing",
+    "latency_momentum",
+    "statistical_arbitrage"
+  ],
+  "skill_proficiency": {
+    "spatial_arbitrage": 0.1164,
+    "sentiment_alpha": 0.1719,
+    "ml_price_forecast": 0.1719,
+    "kelly_sizing": 0.1719,
+    "latency_momentum": 0.1719,
+    "statistical_arbitrage": 0.1719
+  },
+  "intelligence": 113.0,
+  "learning_bonus_bps": 2.277,
+  "mastery_pct": 16.3
+}
