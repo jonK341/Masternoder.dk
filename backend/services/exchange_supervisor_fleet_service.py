@@ -219,7 +219,9 @@ def _tick_profit_analyst_bot(bot: Dict[str, Any], *, hot_symbols: Optional[List[
     cfg = bot.get("config") or {}
     symbols = [str(s).upper() for s in (cfg.get("symbols") or [])]
     if hot_symbols:
-        symbols = list(dict.fromkeys([s for s in hot_symbols if s in symbols] + symbols))[:4]
+        symbols = list(dict.fromkeys([str(s).upper() for s in hot_symbols if s] + symbols))[:10]
+    if not symbols:
+        symbols = ["DOGE", "XRP"]
     agent_id = bot.get("id")
     notional = float(os.environ.get("EXCHANGE_LIVE_MICRO_USD", "75") or 75)
     scan = arb.scan_opportunities(symbols=symbols, venues=["binance", "nonkyc"], notional_usd=notional)
