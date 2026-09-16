@@ -1012,11 +1012,18 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
             except Exception:
                 pass
             try:
-                with open(local, "r", encoding="utf-8", errors="replace") as f:
-                    content = f.read()
-                with sftp.file(remote, "w") as rf:
-                    rf.write(content)
-                print(f"  [OK] {local}")
+                local_path = os.path.abspath(local)
+                sftp.put(local_path, remote)
+                ssh.exec_command(
+                    f"chown www-data:www-data '{remote}' 2>/dev/null || true; chmod 644 '{remote}'",
+                    timeout=5,
+                )
+                local_sz = os.path.getsize(local_path)
+                remote_sz = sftp.stat(remote).st_size
+                if local_sz != remote_sz:
+                    print(f"  [ERROR] {local}: size mismatch local={local_sz} remote={remote_sz}")
+                    continue
+                print(f"  [OK] {local} ({local_sz} bytes)")
                 deployed += 1
             except Exception as e:
                 print(f"  [ERROR] {local}: {e}")
