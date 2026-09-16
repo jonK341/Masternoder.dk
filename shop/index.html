@@ -640,6 +640,10 @@
                     <strong>One unique trophy per MN2 block</strong> — AI smiley .gif, license number, battle stats,
                     and full trading support (auction, peer transfer, exchange). Platform ledger; not on-chain mint.
                 </p>
+                <div id="shop-block-gallery-ops" class="card" style="display:none;margin-bottom:var(--spacing-md);padding:var(--spacing-md);border:1px solid rgba(0,255,136,0.25);background:rgba(0,0,0,0.2);">
+                    <strong style="color:var(--secondary);">Genesis backfill ops</strong>
+                    <div id="shop-block-gallery-ops-body" style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary);">Loading backfill status…</div>
+                </div>
                 <div id="shop-block-gallery-status" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px;" aria-live="polite">Syncing chain blocks…</div>
                 <div id="shop-block-gallery-grid" class="shop-grid shop-block-gallery-grid">Loading…</div>
             </section>
@@ -1544,11 +1548,47 @@
             return card;
         }
 
+        function renderBlockGalleryOps(data) {
+            const panel = document.getElementById('shop-block-gallery-ops');
+            const body = document.getElementById('shop-block-gallery-ops-body');
+            if (!panel || !body || !data || !data.success) {
+                if (panel) panel.style.display = 'none';
+                return;
+            }
+            panel.style.display = 'block';
+            const genesisPct = data.genesis_index_percent != null ? data.genesis_index_percent : 0;
+            const mediaPct = data.media_percent_complete != null ? data.media_percent_complete : 0;
+            const cursor = data.genesis_backfill_cursor != null ? data.genesis_backfill_cursor : '—';
+            const milestone = data.milestone_block != null ? data.milestone_block : '—';
+            const lazy = data.lazy_media_generation ? 'on' : 'off';
+            body.innerHTML =
+                '<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">' +
+                '<div><div>Genesis index</div><div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;margin:6px 0;"><div style="height:8px;width:' + Math.min(100, genesisPct) + '%;background:linear-gradient(90deg,#00ff88,#00d4ff);border-radius:4px;"></div></div>' +
+                '<strong>' + genesisPct + '%</strong> · cursor #' + cursor + (data.genesis_backfill_complete ? ' · complete' : '') + '</div>' +
+                '<div><div>AI GIF media</div><div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;margin:6px 0;"><div style="height:8px;width:' + Math.min(100, mediaPct) + '%;background:linear-gradient(90deg,#ffd54f,#ff7043);border-radius:4px;"></div></div>' +
+                '<strong>' + mediaPct + '%</strong> · ' + (data.media_generated_count || 0) + '/' + (data.media_total_drops || 0) + ' generated · lazy ' + lazy + '</div>' +
+                '<div><div>Drops</div><strong>' + (data.total_drops || 0) + '</strong> indexed · ' + (data.claimed_drops || 0) + ' claimed · tip #' + (data.last_height || '—') +
+                (milestone ? '<br><span style="opacity:0.85;">Milestone block ' + milestone + '</span>' : '') + '</div>' +
+                '</div>';
+        }
+
+        async function loadBlockGalleryOps() {
+            try {
+                const r = await fetch(`${BASE_URL}/api/shop/block-mint/backfill/status`);
+                const d = await r.json();
+                renderBlockGalleryOps(d);
+            } catch (e) {
+                const panel = document.getElementById('shop-block-gallery-ops');
+                if (panel) panel.style.display = 'none';
+            }
+        }
+
         async function loadBlockGallery() {
             const grid = document.getElementById('shop-block-gallery-grid');
             const status = document.getElementById('shop-block-gallery-status');
             if (!grid) return;
             grid.innerHTML = '<p style="grid-column:1/-1;color:var(--text-secondary);">Loading block gallery…</p>';
+            loadBlockGalleryOps();
             try {
                 const r = await fetch(`${BASE_URL}/api/shop/block-mint/registry?limit=48&include_claimed=1`);
                 const d = await r.json();

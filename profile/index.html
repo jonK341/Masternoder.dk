@@ -3208,6 +3208,18 @@
                 const avatarUrl = profileSafeUrl(prefs.avatar_url || profile.avatar_url, '/static/img/default-avatar.png');
                 const bio = prefs.bio || profile.bio || '';
                 const skillPathName = stats.skill_path_name || 'Balanced';
+                const trophyBadges = prefs.trophy_badges || {};
+                let trophyBadgeHtml = '';
+                if (trophyBadges.staking_champion) {
+                    trophyBadgeHtml += '<span class="badge" title="Staking interval champion">🏆 ' + profileEscapeHtml(trophyBadges.profile_label || 'Interval champion') + '</span>';
+                }
+                if (Number(trophyBadges.staking_wins || 0) > 0) {
+                    const wins = Number(trophyBadges.staking_wins);
+                    trophyBadgeHtml += '<span class="badge" title="Block trophies from staking wins">⚡ ' + wins + ' staking win' + (wins === 1 ? '' : 's') + '</span>';
+                }
+                if (trophyBadges.equipped_trophy_key) {
+                    trophyBadgeHtml += '<span class="badge" title="Equipped trophy">🎖 Featured trophy</span>';
+                }
                 const fallbackInitial = profileEscapeHtml(String(displayName || 'U').charAt(0).toUpperCase() || 'U');
                 const fallbackAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Crect fill=%22%2300ff88%22 width=%22120%22 height=%22120%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23000%22 font-size=%2240%22%3E' + encodeURIComponent(fallbackInitial) + '%3C/text%3E%3C/svg%3E';
                 header.innerHTML = `
@@ -3225,6 +3237,7 @@
                             <span class="badge">Level ${profileEscapeHtml(level)}</span>
                             <span class="badge">${profileEscapeHtml(skillPathName)}</span>
                             ${profile.onboarding_complete ? '<span class="badge">✓ Verified</span>' : ''}
+                            ${trophyBadgeHtml}
                         </div>
                         ${bio ? `<p class="profile-bio">${profileEscapeHtml(bio)}</p>` : ''}
                         <div class="profile-meta">

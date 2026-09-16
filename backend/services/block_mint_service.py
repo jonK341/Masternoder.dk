@@ -79,13 +79,23 @@ def block_item_id(height: int) -> str:
     return f"block-{int(height)}"
 
 
-def _media_for_height(height: int) -> Dict[str, str]:
-    iid = block_item_id(height)
+def _media_for_height(height: int, *, ensure_lazy: bool = False) -> Dict[str, str]:
+    h = int(height)
+    if ensure_lazy and get_config().get("lazy_media_generation", True):
+        try:
+            from backend.services.block_trophy_media_service import block_media_exists, ensure_block_media
+
+            if not block_media_exists(h):
+                ensure_block_media(h, force=False)
+        except Exception:
+            pass
+
+    iid = block_item_id(h)
     media = _read_json(os.path.join(_BASE, "data", "shop_item_media.json"), {})
     row = media.get(iid) or {}
     return {
-        "image_url": row.get("image_url") or row.get("poster_url") or f"/static/img/trophies/block-{height}.png",
-        "gif_url": row.get("gif_url") or row.get("clip_url") or f"/static/img/trophies/block-{height}.gif",
+        "image_url": row.get("image_url") or row.get("poster_url") or f"/static/img/trophies/block-{h}.png",
+        "gif_url": row.get("gif_url") or row.get("clip_url") or f"/static/img/trophies/block-{h}.gif",
     }
 
 
@@ -99,10 +109,15 @@ def _battle_stats_preview(height: int) -> Dict[str, Any]:
         return {}
 
 
-def _catalog_row(height: int, manifest_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def _catalog_row(
+    height: int,
+    manifest_row: Optional[Dict[str, Any]] = None,
+    *,
+    ensure_lazy_media: bool = False,
+) -> Dict[str, Any]:
     cfg = get_config()
     iid = block_item_id(height)
-    media = _media_for_height(height)
+    media = _media_for_height(height, ensure_lazy=ensure_lazy_media)
     manifest_row = manifest_row or {}
     claimed = bool(manifest_row.get("claimed_by"))
     stats = manifest_row.get("battle_stats") or _battle_stats_preview(height)
@@ -242,18 +257,43 @@ def get_genesis_backfill_status() -> Dict[str, Any]:
     drops = doc.get("drops") or {}
     total = len(drops)
     claimed = sum(1 for d in drops.values() if isinstance(d, dict) and d.get("claimed_by"))
+    last_height = int(doc.get("last_height") or 0)
+    genesis = int(cfg.get("genesis_block") or 1)
+    cursor = int(doc.get("genesis_backfill_cursor") or genesis)
+    milestone = int(cfg.get("milestone_block") or 0)
+    chain_span = max(0, last_height - genesis + 1) if last_height >= genesis else 0
+    genesis_index_percent = round(100.0 * total / chain_span, 2) if chain_span else 0.0
+    if doc.get("genesis_backfill_complete"):
+        genesis_index_percent = 100.0
+
+    media_stats: Dict[str, Any] = {}
+    try:
+        from backend.services.block_trophy_media_service import count_block_media_stats
+
+        heights = sorted(int(k) for k in drops.keys())
+        media_stats = count_block_media_stats(heights)
+    except Exception:
+        media_stats = {
+            "media_generated_count": 0,
+            "media_pending_count": total,
+            "media_total_drops": total,
+            "media_percent_complete": 0.0,
+        }
+
     return {
         "success": True,
-        "milestone_block": int(cfg.get("milestone_block") or 0),
-        "genesis_block": int(cfg.get("genesis_block") or 1),
+        "milestone_block": milestone,
+        "genesis_block": genesis,
         "lazy_media_generation": bool(cfg.get("lazy_media_generation", True)),
         "genesis_backfill_started": bool(doc.get("genesis_backfill_started")),
         "genesis_backfill_complete": bool(doc.get("genesis_backfill_complete")),
-        "genesis_backfill_cursor": doc.get("genesis_backfill_cursor"),
-        "last_height": doc.get("last_height"),
+        "genesis_backfill_cursor": cursor,
+        "genesis_index_percent": genesis_index_percent,
+        "last_height": last_height,
         "total_drops": total,
         "claimed_drops": claimed,
         "unclaimed_drops": total - claimed,
+        **media_stats,
     }
 
 
@@ -309,9 +349,27 @@ def get_block_registry(*, limit: int = 48, include_claimed: bool = True) -> Dict
                 drops_map[key] = manifest_row
             except Exception:
                 pass
-        entries.append(_catalog_row(h, manifest_row))
+        entries.append(_catalog_row(h, manifest_row, ensure_lazy_media=False))
         if len(entries) >= max(1, min(limit, 200)):
             break
+
+    lazy_cfg = get_config().get("lazy_media_generation", True)
+    if lazy_cfg and entries:
+        try:
+            from backend.services.block_trophy_media_service import lazy_ensure_block_media_for_gallery
+
+            heights = [int(e.get("block_height") or 0) for e in entries if e.get("block_height")]
+            lazy_ensure_block_media_for_gallery(heights, max_generate=min(12, len(heights)))
+            for idx, entry in enumerate(entries):
+                h = int(entry.get("block_height") or 0)
+                if h:
+                    entries[idx] = _catalog_row(
+                        h,
+                        drops_map.get(str(h)) if isinstance(drops_map.get(str(h)), dict) else None,
+                        ensure_lazy_media=True,
+                    )
+        except Exception:
+            pass
 
     if drops_map != doc.get("drops"):
         doc["drops"] = drops_map

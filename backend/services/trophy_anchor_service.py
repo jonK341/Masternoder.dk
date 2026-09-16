@@ -348,8 +348,20 @@ def _apply_anchor_broadcast(
     return entry
 
 
-def _maybe_broadcast_entry(entry: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+def _should_broadcast(entry: Dict[str, Any], cfg: Dict[str, Any]) -> bool:
     if not cfg.get("broadcast_on_chain", False):
+        return False
+    if entry.get("anchor_txid"):
+        return False
+    if cfg.get("broadcast_priority_only", True):
+        min_pri = int(cfg.get("broadcast_min_priority", 50))
+        pri = int(entry.get("priority") or _source_priority(str(entry.get("source") or "")))
+        return pri >= min_pri
+    return True
+
+
+def _maybe_broadcast_entry(entry: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+    if not _should_broadcast(entry, cfg):
         return entry, None
     if entry.get("anchor_txid"):
         return entry, None
@@ -401,6 +413,7 @@ def process_anchor_queue(*, limit: int = 20, job_id: Optional[str] = None) -> Di
                 "anchor_explorer_url": None,
                 "committed_at": _iso(),
                 "source": job.get("source"),
+                "priority": int(job.get("priority") or _source_priority(str(job.get("source") or ""))),
             }
             entry, bcast = _maybe_broadcast_entry(entry, cfg)
             if bcast and bcast.get("success"):

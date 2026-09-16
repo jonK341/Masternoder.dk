@@ -28,6 +28,12 @@ def build_metadata(edition_key: str) -> Dict[str, Any]:
 
     edition = found.get("edition") or {}
     owner = found.get("user_id") or ""
+    try:
+        from backend.services.block_trophy_media_service import ensure_lazy_edition_media
+
+        edition = ensure_lazy_edition_media({**edition, "user_id": owner}, edition_key)
+    except Exception:
+        pass
     iid = edition.get("item_id") or ""
     stats = edition.get("battle_stats") or {}
     trading = edition.get("trading_profile") or {}

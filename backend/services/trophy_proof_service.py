@@ -13,6 +13,12 @@ def build_proof_page(edition_key: str) -> Dict[str, Any]:
         return meta
 
     edition = meta.get("edition") or {}
+    try:
+        from backend.services.block_trophy_media_service import ensure_lazy_edition_media
+
+        edition = ensure_lazy_edition_media({**edition, "user_id": meta.get("owner_id")}, edition_key)
+    except Exception:
+        pass
     provenance = get_chain(edition_key, limit=30)
 
     return {

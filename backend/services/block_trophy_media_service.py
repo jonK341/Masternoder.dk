@@ -451,3 +451,139 @@ def ensure_block_media(height: int, *, duration: float = 3.0, force: bool = Fals
         "skipped": False,
         "ai_smiley": True,
     }
+
+
+def _static_file_exists(url_path: str) -> bool:
+    if not url_path or not str(url_path).startswith("/static/"):
+        return False
+    rel = str(url_path).lstrip("/")
+    return os.path.isfile(os.path.join(_BASE, rel))
+
+
+def block_media_exists(height: int) -> bool:
+    paths = _paths(int(height))
+    return os.path.isfile(paths["gif"]) or os.path.isfile(paths["png"])
+
+
+def count_block_media_stats(heights: List[int]) -> Dict[str, Any]:
+    """Count how many block heights already have generated smiley media on disk."""
+    generated = 0
+    for h in heights:
+        if block_media_exists(h):
+            generated += 1
+    total = len(heights)
+    pending = max(0, total - generated)
+    return {
+        "media_generated_count": generated,
+        "media_pending_count": pending,
+        "media_total_drops": total,
+        "media_percent_complete": round(100.0 * generated / total, 2) if total else 0.0,
+    }
+
+
+def lazy_ensure_block_media_for_gallery(heights: List[int], *, max_generate: int = 12) -> Dict[str, Any]:
+    """Generate missing block-level GIFs for gallery rows (lazy genesis worker on view)."""
+    try:
+        from backend.services.block_mint_service import get_config
+
+        if not get_config().get("lazy_media_generation", True):
+            return {"skipped": True, "reason": "lazy_disabled"}
+    except Exception:
+        pass
+
+    generated = 0
+    skipped = 0
+    errors = 0
+    for h in heights:
+        if generated >= max(1, int(max_generate or 12)):
+            break
+        if block_media_exists(h):
+            skipped += 1
+            continue
+        result = ensure_block_media(int(h), force=False)
+        if result.get("success"):
+            if result.get("skipped"):
+                skipped += 1
+            else:
+                generated += 1
+        else:
+            errors += 1
+    return {
+        "success": True,
+        "generated": generated,
+        "skipped": skipped,
+        "errors": errors,
+        "requested": len(heights),
+    }
+
+
+def ensure_lazy_edition_media(edition: Dict[str, Any], edition_key: str) -> Dict[str, Any]:
+    """Generate per-edition (or block fallback) media on first proof/gallery view."""
+    try:
+        from backend.services.block_mint_service import get_config
+
+        if not get_config().get("lazy_media_generation", True):
+            return edition
+    except Exception:
+        return edition
+
+    ekey = (edition_key or edition.get("edition_key") or "").strip()
+    gif_url = edition.get("gif_url") or edition.get("edition_gif_url")
+    if gif_url and _static_file_exists(gif_url):
+        return edition
+
+    h = int(edition.get("block_height") or 0)
+    if not h and ekey:
+        iid = edition.get("item_id") or ""
+        if iid.startswith("block-"):
+            try:
+                h = int(iid.split("-", 1)[1])
+            except (IndexError, ValueError):
+                h = 0
+
+    stats = edition.get("battle_stats")
+    lic = str(edition.get("license_number") or "")
+    eno = int(edition.get("edition_no") or 1)
+
+    if ekey and h:
+        media = ensure_edition_media(
+            ekey,
+            h,
+            battle_stats=stats if isinstance(stats, dict) else None,
+            license_number=lic,
+            edition_no=eno,
+        )
+        if media.get("success"):
+            edition = {
+                **edition,
+                "gif_url": media.get("gif_url"),
+                "image_url": media.get("image_url"),
+                "per_edition_media": media.get("per_edition", True),
+            }
+            try:
+                from backend.services.trophy_fulfillment_service import patch_edition_fields
+
+                owner = edition.get("user_id")
+                iid = edition.get("item_id")
+                if owner and iid:
+                    patch_edition_fields(
+                        str(owner),
+                        str(iid),
+                        eno,
+                        {
+                            "gif_url": media.get("gif_url"),
+                            "image_url": media.get("image_url"),
+                            "per_edition_media": media.get("per_edition", True),
+                        },
+                    )
+            except Exception:
+                pass
+    elif h:
+        media = ensure_block_media(h, force=False)
+        if media.get("success"):
+            edition = {
+                **edition,
+                "gif_url": media.get("gif_url"),
+                "image_url": media.get("image_url"),
+            }
+    return edition

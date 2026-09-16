@@ -1,6 +1,8 @@
 {
   "enabled": true,
   "auto_process_on_queue": true,
-  "broadcast_on_chain": false,
+  "broadcast_on_chain": true,
+  "broadcast_priority_only": true,
+  "broadcast_min_priority": 50,
   "explorer_tx_base": "/explorer?tx="
 }
