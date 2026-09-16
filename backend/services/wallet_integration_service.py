@@ -78,12 +78,15 @@ def build_integration_hub(user_id: str) -> Dict[str, Any]:
     camgirls_total = 0
     camgirls_online = 0
     camgirls_upgrades = 0
+    camgirls_ai_features = 0
     try:
         from backend.services.camgirls_wallet_service import list_performers, load_upgrades_catalog
+        from backend.services.camgirls_ai_features_service import load_catalog
         perf = list_performers()
         camgirls_total = int(perf.get("total") or 0)
         camgirls_online = int(perf.get("online_count") or 0)
         camgirls_upgrades = int((load_upgrades_catalog().get("total") or 0))
+        camgirls_ai_features = int((load_catalog().get("total") or 0))
     except Exception:
         pass
 
@@ -160,6 +163,14 @@ def build_integration_hub(user_id: str) -> Dict[str, Any]:
                 "api": "/api/wallet/v2/camgirls/upgrades",
                 "wallet_tab": "camgirls",
                 "upgrade_count": camgirls_upgrades,
+            },
+            "WR-CAM-AI-100": {
+                "id": "camgirls-ai-features",
+                "label": "Camgirl AI Features",
+                "path": "/wallets?tab=camgirls&panel=ai-features",
+                "api": "/api/wallet/v2/camgirls/ai-features",
+                "wallet_tab": "camgirls",
+                "feature_count": camgirls_ai_features,
             },
         },
         "tab_groups": {

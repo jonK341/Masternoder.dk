@@ -1,16 +1,19 @@
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import {
+  fetchCamgirlsAiFeatures,
   fetchCamgirlsCatalog,
   fetchCamgirlsUpgrades,
   fetchCamgirlsUpgradesProgress,
   postCamgirlTip,
+  triggerCamgirlAiFeature,
   unlockCamgirlUpgrade,
+  type CamgirlAiFeature,
   type CamgirlPerformer,
   type CamgirlUpgrade,
   type CamgirlsUpgradesProgress,
 } from '../api/client';
 
-type Panel = 'performers' | 'upgrades';
+type Panel = 'performers' | 'upgrades' | 'ai-features';
 
 const CATEGORY_LABELS: Record<string, string> = {
   studio: 'Studio',
@@ -21,25 +24,61 @@ const CATEGORY_LABELS: Record<string, string> = {
   rewards: 'Rewards',
   network: 'Network',
   premium: 'Premium',
+  greetings: 'Greetings',
+  reactions: 'Reactions',
+  dances: 'Dances',
+  games: 'Games',
+  tips: 'Tips',
+  vip_moments: 'VIP Moments',
+  network_events: 'Network Events',
+  trophy_tie_ins: 'Trophy Tie-ins',
+  ai_chat_moods: 'AI Chat Moods',
+  seasonal: 'Seasonal',
 };
+
+function effectivePrice(f: CamgirlAiFeature): number {
+  const p = f.payment;
+  if (p.unlocked_via_upgrade) return 0;
+  return p.effective_price_mn2 ?? p.price_mn2 ?? 0;
+}
+
+function previewFeature(feature: CamgirlAiFeature, audioEnabled: boolean): HTMLAudioElement | null {
+  if (!audioEnabled || !feature.sound?.url) return null;
+  const audio = new Audio(feature.sound.url);
+  audio.volume = feature.sound.volume_default ?? 0.5;
+  audio.play().catch(() => {});
+  return audio;
+}
 
 export function CamgirlsHub() {
   const panelFromQuery = (): Panel => {
     const p = new URLSearchParams(window.location.search).get('panel');
-    return p === 'upgrades' ? 'upgrades' : 'performers';
+    if (p === 'upgrades') return 'upgrades';
+    if (p === 'ai-features') return 'ai-features';
+    return 'performers';
   };
 
   const [panel, setPanel] = useState<Panel>(panelFromQuery);
   const [performers, setPerformers] = useState<CamgirlPerformer[]>([]);
   const [upgrades, setUpgrades] = useState<CamgirlUpgrade[]>([]);
+  const [aiFeatures, setAiFeatures] = useState<CamgirlAiFeature[]>([]);
+  const [aiCategories, setAiCategories] = useState<string[]>([]);
   const [progress, setProgress] = useState<CamgirlsUpgradesProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgradesLoaded, setUpgradesLoaded] = useState(false);
+  const [aiLoaded, setAiLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unlocking, setUnlocking] = useState<string | null>(null);
   const [tipping, setTipping] = useState<string | null>(null);
+  const [triggering, setTriggering] = useState<string | null>(null);
   const [tipFlash, setTipFlash] = useState<string | null>(null);
+  const [aiFlash, setAiFlash] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
+  const [aiFilter, setAiFilter] = useState('all');
+  const [selectedPerformer, setSelectedPerformer] = useState('');
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +86,9 @@ export function CamgirlsHub() {
       .then((data) => {
         if (!cancelled) {
           setPerformers(data.performers || []);
+          if ((data.performers || []).length > 0) {
+            setSelectedPerformer(data.performers[0].id);
+          }
           setLoading(false);
         }
       })
@@ -71,17 +113,46 @@ export function CamgirlsHub() {
       .catch((err: Error) => setError(err.message));
   }, [upgradesLoaded]);
 
+  const loadAiFeatures = useCallback(() => {
+    if (aiLoaded) return Promise.resolve();
+    setError(null);
+    const cat = aiFilter === 'all' ? undefined : aiFilter;
+    const perf = selectedPerformer || undefined;
+    return fetchCamgirlsAiFeatures(cat, perf)
+      .then((data) => {
+        setAiFeatures(data.features || []);
+        setAiCategories(data.categories || []);
+        setAiLoaded(true);
+      })
+      .catch((err: Error) => setError(err.message));
+  }, [aiLoaded, aiFilter, selectedPerformer]);
+
   useEffect(() => {
     if (panel === 'upgrades') loadUpgrades();
-  }, [panel, loadUpgrades]);
+    if (panel === 'ai-features') loadAiFeatures();
+  }, [panel, loadUpgrades, loadAiFeatures]);
+
+  useEffect(() => {
+    if (panel !== 'ai-features') return;
+    setAiLoaded(false);
+    const cat = aiFilter === 'all' ? undefined : aiFilter;
+    const perf = selectedPerformer || undefined;
+    fetchCamgirlsAiFeatures(cat, perf)
+      .then((data) => {
+        setAiFeatures(data.features || []);
+        setAiCategories(data.categories || []);
+        setAiLoaded(true);
+      })
+      .catch((err: Error) => setError(err.message));
+  }, [aiFilter, selectedPerformer, panel]);
 
   const switchPanel = (p: Panel) => {
     setPanel(p);
     const url = new URL(window.location.href);
-    if (p === 'upgrades') {
-      url.searchParams.set('panel', 'upgrades');
-    } else {
+    if (p === 'performers') {
       url.searchParams.delete('panel');
+    } else {
+      url.searchParams.set('panel', p);
     }
     window.history.replaceState({}, '', url.pathname + url.search);
   };
@@ -134,9 +205,63 @@ export function CamgirlsHub() {
     }
   };
 
+  const enableAudio = () => setAudioUnlocked(true);
+
+  const handlePreview = (feature: CamgirlAiFeature) => {
+    if (!audioUnlocked) enableAudio();
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    setPreviewId(feature.id);
+    previewAudioRef.current = previewFeature(feature, true);
+    window.setTimeout(() => setPreviewId((cur) => (cur === feature.id ? null : cur)), feature.animation?.duration_ms || 1500);
+  };
+
+  const resolvePerformerForFeature = (feature: CamgirlAiFeature): string | undefined => {
+    const ids = feature.performer_ids || [];
+    if (ids.includes('all')) return selectedPerformer || performers[0]?.id;
+    if (selectedPerformer && ids.includes(selectedPerformer)) return selectedPerformer;
+    return ids[0];
+  };
+
+  const handleTrigger = async (feature: CamgirlAiFeature) => {
+    if (triggering) return;
+    if (!audioUnlocked) enableAudio();
+    const performerId = resolvePerformerForFeature(feature);
+    setTriggering(feature.id);
+    setAiFlash(null);
+    try {
+      const result = await triggerCamgirlAiFeature(feature.id, performerId);
+      if (result.success && result.playback) {
+        const anim = result.playback.animation;
+        const snd = result.playback.sound;
+        if (snd?.url) {
+          const audio = new Audio(snd.url);
+          audio.volume = snd.volume_default ?? 0.5;
+          audio.play().catch(() => {});
+        }
+        setAiFlash(`Triggered ${result.name} — paid ${result.paid_mn2 ?? 0} MN2`);
+        setPreviewId(feature.id);
+        window.setTimeout(() => setPreviewId(null), anim?.duration_ms || 1500);
+      } else {
+        setAiFlash(result.error || result.message || 'Trigger failed');
+      }
+    } catch (err: unknown) {
+      setAiFlash(err instanceof Error ? err.message : 'Trigger failed');
+    } finally {
+      setTriggering(null);
+      window.setTimeout(() => setAiFlash(null), 4000);
+    }
+  };
+
   const filteredUpgrades = filter === 'all'
     ? upgrades
     : upgrades.filter((u) => u.category === filter);
+
+  const filteredAi = aiFilter === 'all'
+    ? aiFeatures
+    : aiFeatures.filter((f) => f.category === aiFilter);
 
   return (
     <div class="wallet-tab-panel">
@@ -144,7 +269,7 @@ export function CamgirlsHub() {
         <div style={{ padding: '16px' }}>
           <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Camgirls Studio</div>
           <p style={{ margin: '8px 0 0', color: 'var(--wallet-muted)', fontSize: '0.9rem' }}>
-            25 performers — SFW wallet cards link to the full studio experience. 250 section upgrades.
+            25 performers — SFW wallet cards link to the full studio experience. 250 section upgrades. 100 AI feature bundles.
           </p>
           <a href="/camgirls" class="wallet-discord-btn wallet-discord-btn-primary" style={{ marginTop: '12px', display: 'inline-flex' }}>
             Open full studio →
@@ -152,7 +277,7 @@ export function CamgirlsHub() {
         </div>
       </section>
 
-      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+      <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
         <button
           type="button"
           class={`wallet-discord-btn${panel === 'performers' ? ' wallet-discord-btn-primary' : ''}`}
@@ -166,6 +291,13 @@ export function CamgirlsHub() {
           onClick={() => switchPanel('upgrades')}
         >
           Upgrades (250)
+        </button>
+        <button
+          type="button"
+          class={`wallet-discord-btn${panel === 'ai-features' ? ' wallet-discord-btn-primary' : ''}`}
+          onClick={() => switchPanel('ai-features')}
+        >
+          AI Features (100)
         </button>
       </div>
 
@@ -308,6 +440,145 @@ export function CamgirlsHub() {
                   Showing first 80 — filter by category to browse all 250.
                 </p>
               )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {panel === 'ai-features' && (
+        <section class="wallet-panel" style={{ marginTop: '12px' }}>
+          <div class="wallet-panel-header" style={{ flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <div class="wallet-panel-title">AI Features</div>
+              <div class="wallet-panel-subtitle">
+                {aiLoaded ? `${filteredAi.length} bundles — animation + payment + sound` : 'Loading…'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <select
+                value={selectedPerformer}
+                onChange={(e) => setSelectedPerformer((e.target as HTMLSelectElement).value)}
+                style={{
+                  background: 'var(--wallet-bg-elevated)',
+                  border: 'var(--wallet-border)',
+                  color: 'var(--wallet-text)',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--wallet-radius)',
+                }}
+              >
+                {performers.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <select
+                value={aiFilter}
+                onChange={(e) => setAiFilter((e.target as HTMLSelectElement).value)}
+                style={{
+                  background: 'var(--wallet-bg-elevated)',
+                  border: 'var(--wallet-border)',
+                  color: 'var(--wallet-text)',
+                  padding: '6px 10px',
+                  borderRadius: 'var(--wallet-radius)',
+                }}
+              >
+                <option value="all">All categories</option>
+                {(aiCategories.length ? aiCategories : Object.keys(CATEGORY_LABELS).slice(8)).map((cat) => (
+                  <option key={cat} value={cat}>{CATEGORY_LABELS[cat] || cat}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {aiFlash && (
+            <div style={{ padding: '0 16px', fontSize: '0.85rem', color: 'var(--wallet-accent)' }}>{aiFlash}</div>
+          )}
+          {!audioUnlocked && (
+            <div style={{ padding: '8px 16px' }}>
+              <button type="button" class="wallet-discord-btn" onClick={enableAudio}>
+                Enable sound preview
+              </button>
+            </div>
+          )}
+          {!aiLoaded ? (
+            <div style={{ padding: '16px' }}>
+              <div class="wallet-skeleton" style={{ height: '200px' }} />
+            </div>
+          ) : (
+            <div class="wallet-shop-grid" style={{ padding: '8px 16px 16px', maxHeight: '560px', overflowY: 'auto' }}>
+              {filteredAi.map((f) => {
+                const price = effectivePrice(f);
+                const isPreview = previewId === f.id;
+                const anim = f.animation;
+                const isCss = anim?.type === 'css';
+                return (
+                  <div
+                    key={f.id}
+                    class="wallet-shop-card"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      outline: isPreview ? '2px solid var(--wallet-accent)' : undefined,
+                    }}
+                    onMouseEnter={() => handlePreview(f)}
+                    onClick={() => handlePreview(f)}
+                  >
+                    <div
+                      style={{
+                        height: '64px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--wallet-bg-elevated)',
+                        borderRadius: 'var(--wallet-radius)',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {isCss ? (
+                        <div
+                          class={anim.asset_url}
+                          style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, var(--wallet-accent), transparent)',
+                            animation: isPreview ? 'pulse 1s ease-in-out infinite' : undefined,
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={anim?.asset_url || '/static/camgirls/preview-demo.svg'}
+                          alt=""
+                          width={48}
+                          height={48}
+                          style={{
+                            borderRadius: 'var(--wallet-radius)',
+                            transform: isPreview ? 'scale(1.1)' : undefined,
+                            transition: 'transform 0.2s',
+                          }}
+                        />
+                      )}
+                    </div>
+                    <span class="wallet-shop-card-name">{f.name}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--wallet-muted)' }}>
+                      {f.id} · {CATEGORY_LABELS[f.category] || f.category}
+                    </span>
+                    <span class="wallet-shop-card-desc" style={{ fontSize: '0.75rem' }}>
+                      {f.description?.slice(0, 80)}…
+                    </span>
+                    <span style={{ fontFamily: 'var(--wallet-font-mono)', fontSize: '0.85rem', color: 'var(--wallet-accent)' }}>
+                      {price === 0 ? 'Free (upgrade)' : `${price.toFixed(2)} MN2`}
+                    </span>
+                    <button
+                      type="button"
+                      class="wallet-discord-btn wallet-discord-btn-primary"
+                      disabled={triggering === f.id}
+                      onClick={(e) => { e.stopPropagation(); handleTrigger(f); }}
+                    >
+                      {triggering === f.id ? 'Triggering…' : price === 0 ? 'Trigger free' : `Pay ${price.toFixed(2)} MN2`}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>

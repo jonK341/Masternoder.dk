@@ -1,0 +1,2399 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-16",
+  "total": 100,
+  "categories": [
+    "greetings",
+    "reactions",
+    "dances",
+    "games",
+    "tips",
+    "vip_moments",
+    "network_events",
+    "trophy_tie_ins",
+    "ai_chat_moods",
+    "seasonal"
+  ],
+  "features": [
+    {
+      "id": "CAM-AI-001",
+      "name": "Wave hello",
+      "category": "greetings",
+      "performer_ids": [
+        "cg_wallet_nova",
+        "cg_wallet_iris"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-001.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 3.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.1
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: wave hello \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-002",
+      "name": "Morning sparkle",
+      "category": "greetings",
+      "performer_ids": [
+        "cg_wallet_luna",
+        "cg_wallet_aurora"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-greetings",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 5.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.0
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: morning sparkle \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-003",
+      "name": "Night owl greet",
+      "category": "greetings",
+      "performer_ids": [
+        "cg_wallet_sage",
+        "cg_wallet_coral"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-003.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 6.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.9
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: night owl greet \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-004",
+      "name": "Raid welcome",
+      "category": "greetings",
+      "performer_ids": [
+        "cg_wallet_ember",
+        "cg_wallet_velvet"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-ember.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 8.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 4.8
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: raid welcome \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-005",
+      "name": "Returning fan hug",
+      "category": "greetings",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-005.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 9.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.7
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: returning fan hug \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-006",
+      "name": "New viewer bow",
+      "category": "greetings",
+      "performer_ids": [
+        "cg_wallet_aurora",
+        "cg_wallet_storm"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-greetings",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 11.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.6
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: new viewer bow \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-007",
+      "name": "VIP entrance",
+      "category": "greetings",
+      "performer_ids": [
+        "cg_wallet_coral",
+        "cg_wallet_honey"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-007.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 12.5,
+        "unlock_upgrade_id": "WR-CAM-UPG-007",
+        "tip_min_mn2": 7.5
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: vip entrance \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-008",
+      "name": "Cosmic salute",
+      "category": "greetings",
+      "performer_ids": [
+        "cg_wallet_velvet",
+        "cg_wallet_onyx"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-sage.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 14.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.4
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: cosmic salute \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-009",
+      "name": "Soft smile loop",
+      "category": "greetings",
+      "performer_ids": [
+        "cg_wallet_pixel",
+        "cg_wallet_jade"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-009.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 2.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.0
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: soft smile loop \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-010",
+      "name": "Studio door chime",
+      "category": "greetings",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-greetings",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 4.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.4
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: studio door chime \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-011",
+      "name": "Heart eyes pop",
+      "category": "reactions",
+      "performer_ids": [
+        "cg_wallet_honey",
+        "cg_wallet_frost"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-011.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 5.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.3
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: heart eyes pop \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-012",
+      "name": "LOL bounce",
+      "category": "reactions",
+      "performer_ids": [
+        "cg_wallet_onyx",
+        "cg_wallet_silk"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-iris.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 7.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 4.2
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: lol bounce \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-013",
+      "name": "Mind blown shimmer",
+      "category": "reactions",
+      "performer_ids": [
+        "cg_wallet_jade",
+        "cg_wallet_blaze"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-013.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 8.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.1
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: mind blown shimmer \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-014",
+      "name": "Clap burst",
+      "category": "reactions",
+      "performer_ids": [
+        "cg_wallet_ruby",
+        "cg_wallet_mist"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-reactions",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 10.0,
+        "unlock_upgrade_id": "WR-CAM-UPG-014",
+        "tip_min_mn2": 6.0
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: clap burst \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-015",
+      "name": "Shy blush",
+      "category": "reactions",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-015.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 11.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.9
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: shy blush \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-016",
+      "name": "Surprise gasp",
+      "category": "reactions",
+      "performer_ids": [
+        "cg_wallet_silk",
+        "cg_wallet_pearl"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-demo.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 13.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 7.8
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: surprise gasp \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-017",
+      "name": "Thumbs up glow",
+      "category": "reactions",
+      "performer_ids": [
+        "cg_wallet_blaze",
+        "cg_wallet_violet"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-017.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 14.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.7
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: thumbs up glow \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-018",
+      "name": "Facepalm fade",
+      "category": "reactions",
+      "performer_ids": [
+        "cg_wallet_mist",
+        "cg_wallet_terra"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-reactions",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 2.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.0
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: facepalm fade \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-019",
+      "name": "Cheer horn",
+      "category": "reactions",
+      "performer_ids": [
+        "cg_wallet_copper",
+        "cg_wallet_comet"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-019.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 4.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.4
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: cheer horn \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-020",
+      "name": "Slow nod approve",
+      "category": "reactions",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/preview-demo.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 6.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.6
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: slow nod approve \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-021",
+      "name": "Shuffle step",
+      "category": "dances",
+      "performer_ids": [
+        "cg_wallet_violet",
+        "cg_wallet_apex"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-021.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 7.5,
+        "unlock_upgrade_id": "WR-CAM-UPG-021",
+        "tip_min_mn2": 4.5
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: shuffle step \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-022",
+      "name": "Spin twirl",
+      "category": "dances",
+      "performer_ids": [
+        "cg_wallet_terra",
+        "cg_wallet_nova"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-dances",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 9.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.4
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: spin twirl \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-023",
+      "name": "Hip sway loop",
+      "category": "dances",
+      "performer_ids": [
+        "cg_wallet_comet",
+        "cg_wallet_luna"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-023.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 10.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.3
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: hip sway loop \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-024",
+      "name": "Robot groove",
+      "category": "dances",
+      "performer_ids": [
+        "cg_wallet_dusk",
+        "cg_wallet_sage"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-ember.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 12.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 7.2
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: robot groove \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-025",
+      "name": "Ballet curtsey",
+      "category": "dances",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-025.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 13.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.1
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: ballet curtsey \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-026",
+      "name": "Disco pulse",
+      "category": "dances",
+      "performer_ids": [
+        "cg_wallet_nova",
+        "cg_wallet_iris"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-dances",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 15.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.0
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: disco pulse \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-027",
+      "name": "Wave arms sync",
+      "category": "dances",
+      "performer_ids": [
+        "cg_wallet_luna",
+        "cg_wallet_aurora"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-027.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 3.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.0
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: wave arms sync \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-028",
+      "name": "Jump cut beat",
+      "category": "dances",
+      "performer_ids": [
+        "cg_wallet_sage",
+        "cg_wallet_coral"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-sage.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 4.5,
+        "unlock_upgrade_id": "WR-CAM-UPG-028",
+        "tip_min_mn2": 2.7
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: jump cut beat \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-029",
+      "name": "Freeze pose",
+      "category": "dances",
+      "performer_ids": [
+        "cg_wallet_ember",
+        "cg_wallet_velvet"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-029.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 6.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.6
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: freeze pose \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-030",
+      "name": "Victory shimmy",
+      "category": "dances",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-dances",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 8.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 4.8
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: victory shimmy \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-031",
+      "name": "Dice roll flair",
+      "category": "games",
+      "performer_ids": [
+        "cg_wallet_aurora",
+        "cg_wallet_storm"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-031.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 9.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.7
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: dice roll flair \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-032",
+      "name": "Wheel spin cue",
+      "category": "games",
+      "performer_ids": [
+        "cg_wallet_coral",
+        "cg_wallet_honey"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-iris.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 11.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.6
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: wheel spin cue \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-033",
+      "name": "Trivia buzz",
+      "category": "games",
+      "performer_ids": [
+        "cg_wallet_velvet",
+        "cg_wallet_onyx"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-033.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 12.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 7.5
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: trivia buzz \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-034",
+      "name": "Rock paper flash",
+      "category": "games",
+      "performer_ids": [
+        "cg_wallet_pixel",
+        "cg_wallet_jade"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-games",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 14.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.4
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: rock paper flash \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-035",
+      "name": "Number guess pop",
+      "category": "games",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-035.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 15.5,
+        "unlock_upgrade_id": "WR-CAM-UPG-035",
+        "tip_min_mn2": 9.3
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: number guess pop \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-036",
+      "name": "Truth dare card",
+      "category": "games",
+      "performer_ids": [
+        "cg_wallet_honey",
+        "cg_wallet_frost"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-demo.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 3.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.1
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: truth dare card \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-037",
+      "name": "Bingo dab",
+      "category": "games",
+      "performer_ids": [
+        "cg_wallet_onyx",
+        "cg_wallet_silk"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-037.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 5.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.0
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: bingo dab \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-038",
+      "name": "Raffle drum",
+      "category": "games",
+      "performer_ids": [
+        "cg_wallet_jade",
+        "cg_wallet_blaze"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-games",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 6.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.9
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: raffle drum \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-039",
+      "name": "Leaderboard flash",
+      "category": "games",
+      "performer_ids": [
+        "cg_wallet_ruby",
+        "cg_wallet_mist"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-039.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 8.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 4.8
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: leaderboard flash \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-040",
+      "name": "Mini quest ping",
+      "category": "games",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/preview-demo.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 10.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.0
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: mini quest ping \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-041",
+      "name": "Rose shower",
+      "category": "tips",
+      "performer_ids": [
+        "cg_wallet_silk",
+        "cg_wallet_pearl"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-041.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 11.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.9
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: rose shower \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-042",
+      "name": "Coin rain",
+      "category": "tips",
+      "performer_ids": [
+        "cg_wallet_blaze",
+        "cg_wallet_violet"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-tips",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 13.0,
+        "unlock_upgrade_id": "WR-CAM-UPG-042",
+        "tip_min_mn2": 7.8
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: coin rain \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-043",
+      "name": "Diamond sparkle",
+      "category": "tips",
+      "performer_ids": [
+        "cg_wallet_mist",
+        "cg_wallet_terra"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-043.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 14.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.7
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: diamond sparkle \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-044",
+      "name": "Fireworks tip",
+      "category": "tips",
+      "performer_ids": [
+        "cg_wallet_copper",
+        "cg_wallet_comet"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-ember.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 16.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.6
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: fireworks tip \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-045",
+      "name": "Heart cascade",
+      "category": "tips",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-045.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 4.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.4
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: heart cascade \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-046",
+      "name": "Star trail",
+      "category": "tips",
+      "performer_ids": [
+        "cg_wallet_violet",
+        "cg_wallet_apex"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-tips",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 5.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.3
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: star trail \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-047",
+      "name": "Crown moment",
+      "category": "tips",
+      "performer_ids": [
+        "cg_wallet_terra",
+        "cg_wallet_nova"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-047.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 7.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 4.2
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: crown moment \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-048",
+      "name": "Neon thank-you",
+      "category": "tips",
+      "performer_ids": [
+        "cg_wallet_comet",
+        "cg_wallet_luna"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-sage.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 8.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.1
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: neon thank-you \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-049",
+      "name": "Confetti burst",
+      "category": "tips",
+      "performer_ids": [
+        "cg_wallet_dusk",
+        "cg_wallet_sage"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-049.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 10.0,
+        "unlock_upgrade_id": "WR-CAM-UPG-049",
+        "tip_min_mn2": 6.0
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: confetti burst \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-050",
+      "name": "Goal meter fill",
+      "category": "tips",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-tips",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 12.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 7.2
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: goal meter fill \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-051",
+      "name": "Velvet curtain",
+      "category": "vip_moments",
+      "performer_ids": [
+        "cg_wallet_nova",
+        "cg_wallet_iris"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-051.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 20.25,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.1
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: velvet curtain \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-052",
+      "name": "Gold spotlight",
+      "category": "vip_moments",
+      "performer_ids": [
+        "cg_wallet_luna",
+        "cg_wallet_aurora"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-iris.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 15.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.0
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: gold spotlight \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-053",
+      "name": "Private wink",
+      "category": "vip_moments",
+      "performer_ids": [
+        "cg_wallet_sage",
+        "cg_wallet_coral"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-053.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 16.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.9
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: private wink \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-054",
+      "name": "Champagne fizz",
+      "category": "vip_moments",
+      "performer_ids": [
+        "cg_wallet_ember",
+        "cg_wallet_velvet"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-vip_moments",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 6.75,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 2.7
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: champagne fizz \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-055",
+      "name": "Platinum frame",
+      "category": "vip_moments",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-055.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 6.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.6
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: platinum frame \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-056",
+      "name": "Concierge bow",
+      "category": "vip_moments",
+      "performer_ids": [
+        "cg_wallet_aurora",
+        "cg_wallet_storm"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-demo.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 7.5,
+        "unlock_upgrade_id": "WR-CAM-UPG-056",
+        "tip_min_mn2": 4.5
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: concierge bow \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-057",
+      "name": "Lounge shimmer",
+      "category": "vip_moments",
+      "performer_ids": [
+        "cg_wallet_coral",
+        "cg_wallet_honey"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-057.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 13.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.4
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: lounge shimmer \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-058",
+      "name": "Elite badge glow",
+      "category": "vip_moments",
+      "performer_ids": [
+        "cg_wallet_velvet",
+        "cg_wallet_onyx"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-vip_moments",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 10.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.3
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: elite badge glow \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-059",
+      "name": "Red carpet roll",
+      "category": "vip_moments",
+      "performer_ids": [
+        "cg_wallet_pixel",
+        "cg_wallet_jade"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-059.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 12.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 7.2
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: red carpet roll \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-060",
+      "name": "Signature thank-you",
+      "category": "vip_moments",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/preview-demo.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 21.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.4
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: signature thank-you \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-061",
+      "name": "Block found cheer",
+      "category": "network_events",
+      "performer_ids": [
+        "cg_wallet_honey",
+        "cg_wallet_frost"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-061.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 15.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.3
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: block found cheer \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-062",
+      "name": "Masternode pulse",
+      "category": "network_events",
+      "performer_ids": [
+        "cg_wallet_onyx",
+        "cg_wallet_silk"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-network_events",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 17.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 10.2
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: masternode pulse \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-063",
+      "name": "Pool sync wave",
+      "category": "network_events",
+      "performer_ids": [
+        "cg_wallet_jade",
+        "cg_wallet_blaze"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-063.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 5.0,
+        "unlock_upgrade_id": "WR-CAM-UPG-063",
+        "tip_min_mn2": 3.0
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: pool sync wave \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-064",
+      "name": "Peer join ping",
+      "category": "network_events",
+      "performer_ids": [
+        "cg_wallet_ruby",
+        "cg_wallet_mist"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-ember.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 6.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.9
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: peer join ping \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-065",
+      "name": "Hash rate shimmer",
+      "category": "network_events",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-065.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 8.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 4.8
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: hash rate shimmer \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-066",
+      "name": "Wallet link toast",
+      "category": "network_events",
+      "performer_ids": [
+        "cg_wallet_silk",
+        "cg_wallet_pearl"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-network_events",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 9.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.7
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: wallet link toast \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-067",
+      "name": "Exchange tick",
+      "category": "network_events",
+      "performer_ids": [
+        "cg_wallet_blaze",
+        "cg_wallet_violet"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-067.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 11.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.6
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: exchange tick \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-068",
+      "name": "Chat bridge glow",
+      "category": "network_events",
+      "performer_ids": [
+        "cg_wallet_mist",
+        "cg_wallet_terra"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-sage.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 12.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 7.5
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: chat bridge glow \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-069",
+      "name": "CDN edge flash",
+      "category": "network_events",
+      "performer_ids": [
+        "cg_wallet_copper",
+        "cg_wallet_comet"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-069.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 14.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.4
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: cdn edge flash \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-070",
+      "name": "Network health chip",
+      "category": "network_events",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-network_events",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 16.0,
+        "unlock_upgrade_id": "WR-CAM-UPG-070",
+        "tip_min_mn2": 9.6
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: network health chip \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-071",
+      "name": "Trophy lift",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "cg_wallet_violet",
+        "cg_wallet_apex"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-071.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 17.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 10.5
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: trophy lift \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-072",
+      "name": "Edition sparkle",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "cg_wallet_terra",
+        "cg_wallet_nova"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-iris.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 5.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.3
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: edition sparkle \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-073",
+      "name": "Mint fanfare",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "cg_wallet_comet",
+        "cg_wallet_luna"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-073.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 7.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 4.2
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: mint fanfare \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-074",
+      "name": "Collector bow",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "cg_wallet_dusk",
+        "cg_wallet_sage"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-trophy_tie_ins",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 8.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.1
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: collector bow \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-075",
+      "name": "Rare shine",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-075.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 10.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.0
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: rare shine \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-076",
+      "name": "Shop gift link",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "cg_wallet_nova",
+        "cg_wallet_iris"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-demo.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 11.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.9
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: shop gift link \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-077",
+      "name": "Battle trophy nod",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "cg_wallet_luna",
+        "cg_wallet_aurora"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-077.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 13.0,
+        "unlock_upgrade_id": "WR-CAM-UPG-077",
+        "tip_min_mn2": 7.8
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: battle trophy nod \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-078",
+      "name": "Staking flair",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "cg_wallet_sage",
+        "cg_wallet_coral"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-trophy_tie_ins",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 14.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.7
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: staking flair \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-079",
+      "name": "Compendium page turn",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "cg_wallet_ember",
+        "cg_wallet_velvet"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-079.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 16.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.6
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: compendium page turn \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-080",
+      "name": "Hall of fame wave",
+      "category": "trophy_tie_ins",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/preview-demo.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 18.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 10.8
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: hall of fame wave \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-081",
+      "name": "Playful banter",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "cg_wallet_aurora",
+        "cg_wallet_storm"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-081.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 6.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.6
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: playful banter \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-082",
+      "name": "Calm zen tone",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "cg_wallet_coral",
+        "cg_wallet_honey"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-ai_chat_moods",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 7.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 4.5
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: calm zen tone \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-083",
+      "name": "Hype coach",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "cg_wallet_velvet",
+        "cg_wallet_onyx"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-083.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 9.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.4
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: hype coach \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-084",
+      "name": "Mysterious whisper",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "cg_wallet_pixel",
+        "cg_wallet_jade"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-ember.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 10.5,
+        "unlock_upgrade_id": "WR-CAM-UPG-084",
+        "tip_min_mn2": 6.3
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: mysterious whisper \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-085",
+      "name": "Supportive nod",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-085.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 12.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 7.2
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: supportive nod \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-086",
+      "name": "Sassy wink",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "cg_wallet_honey",
+        "cg_wallet_frost"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-ai_chat_moods",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 13.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.1
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: sassy wink \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-087",
+      "name": "Scholarly pause",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "cg_wallet_onyx",
+        "cg_wallet_silk"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-087.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 15.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.0
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: scholarly pause \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-088",
+      "name": "Dreamy drift",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "cg_wallet_jade",
+        "cg_wallet_blaze"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-sage.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 16.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.9
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: dreamy drift \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-089",
+      "name": "Bold challenge",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "cg_wallet_ruby",
+        "cg_wallet_mist"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-089.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 18.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 10.8
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: bold challenge \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-090",
+      "name": "Grateful close",
+      "category": "ai_chat_moods",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-ai_chat_moods",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 6.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.9
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: grateful close \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-091",
+      "name": "Spring bloom",
+      "category": "seasonal",
+      "performer_ids": [
+        "cg_wallet_silk",
+        "cg_wallet_pearl"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-091.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 8.0,
+        "unlock_upgrade_id": "WR-CAM-UPG-091",
+        "tip_min_mn2": 4.8
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: spring bloom \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-092",
+      "name": "Summer sun",
+      "category": "seasonal",
+      "performer_ids": [
+        "cg_wallet_blaze",
+        "cg_wallet_violet"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-iris.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 9.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.7
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: summer sun \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-093",
+      "name": "Autumn leaves",
+      "category": "seasonal",
+      "performer_ids": [
+        "cg_wallet_mist",
+        "cg_wallet_terra"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-093.webm",
+        "duration_ms": 2200
+      },
+      "payment": {
+        "price_mn2": 16.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 6.6
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: autumn leaves \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-094",
+      "name": "Winter frost",
+      "category": "seasonal",
+      "performer_ids": [
+        "cg_wallet_copper",
+        "cg_wallet_comet"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-seasonal",
+        "duration_ms": 2400
+      },
+      "payment": {
+        "price_mn2": 12.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 7.5
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: winter frost \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-095",
+      "name": "Holiday lights",
+      "category": "seasonal",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-095.png",
+        "duration_ms": 2600
+      },
+      "payment": {
+        "price_mn2": 14.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 8.4
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.85
+      },
+      "description": "SFW wallet bundle: holiday lights \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-096",
+      "name": "New Year burst",
+      "category": "seasonal",
+      "performer_ids": [
+        "cg_wallet_violet",
+        "cg_wallet_apex"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/avatar-demo.svg",
+        "duration_ms": 1200
+      },
+      "payment": {
+        "price_mn2": 23.25,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 9.3
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.35
+      },
+      "description": "SFW wallet bundle: new year burst \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-097",
+      "name": "Valentine hearts",
+      "category": "seasonal",
+      "performer_ids": [
+        "cg_wallet_terra",
+        "cg_wallet_nova"
+      ],
+      "animation": {
+        "type": "webm",
+        "asset_url": "/static/camgirls/clips/feature-097.webm",
+        "duration_ms": 1400
+      },
+      "payment": {
+        "price_mn2": 17.0,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 10.2
+      },
+      "sound": {
+        "url": "/static/sounds/message.mp3",
+        "volume_default": 0.45
+      },
+      "description": "SFW wallet bundle: valentine hearts \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-098",
+      "name": "Halloween spooky",
+      "category": "seasonal",
+      "performer_ids": [
+        "cg_wallet_comet",
+        "cg_wallet_luna"
+      ],
+      "animation": {
+        "type": "css",
+        "asset_url": "camgirl-ai-keyframes-seasonal",
+        "duration_ms": 1600
+      },
+      "payment": {
+        "price_mn2": 18.5,
+        "unlock_upgrade_id": "WR-CAM-UPG-098",
+        "tip_min_mn2": 11.1
+      },
+      "sound": {
+        "url": "/static/sounds/alert.mp3",
+        "volume_default": 0.55
+      },
+      "description": "SFW wallet bundle: halloween spooky \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-099",
+      "name": "Anniversary cake",
+      "category": "seasonal",
+      "performer_ids": [
+        "cg_wallet_dusk",
+        "cg_wallet_sage"
+      ],
+      "animation": {
+        "type": "sprite",
+        "asset_url": "/static/camgirls/sprites/feature-099.png",
+        "duration_ms": 1800
+      },
+      "payment": {
+        "price_mn2": 9.75,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 3.9
+      },
+      "sound": {
+        "url": "/static/sounds/mention.mp3",
+        "volume_default": 0.65
+      },
+      "description": "SFW wallet bundle: anniversary cake \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    },
+    {
+      "id": "CAM-AI-100",
+      "name": "Festival lanterns",
+      "category": "seasonal",
+      "performer_ids": [
+        "all"
+      ],
+      "animation": {
+        "type": "gif",
+        "asset_url": "/static/camgirls/preview-demo.svg",
+        "duration_ms": 2000
+      },
+      "payment": {
+        "price_mn2": 8.5,
+        "unlock_upgrade_id": null,
+        "tip_min_mn2": 5.1
+      },
+      "sound": {
+        "url": "/static/sounds/notification.mp3",
+        "volume_default": 0.75
+      },
+      "description": "SFW wallet bundle: festival lanterns \u2014 animation, MN2 payment, and sound cue for camgirl AI studio. Full experience on /camgirls."
+    }
+  ]
+}

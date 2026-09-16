@@ -631,6 +631,61 @@ export type CamgirlsUpgradesProgress = {
   progress_hints?: Record<string, string>;
 };
 
+export type CamgirlAiFeatureAnimation = {
+  type: string;
+  asset_url: string;
+  duration_ms: number;
+};
+
+export type CamgirlAiFeaturePayment = {
+  price_mn2: number;
+  tip_min_mn2?: number;
+  unlock_upgrade_id?: string | null;
+  effective_price_mn2?: number;
+  unlocked_via_upgrade?: boolean;
+};
+
+export type CamgirlAiFeatureSound = {
+  url: string;
+  volume_default: number;
+};
+
+export type CamgirlAiFeature = {
+  id: string;
+  name: string;
+  category: string;
+  performer_ids: string[];
+  animation: CamgirlAiFeatureAnimation;
+  payment: CamgirlAiFeaturePayment;
+  sound: CamgirlAiFeatureSound;
+  description?: string;
+  performer_match?: boolean;
+};
+
+export type CamgirlsAiFeaturesCatalog = {
+  success: boolean;
+  total: number;
+  categories: string[];
+  features: CamgirlAiFeature[];
+};
+
+export type CamgirlAiFeatureTriggerResult = {
+  success: boolean;
+  feature_id?: string;
+  name?: string;
+  category?: string;
+  performer_id?: string;
+  paid_mn2?: number;
+  unlocked_via_upgrade?: boolean;
+  playback?: {
+    animation: CamgirlAiFeatureAnimation;
+    sound: CamgirlAiFeatureSound;
+    triggered_at?: string;
+  };
+  error?: string;
+  message?: string;
+};
+
 export async function fetchIntegrationHub(): Promise<IntegrationHub> {
   const res = await fetch('/api/wallet/v2/integration/hub', {
     credentials: 'same-origin',
@@ -786,6 +841,47 @@ export async function unlockCamgirlUpgrade(upgradeId: string): Promise<{
     error?: string;
     message?: string;
   }>;
+}
+
+export async function fetchCamgirlsAiFeatures(
+  category?: string,
+  performerId?: string,
+): Promise<CamgirlsAiFeaturesCatalog> {
+  const params = new URLSearchParams();
+  if (category) params.set('category', category);
+  if (performerId) params.set('performer_id', performerId);
+  const qs = params.toString();
+  const res = await fetch(`/api/wallet/v2/camgirls/ai-features${qs ? `?${qs}` : ''}`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Camgirls AI features failed (${res.status})`);
+  return res.json() as Promise<CamgirlsAiFeaturesCatalog>;
+}
+
+export async function fetchCamgirlAiFeature(
+  featureId: string,
+  performerId?: string,
+): Promise<{ success: boolean; feature?: CamgirlAiFeature; error?: string }> {
+  const params = performerId ? `?performer_id=${encodeURIComponent(performerId)}` : '';
+  const res = await fetch(`/api/wallet/v2/camgirls/ai-features/${encodeURIComponent(featureId)}${params}`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  return res.json() as Promise<{ success: boolean; feature?: CamgirlAiFeature; error?: string }>;
+}
+
+export async function triggerCamgirlAiFeature(
+  featureId: string,
+  performerId?: string,
+): Promise<CamgirlAiFeatureTriggerResult> {
+  const res = await fetch(`/api/wallet/v2/camgirls/ai-features/${encodeURIComponent(featureId)}/trigger`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ performer_id: performerId }),
+  });
+  return res.json() as Promise<CamgirlAiFeatureTriggerResult>;
 }
 
 export async function unlinkDiscord(

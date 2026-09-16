@@ -12,6 +12,11 @@ from backend.services.wallet_upgrades_service import (
 )
 from backend.services.wallet_micro_earn_service import get_status as micro_earn_status
 from backend.services.wallet_micro_earn_service import record_click as micro_earn_click
+from backend.services.camgirls_ai_features_service import (
+    get_feature_detail as camgirls_get_ai_feature,
+    list_features as camgirls_list_ai_features,
+    trigger_feature as camgirls_trigger_ai_feature,
+)
 from backend.services.camgirls_wallet_service import (
     get_progress as camgirls_get_progress,
     get_wallet_detail as camgirls_get_wallet_detail,
@@ -196,6 +201,36 @@ def wallet_v2_camgirls_upgrades_unlock():
     body = request.get_json(silent=True) or {}
     upgrade_id = body.get("upgrade_id") or request.args.get("upgrade_id")
     result = camgirls_unlock_upgrade(user_id, upgrade_id)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/ai-features", methods=["GET"])
+def wallet_v2_camgirls_ai_features_list():
+    """100 camgirl AI feature bundles — animation + payment + sound."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    category = request.args.get("category")
+    performer_id = request.args.get("performer_id")
+    return jsonify(camgirls_list_ai_features(category=category, performer_id=performer_id, user_id=user_id)), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/ai-features/<feature_id>", methods=["GET"])
+def wallet_v2_camgirls_ai_feature_detail(feature_id: str):
+    """Single camgirl AI feature bundle detail."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    performer_id = request.args.get("performer_id")
+    result = camgirls_get_ai_feature(feature_id, performer_id=performer_id, user_id=user_id)
+    status = 200 if result.get("success") else 404
+    return jsonify(result), status
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/ai-features/<feature_id>/trigger", methods=["POST"])
+def wallet_v2_camgirls_ai_feature_trigger(feature_id: str):
+    """Pay MN2 (or free if upgrade-unlocked) and return animation+sound playback payload."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    body = request.get_json(silent=True) or {}
+    performer_id = body.get("performer_id") or request.args.get("performer_id")
+    result = camgirls_trigger_ai_feature(user_id, feature_id, performer_id=performer_id)
     status = 200 if result.get("success") else 400
     return jsonify(result), status
 

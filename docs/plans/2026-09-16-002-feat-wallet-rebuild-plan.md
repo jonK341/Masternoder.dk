@@ -1610,6 +1610,19 @@ Phase-1 functional scaffold wiring exchange, encoder, shop, news, podcast, netwo
 | **WR-INT-CAM** | Camgirls | `GET /api/wallet/v2/camgirls/catalog` | `camgirls_catalog.json` (25 performers) |
 | **WR-INT-CAM-UPG** | Camgirls → Upgrades | `GET/POST /api/wallet/v2/camgirls/upgrades/*` | `camgirls_upgrades_catalog.json` (250) |
 | **WR-INT-CAM-WAL** | Camgirls wallets | `GET /api/wallet/v2/camgirls/<id>/wallet`, `POST …/tip` | Synthetic `wallet_user_id` = `camgirl_{id}` in platform ledger |
+| **WR-CAM-AI-100** | Camgirls → AI Features | `GET/POST /api/wallet/v2/camgirls/ai-features/*` | `camgirls_ai_features_catalog.json` (100 bundles: animation + payment + sound) |
+
+### Camgirl AI features (WR-CAM-AI-100)
+
+Each of **100 unified bundles** combines animation, MN2 payment, and sound cue:
+
+- Catalog ids `CAM-AI-001` … `CAM-AI-100` in `data/camgirls_ai_features_catalog.json`
+- Categories (10 each): greetings, reactions, dances, games, tips, vip_moments, network_events, trophy_tie_ins, ai_chat_moods, seasonal
+- `GET /api/wallet/v2/camgirls/ai-features` — list/filter by category or performer
+- `GET /api/wallet/v2/camgirls/ai-features/<id>` — bundle detail with effective price
+- `POST /api/wallet/v2/camgirls/ai-features/<id>/trigger` — pay MN2 (or free if `unlock_upgrade_id` WR-CAM-UPG unlocked), return playback payload; credits performer synthetic wallet
+- Wallet Camgirls tab: **AI Features** sub-panel with category filter, hover/tap preview, trigger button showing MN2 price
+- SFW wallet cards; full studio experience links to `studio_path` on `/camgirls`
 
 ### Camgirl MN2 wallets (WR-INT-CAM-WAL)
 
@@ -1635,4 +1648,5 @@ Each wallet-catalog camgirl has a **synthetic ledger account**:
 
 - `tests/unit/test_wallet_integration_hub.py`
 - `tests/unit/test_camgirls_wallet.py`
+- `tests/unit/test_camgirls_ai_features.py`
 - `tests/unit/test_network_chat.py`
