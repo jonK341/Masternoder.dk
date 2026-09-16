@@ -68,6 +68,8 @@ def _expand_editions(
                     "acquired_at": ed.get("granted_at") or inv_row.get("created_at"),
                     "hold_until": ed.get("hold_until"),
                     "proof_hash": ed.get("proof_hash"),
+                    "anchor_status": ed.get("anchor_status"),
+                    "anchor_commitment": ed.get("anchor_commitment"),
                     "acquired_via": ed.get("acquired_via"),
                     "image_url": media.get("image_url"),
                     "gif_url": media.get("gif_url"),

@@ -25,7 +25,9 @@
       { title: 'Champions League', href: '/champions-league/', desc: 'Season ladder', reward: 'Trophy MN2' },
     ],
     trophies: [
-      { title: 'Trophy table', href: '/trophies/', desc: 'All definitions', reward: 'Collector income' },
+      { title: 'Shop trophies', href: '/shop?tab=trophies', desc: 'Top 25 + block drops — PayPal & MN2', reward: 'Collect editions' },
+      { title: 'Wallet hub', href: '/wallets?tab=trophies', desc: 'Your edition gallery & transfers', reward: 'Trade editions' },
+      { title: 'Trophy table', href: '/trophies/', desc: 'Hunter game definitions', reward: 'Collector income' },
       { title: 'Star Map 25', href: '/starmap25/', desc: 'Constellation levels', reward: 'Map MN2' },
     ],
     game: [

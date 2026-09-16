@@ -11,6 +11,7 @@ Requires ffmpeg on PATH (libx264 + palette filters for GIF).
   python scripts/generate_shop_top_clips.py --count 8
   python scripts/generate_shop_top_clips.py --count 10 --duration 3
   python scripts/generate_shop_top_clips.py --count 26 --tag media_priority
+  python scripts/generate_block_trophy_media.py --height 1005
 
 Writes:
   static/shop/clips/<id>.mp4

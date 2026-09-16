@@ -626,6 +626,7 @@
                     <button type="button" class="shop-trophy-chip" data-trophy-series="block-mint">Block Trophies</button>
                 </div>
                 <div id="shop-trophy-status" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:10px;" aria-live="polite">Loading trophies…</div>
+                <div id="shop-block-mint-teaser" class="card" style="display:none;margin-bottom:var(--spacing-md);padding:var(--spacing-md);border:1px solid rgba(0,212,255,0.35);background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,255,136,0.05));"></div>
                 <div id="shop-trophy-grid" class="shop-grid">Loading…</div>
             </section>
         </div>
@@ -1457,8 +1458,12 @@
             const img = item.image_url || item.gif_url
                 ? `<img src="${shopEscape(item.image_url || item.gif_url)}" alt="" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;" loading="lazy" />`
                 : '';
-            const explorer = item.explorer_url
-                ? `<a href="${shopEscape(item.explorer_url)}" class="shop-hub-link" style="font-size:0.78rem;">Block explorer →</a>`
+            const isBlock = item.series === 'block_mint' || String(item.id || '').startsWith('block-');
+            const explorer = (item.explorer_url || (isBlock && item.block_height ? '/explorer?height=' + item.block_height : ''))
+                ? `<a href="${shopEscape(item.explorer_url || ('/explorer?height=' + item.block_height))}" class="shop-hub-link" style="font-size:0.78rem;">View block #${item.block_height || ''} on explorer →</a>`
+                : '';
+            const blockBadge = isBlock && item.block_height
+                ? `<span style="display:inline-block;padding:2px 8px;border:1px solid rgba(0,212,255,0.5);color:#00d4ff;font-size:0.7rem;border-radius:2px;margin-bottom:6px;">Block #${item.block_height}</span>`
                 : '';
             const payPalBtn = (priceUsd != null && priceUsd > 0)
                 ? `<button type="button" class="btn-purchase btn-paypal-item" data-item-id="${shopEscape(item.id)}" data-amount="${priceUsd}" data-name="${shopEscape(item.name || item.id)}" style="background:linear-gradient(135deg,#0070ba,#1546a0);">
@@ -1473,6 +1478,7 @@
                 : '';
             return `<article class="shop-item shop-trophy-card" style="text-align:left;border:1px solid rgba(255,215,0,0.35);">
                 ${owned}
+                ${blockBadge}
                 ${img}
                 <div class="item-icon">${item.icon || '🏆'}</div>
                 <div class="item-name">${shopEscape(item.name || item.id)}</div>
@@ -1504,6 +1510,32 @@
                     const total = d.top25_total != null ? d.top25_total : 25;
                     status.textContent = items.length + ' trophy SKU' + (items.length === 1 ? '' : 's')
                         + (owned ? ` · You own ${owned}/${total} Top 25 editions` : '');
+                }
+                const teaser = document.getElementById('shop-block-mint-teaser');
+                if (teaser) {
+                    if (series === 'block-mint' || items.some(i => i.series === 'block_mint')) {
+                        try {
+                            const br = await fetch(`${BASE_URL}/api/shop/block-mint/drops?limit=1`);
+                            const bd = await br.json();
+                            const latest = (bd.drops || [])[0];
+                            if (latest) {
+                                teaser.style.display = 'block';
+                                teaser.innerHTML = '<strong style="color:var(--secondary);">Latest block drop</strong>' +
+                                    '<p style="margin:6px 0 0;font-size:0.88rem;color:var(--text-secondary);">' +
+                                    shopEscape(latest.name || latest.id) + ' at height ' + (bd.block_height || latest.block_height || '—') +
+                                    (latest.claimed ? ' · claimed' : ' · available') +
+                                    '</p>' +
+                                    (latest.explorer_url ? '<a href="' + shopEscape(latest.explorer_url) + '" class="shop-hub-link" style="font-size:0.82rem;">Explorer →</a> ' : '') +
+                                    '<a href="/shop?tab=trophies&series=block-mint" class="shop-hub-link" style="font-size:0.82rem;">All block trophies →</a>';
+                            } else {
+                                teaser.style.display = 'none';
+                            }
+                        } catch (e) {
+                            teaser.style.display = 'none';
+                        }
+                    } else {
+                        teaser.style.display = 'none';
+                    }
                 }
                 if (!items.length) {
                     grid.innerHTML = '<p style="grid-column:1/-1;color:var(--text-secondary);">No trophies in this series yet.</p>';

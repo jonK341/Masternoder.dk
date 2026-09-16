@@ -79,6 +79,20 @@
             <div class="fp-stat"><div class="v" id="stat-trophies">0</div><div class="l">Trophies</div></div>
         </section>
 
+        <section class="fp-mn2-band" id="fp-trophy-teaser" aria-labelledby="fp-trophy-title" style="margin-top:0;">
+            <div class="fp-mn2-band-copy">
+                <h2 id="fp-trophy-title">🏆 Trophy collector floor</h2>
+                <p>Top 25 Legends and block-height drops — platform editions with PayPal, MN2, and peer trading. Not on-chain NFTs; honest platform-ledger collectibles.</p>
+                <p class="fp-mn2-balance-pill" id="fp-trophy-owned-pill" style="display:none;">Your editions: <strong id="fp-trophy-owned-count">0</strong></p>
+            </div>
+            <div class="fp-mn2-band-actions">
+                <a class="fp-mn2-badge" href="/shop?tab=trophies">Shop trophies</a>
+                <a class="fp-mn2-link" href="/wallets?tab=trophies">Wallet collection</a>
+                <a class="fp-mn2-link" href="/shop?tab=trophies&series=block-mint">Block drops</a>
+                <a class="fp-mn2-link" href="/exchange#cex-trophy-section">Exchange floor</a>
+            </div>
+        </section>
+
         <section class="fp-game-hub" id="fp-game-hub" aria-labelledby="fp-gh-title">
             <div class="fp-game-hub-head">
                 <div>
@@ -273,9 +287,25 @@
                     setTimeout(fn, 200);
                 }
             };
+            async function loadTrophyTeaser() {
+                try {
+                    const r = await fetch(`${BASE_URL || ''}/api/wallet/v2/trophies?user_id=${encodeURIComponent(userId)}`);
+                    const d = await r.json();
+                    if (!d.success || d.guest) return;
+                    const n = (d.counts && d.counts.total_editions) || (d.editions && d.editions.length) || 0;
+                    if (n > 0) {
+                        const pill = document.getElementById('fp-trophy-owned-pill');
+                        const cnt = document.getElementById('fp-trophy-owned-count');
+                        if (pill) pill.style.display = '';
+                        if (cnt) cnt.textContent = String(n);
+                    }
+                } catch (e) { /* optional */ }
+            }
+
             runWhenIdle(() => {
                 loadMn2Surface();
                 loadAllStats();
+                loadTrophyTeaser();
                 setInterval(loadAllStats, 45000);
                 setInterval(loadMn2Surface, 120000);
             });
