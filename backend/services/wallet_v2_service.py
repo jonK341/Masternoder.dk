@@ -151,3 +151,118 @@ def build_summary(user_id: str, sections_raw: Optional[str] = None) -> Dict[str,
             payload["mn2_usd_price"] = payload["network"]["mn2_usd_price"]
 
     return payload
+
+
+def _discord_invite_url() -> Optional[str]:
+    try:
+        import json as _json
+
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "data",
+            "casino_config.json",
+        )
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                cfg = _json.load(f)
+            discord_cfg = cfg.get("discord_integration") if isinstance(cfg, dict) else {}
+            if isinstance(discord_cfg, dict):
+                url = (discord_cfg.get("invite_url") or "").strip()
+                if url:
+                    return url
+    except Exception:
+        pass
+    return (os.environ.get("DISCORD_INVITE_URL") or "https://discord.gg/masternoder").strip() or None
+
+
+def _discord_profile_from_user(user_id: str) -> Dict[str, Any]:
+    """Best-effort Discord display fields from profile preferences."""
+    out: Dict[str, Any] = {"username": None, "avatar_url": None}
+    if not (user_id or "").strip():
+        return out
+    try:
+        from backend.services.user_profile import get_user_profile
+
+        profile = get_user_profile(user_id) or {}
+        prefs = profile.get("preferences") if isinstance(profile.get("preferences"), dict) else {}
+        out["username"] = prefs.get("discord_username") or prefs.get("display_name") or profile.get("username")
+        out["avatar_url"] = prefs.get("discord_avatar_url") or prefs.get("avatar_url") or profile.get("avatar_url")
+    except Exception:
+        pass
+    return out
+
+
+def build_discord_status(user_id: str) -> Dict[str, Any]:
+    """Wallet Discord panel — wraps discord_link_service and linked-role OAuth."""
+    user_id = (user_id or "").strip() or "default_user"
+    guest = user_id in ("", "default_user", "guest")
+    invite = _discord_invite_url()
+    payload: Dict[str, Any] = {
+        "success": True,
+        "user_id": user_id,
+        "guest": guest,
+        "linked": False,
+        "discord_id": None,
+        "server_invite_url": invite,
+        "manual_link_supported": True,
+        "profile_discord_path": "/profile?tab=integrations",
+        "share_supported": False,
+        "notification_prefs_note": "Notification toggles are stored locally until WR-U10 ships server prefs.",
+        "roles_available": [],
+    }
+    if guest:
+        payload["message"] = "Sign in with a Profile account to link Discord."
+        payload["oauth_login_configured"] = False
+        return payload
+
+    from backend.services.discord_link_service import link_status
+
+    status = link_status(user_id) or {}
+    payload.update(
+        {
+            "linked": bool(status.get("linked")),
+            "discord_id": status.get("discord_id"),
+            "mn2_balance": status.get("mn2_balance"),
+            "casino_vip_eligible": status.get("casino_vip_eligible"),
+            "min_mn2_for_vip": status.get("min_mn2_for_vip"),
+            "hosting_customer": status.get("hosting_customer"),
+            "hosting_vip_eligible": status.get("hosting_vip_eligible"),
+            "hosting_vip_message": status.get("hosting_vip_message"),
+        }
+    )
+    profile = _discord_profile_from_user(user_id)
+    payload["username"] = profile.get("username")
+    payload["avatar_url"] = profile.get("avatar_url")
+
+    roles: List[str] = []
+    if payload.get("linked"):
+        roles.append("linked")
+    if payload.get("casino_vip_eligible"):
+        roles.append("casino_vip")
+    if payload.get("hosting_vip_eligible"):
+        roles.append("hosting_vip")
+    payload["roles_available"] = roles
+
+    try:
+        from backend.services.discord_linked_roles_service import configured, build_oauth_start
+
+        payload["linked_role_configured"] = bool(configured())
+        if configured():
+            start = build_oauth_start(user_id_hint=user_id)
+            if isinstance(start, dict) and start.get("url"):
+                payload["linked_role_oauth_url"] = start.get("url")
+    except Exception:
+        payload["linked_role_configured"] = False
+
+    try:
+        from backend.services.social_auth_service import discord_oauth_configured, discord_login_start_path
+
+        payload["oauth_login_configured"] = bool(discord_oauth_configured())
+        if payload["oauth_login_configured"]:
+            payload["oauth_login_start_path"] = discord_login_start_path(
+                return_url="/wallets?tab=settings&panel=discord"
+            )
+    except Exception:
+        payload["oauth_login_configured"] = False
+
+    return payload

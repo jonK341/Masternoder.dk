@@ -95,7 +95,9 @@ The **main wallet interface** is a single shell with a **horizontal sub-tab navi
 | 8 | **Battle** | `battle` | `mod-battle-contest` | `v2/battle/snapshot` |
 | 9 | **Peers** | `peers` | `mod-peers` | `v2/network/peers` |
 | 10 | **Staking** | `staking` | `mod-staking` | `v2/staking` |
-| 11 | **Settings** | `settings` | `mod-settings` | `v2/security/*` |
+| 11 | **Settings** | `settings` | `mod-settings` | `v2/security/*`, `v2/discord/status` |
+
+**Settings sub-panels:** **General** (2FA, whitelist, fiat — WR-U9) · **Discord** (`?tab=settings&panel=discord`) — link/unlink, roles, notifications, server invite.
 
 **Adjustments by capability:** Hide **Trophies** until plan 001 U1 ships or `trophy_counts > 0`. Hide **Battle** when `wallet_fun_mode: false`. **Peers** always visible for node-health transparency.
 
@@ -307,6 +309,10 @@ Legend: **Exists** = repo has working backend/UI today · **Wrap** = expose via 
 | PayPal on-ramp hold status | **Exists** on-ramp | | | | ✓ | ✓ | |
 | Masternode hosting status | **Exists** `mn2_masternode_hosting_service` | | ✓ | | | ✓ | |
 | Daemon/Qt download links | **Exists** release docs | | | | ✓ | ✓ | |
+| **Discord link + roles** (Settings panel) | **Wrap** `discord_link_service`, linked roles OAuth | | | | ✓ | ✓ | |
+| **Discord wallet notifications** (opt-in toggles) | **New UI** + future DM fanout | | | | ✓ | ✓ | optional |
+| **Share trophy/edition to Discord** (embed/webhook) | **Wrap** `discord_service.post_message` | | | ✓ | | ✓ | ✓ |
+| **Discord login shortcut** (web wallet) | **Wrap** `social_auth` + linked-role OAuth | ✓ | | | ✓ | ✓ | |
 | Desktop installer Win/Mac/Linux | **Net-new** Tauri | | | | | ✓ | |
 | System tray + deep links | **Net-new** Tauri | | | | | ✓ | |
 | Offline read-only cache | **Net-new** desktop | | | | | ✓ | |
@@ -387,8 +393,56 @@ The **Overview** tab is the wallet’s main face: network KPIs render on first p
 | 23 | **Hunter trophy score badge** (read-only) — social rank chip | Fun | `trophy_social_service` |
 | 24 | **Shop sound/GIF on trophy hover** — media manifest previews | Fun | `data/shop_item_media.json` |
 | 25 | **Global balance bar → /wallets** — site-wide deep link to new wallet | UX | `mn2-global-bar.js` migration |
+| 26 | **Discord Settings panel** — link/unlink, roles, invite, notification opt-in | Social | `v2/discord/status`, `discord_link_service`, `discord_linked_roles_service` |
 
-**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder).
+**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test.
+
+---
+
+## Discord integration (Settings → Discord)
+
+Wallet surfaces existing repo Discord features — **no new OAuth stack**. Maps to services already used by Profile and Casino.
+
+### Existing backend (do not reinvent)
+
+| Capability | Repo anchor |
+|------------|-------------|
+| Manual link / unlink | `POST /api/discord/link`, `POST /api/discord/link/unlink`, `GET /api/discord/link/status` → `discord_link_service.py` |
+| Linked Roles OAuth | `GET /api/discord/linked-role` → `discord_linked_roles_service.py` (`role_connections.write`) |
+| Sign in with Discord | `social_auth_service.py` (OAuth `identify email`); auto-calls `link_user` on callback |
+| Casino VIP eligibility | `link_status` → `casino_vip_eligible` + `CASINO_DISCORD_VIP_MIN_MN2` |
+| Hosting VIP | `discord_hosting_vip_service.py` |
+| Outbound webhooks / embeds | `discord_service.post_message`, `casino_discord_fanout`, `market_discord_fanout`, `game_discord_fanout` |
+| Shop promo codes | `shop_discord_promo_service.py` (`DISCORD-STARTER`, etc.) |
+| Server invite | `data/casino_config.json` → `discord_integration.invite_url` or `DISCORD_INVITE_URL` env |
+| Profile UI (reference) | `profile/index.html` `#discord-link-card`, `#social-login-discord` |
+
+### Wallet UI (`?tab=settings&panel=discord`)
+
+| Feature | Behavior | Backend |
+|---------|----------|---------|
+| Link / unlink | **Connect Discord** → linked-role OAuth when configured; else `/api/auth/discord/start` or deep link to Profile card | `v2/discord/status` + existing link routes |
+| Linked state | Show `discord_id`, username, avatar from profile `social_auth` prefs | `build_discord_status` |
+| Server roles | Chips for `casino_vip`, `hosting_vip`, `account_linked` from link + metadata | `link_status`, `build_metadata_for_user` |
+| Notifications (opt-in) | Toggles: balance alerts, trophy drops, block trophy mint, battle results | **WR-DISCORD-1:** localStorage; **WR-DISCORD-2:** per-user prefs + bot DM fanout |
+| Share trophy/edition | “Share to Discord” on trophy card → rich embed via ops webhook | `discord_service.post_message` (user-initiated, WR-DISCORD-3) |
+| Discord login shortcut | Settings CTA + Overview guest banner → OAuth or Profile | `social_auth` / linked-role |
+| Join server | Link when `server_invite_url` present | `casino_config` / env |
+
+### v2 API
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/api/wallet/v2/discord/status` | Link state, roles, OAuth URLs, invite, notification defaults |
+
+Link/unlink POSTs remain on `/api/discord/link*` (same as Profile) to avoid duplicating `discord_link_service`.
+
+### Assumptions (WR-DISCORD-1)
+
+1. **OAuth priority:** Linked-role flow (`/api/discord/linked-role`) preferred when `DISCORD_CLIENT_ID` + secret set; falls back to Profile manual ID paste.
+2. **Discord social login** via `/api/auth/discord/start` is configured in `social_auth_service` but may be disabled in `social_auth_routes` (`_ALLOWED_PROVIDERS` = github/google only) — wallet deep-links to Profile when route disabled.
+3. **Per-user DM notifications** are not implemented server-side yet; toggles persist in `localStorage` until WR-DISCORD-2 adds profile prefs + bot DM scope.
+4. **Share to Discord** requires user-facing webhook or bot channel post — deferred to WR-DISCORD-3; `share_supported` flag reflects `DISCORD_WEBHOOK_URL` ops config.
 
 ---
 
@@ -496,6 +550,7 @@ All routes require same-origin session / `user_id` resolution as existing MN2 ro
 | GET | `/api/wallet/v2/trophy-monitor/4d` | **4D Trophy Monitor bundle** | `network/4d` + owned trophies + `shop_item_media` URLs + block-mint latest drop |
 | GET | `/api/wallet/v2/battle/snapshot` | Battle contest widget data | `battle_social_store` tournaments + user progress + season leaderboard top 5 |
 | GET/POST | `/api/wallet/v2/security/*` | 2FA, whitelist | delegate `mn2_withdrawal_security` routes |
+| GET | `/api/wallet/v2/discord/status` | Discord link state + OAuth URLs + invite | `discord_link_service.link_status`, `discord_linked_roles_service`, `casino_config` |
 
 **`trophy-monitor/4d` response shape (sketch):**
 
@@ -984,6 +1039,46 @@ flowchart LR
 - `static/js/mn2-withdrawal-security.js` — parity checklist for SPA flows
 
 **Test scenarios:** `test_mn2_withdrawal_security.py` passes; SPA enable 2FA smoke.
+
+---
+
+### WR-DISCORD-1. Settings → Discord panel — **partial ✓ (2026-09-16)**
+
+**Goal:** Link/unlink Discord, show roles/VIP eligibility, server invite, notification opt-in UI.
+
+**Dependencies:** WR-U0, WR-U2 (Settings tab shell)
+
+**Files:**
+
+- `wallet-app/src/tabs/Discord.tsx`, `wallet-app/src/tabs/Settings.tsx` (sub-panel nav)
+- `backend/services/wallet_v2_service.py` — `build_discord_status`
+- `backend/routes/wallet_v2_routes.py` — `GET /api/wallet/v2/discord/status`
+- `tests/unit/test_wallet_v2_discord.py`
+
+**Approach:**
+
+1. BFF wraps `discord_link_service.link_status` + linked-role OAuth URL + profile avatar.
+2. Connect button uses linked-role OAuth when configured; manual ID paste matches Profile.
+3. Notification toggles: localStorage MVP; server prefs in WR-DISCORD-2.
+
+**Test scenarios:**
+
+- Guest `default_user` returns `guest: true` without error.
+- Linked user bundle includes `discord_id`, `roles_available`, `server_invite_url`.
+
+### WR-DISCORD-2. Discord notification prefs (server) — **planned**
+
+**Goal:** Persist per-user notification opt-in; fan out wallet events to linked Discord (DM or #wallet channel).
+
+**Dependencies:** WR-DISCORD-1; bot DM scope or dedicated webhook channel
+
+**Delegates:** `activity_events_service`, `discord_service.post_message`
+
+### WR-DISCORD-3. Share trophy/edition to Discord — **planned**
+
+**Goal:** Trophy card “Share” → rich embed with edition, GIF preview, shop link.
+
+**Dependencies:** WR-U8 trophies tab; `discord_service` or user webhook
 
 ---
 

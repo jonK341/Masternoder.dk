@@ -3,6 +3,7 @@ import { fetchSummary, type WalletSummary } from './api/client';
 import { BalanceHero } from './components/BalanceHero';
 import { TabNav, type TabId } from './components/TabNav';
 import { Overview } from './tabs/Overview';
+import { Settings } from './tabs/Settings';
 
 function tabFromQuery(): TabId {
   const tab = new URLSearchParams(window.location.search).get('tab');
@@ -62,6 +63,8 @@ export function App() {
       <TabNav active={activeTab} onChange={onTabChange} />
       {activeTab === 'overview' ? (
         <Overview summary={summary} loading={loading} error={error} />
+      ) : activeTab === 'settings' ? (
+        <Settings />
       ) : (
         <div class="wallet-panel wallet-tab-panel wallet-placeholder-tab">
           <strong>{activeTab}</strong> — coming in the next wallet v2 slice (WR-U2+).

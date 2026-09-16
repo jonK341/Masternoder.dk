@@ -75,6 +75,31 @@ body {
   color: var(--wallet-accent);
 }
 
+.wallet-discord-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-elevated);
+  color: var(--wallet-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.wallet-discord-btn-primary {
+  background: #5865f2;
+  border-color: #5865f2;
+  color: #fff;
+}
+
+.wallet-discord-btn-primary:hover {
+  background: #6f7af5;
+}
+
 .wallet-skeleton {
   background: linear-gradient(90deg, #1a1f28 25%, #242a36 50%, #1a1f28 75%);
   background-size: 200% 100%;
