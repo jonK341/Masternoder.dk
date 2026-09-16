@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tarfile
@@ -14,9 +15,11 @@ import urllib.request
 
 from mn2_release_config import (
     BASE_TAG,
+    EXTRA_PATCH_REL,
     MANIFEST_NAME,
     MANIFEST_URL,
     PATCH_REL,
+    RELEASE_BRANCH,
     REPO,
     RELEASE_URL,
     TARGET_VERSION,
@@ -38,6 +41,26 @@ def _head_ok(url: str) -> bool:
             return 200 <= resp.status < 400
     except (urllib.error.URLError, OSError):
         return False
+
+
+def _patched_source_version() -> str | None:
+    """Return the final configure.ac version implied by the release patches."""
+    root = os.path.dirname(os.path.dirname(__file__))
+    values: dict[str, str] = {}
+    pattern = re.compile(r"^[ +]define\(_CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD),\s*([0-9]+)\)")
+    for rel in (PATCH_REL, EXTRA_PATCH_REL):
+        path = os.path.join(root, rel.replace("/", os.sep))
+        if not os.path.isfile(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                m = pattern.match(line.rstrip())
+                if m:
+                    values[m.group(1)] = m.group(2)
+    keys = ("MAJOR", "MINOR", "REVISION", "BUILD")
+    if not all(k in values for k in keys):
+        return None
+    return ".".join(values[k] for k in keys)
 
 
 def _sha256(path: str) -> str:
@@ -105,11 +128,17 @@ def main() -> int:
     tag = _gh_json(["api", f"repos/{REPO}/git/refs/tags/{TARGET_VERSION}"])
     print(f"Git tag {TARGET_VERSION}: {'yes' if tag else 'MISSING (patch build OK with --skip-tag)'}")
 
-    branch = _gh_json(["api", f"repos/{REPO}/git/refs/heads/release/v1.3.0.0-multi-ping"])
-    print(f"Branch release/v1.3.0.0-multi-ping: {'yes' if branch else 'not pushed'}")
+    branch = _gh_json(["api", f"repos/{REPO}/git/refs/heads/{RELEASE_BRANCH}"])
+    print(f"Branch {RELEASE_BRANCH}: {'yes' if branch else 'not pushed'}")
 
     patch_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), PATCH_REL.replace("/", os.sep))
     print(f"Site patch {PATCH_REL}: {'yes' if os.path.isfile(patch_path) else 'MISSING'}")
+    extra_patch_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), EXTRA_PATCH_REL.replace("/", os.sep))
+    print(f"Site patch {EXTRA_PATCH_REL}: {'yes' if os.path.isfile(extra_patch_path) else 'MISSING'}")
+    source_version = _patched_source_version()
+    source_ok = source_version == TARGET_VERSION.removeprefix("v")
+    label = source_version or "unknown"
+    print(f"Patched source version: {label} ({'matches target' if source_ok else 'MISMATCH'})")
 
     rel = _gh_json(["release", "view", TARGET_VERSION, "--repo", REPO, "--json", "name,isDraft,assets"])
     draft = False

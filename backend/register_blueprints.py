@@ -89,6 +89,13 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP hunters_game: {e}")
     try:
+        from backend.routes.game_hub_routes import game_hub_bp
+        app.register_blueprint(game_hub_bp)
+        n += 1
+        print("  [OK] Registered game_hub blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP game_hub: {e}")
+    try:
         from backend.routes.star_map_routes import star_map_bp
         app.register_blueprint(star_map_bp)
         n += 1
@@ -628,6 +635,16 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import hunters_game: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering hunters_game: {e}")
+
+    try:
+        from backend.routes.game_hub_routes import game_hub_bp
+        app.register_blueprint(game_hub_bp)
+        registered_count += 1
+        print("  [OK] Registered game_hub blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import game_hub: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering game_hub: {e}")
 
     try:
         from backend.routes.star_map_routes import star_map_bp

@@ -38,7 +38,7 @@ def serve_static(filename):
 # All pages are registered automatically from this list (create_page_route below).
 # Add any new page subdir with index.html at project root here to expose it.
 PAGES = [
-    'gallery', 'battle', 'shop', 'chat', 'debugger',
+    'gallery', 'battle', 'shop', 'debugger',
     'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
     'editor', 'monetization', 'milkyway', 'rights-law', 'victory-tech-tree',
     'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
@@ -46,12 +46,18 @@ PAGES = [
     'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
     'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
-    'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams', 'explorer', 'proof-of-reserves',
+    'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams',
+    'social-monitor', 'explorer', 'proof-of-reserves',
     'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
-    'wallets',
-    'podcast', 'business-control',
+    'wallets', 'podcast', 'business-control',
 ]
+
+# Legacy page aliases that no longer have standalone index.html files.
+_PAGE_REDIRECTS = {
+    'achievements': '/trophies',
+    'chat': '/lab#discussion',
+}
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
 _CONSOLIDATED_PROFILE_TABS = {
@@ -78,6 +84,26 @@ def _register_profile_redirects():
 
 
 _register_profile_redirects()
+
+
+def _register_page_redirects():
+    """Register retired page URLs as deliberate redirects instead of fake 200 fallbacks."""
+
+    def _make_handler(target: str, name: str):
+        def _redirect():
+            return redirect(target, code=301)
+
+        _redirect.__name__ = name
+        return _redirect
+
+    for slug, target in _PAGE_REDIRECTS.items():
+        safe = slug.replace('-', '_')
+        handler = _make_handler(target, f'redirect_{safe}_page')
+        all_page_bp.add_url_rule(f'/{slug}', view_func=handler, strict_slashes=False)
+        all_page_bp.add_url_rule(f'/{slug}/index.html', view_func=handler)
+
+
+_register_page_redirects()
 
 
 @all_page_bp.route('/', methods=['GET'])

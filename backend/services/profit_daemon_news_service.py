@@ -117,3 +117,26 @@ def maybe_publish_tick_news(loop: str, summary: str, *, res: Optional[Dict[str, 
         )
     except Exception:
         return None
+
+
+def maybe_publish_custom_news(message: str, *, featured: bool = False, href: str = "/profit/") -> Optional[Dict[str, Any]]:
+    """Publish a one-off profit / ops headline (e.g. YouTube 5D monitor feed)."""
+    text = (message or "").strip()
+    if not text:
+        return None
+    event_key = "custom_" + hashlib.sha256(text.encode()).hexdigest()[:16]
+    if not _cooldown_ok(event_key):
+        return None
+    item_id = "profit_" + hashlib.sha256(event_key.encode()).hexdigest()[:12]
+    try:
+        from backend.services.platform_news_publish import publish
+        return publish(
+            item_id=item_id,
+            title=text[:120],
+            summary="Business Control · live profit pulse",
+            channel=_CHANNEL,
+            href=href,
+            featured=featured,
+        )
+    except Exception:
+        return None

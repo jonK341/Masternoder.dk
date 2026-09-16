@@ -33,6 +33,12 @@ def _iso() -> str:
 
 def load_api_config() -> Dict[str, Any]:
     cfg = ex._read_json(_API_CFG_PATH, {})
+    if not cfg and os.path.isfile(_API_CFG_PATH):
+        try:
+            with open(_API_CFG_PATH, "r", encoding="utf-8") as f:
+                json.load(f)
+        except json.JSONDecodeError as exc:
+            print(f"[venue-api] invalid JSON in {_API_CFG_PATH}: {exc}")
     return cfg if isinstance(cfg, dict) else {}
 
 
@@ -100,8 +106,9 @@ def _secret_names(venue_id: str) -> Tuple[str, str, str]:
 
 
 def venue_has_credentials(venue_id: str) -> bool:
-    creds = venue_credentials(venue_id)
-    return bool(creds.get("api_key") and creds.get("api_secret"))
+    from backend.services import exchange_secrets_vault_service as vault
+    key_name, sec_name, _ = _secret_names(venue_id)
+    return bool(vault.get_secret(key_name) and vault.get_secret(sec_name))
 
 
 def venue_execution_eligible(venue_id: str) -> bool:
@@ -116,20 +123,12 @@ def venue_execution_eligible(venue_id: str) -> bool:
 
 
 def venue_credentials(venue_id: str) -> Dict[str, Optional[str]]:
-    """Resolve venue API creds from the encrypted vault, falling back to env vars
-    ``{VENUE}_API_KEY`` / ``_API_SECRET`` / ``_API_PASSPHRASE`` (so keys can live in .env or the
-    app config.json, e.g. NONKYC_API_KEY, and not only the vault)."""
     from backend.services import exchange_secrets_vault_service as vault
     key_name, sec_name, pass_name = _secret_names(venue_id)
-    vu = str(venue_id or "").upper()
-
-    def _env(suffix: str) -> Optional[str]:
-        return (os.environ.get(f"{vu}_{suffix}") or "").strip() or None
-
     return {
-        "api_key": vault.get_secret(key_name) or _env("API_KEY"),
-        "api_secret": vault.get_secret(sec_name) or _env("API_SECRET"),
-        "passphrase": vault.get_secret(pass_name) or _env("API_PASSPHRASE"),
+        "api_key": vault.get_secret(key_name),
+        "api_secret": vault.get_secret(sec_name),
+        "passphrase": vault.get_secret(pass_name),
     }
 
 
@@ -228,10 +227,7 @@ def venue_api_request(
     if use_paper or not vcfg.get("live_supported", True):
         return _simulate_response(venue_id, endpoint_key, params)
 
-    # An explicit dry_run=False means the caller (e.g. balance reads, or a bot with its own
-    # live gate) has already decided to go live — honor it and skip the shared arb/spork gate.
-    # Only enforce the shared gate when the caller left it to us (dry_run is None).
-    if not gate_ok and dry_run is None:
+    if not gate_ok:
         hint = "Set EXCHANGE_ROTATION_LIVE=1" if rotation else "Set EXCHANGE_ARBITRAGE_LIVE=1"
         return {"success": False, "error": "live_gated", "hint": hint}
 
@@ -438,8 +434,7 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             return cached
         return {"ok": False, "error": "symbol_not_found", "market": pair}
 
-    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0,
-                                 "min_notional": 0.0, "tick_size": 0.0}
+    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0, "tick_size": 0.0}
     for filt in row.get("filters") or []:
         if not isinstance(filt, dict):
             continue
@@ -448,10 +443,10 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             filters["step_size"] = float(filt.get("stepSize") or 0)
             filters["min_qty"] = float(filt.get("minQty") or 0)
             filters["max_qty"] = float(filt.get("maxQty") or 0)
-        elif ftype in ("MIN_NOTIONAL", "NOTIONAL"):
-            filters["min_notional"] = float(filt.get("minNotional") or filt.get("notional") or 0)
         elif ftype == "PRICE_FILTER":
             filters["tick_size"] = float(filt.get("tickSize") or 0)
+        elif ftype in ("MIN_NOTIONAL", "NOTIONAL"):
+            filters["min_notional"] = float(filt.get("minNotional") or filt.get("notional") or 0)
 
     out = {"ok": True, "market": pair, **filters}
     _BINANCE_FILTER_CACHE[pair] = out
@@ -489,6 +484,7 @@ def normalize_order_qty(
         return {"ok": False, "error": filt.get("error") or "filter_fetch_failed", "venue_id": venue, "market": pair}
 
     step = float(filt.get("step_size") or 0)
+    tick_size = float(filt.get("tick_size") or 0)
     min_qty = float(filt.get("min_qty") or 0)
     max_qty = float(filt.get("max_qty") or 0)
     min_notional = float(filt.get("min_notional") or 0)
@@ -732,34 +728,34 @@ def place_limit_order(
         return {"success": False, "error": resolved.get("error"), "venue_id": venue_id}
     pair = str(market or resolved.get("market") or "")
     side_u = str(side or "buy").upper()
+    side_l = side_u.lower()
     qty = round(max(0.0, float(quantity or 0)), 8)
     px = round(max(0.0, float(price or 0)), 8)
     if qty <= 0 or px <= 0:
         return {"success": False, "error": "invalid_quantity_or_price"}
     coid = client_order_id or f"grid-{int(time.time()*1000)}"
 
-    def _plain(x: float) -> str:
-        s = ("%.8f" % float(x))
-        return s.rstrip("0").rstrip(".") if "." in s else s
-
     if venue_id == "binance":
-        # Normalize to Binance LOT_SIZE (qty step) + PRICE_FILTER (tick) or the order is rejected.
-        norm = normalize_order_qty(venue_id, symbol.upper(), side_u.lower(), qty, price=px,
-                                   quote=quote, market=pair)
-        if norm.get("ok"):
-            qty = float(norm.get("quantity") or qty)
-        elif norm.get("error"):
-            return {"success": False, "error": norm.get("error"), "venue_id": venue_id,
-                    "symbol": symbol.upper(), "pair": pair, "normalize": norm}
-        filt = fetch_binance_symbol_filters(pair)
-        tick = float(filt.get("tick_size") or 0)
+        norm = normalize_order_qty(
+            venue_id, symbol.upper(), side_l, qty,
+            price=px, market=pair, quote=resolved.get("quote"),
+        )
+        if not norm.get("ok"):
+            return {
+                "success": False,
+                "error": norm.get("error"),
+                "venue_id": venue_id,
+                "symbol": symbol.upper(),
+                "pair": pair,
+                "normalize": norm,
+            }
+        qty = float(norm["quantity"])
+        tick = float((norm.get("filters") or {}).get("tick_size") or 0)
         if tick > 0:
             px = _quantize_down(px, tick)
-        if qty <= 0 or px <= 0:
-            return {"success": False, "error": "invalid_after_normalize", "venue_id": venue_id}
         params: Dict[str, Any] = {
             "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": "GTC",
-            "quantity": _plain(qty), "price": _plain(px), "newClientOrderId": coid,
+            "quantity": qty, "price": px, "newClientOrderId": coid,
         }
     elif venue_id in ("nonkyc", "xeggex"):
         params = {
@@ -830,13 +826,7 @@ def get_open_orders(venue_id: str, symbol: str = "", *,
 def get_order_status(venue_id: str, symbol: str, order_id: Any, *,
                      dry_run: Optional[bool] = None, market: Optional[str] = None,
                      quote: Optional[str] = None) -> Dict[str, Any]:
-    """Look up a single order and normalize its state.
-
-    Returns the raw response plus normalized flags: ``filled`` (fully executed),
-    ``resting`` (still open on the book), ``order_status`` (venue status string) and
-    ``executed_qty``. Flags are only True when the request itself succeeded — a failed
-    lookup yields filled=resting=False so callers never infer a phantom fill.
-    """
+    """Look up a single order and normalize its state."""
     pair = str(market or "")
     if not pair and symbol:
         resolved = resolve_market(venue_id, symbol.upper(), quote)
