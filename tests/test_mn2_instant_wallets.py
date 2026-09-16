@@ -45,6 +45,61 @@ class TestMN2WalletService(unittest.TestCase):
             self.assertEqual(data.get("pool_1"), "MxPool1")
             self.assertEqual(data.get("pool_2"), "MxPool2")
 
+    def test_pool_assign_creates_full_wallet_dict(self):
+        import tempfile
+        from backend.services import mn2_wallet_service as ws
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_user_addresses.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"pool_1": "MxPoolAddr"}, f)
+            with patch.object(ws, "_addresses_path", return_value=path):
+                with patch.object(ws, "_data_dir", return_value=tmp):
+                    with patch.object(ws, "_address_validity", return_value=True):
+                        res = ws.get_or_create_deposit_address("user_new")
+            self.assertTrue(res.get("success"))
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            entry = data.get("user_new")
+            self.assertIsInstance(entry, dict)
+            self.assertEqual(entry.get("primary"), "MxPoolAddr")
+            self.assertEqual(entry.get("wallet_type"), "core")
+            self.assertTrue(entry.get("addresses"))
+
+    def test_ensure_user_wallet_upgrades_legacy_string(self):
+        import tempfile
+        from backend.services import mn2_wallet_service as ws
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_user_addresses.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"legacy_user": "MxLegacyAddr"}, f)
+            with patch.object(ws, "_addresses_path", return_value=path):
+                with patch.object(ws, "_data_dir", return_value=tmp):
+                    with patch.object(ws, "_address_validity", return_value=True):
+                        res = ws.ensure_user_wallet("legacy_user")
+            self.assertTrue(res.get("success"))
+            self.assertEqual(res.get("deposit_address"), "MxLegacyAddr")
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            self.assertIsInstance(data["legacy_user"], dict)
+
+    def test_normalize_all_legacy_wallets(self):
+        import tempfile
+        from backend.services import mn2_wallet_service as ws
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_user_addresses.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"u1": "Mx1", "u2": {"primary": "Mx2", "wallet_type": "core", "addresses": []}}, f)
+            with patch.object(ws, "_addresses_path", return_value=path):
+                with patch.object(ws, "_data_dir", return_value=tmp):
+                    res = ws.normalize_all_legacy_wallets()
+            self.assertEqual(res.get("upgraded"), 1)
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            self.assertIsInstance(data["u1"], dict)
+
     def test_create_additional_wallet_pool_fallback(self):
         import tempfile
         from backend.services import mn2_wallet_service as ws

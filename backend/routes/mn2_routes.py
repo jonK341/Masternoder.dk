@@ -13,7 +13,7 @@ _log = logging.getLogger(__name__)
 from backend.services.account_resolution_service import resolve_user_id
 from backend.services.mn2_wallet_service import (
     get_balance,
-    ensure_user_deposit_address,
+    ensure_user_wallet,
     get_or_create_deposit_address,
     list_user_addresses,
     create_additional_wallet,
@@ -63,7 +63,7 @@ def mn2_balance():
     result = get_balance(user_id)
     if not result.get("success"):
         return jsonify({"success": False, "error": result.get("error", "Unknown error")}), 500
-    wallet = ensure_user_deposit_address(user_id)
+    wallet = ensure_user_wallet(user_id)
     config = _load_mn2_config()
     coins_per_mn2 = float(config.get("coins_per_mn2") or 100)
     shop_revenue_address = (config.get("shop_revenue_address") or "").strip()
@@ -79,6 +79,7 @@ def mn2_balance():
         "shop_revenue_explorer_url": shop_revenue_explorer_url or None,
         "wallet_ready": bool(deposit_addr),
         "deposit_address": deposit_addr or None,
+        "wallet_type": wallet.get("wallet_type") if wallet.get("success") else None,
     }
     if deposit_addr:
         payload["explorer_address_url"] = f"{base}/address.dws?addr={deposit_addr}"
@@ -576,6 +577,15 @@ def _ops_authorized() -> bool:
         return True
     token = (request.headers.get("X-Scanner-Token") or request.headers.get("X-Ops-Token") or request.args.get("token") or "").strip()
     return token == secret
+
+
+@mn2_bp.route("/api/mn2/ops/normalize-wallets", methods=["POST", "GET"])
+def mn2_ops_normalize_wallets():
+    """Upgrade bare address strings to full wallet records (users + agents). Ops auth required."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    from backend.services.mn2_wallet_service import normalize_all_legacy_wallets
+    return jsonify(normalize_all_legacy_wallets()), 200
 
 
 @mn2_bp.route("/api/mn2/ops/seed-pool-addresses", methods=["POST"])

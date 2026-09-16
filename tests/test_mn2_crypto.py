@@ -39,7 +39,7 @@ class TestMN2Balance(unittest.TestCase):
         self.app = get_app()
         self.client = self.app.test_client()
 
-    @patch("backend.routes.mn2_routes.ensure_user_deposit_address")
+    @patch("backend.routes.mn2_routes.ensure_user_wallet")
     @patch("backend.routes.mn2_routes.get_balance")
     @patch("backend.routes.mn2_routes._load_mn2_config")
     def test_balance_returns_ok(self, mock_config, mock_get_balance, mock_ensure_wallet):
@@ -48,6 +48,7 @@ class TestMN2Balance(unittest.TestCase):
             "success": True,
             "user_id": "test_user",
             "deposit_address": "MxAutoWallet123",
+            "wallet_type": "core",
         }
         mock_config.return_value = {"coins_per_mn2": 100, "shop_revenue_address": "", "withdrawal_requires_verification": False}
         r = self.client.get("/api/mn2/balance?user_id=test_user")
