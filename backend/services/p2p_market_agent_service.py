@@ -33,7 +33,7 @@ def _tier_for_index(i: int) -> str:
 
 
 def _price_for_tier(tier: str) -> float:
-    """Pick a listing price inside the oracle corridor when possible."""
+    """Pick a listing price inside the oracle corridor for budget/mid/premium tiers."""
     target = float(TIER_TARGETS.get(tier, TIER_TARGETS["mid"]))
     try:
         from backend.services.mn2_p2p_oracle import get_corridor
@@ -44,14 +44,15 @@ def _price_for_tier(tier: str) -> float:
         return round(target, 8)
     lo = float(corridor["min_price_usd_per_mn2"])
     hi = float(corridor["max_price_usd_per_mn2"])
-    oracle = float(corridor["oracle_usd_per_mn2"])
-    if lo <= target <= hi:
-        return round(target, 8)
-    if target < lo:
-        return round(lo + (hi - lo) * 0.15, 8)
-    if target > hi:
-        return round(hi - (hi - lo) * 0.15, 8)
-    return round(oracle, 8)
+    span = hi - lo
+    if span <= 0:
+        return round(float(corridor.get("oracle_usd_per_mn2") or target), 8)
+    slots = {
+        "budget": lo + span * 0.15,
+        "mid": lo + span * 0.50,
+        "premium": lo + span * 0.85,
+    }
+    return round(slots.get(tier, slots["mid"]), 8)
 
 
 def _ensure_verified(user_id: str) -> bool:
@@ -109,6 +110,47 @@ def _record_activity(action: str, metadata: Optional[Dict[str, Any]] = None) -> 
         pass
 
 
+def _rebalance_tier_mix(*, max_swaps: int = 2) -> int:
+    """Cancel/recreate agent listings so budget/mid/premium tiers are all represented."""
+    import backend.services.mn2_p2p_service as p2p
+    from backend.services.shop_taxonomy_service import p2p_price_group_for
+
+    agent_listings = [
+        l for l in _all_open_listings()
+        if p2p.is_agent_user(str(l.get("seller_id") or ""))
+    ]
+    if len(agent_listings) < 3:
+        return 0
+    counts: Dict[str, int] = {"budget": 0, "mid": 0, "premium": 0}
+    by_tier: Dict[str, List[Dict[str, Any]]] = {"budget": [], "mid": [], "premium": []}
+    for listing in agent_listings:
+        tier = p2p_price_group_for(listing)
+        if tier in counts:
+            counts[tier] += 1
+            by_tier[tier].append(listing)
+    missing = [t for t in ("budget", "mid", "premium") if counts[t] == 0]
+    if not missing:
+        return 0
+    swapped = 0
+    dominant = max(counts, key=lambda k: counts[k])
+    for tier_needed in missing:
+        if swapped >= max_swaps or not by_tier.get(dominant):
+            break
+        listing = by_tier[dominant].pop()
+        sid = str(listing.get("seller_id") or "")
+        lid = str(listing.get("listing_id") or "")
+        cancel = p2p.cancel_listing(sid, lid)
+        if not cancel.get("success"):
+            continue
+        mn2_amt = float(listing.get("mn2_available") or listing.get("mn2_total") or 20)
+        price = _price_for_tier(tier_needed)
+        res = p2p.create_listing(sid, mn2_amt, price)
+        if res.get("success"):
+            swapped += 1
+            counts[dominant] = max(0, counts[dominant] - 1)
+    return swapped
+
+
 def ensure_agents(*, target_listings: int = TARGET_OPEN_LISTINGS) -> Dict[str, Any]:
     """Verify agents, fund wallets, and create listings until target count is met."""
     import backend.services.mn2_p2p_service as p2p
@@ -120,8 +162,11 @@ def ensure_agents(*, target_listings: int = TARGET_OPEN_LISTINGS) -> Dict[str, A
     verified = 0
     funded = 0
     created = 0
+    rebalanced = 0
     errors: List[str] = []
     agents = _agent_ids()
+
+    rebalanced = _rebalance_tier_mix(max_swaps=3)
 
     for uid in agents:
         if _ensure_verified(uid):
@@ -156,6 +201,7 @@ def ensure_agents(*, target_listings: int = TARGET_OPEN_LISTINGS) -> Dict[str, A
         "agent_count": len(agents),
         "verified_added": verified,
         "funded_agents": funded,
+        "listings_rebalanced": rebalanced,
         "listings_created": created,
         "open_agent_listings": len([l for l in _all_open_listings() if p2p.is_agent_user(l.get("seller_id", ""))]),
         "errors": errors[:5],

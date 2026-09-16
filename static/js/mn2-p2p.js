@@ -99,6 +99,10 @@
 
   function loadListings() {
     get('/api/mn2/p2p/listings?limit=50').then(function (res) {
+      var tax = window.ShopTaxonomy;
+      if (tax && tax.setP2pCorridor && res && res.corridor) {
+        tax.setP2pCorridor(res.corridor);
+      }
       renderListings((res && res.listings) || []);
     }).catch(function () {
       renderListings([]);

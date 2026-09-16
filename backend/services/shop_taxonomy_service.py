@@ -340,11 +340,34 @@ def rental_group_for(row: Optional[Dict[str, Any]] = None) -> str:
     return "daemons" if item.get("daemon") else "bots"
 
 
-def p2p_price_group_for(row: Optional[Dict[str, Any]] = None) -> str:
+def p2p_price_group_for(
+    row: Optional[Dict[str, Any]] = None,
+    corridor: Optional[Dict[str, Any]] = None,
+) -> str:
+    """Classify a listing into budget/mid/premium using oracle corridor thirds when available."""
     item = row or {}
     price = float(item.get("price_usd_per_mn2") or 0)
     if price <= 0:
         return "other"
+    if corridor is None:
+        try:
+            from backend.services.mn2_p2p_oracle import get_corridor
+
+            corridor = get_corridor()
+        except Exception:
+            corridor = {}
+    if corridor.get("oracle_available"):
+        lo = float(corridor["min_price_usd_per_mn2"])
+        hi = float(corridor["max_price_usd_per_mn2"])
+        span = hi - lo
+        if span <= 0:
+            return "mid"
+        third = span / 3.0
+        if price <= lo + third:
+            return "budget"
+        if price <= lo + (2.0 * third):
+            return "mid"
+        return "premium"
     if price < 0.1:
         return "budget"
     if price < 0.5:

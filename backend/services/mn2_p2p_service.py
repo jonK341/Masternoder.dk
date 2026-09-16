@@ -781,7 +781,16 @@ def _public_order(o: Dict[str, Any]) -> Dict[str, Any]:
 def list_listings(limit: int = 100) -> Dict[str, Any]:
     rows = [_public_listing(l) for l in _read(_LISTINGS_FILE).values() if l.get("status") == "open"]
     rows.sort(key=lambda r: float(r.get("price_usd_per_mn2") or 0))
-    return {"success": True, "listings": rows[: max(1, min(int(limit or 100), 500))]}
+    out: Dict[str, Any] = {
+        "success": True,
+        "listings": rows[: max(1, min(int(limit or 100), 500))],
+    }
+    try:
+        from backend.services.mn2_p2p_oracle import get_corridor
+        out["corridor"] = get_corridor()
+    except Exception:
+        pass
+    return out
 
 
 def get_order(order_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:

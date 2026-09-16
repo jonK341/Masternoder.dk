@@ -289,10 +289,27 @@
     return 'bots';
   }
 
+  var _p2pCorridor = null;
+
+  function setP2pCorridor(corridor) {
+    _p2pCorridor = corridor && corridor.oracle_available ? corridor : null;
+  }
+
   function p2pPriceGroupFor(row) {
     row = row || {};
     var price = Number(row.price_usd_per_mn2 || 0);
     if (price <= 0) return 'other';
+    if (_p2pCorridor) {
+      var lo = Number(_p2pCorridor.min_price_usd_per_mn2 || 0);
+      var hi = Number(_p2pCorridor.max_price_usd_per_mn2 || 0);
+      var span = hi - lo;
+      if (span > 0) {
+        var third = span / 3;
+        if (price <= lo + third) return 'budget';
+        if (price <= lo + (2 * third)) return 'mid';
+        return 'premium';
+      }
+    }
     if (price < 0.1) return 'budget';
     if (price < 0.5) return 'mid';
     return 'premium';
@@ -417,6 +434,7 @@
     txSubcategoryFor: txSubcategoryFor,
     marketplaceTierFor: marketplaceTierFor,
     rentalGroupFor: rentalGroupFor,
+    setP2pCorridor: setP2pCorridor,
     p2pPriceGroupFor: p2pPriceGroupFor,
     digitalDownloadSubcatFor: digitalDownloadSubcatFor,
     classify: classify,

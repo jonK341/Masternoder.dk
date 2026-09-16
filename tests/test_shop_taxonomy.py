@@ -170,9 +170,19 @@ class TestShopTaxonomy(unittest.TestCase):
         self.assertEqual(marketplace_tier_for({"tier": "Quant", "price_mn2": 4000}), "elite")
         self.assertEqual(rental_group_for({"daemon": True}), "daemons")
         self.assertEqual(rental_group_for({"daemon": False}), "bots")
-        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.05}), "budget")
-        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.25}), "mid")
-        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.75}), "premium")
+        corridor = {
+            "oracle_available": True,
+            "min_price_usd_per_mn2": 3.0,
+            "max_price_usd_per_mn2": 6.0,
+            "oracle_usd_per_mn2": 4.5,
+        }
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 3.5}, corridor=corridor), "budget")
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 4.5}, corridor=corridor), "mid")
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 5.5}, corridor=corridor), "premium")
+        no_oracle = {"oracle_available": False}
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.05}, corridor=no_oracle), "budget")
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.25}, corridor=no_oracle), "mid")
+        self.assertEqual(p2p_price_group_for({"price_usd_per_mn2": 0.75}, corridor=no_oracle), "premium")
         self.assertEqual(digital_download_subcat_for({"name": "Neon Theme Pack"}), "themes")
         self.assertEqual(digital_download_subcat_for({"name": "Prompt Pack Vol 2"}), "prompts")
 
