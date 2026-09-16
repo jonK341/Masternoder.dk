@@ -23,8 +23,9 @@ python run.py
 ```
 
 ### Access URLs
-- **Local:** http://localhost:5000/vidgenerator
-- **Live:** https://masternoder.dk/vidgenerator
+- **Local:** `/vidgenerator` via `python run.py`
+- **Deployed:** `/vidgenerator` on the live site
+- **MN2 Wallet (web):** [/wallets](/wallets) — desktop preview: [docs/WALLET_DOWNLOAD.md](docs/WALLET_DOWNLOAD.md)
 
 ---
 

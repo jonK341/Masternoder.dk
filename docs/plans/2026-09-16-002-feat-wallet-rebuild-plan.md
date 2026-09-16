@@ -330,6 +330,68 @@ Legend: **Exists** = repo has working backend/UI today · **Wrap** = expose via 
 
 ---
 
+## Top 25 Wallet Feature Ideas
+
+Creative, network-first features beyond standard send/receive — grounded in repo surfaces (battle, trophies, 4D/5D monitors, staking, masternodes, shop, exchange, agents).
+
+### Network-first Overview (main face spec)
+
+The **Overview** tab is the wallet’s main face: network KPIs render on first paint alongside a balance skeleton.
+
+| KPI / element | Source | First paint? |
+|---------------|--------|--------------|
+| Block height | `mn2_chainz.network_overview` (cached) | ✓ |
+| Peer connections | `network_overview.connections` | ✓ |
+| Mempool tx count | `network_overview.mempool_tx` | ✓ |
+| MN2/USD price | `chainz_ticker_usd` / overview | ✓ |
+| Staking pool APY snippet | `mn2_staking_service.dynamic_apr()` | ✓ |
+| Trophy count badge | `shop_db_service.get_inventory` (top25-* count) | ✓ |
+| Liquid / held balance | `get_balance` + `mn2_hold_registry` | ✓ (skeleton → data) |
+| Deposit address | `get_or_create_deposit_address` | **Never on Overview** |
+
+**Aggressive perf budget:**
+
+| Metric | Target |
+|--------|--------|
+| First Contentful Paint (FCP) | **< 800 ms** (warm static + summary) |
+| `GET /api/wallet/v2/summary` p95 | **< 400 ms** (mocked/staging); no deposit RPC |
+| Zero blocking RPC on Overview | Deposit address **Receive-tab only** |
+| Tab lazy-load | Each non-Overview tab `import()` on first visit |
+
+### Top 25 feature ideas
+
+| # | Feature | Category | Repo anchor |
+|---|---------|----------|-------------|
+| 1 | **Network face Overview** — live height, peers, mempool, price, APY on first paint | Network | `wallet_v2_service`, `NetworkFace.tsx` |
+| 2 | **Sub-tab shell** — all 11 wallet functions in one horizontal bar | UX | `TabNav.tsx`, plan WR-U0 |
+| 3 | **Sharpened Edges design** — angular 2px panels, mono balances | UX | `wallet-sharpened.css` |
+| 4 | **Fast summary API** — balance + network + trophy badge, no deposit RPC | Perf | `/api/wallet/v2/summary` |
+| 5 | **4D Trophy Monitor holodeck** — network strip + owned trophy GIF cards | Fun | `v2/trophy-monitor/4d`, `shop_item_media.json` |
+| 6 | **5D Explorer tab** — recent blocks, search, `/explorer` deep links | Network | `mn2_explorer_data`, `story-monitor-5d.js` |
+| 7 | **Peers topology tab** — sortable peer table, latency sparklines | Network | `mn2_network_peers_service` |
+| 8 | **Extended send wizard** — address book, fee preview, 2FA confirm | Serious | `mn2_withdrawal_security`, `v2/send/preview` |
+| 9 | **Extended receive** — QR, request amount, deposit history | Serious | `v2/deposit`, ledger filter |
+| 10 | **5D wallet activity chart** — personal in/out/net bars | Serious | `wallet-activity` API |
+| 11 | **Staking snapshot panel** — staked balance, APR, leaderboard link | Serious | `mn2_staking_service` |
+| 12 | **Battle contest widget** — open tournaments, join CTA, top-5 LB | Fun | `battle_routes`, `battle_social_store` |
+| 13 | **Trophy gallery + edition badges** — Top 25 progress, list/transfer | Fun | plan 001 T-U*, shop inventory |
+| 14 | **Auction house quick-list** — list edition from wallet Trophies tab | Commerce | `shop_auction_service` |
+| 15 | **Block trophy drop teaser** — latest mint height + GIF preview | Fun | plan 001 BM-U1 |
+| 16 | **Masternode hosting status chip** — hosted MN count, payout link | Network | `mn2_masternode_hosting_service` |
+| 17 | **PayPal hold transparency** — on-ramp held MN2 with unlock ETA | Serious | `mn2_hold_registry`, on-ramp |
+| 18 | **Exchange / agent marketplace links** — treasury tiles deep-link | Commerce | `crypto_exchange_service`, agents |
+| 19 | **Network alert sounds** (fun mode) — stall/sync warnings | Fun | `notification-alarm.js`, SSE stream |
+| 20 | **SSE live network dot** — optional EventSource on 4D strip | Network | `/api/mn2/explorer/stream` |
+| 21 | **Desktop Tauri shell** — Win/Mac/Linux, tray, `wallet://` deep links | Platform | `desktop/wallet-tauri/` |
+| 22 | **Offline read-only cache** — last summary + trophy grid (desktop) | Platform | Tauri secure store |
+| 23 | **Hunter trophy score badge** (read-only) — social rank chip | Fun | `trophy_social_service` |
+| 24 | **Shop sound/GIF on trophy hover** — media manifest previews | Fun | `data/shop_item_media.json` |
+| 25 | **Global balance bar → /wallets** — site-wide deep link to new wallet | UX | `mn2-global-bar.js` migration |
+
+**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder).
+
+---
+
 ## Architecture
 
 ```mermaid
@@ -634,7 +696,7 @@ flowchart LR
 
 ## Implementation Units
 
-### WR-U0. Wallet app scaffold + Sharpened Edges shell
+### WR-U0. Wallet app scaffold + Sharpened Edges shell — **partial ✓ (2026-09-16)**
 
 **Goal:** Vite + TypeScript + Preact app builds into Flask static tree with sub-tab navigation shell and angular design tokens.
 
@@ -653,7 +715,7 @@ flowchart LR
 
 ---
 
-### WR-U1. Wallet v2 API blueprint + summary
+### WR-U1. Wallet v2 API blueprint + summary — **partial ✓ (2026-09-16)**
 
 **Goal:** Fast summary endpoint; no deposit RPC.
 
