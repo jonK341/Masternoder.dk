@@ -36,7 +36,21 @@ def _load_identifiers(user_id: str) -> Dict[str, Any]:
     return out
 
 
-def _control_for_user(user_id: str) -> Optional[Dict[str, Any]]:
+def _load_control_index() -> Dict[str, Dict[str, Any]]:
+    try:
+        from backend.services.ledger_customer_control_service import _load_store
+
+        return dict((_load_store().get("assignments") or {}))
+    except Exception:
+        return {}
+
+
+def _control_for_user(
+    user_id: str,
+    control_index: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Optional[Dict[str, Any]]:
+    if control_index is not None:
+        return control_index.get(user_id)
     try:
         from backend.services.ledger_customer_control_service import get_assignment
 
@@ -45,16 +59,26 @@ def _control_for_user(user_id: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def _ledger_summary_for_user(user_id: str) -> Optional[Dict[str, Any]]:
+def _load_ledger_index(limit: int = 20000) -> Dict[str, Dict[str, Any]]:
     try:
         from backend.services.mn2_ledger import list_ledger_user_summaries
 
-        for row in list_ledger_user_summaries(limit=20000):
-            if row.get("user_id") == user_id:
-                return row
+        return {
+            str(row.get("user_id")): row
+            for row in list_ledger_user_summaries(limit=limit)
+            if row.get("user_id")
+        }
     except Exception:
-        pass
-    return None
+        return {}
+
+
+def _ledger_summary_for_user(
+    user_id: str,
+    ledger_index: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Optional[Dict[str, Any]]:
+    if ledger_index is not None:
+        return ledger_index.get(user_id)
+    return _load_ledger_index().get(user_id)
 
 
 def _discord_meta_for_user(user_id: str) -> Optional[Dict[str, Any]]:
@@ -70,14 +94,20 @@ def _discord_meta_for_user(user_id: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _customer_row(user_id: str, raw: dict) -> Dict[str, Any]:
+def _customer_row(
+    user_id: str,
+    raw: dict,
+    *,
+    ledger_index: Optional[Dict[str, Dict[str, Any]]] = None,
+    control_index: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
     systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
     discord = raw.get("discord") if isinstance(raw.get("discord"), dict) else _discord_meta_for_user(user_id)
     ledger = raw.get("ledger") if isinstance(raw.get("ledger"), dict) else None
     if not ledger:
-        ledger = _ledger_summary_for_user(user_id)
+        ledger = _ledger_summary_for_user(user_id, ledger_index)
     source = raw.get("source") or ("discord_channel" if discord else ("ledger" if ledger else "site"))
-    control = _control_for_user(user_id)
+    control = _control_for_user(user_id, control_index)
     return {
         "user_id": user_id,
         "level": int(raw.get("level") or 1),
@@ -109,8 +139,12 @@ def list_customers(
     rows: List[Dict[str, Any]] = []
     q = (search or "").strip().lower()
     src = (source or "").strip().lower()
+    control_index = _load_control_index()
+    ledger_index: Dict[str, Dict[str, Any]] = {}
+    if src in ("", "ledger"):
+        ledger_index = _load_ledger_index()
 
-    if os.path.isdir(_POINTS_DIR):
+    if src != "ledger" and os.path.isdir(_POINTS_DIR):
         for name in os.listdir(_POINTS_DIR):
             if not name.endswith(".json"):
                 continue
@@ -121,7 +155,7 @@ def list_customers(
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     raw = json.load(f) or {}
-                row = _customer_row(uid, raw)
+                row = _customer_row(uid, raw, ledger_index=ledger_index, control_index=control_index)
                 if src and str(row.get("source") or "").lower() != src:
                     continue
                 rows.append(row)
@@ -152,40 +186,34 @@ def list_customers(
                     "source": "discord_channel",
                     "discord": drow,
                     "ledger": None,
-                    "control": _control_for_user(uid),
+                    "control": _control_for_user(uid, control_index),
                 })
                 seen.add(uid)
         except Exception:
             pass
 
     if src in ("", "ledger"):
-        try:
-            from backend.services.mn2_ledger import list_ledger_user_summaries
-
-            seen = {r.get("user_id") for r in rows}
-            for lrow in list_ledger_user_summaries(limit=2000):
-                uid = lrow.get("user_id")
-                if not uid or uid in seen:
-                    continue
-                if q and q not in str(uid).lower():
-                    continue
-                rows.append({
-                    "user_id": uid,
-                    "level": 1,
-                    "xp_total": 0,
-                    "coins": 0,
-                    "mn2_balance": float(lrow.get("ledger_net_mn2") or 0),
-                    "last_active": lrow.get("last_activity"),
-                    "avatar_url": _avatar_url(uid),
-                    "identifiers": _load_identifiers(uid),
-                    "source": "ledger",
-                    "discord": None,
-                    "ledger": lrow,
-                    "control": _control_for_user(uid),
-                })
-                seen.add(uid)
-        except Exception:
-            pass
+        seen = {r.get("user_id") for r in rows}
+        for uid, lrow in ledger_index.items():
+            if uid in seen:
+                continue
+            if q and q not in str(uid).lower():
+                continue
+            rows.append({
+                "user_id": uid,
+                "level": 1,
+                "xp_total": 0,
+                "coins": 0,
+                "mn2_balance": float(lrow.get("ledger_net_mn2") or 0),
+                "last_active": lrow.get("last_activity"),
+                "avatar_url": _avatar_url(uid),
+                "identifiers": _load_identifiers(uid),
+                "source": "ledger",
+                "discord": None,
+                "ledger": lrow,
+                "control": _control_for_user(uid, control_index),
+            })
+            seen.add(uid)
 
     rows.sort(key=lambda r: str(r.get("last_active") or ""), reverse=True)
     total = len(rows)
