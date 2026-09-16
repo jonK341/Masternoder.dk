@@ -1,5 +1,5 @@
 ---
-title: PayPal NFT Purchase and NFT Sections - Plan
+title: PayPal NFT Shop and Exchange - Plan
 type: feat
 date: 2026-09-16
 artifact_contract: ce-unified-plan/v1
@@ -9,30 +9,36 @@ execution: code
 deepened: 2026-09-16
 ---
 
-# PayPal NFT Purchase and NFT Sections - Plan
+# PayPal NFT Shop and Exchange - Plan
 
 Product Contract created in this run (`ce-plan-bootstrap`).
 No upstream brainstorm existed.
-No same-topic plan existed to resume.
+This file was first written for shop PayPal NFT sections, then enriched in place for the follow-ups: add NFTs to the exchange, and check whether MasterNoder2 can mint NFTs.
+
+Product Contract preservation: R1–R12 and KD1–KD5 meaning unchanged.
+Added R13–R18, KD6–KD7, KTD9–KTD12, U5–U7 for chain capability, exchange, and PayPal chargeback hold.
 
 ---
 
 ## Goal Capsule
 
-Make platform NFTs buyable with PayPal, and give them dedicated UI sections, by extending the existing shop catalog and PayPal Orders v2 create-approve-capture path.
+**MN2 cannot mint or issue NFTs today.**
+MasterNoder2 is a PIVX-style UTXO coin with masternode, staking, InstantSend, and zerocoin RPCs.
+It has no NFT standard, no unique-asset opcode, and no mint/transfer RPC for non-fungible tokens.
+`mintzerocoin` mints fungible zMN2 privacy coins, not collectibles.
 
-Do not mint on-chain tokens.
-Do not integrate a PayPal NFT marketplace API.
-PayPal has no launched merchant NFT checkout product to adopt.
+Ship platform-ledger NFTs: serialized unique collectibles in shop inventory, sold with PayPal and MN2 on both Shop and Exchange, with honest copy that they are not on-chain tokens.
+Reuse PayPal Orders v2 create-approve-capture.
+Do not send irreversible on-chain MN2 or a unique chain object as PayPal fulfillment.
 
 Authority order: Product Contract R-IDs, then Key Technical Decisions, then unit approach.
 Fulfillment stays on `fulfill_shop_purchase` plus `_apply_shop_item_effects`.
-Checkout stays on `POST /api/paypal/create-order` and `POST /api/paypal/capture`.
+Checkout stays on `POST /api/paypal/create-order` and `POST /api/paypal/capture` (shop and exchange return URLs from a server allowlist).
 
-Stop if the work expands to on-chain minting, a new PSP, casino real-money NFT betting, or a standalone `/nft` app.
+Stop if the work expands to daemon NFT opcodes, an EVM wrap/bridge, a new PSP, casino real-money NFT betting, or a standalone `/nft` app.
 
-Execution profile: characterize the current shop listing and PayPal capture path first, then add NFT kind + server-priced checkout + sections.
-Tail ownership: implement `U1` through `U4` in dependency order.
+Execution profile: characterize shop listing and PayPal capture first, then catalog kind + server-priced checkout + shop/exchange/profile sections + PayPal hold.
+Tail ownership: implement `U1` through `U7` in dependency order.
 
 ---
 
@@ -40,46 +46,66 @@ Tail ownership: implement `U1` through `U4` in dependency order.
 
 ### Summary
 
-Users can browse a dedicated NFT section, pay with PayPal, and see owned collectibles in a collection gallery.
-The first NFT series is the existing Top 25 Legends catalog (`top25-01`…`top25-25` plus the three Top 25 bundles).
+Users browse dedicated NFT sections on Shop and Exchange, pay with PayPal or in-app MN2/coins, and see owned collectibles in Profile.
+The first series is Top 25 Legends (`top25-01`…`top25-25` plus the three Top 25 bundles).
 These are licensed off-chain digital collectibles branded as NFTs in the UI.
+The MN2 chain does not mint them.
 
 ### Problem Frame
 
-The repo has no NFT module.
-Shop already sells numbered collectibles and already derives `price_usd` so catalog cards can show PayPal.
+Users asked for PayPal NFT purchase, NFT sections, NFTs in shop and exchange, and whether “our blockchain” can mint NFTs.
+This repo has no NFT module and no chain NFT primitive.
+Shop already sells numbered Top 25 collectibles and already derives `price_usd` so catalog cards can show PayPal.
 Those items are buried in Catalog / Deals, have no NFT branding, and PayPal create-order trusts the client `amount`.
-Inventory stacks quantity and does not record edition or payment_ref, so a refreshed capture can double-grant.
-Users asked for PayPal NFT purchase and NFT sections.
-The codebase can deliver that as a shop surface, not as a blockchain product.
+Inventory stacks quantity and does not record edition or `payment_ref`, so a refreshed capture can double-grant.
+Exchange shop sells MN2 boosts and rentals only (`data/exchange_shop_catalog.json`); its renderer has no NFT category and no PayPal CTA on those cards.
+A PayPal chargeback can reverse fiat after the buyer has already listed the collectible or withdrawn MN2.
+The product that fits the chain is a platform ledger collectible, not an MN2 token.
 
 ### Requirements
+
+**Issuance and honesty**
+
+- R12. UI must not claim on-chain uniqueness, wallet minting, or resale investment value.
+- R16. Shop, Exchange, and Profile NFT copy must state that MN2 cannot mint these items on-chain today.
+- R18. Each granted NFT edition records a platform-ledger proof hash (not a chain mint).
+
+**PayPal checkout**
 
 - R1. Logged-in users can buy flagged NFT SKUs with PayPal and receive them in shop inventory.
 - R2. Guests (`default_user`) cannot start PayPal NFT checkout.
 - R3. PayPal order amount is the server catalog `price_usd`, not the client-supplied amount.
 - R4. A successful capture is idempotent for the same PayPal `order_id` / `capture_id`.
 - R5. PayPal purchase-unit copy describes a licensed digital collectible, not an investment or on-chain token.
+- R17. A PayPal-acquired NFT edition cannot be listed on Auction House or turned into withdrawable MN2 until the hold window ends.
+
+**Surfaces**
+
 - R6. Shop exposes a first-class NFT tab at `/shop?tab=nft` with PayPal-first CTAs.
 - R7. Profile shows an NFT collection section fed by `/api/shop/inventory`.
 - R8. Home and Command Center show a short NFT teaser that deep-links to `/shop?tab=nft`.
 - R9. NFT listing APIs return only items with `kind=nft` (or equivalent tag) plus series progress for Top 25.
 - R10. Coin and MN2 rails remain available on the same SKUs.
 - R11. Casino and mobile TWA do not add PayPal NFT checkout.
-- R12. UI must not claim on-chain uniqueness, wallet minting, or resale investment value.
+- R13. Exchange exposes a first-class NFT section that lists the same `kind=nft` SKUs.
+- R14. Logged-in users can start PayPal NFT checkout from Exchange and return to `/exchange`.
+- R15. MN2 or coin purchase of an NFT SKU from Exchange writes the same shop inventory as Shop checkout.
 
 ### Actors
 
 - A1. Logged-in shopper with a Profile account.
 - A2. Guest (`default_user`).
-- A3. Returning PayPal payer hitting `/shop?paypal=success`.
+- A3. Returning PayPal payer hitting `/shop?paypal=success` or `/exchange?paypal=success`.
+- A4. Exchange trader buying from `#cex-exchange-shop` / the NFT section.
 
 ### Key Flows
 
-- F1. Browse NFT tab → choose SKU → PayPal → return → capture → inventory + collection card updates.
+- F1. Browse Shop NFT tab → choose SKU → PayPal → return → capture → inventory + collection card updates.
 - F2. Guest taps PayPal on an NFT → blocked with Profile account prompt.
 - F3. Buyer already owns copies → quantity increments, new edition metadata is recorded, collection still shows the SKU as owned.
 - F4. Duplicate capture (refresh) → payment already captured, no second inventory grant.
+- F5. Browse Exchange NFT section → PayPal or MN2 → same inventory row as Shop.
+- F6. PayPal-acquired edition inside hold → Auction House listing rejected; MN2 withdrawal of sale proceeds blocked.
 
 ### Acceptance Examples
 
@@ -87,46 +113,57 @@ The codebase can deliver that as a shop surface, not as a blockchain product.
 - AE2. Covers R2 / F2. `default_user` posting to `/api/paypal/create-order` for an NFT SKU receives `ACCOUNT_REQUIRED`.
 - AE3. Covers R3. Create-order for `top25-01` with client `amount=0.01` still creates a PayPal order at catalog `price_usd`.
 - AE4. Covers R4 / F4. Two captures of the same `order_id` grant inventory once.
-- AE5. Covers R6. `/shop?tab=nft` shows Top 25 cards with a visible PayPal button.
+- AE5. Covers R6. `/shop?tab=nft` shows Top 25 cards with a visible PayPal button and an on-chain-mint disclaimer.
 - AE6. Covers R7. Profile NFT section lists owned Top 25 items and empty-state CTA to the NFT tab when none are owned.
+- AE7. Covers R13 / R14 / F5. Exchange NFT section lists `top25-01` with PayPal and MN2 actions; PayPal return lands on `/exchange`.
+- AE8. Covers R15. Exchange MN2 purchase of `top25-01` appears in `/api/shop/inventory` and Profile, not only exchange shop state.
+- AE9. Covers R17 / F6. `create_listing` for a PayPal-held `top25-01` edition fails until `hold_until`.
+- AE10. Covers R16. NFT APIs include `on_chain_mint: false` (or equivalent) so clients cannot invent a mint claim.
 
 ### Success Criteria
 
-- A shopper can discover, buy with PayPal, and view at least one NFT without using the generic Catalog filter.
+- A shopper can discover, buy with PayPal, and view at least one NFT from Shop or Exchange without using the generic Catalog filter.
 - PayPal capture for an NFT SKU is server-priced and safe to retry.
 - Copy on PayPal and in-app matches licensed digital collectible, not crypto mint.
+- Implementers can cite the MN2 RPC table as the reason native mint is out of scope.
+- PayPal-bought editions cannot be flipped to irreversible MN2 before the hold clears.
 
 ### Scope Boundaries
 
 In scope:
 
 - Off-chain NFT kind on existing collectible SKUs.
-- PayPal Orders v2 hardening for those SKUs.
-- Shop NFT tab, profile collection, home/Command Center teasers.
-- Edition metadata on the existing inventory row.
+- PayPal Orders v2 hardening for those SKUs on Shop and Exchange.
+- Shop NFT tab, Exchange NFT section, profile collection, home/Command Center teasers.
+- Edition metadata, ledger proof hash, and PayPal hold on the existing inventory row.
 
 Out of scope / outside this product's identity:
 
-- On-chain ERC-721 / MN2 mint, gas, or wallet-connect mint.
+- On-chain ERC-721 / MN2 NFT mint, gas, or wallet-connect mint.
+- Using `mintzerocoin` / zMN2 as an NFT stand-in.
+- Wrapping MN2 onto an EVM chain to mint ERC-721.
 - PayPal NFT marketplace, Pay with Crypto, or a new PSP.
 - Casino USD / real-money NFT wagering.
 - Mobile TWA or Play Store IAP for NFTs.
 - Secondary-market royalties or OpenSea export.
 
-Deferred to follow-up:
+Deferred for later:
 
 - New NFT series beyond Top 25.
 - True global 1/1 scarcity and per-copy inventory rows.
-- Auction House NFT-specific fees.
+- Auction House NFT-specific fees or royalties.
 - Legal ToS page rewrite beyond checkout microcopy.
+- On-chain mint if a future MasterNoder2 release adds NFT opcodes or contracts.
 
 ### Key Decisions
 
-- KD1. Treat "NFT" as a platform collectible brand, not a blockchain token. Governs R5, R12.
-- KD2. Launch series is Top 25 Legends plus its three bundles. Governs R6, R9.
+- KD1. Treat "NFT" as a platform collectible brand, not a blockchain token. Governs R5, R12, R16.
+- KD2. Launch series is Top 25 Legends plus its three bundles. Governs R6, R9, R13.
 - KD3. PayPal remains Orders v2 digital-goods checkout. Governs R1, R3, R5.
-- KD4. NFT sections are Shop tab + Profile gallery + two teasers, not a new site. Governs R6, R7, R8.
+- KD4. Shop NFT tab + Profile gallery + two teasers remain required surfaces. Governs R6, R7, R8.
 - KD5. Casino and TWA stay out of NFT checkout. Governs R11.
+- KD6. Exchange is a first-class NFT surface over the same SKUs and inventory, not a second catalog. Governs R13, R14, R15.
+- KD7. MN2 cannot mint NFTs in this release; platform ledger is the issuance model. Governs R16, R18.
 
 ---
 
@@ -134,9 +171,13 @@ Deferred to follow-up:
 
 ### Assumptions
 
-- Users mean visible NFT shopping and PayPal payment, not Ethereum minting.
+- “Make NFT from our blockchain” means MasterNoder2 / MN2, not Ethereum.
+- Users want visible NFT shopping and PayPal payment on Shop and Exchange, not a new chain feature.
 - Top 25 is enough first inventory because it already exists, has bundles, and has a completion trophy.
 - 100 coins = $1 remains the USD derivation unless a SKU already sets `price_usd`.
+- PayPal NFT hold hours default to the on-ramp `hold_hours` (72) unless `nft_paypal_hold_hours` is added to config.
+- Exchange MN2 debit for NFT SKUs uses unified `mn2_balance` via the shop MN2 purchase path, not only the exchange quote wallet.
+- Slack tools were present but not searched; the user did not ask for Slack context.
 - Headless planning recorded these bets instead of a live product interview.
 
 ### Key Technical Decisions
@@ -145,10 +186,14 @@ Deferred to follow-up:
 - KTD2. Stop overwriting an existing `price_usd` in `_get_shop_items`. Derived USD applies only when `price_usd` is missing. Chosen over always using coins/100 so bundle USD in `data/monetization_config.json` stays authoritative.
 - KTD3. `POST /api/paypal/create-order` resolves amount from the catalog for NFT and other direct shop `item_id`s. Reject unknown NFT ids. Keep the guest block. Chosen over trusting the client amount because that lets a shopper underpay. Apply the lock to all direct shop items in the same function so NFT is not a special hole.
 - KTD4. Persist `payment_ref` on the purchase row in both DB and file mode, then skip fulfill when that ref exists. Chosen over reading `monetization_ledger` JSONL because ledger append happens after fulfill today and is not a lock. `record_purchase` and `_record_purchase_file` do not write `payment_ref` yet even though `ShopPurchase.payment_ref` exists. Extend those helpers. Do not add a new table.
-- KTD5. NFT ownership stays one inventory row per `item_id`. Quantity is copy count. Metadata stores `editions[]` (`edition_no`, `acquired_via`, `payment_ref`, `acquired_at`) on the same row (DB `metadata_json` or file-mode item dict). Chosen over one row per copy because `reserve_inventory` and Auction House key on `item_id`.
-- KTD6. Add `GET /api/shop/nfts` that filters the overlaid catalog and optional ownership. Reuse `GET /api/shop/top25/status` for completion. Chosen over client-only `?category=top25` because bundles are `category=bundles` and would drop out of a category filter.
+- KTD5. NFT ownership stays one inventory row per `item_id`. Quantity is copy count. Metadata stores `editions[]` (`edition_no`, `acquired_via`, `payment_ref`, `acquired_at`, `hold_until`, `proof_hash`) on the same row (DB `metadata_json` or file-mode item dict). Chosen over one row per copy because `reserve_inventory` and Auction House key on `item_id`.
+- KTD6. Add `GET /api/shop/nfts` that filters the overlaid catalog and optional ownership. Reuse `GET /api/shop/top25/status` for completion. Chosen over client-only `?category=top25` because bundles are `category=bundles` and would drop out of a category filter. Response includes `on_chain_mint: false` (R16 / AE10).
 - KTD7. Shop UI version bumps from `9.2.0` when the NFT tab ships.
 - KTD8. PayPal `description` / `item_name` uses `Digital collectible — {name}`. No mint, blockchain, or return-percentage language. Chosen over calling the PayPal line item an NFT because PayPal has no merchant NFT checkout API and NFT wording can trip Acceptable Use / Purchase Protection reviews.
+- KTD9. Do not mint NFTs on MN2. Chosen over native chain mint because the MasterNoder2 RPC table has no NFT/token/asset commands; this repo’s client only wraps fungible MN2 plus masternode/staking helpers; and `docs/plans/masternoder_mn2_ecosystem.plan.md` item 49 already rejected on-chain NFT complexity. `mintzerocoin` is zMN2 privacy mint, not an NFT API. Future on-chain mint is allowed only if a later daemon release adds a documented unique-asset primitive.
+- KTD10. Exchange NFT section is a second UI over `GET /api/shop/nfts` and the same fulfill path. Chosen over adding `category: nft` rows to `data/exchange_shop_catalog.json` because `exchange_shop_service.fulfill_item` has no NFT branch and would trap ownership in `logs/.../exchange_shop` instead of shop inventory (R15). MN2 buy from Exchange calls shop MN2 purchase / `fulfill_shop_purchase`. PayPal from Exchange uses the same create-order endpoint with an allowlisted return path `/exchange`.
+- KTD11. PayPal-acquired editions carry `hold_until`. Auction listing and any path that turns that edition into withdrawable MN2 must fail until the hold ends. Chosen over immediate tradability because PayPal is reversible and MN2 sends are not (`content/digital_goods/paypal-mn2-rails-onepager.md`, `docs/MN2_STAKING_PLAN.md` §17). Reuse on-ramp hold + clawback patterns in `backend/services/mn2_onramp_service.py`. Coin/MN2-paid editions are not PayPal-held.
+- KTD12. On first grant, append `mn2_ledger` type `nft_edition_proof` with a SHA-256 over `{user_id, item_id, edition_no, payment_ref, acquired_at}`. This is idea-49 ledger proof, not an RPC send. Chosen over OP_RETURN/raw tx embedding because that would still not create a transferable NFT and would mix hot-wallet sends into collectible issuance.
 
 ### High-Level Technical Design
 
@@ -158,6 +203,7 @@ Components:
 flowchart LR
   subgraph ui [Player UI]
     ShopNft[shop tab=nft]
+    ExNft[exchange NFT section]
     ProfileNft[profile NFT section]
     Teasers[home and command-center teasers]
   end
@@ -167,16 +213,27 @@ flowchart LR
     Inv["GET /api/shop/inventory"]
     PpCreate["POST /api/paypal/create-order"]
     PpCapture["POST /api/paypal/capture"]
+    ShopBuy["shop MN2 or coin purchase"]
+    Auction["shop auction create_listing"]
   end
-  subgraph core [Existing fulfillment]
+  subgraph core [Fulfillment and holds]
     Catalog["_get_shop_items kind=nft"]
     PpSvc[paypal_service Orders v2]
     ShopDb[shop_db_service]
     Effects["_apply_shop_item_effects"]
+    Ledger[mn2_ledger nft_edition_proof]
+    Hold[edition hold_until]
+  end
+  subgraph chain [MN2 daemon - not used for NFT mint]
+    Rpc[mn2_rpc_client sendtoaddress]
   end
   ShopNft --> ListNfts
+  ExNft --> ListNfts
   ShopNft --> PpCreate
+  ExNft --> PpCreate
+  ExNft --> ShopBuy
   ShopNft --> PpCapture
+  ExNft --> PpCapture
   ProfileNft --> Inv
   ProfileNft --> Top25
   Teasers --> ShopNft
@@ -186,6 +243,11 @@ flowchart LR
   PpCapture --> PpSvc
   PpCapture --> ShopDb
   PpCapture --> Effects
+  PpCapture --> Ledger
+  PpCapture --> Hold
+  ShopBuy --> ShopDb
+  Auction --> Hold
+  Rpc -.->|withdrawals only, never NFT mint| core
 ```
 
 PayPal purchase sequence:
@@ -193,59 +255,102 @@ PayPal purchase sequence:
 ```mermaid
 sequenceDiagram
   participant U as Shopper
-  participant Shop as shop/index.html
+  participant UI as shop or exchange
   participant API as paypal_routes
   participant Cat as shop catalog
   participant PP as PayPal Orders v2
   participant Inv as shop_db_service
-  U->>Shop: Pay with PayPal on NFT card
-  Shop->>API: create-order item_id
+  participant Led as mn2_ledger
+  U->>UI: Pay with PayPal on NFT card
+  UI->>API: create-order item_id return_path
   API->>Cat: lookup price_usd and kind=nft
-  alt guest or unknown SKU
-    API-->>Shop: 400 ACCOUNT_REQUIRED or not found
+  alt guest unknown SKU or bad return_path
+    API-->>UI: 400
   else priced SKU
     API->>PP: create order at catalog USD
-    PP-->>Shop: approve_url
+    PP-->>UI: approve_url
     U->>PP: approve
-    PP-->>Shop: /shop?paypal=success&token&item_id
-    Shop->>API: capture order_id
+    PP-->>UI: /shop or /exchange paypal=success
+    UI->>API: capture order_id
     API->>PP: capture
     alt payment_ref already fulfilled
-      API-->>Shop: success already_fulfilled
+      API-->>UI: success already_fulfilled
     else first capture
-      API->>Inv: fulfill + edition metadata
-      API-->>Shop: item_granted
+      API->>Inv: fulfill plus edition hold_until
+      API->>Led: nft_edition_proof
+      API-->>UI: item_granted
     end
   end
 ```
 
-Collection states:
+Collection and hold states:
 
 ```mermaid
 stateDiagram-v2
   [*] --> Unowned
-  Unowned --> Owned: PayPal or coin or MN2 fulfill
-  Owned --> Owned: additional copy / new edition
-  Owned --> CollectionComplete: all 25 Top 25 SKUs in inventory
+  Unowned --> OwnedHeld: PayPal fulfill
+  Unowned --> OwnedClear: coin or MN2 fulfill
+  OwnedHeld --> OwnedClear: hold_until passed
+  OwnedHeld --> OwnedHeld: auction listing rejected
+  OwnedClear --> OwnedClear: additional copy
+  OwnedClear --> Listed: auction create_listing
+  Listed --> OwnedClear: sold or cancelled
+  OwnedClear --> CollectionComplete: all 25 Top 25 SKUs
   CollectionComplete --> TrophyClaimed: existing top25 claim
+```
+
+MN2 chain capability (planning-time finding):
+
+```mermaid
+flowchart TB
+  Q[Can MN2 mint NFTs?]
+  Q --> RpcTable[vRPCCommands in MasterNoder2 src/rpc/server.cpp]
+  RpcTable --> Wallet[wallet: getnewaddress sendtoaddress listunspent]
+  RpcTable --> Mn[masternoder2: startmasternode spork listmasternodes]
+  RpcTable --> Zc[zerocoin: mintzerocoin spendzerocoin findserial]
+  RpcTable --> Missing[no nft token asset unique-collectible RPC]
+  Missing --> Verdict[CANNOT mint NFTs on MN2 today]
+  Verdict --> Platform[platform-ledger NFT in this plan]
 ```
 
 ### Sequencing
 
-U1 catalog contract, then U2 money path, then U3 shop tab (needs listing + PayPal), then U4 other sections (needs the tab URL and inventory shape).
+U1 catalog contract, then U2 money path and ledger proof, then U3 shop tab, then U5 exchange section (needs listing + PayPal return allowlist), then U6 hold enforcement (needs edition metadata from U2), then U4 teasers/profile, then U7 docs.
+
+U4 can start after U3; U5 can start after U2 in parallel with U3.
 
 ### Sources and Research
 
-- Shop seed and Top 25 series: `backend/routes/shop_routes.py` (`_seed_shop_items`, `_get_shop_items`, `_get_paypal_shop_items`).
-- PayPal create/capture: `backend/routes/paypal_routes.py`, `backend/services/paypal_service.py`.
-- Inventory: `backend/services/shop_db_service.py`, `src/db/models.py` (`UserInventory.metadata_json`).
-- Shop UI tabs and PayPal return: `shop/index.html`.
-- Profile inventory: `profile/index.html`.
-- Top 25 status: `backend/services/shop_monetization_service.py`.
-- Prior NFT avoidance: `docs/plans/masternoder_mn2_ecosystem.plan.md` idea 49.
-- PayPal: Orders v2 is the live merchant path. Public NFT-marketplace work is patent/legacy, not a drop-in API. Purchase Protection typically excludes NFTs; treat as digital goods.
+**MN2 cannot mint NFTs (load-bearing):**
 
-Load-bearing external finding: do not wait for a PayPal NFT product.
+- This repo’s RPC wrapper (`backend/services/mn2_rpc_client.py`) exposes fungible MN2 wallet, chain, masternode, and staking methods only (`getnewaddress`, `sendtoaddress`, `listunspent`, `getstakingstatus`, `startmasternode`, …). There is no mint-NFT / issue-asset helper.
+- Upstream daemon RPC table `src/rpc/server.cpp` `vRPCCommands[]` in [jonK341/MasterNoder2](https://github.com/jonK341/MasterNoder2) lists control, network, blockchain, mining, rawtransactions, masternoder2, wallet, and zerocoin. Grep of `src/rpc/server.cpp`, `src/rpc/misc.cpp`, `src/rpc/rawtransaction.cpp`, and `src/wallet/rpcwallet.cpp` finds no `nft`, `issuetoken`, `createtoken`, or colored-asset command. The table ends at `clearspendcache` under zerocoin.
+- `mintzerocoin` / `getserials` / `findserial` are zMN2 privacy-coin mints and zerocoin serials, not unique collectibles.
+- `docs/MASTERNODER2_CRYPTO_INTEGRATION_PLAN.md` describes JSON-RPC as Bitcoin/Dash-style `getbalance` / `sendtoaddress` / `listtransactions`.
+- `docs/MONETIZATION_CONTENT_CRYPTO_PLAN.md` states MN2 recurring is hard without smart contracts.
+- `docs/MN2_STAKING_PLAN.md` calls the custody model smart-contractless.
+- `docs/plans/masternoder_mn2_ecosystem.plan.md` item 49: Agent Performance NFT-Alternative hashes P&L to `mn2_ledger` to avoid on-chain NFT complexity.
+- `backend/services/shop_serial_service.py` builds catalog index keys `MN2-{CLASS}-{NNNNNN}-{TAG4}`, not chain token ids.
+
+**Shop, PayPal, exchange (local patterns to follow):**
+
+- Top 25 seed: `backend/routes/shop_routes.py` (`_seed_shop_items` ranks `#01`–`#25`, `_get_shop_items`, `_get_paypal_shop_items`).
+- PayPal create/capture: `backend/routes/paypal_routes.py`, `backend/services/paypal_service.py`.
+- Inventory: `backend/services/shop_db_service.py`, `src/db/models.py` (`UserInventory.metadata_json`, `ShopPurchase.payment_ref`).
+- Shop UI tabs: `shop/index.html` (Catalog, Auction, PayPal & coins, MN2 wallet, Boosters, Deals & VIP, My Stall). Category label already maps `top25` to Top 25 Legends.
+- Exchange shop: `backend/services/exchange_shop_service.py`, `data/exchange_shop_catalog.json`, `GET /api/exchange/shop/catalog`, renderer `static/js/agent-marketplace.js` `renderShop`.
+- Exchange PayPal already exists for crypto and MN2 packs: `backend/routes/crypto_exchange_routes.py` (`/api/exchange/paypal/create-mn2-order`). NFT PayPal should not invent a third capture stack; extend shop paypal_routes with allowlisted return path.
+- Chargeback hold pattern: `backend/services/mn2_onramp_service.py`, `docs/MN2_STAKING_PLAN.md` §17, `content/digital_goods/paypal-mn2-rails-onepager.md`.
+- Payment rails catalog: `data/monetization_config.json` `payment_rails_catalog`.
+- Auction reserve-by-item_id: `backend/services/shop_auction_service.py` `create_listing`.
+
+**External (load-bearing for KTD8 / KTD9):**
+
+- PayPal Orders v2 is the live merchant path. There is no launched PayPal merchant NFT checkout API to adopt.
+- MasterNoder2 README/features: SHA256CSM, masternodes, InstantSend, PrivateSend, staking. No NFT roadmap item in the chain README.
+
+No `docs/solutions/` learnings existed to apply.
+No `STRATEGY.md` / `CONCEPTS.md` existed.
 
 ---
 
@@ -255,7 +360,7 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 
 **Goal:** Mark Top 25 SKUs as NFTs, preserve explicit USD prices, and list them for UI sections.
 
-**Requirements:** R9, R10, KD2
+**Requirements:** R9, R10, R16, KD2, AE10. KTD1, KTD2, KTD6
 
 **Dependencies:** none
 
@@ -272,14 +377,14 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 2. After `_get_shop_items` loads DB or seed, merge that overlay by `item_id` so DB-backed catalogs still get `kind`, tags, and listing fields (KTD1).
 3. Map category `top25` and `kind=nft` to serial class `NFT` in `SERIAL_CLASS_BY_CATEGORY`.
 4. Set derived `price_usd` only when absent (KTD2).
-5. Add `GET /api/shop/nfts` that returns items plus series progress. Include bundles. Optional `user_id` adds owned flags from inventory.
+5. Add `GET /api/shop/nfts` that returns items plus series progress and `on_chain_mint: false`. Include bundles. Optional `user_id` adds owned flags from inventory.
 6. Leave coin/MN2 fields unchanged (R10).
 
 **Patterns to follow:** `_get_paypal_shop_items`, `/api/shop/items?category=`, `serial_class_for_category`.
 
 **Test scenarios:**
 
-- Happy path: `/api/shop/nfts` includes `top25-01` and `bundle-top25-starter` with `kind=nft` and a numeric `price_usd`.
+- Happy path: `/api/shop/nfts` includes `top25-01` and `bundle-top25-starter` with `kind=nft`, numeric `price_usd`, and `on_chain_mint` false.
 - Happy path: `/api/shop/items?category=top25` still returns the series.
 - Edge: a SKU with explicit `price_usd=12.99` and coin `price=500` keeps `12.99`.
 - Edge: `top25` serial class is `NFT`, not `OTH`.
@@ -288,11 +393,11 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 
 **Verification:** NFT list is filterable without scanning the full catalog in the client.
 
-### U2. Server-priced PayPal NFT checkout and edition fulfill
+### U2. Server-priced PayPal NFT checkout, edition fulfill, and ledger proof
 
-**Goal:** Buy an NFT with PayPal at the catalog price, once per capture.
+**Goal:** Buy an NFT with PayPal at the catalog price, once per capture, with edition metadata and a ledger proof hash.
 
-**Requirements:** R1, R2, R3, R4, R5, AE1–AE4. KTD3, KTD4, KTD5, KTD8
+**Requirements:** R1, R2, R3, R4, R5, R18, AE1–AE4. KTD3, KTD4, KTD5, KTD8, KTD12
 
 **Dependencies:** U1
 
@@ -301,6 +406,7 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 - `backend/routes/paypal_routes.py`
 - `backend/services/paypal_service.py`
 - `backend/services/shop_db_service.py`
+- `backend/services/mn2_ledger.py`
 - `tests/unit/test_12_paypal.py`
 - `tests/unit/test_shop_payment_safety.py`
 
@@ -308,11 +414,12 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 
 1. On create-order, if `item_id` is a shop/NFT SKU, replace client amount with catalog `price_usd` (KTD3).
 2. Keep the existing `default_user` account gate.
-3. Set PayPal description per KTD8. Return URL stays `/shop?paypal=success&item_id=&user_id=`.
+3. Set PayPal description per KTD8. Accept `return_path` only from allowlist `/shop` and `/exchange` (needed by U5; implement here).
 4. Extend `record_purchase` / `_record_purchase_file` / `fulfill_shop_purchase` to accept and store `payment_ref` and `price_paid_usd` in both persistence modes (KTD4).
 5. Before fulfill, look up `payment_ref` (`paypal:<order_id>` preferred; also accept capture id). If found, return success with `already_fulfilled`.
-6. First successful NFT/direct-item capture fulfills with `price_type=paypal` and appends one edition on the inventory row (KTD5). File mode writes the same fields on the JSON item.
-7. Keep `_apply_shop_item_effects` so Top 25 bundles still grant child inventory.
+6. First successful NFT/direct-item capture fulfills with `price_type=paypal`, appends one edition (KTD5), sets `hold_until` for PayPal editions (KTD11 data; enforcement is U6).
+7. Append `nft_edition_proof` to `mn2_ledger` (KTD12).
+8. Keep `_apply_shop_item_effects` so Top 25 bundles still grant child inventory.
 
 **Execution note:** Start with failing tests for amount lock and duplicate capture before changing `paypal_routes`.
 
@@ -320,12 +427,13 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 
 **Test scenarios:**
 
-- Happy path: capture of `top25-01` calls fulfill once and returns `item_granted`.
+- Happy path: capture of `top25-01` calls fulfill once, returns `item_granted`, writes `proof_hash`, and appends ledger type `nft_edition_proof`.
 - Happy path: create-order for `top25-01` sends catalog USD to `create_order`, ignoring client `0.01`.
 - Covers AE2. Guest create-order is 400 `ACCOUNT_REQUIRED`.
 - Covers AE4. Second capture with the same order/capture id does not call fulfill again.
 - Error: unknown `item_id` that is presented as NFT returns 400 and does not call PayPal.
 - Error: PayPal capture failure returns 500 and does not write inventory.
+- Error: `return_path=https://evil.example` is rejected.
 - Integration: fulfill failure after capture still returns `payment_captured` + `manual_fulfillment_required` (existing safety).
 - Edge: bundle `bundle-top25-starter` remains in the PayPal shop map and still applies child grants.
 
@@ -335,7 +443,7 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 
 **Goal:** Shoppers can open a dedicated NFT section and start PayPal from it.
 
-**Requirements:** R6, R10, R12, AE5. KTD7
+**Requirements:** R6, R10, R12, R16, AE5. KTD7
 
 **Dependencies:** U1, U2
 
@@ -351,7 +459,7 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 3. Render series cards from `/api/shop/nfts` with rarity, serial, owned badge, PayPal button (`buyItemWithPayPal`), plus coin/MN2 actions already used in Catalog.
 4. Surface Top 25 completion progress on this tab (reuse `loadTop25` / `/api/shop/top25/status`).
 5. After PayPal return, if `item_id` is an NFT, switch to the NFT tab and refresh inventory.
-6. Disclaimer line: licensed digital collectible, not an on-chain token (R12).
+6. Disclaimer line per R12 and R16.
 7. Bump `SHOP_UI_VERSION` (KTD7).
 
 **Patterns to follow:** Deals & VIP tab wiring; `renderShopGrid` PayPal button gate (`price_usd` + `buyItemWithPayPal`); `handlePayPalReturn`.
@@ -360,7 +468,7 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 
 - Test expectation: none for HTML structure in pytest.
 - Behavioral coverage for checkout stays in U2.
-- Manual/smoke: `/shop?tab=nft` shows PayPal on `top25-01` for a logged-in user.
+- Manual/smoke: `/shop?tab=nft` shows PayPal on `top25-01` for a logged-in user and does not say the item is minted on MN2.
 
 **Verification:** NFT tab is reachable from a URL and leads through the existing PayPal redirect.
 
@@ -368,7 +476,7 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 
 **Goal:** Owned NFTs appear as a collection, and other hubs can send users to the NFT tab.
 
-**Requirements:** R7, R8, R11, AE6
+**Requirements:** R7, R8, R11, R16, AE6
 
 **Dependencies:** U1, U3
 
@@ -386,6 +494,7 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 3. On the home MN2 band, add one link: NFT collectibles → `/shop?tab=nft`.
 4. In Command Center `LINKS.overview` (or a shop group), add “NFT collectibles — PayPal or MN2”.
 5. Do not add PayPal buttons on casino or TWA (R11).
+6. Disclaimer per R16.
 
 **Patterns to follow:** existing `profile-shop-v9-inventory` fetch; `fp-mn2-band-actions` links; command-center card helper.
 
@@ -398,6 +507,108 @@ Load-bearing external finding: do not wait for a PayPal NFT product.
 
 **Verification:** A buyer can find NFTs from Home, Command Center, Shop, and Profile without hunting Catalog chips.
 
+### U5. Exchange NFT section on the shared catalog
+
+**Goal:** Exchange lists the same NFT SKUs and can sell them with PayPal or MN2 into shop inventory.
+
+**Requirements:** R13, R14, R15, AE7, AE8. KTD10
+
+**Dependencies:** U1, U2
+
+**Files:**
+
+- `exchange/index.html`
+- `static/js/agent-marketplace.js`
+- `backend/routes/paypal_routes.py` (return_path already in U2; Exchange client must send it)
+- `backend/routes/shop_routes.py` or `backend/services/shop_mn2_purchase_core.py` (MN2 buy from Exchange)
+- `tests/unit/test_exchange_rental_shop.py`
+- `tests/unit/test_12_paypal.py`
+
+**Approach:**
+
+1. Add an NFT subsection under `#cex-exchange-shop` (or a sibling section) that loads `GET /api/shop/nfts`.
+2. Cards show PayPal and MN2 actions plus the R16 disclaimer. Do not use `data-shop` → `/api/exchange/shop/purchase` for these ids.
+3. MN2 buy calls the shop MN2 purchase helper so `fulfill_shop_purchase` runs (R15).
+4. PayPal buy calls `/api/paypal/create-order` with `return_path=/exchange`.
+5. Handle `/exchange?paypal=success` capture the same way shop `handlePayPalReturn` does.
+6. Leave existing exchange boost/rental SKUs on MN2-only `renderShop`.
+
+**Patterns to follow:** `renderShop` in `static/js/agent-marketplace.js`; exchange MN2 pack PayPal return on `exchange/index.html`; `shop_mn2_purchase_core`.
+
+**Test scenarios:**
+
+- Happy path: shop NFT list used by Exchange includes `top25-01`.
+- Happy path: an MN2 purchase helper for `top25-01` from an exchange-tagged source writes shop inventory (AE8).
+- Happy path: create-order with `return_path=/exchange` builds a return URL under `/exchange?paypal=success`.
+- Edge: `POST /api/exchange/shop/purchase` for `top25-01` does not succeed as an unknown exchange boost (either unknown_item or explicit redirect error).
+- Error: guest PayPal from Exchange is still `ACCOUNT_REQUIRED`.
+- Integration: coin-pack and rental SKUs in `renderShop` still buy via `/api/exchange/shop/purchase`.
+
+**Verification:** Exchange NFT ownership is visible in Profile/Shop inventory.
+
+### U6. PayPal chargeback hold vs irreversible transfer
+
+**Goal:** PayPal-bought NFT editions cannot be auctioned or cashed into withdrawable MN2 during the hold window.
+
+**Requirements:** R17, AE9. KTD11
+
+**Dependencies:** U2
+
+**Files:**
+
+- `backend/services/shop_auction_service.py`
+- `backend/services/shop_db_service.py`
+- `backend/services/mn2_onramp_service.py` (hold-hours helper or shared constant)
+- `tests/unit/test_shop_monetization.py` or new `tests/unit/test_nft_paypal_hold.py`
+
+**Approach:**
+
+1. PayPal editions store `hold_until` from on-ramp `hold_hours` (KTD11).
+2. `create_listing` computes available unheld quantity for `kind=nft` items and rejects if the requested qty exceeds it.
+3. Do not credit withdrawable MN2 as change, cash-out, or P2P sale proceeds for a held edition.
+4. Do not add a new PayPal dispute product in this unit. `paypal_webhook_service.py` has no dispute/chargeback handler today. Hold plus auction block is the required control.
+5. Coin/MN2-acquired editions have `hold_until=null` and list normally. Dispute clawback is Q6, not this unit.
+
+**Patterns to follow:** `mn2_onramp_service` `hold_hours`; `reserve_inventory` quantity checks.
+
+**Test scenarios:**
+
+- Happy path: after simulated PayPal fulfill, `create_listing` for that item_id fails until `hold_until` is in the past.
+- Happy path: after hold expiry, listing succeeds and reserves quantity.
+- Edge: user owns one PayPal-held copy and one MN2-clear copy; listing qty 1 succeeds (clear copy), qty 2 fails.
+- Edge: MN2-only purchase can be listed immediately.
+- Error: guest listing still fails for the existing account gate.
+
+**Verification:** A chargeback-prone PayPal NFT cannot be flipped to irreversible MN2 in the hold window.
+
+### U7. Docs: rails, hold, and chain capability
+
+**Goal:** Operators and implementers see the mint verdict and the PayPal hold rule next to existing payment docs.
+
+**Requirements:** R16, R17. KTD9, KTD11
+
+**Dependencies:** U2, U6
+
+**Files:**
+
+- `docs/PAYPAL_INTEGRATION_GUIDE.md`
+- `docs/MN2_OPS.md`
+- `content/digital_goods/paypal-mn2-rails-onepager.md`
+
+**Approach:**
+
+1. Short PayPal guide subsection: NFT SKUs are digital collectibles, server-priced, allowlisted return paths.
+2. MN2 ops note: daemon cannot mint NFTs; `mintzerocoin` is not an NFT API; collectibles live in shop inventory + `nft_edition_proof`.
+3. One-pager bullet: PayPal NFT SKUs stay on the fiat rail until hold clears; do not settle unique collectibles with `sendtoaddress`.
+
+**Patterns to follow:** existing one-pager two-rail wording; MN2 ops daemon/RPC sections.
+
+**Test scenarios:**
+
+- Test expectation: none (docs only).
+
+**Verification:** A future implementer reading `docs/MN2_OPS.md` sees the mint verdict without re-deriving the RPC table.
+
 ---
 
 ## Verification Contract
@@ -407,18 +618,23 @@ Repo tests are pytest from the repo root.
 Plan-proving commands:
 
 - `pytest tests/unit/test_11_shop_routes.py tests/unit/test_shop_serial_service.py tests/unit/test_12_paypal.py tests/unit/test_shop_payment_safety.py -q`
-- After U2, also run `pytest tests/unit/test_shop_monetization.py -q` so Top 25 claim still works.
+- `pytest tests/unit/test_shop_monetization.py tests/unit/test_exchange_rental_shop.py -q`
+- After U6: `pytest tests/unit/test_nft_paypal_hold.py -q` if that file is added.
 
 Quality gates:
 
 - No live PayPal calls in unit tests (mock `create_order` / `capture_order`).
 - Guest cannot create an NFT order.
 - Duplicate capture does not double fulfill.
-- `kind=nft` items appear on `/api/shop/nfts`.
+- `kind=nft` items appear on `/api/shop/nfts` with `on_chain_mint` false.
+- Exchange MN2 NFT buy writes shop inventory.
+- PayPal-held editions cannot be auction-listed.
 
 Smoke (implementer, sandbox PayPal):
 
 - Logged-in user buys `top25-01` from `/shop?tab=nft`, returns, sees inventory and Profile NFT section.
+- Same SKU is visible on Exchange NFT section.
+- Immediate Auction House list of that PayPal copy fails until hold expiry (can be clock-stubbed in tests).
 
 `release:validate` is not required for this plan.
 
@@ -428,37 +644,53 @@ Smoke (implementer, sandbox PayPal):
 
 Global:
 
-- R1–R12 are met or explicitly deferred above.
-- U1–U4 merged with their tests.
+- R1–R18 are met or explicitly deferred above.
+- U1–U7 merged with their tests (U3/U7 may be smoke/docs-only as marked).
 - Abandoned debug code is removed.
-- Docs that describe shop PayPal mention NFT collectibles: `docs/PAYPAL_INTEGRATION_GUIDE.md` (short subsection only).
+- Docs in U7 name the mint verdict and the PayPal hold.
 
 Per unit:
 
-- U1. Listing API and serial class shipped.
-- U2. Server price lock + idempotent capture shipped.
-- U3. `/shop?tab=nft` shipped with PayPal CTA.
+- U1. Listing API, serial class, and `on_chain_mint: false` shipped.
+- U2. Server price lock, idempotent capture, edition proof, allowlisted return path shipped.
+- U3. `/shop?tab=nft` shipped with PayPal CTA and disclaimer.
 - U4. Profile section + two teasers shipped. Casino/TWA untouched for checkout.
+- U5. Exchange NFT section uses shop inventory, not exchange_shop state.
+- U6. Hold blocks auction/MN2 cash-out for PayPal editions.
+- U7. PayPal guide, MN2 ops, and rails one-pager updated.
 
 ---
 
 ## System-Wide Impact
 
 Money path: create-order amount lock should apply to all direct shop item_ids in the same function so NFT is not a special hole.
-Inventory metadata grows but the row key stays `user_id` + `item_id`, so Auction House reserve-by-item_id still works.
-Agent/tool parity: no new agent tool required. Shop purchase APIs remain the automation surface.
+Inventory metadata grows but the row key stays `user_id` + `item_id`, so Auction House reserve-by-item_id still works once U6 subtracts held qty.
+Exchange quote wallet and unified `mn2_balance` stay separate; NFT MN2 spend must not silently debit the wrong book.
+Agent/tool parity: no new agent blueprint. Shop purchase and PayPal routes remain the automation surface; Exchange NFT must use those, not a one-off `exchange_shop` effect.
+Daemon RPC is unchanged. Do not add NFT methods to `mn2_rpc_client.py`.
 
 ---
 
 ## Risks and Dependencies
 
-- PayPal chargebacks on digital collectibles. Mitigation: account required, clear digital-goods copy, existing capture/fulfill split.
-- Gambling AUP if NFTs are sold next to USD casino deposits. Mitigation: R11, shop-only checkout.
+- MN2 has no NFT primitive. Mitigation: KTD9; UI disclaimers R12/R16; do not ship wallet-connect mint.
+- Operators may confuse `mintzerocoin` with NFT mint. Mitigation: U7 ops note.
+- PayPal chargebacks on digital collectibles, then irreversible MN2 withdrawal or auction flip. Mitigation: R17, KTD11, U6, account required.
+- Gambling AUP if NFTs are sold next to USD casino deposits. Mitigation: R11, shop/exchange-only checkout.
 - Double fulfill on return refresh. Mitigation: KTD4.
-- Users expect withdrawable on-chain NFTs. Mitigation: R12 disclaimer on tab and profile.
-- Depends on existing `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` and shop file-or-DB inventory.
+- Users expect withdrawable on-chain NFTs. Mitigation: R12/R16 on Shop, Exchange, and Profile.
 - DB catalog rows omit tags/`kind`. Overlay-by-id is required or the NFT tab is empty when migrations are applied.
-- File-mode purchases currently omit `payment_ref`. Idempotency must land in both stores or sandbox refresh tests will look green only on one mode.
+- File-mode purchases currently omit `payment_ref`. Idempotency must land in both stores.
+- Depends on existing `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` and shop file-or-DB inventory.
+- Exchange `renderShop` uses `innerHTML` for catalog names; NFT names must stay catalog-controlled, not user HTML.
+
+---
+
+## Documentation / Operational Notes
+
+Rollout: sandbox PayPal first; do not enable live PayPal NFT SKUs until U2 amount lock, U2 idempotency, and U6 hold are green.
+Monitoring: reuse PayPal capture logs and `mn2_ledger` `nft_edition_proof` rows for support lookup.
+No daemon upgrade is required for this feature.
 
 ---
 
@@ -469,3 +701,6 @@ Deferred, not blocking:
 - Q1. Later series after Top 25 (names, art, supply caps).
 - Q2. Whether ops wants curated USD that diverges from 100 coins = $1 for flagship ranks.
 - Q3. Whether a future ToS page should add a collectibles license paragraph beyond checkout microcopy.
+- Q4. If a future MasterNoder2 release adds unique-asset RPCs, whether to optionally mint then (still behind PayPal hold).
+- Q5. Exact `nft_paypal_hold_hours` if ops does not want the 72h on-ramp default.
+- Q6. PayPal dispute webhook clawback for NFT editions after a chargeback lands (depends on adding dispute handling to `paypal_webhook_service.py`).
