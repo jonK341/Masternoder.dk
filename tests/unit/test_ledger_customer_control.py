@@ -45,6 +45,7 @@ def test_assign_and_execute_ai_control(tmp_path, monkeypatch):
 def test_ledger_customer_route_localhost(tmp_path, monkeypatch):
     monkeypatch.delenv("ADMIN_OPS_SECRET", raising=False)
     monkeypatch.delenv("DISCORD_OPS_SECRET", raising=False)
+    monkeypatch.delenv("YOUR_OPS_SECRET", raising=False)
     controls_file = tmp_path / "ledger_customer_controls.json"
     controls_file.write_text(json.dumps({"version": 1, "assignments": {}}), encoding="utf-8")
 

@@ -395,6 +395,7 @@ MANIFESTS = {
         "backend/services/encoder_micro_rewards_service.py",
         "backend/services/ops_secret_service.py",
         "backend/services/ledger_customer_control_service.py",
+        "backend/services/ledger_customer_aggregator_service.py",
         "backend/services/customer_aggregator_service.py",
         "customers/index.html",
         "data/encoder_orders.json",

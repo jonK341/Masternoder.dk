@@ -67,7 +67,9 @@
   },
   "ledger_customer_control": {
     "enabled": true,
-    "default_controller": "ai"
+    "default_controller": "ai",
+    "auto_assign_agent": true,
+    "default_agent_id": "master_fix"
   },
   "click_rewards": {
     "enabled": true,

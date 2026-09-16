@@ -158,3 +158,51 @@ def customers_control_stats():
         return jsonify({"success": False, "error": "admin_required"}), 403
     from backend.services.ledger_customer_control_service import control_stats
     return jsonify(control_stats()), 200
+
+
+@customer_aggregator_bp.route("/api/customers/sync/ledger", methods=["POST"])
+def customers_sync_ledger():
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.ledger_customer_aggregator_service import sync_ledger_customers_to_aggregator
+
+    data = request.get_json(silent=True) or {}
+    result = sync_ledger_customers_to_aggregator(limit=int(data.get("limit") or 500))
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@customer_aggregator_bp.route("/api/customers/agents", methods=["GET"])
+def customers_agents():
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.ledger_customer_aggregator_service import list_available_agents
+    return jsonify(list_available_agents()), 200
+
+
+@customer_aggregator_bp.route("/api/customers/sync/agents", methods=["POST"])
+def customers_sync_agents():
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.ledger_customer_aggregator_service import assign_agents_to_ledger_customers
+
+    data = request.get_json(silent=True) or {}
+    result = assign_agents_to_ledger_customers(
+        limit=int(data.get("limit") or 200),
+        controller_type=str(data.get("controller_type") or "agent"),
+        only_unassigned=bool(data.get("only_unassigned", True)),
+    )
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@customer_aggregator_bp.route("/api/customers/sync/ledger-agents", methods=["POST"])
+def customers_sync_ledger_agents():
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.ledger_customer_aggregator_service import sync_ledger_customers_with_agents
+
+    data = request.get_json(silent=True) or {}
+    result = sync_ledger_customers_with_agents(limit=int(data.get("limit") or 200))
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code

@@ -36,6 +36,27 @@ def _load_identifiers(user_id: str) -> Dict[str, Any]:
     return out
 
 
+def _control_for_user(user_id: str) -> Optional[Dict[str, Any]]:
+    try:
+        from backend.services.ledger_customer_control_service import get_assignment
+
+        return get_assignment(user_id)
+    except Exception:
+        return None
+
+
+def _ledger_summary_for_user(user_id: str) -> Optional[Dict[str, Any]]:
+    try:
+        from backend.services.mn2_ledger import list_ledger_user_summaries
+
+        for row in list_ledger_user_summaries(limit=20000):
+            if row.get("user_id") == user_id:
+                return row
+    except Exception:
+        pass
+    return None
+
+
 def _discord_meta_for_user(user_id: str) -> Optional[Dict[str, Any]]:
     try:
         from backend.services.discord_customer_ingest_service import _load_index
@@ -52,18 +73,29 @@ def _discord_meta_for_user(user_id: str) -> Optional[Dict[str, Any]]:
 def _customer_row(user_id: str, raw: dict) -> Dict[str, Any]:
     systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
     discord = raw.get("discord") if isinstance(raw.get("discord"), dict) else _discord_meta_for_user(user_id)
-    source = raw.get("source") or ("discord_channel" if discord else "site")
+    ledger = raw.get("ledger") if isinstance(raw.get("ledger"), dict) else None
+    if not ledger:
+        ledger = _ledger_summary_for_user(user_id)
+    source = raw.get("source") or ("discord_channel" if discord else ("ledger" if ledger else "site"))
+    control = _control_for_user(user_id)
     return {
         "user_id": user_id,
         "level": int(raw.get("level") or 1),
         "xp_total": float(raw.get("xp_total") or raw.get("xp") or 0),
         "coins": float(raw.get("coins") or systems.get("coins") or 0),
-        "mn2_balance": float(raw.get("mn2_balance") or systems.get("mn2_balance") or 0),
-        "last_active": raw.get("updated_at") or raw.get("last_source"),
+        "mn2_balance": float(
+            raw.get("mn2_balance")
+            or systems.get("mn2_balance")
+            or (ledger or {}).get("ledger_net_mn2")
+            or 0
+        ),
+        "last_active": raw.get("updated_at") or raw.get("last_source") or (ledger or {}).get("last_activity"),
         "avatar_url": _avatar_url(user_id),
         "identifiers": _load_identifiers(user_id),
         "source": source,
         "discord": discord,
+        "ledger": ledger,
+        "control": control,
     }
 
 
@@ -119,6 +151,37 @@ def list_customers(
                     "identifiers": _load_identifiers(uid),
                     "source": "discord_channel",
                     "discord": drow,
+                    "ledger": None,
+                    "control": _control_for_user(uid),
+                })
+                seen.add(uid)
+        except Exception:
+            pass
+
+    if src in ("", "ledger"):
+        try:
+            from backend.services.mn2_ledger import list_ledger_user_summaries
+
+            seen = {r.get("user_id") for r in rows}
+            for lrow in list_ledger_user_summaries(limit=2000):
+                uid = lrow.get("user_id")
+                if not uid or uid in seen:
+                    continue
+                if q and q not in str(uid).lower():
+                    continue
+                rows.append({
+                    "user_id": uid,
+                    "level": 1,
+                    "xp_total": 0,
+                    "coins": 0,
+                    "mn2_balance": float(lrow.get("ledger_net_mn2") or 0),
+                    "last_active": lrow.get("last_activity"),
+                    "avatar_url": _avatar_url(uid),
+                    "identifiers": _load_identifiers(uid),
+                    "source": "ledger",
+                    "discord": None,
+                    "ledger": lrow,
+                    "control": _control_for_user(uid),
                 })
                 seen.add(uid)
         except Exception:
@@ -138,19 +201,22 @@ def get_customer(user_id: str) -> Dict[str, Any]:
         customer = _customer_row(user_id, raw)
     else:
         discord = _discord_meta_for_user(user_id)
-        if not discord:
+        ledger = _ledger_summary_for_user(user_id)
+        if not discord and not ledger:
             return {"success": False, "error": "not_found"}
         customer = {
             "user_id": user_id,
             "level": 1,
             "xp_total": 0,
             "coins": 0,
-            "mn2_balance": 0,
-            "last_active": discord.get("last_seen_at"),
+            "mn2_balance": float((ledger or {}).get("ledger_net_mn2") or 0),
+            "last_active": (discord or {}).get("last_seen_at") or (ledger or {}).get("last_activity"),
             "avatar_url": _avatar_url(user_id),
             "identifiers": _load_identifiers(user_id),
-            "source": "discord_channel",
+            "source": "discord_channel" if discord else "ledger",
             "discord": discord,
+            "ledger": ledger,
+            "control": _control_for_user(user_id),
         }
 
     control = {}
@@ -212,7 +278,23 @@ def stats() -> Dict[str, Any]:
         fulfillment_stats = {}
 
     discord_total = int(discord_stats.get("total") or 0)
-    total = max(points_count, discord_total)
+    ledger_total = 0
+    try:
+        from backend.services.mn2_ledger import list_ledger_user_summaries
+
+        ledger_total = len(list_ledger_user_summaries(limit=20000))
+    except Exception:
+        pass
+
+    control_stats: Dict[str, Any] = {}
+    try:
+        from backend.services.ledger_customer_control_service import control_stats as ctrl_stats
+
+        control_stats = ctrl_stats()
+    except Exception:
+        pass
+
+    total = max(points_count, discord_total, ledger_total)
     return {
         "success": True,
         "total": total,
@@ -221,5 +303,7 @@ def stats() -> Dict[str, Any]:
         "with_mn2": with_mn2,
         "discord": discord_stats,
         "discord_sourced": discord_total,
+        "ledger_total": ledger_total,
+        "control": control_stats,
         "fulfillment": fulfillment_stats,
     }

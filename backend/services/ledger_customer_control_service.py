@@ -122,43 +122,54 @@ def clear_controller(user_id: str) -> Dict[str, Any]:
 
 
 def _customer_base(user_id: str) -> Dict[str, Any]:
-    from backend.services.customer_aggregator_service import get_customer, _POINTS_DIR
-    import os
-
-    result = get_customer(user_id)
-    if result.get("success"):
-        return result.get("customer") or {}
-
-    # Discord-only prospect without points file yet
-    try:
-        from backend.services.discord_customer_ingest_service import list_discord_customers
-
-        for row in (list_discord_customers(limit=5000).get("customers") or []):
-            if row.get("user_id") == user_id:
-                from backend.services.customer_aggregator_service import _avatar_url, _load_identifiers
-
-                return {
-                    "user_id": user_id,
-                    "level": 1,
-                    "xp_total": 0,
-                    "coins": 0,
-                    "mn2_balance": 0,
-                    "last_active": row.get("last_seen_at"),
-                    "avatar_url": _avatar_url(user_id),
-                    "identifiers": _load_identifiers(user_id),
-                    "source": "discord_channel",
-                    "discord": row,
-                }
-    except Exception:
-        pass
+    from backend.services.customer_aggregator_service import (
+        _POINTS_DIR,
+        _avatar_url,
+        _customer_row,
+        _discord_meta_for_user,
+        _ledger_summary_for_user,
+        _load_identifiers,
+    )
 
     path = os.path.join(_POINTS_DIR, f"{user_id}.json")
     if os.path.isfile(path):
         with open(path, "r", encoding="utf-8") as f:
             raw = json.load(f) or {}
-        from backend.services.customer_aggregator_service import _customer_row
-
         return _customer_row(user_id, raw)
+
+    discord = _discord_meta_for_user(user_id)
+    if discord:
+        return {
+            "user_id": user_id,
+            "level": 1,
+            "xp_total": 0,
+            "coins": 0,
+            "mn2_balance": 0,
+            "last_active": discord.get("last_seen_at"),
+            "avatar_url": _avatar_url(user_id),
+            "identifiers": _load_identifiers(user_id),
+            "source": "discord_channel",
+            "discord": discord,
+            "ledger": None,
+            "control": get_assignment(user_id),
+        }
+
+    ledger = _ledger_summary_for_user(user_id)
+    if ledger:
+        return {
+            "user_id": user_id,
+            "level": 1,
+            "xp_total": 0,
+            "coins": 0,
+            "mn2_balance": float(ledger.get("ledger_net_mn2") or 0),
+            "last_active": ledger.get("last_activity"),
+            "avatar_url": _avatar_url(user_id),
+            "identifiers": _load_identifiers(user_id),
+            "source": "ledger",
+            "discord": None,
+            "ledger": ledger,
+            "control": get_assignment(user_id),
+        }
 
     return {}
 

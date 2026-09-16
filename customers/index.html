@@ -36,6 +36,12 @@
     <h1 style="text-align:center;">Customers</h1>
     <div class="customers-toolbar">
         <button class="btn" id="btnSyncFulfill">Sync Discord + Encoder Fulfill</button>
+        <button class="btn" id="btnSyncLedger">Sync Ledger + Assign Agents</button>
+        <select id="sourceFilter" class="btn" style="padding:8px 10px;">
+            <option value="">All sources</option>
+            <option value="ledger">Ledger</option>
+            <option value="discord_channel">Discord</option>
+        </select>
         <button class="btn" id="btnRefresh">Refresh</button>
         <a class="btn" href="/create-app/" style="text-decoration:none;display:inline-block">Open Encoder Hub</a>
     </div>
@@ -59,6 +65,7 @@
                     <option value="agent">Platform Agent</option>
                     <option value="camgirl">Camgirl</option>
                 </select>
+                <select id="ctrlAgentPick" hidden></select>
                 <input id="ctrlId" placeholder="agent/performer id (optional)" />
                 <button class="btn" id="btnAssign">Assign</button>
                 <button class="btn" id="btnClearCtrl">Clear</button>
@@ -88,6 +95,7 @@
         const hdrGet = secret ? {'X-Ops-Secret': secret} : {};
         let currentUserId = null;
         let microRewardCatalog = [];
+        let platformAgents = [];
 
         function selectedMicroRewards() {
             return Array.from(document.querySelectorAll('#microRewardsList input[type=checkbox]:checked'))
@@ -115,21 +123,33 @@
                 if (s.success) {
                     const discord = s.discord || {};
                     document.getElementById('stats').textContent =
-                        `Total: ${s.total || 0} · Active today: ${s.active_today || 0} · Discord: ${discord.total || s.discord_sourced || 0}` +
+                        `Total: ${s.total || 0} · Ledger: ${s.ledger_total || 0} · Active today: ${s.active_today || 0} · Discord: ${discord.total || s.discord_sourced || 0}` +
                         (f.total_fulfilled != null ? ` · Encoder fulfilled: ${f.total_fulfilled}` : '') +
                         (c.total_assigned != null ? ` · Controlled: ${c.total_assigned}` : '');
                 }
             } catch (e) {}
         }
 
+        async function loadAgents() {
+            try {
+                const r = await fetch('/api/customers/agents', {headers: hdrGet}).then(x => x.json());
+                if (!r.success) return;
+                platformAgents = r.agents || [];
+                const pick = document.getElementById('ctrlAgentPick');
+                pick.innerHTML = platformAgents.map(a =>
+                    `<option value="${a.agent_id}">${a.label || a.agent_id} (${a.status || 'unknown'})</option>`
+                ).join('');
+            } catch (e) {}
+        }
+
         async function loadCustomers() {
             const grid = document.getElementById('grid');
+            const source = document.getElementById('sourceFilter').value;
+            const qs = source ? `limit=48&source=${encodeURIComponent(source)}` : 'limit=48';
             try {
-                const r = await fetch('/api/customers?limit=48&source=discord_channel', {headers: hdrGet}).then(x => x.json());
+                const r = await fetch(`/api/customers?${qs}`, {headers: hdrGet}).then(x => x.json());
                 if (!r.success) {
-                    const r2 = await fetch('/api/customers?limit=48', {headers: hdrGet}).then(x => x.json());
-                    if (!r2.success) { grid.innerHTML = '<p>Admin access required (ops secret).</p>'; return; }
-                    renderGrid(r2.customers || []);
+                    grid.innerHTML = '<p>Admin access required (ops secret).</p>';
                     return;
                 }
                 renderGrid(r.customers || []);
@@ -145,7 +165,7 @@
                     <img src="${c.avatar_url || '/static/img/agents/default.svg'}" alt="">
                     <div>${c.discord?.username || c.user_id}</div>
                     <small>${(c.mn2_balance || 0).toFixed(4)} MN2</small>
-                    <div class="tag">${c.source || 'site'}${c.fulfillment ? ' · fulfilled' : ''}</div>
+                    <div class="tag">${c.source || 'site'}${c.ledger?.entry_count ? ` · ${c.ledger.entry_count} ledger` : ''}${c.control ? ` · ${c.control.controller_type}` : ''}${c.fulfillment ? ' · fulfilled' : ''}</div>
                 </div>`).join('');
             grid.querySelectorAll('.card').forEach(el => el.addEventListener('click', () => openCustomer(el.dataset.uid)));
         }
@@ -169,7 +189,11 @@
                 if (assign) {
                     document.getElementById('ctrlType').value = assign.controller_type || 'ai';
                     document.getElementById('ctrlId').value = assign.controller_id || '';
+                    if (assign.controller_type === 'agent' && assign.controller_id) {
+                        document.getElementById('ctrlAgentPick').value = assign.controller_id;
+                    }
                 }
+                toggleAgentPick();
                 document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
             } catch (e) {
                 document.getElementById('modalJson').textContent = String(e);
@@ -181,7 +205,44 @@
             currentUserId = null;
         });
 
+        function toggleAgentPick() {
+            const isAgent = document.getElementById('ctrlType').value === 'agent';
+            document.getElementById('ctrlAgentPick').hidden = !isAgent || !platformAgents.length;
+            document.getElementById('ctrlId').hidden = isAgent && platformAgents.length;
+        }
+
+        document.getElementById('ctrlType').addEventListener('change', toggleAgentPick);
+        document.getElementById('ctrlAgentPick').addEventListener('change', () => {
+            document.getElementById('ctrlId').value = document.getElementById('ctrlAgentPick').value;
+        });
+
+        document.getElementById('sourceFilter').addEventListener('change', loadCustomers);
+
         document.getElementById('btnRefresh').addEventListener('click', () => { loadStats(); loadCustomers(); });
+
+        document.getElementById('btnSyncLedger').addEventListener('click', async () => {
+            const btn = document.getElementById('btnSyncLedger');
+            const status = document.getElementById('fulfillStatus');
+            btn.disabled = true;
+            status.textContent = 'Syncing ledger customers and assigning agents…';
+            try {
+                const r = await fetch('/api/customers/sync/ledger-agents', {
+                    method: 'POST', headers: hdr,
+                    body: JSON.stringify({limit: 200})
+                }).then(x => x.json());
+                const sync = r.ledger_sync || {};
+                const assign = r.agent_assign || {};
+                status.textContent = r.success
+                    ? `Ledger stubs: +${sync.stubs_created || 0} / ~${sync.stubs_updated || 0} updated · Agents assigned: ${assign.assigned_count || 0} (skipped ${assign.skipped_count || 0})`
+                    : (r.error || 'Ledger sync failed');
+                await loadStats();
+                await loadCustomers();
+            } catch (e) {
+                status.textContent = String(e);
+            } finally {
+                btn.disabled = false;
+            }
+        });
 
         document.getElementById('btnSyncFulfill').addEventListener('click', async () => {
             const btn = document.getElementById('btnSyncFulfill');
@@ -211,10 +272,11 @@
 
         document.getElementById('btnAssign').addEventListener('click', async () => {
             if (!currentUserId) return;
-            const body = {
-                controller_type: document.getElementById('ctrlType').value,
-                controller_id: document.getElementById('ctrlId').value
-            };
+            const ctype = document.getElementById('ctrlType').value;
+            const cid = (ctype === 'agent' && platformAgents.length)
+                ? document.getElementById('ctrlAgentPick').value
+                : document.getElementById('ctrlId').value;
+            const body = {controller_type: ctype, controller_id: cid};
             const r = await fetch(`/api/customers/${encodeURIComponent(currentUserId)}/control`, {
                 method: 'POST', headers: hdr, body: JSON.stringify(body)
             }).then(x => x.json());
@@ -243,6 +305,7 @@
         });
 
         loadMicroRewards();
+        loadAgents().then(() => toggleAgentPick());
         loadStats();
         loadCustomers();
     })();

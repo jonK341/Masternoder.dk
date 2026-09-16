@@ -68,6 +68,55 @@ def append_entry(
     _save_entries(entries)
 
 
+def list_ledger_user_summaries(*, limit: int = 5000) -> List[Dict[str, Any]]:
+    """Distinct ledger customers with activity summary, newest activity first."""
+    by_user: Dict[str, Dict[str, Any]] = {}
+    for e in _load_entries():
+        uid = str(e.get("user_id") or "").strip()
+        if not uid or uid.lower() in ("", "default_user", "anon", "anonymous"):
+            continue
+        row = by_user.setdefault(uid, {
+            "user_id": uid,
+            "entry_count": 0,
+            "last_activity": "",
+            "ledger_in_mn2": 0.0,
+            "ledger_out_mn2": 0.0,
+            "entry_types": set(),
+        })
+        row["entry_count"] += 1
+        ca = str(e.get("created_at") or "")
+        if ca > str(row.get("last_activity") or ""):
+            row["last_activity"] = ca
+        t = str(e.get("type") or "").strip()
+        row["entry_types"].add(t)
+        try:
+            amt = float(e.get("amount") or 0)
+        except (TypeError, ValueError):
+            amt = 0.0
+        if t in ("deposit", "staking_reward", "onramp_purchase", "aggregator_mn2_earn", "encoder_payment"):
+            row["ledger_in_mn2"] += amt
+        elif t in ("withdrawal", "shop_payment", "onramp_clawback", "encoder_payment"):
+            if t == "encoder_payment" and amt > 0:
+                row["ledger_out_mn2"] += amt
+            elif t != "encoder_payment":
+                row["ledger_out_mn2"] += abs(amt)
+
+    rows: List[Dict[str, Any]] = []
+    for row in by_user.values():
+        rows.append({
+            "user_id": row["user_id"],
+            "entry_count": row["entry_count"],
+            "last_activity": row["last_activity"],
+            "ledger_in_mn2": round(float(row["ledger_in_mn2"] or 0), 8),
+            "ledger_out_mn2": round(float(row["ledger_out_mn2"] or 0), 8),
+            "ledger_net_mn2": round(float(row["ledger_in_mn2"] or 0) - float(row["ledger_out_mn2"] or 0), 8),
+            "entry_types": sorted(row["entry_types"]),
+        })
+    rows.sort(key=lambda r: str(r.get("last_activity") or ""), reverse=True)
+    lim = max(1, min(int(limit or 5000), 20000))
+    return rows[:lim]
+
+
 def get_entries_by_user(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
     """Return ledger entries for the user, newest first. limit caps the count."""
     entries = _load_entries()
