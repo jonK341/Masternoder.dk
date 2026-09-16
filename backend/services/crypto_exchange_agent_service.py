@@ -180,10 +180,32 @@ def tick(*, force: bool = False) -> Dict[str, Any]:
             "last_tick": _iso(),
         }
 
+    pool_action: Dict[str, Any] = {"skipped": True}
+    try:
+        from backend.services.exchange_mn2_pool_agent_service import tick as pool_tick
+
+        pool_action = pool_tick()
+        actions.append({
+            "agent_id": pool_action.get("agent_id") or "exchange_agent_mn2_pool",
+            "agent_name": "MN2 Pool Controller",
+            "strategy": "mn2_pool",
+            "success": bool(pool_action.get("success")),
+            "error": pool_action.get("error"),
+            "pool_assets": (pool_action.get("status") or {}).get("pool_assets"),
+        })
+    except Exception as exc:
+        actions.append({
+            "agent_id": "exchange_agent_mn2_pool",
+            "agent_name": "MN2 Pool Controller",
+            "strategy": "mn2_pool",
+            "success": False,
+            "error": str(exc),
+        })
+
     state["tick_count"] = tick_count
     state["last_tick"] = _iso()
     _write_state(state)
-    return {"success": True, "tick_count": tick_count, "actions": actions, "state": state}
+    return {"success": True, "tick_count": tick_count, "actions": actions, "pool_tick": pool_action, "state": state}
 
 
 def run_daemon(interval_sec: int | None = None) -> None:

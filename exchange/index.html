@@ -100,7 +100,7 @@
                             </select>
                         </label>
                     </div>
-                    <p class="cex-muted">Spend MN2 coins to buy USDT or USDC (select the stable, side Buy, quote MN2). Sell them back the same way. Quotes also include USDT/USDC for other markets.</p>
+                    <p class="cex-muted">Spend MN2 coins to buy USDT or USDC (select the stable, side Buy, quote MN2). <strong>Swap back:</strong> select USDT/USDC, side Sell, quote MN2 — or sell MN2 for USDT/USDC. Orders use the MN2 liquidity pool.</p>
                     <div id="cex-quote-preview" class="cex-quote-preview"></div>
                     <button type="button" id="cex-swap-btn" class="cex-btn cex-btn--primary">Get quote &amp; swap</button>
                 </div>
@@ -167,6 +167,14 @@
             <aside class="cex-panel cex-wallet">
                 <h2>Exchange wallet</h2>
                 <div id="cex-wallet-balances" class="cex-wallet-list">—</div>
+                <h3>MN2 liquidity pool</h3>
+                <p class="cex-muted">Customer MN2 ↔ USDT/USDC swaps draw from the platform pool. Pool agent tops up MN2 and rebalances stables.</p>
+                <div id="cex-mn2-pool" class="cex-wallet-list">Loading pool…</div>
+                <div class="cex-pool-actions">
+                    <a class="cex-mini-link" href="/exchange?asset=USDT&quote=MN2&side=sell">Swap USDT → MN2</a>
+                    <a class="cex-mini-link" href="/exchange?asset=USDC&quote=MN2&side=sell">Swap USDC → MN2</a>
+                    <a class="cex-mini-link" href="/exchange?asset=MN2&quote=USDT&side=sell">Swap MN2 → USDT</a>
+                </div>
                 <h3>Binance USDT / USDC</h3>
                 <p class="cex-muted">Platform stable wallets connected to Binance spot. Trade them against MN2 coins on this desk.</p>
                 <div id="cex-binance-stables" class="cex-wallet-list">Loading Binance wallets…</div>

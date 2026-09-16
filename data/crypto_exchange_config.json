@@ -46,7 +46,8 @@
       {"id": "exchange_agent_meme_hunter", "name": "Meme Hunter", "strategy": "meme_momentum", "assets": ["DOGE", "SHIB"], "enabled": true},
       {"id": "exchange_agent_defi_router", "name": "DeFi Router", "strategy": "defi_rotation", "assets": ["LINK", "UNI", "ATOM", "ARB", "OP", "NEAR"], "enabled": true},
       {"id": "exchange_agent_payments_hub", "name": "Payments Hub", "strategy": "payments_routing", "assets": ["XRP", "LTC", "XLM", "TRX", "DASH"], "enabled": true},
-      {"id": "exchange_agent_mn2_yield", "name": "MN2 Yield Farmer", "strategy": "native_yield", "assets": ["MN2", "BNB", "DOT"], "enabled": true}
+      {"id": "exchange_agent_mn2_yield", "name": "MN2 Yield Farmer", "strategy": "native_yield", "assets": ["MN2", "BNB", "DOT"], "enabled": true},
+      {"id": "exchange_agent_mn2_pool", "name": "MN2 Pool Controller", "strategy": "mn2_pool", "assets": ["MN2", "USDT", "USDC"], "enabled": true}
     ]
   },
   "tax": {

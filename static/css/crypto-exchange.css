@@ -152,6 +152,13 @@
   font-size: 0.82rem;
 }
 .cex-profile-card h3 { margin: 0 0 6px; color: #a8d4ff; font-size: 0.95rem; }
+.cex-pool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 8px 0 14px;
+}
+
 .cex-mini-link {
   display: inline-block;
   margin: 4px 6px 0 0;

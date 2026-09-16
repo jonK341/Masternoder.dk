@@ -1242,6 +1242,23 @@ def exchange_payout_configure_binance():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/mn2-pool/status", methods=["GET"])
+def exchange_mn2_pool_status():
+    from backend.services.exchange_mn2_pool_service import mn2_pool_status
+
+    return jsonify(mn2_pool_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/mn2-pool/tick", methods=["POST"])
+def exchange_mn2_pool_tick():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_mn2_pool_agent_service import tick
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(tick(force=bool(data.get("force"))))
+
+
 @crypto_exchange_bp.route("/api/exchange/binance/stable-wallets", methods=["GET"])
 def exchange_binance_stable_wallets():
     from backend.services.exchange_payout_service import binance_stable_wallets_status

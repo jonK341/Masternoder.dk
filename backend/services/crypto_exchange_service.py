@@ -154,10 +154,14 @@ def get_wallet(user_id: str) -> Dict[str, Any]:
     assets = data.get("assets") if isinstance(data.get("assets"), dict) else {}
     for stable in _STABLE_QUOTES:
         assets.setdefault(stable, 0.0)
+    mn2_balance = _get_quote_balance(uid, "MN2")
+    coins_balance = _get_quote_balance(uid, "COINS")
     return {
         "success": True,
         "user_id": uid,
         "assets": assets,
+        "mn2_balance": round(mn2_balance, 8),
+        "coins_balance": round(coins_balance, 8),
         "staking": data.get("staking") or {},
         "bonus": data.get("bonus") or {},
         "volume_usd_30d": float(data.get("volume_usd_30d") or 0),
@@ -223,6 +227,23 @@ def _adjust_quote_balance(user_id: str, quote: str, delta: float, source: str, m
         raise ValueError("invalid_quote")
     from backend.services.unified_points_database import unified_points_db
     unified_points_db.add_points(user_id, field, float(delta), source=source, metadata=meta)
+
+
+def _is_mn2_symbol(symbol: str) -> bool:
+    return (symbol or "").strip().upper() == "MN2"
+
+
+def _get_symbol_balance(user_id: str, symbol: str) -> float:
+    if _is_mn2_symbol(symbol):
+        return _get_quote_balance(user_id, "MN2")
+    return _get_balance(user_id, symbol)
+
+
+def _adjust_symbol_balance(user_id: str, symbol: str, delta: float, source: str, meta: dict) -> None:
+    if _is_mn2_symbol(symbol):
+        _adjust_quote_balance(user_id, "MN2", delta, source, meta)
+        return
+    _adjust_balance(user_id, symbol, delta)
 
 
 def _fee_quote_to_mn2(fee_quote: float, quote: str, cfg: Optional[Dict] = None) -> float:
@@ -809,6 +830,17 @@ def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str =
         payload["quote_cost"] = round(quote_cost, 8)
     else:
         payload["quote_received"] = round(quote_out, 8)
+
+    try:
+        from backend.services.exchange_mn2_pool_service import check_pool_liquidity, is_pool_swap
+
+        if is_pool_swap(sym, quote):
+            payload["pool_backed"] = True
+            pool_err = check_pool_liquidity(sym, side, quote, payload)
+            if pool_err:
+                return {"success": False, "error": pool_err, "pool_backed": True}
+    except Exception:
+        pass
     return payload
 
 
@@ -831,19 +863,45 @@ def execute_swap(user_id: str, quote_id: str, symbol: str, side: str, amount: fl
 
     try:
         with _LOCK:
+            try:
+                from backend.services.exchange_mn2_pool_service import (
+                    check_pool_liquidity,
+                    is_pool_swap,
+                    pool_user_id,
+                )
+
+                if uid != pool_user_id() and is_pool_swap(sym, quote_cur):
+                    pool_err = check_pool_liquidity(sym, side, quote_cur, q)
+                    if pool_err:
+                        return {"success": False, "error": pool_err, "pool_backed": True}
+            except ImportError:
+                pass
+
             if side == "buy":
                 cost = float(q.get("quote_cost") or 0)
                 bal = _get_quote_balance(uid, quote_cur)
                 if bal < cost:
                     return {"success": False, "error": f"insufficient_{quote_cur.lower()}"}
                 _adjust_quote_balance(uid, quote_cur, -cost, "exchange_buy", meta)
-                _adjust_balance(uid, sym, amt)
+                _adjust_symbol_balance(uid, sym, amt, "exchange_buy", meta)
             else:
-                if _get_balance(uid, sym) < amt:
+                if _get_symbol_balance(uid, sym) < amt:
                     return {"success": False, "error": f"insufficient_{sym.lower()}"}
                 received = float(q.get("quote_received") or 0)
-                _adjust_balance(uid, sym, -amt)
+                _adjust_symbol_balance(uid, sym, -amt, "exchange_sell", meta)
                 _adjust_quote_balance(uid, quote_cur, received, "exchange_sell", meta)
+
+            try:
+                from backend.services.exchange_mn2_pool_service import apply_pool_leg, pool_user_id
+
+                if uid != pool_user_id():
+                    pool_res = apply_pool_leg(sym, side, quote_cur, q)
+                    if not pool_res.get("success") and not pool_res.get("skipped"):
+                        raise ValueError(pool_res.get("error") or "pool_leg_failed")
+            except ValueError:
+                raise
+            except ImportError:
+                pass
 
             fee_mn2 = _fee_quote_to_mn2(float(q.get("fee_quote") or 0), quote_cur, load_config())
             _collect_fee(fee_mn2)
@@ -903,9 +961,9 @@ def create_limit_order(user_id: str, symbol: str, side: str, amount: float, limi
     with _LOCK:
         ref = f"ex-order:{uuid.uuid4().hex[:12]}"
         if side == "sell":
-            if _get_balance(uid, sym) < amt:
+            if _get_symbol_balance(uid, sym) < amt:
                 return {"success": False, "error": f"insufficient_{sym.lower()}"}
-            _adjust_balance(uid, sym, -amt)
+            _adjust_symbol_balance(uid, sym, -amt, "exchange_order_lock", {"reference": ref})
         else:
             cost = amt * price
             if _get_quote_balance(uid, quote) < cost:
@@ -1323,6 +1381,13 @@ def deposit_from_mn2(user_id: str, symbol: str, mn2_amount: float) -> Dict[str, 
 def health() -> Dict[str, Any]:
     cfg = load_config()
     tre = _read_json(_TREASURY_PATH, {})
+    pool_summary = None
+    try:
+        from backend.services.exchange_mn2_pool_service import mn2_pool_status
+
+        pool_summary = mn2_pool_status()
+    except Exception:
+        pass
     return {
         "success": True,
         "service": "crypto_exchange",
@@ -1330,5 +1395,6 @@ def health() -> Dict[str, Any]:
         "asset_count": len(cfg.get("assets") or []),
         "quote_currencies": _quote_currencies(cfg),
         "treasury_fees_mn2": tre.get("total_fees_mn2"),
+        "mn2_pool": pool_summary,
         "timestamp": _iso(),
     }

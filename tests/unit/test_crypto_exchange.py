@@ -34,11 +34,7 @@ def ex_env(tmp_path, monkeypatch):
         return {"success": True}
 
     monkeypatch.setattr("backend.services.activity_events_service.emit", _noop_emit)
-    return ex
 
-
-@pytest.fixture
-def points_db(tmp_path, monkeypatch):
     from backend.services import unified_points_database as upd
     from contextlib import contextmanager
 
@@ -47,14 +43,37 @@ def points_db(tmp_path, monkeypatch):
         yield
 
     monkeypatch.setattr(upd, "_unified_points_db_context", _noop_ctx)
-    db = upd.UnifiedPointsDatabase(base_dir=str(tmp_path))
+    points_root = tmp_path / "points"
+    db = upd.UnifiedPointsDatabase(base_dir=str(points_root))
     monkeypatch.setattr(upd, "unified_points_db", db)
 
     def _file_only_get(user_id: str):
         return {"success": True, "points": db._points_payload_from_file(user_id)}
 
     monkeypatch.setattr(db, "get_all_points", _file_only_get)
-    return db
+
+    import uuid
+    pool_user = f"test_mn2_pool_{uuid.uuid4().hex[:8]}"
+    pool_cfg = tmp_path / "exchange_mn2_pool_config.json"
+    pool_cfg.write_text(json.dumps({
+        "enabled": True,
+        "pool_user_id": pool_user,
+        "paper_seed_on_empty": True,
+        "paper_seed": {"MN2": 100000, "USDT": 100000, "USDC": 100000},
+        "min_pool_by_asset": {"MN2": 0, "USDT": 0, "USDC": 0},
+    }), encoding="utf-8")
+    monkeypatch.setattr("backend.services.exchange_mn2_pool_service._CFG_PATH", str(pool_cfg))
+    monkeypatch.setattr("backend.services.exchange_mn2_pool_service._STATE_PATH", str(data / "mn2_pool_state.json"))
+    monkeypatch.setattr("backend.services.exchange_mn2_pool_service._LEDGER_PATH", str(data / "mn2_pool_ledger.jsonl"))
+    from backend.services import exchange_mn2_pool_service as pool_mod
+    pool_mod.ensure_paper_seed()
+    return ex
+
+
+@pytest.fixture
+def points_db(ex_env):
+    from backend.services import unified_points_database as upd
+    return upd.unified_points_db
 
 
 def test_catalog_has_25_assets(ex_env):

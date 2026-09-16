@@ -82,12 +82,32 @@
     var el = q('cex-wallet-balances');
     if (!el || !w || !w.success) return;
     var assets = w.assets || {};
+    var rows = [];
+    if (w.mn2_balance != null) {
+      rows.push('<div class="cex-wallet-row"><span>MN2 coins</span><strong>' + fmt(w.mn2_balance, 6) + '</strong></div>');
+    }
     var pinned = ['USDT', 'USDC'];
-    var keys = pinned.concat(Object.keys(assets).filter(function (k) {
+    pinned.concat(Object.keys(assets).filter(function (k) {
       return pinned.indexOf(k) < 0 && Number(assets[k]) > 0;
-    }));
-    el.innerHTML = keys.map(function (k) {
-      return '<div class="cex-wallet-row"><span>' + k + '</span><strong>' + fmt(assets[k], 8) + '</strong></div>';
+    })).forEach(function (k) {
+      rows.push('<div class="cex-wallet-row"><span>' + k + '</span><strong>' + fmt(assets[k], 8) + '</strong></div>');
+    });
+    el.innerHTML = rows.join('') || '<p class="cex-muted">No balances yet.</p>';
+  }
+
+  function renderMn2Pool(data) {
+    var el = q('cex-mn2-pool');
+    if (!el) return;
+    if (!data || !data.success) {
+      el.innerHTML = '<p class="cex-muted">MN2 pool unavailable.</p>';
+      return;
+    }
+    var assets = data.pool_assets || {};
+    var gaps = data.pool_gaps || {};
+    el.innerHTML = ['MN2', 'USDT', 'USDC'].map(function (sym) {
+      var gap = gaps[sym];
+      var note = gap ? ' · need ' + fmt(gap, 4) : '';
+      return '<div class="cex-wallet-row"><span>' + sym + '</span><strong>' + fmt(assets[sym], 4) + note + '</strong></div>';
     }).join('');
   }
 
@@ -308,6 +328,7 @@
       getJson('/api/exchange/rewards?user_id=' + u),
       getJson('/api/exchange/trades?limit=10'),
       getJson('/api/exchange/binance/stable-wallets'),
+      getJson('/api/exchange/mn2-pool/status'),
     ]).then(function (res) {
       catalog = res[0];
       if (catalog && catalog.success) {
@@ -329,6 +350,7 @@
       renderRewards(res[2]);
       renderTrades(res[3]);
       renderBinanceStables(res[4]);
+      renderMn2Pool(res[5]);
     }).catch(function () { msg('Could not load exchange data.'); });
   }
 
@@ -586,9 +608,11 @@
       var params = new URLSearchParams(window.location.search);
       var asset = (params.get('asset') || '').toUpperCase();
       var quote = (params.get('quote') || '').toUpperCase();
+      var side = (params.get('side') || '').toLowerCase();
       if (asset) selected = asset;
       if (quote && q('cex-swap-quote')) q('cex-swap-quote').value = quote;
       if (quote && q('cex-limit-quote')) q('cex-limit-quote').value = quote;
+      if (side && q('cex-swap-side')) q('cex-swap-side').value = side === 'sell' ? 'sell' : 'buy';
     } catch (e) {}
   }
 

@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "pool_user_id": "exchange_sales_pool",
+  "agent_id": "exchange_agent_mn2_pool",
+  "pool_assets": ["MN2", "USDT", "USDC"],
+  "min_pool_by_asset": {
+    "MN2": 2500,
+    "USDT": 500,
+    "USDC": 500
+  },
+  "paper_seed_on_empty": true,
+  "paper_seed": {
+    "MN2": 10000,
+    "USDT": 2000,
+    "USDC": 2000
+  },
+  "seed_mn2_per_tick": 250,
+  "stable_rebalance_threshold": 0.15,
+  "tick_cooldown_seconds": 120,
+  "note": "Customer MN2↔USDT/USDC swaps draw from exchange_sales_pool. Pool agent tops up MN2 and rebalances stables."
+}
