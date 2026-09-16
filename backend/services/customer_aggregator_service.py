@@ -82,17 +82,28 @@ def _ledger_summary_for_user(
     return _load_ledger_index().get(user_id)
 
 
-def _discord_meta_for_user(user_id: str) -> Optional[Dict[str, Any]]:
+def _discord_index_by_user() -> Dict[str, Dict[str, Any]]:
     try:
         from backend.services.discord_customer_ingest_service import _load_index
 
         index = _load_index()
+        out: Dict[str, Dict[str, Any]] = {}
         for row in (index.get("customers") or {}).values():
-            if row.get("user_id") == user_id:
-                return row
+            uid = row.get("user_id")
+            if uid:
+                out[str(uid)] = row
+        return out
     except Exception:
-        pass
-    return None
+        return {}
+
+
+def _discord_meta_for_user(
+    user_id: str,
+    discord_index: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Optional[Dict[str, Any]]:
+    if discord_index is not None:
+        return discord_index.get(user_id)
+    return _discord_index_by_user().get(user_id)
 
 
 def _customer_row(
@@ -101,9 +112,11 @@ def _customer_row(
     *,
     ledger_index: Optional[Dict[str, Dict[str, Any]]] = None,
     control_index: Optional[Dict[str, Dict[str, Any]]] = None,
+    discord_index: Optional[Dict[str, Dict[str, Any]]] = None,
+    include_identifiers: bool = True,
 ) -> Dict[str, Any]:
     systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
-    discord = raw.get("discord") if isinstance(raw.get("discord"), dict) else _discord_meta_for_user(user_id)
+    discord = raw.get("discord") if isinstance(raw.get("discord"), dict) else _discord_meta_for_user(user_id, discord_index)
     ledger = raw.get("ledger") if isinstance(raw.get("ledger"), dict) else None
     if not ledger:
         ledger = _ledger_summary_for_user(user_id, ledger_index)
@@ -122,7 +135,7 @@ def _customer_row(
         ),
         "last_active": raw.get("updated_at") or raw.get("last_source") or (ledger or {}).get("last_activity"),
         "avatar_url": _avatar_url(user_id),
-        "identifiers": _load_identifiers(user_id),
+        "identifiers": _load_identifiers(user_id) if include_identifiers else {},
         "source": source,
         "discord": discord,
         "ledger": ledger,
@@ -141,6 +154,7 @@ def list_customers(
     q = (search or "").strip().lower()
     src = (source or "").strip().lower()
     control_index = _load_control_index()
+    discord_index = _discord_index_by_user() if src in ("", "discord", "discord_channel") else {}
     ledger_index: Dict[str, Dict[str, Any]] = {}
     if src in ("", "ledger"):
         ledger_index = _load_ledger_index()
@@ -156,7 +170,14 @@ def list_customers(
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     raw = json.load(f) or {}
-                row = _customer_row(uid, raw, ledger_index=ledger_index, control_index=control_index)
+                row = _customer_row(
+                    uid,
+                    raw,
+                    ledger_index=ledger_index,
+                    control_index=control_index,
+                    discord_index=discord_index,
+                    include_identifiers=False,
+                )
                 if src and str(row.get("source") or "").lower() != src:
                     continue
                 rows.append(row)
@@ -280,7 +301,7 @@ def stats() -> Dict[str, Any]:
             if not name.endswith(".json"):
                 continue
             points_count += 1
-            if with_mn2 < 5000:
+            if with_mn2 < 250:
                 try:
                     with open(os.path.join(_POINTS_DIR, name), "r", encoding="utf-8") as f:
                         raw = json.load(f) or {}
