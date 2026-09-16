@@ -41,13 +41,14 @@ export function TrophySlot({ trophyCounts, loading }: Props) {
         ) : (
           <div class="wallet-trophy-empty">
             <p>No trophies yet — browse the shop Top 25 series.</p>
-            <a href="/shop?tab=trophies" class="wallet-link">Shop trophies →</a>
+            <a href="/wallets?tab=trophies" class="wallet-link">Open trophy gallery →</a>
           </div>
         )}
       </div>
       {top25 > 0 && (
         <div class="wallet-trophy-footer">
-          Top 25 progress: <strong>{top25}</strong> edition{top25 === 1 ? '' : 's'} owned
+          Top 25 progress: <strong>{top25}</strong> edition{top25 === 1 ? '' : 's'} owned ·{' '}
+          <a href="/wallets?tab=trophies" class="wallet-link">Gallery</a>
         </div>
       )}
     </section>

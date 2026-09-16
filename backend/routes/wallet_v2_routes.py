@@ -56,6 +56,16 @@ def wallet_v2_summary():
     return jsonify(payload), 200
 
 
+@wallet_v2_bp.route("/api/wallet/v2/trophies", methods=["GET"])
+def wallet_v2_trophies():
+    """Lazy-loaded trophy collection for wallet Trophies tab (plan 001 W-U3)."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    series = (request.args.get("series") or "").strip() or None
+    from backend.services.wallet_trophies_service import build_wallet_trophies
+
+    return jsonify(build_wallet_trophies(user_id, series=series)), 200
+
+
 @wallet_v2_bp.route("/api/wallet/v2/discord/status", methods=["GET"])
 def wallet_v2_discord_status():
     """Discord link state for wallet Settings panel."""

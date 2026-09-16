@@ -15,6 +15,7 @@ import { PortalHub } from './tabs/PortalHub';
 import { RewardsHub } from './tabs/RewardsHub';
 import { Settings } from './tabs/Settings';
 import { ShopHub } from './tabs/ShopHub';
+import { Trophies } from './tabs/Trophies';
 import { Upgrades } from './tabs/Upgrades';
 
 function tabFromQuery(): TabId {
@@ -115,6 +116,8 @@ export function App() {
         return <Settings />;
       case 'upgrades':
         return <Upgrades />;
+      case 'trophies':
+        return <Trophies />;
       default:
         return (
           <div class="wallet-panel wallet-tab-panel wallet-placeholder-tab">

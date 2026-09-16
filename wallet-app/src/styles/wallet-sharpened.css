@@ -235,6 +235,148 @@ body {
   border-top: var(--wallet-border);
 }
 
+.wallet-trophies-tab .wallet-trophies-disclaimer {
+  margin: 0 16px 12px;
+  font-size: 0.8rem;
+  color: var(--wallet-muted);
+  line-height: 1.45;
+}
+
+.wallet-trophies-progress {
+  margin: 0 16px 12px;
+  font-size: 0.85rem;
+  color: var(--wallet-text);
+}
+
+.wallet-trophy-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 16px 14px;
+}
+
+.wallet-trophy-chip {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-elevated);
+  color: var(--wallet-text);
+  cursor: pointer;
+}
+
+.wallet-trophy-chip--active {
+  border-color: var(--wallet-accent);
+  color: var(--wallet-accent);
+}
+
+.wallet-trophy-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.wallet-trophy-gallery--compact {
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+}
+
+.wallet-trophy-gallery-card {
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-elevated);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+}
+
+.wallet-trophy-gallery-card--shop:hover {
+  border-color: var(--wallet-accent);
+}
+
+.wallet-trophy-gallery-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.wallet-trophy-gallery-icon-wrap {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wallet-bg);
+}
+
+.wallet-trophy-gallery-icon {
+  font-size: 2rem;
+}
+
+.wallet-trophy-gallery-body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wallet-trophy-gallery-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.wallet-trophy-gallery-meta {
+  font-size: 0.75rem;
+  color: var(--wallet-muted);
+  font-family: var(--wallet-font-mono);
+}
+
+.wallet-trophy-gallery-tag {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--wallet-muted);
+}
+
+.wallet-trophy-gallery-price {
+  font-size: 0.8rem;
+  font-family: var(--wallet-font-mono);
+  color: var(--wallet-accent);
+}
+
+.wallet-trophy-gallery-ctas {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.wallet-trophy-cta {
+  font-size: 0.75rem;
+  color: var(--wallet-accent);
+  text-decoration: none;
+}
+
+.wallet-trophies-empty {
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--wallet-muted);
+}
+
+.wallet-trophies-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+}
+
+.wallet-trophies-actions-sep {
+  color: var(--wallet-muted);
+}
+
 .wallet-mn-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));

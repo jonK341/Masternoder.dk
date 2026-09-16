@@ -47,6 +47,65 @@ export type WalletSummary = {
   explorer_base_url?: string;
 };
 
+export type TrophyEdition = {
+  edition_no: number;
+  edition_key: string;
+  legacy_stack?: boolean;
+  item_id: string;
+  item_name?: string;
+  serial_key?: string;
+  series?: string;
+  on_chain_mint: boolean;
+  image_url?: string | null;
+  gif_url?: string | null;
+  sound_url?: string | null;
+  trade_actions?: {
+    auction_list?: string;
+    peer_transfer?: string | null;
+    shop_detail?: string;
+  };
+};
+
+export type WalletTrophiesResponse = {
+  success: boolean;
+  guest?: boolean;
+  user_id?: string;
+  message?: string;
+  on_chain_mint: boolean;
+  platform_ledger?: boolean;
+  editions: TrophyEdition[];
+  catalog_preview?: Array<{
+    id: string;
+    name?: string;
+    effective_price_usd?: number;
+    shop_url?: string;
+    image_url?: string | null;
+  }>;
+  counts?: {
+    total_editions: number;
+    top25_owned: number;
+    top25_total: number;
+    unique_skus: number;
+    catalog_skus?: number;
+  };
+  shop_trophies_url?: string;
+  auction_url?: string;
+};
+
+export async function fetchWalletTrophies(series?: string): Promise<WalletTrophiesResponse> {
+  const params = new URLSearchParams();
+  if (series) params.set('series', series);
+  const qs = params.toString();
+  const res = await fetch(`/api/wallet/v2/trophies${qs ? `?${qs}` : ''}`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Trophies failed (${res.status})`);
+  }
+  return res.json() as Promise<WalletTrophiesResponse>;
+}
+
 export async function fetchSummary(): Promise<WalletSummary> {
   const params = new URLSearchParams({
     sections: 'balance,trophy_counts,flags,network',
