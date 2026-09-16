@@ -411,6 +411,7 @@ MANIFESTS = {
         "backend/services/p2p_market_agent_service.py",
         "backend/services/agent_cron_service.py",
         "backend/routes/agent_cron_routes.py",
+        "backend/routes/mn2_p2p_routes.py",
         "cron/agents_p2p_market.sh",
         "cron/masternoder-agents-p2p-market.cron.d",
     ],
