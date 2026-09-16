@@ -103,6 +103,10 @@ export type DiscordStatus = {
     fulfillment_status_api: string;
   };
   fulfillment_status?: string;
+  fulfillment_source?: string;
+  fulfillment_sources?: string[];
+  buyer_signal?: boolean;
+  mn2_coin_offer_status?: string;
   fulfillment_order_lines?: Array<{
     id: string;
     label: string;
@@ -128,6 +132,10 @@ export type DiscordFulfillmentStatus = {
     fulfilled_at?: string | null;
   }>;
   mn2_balance?: number;
+  source?: string;
+  sources?: string[];
+  buyer_signal?: boolean;
+  mn2_coin_offer_status?: string;
   order_list_api?: string;
   message?: string;
 };

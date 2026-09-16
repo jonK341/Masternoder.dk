@@ -363,6 +363,10 @@ def build_discord_status(user_id: str) -> Dict[str, Any]:
         if fulfillment.get("in_order_list"):
             payload["fulfillment_status"] = fulfillment.get("fulfillment_status")
             payload["fulfillment_order_lines"] = fulfillment.get("order_lines") or []
+            payload["fulfillment_source"] = fulfillment.get("source")
+            payload["fulfillment_sources"] = fulfillment.get("sources") or []
+            payload["buyer_signal"] = fulfillment.get("buyer_signal")
+            payload["mn2_coin_offer_status"] = fulfillment.get("mn2_coin_offer_status")
     except Exception:
         pass
 

@@ -340,6 +340,19 @@ export function DiscordPanel() {
           <p style={{ margin: '0 0 10px', fontSize: '0.8rem', color: 'var(--wallet-muted)' }}>
             Your row on the MN2 Discord community order list.
           </p>
+          {status.fulfillment_source || status.fulfillment_sources?.length ? (
+            <div style={{ fontSize: '0.8rem', marginBottom: '8px', color: 'var(--wallet-muted)' }}>
+              Source: {status.fulfillment_sources?.join(' + ') || status.fulfillment_source}
+            </div>
+          ) : null}
+          {status.buyer_signal && status.mn2_coin_offer_status && status.mn2_coin_offer_status !== 'none' ? (
+            <div style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
+              MN2 coin offer:{' '}
+              <span style={{ fontWeight: 700, color: 'var(--wallet-accent)' }}>
+                {status.mn2_coin_offer_status}
+              </span>
+            </div>
+          ) : null}
           <div style={{ fontSize: '0.85rem', marginBottom: '10px' }}>
             Status:{' '}
             <span

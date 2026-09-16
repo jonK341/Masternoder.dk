@@ -15,9 +15,18 @@ _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 _IDENT_DIR = os.path.join(_BASE, "logs", "user_identifiers")
 _LEDGER_FILE = "discord_fulfillment_ledger.json"
 _ORDER_LIST_FILE = "discord_order_list.json"
+_CONFIG_FILE = "discord_fulfillment_config.json"
 _MN2_CHANNEL_CONFIG = os.path.join(_BASE, "data", "discord_mn2_channel.json")
+_PAYMENT_LEDGER = os.path.join(_BASE, "logs", "monetization", "payment_ledger.jsonl")
+_DISCORD_CLICKS = os.path.join(_BASE, "logs", "discord_clicks.jsonl")
+_DISCORD_PROMOS = os.path.join(_BASE, "data", "discord_promo_codes.json")
+_ONRAMP_ORDERS = os.path.join(_BASE, "data", "mn2_onramp_orders.json")
+_MN2_LEDGER = os.path.join(_BASE, "data", "mn2_ledger.json")
+_INTENT_REGISTRY = os.path.join(_BASE, "data", "discord_mn2_purchase_intent.json")
 
-_DEFAULT_LINE_IDS = ("account_link", "role_sync", "casino_vip_role", "hosting_vip_role", "mn2_credit", "trophy_grant")
+_SOURCE_LOCAL = "local_linked"
+_SOURCE_API = "discord_api"
+_SOURCE_BUYER = "purchase_intent"
 
 
 def _iso() -> str:
@@ -28,12 +37,57 @@ def _data_dir() -> str:
     return os.path.join(_BASE, "data")
 
 
+def _config_path() -> str:
+    return os.path.join(_data_dir(), _CONFIG_FILE)
+
+
 def _ledger_path() -> str:
     return os.path.join(_data_dir(), _LEDGER_FILE)
 
 
 def _order_list_path() -> str:
     return os.path.join(_data_dir(), _ORDER_LIST_FILE)
+
+
+def load_config() -> Dict[str, Any]:
+    path = _config_path()
+    defaults: Dict[str, Any] = {
+        "mn2_channel_id": None,
+        "buyer_signal_weights": {
+            "payment_ledger": 30,
+            "discord_promo_redeem": 25,
+            "mn2_onramp_quote": 35,
+            "mn2_onramp_funded": 45,
+            "discord_click": 15,
+            "coin_pack_purchase": 20,
+            "casino_discord_play": 10,
+            "wallet_intent_register": 40,
+        },
+        "buyer_signal_threshold": 20,
+        "default_coin_pack_sku": "mn2-pack-s",
+        "default_onramp_nudge_url": "/exchange?tab=onramp",
+        "discord_promo_codes": ["DISCORD-STARTER", "HOSTMN5", "MARKET-BONUS"],
+        "payment_item_id_hints": ["mn2", "coin", "pack", "onramp", "paypal"],
+        "priority_weights": {
+            "local_linked": 10,
+            "discord_api": 5,
+            "purchase_intent": 15,
+            "linked_and_buyer": 25,
+        },
+    }
+    if not os.path.isfile(path):
+        return defaults
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            merged = {**defaults, **data}
+            merged["buyer_signal_weights"] = {**defaults["buyer_signal_weights"], **(data.get("buyer_signal_weights") or {})}
+            merged["priority_weights"] = {**defaults["priority_weights"], **(data.get("priority_weights") or {})}
+            return merged
+    except Exception:
+        pass
+    return defaults
 
 
 def _bot_token() -> str:
@@ -45,19 +99,46 @@ def _guild_id() -> str:
 
 
 def _mn2_channel_id() -> Optional[str]:
+    cfg = load_config()
+    cid = str(cfg.get("mn2_channel_id") or "").strip()
+    if cid.isdigit():
+        return cid
     env_id = (os.environ.get("DISCORD_MN2_CHANNEL_ID") or "").strip()
     if env_id.isdigit():
         return env_id
     if os.path.isfile(_MN2_CHANNEL_CONFIG):
         try:
             with open(_MN2_CHANNEL_CONFIG, "r", encoding="utf-8") as f:
-                cfg = json.load(f)
-            cid = str((cfg or {}).get("channel_id") or "").strip()
+                ch = json.load(f)
+            cid = str((ch or {}).get("channel_id") or "").strip()
             if cid.isdigit():
                 return cid
         except Exception:
             pass
     return None
+
+
+def _read_jsonl(path: str, limit: int = 5000) -> List[Dict[str, Any]]:
+    if not os.path.isfile(path):
+        return []
+    rows: List[Dict[str, Any]] = []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                    if isinstance(row, dict):
+                        rows.append(row)
+                except Exception:
+                    continue
+                if len(rows) >= limit:
+                    break
+    except Exception:
+        pass
+    return rows
 
 
 def _discord_api_get(path: str, params: Optional[Dict[str, str]] = None) -> Tuple[Optional[Any], Optional[str]]:
@@ -91,6 +172,30 @@ def _discord_api_get(path: str, params: Optional[Dict[str, str]] = None) -> Tupl
         return None, str(exc)
 
 
+def _resolve_discord_id(user_id: Optional[str]) -> Optional[str]:
+    uid = (user_id or "").strip()
+    if not uid:
+        return None
+    try:
+        from backend.services.discord_link_service import get_discord_id_for_user
+
+        return get_discord_id_for_user(uid)
+    except Exception:
+        return None
+
+
+def _resolve_user_id(discord_id: Optional[str]) -> Optional[str]:
+    did = (discord_id or "").strip()
+    if not did:
+        return None
+    try:
+        from backend.services.discord_link_service import get_user_id_for_discord
+
+        return get_user_id_for_discord(did)
+    except Exception:
+        return None
+
+
 def scan_local_linked_users() -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     if not os.path.isdir(_IDENT_DIR):
@@ -112,7 +217,9 @@ def scan_local_linked_users() -> List[Dict[str, Any]]:
                     "discord_id": discord_id,
                     "user_id": (data.get("user_id") or "").strip() or None,
                     "discord_username": data.get("discord_username") or data.get("username"),
-                    "source": "local_linked",
+                    "source": _SOURCE_LOCAL,
+                    "buyer_signals": [],
+                    "buyer_score": 0.0,
                 }
             )
         except Exception:
@@ -153,7 +260,9 @@ def fetch_discord_guild_members(limit: int = 1000) -> Dict[str, Any]:
                     "discord_id": uid,
                     "discord_username": user.get("global_name") or user.get("username"),
                     "user_id": None,
-                    "source": "discord_api_guild",
+                    "source": _SOURCE_API,
+                    "buyer_signals": [],
+                    "buyer_score": 0.0,
                 }
             )
         after = members[-1]["discord_id"] if members else None
@@ -201,13 +310,313 @@ def fetch_discord_channel_authors(limit: int = 200) -> Dict[str, Any]:
                 "discord_id": uid,
                 "discord_username": author.get("global_name") or author.get("username"),
                 "user_id": None,
-                "source": "discord_api_channel",
+                "source": _SOURCE_API,
+                "buyer_signals": [],
+                "buyer_score": 0.0,
             }
         )
         if len(members) >= limit:
             break
 
     return {"success": True, "members": members, "error": None, "api_used": True, "channel_id": channel_id}
+
+
+def _buyer_signal_weight(cfg: Dict[str, Any], signal: str) -> float:
+    weights = cfg.get("buyer_signal_weights") or {}
+    try:
+        return float(weights.get(signal) or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _item_matches_mn2_coin(item_id: str, item_name: str, hints: List[str]) -> bool:
+    blob = f"{item_id} {item_name}".lower()
+    return any(h in blob for h in hints)
+
+
+def _load_intent_registry() -> Dict[str, Any]:
+    if not os.path.isfile(_INTENT_REGISTRY):
+        return {"version": 1, "entries": []}
+    try:
+        with open(_INTENT_REGISTRY, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            data.setdefault("entries", [])
+            return data
+    except Exception:
+        pass
+    return {"version": 1, "entries": []}
+
+
+def _save_intent_registry(doc: Dict[str, Any]) -> None:
+    os.makedirs(_data_dir(), exist_ok=True)
+    doc["updated_at"] = _iso()
+    path = _INTENT_REGISTRY
+    tmp = path + ".tmp"
+    with _LOCK:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(doc, f, indent=2)
+        os.replace(tmp, path)
+
+
+def register_mn2_purchase_intent(
+    *,
+    user_id: Optional[str] = None,
+    discord_id: Optional[str] = None,
+    channel: str = "wallet",
+    pack_id: Optional[str] = None,
+    amount_usd: Optional[float] = None,
+    note: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Record explicit MN2 buy intent (wallet CTA, Discord bot, ops import)."""
+    uid = (user_id or "").strip() or None
+    did = (discord_id or "").strip() or None
+    if not did and uid:
+        did = _resolve_discord_id(uid)
+    if not did and not uid:
+        return {"success": False, "error": "user_id or discord_id required"}
+
+    entry = {
+        "user_id": uid,
+        "discord_id": did,
+        "channel": (channel or "wallet").strip()[:64],
+        "pack_id": (pack_id or "").strip()[:64] or None,
+        "amount_usd": float(amount_usd) if amount_usd is not None else None,
+        "note": (note or "").strip()[:256] or None,
+        "registered_at": _iso(),
+    }
+    doc = _load_intent_registry()
+    entries = doc.get("entries") or []
+    dedupe = f"{did or ''}:{uid or ''}:{entry['channel']}:{entry.get('pack_id') or ''}"
+    for prev in entries:
+        if prev.get("_dedupe") == dedupe:
+            prev.update(entry)
+            prev["updated_at"] = _iso()
+            _save_intent_registry(doc)
+            return {"success": True, "updated": True, "discord_id": did, "user_id": uid, "entry": prev}
+    entry["_dedupe"] = dedupe
+    entries.append(entry)
+    doc["entries"] = entries[-5000:]
+    _save_intent_registry(doc)
+    return {"success": True, "registered": True, "discord_id": did, "user_id": uid, "entry": entry}
+
+
+def scan_purchase_intent_buyers() -> List[Dict[str, Any]]:
+    """
+    Source C — users with MN2/coin purchase intent signals, resolved to discord_id when possible.
+    """
+    cfg = load_config()
+    hints = [str(h).lower() for h in (cfg.get("payment_item_id_hints") or [])]
+    promo_codes = {str(c).upper() for c in (cfg.get("discord_promo_codes") or [])}
+    by_discord: Dict[str, Dict[str, Any]] = {}
+
+    def _bump(discord_id: str, user_id: Optional[str], signal: str, username: Optional[str] = None) -> None:
+        did = (discord_id or "").strip()
+        if not did:
+            return
+        w = _buyer_signal_weight(cfg, signal)
+        if did not in by_discord:
+            by_discord[did] = {
+                "discord_id": did,
+                "user_id": user_id,
+                "discord_username": username,
+                "source": _SOURCE_BUYER,
+                "buyer_signals": [],
+                "buyer_score": 0.0,
+            }
+        row = by_discord[did]
+        if user_id and not row.get("user_id"):
+            row["user_id"] = user_id
+        if username and not row.get("discord_username"):
+            row["discord_username"] = username
+        if signal not in row["buyer_signals"]:
+            row["buyer_signals"].append(signal)
+        row["buyer_score"] = float(row.get("buyer_score") or 0) + w
+
+    # Explicit wallet / Discord bot intent registry
+    for entry in _load_intent_registry().get("entries") or []:
+        uid = (entry.get("user_id") or "").strip() or None
+        did = str(entry.get("discord_id") or "").strip() or None
+        if not did and uid:
+            did = _resolve_discord_id(uid)
+        if not did:
+            continue
+        _bump(did, uid, "wallet_intent_register")
+
+    # PayPal / monetization payment ledger
+    for entry in _read_jsonl(_PAYMENT_LEDGER):
+        user_id = (entry.get("user_id") or "").strip() or None
+        extra = entry.get("extra") if isinstance(entry.get("extra"), dict) else {}
+        discord_id = str(extra.get("discord_id") or entry.get("discord_id") or "").strip() or None
+        if not discord_id and user_id:
+            discord_id = _resolve_discord_id(user_id)
+        if not discord_id:
+            continue
+        item_id = str(entry.get("item_id") or "")
+        item_name = str(entry.get("item_name") or "")
+        if _item_matches_mn2_coin(item_id, item_name, hints):
+            sig = "coin_pack_purchase" if "coin" in item_id.lower() or "coin" in item_name.lower() else "payment_ledger"
+            _bump(discord_id, user_id, sig)
+
+    # Discord promo redemptions (DISCORD-STARTER, etc.)
+    if os.path.isfile(_DISCORD_PROMOS):
+        try:
+            with open(_DISCORD_PROMOS, "r", encoding="utf-8") as f:
+                promo_doc = json.load(f)
+            for promo in promo_doc.get("codes") or []:
+                if not isinstance(promo, dict):
+                    continue
+                code = str(promo.get("code") or "").upper()
+                if promo_codes and code not in promo_codes:
+                    continue
+                for uid in promo.get("redeemed_by") or []:
+                    if not isinstance(uid, str):
+                        continue
+                    did = _resolve_discord_id(uid)
+                    if did:
+                        _bump(did, uid, "discord_promo_redeem")
+        except Exception:
+            pass
+
+    # MN2 on-ramp orders (quoted / funded = buy intent)
+    if os.path.isfile(_ONRAMP_ORDERS):
+        try:
+            with open(_ONRAMP_ORDERS, "r", encoding="utf-8") as f:
+                orders = json.load(f)
+            for order in (orders.values() if isinstance(orders, dict) else []):
+                if not isinstance(order, dict):
+                    continue
+                uid = (order.get("user_id") or "").strip() or None
+                if not uid:
+                    continue
+                did = _resolve_discord_id(uid)
+                if not did:
+                    continue
+                status = (order.get("status") or "").strip()
+                if status in ("held", "cleared"):
+                    _bump(did, uid, "mn2_onramp_funded")
+                elif status in ("quoted", "pending_payment"):
+                    _bump(did, uid, "mn2_onramp_quote")
+        except Exception:
+            pass
+
+    # Exchange PayPal MN2 pack orders (pending + captured)
+    paypal_mn2_orders = os.path.join(_BASE, "data", "crypto_exchange", "paypal_mn2_orders.json")
+    if os.path.isfile(paypal_mn2_orders):
+        try:
+            with open(paypal_mn2_orders, "r", encoding="utf-8") as f:
+                orders_doc = json.load(f)
+            for bucket in ("pending", "captured"):
+                for order in (orders_doc.get(bucket) or {}).values():
+                    if not isinstance(order, dict):
+                        continue
+                    uid = (order.get("user_id") or "").strip() or None
+                    if not uid:
+                        continue
+                    did = _resolve_discord_id(uid)
+                    if not did:
+                        continue
+                    sig = "mn2_onramp_funded" if bucket == "captured" else "mn2_onramp_quote"
+                    _bump(did, uid, sig)
+        except Exception:
+            pass
+
+    # MN2 ledger on-ramp purchases for linked users
+    if os.path.isfile(_MN2_LEDGER):
+        try:
+            with open(_MN2_LEDGER, "r", encoding="utf-8") as f:
+                ledger = json.load(f)
+            entries = ledger.get("entries") if isinstance(ledger, dict) else ledger
+            for entry in entries or []:
+                if not isinstance(entry, dict):
+                    continue
+                if entry.get("type") not in ("onramp_purchase", "shop_payment", "deposit"):
+                    continue
+                uid = (entry.get("user_id") or "").strip() or None
+                if not uid:
+                    continue
+                meta = entry.get("metadata") if isinstance(entry.get("metadata"), dict) else {}
+                if entry.get("type") == "onramp_purchase":
+                    did = _resolve_discord_id(uid)
+                    if did:
+                        _bump(did, uid, "mn2_onramp_funded")
+                elif entry.get("type") == "shop_payment":
+                    iid = str(meta.get("item_id") or "")
+                    if _item_matches_mn2_coin(iid, "", hints):
+                        did = _resolve_discord_id(uid)
+                        if did:
+                            _bump(did, uid, "coin_pack_purchase")
+        except Exception:
+            pass
+
+    # Discord click / referral trail (casino discord-play, affiliate links)
+    for click in _read_jsonl(_DISCORD_CLICKS):
+        user_id = (click.get("user_id") or "").strip() or None
+        link_id = str(click.get("link_id") or "")
+        meta = click.get("meta") if isinstance(click.get("meta"), dict) else {}
+        if not user_id:
+            continue
+        did = _resolve_discord_id(user_id)
+        if not did:
+            continue
+        if "discord" in link_id.lower() or meta.get("source") in ("affiliate_rotator", "promo_rotator"):
+            sig = "casino_discord_play" if "casino" in link_id.lower() or "play" in link_id.lower() else "discord_click"
+            _bump(did, user_id, sig)
+
+    threshold = float(cfg.get("buyer_signal_threshold") or 0)
+    return [row for row in by_discord.values() if float(row.get("buyer_score") or 0) >= threshold]
+
+
+def _canonical_source(sources: Set[str]) -> str:
+    ordered = [_SOURCE_LOCAL, _SOURCE_API, _SOURCE_BUYER]
+    present = [s for s in ordered if s in sources]
+    if len(present) == 0:
+        return "unknown"
+    if len(present) == 1:
+        return present[0]
+    if len(present) == 3:
+        return "all"
+    return "+".join(present)
+
+
+def _priority_score(sources: Set[str], buyer_score: float, linked: bool, cfg: Dict[str, Any]) -> int:
+    pw = cfg.get("priority_weights") or {}
+    score = int(buyer_score)
+    if _SOURCE_LOCAL in sources:
+        score += int(pw.get("local_linked") or 0)
+    if _SOURCE_API in sources:
+        score += int(pw.get("discord_api") or 0)
+    if _SOURCE_BUYER in sources:
+        score += int(pw.get("purchase_intent") or 0)
+    if linked and _SOURCE_BUYER in sources:
+        score += int(pw.get("linked_and_buyer") or 0)
+    return score
+
+
+def _merge_seed(merged: Dict[str, Dict[str, Any]], row: Dict[str, Any], source_key: str) -> None:
+    did = str(row.get("discord_id") or "").strip()
+    if not did:
+        return
+    if did not in merged:
+        merged[did] = {
+            "discord_id": did,
+            "user_id": row.get("user_id"),
+            "discord_username": row.get("discord_username"),
+            "sources": {source_key},
+            "buyer_signals": list(row.get("buyer_signals") or []),
+            "buyer_score": float(row.get("buyer_score") or 0),
+        }
+        return
+    existing = merged[did]
+    existing["sources"].add(source_key)
+    if row.get("user_id") and not existing.get("user_id"):
+        existing["user_id"] = row["user_id"]
+    if row.get("discord_username") and not existing.get("discord_username"):
+        existing["discord_username"] = row["discord_username"]
+    for sig in row.get("buyer_signals") or []:
+        if sig not in existing["buyer_signals"]:
+            existing["buyer_signals"].append(sig)
+    existing["buyer_score"] = max(float(existing.get("buyer_score") or 0), float(row.get("buyer_score") or 0))
 
 
 def _mn2_balance_for_user(user_id: Optional[str]) -> float:
@@ -244,6 +653,9 @@ def _line_template(
         "hosting_vip_role": "Hosting VIP role",
         "mn2_credit": "MN2 community credit",
         "trophy_grant": "Community trophy grant",
+        "coin_pack_offer": "MN2 coin pack offer",
+        "mn2_onramp_nudge": "MN2 on-ramp nudge",
+        "paypal_mn2_bundle": "PayPal MN2 bundle offer",
     }
     row: Dict[str, Any] = {
         "id": line_id,
@@ -261,9 +673,15 @@ def _compute_order_lines(
     user_id: Optional[str],
     mn2_balance: float,
     existing_lines: Optional[List[Dict[str, Any]]] = None,
+    *,
+    buyer_signals: Optional[List[str]] = None,
+    buyer_score: float = 0.0,
+    cfg: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
+    cfg = cfg or load_config()
     existing = {ln.get("id"): ln for ln in (existing_lines or []) if isinstance(ln, dict) and ln.get("id")}
     lines: List[Dict[str, Any]] = []
+    signals = set(buyer_signals or [])
 
     linked = bool(user_id)
     min_vip = float(os.environ.get("CASINO_DISCORD_VIP_MIN_MN2", "100"))
@@ -277,14 +695,23 @@ def _compute_order_lines(
         except Exception:
             pass
 
+    has_buyer_signal = bool(signals) and float(buyer_score or 0) >= float(cfg.get("buyer_signal_threshold") or 0)
+
     specs: List[Tuple[str, str]] = [
         ("account_link", "fulfilled" if linked else "pending"),
         ("role_sync", "fulfilled" if linked else "pending"),
         ("casino_vip_role", "fulfilled" if casino_vip else ("pending" if linked else "skipped")),
         ("hosting_vip_role", "fulfilled" if hosting_vip else ("pending" if linked else "skipped")),
-        ("mn2_credit", "pending"),
+        ("mn2_credit", "pending" if has_buyer_signal or linked else "skipped"),
         ("trophy_grant", "pending"),
     ]
+
+    if has_buyer_signal:
+        specs.extend([
+            ("coin_pack_offer", "pending"),
+            ("mn2_onramp_nudge", "pending" if "mn2_onramp_funded" not in signals else "skipped"),
+            ("paypal_mn2_bundle", "pending" if any(s in signals for s in ("payment_ledger", "coin_pack_purchase")) else "skipped"),
+        ])
 
     for line_id, default_status in specs:
         prev = existing.get(line_id) or {}
@@ -298,8 +725,17 @@ def _compute_order_lines(
         meta: Dict[str, Any] = {}
         if line_id == "mn2_credit":
             meta["default_amount_mn2"] = float(os.environ.get("DISCORD_FULFILLMENT_MN2_CREDIT", "0") or 0)
+            if has_buyer_signal:
+                meta["buyer_signals"] = list(signals)
         if line_id == "trophy_grant":
             meta["trophy_sku"] = os.environ.get("DISCORD_FULFILLMENT_TROPHY_SKU", "discord-community")
+        if line_id == "coin_pack_offer":
+            meta["coin_pack_sku"] = cfg.get("default_coin_pack_sku") or "mn2-pack-s"
+            meta["buyer_signals"] = list(signals)
+        if line_id == "mn2_onramp_nudge":
+            meta["onramp_url"] = cfg.get("default_onramp_nudge_url") or "/exchange?tab=onramp"
+        if line_id == "paypal_mn2_bundle":
+            meta["bundle_hint"] = "paypal_mn2"
         lines.append(_line_template(line_id, status=status, metadata=meta or None))
 
     return lines
@@ -321,7 +757,7 @@ def _load_ledger_doc() -> Dict[str, Any]:
     path = _ledger_path()
     with _LOCK:
         if not os.path.isfile(path):
-            return {"version": 1, "updated_at": None, "rows": [], "meta": {}}
+            return {"version": 2, "updated_at": None, "rows": [], "meta": {}}
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -331,7 +767,7 @@ def _load_ledger_doc() -> Dict[str, Any]:
                 return data
         except Exception:
             pass
-    return {"version": 1, "updated_at": None, "rows": [], "meta": {}}
+    return {"version": 2, "updated_at": None, "rows": [], "meta": {}}
 
 
 def _save_ledger_doc(doc: Dict[str, Any]) -> None:
@@ -346,14 +782,17 @@ def _save_ledger_doc(doc: Dict[str, Any]) -> None:
 
 
 def _save_order_list_export(doc: Dict[str, Any], rows: List[Dict[str, Any]]) -> None:
+    meta = doc.get("meta") or {}
     export = {
         "generated_at": _iso(),
         "total": len(rows),
         "pending": sum(1 for r in rows if r.get("fulfillment_status") == "pending"),
         "partial": sum(1 for r in rows if r.get("fulfillment_status") == "partial"),
         "fulfilled": sum(1 for r in rows if r.get("fulfillment_status") == "fulfilled"),
-        "sources": doc.get("meta", {}).get("sources", {}),
-        "discord_api_used": bool(doc.get("meta", {}).get("discord_api_used")),
+        "sources": meta.get("sources", {}),
+        "overlaps": meta.get("overlaps", {}),
+        "buyer_signal_count": meta.get("buyer_signal_count", 0),
+        "discord_api_used": bool(meta.get("discord_api_used")),
         "orders": rows,
     }
     path = _order_list_path()
@@ -364,8 +803,14 @@ def _save_order_list_export(doc: Dict[str, Any], rows: List[Dict[str, Any]]) -> 
         os.replace(tmp, path)
 
 
-def build_order_list(*, use_discord_api: bool = True) -> Dict[str, Any]:
-    """Aggregate Discord users + wallet/trophy status into fulfillment ledger."""
+def build_order_list(
+    *,
+    use_local: bool = True,
+    use_discord_api: bool = True,
+    use_buyer_signals: bool = True,
+) -> Dict[str, Any]:
+    """Aggregate Discord users from 3 sources into fulfillment ledger."""
+    cfg = load_config()
     existing_doc = _load_ledger_doc()
     existing_by_id = {
         str(r.get("discord_id")): r
@@ -374,15 +819,25 @@ def build_order_list(*, use_discord_api: bool = True) -> Dict[str, Any]:
     }
 
     merged: Dict[str, Dict[str, Any]] = {}
-    source_counts: Dict[str, int] = {"local_linked": 0, "discord_api_guild": 0, "discord_api_channel": 0}
+    source_counts: Dict[str, int] = {
+        _SOURCE_LOCAL: 0,
+        _SOURCE_API: 0,
+        _SOURCE_BUYER: 0,
+    }
+    overlap_counts: Dict[str, int] = {
+        "local_and_api": 0,
+        "local_and_buyer": 0,
+        "api_and_buyer": 0,
+        "all_three": 0,
+    }
 
-    for row in scan_local_linked_users():
-        did = row["discord_id"]
-        merged[did] = row
-        source_counts["local_linked"] += 1
+    if use_local:
+        for row in scan_local_linked_users():
+            _merge_seed(merged, row, _SOURCE_LOCAL)
 
     api_used = False
     api_notes: List[str] = []
+
     if use_discord_api and _bot_token():
         guild_result = fetch_discord_guild_members()
         if guild_result.get("api_used"):
@@ -390,12 +845,7 @@ def build_order_list(*, use_discord_api: bool = True) -> Dict[str, Any]:
         if guild_result.get("error"):
             api_notes.append(f"guild_members: {guild_result['error']}")
         for row in guild_result.get("members") or []:
-            did = row["discord_id"]
-            if did not in merged:
-                merged[did] = row
-                source_counts["discord_api_guild"] += 1
-            elif not merged[did].get("discord_username") and row.get("discord_username"):
-                merged[did]["discord_username"] = row["discord_username"]
+            _merge_seed(merged, row, _SOURCE_API)
 
         channel_result = fetch_discord_channel_authors()
         if channel_result.get("api_used"):
@@ -403,26 +853,40 @@ def build_order_list(*, use_discord_api: bool = True) -> Dict[str, Any]:
         if channel_result.get("error"):
             api_notes.append(f"channel_authors: {channel_result['error']}")
         for row in channel_result.get("members") or []:
-            did = row["discord_id"]
-            if did not in merged:
-                merged[did] = row
-                source_counts["discord_api_channel"] += 1
+            _merge_seed(merged, row, _SOURCE_API)
+
+    if use_buyer_signals:
+        for row in scan_purchase_intent_buyers():
+            _merge_seed(merged, row, _SOURCE_BUYER)
+
+    source_counts = {_SOURCE_LOCAL: 0, _SOURCE_API: 0, _SOURCE_BUYER: 0}
+    for did, seed in merged.items():
+        srcs = seed.get("sources") or set()
+        for s in srcs:
+            if s in source_counts:
+                source_counts[s] += 1
+        if _SOURCE_LOCAL in srcs and _SOURCE_API in srcs:
+            overlap_counts["local_and_api"] += 1
+        if _SOURCE_LOCAL in srcs and _SOURCE_BUYER in srcs:
+            overlap_counts["local_and_buyer"] += 1
+        if _SOURCE_API in srcs and _SOURCE_BUYER in srcs:
+            overlap_counts["api_and_buyer"] += 1
+        if len(srcs) >= 3:
+            overlap_counts["all_three"] += 1
 
     rows_out: List[Dict[str, Any]] = []
     for discord_id, seed in sorted(merged.items(), key=lambda x: x[0]):
-        user_id = seed.get("user_id")
-        if not user_id:
-            try:
-                from backend.services.discord_link_service import get_user_id_for_discord
-
-                user_id = get_user_id_for_discord(discord_id)
-            except Exception:
-                user_id = None
-
+        user_id = seed.get("user_id") or _resolve_user_id(discord_id)
         mn2_balance = _mn2_balance_for_user(user_id)
         username = seed.get("discord_username")
         if not username and user_id:
             username = _discord_username_for_user(user_id)
+
+        sources_set: Set[str] = set(seed.get("sources") or [])
+        buyer_signals = list(seed.get("buyer_signals") or [])
+        buyer_score = float(seed.get("buyer_score") or 0)
+        linked = bool(user_id)
+        priority = _priority_score(sources_set, buyer_score, linked, cfg)
 
         prev = existing_by_id.get(discord_id) or {}
         lines = _compute_order_lines(
@@ -430,31 +894,49 @@ def build_order_list(*, use_discord_api: bool = True) -> Dict[str, Any]:
             user_id,
             mn2_balance,
             existing_lines=prev.get("order_lines"),
+            buyer_signals=buyer_signals,
+            buyer_score=buyer_score,
+            cfg=cfg,
         )
         row = {
             "discord_id": discord_id,
             "discord_username": username,
             "user_id": user_id,
             "mn2_balance": mn2_balance,
-            "source": seed.get("source") or prev.get("source") or "unknown",
+            "source": _canonical_source(sources_set),
+            "sources": sorted(sources_set),
+            "buyer_signal": bool(buyer_signals) and buyer_score >= float(cfg.get("buyer_signal_threshold") or 0),
+            "buyer_signals": buyer_signals,
+            "buyer_score": buyer_score,
+            "priority_score": priority,
             "fulfillment_status": _aggregate_status(lines),
             "order_lines": lines,
+            "mn2_coin_offer_status": _mn2_coin_offer_status(lines),
             "created_at": prev.get("created_at") or _iso(),
             "updated_at": _iso(),
         }
         rows_out.append(row)
 
+    rows_out.sort(key=lambda r: (-int(r.get("priority_score") or 0), r.get("discord_id") or ""))
+
     doc = {
-        "version": 1,
+        "version": 2,
         "updated_at": _iso(),
         "rows": rows_out,
         "meta": {
             "sources": source_counts,
+            "overlaps": overlap_counts,
+            "buyer_signal_count": sum(1 for r in rows_out if r.get("buyer_signal")),
             "discord_api_used": api_used,
             "discord_api_notes": api_notes,
             "bot_configured": bool(_bot_token()),
             "guild_configured": bool(_guild_id()),
             "mn2_channel_configured": bool(_mn2_channel_id()),
+            "sources_enabled": {
+                "local": use_local,
+                "discord_api": use_discord_api,
+                "buyer_signals": use_buyer_signals,
+            },
         },
     }
     _save_ledger_doc(doc)
@@ -468,10 +950,24 @@ def build_order_list(*, use_discord_api: bool = True) -> Dict[str, Any]:
         "fulfilled": sum(1 for r in rows_out if r.get("fulfillment_status") == "fulfilled"),
         "discord_api_used": api_used,
         "sources": source_counts,
+        "overlaps": overlap_counts,
+        "buyer_signal_count": doc["meta"]["buyer_signal_count"],
         "api_notes": api_notes,
         "ledger_path": _LEDGER_FILE,
         "order_list_path": _ORDER_LIST_FILE,
     }
+
+
+def _mn2_coin_offer_status(lines: List[Dict[str, Any]]) -> str:
+    offer_ids = ("coin_pack_offer", "mn2_onramp_nudge", "paypal_mn2_bundle", "mn2_credit")
+    relevant = [ln for ln in lines if ln.get("id") in offer_ids and ln.get("status") != "skipped"]
+    if not relevant:
+        return "none"
+    if all(ln.get("status") == "fulfilled" for ln in relevant):
+        return "fulfilled"
+    if any(ln.get("status") == "fulfilled" for ln in relevant):
+        return "partial"
+    return "pending"
 
 
 def get_order_list() -> Dict[str, Any]:
@@ -523,7 +1019,7 @@ def get_user_fulfillment_status(user_id: str) -> Dict[str, Any]:
 
     row = get_row_for_discord(discord_id)
     if not row:
-        build_order_list(use_discord_api=False)
+        build_order_list(use_local=True, use_discord_api=False, use_buyer_signals=True)
         row = get_row_for_discord(discord_id)
 
     return {
@@ -535,6 +1031,12 @@ def get_user_fulfillment_status(user_id: str) -> Dict[str, Any]:
         "fulfillment_status": (row or {}).get("fulfillment_status"),
         "order_lines": (row or {}).get("order_lines") or [],
         "mn2_balance": (row or {}).get("mn2_balance"),
+        "source": (row or {}).get("source"),
+        "sources": (row or {}).get("sources") or [],
+        "buyer_signal": (row or {}).get("buyer_signal"),
+        "buyer_signals": (row or {}).get("buyer_signals") or [],
+        "mn2_coin_offer_status": (row or {}).get("mn2_coin_offer_status"),
+        "priority_score": (row or {}).get("priority_score"),
         "order_list_api": "/api/discord/fulfillment/order-list",
     }
 
@@ -545,6 +1047,7 @@ def _apply_line_fulfillment(
     *,
     operator: Optional[str] = None,
 ) -> Dict[str, Any]:
+    cfg = load_config()
     targets = set(line_items or [ln.get("id") for ln in row.get("order_lines") or [] if ln.get("status") == "pending"])
     applied: List[str] = []
     errors: List[str] = []
@@ -621,6 +1124,46 @@ def _apply_line_fulfillment(
                 errors.append(f"trophy_grant: {exc}")
                 continue
 
+        if lid == "coin_pack_offer" and user_id:
+            sku = (ln.get("metadata") or {}).get("coin_pack_sku") or cfg.get("default_coin_pack_sku") or "mn2-pack-s"
+            try:
+                from backend.services.shop_mn2_fulfillment_service import apply_mn2_grants_for_purchase
+
+                apply_mn2_grants_for_purchase(
+                    user_id,
+                    sku,
+                    None,
+                    1,
+                    source="discord_fulfillment_coin_pack",
+                    reference=f"discord_fulfill:{discord_id}:coin_pack",
+                )
+            except Exception as exc:
+                errors.append(f"coin_pack_offer: {exc}")
+                continue
+
+        if lid == "mn2_onramp_nudge" and user_id:
+            ln.setdefault("metadata", {})["offer_sent"] = True
+            ln["metadata"]["onramp_url"] = (ln.get("metadata") or {}).get("onramp_url") or cfg.get("default_onramp_nudge_url")
+
+        if lid == "paypal_mn2_bundle" and user_id:
+            micro = float(os.environ.get("DISCORD_FULFILLMENT_MN2_CREDIT", "0") or 0)
+            if micro > 0:
+                try:
+                    from backend.services.unified_points_database import unified_points_db
+
+                    ref = f"discord_fulfill:{discord_id}:paypal_bundle"
+                    unified_points_db.add_points(
+                        user_id,
+                        "mn2_balance",
+                        micro,
+                        source="discord_fulfillment_paypal_bundle",
+                        metadata={"discord_id": discord_id, "reference": ref, "operator": operator},
+                    )
+                except Exception as exc:
+                    errors.append(f"paypal_mn2_bundle: {exc}")
+                    continue
+            ln.setdefault("metadata", {})["offer_sent"] = True
+
         ln["status"] = "fulfilled"
         ln["fulfilled_at"] = _iso()
         if operator:
@@ -632,8 +1175,12 @@ def _apply_line_fulfillment(
         row.get("user_id"),
         float(row.get("mn2_balance") or 0),
         existing_lines=row.get("order_lines"),
+        buyer_signals=row.get("buyer_signals"),
+        buyer_score=float(row.get("buyer_score") or 0),
+        cfg=cfg,
     )
     row["fulfillment_status"] = _aggregate_status(row["order_lines"])
+    row["mn2_coin_offer_status"] = _mn2_coin_offer_status(row["order_lines"])
     row["updated_at"] = _iso()
     return {"applied": applied, "errors": errors}
 
@@ -652,7 +1199,7 @@ def fulfill_order(
     rows = doc.get("rows") or []
     target = next((r for r in rows if str(r.get("discord_id")) == did), None)
     if not target:
-        build_order_list(use_discord_api=False)
+        build_order_list(use_local=True, use_discord_api=False, use_buyer_signals=True)
         doc = _load_ledger_doc()
         rows = doc.get("rows") or []
         target = next((r for r in rows if str(r.get("discord_id")) == did), None)
@@ -667,6 +1214,7 @@ def fulfill_order(
         "success": len(result["errors"]) == 0,
         "discord_id": did,
         "fulfillment_status": target.get("fulfillment_status"),
+        "mn2_coin_offer_status": target.get("mn2_coin_offer_status"),
         "applied": result["applied"],
         "errors": result["errors"],
     }

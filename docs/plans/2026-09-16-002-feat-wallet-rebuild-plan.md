@@ -668,7 +668,7 @@ Wallet surfaces existing repo Discord features — **no new OAuth stack**. Maps 
 
 Link/unlink POSTs remain on `/api/discord/link*` (same as Profile) to avoid duplicating `discord_link_service`.
 
-**WR-DISCORD-4 data sources (priority):** (1) `logs/user_identifiers/discord_*.json` linked accounts; (2) Discord API guild members + `DISCORD_MN2_CHANNEL_ID` recent authors when `DISCORD_BOT_TOKEN` + `DISCORD_GUILD_ID` set; (3) local-only stub when API unavailable (live deploy needs bot token + Server Members intent for full guild scan).
+**WR-DISCORD-4/5 triple-source population:** (A) `logs/user_identifiers/discord_*.json` linked accounts; (B) Discord API guild members + `DISCORD_MN2_CHANNEL_ID` channel authors when bot token + guild id set; (C) MN2 purchase intent from `payment_ledger.jsonl`, `discord_promo_codes.json` redemptions, `mn2_onramp_orders.json`, `mn2_ledger.json`, `discord_clicks.jsonl`. Merge dedupes by `discord_id`, marks `source` as `local_linked`, `discord_api`, `purchase_intent`, or combined (`local_linked+discord_api`, `all`). Sources A+C populate ledger when Discord API unavailable (403 / missing intent). Config: `data/discord_fulfillment_config.json`. // pragma: allowlist secret
 
 ### Assumptions (WR-DISCORD-1)
 
@@ -1462,6 +1462,16 @@ flowchart LR
 **Files:** `backend/services/discord_fulfillment_ledger_service.py`, `data/discord_fulfillment_ledger.json`, `data/discord_order_list.json`, `scripts/sync_discord_order_list.py`, `tests/unit/test_discord_fulfillment_ledger.py`, wallet `Discord.tsx` fulfillment section.
 
 **Ops:** `python3 scripts/sync_discord_order_list.py` (add `--no-api` for linked-users-only). Guild member scan requires bot **Server Members** privileged intent; channel author scan needs `DISCORD_MN2_CHANNEL_ID`.
+
+---
+
+### WR-DISCORD-5. Triple-source population + buyer signals — **shipped ✓ (2026-09-16)**
+
+**Goal:** Merge all three population sources (local linked, Discord API, MN2 purchase intent) with dedupe, priority scoring, and buyer-focused order lines (`coin_pack_offer`, `mn2_onramp_nudge`, `paypal_mn2_bundle`).
+
+**Buyer signal criteria:** PayPal/payment ledger MN2 or coin SKUs; `DISCORD-STARTER` / `HOSTMN5` promo redemptions; MN2 on-ramp quoted/funded orders; shop payments in `mn2_ledger`; Discord affiliate/casino-play clicks. Requires linked `discord_id` (direct metadata or `discord_link_service` lookup).
+
+**CLI:** `python3 scripts/sync_discord_order_list.py --all` (default) or `--local --api --buyers`. Wallet panel shows `fulfillment_source`, `buyer_signal`, `mn2_coin_offer_status`.
 
 ---
 

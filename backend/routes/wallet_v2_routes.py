@@ -72,6 +72,25 @@ def wallet_v2_discord_fulfillment_status():
     return jsonify(get_user_fulfillment_status(user_id)), 200
 
 
+@wallet_v2_bp.route("/api/wallet/v2/discord/register-purchase-intent", methods=["POST"])
+def wallet_v2_discord_register_purchase_intent():
+    """Register MN2 buy intent for Discord fulfillment ledger (source 3)."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    body = request.get_json(silent=True) or {}
+    from backend.services.discord_fulfillment_ledger_service import register_mn2_purchase_intent
+
+    result = register_mn2_purchase_intent(
+        user_id=user_id,
+        discord_id=body.get("discord_id"),
+        channel=body.get("channel") or "wallet",
+        pack_id=body.get("pack_id"),
+        amount_usd=body.get("amount_usd"),
+        note=body.get("note"),
+    )
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
+
+
 @wallet_v2_bp.route("/api/wallet/v2/upgrades", methods=["GET"])
 def wallet_v2_upgrades_list():
     """Wallet upgrades catalog — lazy-loaded, not on summary."""

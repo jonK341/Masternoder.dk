@@ -227,7 +227,11 @@ def discord_fulfillment_order_list():
     if refresh:
         from backend.services.discord_fulfillment_ledger_service import build_order_list
 
-        build_order_list(use_discord_api=(request.args.get("use_api", "1") != "0"))
+        build_order_list(
+            use_local=(request.args.get("use_local", "1") != "0"),
+            use_discord_api=(request.args.get("use_api", "1") != "0"),
+            use_buyer_signals=(request.args.get("use_buyers", request.args.get("use_intent", "1")) != "0"),
+        )
     return jsonify(get_order_list()), 200
 
 
