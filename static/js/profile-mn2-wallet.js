@@ -530,11 +530,20 @@
     wireFiatToggle();
     initWalletSubTabs();
 
-    fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
-      renderBalance(res.data);
-    });
-    fetchJson(base() + '/api/mn2/deposit-address?user_id=' + q, { timeout: 18000 }).then(function (res) {
-      renderDeposit(res.data);
+    fetchJson(base() + '/api/mn2/balance?user_id=' + q, { timeout: 18000 }).then(function (res) {
+      var bal = res.data || {};
+      renderBalance(bal);
+      if (bal.wallet_ready && bal.deposit_address) {
+        renderDeposit({
+          success: true,
+          deposit_address: bal.deposit_address,
+          explorer_address_url: bal.explorer_address_url,
+        });
+      } else if (!bal.wallet_ready) {
+        fetchJson(base() + '/api/mn2/deposit-address?user_id=' + q, { timeout: 18000 }).then(function (addrRes) {
+          renderDeposit(addrRes.data);
+        });
+      }
     });
     fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
       renderTransactions(res.data);

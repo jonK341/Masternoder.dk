@@ -127,6 +127,14 @@ def _pop_pool_address(addresses: Dict[str, Any]) -> Optional[str]:
         return addr
 
 
+def ensure_user_deposit_address(user_id: str) -> Dict[str, Any]:
+    """Best-effort: assign each user their own deposit address (pool or RPC). Never raises."""
+    try:
+        return get_or_create_deposit_address(user_id)
+    except Exception as exc:
+        return {"success": False, "error": str(exc), "deposit_address": None, "user_id": user_id}
+
+
 def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
     """
     Return the deposit address for the user. If none exists, use an existing pool address

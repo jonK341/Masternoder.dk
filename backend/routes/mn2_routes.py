@@ -13,6 +13,7 @@ _log = logging.getLogger(__name__)
 from backend.services.account_resolution_service import resolve_user_id
 from backend.services.mn2_wallet_service import (
     get_balance,
+    ensure_user_deposit_address,
     get_or_create_deposit_address,
     list_user_addresses,
     create_additional_wallet,
@@ -62,11 +63,13 @@ def mn2_balance():
     result = get_balance(user_id)
     if not result.get("success"):
         return jsonify({"success": False, "error": result.get("error", "Unknown error")}), 500
+    wallet = ensure_user_deposit_address(user_id)
     config = _load_mn2_config()
     coins_per_mn2 = float(config.get("coins_per_mn2") or 100)
     shop_revenue_address = (config.get("shop_revenue_address") or "").strip()
     base = _explorer_base_url().rstrip("/")
     shop_revenue_explorer_url = f"{base}/address.dws?addr={shop_revenue_address}" if shop_revenue_address else ""
+    deposit_addr = (wallet.get("deposit_address") or "").strip() if wallet.get("success") else ""
     payload = {
         "success": True,
         "user_id": result.get("user_id"),
@@ -74,7 +77,13 @@ def mn2_balance():
         "coins_per_mn2": coins_per_mn2,
         "shop_revenue_address": shop_revenue_address or None,
         "shop_revenue_explorer_url": shop_revenue_explorer_url or None,
+        "wallet_ready": bool(deposit_addr),
+        "deposit_address": deposit_addr or None,
     }
+    if deposit_addr:
+        payload["explorer_address_url"] = f"{base}/address.dws?addr={deposit_addr}"
+    elif wallet.get("error"):
+        payload["wallet_error"] = _user_facing_rpc_error(str(wallet.get("error")))
     if config.get("withdrawal_requires_verification"):
         try:
             from backend.services.mn2_verification import is_verified
