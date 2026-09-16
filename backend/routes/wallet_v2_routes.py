@@ -56,6 +56,15 @@ def wallet_v2_summary():
     return jsonify(payload), 200
 
 
+@wallet_v2_bp.route("/api/wallet/v2/staking", methods=["GET"])
+def wallet_v2_staking():
+    """Staking snapshot + block trophy grants for wallet Staking tab."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    from backend.services.wallet_v2_staking_service import build_wallet_staking
+
+    return jsonify(build_wallet_staking(user_id)), 200
+
+
 @wallet_v2_bp.route("/api/wallet/v2/trophies", methods=["GET"])
 def wallet_v2_trophies():
     """Lazy-loaded trophy collection for wallet Trophies tab (plan 001 W-U3)."""

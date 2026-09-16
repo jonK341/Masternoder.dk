@@ -15,6 +15,7 @@ import { PortalHub } from './tabs/PortalHub';
 import { RewardsHub } from './tabs/RewardsHub';
 import { Settings } from './tabs/Settings';
 import { ShopHub } from './tabs/ShopHub';
+import { Staking } from './tabs/Staking';
 import { Trophies } from './tabs/Trophies';
 import { TrophyMonitor4D } from './tabs/TrophyMonitor4D';
 import { Upgrades } from './tabs/Upgrades';
@@ -121,6 +122,8 @@ export function App() {
         return <Trophies />;
       case 'monitor-4d':
         return <TrophyMonitor4D />;
+      case 'staking':
+        return <Staking />;
       default:
         return (
           <div class="wallet-panel wallet-tab-panel wallet-placeholder-tab">

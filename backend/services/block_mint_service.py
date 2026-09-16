@@ -269,6 +269,158 @@ def get_block_registry(*, limit: int = 48, include_claimed: bool = True) -> Dict
     }
 
 
+def claim_block_trophy_staking_reward(
+    user_id: str,
+    height: int,
+    *,
+    interval_id: str = "",
+    reward_mn2: float = 0.0,
+) -> Dict[str, Any]:
+    """Grant block trophy to staking interval winner — no payment (wallet v2 reward)."""
+    uid = (user_id or "").strip()
+    if not uid or uid in ("default_user", "guest"):
+        return {"success": False, "error": "guest_blocked"}
+
+    h = int(height)
+    iid = block_item_id(h)
+    doc = _read_json(_MANIFEST_PATH, {"drops": {}})
+    drops = doc.setdefault("drops", {})
+    key = str(h)
+    if key not in drops:
+        sync_block_height()
+        doc = _read_json(_MANIFEST_PATH, {"drops": {}})
+        drops = doc.get("drops") or {}
+        if key not in drops:
+            return {"success": False, "error": "block_not_in_manifest", "height": h}
+
+    row = drops[key]
+    if row.get("claimed_by"):
+        return {
+            "success": False,
+            "error": "already_claimed",
+            "claimed_by": row.get("claimed_by"),
+            "height": h,
+        }
+
+    catalog = _catalog_row(h, row)
+    from backend.services.trophy_fulfillment_service import grant_platform_edition, patch_edition_fields
+
+    grant = grant_platform_edition(
+        uid,
+        iid,
+        catalog["name"],
+        acquired_via="staking_winner",
+        price_type="staking_reward",
+        extra={
+            "block_height": h,
+            "platform_trophy": True,
+            "ai_generated": True,
+            "staking_interval_id": interval_id,
+            "staking_reward_mn2": reward_mn2,
+        },
+    )
+    if not grant.get("success"):
+        return grant
+
+    edition_no = grant.get("edition_no")
+    edition_key = grant.get("edition_key")
+    proof_hash = grant.get("proof_hash")
+    edition = grant.get("edition") or {}
+
+    battle_stats: Dict[str, Any] = {}
+    lic = row.get("license_number") or catalog.get("license_number")
+    trading: Optional[Dict[str, Any]] = None
+    try:
+        from backend.services.block_trophy_battle_service import generate_battle_stats
+        from backend.services.block_trophy_registry_service import build_trading_profile
+
+        battle_stats = generate_battle_stats(
+            h,
+            edition_key or f"TRO-{iid}-{edition_no}",
+            edition_no=int(edition_no or 1),
+        )
+        trading = build_trading_profile(
+            h,
+            stats=battle_stats,
+            claimed=True,
+            claimed_by=uid,
+            edition_key=edition_key,
+            edition_no=int(edition_no or 1),
+            proof_hash=proof_hash,
+        )
+        if lic:
+            trading["license_number"] = lic
+        patch_edition_fields(
+            uid,
+            iid,
+            int(edition_no or 1),
+            {
+                "battle_stats": battle_stats,
+                "serial_number": battle_stats.get("serial_number"),
+                "license_number": lic or trading.get("license_number"),
+                "trading_profile": trading,
+                "block_height": h,
+                "platform_trophy": True,
+                "one_per_block": True,
+                "acquired_via": "staking_winner",
+            },
+        )
+        edition = {
+            **edition,
+            "battle_stats": battle_stats,
+            "license_number": lic,
+            "trading_profile": trading,
+        }
+    except Exception:
+        pass
+
+    row["claimed_by"] = uid
+    row["claimed_at"] = _iso()
+    row["edition_no"] = edition_no
+    row["edition_key"] = edition_key
+    row["proof_hash"] = proof_hash
+    row["claimed_via"] = "staking_winner"
+    if trading:
+        row["trading_profile"] = trading
+    drops[key] = row
+    doc["updated_at"] = _iso()
+    _write_json(_MANIFEST_PATH, doc)
+
+    try:
+        from backend.services.mn2_ledger import append_entry
+
+        append_entry(
+            uid,
+            "staking_trophy_grant",
+            0.0,
+            txid=f"staking-trophy:{interval_id}:{h}",
+            metadata={
+                "item_id": iid,
+                "block_height": h,
+                "edition_key": edition_key,
+                "interval_id": interval_id,
+                "reward_mn2": reward_mn2,
+            },
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "height": h,
+        "item_id": iid,
+        "edition_no": edition_no,
+        "edition_key": edition_key,
+        "edition": edition,
+        "battle_stats": battle_stats,
+        "license_number": lic,
+        "trading_profile": trading,
+        "acquired_via": "staking_winner",
+        "explorer_url": catalog.get("explorer_url"),
+        "gif_url": catalog.get("gif_url"),
+    }
+
+
 def claim_block_trophy(
     user_id: str,
     height: int,

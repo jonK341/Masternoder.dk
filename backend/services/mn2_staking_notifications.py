@@ -173,6 +173,33 @@ def _week_rows(user_id: str) -> List[Dict[str, Any]]:
     return rows
 
 
+def on_staking_trophy_grant(user_id: str, grant: Dict[str, Any]) -> None:
+    """Notify wallet user they won a block trophy from staking."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return
+    lic = grant.get("license_number") or ""
+    height = grant.get("block_height")
+    title = "Staking trophy won"
+    message = (
+        f"You earned block smiley trophy #{height}"
+        + (f" (license {lic})" if lic else "")
+        + ". Open Wallet → Trophies to view, battle, and trade."
+    )
+    try:
+        from backend.services.user_engagement import add_notification
+
+        add_notification(
+            uid,
+            title,
+            message,
+            category="staking_trophy",
+            metadata=grant,
+        )
+    except Exception:
+        pass
+
+
 def send_weekly_digest(user_id: str) -> Optional[Dict[str, Any]]:
     """Build and deliver one user's weekly digest if opted in."""
     uid = (user_id or "").strip()

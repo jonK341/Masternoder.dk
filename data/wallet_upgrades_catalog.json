@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generated_at": "2026-09-16",
-  "total": 250,
+  "total": 251,
   "categories": [
     "speed",
     "network_visibility",
@@ -3012,6 +3012,18 @@
         "type": "mn2_spent",
         "value": 2250,
         "label": "Spend 2250 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-251",
+      "name": "Staking trophy drops",
+      "effect": "Interval staking winners receive block smiley trophies in wallet \u2014 license, battle stats, and trading profile included.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2275,
+        "label": "Spend 2275 MN2 in wallet actions"
       }
     }
   ]

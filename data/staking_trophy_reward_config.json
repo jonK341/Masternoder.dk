@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "winners_per_interval": 1,
+  "min_reward_mn2": 0.001,
+  "prefer_chain_tip_block": true,
+  "notify_wallet": true
+}

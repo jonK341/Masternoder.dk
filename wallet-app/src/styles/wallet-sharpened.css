@@ -1137,3 +1137,31 @@ body {
   background: var(--wallet-bg);
   color: var(--wallet-text);
 }
+
+.wallet-staking-hero .wallet-staking-upgrade {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 16px 12px;
+  padding: 10px 12px;
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-elevated);
+}
+
+.wallet-staking-grant-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wallet-staking-grant-item {
+  padding: 10px 12px;
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-elevated);
+  font-size: 0.85rem;
+}

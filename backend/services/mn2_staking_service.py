@@ -929,6 +929,14 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
         _save_stakes(stakes)
         _append_reward_rows(rows)
 
+        trophy_grants: Dict[str, Any] = {}
+        try:
+            from backend.services.staking_trophy_reward_service import process_interval_winners
+
+            trophy_grants = process_interval_winners(rows, interval_id=interval_id)
+        except Exception:
+            pass
+
         return {
             "success": True,
             "interval_id": interval_id,
@@ -937,6 +945,7 @@ def accrue_rewards(force: bool = False) -> Dict[str, Any]:
             "source": "realized_yield" if use_realized else "apr_fallback",
             "realized_yield_mn2": round(realized, 8),
             "reserve_mn2": round(reserve.get("reserve_mn2", 0.0), 8),
+            "trophy_grants": trophy_grants,
         }
 
 

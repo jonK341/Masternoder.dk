@@ -198,6 +198,53 @@ export async function transferTrophyEdition(payload: {
   return data;
 }
 
+export type StakingTrophyGrant = {
+  interval_id: string;
+  user_id: string;
+  block_height: number;
+  edition_key?: string;
+  license_number?: string;
+  reward_mn2?: number;
+  granted_at?: string;
+};
+
+export type WalletStakingResponse = {
+  success: boolean;
+  guest?: boolean;
+  message?: string;
+  user_id?: string;
+  platform_trophy_rewards?: boolean;
+  on_chain_mint?: boolean;
+  stake?: {
+    staked?: number;
+    total_earned?: number;
+    estimated_next_interval_reward?: number;
+  };
+  trophy_grants?: {
+    success?: boolean;
+    grants: StakingTrophyGrant[];
+    count?: number;
+  };
+  upgrade?: {
+    id: string;
+    unlocked: boolean;
+    label: string;
+    description: string;
+  };
+  links?: Record<string, string>;
+};
+
+export async function fetchWalletStaking(): Promise<WalletStakingResponse> {
+  const res = await fetch('/api/wallet/v2/staking', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Staking failed (${res.status})`);
+  }
+  return res.json() as Promise<WalletStakingResponse>;
+}
+
 export async function fetchWalletTrophies(series?: string): Promise<WalletTrophiesResponse> {
   const params = new URLSearchParams();
   if (series) params.set('series', series);
