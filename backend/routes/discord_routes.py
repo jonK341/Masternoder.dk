@@ -98,6 +98,21 @@ def discord_digest_run():
     return jsonify(result), 200
 
 
+@discord_bp.route("/api/discord/announce/block-million-trophy", methods=["POST"])
+def discord_announce_block_million_trophy():
+    """Ops — post Block 1,000,000 genesis trophy collection announcement."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    body = request.get_json(silent=True) or {}
+    from backend.services.trophy_milestone_announcement_service import post_block_million_announcement
+
+    result = post_block_million_announcement(
+        channel=(body.get("channel") or "announcements").strip(),
+        force=bool(body.get("force")),
+    )
+    return jsonify(result), 200 if result.get("success") else 502
+
+
 @discord_bp.route("/api/discord/casino/fanout", methods=["POST"])
 def discord_casino_fanout():
     """Cron entry — casino activity_events → #casino (alias of /api/casino/discord/notify)."""

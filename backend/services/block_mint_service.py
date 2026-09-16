@@ -159,12 +159,41 @@ def sync_block_height() -> Dict[str, Any]:
         return {"success": False, "error": "block_height_unavailable"}
 
     lookback = max(1, int(cfg.get("lookback_blocks") or 5))
+    milestone = int(cfg.get("milestone_block") or 0)
+    genesis = max(1, int(cfg.get("genesis_block") or 1))
     doc = _read_json(_MANIFEST_PATH, {"drops": {}, "last_height": 0})
     drops = doc.setdefault("drops", {})
     last = int(doc.get("last_height") or 0)
-    start = max(last, height - lookback + 1)
+
+    genesis_mode = (
+        milestone > 0
+        and height >= milestone
+        and cfg.get("backfill_from_genesis_at_milestone", True)
+    )
+    if genesis_mode and not doc.get("genesis_backfill_complete"):
+        if not doc.get("genesis_backfill_started"):
+            doc["genesis_backfill_started"] = True
+            doc["genesis_backfill_cursor"] = genesis
+            try:
+                from backend.services.trophy_milestone_announcement_service import post_block_million_announcement
+
+                if not cfg.get("milestone_discord_announced"):
+                    post_block_million_announcement()
+                    cfg_doc = _read_json(_CONFIG_PATH, {})
+                    cfg_doc["milestone_discord_announced"] = True
+                    _write_json(_CONFIG_PATH, cfg_doc)
+            except Exception:
+                pass
+        batch = max(50, int(cfg.get("backfill_batch_size") or 500))
+        cursor = int(doc.get("genesis_backfill_cursor") or genesis)
+        start = cursor
+        end = min(cursor + batch - 1, height)
+    else:
+        start = max(last, height - lookback + 1)
+        end = height
+
     added: List[int] = []
-    for h in range(start, height + 1):
+    for h in range(start, end + 1):
         key = str(h)
         if key not in drops:
             entry = {
@@ -188,10 +217,22 @@ def sync_block_height() -> Dict[str, Any]:
                 ensure_block_media(h)
             except Exception:
                 pass
-    doc["last_height"] = height
+    if genesis_mode and not doc.get("genesis_backfill_complete"):
+        doc["genesis_backfill_cursor"] = end + 1
+        if end >= height:
+            doc["genesis_backfill_complete"] = True
+    doc["last_height"] = max(int(doc.get("last_height") or 0), height)
     doc["updated_at"] = _iso()
     _write_json(_MANIFEST_PATH, doc)
-    return {"success": True, "block_height": height, "added": added, "total_drops": len(drops)}
+    return {
+        "success": True,
+        "block_height": height,
+        "added": added,
+        "total_drops": len(drops),
+        "genesis_backfill": genesis_mode,
+        "genesis_backfill_complete": bool(doc.get("genesis_backfill_complete")),
+        "genesis_backfill_cursor": doc.get("genesis_backfill_cursor"),
+    }
 
 
 def get_block_drops(limit: int = 20) -> Dict[str, Any]:

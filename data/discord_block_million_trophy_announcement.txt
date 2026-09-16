@@ -1,0 +1,32 @@
+# Discord announcement — Block 1,000,000 Genesis Trophy Collection
+# Generated: 2026-09-16
+# Post: python3 scripts/post_block_million_announcement.py
+# Or ops: POST /api/discord/announce/block-million-trophy
+
+--- MESSAGE (copy below) ---
+
+🏆 **Block 1,000,000 milestone** — the Block Trophy collection (platform NFTs) is now rolling out **from block #1** through the chain.
+
+**Genesis → tip: one AI trophy per MN2 block**
+
+From block **1,000,000** onward, MasterNoder creates a **unique Block Trophy** for every MN2 block — **starting at block #1** (genesis) and continuing to chain tip.
+
+Each edition includes:
+• **Unique AI smiley GIF** (per edition — mood + rarity in the animation)
+• **License number** + battle stats + trading profile
+• **Wallet v2** gallery, 4D monitor, auction & peer transfer
+• **Staking interval winners** can earn unclaimed block trophies
+
+**Rules**
+• Milestone: block **1,000,000** triggers genesis backfill
+• Genesis: block **#1** — first trophy in the series
+• Supply: exactly **1 trophy per block height**
+
+**Links**
+• Block Gallery → /shop?tab=block-gallery
+• Wallet Trophies → /wallets?tab=trophies
+• Staking rewards → /wallets?tab=staking
+
+Platform-ledger collectibles today — optional L2 anchor; on-chain mint deferred.
+
+--- END MESSAGE ---

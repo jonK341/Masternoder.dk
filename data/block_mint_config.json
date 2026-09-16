@@ -5,5 +5,10 @@
   "base_price_usd": 2.99,
   "floor_price_usd": 0.99,
   "claim_methods": ["mn2", "paypal"],
-  "explorer_base_url": "/explorer?height="
+  "explorer_base_url": "/explorer?height=",
+  "milestone_block": 1000000,
+  "genesis_block": 1,
+  "backfill_from_genesis_at_milestone": true,
+  "backfill_batch_size": 500,
+  "milestone_discord_announced": false
 }
