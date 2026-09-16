@@ -434,3 +434,53 @@ def test_process_pending_skips_ping_when_rpc_unhealthy(monkeypatch):
     out = mn.process_pending_hosts(limit=5)
     assert out["ping_loop"]["skipped"] is True
     assert "RPC unavailable" in out["ping_loop"]["reason"]
+
+
+def test_sort_pending_hosts_paypal_before_mn2_before_platform(monkeypatch):
+    hosts = [
+        {"id": "platform-mn-2", "status": "provisioning", "created_at": "2026-01-01T00:00:00Z"},
+        {"id": "user-mn2-aaa", "status": "provisioning", "created_at": "2026-01-02T00:00:00Z"},
+        {"id": "user-pp-bbb", "status": "provisioning", "created_at": "2026-01-03T00:00:00Z"},
+        {"id": "user-cred-ccc", "status": "queued", "created_at": "2026-01-04T00:00:00Z"},
+    ]
+    monkeypatch.setattr(
+        mn,
+        "_host_payment_method_map",
+        lambda: {
+            "user-pp-bbb": "paypal",
+            "user-mn2-aaa": "mn2",
+            "user-cred-ccc": "credits",
+        },
+    )
+    ordered = mn._sort_pending_hosts(hosts)
+    assert [h["id"] for h in ordered] == [
+        "user-pp-bbb",
+        "user-mn2-aaa",
+        "user-cred-ccc",
+        "platform-mn-2",
+    ]
+
+
+def test_process_pending_provisions_paypal_host_first(monkeypatch):
+    hosts = [
+        {"id": "platform-mn-2", "status": "provisioning"},
+        {"id": "user-mn2-aaa", "status": "provisioning"},
+        {"id": "user-pp-bbb", "status": "provisioning"},
+    ]
+    seen: list[str] = []
+
+    def _provision(host_id: str, order_id=None):
+        seen.append(host_id)
+        return {"success": True, "status": "provisioning"}
+
+    monkeypatch.setattr(mn, "_rpc_is_healthy", lambda: True)
+    monkeypatch.setattr(mn, "maintain_ping_loop", lambda: {"success": True})
+    monkeypatch.setattr(mn, "list_hosts", lambda include_internal=False: hosts)
+    monkeypatch.setattr(
+        mn,
+        "_host_payment_method_map",
+        lambda: {"user-pp-bbb": "paypal", "user-mn2-aaa": "mn2"},
+    )
+    monkeypatch.setattr(mn, "provision_host", _provision)
+    mn.process_pending_hosts(limit=2)
+    assert seen == ["user-pp-bbb", "user-mn2-aaa"]

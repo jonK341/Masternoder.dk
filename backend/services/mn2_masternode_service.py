@@ -150,6 +150,67 @@ def _count_slots_used(hosts: List[Dict[str, Any]]) -> int:
     return sum(1 for h in hosts if isinstance(h, dict) and _host_reserves_slot(h))
 
 
+def _host_payment_method_map() -> Dict[str, str]:
+    """Map host_id -> payment_method from paid hosting orders."""
+    try:
+        from backend.services import mn2_masternode_hosting_service as hosting
+        orders = hosting._load_orders()
+    except Exception:
+        orders = {}
+    out: Dict[str, str] = {}
+    if not isinstance(orders, dict):
+        return out
+    for order in orders.values():
+        if not isinstance(order, dict):
+            continue
+        if (order.get("status") or "").lower() not in ("paid", "provisioned"):
+            continue
+        pm = (order.get("payment_method") or "").strip().lower()
+        if not pm and (order.get("paypal_capture_id") or order.get("paypal_order_id")):
+            pm = "paypal"
+        for hid in order.get("host_ids") or []:
+            if hid:
+                out[str(hid)] = pm or "unknown"
+    return out
+
+
+def _payment_priority_for_host(host: Dict[str, Any], payment_by_host: Dict[str, str]) -> int:
+    """
+    Lower = provision first. PayPal-paid customer slots before MN2-paid, then credits,
+    then unknown user hosts; internal platform fleet rows last.
+    """
+    hid = str(host.get("id") or "")
+    pm = (payment_by_host.get(hid) or "").lower()
+    notes = (host.get("notes") or "").lower()
+    if not pm:
+        if "paypal" in notes:
+            pm = "paypal"
+        elif "mn2" in notes:
+            pm = "mn2"
+    if pm == "paypal":
+        return 0
+    if pm in ("mn2", "mn2_onchain"):
+        return 1
+    if pm == "credits":
+        return 2
+    if hid.startswith("platform-mn-") or hid.startswith("platformmn"):
+        return 4
+    return 3
+
+
+def _sort_pending_hosts(hosts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Order pending hosts: PayPal first, MN2 second, then credits / other / platform fleet."""
+    payment_by_host = _host_payment_method_map()
+    return sorted(
+        hosts,
+        key=lambda h: (
+            _payment_priority_for_host(h, payment_by_host),
+            str(h.get("created_at") or h.get("updated_at") or ""),
+            str(h.get("id") or ""),
+        ),
+    )
+
+
 def purge_stale_provisioning_hosts(
     max_age_hours: float = 6,
     *,
@@ -1609,7 +1670,8 @@ def process_pending_hosts(limit: int = 20, *, skip_ping: bool = False) -> Dict[s
         ping = maintain_ping_loop()
     pending_status = {"queued", "provisioning", "planned"}
     hosts = list_hosts(include_internal=True)
-    todo = [h for h in hosts if (h.get("status") or "").lower() in pending_status][: max(1, int(limit))]
+    pending = [h for h in hosts if (h.get("status") or "").lower() in pending_status]
+    todo = _sort_pending_hosts(pending)[: max(1, int(limit))]
     results = []
     for h in todo:
         hid = h.get("id")
