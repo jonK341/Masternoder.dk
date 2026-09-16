@@ -40,6 +40,10 @@ def test_fulfill_single_customer(tmp_path, monkeypatch):
 
     monkeypatch.setattr("backend.services.ai_user_controller.onboard_new_user", _fake_onboard)
     monkeypatch.setattr("backend.services.encoder_micro_rewards_service.attach_micro_rewards", _fake_micro)
+    monkeypatch.setattr(
+        "backend.services.encoder_v2_service.ensure_free_unlocks",
+        lambda uid: {"success": True, "added": 12, "progress": {"unlocked_count": 12}},
+    )
 
     res = ecf.fulfill_single_customer(
         "discord_123",

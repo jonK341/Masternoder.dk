@@ -143,6 +143,20 @@ def fulfill_single_customer(
     except Exception:
         award = {"success": False}
 
+    # Grant Super Encoder v2 free starter unlocks
+    encoder_v2 = {}
+    if cfg.get("grant_encoder_v2_starters", True):
+        try:
+            from backend.services.encoder_v2_service import ensure_free_unlocks
+
+            encoder_v2 = ensure_free_unlocks(uid)
+            if int(encoder_v2.get("added") or 0) > 0:
+                actions.append("encoder_v2_starters")
+            elif encoder_v2.get("success"):
+                actions.append("encoder_v2_ready")
+        except Exception:
+            encoder_v2 = {"success": False}
+
     # Promote customer row metadata
     try:
         _promote_customer_row(uid, discord_meta=discord_meta)
@@ -155,6 +169,7 @@ def fulfill_single_customer(
         "discord_id": (discord_meta or {}).get("discord_id"),
         "username": username,
         "micro_rewards": award if isinstance(award, dict) else {},
+        "encoder_v2": encoder_v2 if isinstance(encoder_v2, dict) else {},
     })
     return {"success": True, "user_id": uid, "fulfillment": record, "actions": actions}
 
@@ -282,10 +297,15 @@ def fulfill_discord_customers_via_encoder(
 def fulfillment_stats() -> Dict[str, Any]:
     store = _load_store()
     fulfilled = store.get("fulfilled") or {}
+    with_encoder = sum(
+        1 for row in fulfilled.values()
+        if isinstance(row, dict) and row.get("encoder_v2", {}).get("success")
+    )
     return {
         "success": True,
         "enabled": fulfillment_enabled(),
         "total_fulfilled": len(fulfilled),
+        "with_encoder_v2": with_encoder,
         "last_batch_at": store.get("last_batch_at"),
         "config": _config(),
     }

@@ -62,7 +62,8 @@
       "encoder_fulfillment"
     ],
     "bonus_mn2": 0.0005,
-    "attach_bonus_mn2": true
+    "attach_bonus_mn2": true,
+    "grant_encoder_v2_starters": true
   },
   "ledger_customer_control": {
     "enabled": true,
