@@ -7,13 +7,14 @@ artifact_readiness: implementation-ready
 product_contract_source: ce-plan-bootstrap
 execution: code
 deepened: 2026-09-16
+block_mint_research: 2026-09-16
 ---
 
 # PayPal NFT Shop and Exchange - Plan
 
 Product Contract created in this run (`ce-plan-bootstrap`).
 No upstream brainstorm existed.
-This file was first written for shop PayPal NFT sections, then enriched in place for the follow-ups: add NFTs to the exchange, and check whether MasterNoder2 can mint NFTs.
+This file was first written for shop PayPal NFT sections, then enriched in place for the follow-ups: add NFTs to the exchange, check whether MasterNoder2 can mint NFTs, and whether **one platform NFT per new MN2 block** (static image or 3s encoder GIF) can ship as a new shop area.
 
 Product Contract preservation: R1–R12 and KD1–KD5 meaning unchanged.
 Added R13–R18, KD6–KD7, KTD9–KTD12, U5–U7 for chain capability, exchange, and PayPal chargeback hold.
@@ -691,6 +692,161 @@ Daemon RPC is unchanged. Do not add NFT methods to `mn2_rpc_client.py`.
 Rollout: sandbox PayPal first; do not enable live PayPal NFT SKUs until U2 amount lock, U2 idempotency, and U6 hold are green.
 Monitoring: reuse PayPal capture logs and `mn2_ledger` `nft_edition_proof` rows for support lookup.
 No daemon upgrade is required for this feature.
+
+---
+
+## Block Mint NFTs (companion scope)
+
+Follow-up question: *mint an NFT every time MN2 creates a new block, with a still or (better) a 3-second GIF from the encoder, as a new shop starting point.*
+
+### Verdict (planning-time, 2026-09-16)
+
+| Question | Answer | Why |
+|----------|--------|-----|
+| Can MN2 **on-chain** mint one NFT per new block today? | **No** | MasterNoder2 has no NFT/token/asset RPC; `mintzerocoin` is fungible zMN2 only (see KTD9 and MN2 chain capability diagram above). |
+| Can the **platform** issue one block-tied collectible per new height with a 3s GIF? | **Yes — phased MVP** | Block height is already readable via RPC; shop media already supports `gif_url`; `scripts/generate_shop_top_clips.py` already builds ~3s MP4+GIF with ffmpeg. No on-chain mint required. |
+| Can this ship as a **shop starting point** without blocking U1–U7? | **Yes** | Add a **Block Drops** sub-area under the NFT tab after U1/U3; reuse PayPal/MN2 checkout from U2 and disclaimers from R16. |
+
+**Short answer for the user:** block-per-mint on the MN2 chain is **not** feasible today. Block-per-drop as a **platform ledger collectible** with encoder GIF media **is** feasible and fits the existing off-chain NFT model.
+
+### Evidence (file:line)
+
+**Chain — no native mint**
+
+- `backend/services/mn2_rpc_client.py:293-543` — RPC surface is fungible wallet + chain queries (`getblockcount`, `getblock`, `sendtoaddress`, …); no `mintnft` / `issuetoken` helper.
+- `backend/services/mn2_rpc_client.py:315-317` — `sendtoaddress` moves MN2; it does not create a unique collectible token.
+- Plan KTD9 / Sources — upstream `vRPCCommands[]` has zerocoin + wallet only; no NFT opcode.
+
+**Block detection — exists, poll-based (no push hook)**
+
+- `backend/services/mn2_explorer_data.py:40-74` — `recent_blocks()` walks tip via `getblockcount` → `getblockhash` → `getblock`; cached ~30s.
+- `backend/routes/mn2_staking_routes.py:510-518` — `GET /api/mn2/recent-blocks` exposes that list to the UI.
+- `backend/services/mn2_network_stats.py:104-115` — height stall detection compares `block_height` across snapshots (pattern for a listener, not a mint hook).
+- **Gap:** no `blocknotify`, ZMQ subscriber, or daemon callback in this repo today. A block-mint job must **poll** `getblockcount` (cron or background thread), not rely on chain push events.
+
+**Encoder / 3s GIF — exists for shop media**
+
+- `scripts/generate_shop_top_clips.py:4-18` — docstring: “Build ~3s MP4 + animated GIF from existing shop hero JPGs”; writes `static/shop/clips/<id>.gif`.
+- `scripts/generate_shop_top_clips.py:156-177` — `_run_gif()` uses ffmpeg palette pipeline (`palettegen` / `paletteuse`).
+- `backend/services/shop_media_service.py:57-58` — manifest merge attaches `gif_url` onto catalog items.
+- `shop/index.html:1760-1761` — shop cards already render `gif_url` previews and “GIF” links.
+- `backend/services/generator_thumbnail_service.py:62-111` — related ffmpeg+PIL frame extraction (poster/sprites); reuse ffmpeg binary resolution pattern, not the full generator queue.
+
+**Shop / exchange patterns — reuse NFT tab plan**
+
+- U3 — `/shop?tab=nft` tab + panel pattern in `shop/index.html`.
+- U5 — Exchange NFT section over `GET /api/shop/nfts` (same inventory path).
+- `data/shop_item_media.json` — existing rows already include `gif_url` for several SKUs (proof the static hosting path works).
+
+### Product shape (block drops)
+
+One **global edition per block height**, not one mint per user per block:
+
+- SKU id: `block-{height}` (e.g. `block-1842031`).
+- **Supply:** 1 platform edition per height (first claimant or ops pre-mint to treasury; see BM-U2).
+- **Media:** deterministic still from block hash seed → optional 3s zoom GIF (encoder pipeline).
+- **Honesty:** `on_chain_mint: false`, `series: block_mint`, copy: “Block Drop collectible — tied to MN2 block #{height}, issued on platform ledger, not an on-chain token.”
+- **Pricing:** MN2-only or low fixed USD for MVP; PayPal optional in phase B (inherits U2 hold rules).
+
+### Shop starting point (recommended)
+
+| Surface | Recommendation |
+|---------|----------------|
+| **Tab** | Keep primary tab **`nft`** (U3). Add inner nav chip **“Block Drops”** → URL `/shop?tab=nft&series=block-mint`. Avoid a top-level eighth shop tab until volume proves out. |
+| **Exchange** | Second subsection under Exchange NFT area (U5): “Latest block drops” fed by the same API. |
+| **Profile** | Filter `series=block_mint` in the NFT collection card (U4). |
+| **Empty state** | “Next drop mints when MN2 height advances — watch Explorer” with link to `/explorer` (recent blocks table already live). |
+
+### API sketch (new; does not exist yet)
+
+```
+GET  /api/shop/block-mint/drops?limit=24&cursor=height
+     → { drops: [{ item_id, block_height, block_hash, time, gif_url, image_url,
+                   price_mn2, owned, on_chain_mint: false, series: "block_mint" }],
+         tip_height, next_drop_eta_hint }
+
+GET  /api/shop/block-mint/drops/<height>
+     → single drop + media URLs + claim/ownership
+
+POST /api/shop/block-mint/claim   (auth required)
+     body: { block_height }
+     → grants inventory row block-{height} via fulfill_shop_purchase pattern;
+       debits MN2 or starts PayPal (reuse U2)
+
+GET  /api/shop/nfts?series=block-mint
+     → optional filter extension on U1 list endpoint (preferred over a third catalog)
+```
+
+Internal only (cron):
+
+```
+POST /api/agents/cron/run  jobs=block_mint_poll
+     → secured like agent_cron_routes.py; or new preset in agent_cron_service.py
+```
+
+### Block listener job (design)
+
+```mermaid
+flowchart LR
+  Cron["agent_cron block_mint_poll"] --> Rpc["mn2_rpc_client.getblockcount"]
+  Rpc --> Cmp{"height > last_minted?"}
+  Cmp -->|no| Sleep["exit; retry in 30-60s"]
+  Cmp -->|yes| Meta["getblockhash + getblock time/hash"]
+  Meta --> Art["block_mint_media_service"]
+  Art --> Still["PNG from hash seed"]
+  Art --> Gif["ffmpeg 3s GIF via generate_shop_top_clips pattern"]
+  Gif --> Manifest["data/block_mint_manifest.jsonl"]
+  Manifest --> Cat["overlay kind=nft series=block_mint"]
+  Cat --> Shop["GET /api/shop/block-mint/drops"]
+```
+
+**Implementation notes:**
+
+1. **State file:** `data/block_mint_state.json` with `{ last_minted_height, last_run_ts }` — idempotent per height.
+2. **Poll interval:** 30–60s cron (MN2 PoS block time is not sub-second; `mn2_network_stats` uses 30min stall window as reference). Do not mint inside the HTTP request path.
+3. **Catch-up:** if daemon was down, mint at most **N heights per run** (e.g. 5) to avoid ffmpeg storms.
+4. **Media path:** `static/shop/block-mint/{height}.png` + `{height}.gif`; manifest row mirrors `shop_item_media.json` fields.
+5. **Ledger proof:** append `mn2_ledger` type `block_drop_proof` with `{ block_height, block_hash, media_sha256, minted_at }` (KTD12 cousin).
+6. **No daemon change:** do not embed metadata in OP_RETURN unless a future chain release adds a real NFT transfer primitive.
+
+### Encoder pipeline (3s GIF)
+
+Reuse `scripts/generate_shop_top_clips.py` mechanics:
+
+1. **Input:** procedural still or Pollinations still from prompt seeded by `sha256(block_hash)`.
+2. **MP4:** `_run_mp4(..., duration=3.0, fps=30)` zoompan on still.
+3. **GIF:** `_run_gif(ffmpeg, mp4, out_gif)` palette pipeline.
+4. **Service wrapper (planned):** `backend/services/block_mint_media_service.py` — thin wrapper calling the same ffmpeg helpers; **not** the full `video_generator_service` queue (too heavy per block).
+5. **Fallback:** if ffmpeg missing, ship PNG only and set `gif_url: null` (shop already handles missing GIF).
+
+### Phased roadmap (Block Mint units)
+
+Depends on U1 (catalog `kind=nft`) and U2 (checkout) for paid claims; can demo **free/treasury claims** after BM-U1 only.
+
+| Unit | Goal | Depends |
+|------|------|---------|
+| **BM-U1** | Block listener + manifest + `GET /api/shop/block-mint/drops` | RPC reachable |
+| **BM-U2** | Media: PNG + 3s GIF per new height | BM-U1 |
+| **BM-U3** | Shop NFT sub-tab “Block Drops” + Explorer teaser | U3, BM-U1 |
+| **BM-U4** | MN2/PayPal claim into shop inventory + `block_drop_proof` ledger | U2, BM-U2 |
+| **BM-U5** | Exchange subsection + Profile filter | U5, BM-U3 |
+| **BM-U6** | (Deferred) On-chain anchor if MN2 ships unique-asset RPC | daemon release |
+
+**MVP starting point:** ship **BM-U1 + BM-U2 + BM-U3** as read-only gallery (“latest 24 block drops” with GIF previews). Add **BM-U4** when U2 PayPal/MN2 path is green.
+
+### Risks (block mint specific)
+
+- **Volume:** one drop per block × 24/7 can flood the catalog. Mitigate: show latest 24 in UI; archive older heights; optional “milestone blocks only” mode (heights divisible by 100).
+- **Encoder load:** GIF per block on a slow VPS. Mitigate: catch-up cap, PNG-first, queue ffmpeg in BM-U2.
+- **User expectation of on-chain mint:** stronger disclaimer than Top 25; link to Explorer block, not wallet token.
+- **Duplicate poll:** two cron workers could double-mint same height. Mitigate: file lock or `last_minted_height` check before media write.
+- **Claim race:** two users claim the single edition. Mitigate: first successful `fulfill` wins; second gets `SOLD_OUT`.
+
+### Open questions (block mint)
+
+- Q7. Free treasury mint vs MN2-priced claim vs PayPal for block drops.
+- Q8. Mint every block vs milestone blocks only (supply control).
+- Q9. Whether block-drop GIF should use crypto-themed encoder templates (ecosystem plan item 10: price ticker / masternode stats intro).
 
 ---
 
