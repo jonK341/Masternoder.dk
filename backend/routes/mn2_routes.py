@@ -11,7 +11,14 @@ from flask import Blueprint, jsonify, request
 _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
-from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
+from backend.services.mn2_wallet_service import (
+    get_balance,
+    ensure_user_wallet,
+    get_or_create_deposit_address,
+    list_user_addresses,
+    create_additional_wallet,
+    refresh_deposit_address,
+)
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
 
 
@@ -56,11 +63,13 @@ def mn2_balance():
     result = get_balance(user_id)
     if not result.get("success"):
         return jsonify({"success": False, "error": result.get("error", "Unknown error")}), 500
+    wallet = ensure_user_wallet(user_id)
     config = _load_mn2_config()
     coins_per_mn2 = float(config.get("coins_per_mn2") or 100)
     shop_revenue_address = (config.get("shop_revenue_address") or "").strip()
     base = _explorer_base_url().rstrip("/")
     shop_revenue_explorer_url = f"{base}/address.dws?addr={shop_revenue_address}" if shop_revenue_address else ""
+    deposit_addr = (wallet.get("deposit_address") or "").strip() if wallet.get("success") else ""
     payload = {
         "success": True,
         "user_id": result.get("user_id"),
@@ -68,7 +77,14 @@ def mn2_balance():
         "coins_per_mn2": coins_per_mn2,
         "shop_revenue_address": shop_revenue_address or None,
         "shop_revenue_explorer_url": shop_revenue_explorer_url or None,
+        "wallet_ready": bool(deposit_addr),
+        "deposit_address": deposit_addr or None,
+        "wallet_type": wallet.get("wallet_type") if wallet.get("success") else None,
     }
+    if deposit_addr:
+        payload["explorer_address_url"] = f"{base}/address.dws?addr={deposit_addr}"
+    elif wallet.get("error"):
+        payload["wallet_error"] = _user_facing_rpc_error(str(wallet.get("error")))
     if config.get("withdrawal_requires_verification"):
         try:
             from backend.services.mn2_verification import is_verified
@@ -270,6 +286,208 @@ def mn2_statement():
     }), 200
 
 
+@mn2_bp.route("/api/mn2/wallet/addresses", methods=["GET"])
+def mn2_wallet_addresses():
+    """List all labeled deposit addresses for the current user."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    result = list_user_addresses(user_id)
+    if not result.get("success"):
+        return jsonify(result), 200
+    base = _explorer_base_url().rstrip("/")
+    rows = []
+    for row in result.get("addresses") or []:
+        item = dict(row)
+        addr = (item.get("address") or "").strip()
+        if addr:
+            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+        rows.append(item)
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "addresses": rows,
+        "wallet_type": result.get("wallet_type"),
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/create", methods=["POST"])
+def mn2_wallet_create():
+    """Create a new labeled deposit address for the current user."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    data = request.get_json(silent=True) or {}
+    label = (data.get("label") or request.args.get("label") or "wallet").strip()
+    result = create_additional_wallet(user_id, label=label)
+    if not result.get("success"):
+        err = result.get("error", "Unknown error")
+        return jsonify({"success": False, "error": _user_facing_rpc_error(str(err))}), 200
+    addr = (result.get("deposit_address") or "").strip()
+    base = _explorer_base_url().rstrip("/")
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "deposit_address": addr,
+        "label": result.get("label"),
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+        "addresses": result.get("addresses"),
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])
+def mn2_wallet_refresh():
+    """Rotate primary deposit address (keeps legacy addresses in history)."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    result = refresh_deposit_address(user_id)
+    if not result.get("success"):
+        err = result.get("error", "Unknown error")
+        return jsonify({"success": False, "error": _user_facing_rpc_error(err)}), 200
+    addr = (result.get("deposit_address") or "").strip()
+    base = _explorer_base_url().rstrip("/")
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "deposit_address": addr,
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/agent-wallets", methods=["GET"])
+def mn2_agent_wallets():
+    """List peer-mesh agent wallets with deposit addresses and balances."""
+    provision = request.args.get("provision", "1") != "0"
+    try:
+        from backend.services.agent_peer_transactions_service import list_mesh_agent_wallets
+        result = list_mesh_agent_wallets(provision=provision)
+    except Exception as e:
+        _log.exception("mn2_agent_wallets failed")
+        return jsonify({"success": False, "error": str(e), "agents": []}), 500
+    base = _explorer_base_url().rstrip("/")
+    rows = []
+    for row in result.get("agents") or []:
+        item = dict(row)
+        addr = (item.get("address") or "").strip()
+        if addr:
+            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+        rows.append(item)
+    return jsonify({
+        "success": True,
+        "agents": rows,
+        "count": result.get("count") or len(rows),
+        "unique_addresses": result.get("unique_addresses") or len({r.get("address") for r in rows if r.get("address")}),
+        "mesh_enabled": result.get("mesh_enabled"),
+    }), 200
+
+
+def _last_settlement_snapshot() -> dict:
+    """Read the most recent agent settlement run from logs."""
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base, "logs", "mn2_settlement", "settlement_runs.jsonl")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        if not lines:
+            return {}
+        last = json.loads(lines[-1].strip())
+        systems = last.get("systems") or []
+        return {
+            "ran_at": last.get("ran_at"),
+            "success": last.get("success"),
+            "systems_count": len(systems),
+            "systems": systems[:20],
+            "dry_run": last.get("dry_run"),
+        }
+    except Exception:
+        return {}
+
+
+@mn2_bp.route("/api/mn2/profile-monitor", methods=["GET"])
+def mn2_profile_monitor():
+    """Unified MN2 monitor: ledger activity, system breakdown, wallet list, daemon health."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    try:
+        days = int(request.args.get("days", 5))
+    except (TypeError, ValueError):
+        days = 5
+    days = max(1, min(days, 31))
+    config = _load_mn2_config()
+    from backend.services.mn2_ledger import get_wallet_activity_days, get_entries_by_user
+
+    buckets = get_wallet_activity_days(user_id, days=days)
+    entries = get_entries_by_user(user_id, limit=200)
+    by_system: dict = {}
+    chain_txs = 0
+    for e in entries:
+        t = (e.get("type") or "other").strip()
+        meta = e.get("metadata") or {}
+        src = (meta.get("source") or t).strip()
+        bucket = by_system.setdefault(src, {"count": 0, "total_mn2": 0.0})
+        bucket["count"] += 1
+        try:
+            bucket["total_mn2"] = round(bucket["total_mn2"] + float(e.get("amount") or 0), 8)
+        except (TypeError, ValueError):
+            pass
+        if (e.get("txid") or "").strip() or meta.get("chain_txid") or meta.get("chain_paid"):
+            chain_txs += 1
+
+    wallets = list_user_addresses(user_id)
+    daemon: dict = {"healthy": False}
+    try:
+        from backend.services.mn2_daemon_health_service import probe_daemon
+        probe = probe_daemon(extended=False)
+        health = probe.get("health") or {}
+        daemon = {
+            "healthy": bool(probe.get("healthy")),
+            "block_height": health.get("block_height"),
+            "latency_ms": health.get("latency_ms"),
+        }
+    except Exception:
+        pass
+
+    chain_payouts = (config.get("chain_reward_payouts") or {})
+    return jsonify({
+        "success": True,
+        "user_id": user_id,
+        "days": days,
+        "buckets": buckets,
+        "by_system": by_system,
+        "chain_tx_count": chain_txs,
+        "instant_rewards": bool(config.get("instant_rewards", True)),
+        "instant_deposits": bool(config.get("instant_deposits", True)),
+        "instant_deposit_confirmations": int(config.get("instant_deposit_confirmations") or 0),
+        "confirmations_required": int(config.get("confirmations") or 0),
+        "chain_payouts_enabled": bool(chain_payouts.get("enabled", False)),
+        "daemon": daemon,
+        "last_settlement": _last_settlement_snapshot(),
+        "wallets": wallets.get("addresses") or [],
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/daemon/health", methods=["GET"])
+def mn2_daemon_health():
+    """Probe masternoder2d RPC health (block height, latency, optional wallet)."""
+    from backend.services.mn2_daemon_health_service import probe_daemon
+    extended = request.args.get("extended", "0") == "1"
+    return jsonify(probe_daemon(extended=extended)), 200
+
+
+@mn2_bp.route("/api/mn2/ops/settle-ecosystem", methods=["POST"])
+def mn2_ops_settle_ecosystem():
+    """Run agent MN2 settlement (battle auto-claim, chain payouts, deposit scan). Ops auth required."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    systems_raw = data.get("systems") or request.args.get("systems") or "all"
+    if isinstance(systems_raw, str):
+        systems = [s.strip() for s in systems_raw.split(",") if s.strip()]
+    else:
+        systems = list(systems_raw) if systems_raw else ["all"]
+    dry_run = (request.args.get("dry_run") == "1") or data.get("dry_run") is True
+    from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
+    result = run_mn2_ecosystem_settlement(systems=systems, dry_run=dry_run)
+    status = 200 if result.get("success") else 500
+    return jsonify(result), status
+
+
 @mn2_bp.route("/api/mn2/wallet-activity", methods=["GET"])
 def mn2_wallet_activity():
     """Last N UTC days of MN2 ledger aggregates (deposits, outflows, net) for profile monitor."""
@@ -401,6 +619,92 @@ def _ops_authorized() -> bool:
         return True
     token = (request.headers.get("X-Scanner-Token") or request.headers.get("X-Ops-Token") or request.args.get("token") or "").strip()
     return token == secret
+
+
+@mn2_bp.route("/api/mn2/user-wallet-map", methods=["GET"])
+def mn2_user_wallet_map():
+    """Table of all users with wallet status and clone/copy flags. ?provision=1 assigns missing wallets."""
+    try:
+        limit = min(500, max(1, int(request.args.get("limit", 200))))
+        offset = max(0, int(request.args.get("offset", 0)))
+    except (TypeError, ValueError):
+        limit, offset = 200, 0
+    search = request.args.get("search") or request.args.get("q")
+    provision = request.args.get("provision", "0") in ("1", "true", "yes")
+    from backend.services.user_wallet_map_service import build_user_wallet_table
+    result = build_user_wallet_table(
+        limit=limit,
+        offset=offset,
+        search=search,
+        provision=provision,
+    )
+    base = _explorer_base_url().rstrip("/")
+    for row in result.get("users") or []:
+        addr = (row.get("deposit_address") or "").strip()
+        if addr:
+            row["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+    return jsonify(result), 200
+
+
+@mn2_bp.route("/api/mn2/ops/provision-all-wallets", methods=["POST", "GET"])
+def mn2_ops_provision_all_wallets():
+    """Bulk-assign wallets to users missing one. Query: limit, offset, search."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        batch = min(500, max(1, int(request.args.get("limit", 200))))
+        offset = max(0, int(request.args.get("offset", 0)))
+    except (TypeError, ValueError):
+        batch, offset = 200, 0
+    search = request.args.get("search") or request.args.get("q")
+    from backend.services.user_wallet_map_service import (
+        build_user_wallet_table,
+        collect_all_user_ids,
+        provision_wallets_batch,
+    )
+    all_uids = sorted(collect_all_user_ids(), reverse=True)
+    q = (search or "").strip().lower()
+    if q:
+        all_uids = [u for u in all_uids if q in u.lower()]
+    slice_ids = all_uids[offset: offset + batch]
+    prov = provision_wallets_batch(slice_ids, limit=batch)
+    table = build_user_wallet_table(limit=batch, offset=offset, search=search, provision=False)
+    return jsonify({
+        "success": True,
+        "total_users": len(all_uids),
+        "batch_offset": offset,
+        "batch_limit": batch,
+        **prov,
+        "table": table,
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/ops/normalize-wallets", methods=["POST", "GET"])
+def mn2_ops_normalize_wallets():
+    """Upgrade bare address strings to full wallet records (users + agents). Ops auth required."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    from backend.services.mn2_wallet_service import normalize_all_legacy_wallets
+    return jsonify(normalize_all_legacy_wallets()), 200
+
+
+@mn2_bp.route("/api/mn2/ops/seed-pool-addresses", methods=["POST"])
+def mn2_ops_seed_pool_addresses():
+    """Register pre-generated MN2 addresses as pool_N (fallback when getnewaddress RPC is disabled)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    raw = data.get("addresses") or data.get("address") or request.args.get("addresses") or ""
+    if isinstance(raw, str):
+        addrs = [a.strip() for a in raw.replace(",", "\n").splitlines() if a.strip()]
+    elif isinstance(raw, list):
+        addrs = [str(a).strip() for a in raw if str(a).strip()]
+    else:
+        addrs = []
+    from backend.services.mn2_wallet_service import seed_pool_addresses
+    result = seed_pool_addresses(addrs)
+    status = 200 if result.get("success") else 200
+    return jsonify(result), status
 
 
 @mn2_bp.route("/api/mn2/ops/create-addresses", methods=["POST", "GET"])

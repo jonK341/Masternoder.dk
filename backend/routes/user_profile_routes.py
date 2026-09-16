@@ -161,6 +161,12 @@ def login_user():
         set_session_user(user_id)
         record_login_success(ip, user_id)
 
+        try:
+            from backend.services.mn2_wallet_service import ensure_user_wallet
+            ensure_user_wallet(user_id)
+        except Exception:
+            pass
+
         # Ensure user exists in DB (creates on first login, updates last_login on return)
         db_result = {}
         try:
@@ -205,6 +211,11 @@ def bind_session():
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id required'}), 400
         set_session_user(user_id)
+        try:
+            from backend.services.mn2_wallet_service import ensure_user_wallet
+            ensure_user_wallet(user_id)
+        except Exception:
+            pass
         # Ensure user exists in DB on session bind
         db_result = {}
         try:

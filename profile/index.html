@@ -736,6 +736,151 @@
         }
         .mn2-5d-label { font-size: 0.65rem; color: rgba(255, 255, 255, 0.65); text-align: center; }
         .mn2-5d-net { font-size: 0.62rem; color: #00d4ff; font-family: ui-monospace, monospace; }
+        .mn2-system-monitor {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .mn2-monitor-chip {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            background: rgba(0, 0, 0, 0.28);
+            font-size: 0.75rem;
+        }
+        .mn2-monitor-chip strong { display: block; color: #00ff88; font-size: 0.95rem; }
+        #profile-mn2-qr {
+            width: 192px;
+            height: 192px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #profile-mn2-qr canvas, #profile-mn2-qr img {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            border-radius: 4px;
+        }
+        #profile-mn2-showcase.mn2-instant-flash {
+            box-shadow: 0 0 24px rgba(0, 255, 136, 0.55);
+            border-color: rgba(0, 255, 136, 0.85) !important;
+            transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        #profile-mn2-instant-toast {
+            position: fixed;
+            top: 72px;
+            right: 16px;
+            max-width: 280px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: rgba(0, 40, 28, 0.94);
+            border: 1px solid rgba(0, 255, 136, 0.45);
+            color: #00ff88;
+            font-size: 0.82rem;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .mn2-wallet-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            margin: 4px 0;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .mn2-wallet-row.active { border-color: rgba(0,255,136,0.45); }
+        .shop-subnav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0 0 12px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.22);
+        }
+        .shop-subnav-btn {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.75);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .shop-subnav-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #000;
+            border-color: transparent;
+        }
+        .shop-order-table-wrap { overflow-x: auto; }
+        .shop-order-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .shop-order-table th,
+        .shop-order-table td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            vertical-align: top;
+        }
+        .shop-order-table thead th {
+            color: rgba(255,255,255,0.65);
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .shop-order-meta { font-size: 0.75rem; opacity: 0.7; margin-top: 2px; }
+        .shop-order-group-title { margin: 16px 0 6px; color: #7ee8ff; font-size: 0.92rem; }
+        .shop-order-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.08);
+        }
+        .shop-order-status.is-completed { background: rgba(0,255,136,0.16); color: #00ff88; }
+        .shop-order-status.is-pending { background: rgba(255,170,0,0.18); color: #ffaa00; }
+        .shop-order-status.is-refunded { background: rgba(255,136,0,0.18); color: #ff9944; }
+        .shop-order-status.is-cancelled { background: rgba(255,68,68,0.16); color: #ff7777; }
+        .shop-orders-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .shop-orders-easy {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+        @media (max-width: 960px) {
+            .shop-orders-easy { grid-template-columns: 1fr; }
+        }
+        .shop-orders-panel {
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(0,0,0,0.18);
+            min-width: 0;
+        }
+        .shop-order-table th:first-child,
+        .shop-order-table td:first-child { width: 2.2rem; }
+        .shop-order-pdf-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .shop-order-pdf-hint { font-size: 0.8rem; opacity: 0.75; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -1001,12 +1146,44 @@
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Items you buy with coins, unified points, or MN2 in <a href="/shop">Shop v4</a> are listed here via <code>/api/shop/inventory</code> (same data as the Shop inventory tab).</p>
                         <div id="profile-shop-v9-inventory">Loading…</div>
                         <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-account">Open inventory tab in Shop</a></p>
+                        <div class="shop-orders-toolbar" style="margin-top:22px;">
+                            <div>
+                                <h3 class="section-title" style="margin:0;font-size:1.05rem;">🧾 My orders</h3>
+                                <p style="font-size: 0.9rem; opacity: 0.85; margin: 6px 0 0;">Your shop purchases (PayPal, coins, points, MN2, on-chain) and masternode hosting. Check rows, then download a PDF.</p>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span id="profile-shop-order-pdf-hint" class="shop-order-pdf-hint">Select orders first</span>
+                                <button type="button" id="profile-shop-order-pdf-btn" class="shop-order-pdf-btn" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;font-weight:700;cursor:pointer;" disabled>Download PDF</button>
+                            </div>
+                        </div>
+                        <div id="profile-shop-orders-easy-view" class="shop-orders-easy">
+                            <section class="shop-orders-panel">
+                                <h4 style="margin:0 0 8px;color:#7ee8ff;">Shop orders</h4>
+                                <nav class="shop-subnav" id="profile-shop-order-status-subnav" aria-label="Order status filters"></nav>
+                                <nav class="shop-subnav" id="profile-shop-order-subnav" aria-label="Order subcategory filters"></nav>
+                                <div id="profile-shop-order-list" class="shop-order-list">Loading…</div>
+                            </section>
+                            <section class="shop-orders-panel">
+                                <h4 style="margin:0 0 8px;color:#7ee8ff;">Masternode hosting</h4>
+                                <p id="profile-hosting-orders-hint" style="margin:0 0 8px;font-size:0.8rem;opacity:0.8;">PayPal $4.99/slot, coins, MN2, or on-chain. Your orders only.</p>
+                                <nav class="shop-subnav" id="profile-hosting-status-subnav" aria-label="Hosting status filters"></nav>
+                                <nav class="shop-subnav" id="profile-hosting-subnav" aria-label="Hosting subcategory filters"></nav>
+                                <div id="profile-mn2-hosting-order-list" class="shop-order-list">Loading…</div>
+                            </section>
+                            <section class="shop-orders-panel">
+                                <h4 style="margin:0 0 8px;color:#7ee8ff;">Stall listings</h4>
+                                <nav class="shop-subnav" id="profile-shop-stall-status-subnav" aria-label="Stall status filters"></nav>
+                                <nav class="shop-subnav" id="profile-shop-stall-subnav" aria-label="Stall subcategory filters"></nav>
+                                <div id="profile-shop-stall-list" class="shop-order-list">Loading…</div>
+                            </section>
+                        </div>
+                        <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-account">Open orders in Shop</a></p>
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
                     <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
                         <h2 class="section-title" style="color: #00d4ff;">MN2 Wallet</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>MN2-only showcase</strong> — no other coin balances shown here.</p>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>Full wallet hub:</strong> <a href="/wallets" style="color:#00ff88;">/wallets</a> — instant rewards, multi-wallet, monitoring. <strong>MN2-only showcase</strong>.</p>
                         <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
                             <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
                             <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
@@ -1032,6 +1209,43 @@
                                 <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals.</p>
                                 <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
                             </div>
+                            <div style="margin-top:14px;">
+                                <strong style="color:#00d4ff;">Blockchain &amp; agent monitor</strong>
+                                <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Daemon health, chain payouts, and agent cron settlement — all rewards credit to your wallet instantly.</p>
+                                <div id="profile-mn2-daemon-monitor" class="mn2-system-monitor">Loading…</div>
+                            </div>
+                            <div style="margin-top:14px;">
+                                <strong style="color:#00d4ff;">System monitor</strong>
+                                <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Rewards &amp; bonuses from game, battle, quests, generator, casino, staking, and on-chain payouts.</p>
+                                <div id="profile-mn2-system-monitor" class="mn2-system-monitor">Loading…</div>
+                            </div>
+                            <div id="profile-mn2-instant-toast" aria-live="polite"></div>
+                            <div style="margin-top:14px;">
+                                <strong style="color:#00d4ff;">Agent mesh wallets</strong>
+                                <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Each platform agent has its own MN2 deposit address for peer-mesh on-chain activity.</p>
+                                <div id="profile-mn2-agent-wallets" class="mn2-agent-wallets-list">Loading…</div>
+                            </div>
+                            <div style="margin-top:14px;">
+                                <strong style="color:#00d4ff;">User wallet map</strong>
+                                <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">All users (clone/copy pairs shown separately, each with their own wallet). Clones share fingerprint, email, or username.</p>
+                                <div id="profile-mn2-user-wallet-map-summary" style="font-size:0.74rem;opacity:0.8;margin:4px 0 8px;">Loading…</div>
+                                <div style="overflow-x:auto;max-height:320px;overflow-y:auto;border:1px solid rgba(0,212,255,0.25);border-radius:8px;">
+                                    <table id="profile-mn2-user-wallet-map-table" style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+                                        <thead>
+                                            <tr style="background:rgba(0,212,255,0.12);text-align:left;">
+                                                <th style="padding:6px 8px;">User</th>
+                                                <th style="padding:6px 8px;">Wallet</th>
+                                                <th style="padding:6px 8px;">Address</th>
+                                                <th style="padding:6px 8px;">MN2</th>
+                                                <th style="padding:6px 8px;">Clone</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="profile-mn2-user-wallet-map-body">
+                                            <tr><td colspan="5" style="padding:8px;opacity:0.7;">Loading…</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                         <div data-wallet-panel="deposit" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
@@ -1039,7 +1253,7 @@
                             <p id="profile-mn2-deposit-error" style="display: none; font-size: 0.85rem; color: #ffaa00; margin: 6px 0;"></p>
                             <p id="profile-mn2-deposit-hint" style="display: none; font-size: 0.8rem; opacity: 0.85; margin: 4px 0;">No address yet. Click <strong>Request address</strong> to get one (from pool or wallet).</p>
                             <div style="display: flex; align-items: flex-start; gap: 12px; margin-top: 6px; flex-wrap: wrap;">
-                                <div id="profile-mn2-qr" style="flex-shrink: 0; width: 100px; height: 100px; background: #fff; border-radius: 6px;"></div>
+                                <div id="profile-mn2-qr" style="flex-shrink: 0; width: 192px; height: 192px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.35);"></div>
                                 <div style="flex: 1; min-width: 0;">
                                     <code id="profile-mn2-deposit-address" style="word-break: break-all; padding: 6px; background: rgba(0,0,0,0.3); border-radius: 6px; font-size: 0.85rem;">--</code>
                                     <div style="margin-top: 6px;">
@@ -1050,7 +1264,12 @@
                                     </div>
                                 </div>
                             </div>
-                            <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear after 6 confirmations.</p>
+                            <div id="profile-mn2-wallets-list" style="margin-top:12px;font-size:0.82rem;"></div>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
+                                <input type="text" id="profile-mn2-new-wallet-label" placeholder="New wallet label" style="min-width:140px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;font-size:0.82rem;">
+                                <button type="button" id="profile-mn2-create-wallet" style="padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;font-size:0.82rem;"><i class="fas fa-wallet"></i> Create new wallet</button>
+                            </div>
+                            <p id="profile-mn2-deposit-instant-msg" style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear instantly (0 confirmations).</p>
                         </div>
                         </div>
                         <div data-wallet-panel="withdraw" style="margin-bottom: 14px; display:none;">
@@ -1136,101 +1355,6 @@
 
                         <p class="mn2-disclaimer" data-wallet-panel="overview" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.75; color: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,212,255,0.2); padding-top: 10px;">MN2 value can be volatile. This is not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: #00d4ff;">Terms</a>.</p>
                     </div>
-                    <script>
-                    (function () {
-                      var rowsEl = document.getElementById('mn2-statement-rows');
-                      if (!rowsEl) return;
-                      var yearEl = document.getElementById('mn2-statement-year');
-                      var csvEl = document.getElementById('mn2-statement-csv');
-                      var sumEl = document.getElementById('mn2-statement-summary');
-                      var label = {
-                        deposit: 'Deposit', withdrawal: 'Withdrawal', staking_reward: 'Staking reward',
-                        stake: 'Stake', unstake: 'Unstake', shop_payment: 'Shop payment',
-                        onramp_purchase: 'PayPal buy', onramp_clawback: 'Chargeback', p2p_buy: 'P2P buy',
-                        p2p_sell_escrow: 'P2P escrow', p2p_escrow_return: 'P2P escrow return',
-                        gift_sent: 'Gift sent', gift_received: 'Gift received',
-                        gift_sent: 'Gift sent', gift_received: 'Gift received'
-                      };
-                      function fmt(n) { return Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 8 }); }
-                      function yearsPopulated() { return yearEl && yearEl.options.length > 1; }
-                      function load() {
-                        var y = yearEl ? yearEl.value : '';
-                        if (csvEl) csvEl.href = '/api/mn2/statement?format=csv' + (y ? '&year=' + y : '');
-                        rowsEl.innerHTML = 'Loading…';
-                        fetch('/api/mn2/statement' + (y ? '?year=' + y : ''), { credentials: 'same-origin' })
-                          .then(function (r) { return r.json(); })
-                          .then(function (d) {
-                            if (!d || !d.success) { rowsEl.innerHTML = (d && d.code === 'auth_required') ? 'Sign in to view your statement.' : 'Could not load statement.'; return; }
-                            if (yearEl && !yearsPopulated()) {
-                              var ys = Object.keys((d.summary && d.summary.by_year) || {}).sort().reverse();
-                              ys.forEach(function (yr) { var o = document.createElement('option'); o.value = yr; o.textContent = yr; yearEl.appendChild(o); });
-                            }
-                            if (sumEl) sumEl.textContent = 'Current balance ' + fmt(d.current_balance_mn2) + ' MN2 · ' + ((d.summary && d.summary.events) || 0) + ' events';
-                            var rows = d.rows || [];
-                            if (!rows.length) { rowsEl.innerHTML = '<p style="margin:0;">No transactions yet.</p>'; return; }
-                            rowsEl.innerHTML = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="opacity:0.7;">' +
-                              '<th style="text-align:left; padding:2px 8px;">Date</th><th style="text-align:left; padding:2px 8px;">Type</th>' +
-                              '<th style="text-align:right; padding:2px 8px;">Change</th><th style="text-align:right; padding:2px 8px;">Balance</th></tr></thead><tbody>' +
-                              rows.map(function (r) {
-                                var pos = (r.delta_mn2 || 0) >= 0;
-                                var d2 = (r.created_at || '').slice(0, 16).replace('T', ' ');
-                                var dc = (r.delta_mn2 === 0) ? 'opacity:0.6;' : (pos ? 'color:#00ff88;' : 'color:#ffaa44;');
-                                var sign = (r.delta_mn2 > 0 ? '+' : '');
-                                return '<tr><td style="padding:2px 8px;">' + d2 + '</td><td style="padding:2px 8px;">' + (label[r.type] || r.type) +
-                                  '</td><td style="padding:2px 8px; text-align:right; ' + dc + '">' + (r.delta_mn2 === 0 ? '—' : sign + fmt(r.delta_mn2)) +
-                                  '</td><td style="padding:2px 8px; text-align:right;">' + fmt(r.running_balance_mn2) + '</td></tr>';
-                              }).join('') + '</tbody></table>';
-                          })
-                          .catch(function () { rowsEl.innerHTML = 'Could not load statement.'; });
-                      }
-                      if (yearEl) yearEl.addEventListener('change', load);
-                      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
-                    })();
-                    </script>
-                    <script>
-                    (function () {
-                      function loadAddrBook() {
-                        var el = document.getElementById('mn2-addrbook-list');
-                        if (!el) return;
-                        fetch('/api/mn2/address-book', { credentials: 'same-origin' }).then(function(r) { return r.json(); }).then(function(d) {
-                          var rows = (d && d.addresses) || [];
-                          if (!rows.length) { el.innerHTML = '<p style="margin:0;opacity:0.7;">No saved addresses.</p>'; return; }
-                          el.innerHTML = rows.map(function(a) {
-                            return '<div style="margin:4px 0;">' + (a.label || a.address).slice(0,40) +
-                              ' <span style="opacity:0.6;">' + (a.cleared ? '✓ cleared' : 'pending clearance') + '</span></div>';
-                          }).join('');
-                        }).catch(function() { el.textContent = 'Could not load.'; });
-                      }
-                      var addBtn = document.getElementById('mn2-addrbook-add');
-                      if (addBtn) addBtn.addEventListener('click', function() {
-                        var addr = (document.getElementById('mn2-addrbook-address') || {}).value || '';
-                        var label = (document.getElementById('mn2-addrbook-label') || {}).value || '';
-                        var pwdEl = document.getElementById('mn2-addrbook-password');
-                        var token = pwdEl ? pwdEl.value : '';
-                        fetch('/api/mn2/address-book', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ address: addr, label: label, verification_token: token || undefined, password: token || undefined }) })
-                          .then(function(r) { return r.json(); }).then(function(d) {
-                            alert(d.success ? 'Trusted address saved.' : (d.error || 'Failed — set profile password in Security tab.'));
-                            if (d.success && pwdEl) pwdEl.value = '';
-                            loadAddrBook();
-                          });
-                      });
-                      var giftBtn = document.getElementById('mn2-gift-send');
-                      if (giftBtn) giftBtn.addEventListener('click', function() {
-                        var to = (document.getElementById('mn2-gift-to') || {}).value || '';
-                        var amt = (document.getElementById('mn2-gift-amount') || {}).value || 0;
-                        var msg = document.getElementById('mn2-gift-msg');
-                        fetch('/api/mn2/transfer', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ to: to, amount: amt }) })
-                          .then(function(r) { return r.json(); }).then(function(d) {
-                            if (msg) { msg.textContent = d.success ? ('Sent ' + d.amount_mn2 + ' MN2 to ' + d.to_user) : (d.error || 'Failed'); msg.style.color = d.success ? '#00ff88' : '#ffaa44'; }
-                            if (d.success && window.profileManager) window.profileManager.loadProfileMn2Wallet();
-                          });
-                      });
-                      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadAddrBook); else loadAddrBook();
-                    })();
-                    </script>
-
                     <!-- MN2 Staking: stake/unstake, browser rig, longevity, calculator -->
                     <div class="section-card" id="profile-mn2-staking-card" data-profile-route="wallet" style="border: 2px solid rgba(0,255,136,0.4); background: linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,212,255,0.04));">
                         <h2 class="section-title" style="color: #00ff88;">⚡ MN2 Staking</h2>
@@ -1662,7 +1786,10 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260915-orders"></script>
+        <script src="/static/js/shop-order-list.js?v=20260915-hosting"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260916-wallets-hub"></script>
+        <script src="/static/js/mn2-wallet-extras.js?v=20260916"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
@@ -1758,6 +1885,7 @@
                         this.loadProfileMn2Wallet();
                         this.loadCryptoWalletAgentsCatalog();
                         this.loadShopInventoryV9();
+                        this.loadShopOrders();
                         this.loadAccountPrivacyControls();
                         var params = new URLSearchParams(window.location.search);
                         if (params.get('refresh') === '1' && typeof this.refreshProfilePoints === 'function') {
@@ -3293,6 +3421,9 @@
                 if (typeof this.loadShopInventoryV9 === 'function') {
                     this.loadShopInventoryV9();
                 }
+                if (typeof this.loadShopOrders === 'function') {
+                    this.loadShopOrders();
+                }
             }
 
             _mergeShopShadowInventory(apiRows, uid) {
@@ -3384,6 +3515,146 @@
 
             async loadShopInventoryV4() {
                 return this.loadShopInventoryV9();
+            }
+
+            _renderProfileShopOrders() {
+                const el = document.getElementById('profile-shop-order-list');
+                if (!window.ShopOrderList || !el) return;
+                ShopOrderList.render({
+                    rows: this._profileShopOrders || [],
+                    listEl: el,
+                    statusNavEl: document.getElementById('profile-shop-order-status-subnav'),
+                    subnavEl: document.getElementById('profile-shop-order-subnav'),
+                    subcategory: this._profileOrderSubcat || 'all',
+                    status: this._profileOrderStatus || 'all',
+                    emptyMessage: 'No shop orders yet. Catalog, PayPal, coins, points, and MN2 purchases appear here.',
+                    onSubcategory: (id) => {
+                        this._profileOrderSubcat = id;
+                        this._renderProfileShopOrders();
+                    },
+                    onStatus: (id) => {
+                        this._profileOrderStatus = id;
+                        this._renderProfileShopOrders();
+                    },
+                });
+            }
+
+            _renderProfileStallOrders() {
+                const el = document.getElementById('profile-shop-stall-list');
+                if (!window.ShopOrderList || !el) return;
+                ShopOrderList.render({
+                    rows: this._profileStallOrders || [],
+                    listEl: el,
+                    statusNavEl: document.getElementById('profile-shop-stall-status-subnav'),
+                    subnavEl: document.getElementById('profile-shop-stall-subnav'),
+                    subcategory: this._profileStallSubcat || 'all',
+                    status: this._profileStallStatus || 'all',
+                    emptyMessage: 'No stall listings yet. Use Sell in My Inventory.',
+                    filterEmptyMessage: 'No listings match this filter.',
+                    onSubcategory: (id) => {
+                        this._profileStallSubcat = id;
+                        this._renderProfileStallOrders();
+                    },
+                    onStatus: (id) => {
+                        this._profileStallStatus = id;
+                        this._renderProfileStallOrders();
+                    },
+                });
+            }
+
+            _renderProfileHostingOrders() {
+                const el = document.getElementById('profile-mn2-hosting-order-list');
+                if (!window.ShopOrderList || !el) return;
+                ShopOrderList.render({
+                    rows: this._profileHostingOrders || [],
+                    listEl: el,
+                    statusNavEl: document.getElementById('profile-hosting-status-subnav'),
+                    subnavEl: document.getElementById('profile-hosting-subnav'),
+                    subcategory: this._profileHostingSubcat || 'all',
+                    status: this._profileHostingStatus || 'all',
+                    emptyMessage: 'No masternode hosting orders for this account yet.',
+                    filterEmptyMessage: 'No hosting orders match this filter.',
+                    onSubcategory: (id) => {
+                        this._profileHostingSubcat = id;
+                        this._renderProfileHostingOrders();
+                    },
+                    onStatus: (id) => {
+                        this._profileHostingStatus = id;
+                        this._renderProfileHostingOrders();
+                    },
+                });
+            }
+
+            async loadShopOrders() {
+                const el = document.getElementById('profile-shop-order-list');
+                const stallEl = document.getElementById('profile-shop-stall-list');
+                const hostEl = document.getElementById('profile-mn2-hosting-order-list');
+                if (!el) return;
+                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                this._profileOrderSubcat = this._profileOrderSubcat || 'all';
+                this._profileOrderStatus = this._profileOrderStatus || 'all';
+                this._profileStallSubcat = this._profileStallSubcat || 'all';
+                this._profileStallStatus = this._profileStallStatus || 'all';
+                this._profileHostingSubcat = this._profileHostingSubcat || 'all';
+                this._profileHostingStatus = this._profileHostingStatus || 'all';
+                if (window.ShopOrderList) {
+                    ShopOrderList.bindPdfControls({
+                        button: document.getElementById('profile-shop-order-pdf-btn'),
+                        hintEl: document.getElementById('profile-shop-order-pdf-hint'),
+                        userId: uid,
+                    });
+                }
+                el.innerHTML = '<p style="opacity:0.85;">Loading…</p>';
+                if (stallEl) stallEl.innerHTML = '<p style="opacity:0.85;">Loading…</p>';
+                if (hostEl) hostEl.innerHTML = '<p style="opacity:0.85;">Loading…</p>';
+                try {
+                    const r = await fetch(`${window.location.origin}/api/shop/purchases?user_id=${encodeURIComponent(uid)}&limit=200`);
+                    const d = r.ok ? await r.json() : {};
+                    if (!d.success && !(d.purchases || []).length) {
+                        throw new Error(d.error || 'Could not load shop orders.');
+                    }
+                    this._profileShopOrders = (d.success && d.purchases) ? d.purchases : [];
+                    this._renderProfileShopOrders();
+                } catch (e) {
+                    this._profileShopOrders = [];
+                    if (window.ShopOrderList) {
+                        ShopOrderList.renderError(el, 'Could not load shop orders.');
+                    } else {
+                        el.innerHTML = '<p style="color:#ffaa00;">Could not load shop orders.</p>';
+                    }
+                }
+                try {
+                    const sr = await fetch(`${window.location.origin}/api/shop/stall-orders?user_id=${encodeURIComponent(uid)}&limit=200`);
+                    const sd = sr.ok ? await sr.json() : {};
+                    this._profileStallOrders = Array.isArray(sd.listings) ? sd.listings : [];
+                    this._renderProfileStallOrders();
+                } catch (e) {
+                    this._profileStallOrders = [];
+                    if (window.ShopOrderList) {
+                        ShopOrderList.renderError(stallEl, 'Could not load stall listings.');
+                    } else if (stallEl) {
+                        stallEl.innerHTML = '<p style="color:#ffaa00;">Could not load stall listings.</p>';
+                    }
+                }
+                try {
+                    const hr = await fetch(`${window.location.origin}/api/shop/hosting-orders?user_id=${encodeURIComponent(uid)}&limit=200`);
+                    const hd = hr.ok ? await hr.json() : {};
+                    this._profileHostingOrders = Array.isArray(hd.hosting) ? hd.hosting : [];
+                    const hint = document.getElementById('profile-hosting-orders-hint');
+                    if (hint) {
+                        const sitePaid = Number(hd.site_paid_orders) || 0;
+                        hint.textContent = 'Your hosting orders (PayPal $4.99/slot, coins, MN2, on-chain). Site-wide paid: ' +
+                            sitePaid + '. This list is yours only.';
+                    }
+                    this._renderProfileHostingOrders();
+                } catch (e) {
+                    this._profileHostingOrders = [];
+                    if (window.ShopOrderList) {
+                        ShopOrderList.renderError(hostEl, 'Could not load hosting orders.');
+                    } else if (hostEl) {
+                        hostEl.innerHTML = '<p style="color:#ffaa00;">Could not load hosting orders.</p>';
+                    }
+                }
             }
 
             renderCommunicationPsychology(cp) {
@@ -4069,10 +4340,16 @@
                         if (window.profileManager && typeof window.profileManager.loadShopInventoryV9 === 'function') {
                             window.profileManager.loadShopInventoryV9();
                         }
+                        if (window.profileManager && typeof window.profileManager.loadShopOrders === 'function') {
+                            window.profileManager.loadShopOrders();
+                        }
                     });
                     function onShopPurchaseRefresh() {
                         if (window.profileManager && typeof window.profileManager.loadShopInventoryV9 === 'function') {
                             window.profileManager.loadShopInventoryV9();
+                        }
+                        if (window.profileManager && typeof window.profileManager.loadShopOrders === 'function') {
+                            window.profileManager.loadShopOrders();
                         }
                     }
                     window.addEventListener('shop-v9-purchase', onShopPurchaseRefresh);

@@ -367,6 +367,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP agent_cron: {e}")
     try:
+        from backend.routes.agent_mn2_transaction_routes import agent_mn2_tx_bp
+        if "agent_mn2_tx" not in app.blueprints:
+            app.register_blueprint(agent_mn2_tx_bp)
+            n += 1
+            print("  [OK] Registered agent_mn2_tx blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_mn2_tx: {e}")
+    try:
         from backend.routes.agent_intelligence_routes import agent_intelligence_bp
         app.register_blueprint(agent_intelligence_bp)
         n += 1
@@ -799,6 +807,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import agent_cron: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering agent_cron: {e}")
+
+    try:
+        if "agent_mn2_tx" not in app.blueprints:
+            from backend.routes.agent_mn2_transaction_routes import agent_mn2_tx_bp
+            app.register_blueprint(agent_mn2_tx_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_mn2_tx blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_mn2_tx: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_mn2_tx: {e}")
 
     # Master Fix Agent Routes
     try:

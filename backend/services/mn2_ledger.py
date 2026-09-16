@@ -146,9 +146,15 @@ def get_wallet_activity_days(user_id: str, days: int = 5) -> List[Dict[str, Any]
         except (TypeError, ValueError):
             continue
         buckets[day]["events"] += 1
-        if t in ("deposit", "staking_reward", "onramp_purchase"):
+        _INFLOW = (
+            "deposit", "staking_reward", "onramp_purchase", "chain_reward",
+            "battle_crypto_claim", "game_mn2_reward", "generator_mn2", "aggregator_mn2",
+            "quest_reward", "casino_reward", "order_overpay_change", "order_underpaid_credit",
+        )
+        _OUTFLOW = ("withdrawal", "shop_payment", "onramp_clawback")
+        if t in _INFLOW or t.endswith("_reward") or "claim" in t:
             buckets[day]["deposits_mn2"] += amt
-        elif t in ("withdrawal", "shop_payment", "onramp_clawback"):
+        elif t in _OUTFLOW:
             buckets[day]["out_mn2"] += abs(amt)
         # stake / unstake are internal balance<->staked moves: neutral (counted as events only)
     for k in day_keys:

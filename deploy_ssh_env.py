@@ -94,6 +94,11 @@ def require_deploy_pass(*, force_prompt: bool = False) -> str:
     )
     raise SystemExit(1)
 
+def default_key_paths() -> list:
+    """Public wrapper: deploy key files that exist on disk."""
+    return _default_key_paths()
+
+
 def _default_key_paths() -> list:
     paths = []
     env_key = (os.environ.get("DEPLOY_KEY_PATH") or "").strip()
@@ -115,6 +120,16 @@ def _try_ssh_key_auth(
 ) -> Optional[Tuple[paramiko.SSHClient, str]]:
     """Try SSH key files / agent only. Returns (client, auth_method) or None."""
     _load_deploy_env_from_dotenv()
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(
+            host, username=user, timeout=timeout,
+            look_for_keys=True, allow_agent=True,
+        )
+        return ssh, "agent-or-default-keys"
+    except Exception:
+        pass
     for key_path in _default_key_paths():
         try:
             ssh = paramiko.SSHClient()

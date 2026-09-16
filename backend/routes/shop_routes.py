@@ -4,6 +4,7 @@ API endpoints for shop functionality including currency and items.
 Uses account resolution: session > request > user_identification.
 """
 from flask import Blueprint, jsonify, request, send_file
+import json
 import os
 
 shop_bp = Blueprint('shop', __name__)
@@ -1119,6 +1120,35 @@ def _seed_shop_items():
         item_id="mn2-5d-withdrawal-beacon",
     )
 
+    # Shop wave v8 — orders UI, micro-tx, agent peer mesh, cron settlement (Sep 2026)
+    _v8 = ["shop_wave_v8", "sep2026", "agent_mesh", "micro_tx"]
+    shop_wave_v8 = [
+        ("Order Ledger PDF Export", "Unlock styled PDF export for checked shop + hosting orders on Profile and Shop account.", "mn2_services", 88, "📄", "rare"),
+        ("My Orders Easy View", "Three-panel orders layout: shop purchases, masternode hosting, stall listings with payment column.", "mn2_services", 72, "🧾", "rare"),
+        ("Micro-TX Burst Pass 24h", "Enables dust on-chain MN2 reward bursts from agent cron for 24h (0.00001 MN2 slots).", "boosts", 95, "⚡", "epic"),
+        ("Agent Peer Mesh Relay", "Agents send dust MN2 to each other on-chain — mesh activity for monitoring agents.", "tech", 110, "🔗", "epic"),
+        ("Agent Cron Settlement+", "Priority agent settlement tick: battle, shop, micro-tx, peer mesh, chain payouts.", "boosts", 65, "🤖", "rare"),
+        ("Profile Wallet Multi-Address", "Create extra labeled MN2 deposit addresses from Profile wallet tab.", "mn2_crypto", 55, "👛", "rare"),
+        ("Chain Activity Monitor Skin", "High-contrast skin for Profile system monitor (game, battle, peer mesh txs).", "cosmetic", 48, "📡", "common"),
+        ("Hosting Order Tracker", "Track your masternode hosting orders beside shop purchases (PayPal, MN2, on-chain).", "mn2_services", 42, "🏛️", "common"),
+        ("Pending Orders Radar", "Highlights unfinished PayPal quotes and on-chain pending payments in orders view.", "tech", 38, "📶", "common"),
+        ("Stall Listing Pro", "Extra stall listing slots and faster refresh on My Stall panel.", "inventory", 75, "🏪", "rare"),
+    ]
+    v8_ids = [
+        "shop-v8-order-pdf-export",
+        "shop-v8-orders-easy-view",
+        "shop-v8-micro-tx-burst",
+        "shop-v8-agent-peer-mesh",
+        "shop-v8-agent-cron-plus",
+        "shop-v8-profile-multi-wallet",
+        "shop-v8-chain-monitor-skin",
+        "shop-v8-hosting-order-tracker",
+        "shop-v8-pending-orders-radar",
+        "shop-v8-stall-listing-pro",
+    ]
+    for i, (n, d, cat, price, icon, rarity) in enumerate(shop_wave_v8):
+        add(n, d, cat, price, icon, rarity, tags=_v8, item_id=v8_ids[i])
+
     # ---- Top 25 Legends: flagship numbered collectible series (June 2026 wave) ----
     # 25 ranked, escalating items spanning every MasterNoder surface. Coin-priced so
     # they work with coins / in-wallet MN2 / on-chain MN2 / PayPal and earn loyalty.
@@ -1947,17 +1977,33 @@ def shop_purchase():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+def _enrich_shop_owned_rows(rows):
+    """Attach catalog taxonomy + order status buckets. Never loads masternode hosting orders."""
+    try:
+        from backend.services.shop_taxonomy_service import enrich_rows
+        catalog_by_id = {str(i.get("id")): i for i in (_get_shop_items() or []) if i.get("id")}
+        return enrich_rows(rows or [], catalog_by_id)
+    except Exception:
+        return list(rows or [])
+
+
 @shop_bp.route('/api/shop/purchases', methods=['GET'])
 def shop_purchases():
-    """Get purchase history for user (requires migration)."""
+    """Get shop purchase / order history for user (requires migration)."""
     try:
         user_id = request.args.get('user_id') or _resolve_user_id()
-        limit = min(int(request.args.get('limit', 50)), 100)
+        limit = min(int(request.args.get('limit', 50)), 300)
         try:
-            from backend.services.shop_db_service import get_purchases
-            purchases = get_purchases(user_id, limit=limit)
+            from backend.services.shop_order_list_service import collect_shop_purchases
+
+            purchases = collect_shop_purchases(user_id, limit=limit)
         except Exception:
-            purchases = []
+            try:
+                from backend.services.shop_db_service import get_purchases
+                purchases = get_purchases(user_id, limit=limit)
+            except Exception:
+                purchases = []
+            purchases = _enrich_shop_owned_rows(purchases)
         return jsonify({'success': True, 'user_id': user_id, 'purchases': purchases}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'purchases': []}), 500
@@ -1973,9 +2019,100 @@ def shop_inventory():
             inventory = get_inventory(user_id)
         except Exception:
             inventory = []
+        inventory = _enrich_shop_owned_rows(inventory)
         return jsonify({'success': True, 'user_id': user_id, 'inventory': inventory}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'inventory': []}), 500
+
+
+@shop_bp.route('/api/shop/stall-orders', methods=['GET'])
+def shop_stall_orders():
+    """Stall/auction listings as order rows for the account order list."""
+    try:
+        user_id = request.args.get('user_id') or _resolve_user_id()
+        limit = min(int(request.args.get('limit', 50)), 300)
+        from backend.services.shop_order_list_service import build_user_order_lists
+
+        payload = build_user_order_lists(user_id, limit=limit)
+        return jsonify({
+            'success': True,
+            'user_id': payload.get('user_id'),
+            'listings': payload.get('listings') or [],
+            'count': (payload.get('counts') or {}).get('stall', 0),
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': True,
+            'user_id': request.args.get('user_id') or 'default_user',
+            'listings': [],
+            'count': 0,
+            'warning': 'Stall listings are temporarily unavailable',
+            'error': str(e),
+        }), 200
+
+
+@shop_bp.route('/api/shop/hosting-orders', methods=['GET'])
+def shop_hosting_orders():
+    """Current user's masternode hosting orders (PayPal / coins / MN2 / on-chain)."""
+    try:
+        user_id = request.args.get('user_id') or _resolve_user_id()
+        limit = min(int(request.args.get('limit', 200)), 300)
+        from backend.services.shop_order_list_service import collect_hosting_orders
+
+        payload = collect_hosting_orders(user_id, limit=limit)
+        rows = payload.get('hosting') or []
+        site = payload.get('site') or {}
+        blob = json.dumps(rows)
+        if 'private_key' in blob or '"wif"' in blob:
+            rows = [{k: v for k, v in r.items() if k not in ('private_key', 'wif')} for r in rows]
+        return jsonify({
+            'success': True,
+            'user_id': payload.get('user_id') or user_id,
+            'hosting': rows,
+            'count': len(rows),
+            'site_paid_orders': site.get('paid_orders', 0),
+            'site_pending_orders': site.get('pending_orders', 0),
+            'site_paid_by_payment_method': site.get('by_payment_method') or {},
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': True,
+            'user_id': request.args.get('user_id') or 'default_user',
+            'hosting': [],
+            'count': 0,
+            'site_paid_orders': 0,
+            'warning': 'Hosting orders are temporarily unavailable',
+            'error': str(e),
+        }), 200
+
+
+@shop_bp.route('/api/shop/order-pdf', methods=['POST'])
+def shop_order_pdf():
+    """Download a PDF of checked purchases and/or stall listings."""
+    from io import BytesIO
+
+    data = request.get_json(silent=True) or {}
+    user_id = data.get('user_id') or request.args.get('user_id') or _resolve_user_id()
+    items = data.get('items') or data.get('orders') or []
+    if not isinstance(items, list) or not items:
+        return jsonify({'success': False, 'error': 'select orders first'}), 400
+    try:
+        from backend.services.shop_order_list_service import pdf_for_checked_orders, resolve_checked_orders
+
+        rows = resolve_checked_orders(user_id, items)
+        if not rows:
+            return jsonify({'success': False, 'error': 'select orders first'}), 400
+        pdf_bytes = pdf_for_checked_orders(user_id, items)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    buffer = BytesIO(pdf_bytes)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name='shop-orders.pdf',
+    )
 
 
 @shop_bp.route('/api/shop/auction/listings', methods=['GET'])
