@@ -2678,6 +2678,14 @@ def generator_generation_health():
             providers = configured_providers()
         except Exception:
             pass
+        try:
+            from backend.services.generator_encode_service import hardware_encode_status
+            from backend.services.tts_service import get_status as tts_status
+            hw = hardware_encode_status()
+            tts = tts_status()
+        except Exception:
+            hw = {}
+            tts = {}
         return jsonify({
             'success': True,
             'ready': ok,
@@ -2685,6 +2693,8 @@ def generator_generation_health():
             'service_check': detail,
             'configured_provider_count': len(providers),
             'configured_providers': providers[:20],
+            'hardware_encode': hw,
+            'tts': {'active_provider': (tts or {}).get('active_provider'), 'available': (tts or {}).get('active_provider') != 'none'},
             'implementation_status': 'complete',
         }), 200
     except Exception as e:
@@ -3027,6 +3037,17 @@ def generator_create():
             pass
         user_id = data.get('user_id', 'default_user')
         try:
+            from backend.services.generator_api_key_service import resolve_api_key
+            raw_key = (request.headers.get('X-Generator-Api-Key') or '').strip()
+            if raw_key:
+                key_row = resolve_api_key(raw_key)
+                if key_row:
+                    user_id = key_row.get('user_id') or user_id
+                    if key_row.get('org_label'):
+                        data['scr_org_label'] = key_row.get('org_label')
+        except Exception:
+            pass
+        try:
             from backend.services.generator_entitlement_service import check_and_reserve
             ent = check_and_reserve(user_id, duration, short_clip)
             if not ent.get('success'):
@@ -3068,6 +3089,8 @@ def generator_create():
         _audio_style = (data.get('audio_style') or '').strip()
         if _audio_style:
             config['audio_style'] = _audio_style
+        if data.get('narration_enabled') is not None:
+            config['narration_enabled'] = bool(data.get('narration_enabled'))
         _profile_mode = (data.get('profile_mode') or '').strip()
         if _profile_mode:
             config['profile_mode'] = _profile_mode
@@ -3242,7 +3265,18 @@ def documentary_progress(doc_id):
                 'storyline_preview': sidecar.get('storyline_preview'),
                 'visual_seed': sidecar.get('visual_seed'),
                 'service_check': sidecar.get('service_check'),
+                'encode_stage': sidecar.get('stage'),
             }
+            stored = _get_video_job(doc_id)
+            if isinstance(stored, dict):
+                if stored.get('points_earned') is not None:
+                    job['points_earned'] = stored.get('points_earned')
+                if stored.get('mn2_earned') is not None:
+                    job['mn2_earned'] = stored.get('mn2_earned')
+                if stored.get('crypto_breakdown'):
+                    job['crypto_breakdown'] = stored.get('crypto_breakdown')
+                if not job.get('providers_used') and stored.get('providers_used'):
+                    job['providers_used'] = stored.get('providers_used')
         else:
             job = _get_video_job(doc_id) or _ensure_video_job(doc_id, 'pending')
         progress = job.get('progress', 50)
@@ -3336,40 +3370,68 @@ def documentary_progress(doc_id):
             'status': status,
             'progress': progress,
             'message': message,
-            'stage': message,
+            'stage': job.get('encode_stage') or sidecar.get('stage') if isinstance(sidecar, dict) else job.get('encode_stage') or message,
+            'encode_stage': job.get('encode_stage') or (sidecar.get('stage') if isinstance(sidecar, dict) else None),
             'video_url': job.get('video_url') if status == 'completed' else None,
             'implementation_status': 'complete',
         }
         if job.get('providers_used'):
             payload['providers_used'] = job.get('providers_used')
+        if job.get('points_earned') is not None:
+            payload['points_earned'] = job.get('points_earned')
+        if job.get('mn2_earned') is not None:
+            payload['mn2_earned'] = job.get('mn2_earned')
+        if job.get('crypto_breakdown'):
+            payload['crypto_breakdown'] = job.get('crypto_breakdown')
         if status in ('failed', 'error') and job.get('error_message'):
             payload['error_message'] = job.get('error_message')
         # Fresh metadata from sidecar (cross-worker; includes storyline + service summary)
         sc_final = _get_video_status_sidecar(doc_id)
         if isinstance(sc_final, dict):
-            for _k in ('generation_run_id', 'storyline_preview', 'visual_seed', 'service_check'):
+            for _k in ('generation_run_id', 'storyline_preview', 'visual_seed', 'service_check', 'points_earned', 'mn2_earned', 'crypto_breakdown', 'stage'):
                 if sc_final.get(_k) is not None:
                     payload[_k] = sc_final[_k]
+            if sc_final.get('stage') and not payload.get('encode_stage'):
+                payload['encode_stage'] = sc_final.get('stage')
         return jsonify(payload), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def documentary_restart(doc_id):
-    """Restart documentary generation"""
+    """Restart documentary generation using saved job config."""
     try:
-        _ensure_video_job(doc_id, 'processing')
-        job = _get_video_job(doc_id)
+        config = None
+        job = _get_video_job(doc_id) or {}
+        if isinstance(job.get('config'), dict) and job['config']:
+            config = dict(job['config'])
+        if not config:
+            try:
+                from backend.services.video_generator_service import read_job_config_for_subprocess
+                config = read_job_config_for_subprocess(doc_id)
+            except Exception:
+                config = None
+        if not config:
+            return jsonify({
+                'success': False,
+                'error': 'No saved config for this job — create a new video instead.',
+            }), 404
+
+        job = _ensure_video_job(doc_id, 'processing')
         job['status'] = 'processing'
         job['progress'] = 0
+        job['message'] = 'Restarting...'
+        job['error_message'] = None
+        job['config'] = config
         job['updated_at'] = datetime.utcnow().isoformat()
         _set_video_job(doc_id, job)
-        
+        _start_documentary_encoding(doc_id, config)
+
         return jsonify({
             'success': True,
             'documentary_id': doc_id,
             'message': 'Documentary generation restarted',
             'implementation_status': 'complete'
-        }), 200
+        }), 202
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -3392,6 +3454,19 @@ def documentary_video(doc_id):
             'message': 'Video generation in progress',
             'implementation_status': 'complete'
         }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def documentary_thumbnail(doc_id):
+    """Serve WebP poster or 3-frame sprite for gallery cards (E6)."""
+    try:
+        from backend.services.generator_thumbnail_service import get_thumbnail_file
+        kind = (request.args.get('kind') or 'poster').strip().lower()
+        path = get_thumbnail_file(doc_id, kind=kind)
+        if path and os.path.isfile(path):
+            return send_file(path, mimetype='image/webp', max_age=86400)
+        return jsonify({'success': False, 'error': 'Thumbnail not available'}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -3533,6 +3608,13 @@ def themes_user():
             themes = [tid for tid, ul in _IDS_BY_LEVEL if ul <= level]
             if not themes:
                 themes = ['default']
+            try:
+                from backend.services.generator_agent_service import shop_unlocked_theme_ids
+                for tid in shop_unlocked_theme_ids(user_id):
+                    if tid not in themes:
+                        themes.append(tid)
+            except Exception:
+                pass
         except Exception:
             pass
         return jsonify({
@@ -4403,15 +4485,15 @@ def game_ai_coach():
 
 @missing_endpoints_bp.route('/api/auth/providers', methods=['GET'])
 def auth_providers_direct():
-    """Social auth providers - GitHub and Google."""
-    _ALLOWED = frozenset({"github", "google"})
+    """Social auth providers."""
     try:
-        from backend.services.social_auth_service import list_providers
+        from backend.services.social_auth_service import ALLOWED_OAUTH_PROVIDERS, list_providers
         data = list_providers()
         providers = data.get("providers", []) if isinstance(data, dict) else []
+        by_id = {p.get("id"): p for p in providers if isinstance(p, dict)}
         out = []
-        for pid in _ALLOWED:
-            p = next((x for x in providers if x.get("id") == pid), {})
+        for pid in sorted(ALLOWED_OAUTH_PROVIDERS):
+            p = by_id.get(pid) or {}
             out.append({
                 "id": pid,
                 "enabled": bool(p.get("enabled")),
@@ -4421,18 +4503,15 @@ def auth_providers_direct():
             })
         return jsonify({"success": True, "providers": out}), 200
     except Exception as e:
-        return jsonify({"success": True, "providers": [
-            {"id": "github", "enabled": False, "configured": False, "start_path": "/api/auth/github/start", "callback_path": "/api/auth/github/callback"},
-            {"id": "google", "enabled": False, "configured": False, "start_path": "/api/auth/google/start", "callback_path": "/api/auth/google/callback"},
-        ], "note": str(e)}), 200
+        return jsonify({"success": False, "error": str(e), "providers": []}), 200
 
 
 @missing_endpoints_bp.route('/api/auth/<provider>/start', methods=['GET'])
 def auth_start_direct(provider):
     """Start OAuth flow."""
-    _ALLOWED = frozenset({"github", "google"})
-    if provider not in _ALLOWED:
-        return jsonify({"success": False, "error": f"{provider} login disabled", "allowed_providers": list(_ALLOWED)}), 400
+    from backend.services.social_auth_service import ALLOWED_OAUTH_PROVIDERS
+    if provider not in ALLOWED_OAUTH_PROVIDERS:
+        return jsonify({"success": False, "error": f"{provider} login disabled", "allowed_providers": sorted(ALLOWED_OAUTH_PROVIDERS)}), 400
     try:
         from backend.services.social_auth_service import build_start_url
         from flask import redirect as flask_redirect
@@ -4713,9 +4792,9 @@ def system_overview():
 @missing_endpoints_bp.route('/api/auth/<provider>/callback', methods=['GET'])
 def auth_callback_direct(provider):
     """OAuth callback."""
-    _ALLOWED = frozenset({"github", "google"})
-    if provider not in _ALLOWED:
-        return jsonify({"success": False, "error": f"{provider} callback disabled", "allowed_providers": list(_ALLOWED)}), 400
+    from backend.services.social_auth_service import ALLOWED_OAUTH_PROVIDERS
+    if provider not in ALLOWED_OAUTH_PROVIDERS:
+        return jsonify({"success": False, "error": f"{provider} callback disabled", "allowed_providers": sorted(ALLOWED_OAUTH_PROVIDERS)}), 400
     code = request.args.get("code")
     state = request.args.get("state")
     if not code or not state:

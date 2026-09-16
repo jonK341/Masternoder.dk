@@ -3,6 +3,8 @@ Generator, documentary, and AI-clips routes.
 Moved here from missing_endpoints_routes for clarity. View logic remains in missing_endpoints_routes;
 this module registers those views on generator_bp so URLs are served from the generator blueprint.
 """
+import os
+
 from flask import Blueprint, jsonify, request
 
 generator_bp = Blueprint("generator", __name__)
@@ -19,7 +21,73 @@ def generator_pricing():
         tier = (request.args.get("tier") or "standard").strip().lower()
         payload = get_public_pricing()
         payload["quote"] = quote_generation(duration=duration, short_clip=short_clip, tier=tier)
+        try:
+            from backend.services.generator_crypto_rewards_service import public_crypto_rewards_info
+            payload["crypto_rewards"] = public_crypto_rewards_info()
+        except Exception:
+            pass
+        try:
+            from backend.services.generator_pricing_service import pricing_suggestion
+            cogs = pricing_suggestion()
+            if cogs.get("success"):
+                payload["cogs_advisory"] = cogs
+                ref_usd = float(cogs.get("suggested_retail_usd_per_reference_job") or 0)
+                if ref_usd > 0:
+                    mn2_usd = float(os.environ.get("MN2_USD_PRICE") or 0) or None
+                    if mn2_usd and mn2_usd > 0:
+                        payload["cogs_advisory"]["approx_mn2_per_ref_job"] = round(ref_usd / mn2_usd, 6)
+        except Exception:
+            pass
+        try:
+            from backend.services.generator_encode_service import encode_profile_public
+            payload["encode_profiles"] = encode_profile_public().get("profiles", [])
+        except Exception:
+            pass
         return jsonify(payload), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@generator_bp.route("/api/generator/encode-profiles", methods=["GET"])
+def generator_encode_profiles():
+    """CRF encode ladder (E8): fast_ai / premium / ultra."""
+    try:
+        from backend.services.generator_encode_service import encode_profile_public
+        return jsonify(encode_profile_public()), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@generator_bp.route("/api/generator/crypto-rewards", methods=["GET"])
+def generator_crypto_rewards_info():
+    """Public MN2 earn rates for generator completions."""
+    try:
+        from backend.services.generator_crypto_rewards_service import public_crypto_rewards_info
+        return jsonify(public_crypto_rewards_info()), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@generator_bp.route("/api/generator/agent-tools", methods=["GET"])
+def generator_agent_tools():
+    """Capability map for agents (Generator #21)."""
+    from backend.services.generator_agent_service import AGENT_TOOLS
+    return jsonify({
+        "success": True,
+        "tools": AGENT_TOOLS,
+        "note": "Mutating actions via /api/generator/agent-action require approved=true.",
+    }), 200
+
+
+@generator_bp.route("/api/generator/agent-action", methods=["POST"])
+def generator_agent_action():
+    """Execute a generator action as an agent (#21)."""
+    try:
+        from backend.services.generator_agent_service import execute_agent_action
+        data = request.get_json(silent=True) or {}
+        result = dict(execute_agent_action(data))
+        code = int(result.pop("http_status", 200))
+        return jsonify(result), code
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -57,6 +125,7 @@ def register_generator_routes():
         ("/api/documentary/progress/<doc_id>", me.documentary_progress, ["GET"]),
         ("/api/documentary/restart/<doc_id>", me.documentary_restart, ["POST"]),
         ("/api/documentary/video/<doc_id>", me.documentary_video, ["GET"]),
+        ("/api/documentary/thumbnail/<doc_id>", me.documentary_thumbnail, ["GET"]),
         ("/api/video-generation/calculate", me.video_generation_calculate, ["POST"]),
         ("/api/video-generation/solve-problems", me.video_generation_solve_problems, ["POST"]),
         ("/api/themes/list", me.themes_list, ["GET"]),
