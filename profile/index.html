@@ -3368,7 +3368,12 @@
                         '<div class="profile-trophies-list">' + preview.map(function(ed) {
                             const name = String(ed.item_name || ed.item_id || '').replace(/</g, '&lt;');
                             const eno = ed.edition_no != null ? (' #' + ed.edition_no) : '';
-                            const anchor = ed.anchor_status === 'committed' ? ' ⛓' : '';
+                            let anchor = '';
+                            if (ed.anchor_status === 'anchored' && ed.anchor_explorer_url) {
+                                anchor = ' <a href="' + String(ed.anchor_explorer_url).replace(/"/g, '&quot;') + '" style="color:#00d4ff;text-decoration:none;" title="On-chain anchor">⛓</a>';
+                            } else if (ed.anchor_status === 'anchored' || ed.anchor_status === 'committed') {
+                                anchor = ' ⛓';
+                            }
                             return '<span class="profile-trophy-chip" title="' + String(ed.edition_key || '').replace(/"/g, '&quot;') + '">🏆 ' + name + eno + anchor + '</span>';
                         }).join('') + '</div>' +
                         (editions.length > 12 ? '<p style="font-size:0.8rem;opacity:0.7;margin-top:8px;">+' + (editions.length - 12) + ' more in wallet hub</p>' : '') +

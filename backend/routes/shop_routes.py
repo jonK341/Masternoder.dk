@@ -2150,6 +2150,20 @@ def shop_trophy_anchor_process():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@shop_bp.route('/api/shop/trophies/anchor/broadcast', methods=['POST'])
+def shop_trophy_anchor_broadcast():
+    """Ops: broadcast OP_RETURN for committed trophy anchors (plan 003 A-U5)."""
+    try:
+        data = request.get_json() or {}
+        limit = min(int(data.get('limit') or 10), 50)
+        edition_key = (data.get('edition_key') or '').strip() or None
+        from backend.services.trophy_anchor_service import broadcast_anchor_queue
+
+        return jsonify(broadcast_anchor_queue(limit=limit, edition_key=edition_key)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @shop_bp.route('/api/shop/trophies/transfer', methods=['POST'])
 def shop_trophy_transfer():
     """Peer transfer of a specific trophy edition (plan 001 T-U2)."""

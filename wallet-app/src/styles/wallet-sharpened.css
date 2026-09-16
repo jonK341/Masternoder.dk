@@ -341,6 +341,20 @@ body {
   color: var(--wallet-muted);
 }
 
+.wallet-trophy-gallery-tag--anchor {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.wallet-trophy-anchor-link {
+  color: var(--wallet-accent);
+  text-decoration: none;
+}
+
+.wallet-trophy-anchor-link:hover {
+  text-decoration: underline;
+}
+
 .wallet-trophy-gallery-price {
   font-size: 0.8rem;
   font-family: var(--wallet-font-mono);

@@ -59,6 +59,10 @@ export type TrophyEdition = {
   acquired_via?: string;
   hold_until?: string;
   proof_hash?: string;
+  anchor_status?: 'pending' | 'committed' | 'anchored' | 'none';
+  anchor_commitment?: string;
+  anchor_txid?: string;
+  anchor_explorer_url?: string;
   image_url?: string | null;
   gif_url?: string | null;
   sound_url?: string | null;

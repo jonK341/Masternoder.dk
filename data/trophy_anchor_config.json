@@ -1,5 +1,6 @@
 {
   "enabled": true,
   "auto_process_on_queue": true,
+  "broadcast_on_chain": false,
   "explorer_tx_base": "/explorer?tx="
 }

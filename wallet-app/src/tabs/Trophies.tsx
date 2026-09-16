@@ -223,6 +223,27 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
         {edition.hold_until ? (
           <div class="wallet-trophy-gallery-meta">Hold until {edition.hold_until.slice(0, 10)}</div>
         ) : null}
+        {edition.anchor_status && edition.anchor_status !== 'none' ? (
+          <div class="wallet-trophy-gallery-tag wallet-trophy-gallery-tag--anchor">
+            {edition.anchor_status === 'anchored' ? (
+              edition.anchor_explorer_url ? (
+                <a
+                  href={edition.anchor_explorer_url}
+                  class="wallet-trophy-anchor-link"
+                  title={edition.anchor_txid || edition.anchor_commitment || 'Chain anchor'}
+                >
+                  ⛓ Anchored on-chain
+                </a>
+              ) : (
+                '⛓ Anchored'
+              )
+            ) : edition.anchor_status === 'committed' ? (
+              '⛓ Anchor committed'
+            ) : (
+              '⛓ Anchor pending'
+            )}
+          </div>
+        ) : null}
         <div class="wallet-trophy-gallery-ctas">
           <a
             href={edition.trade_actions?.shop_detail || '/shop?tab=trophies'}

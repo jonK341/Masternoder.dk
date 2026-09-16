@@ -317,6 +317,29 @@ def sendtoaddress(address: str, amount: float) -> Dict[str, Any]:
     return _call("sendtoaddress", [address, amount])
 
 
+def createrawtransaction(inputs: List[Dict[str, Any]], outputs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Build unsigned raw transaction. OP_RETURN outputs use {\"data\": \"hex\"}."""
+    return _call("createrawtransaction", [inputs, outputs])
+
+
+def fundrawtransaction(hex_tx: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Add inputs/change/fees to a raw transaction."""
+    params: List[Any] = [hex_tx]
+    if options:
+        params.append(options)
+    return _call("fundrawtransaction", params)
+
+
+def signrawtransactionwithwallet(hex_tx: str) -> Dict[str, Any]:
+    """Sign a raw transaction using wallet keys."""
+    return _call("signrawtransactionwithwallet", [hex_tx])
+
+
+def sendrawtransaction(hex_tx: str) -> Dict[str, Any]:
+    """Broadcast a signed raw transaction."""
+    return _call("sendrawtransaction", [hex_tx])
+
+
 def lockunspent(unlock: bool, outputs: list) -> Dict[str, Any]:
     """Lock or unlock UTXOs. unlock=False locks outputs (prevents coin selection from spending them)."""
     return _call("lockunspent", [bool(unlock), outputs])

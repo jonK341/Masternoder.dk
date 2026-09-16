@@ -29,6 +29,27 @@ def _media_for_item(item_id: str) -> Dict[str, Optional[str]]:
     }
 
 
+def _registry_anchor_fields(edition_key: str) -> Dict[str, Any]:
+    """Merge anchor registry row when edition file lacks txid (plan 003 A-U4)."""
+    ekey = (edition_key or "").strip()
+    if not ekey:
+        return {}
+    try:
+        from backend.services.trophy_anchor_service import get_anchor_status
+
+        status = get_anchor_status(ekey)
+        if not status.get("success") or status.get("anchor_status") == "none":
+            return {}
+        return {
+            "anchor_status": status.get("anchor_status"),
+            "anchor_commitment": status.get("anchor_commitment"),
+            "anchor_txid": status.get("anchor_txid"),
+            "anchor_explorer_url": status.get("anchor_explorer_url"),
+        }
+    except Exception:
+        return {}
+
+
 def _expand_editions(
     inv_row: Dict[str, Any],
     catalog: Optional[Dict[str, Any]],
@@ -54,10 +75,13 @@ def _expand_editions(
         media = _media_for_item(item_id)
         out: List[Dict[str, Any]] = []
         for ed in stored:
+            ekey = ed.get("edition_key") or ""
+            anchor_extra = _registry_anchor_fields(ekey) if not ed.get("anchor_txid") else {}
+            anchor_status = ed.get("anchor_status") or anchor_extra.get("anchor_status")
             out.append(
                 {
                     "edition_no": ed.get("edition_no"),
-                    "edition_key": ed.get("edition_key"),
+                    "edition_key": ekey,
                     "legacy_stack": False,
                     "item_id": item_id,
                     "item_name": ed.get("item_name") or inv_row.get("item_name") or (catalog or {}).get("name") or item_id,
@@ -68,8 +92,10 @@ def _expand_editions(
                     "acquired_at": ed.get("granted_at") or inv_row.get("created_at"),
                     "hold_until": ed.get("hold_until"),
                     "proof_hash": ed.get("proof_hash"),
-                    "anchor_status": ed.get("anchor_status"),
-                    "anchor_commitment": ed.get("anchor_commitment"),
+                    "anchor_status": anchor_status,
+                    "anchor_commitment": ed.get("anchor_commitment") or anchor_extra.get("anchor_commitment"),
+                    "anchor_txid": ed.get("anchor_txid") or anchor_extra.get("anchor_txid"),
+                    "anchor_explorer_url": ed.get("anchor_explorer_url") or anchor_extra.get("anchor_explorer_url"),
                     "acquired_via": ed.get("acquired_via"),
                     "image_url": media.get("image_url"),
                     "gif_url": media.get("gif_url"),
