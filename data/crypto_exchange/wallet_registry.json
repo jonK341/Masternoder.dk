@@ -5,7 +5,25 @@
       "venue": "binance",
       "asset": "USDT",
       "note": "payout withdraw TRC20",
-      "updated_at": "2026-07-02T15:28:49.308760Z"
+      "updated_at": "2026-09-16T02:56:03.274513Z"
+    },
+    "binance_usdt": {
+      "address": "",
+      "venue": "binance",
+      "asset": "USDT",
+      "network": "TRC20",
+      "mode": "paper",
+      "note": "Binance spot USDT deposit wallet (synced via API)",
+      "updated_at": "2026-09-16T00:00:00Z"
+    },
+    "binance_usdc": {
+      "address": "",
+      "venue": "binance",
+      "asset": "USDC",
+      "network": "TRC20",
+      "mode": "paper",
+      "note": "Binance spot USDC deposit wallet (synced via API)",
+      "updated_at": "2026-09-16T00:00:00Z"
     }
   }
 }

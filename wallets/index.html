@@ -30,7 +30,7 @@
         <section class="wallet-hero">
             <p class="wallet-muted">MN2 wallet portal</p>
             <h1>Wallets</h1>
-            <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, exchange wallet actions, and daemon downloads.</p>
+            <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, Binance USDT/USDC exchange wallets, and daemon downloads.</p>
             <div class="wallet-actions">
                 <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Open profile wallet</a>
                 <a class="wallet-btn secondary" href="/exchange">Open exchange wallet</a>
@@ -42,6 +42,18 @@
                 <h2>Deposit & withdraw</h2>
                 <p class="wallet-muted">Request a deposit address, submit withdrawals, manage trusted addresses, and review wallet transactions from the profile wallet card.</p>
                 <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Manage MN2 wallet</a>
+            </article>
+            <article class="wallet-card">
+                <h2>Binance USDT</h2>
+                <p class="wallet-muted" id="wallet-usdt-status">Platform USDT wallet connected to Binance spot. Buy USDT with MN2 coins on the exchange.</p>
+                <p class="wallet-muted">Address: <code id="wallet-usdt-addr">—</code></p>
+                <a class="wallet-btn" href="/exchange?asset=USDT&quote=MN2">Trade USDT with MN2</a>
+            </article>
+            <article class="wallet-card">
+                <h2>Binance USDC</h2>
+                <p class="wallet-muted" id="wallet-usdc-status">Platform USDC wallet connected to Binance spot. Buy USDC with MN2 coins on the exchange.</p>
+                <p class="wallet-muted">Address: <code id="wallet-usdc-addr">—</code></p>
+                <a class="wallet-btn" href="/exchange?asset=USDC&quote=MN2">Trade USDC with MN2</a>
             </article>
             <article class="wallet-card">
                 <h2>Spend MN2</h2>
@@ -56,5 +68,26 @@
         </section>
     </main>
     <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
+    <script>
+    (function () {
+      fetch('/api/exchange/binance/stable-wallets', { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.success) return;
+          (data.wallets || []).forEach(function (w) {
+            var asset = (w.asset || '').toLowerCase();
+            var status = document.getElementById('wallet-' + asset + '-status');
+            var addr = document.getElementById('wallet-' + asset + '-addr');
+            if (status) {
+              status.textContent = (w.connected ? 'Connected to Binance' : 'Waiting for Binance API') +
+                ' · ' + (w.network || 'TRC20') +
+                (w.tradeable ? ' · tradable vs MN2' : '');
+            }
+            if (addr) addr.textContent = w.address_masked || 'sync from Business Control → Binance';
+          });
+        })
+        .catch(function () {});
+    })();
+    </script>
 </body>
 </html>

@@ -775,7 +775,10 @@
     if ($("ppMin") && st.min_sweep_usd) $("ppMin").value = st.min_sweep_usd;
   }
 
-  function loadPayout() { api("/api/exchange/payout/status").then(renderPayout); }
+  function loadPayout() {
+    api("/api/exchange/payout/status").then(renderPayout);
+    loadBinanceWallets();
+  }
 
   function savePayPal() {
     api("/api/exchange/payout/configure-paypal", { method: "POST", body: {
@@ -790,7 +793,9 @@
   function saveBinance() {
     var addrs = {};
     var usdt = ($("binUsdt").value || "").trim();
+    var usdc = ($("binUsdc") && $("binUsdc").value || "").trim();
     if (usdt) addrs.USDT = usdt;
+    if (usdc) addrs.USDC = usdc;
     api("/api/exchange/payout/configure-binance", { method: "POST", body: {
       api_key: ($("binKey").value || "").trim(),
       api_secret: ($("binSecret").value || "").trim(),
@@ -798,6 +803,32 @@
     } }).then(function (r) {
       $("payoutResult").textContent = r && r.success ? "Saved." : ("Save failed: " + ((r && r.error) || "error"));
       loadPayout();
+      loadBinanceWallets();
+    });
+  }
+
+  function loadBinanceWallets() {
+    var el = $("binWalletStatus");
+    if (!el) return;
+    api("/api/exchange/binance/stable-wallets").then(function (st) {
+      if (!st || !st.success) {
+        el.textContent = "Could not load Binance USDT/USDC wallets.";
+        return;
+      }
+      el.textContent = (st.wallets || []).map(function (w) {
+        return w.asset + ": " + (w.connected ? "connected" : "not connected") +
+          " " + (w.address_masked || "no address") + " (" + (w.network || "") + ")";
+      }).join(" · ");
+    });
+  }
+
+  function syncBinanceWallets() {
+    api("/api/exchange/payout/sync-binance-wallets", { method: "POST", body: {} }).then(function (r) {
+      $("payoutResult").textContent = r && r.success
+        ? ("Synced " + ((r.wallets || []).map(function (w) { return w.asset; }).join(", ") || "wallets") + " from Binance.")
+        : ("Sync failed: " + ((r && r.error) || "error"));
+      loadPayout();
+      loadBinanceWallets();
     });
   }
 
@@ -923,6 +954,7 @@
     var pp = $("ppPlan"); if (pp) pp.addEventListener("click", planSweep);
     var pw = $("ppSweep"); if (pw) pw.addEventListener("click", doSweep);
     var bs = $("binSave"); if (bs) bs.addEventListener("click", saveBinance);
+    var bsync = $("binSyncWallets"); if (bsync) bsync.addEventListener("click", syncBinanceWallets);
     bindLocalPanel();
 
     if (getKey()) { showApp(); load(); } else { showGate(); }

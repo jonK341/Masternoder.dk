@@ -1242,6 +1242,25 @@ def exchange_payout_configure_binance():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/binance/stable-wallets", methods=["GET"])
+def exchange_binance_stable_wallets():
+    from backend.services.exchange_payout_service import binance_stable_wallets_status
+
+    admin = _admin_authorized()
+    return jsonify(binance_stable_wallets_status(include_spot=admin, include_address=admin))
+
+
+@crypto_exchange_bp.route("/api/exchange/payout/sync-binance-wallets", methods=["POST"])
+def exchange_payout_sync_binance_wallets():
+    if not _admin_authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    from backend.services.exchange_payout_service import sync_binance_stable_wallets
+
+    data = request.get_json(silent=True) or {}
+    dry = data.get("dry_run")
+    return jsonify(sync_binance_stable_wallets(dry_run=bool(dry) if dry is not None else None))
+
+
 @crypto_exchange_bp.route("/api/exchange/payout/withdraw-binance", methods=["POST"])
 def exchange_payout_withdraw_binance():
     if not _admin_authorized():

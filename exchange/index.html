@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
-    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260702a">
+    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260916a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -17,7 +17,7 @@
                 <img src="/static/img/exchange/hero-exchange.svg" alt="" class="cex-hero-img" width="1200" height="320" />
                 <div class="cex-hero-text">
                     <h1><i class="fas fa-chart-line"></i> MasterNoder Exchange</h1>
-                    <p class="cex-sub">25 cryptocurrencies · instant swap · limit orders · staking rewards · tax records</p>
+                    <p class="cex-sub">25 cryptocurrencies · MN2, USDT and USDC quotes · instant swap · Binance stable wallets</p>
                 </div>
             </div>
             <div class="cex-visual-row" aria-hidden="true">
@@ -95,9 +95,12 @@
                             <select id="cex-swap-quote" class="cex-input">
                                 <option value="MN2">MN2</option>
                                 <option value="COINS">Coins</option>
+                                <option value="USDT">USDT</option>
+                                <option value="USDC">USDC</option>
                             </select>
                         </label>
                     </div>
+                    <p class="cex-muted">Spend MN2 coins to buy USDT or USDC (select the stable, side Buy, quote MN2). Sell them back the same way. Quotes also include USDT/USDC for other markets.</p>
                     <div id="cex-quote-preview" class="cex-quote-preview"></div>
                     <button type="button" id="cex-swap-btn" class="cex-btn cex-btn--primary">Get quote &amp; swap</button>
                 </div>
@@ -134,6 +137,14 @@
                         <label>Side<select id="cex-limit-side" class="cex-input"><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
                         <label>Amount<input type="number" id="cex-limit-amount" class="cex-input" min="0" step="any"></label>
                         <label>Limit price<input type="number" id="cex-limit-price" class="cex-input" min="0" step="any"></label>
+                        <label>Quote
+                            <select id="cex-limit-quote" class="cex-input">
+                                <option value="MN2">MN2</option>
+                                <option value="COINS">Coins</option>
+                                <option value="USDT">USDT</option>
+                                <option value="USDC">USDC</option>
+                            </select>
+                        </label>
                     </div>
                     <button type="button" id="cex-limit-btn" class="cex-btn">Place limit order</button>
                     <div id="cex-open-orders" class="cex-orders"></div>
@@ -156,6 +167,9 @@
             <aside class="cex-panel cex-wallet">
                 <h2>Exchange wallet</h2>
                 <div id="cex-wallet-balances" class="cex-wallet-list">—</div>
+                <h3>Binance USDT / USDC</h3>
+                <p class="cex-muted">Platform stable wallets connected to Binance spot. Trade them against MN2 coins on this desk.</p>
+                <div id="cex-binance-stables" class="cex-wallet-list">Loading Binance wallets…</div>
 
                 <div class="cex-bonus-card" id="cex-bonus-card">
                     <h3>Welcome bonus</h3>
@@ -513,7 +527,7 @@
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
     <script src="/static/js/exchange-hub.js?v=20260704a"></script>
-    <script src="/static/js/crypto-exchange.js?v=20260702a"></script>
+    <script src="/static/js/crypto-exchange.js?v=20260916a"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
 </body>
 </html>

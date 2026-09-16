@@ -50,6 +50,24 @@ def binance_network_code(network: str) -> str:
     return _NETWORK_MAP.get(raw, raw)
 
 
+def stable_deposit_network(asset: str) -> str:
+    """Preferred Binance deposit network for a stablecoin (TRC20 by default)."""
+    coin = str(asset or "").strip().upper()
+    env_key = f"BINANCE_{coin}_NETWORK" if coin in ("USDT", "USDC") else ""
+    raw = (os.environ.get(env_key) or "").strip().upper() if env_key else ""
+    if not raw:
+        return "TRC20"
+    if raw in ("TRC20", "ERC20", "BEP20"):
+        return raw
+    if raw == "TRX":
+        return "TRC20"
+    if raw == "ETH":
+        return "ERC20"
+    if raw == "BSC":
+        return "BEP20"
+    return raw
+
+
 def binance_credentials() -> Dict[str, Optional[str]]:
     from backend.services import exchange_secrets_vault_service as vault
 
@@ -244,6 +262,44 @@ def get_binance_buy_quote_asset() -> str:
         return venue_quote("binance")
     except Exception:
         return "USDC"
+
+
+def get_deposit_address(coin: str, network: str = "TRC20", *, dry_run: Optional[bool] = None,
+                        skip_live_gate: bool = True) -> Dict[str, Any]:
+    """GET /sapi/v1/capital/deposit/address — Binance deposit address for one coin/network."""
+    asset = str(coin or "").strip().upper()
+    net_label = (network or stable_deposit_network(asset) or "TRC20").strip().upper()
+    net = binance_network_code(net_label)
+    params: Dict[str, Any] = {"coin": asset or "USDT"}
+    if net:
+        params["network"] = net
+    res = _signed_sapi_request(
+        "GET",
+        "/sapi/v1/capital/deposit/address",
+        params,
+        dry_run=dry_run,
+        skip_live_gate=skip_live_gate,
+    )
+    res["coin"] = asset
+    res["network"] = net
+    res["network_label"] = net_label if net_label in ("TRC20", "ERC20", "BEP20") else net
+    if res.get("simulated"):
+        res.setdefault("address", "")
+        res.setdefault("tag", "")
+        return res
+    if not res.get("success"):
+        res.setdefault("address", "")
+        return res
+    body = res.get("body")
+    address = ""
+    tag = ""
+    if isinstance(body, dict):
+        address = str(body.get("address") or "").strip()
+        tag = str(body.get("tag") or body.get("memo") or "").strip()
+        res["url"] = body.get("url") or ""
+    res["address"] = address
+    res["tag"] = tag
+    return res
 
 
 def get_withdraw_address_list(coin: str = "USDT", *, dry_run: Optional[bool] = None,

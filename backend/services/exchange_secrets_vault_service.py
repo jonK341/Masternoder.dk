@@ -129,22 +129,30 @@ def list_secret_names() -> List[str]:
     return sorted((_load_vault().get("secrets") or {}).keys())
 
 
-def register_wallet(label: str, address: str, *, venue: str = "", asset: str = "", note: str = "") -> Dict[str, Any]:
+def register_wallet(label: str, address: str, *, venue: str = "", asset: str = "", note: str = "",
+                    network: str = "", mode: str = "", allow_empty_address: bool = False) -> Dict[str, Any]:
     label = (label or "").strip()
     address = (address or "").strip()
-    if not label or not address:
+    if not label or (not address and not allow_empty_address):
         return {"success": False, "error": "missing_label_or_address"}
     with _LOCK:
         reg = ex._read_json(_REGISTRY_PATH, {})
         if not isinstance(reg, dict):
             reg = {}
-        reg.setdefault("wallets", {})[label] = {
+        prev = (reg.get("wallets") or {}).get(label)
+        rec = prev.copy() if isinstance(prev, dict) else {}
+        rec.update({
             "address": address,
-            "venue": venue,
-            "asset": asset,
-            "note": note,
+            "venue": venue or rec.get("venue") or "",
+            "asset": asset or rec.get("asset") or "",
+            "note": note or rec.get("note") or "",
             "updated_at": _iso(),
-        }
+        })
+        if network:
+            rec["network"] = network
+        if mode:
+            rec["mode"] = mode
+        reg.setdefault("wallets", {})[label] = rec
         ex._write_json(_REGISTRY_PATH, reg)
     ex._audit("wallet_registered", user_id="admin", label=label, venue=venue, asset=asset)
     return {"success": True, "label": label}

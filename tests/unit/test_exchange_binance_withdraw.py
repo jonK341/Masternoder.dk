@@ -8,6 +8,7 @@ def binance_env(tmp_path, monkeypatch):
     from backend.services import exchange_binance_withdraw_service as bwd
     from backend.services import exchange_payout_service as pay
     from backend.services import exchange_sales_pool_service as pool
+    from backend.services import exchange_secrets_vault_service as vault
 
     data = tmp_path / "crypto_exchange"
     data.mkdir(parents=True)
@@ -17,6 +18,9 @@ def binance_env(tmp_path, monkeypatch):
     monkeypatch.setattr(ex, "_DATA_DIR", str(data))
     monkeypatch.setattr(ex, "_WALLETS_DIR", str(wallets))
     monkeypatch.setattr(ex, "_AUDIT_PATH", str(data / "audit_log.jsonl"))
+    monkeypatch.setattr(vault, "_DATA_DIR", str(data))
+    monkeypatch.setattr(vault, "_VAULT_PATH", str(data / "secrets_vault.enc"))
+    monkeypatch.setattr(vault, "_REGISTRY_PATH", str(data / "wallet_registry.json"))
     monkeypatch.setattr(pay, "_PAYOUT_PATH", str(data / "payout_config.json"))
     monkeypatch.setattr(pay, "_SWEEPS_PATH", str(data / "payout_sweeps.jsonl"))
     monkeypatch.setattr(pool, "_STATE_PATH", str(data / "sales_pool_state.json"))
@@ -31,8 +35,12 @@ def binance_env(tmp_path, monkeypatch):
 
     monkeypatch.setenv("BINANCE_API_KEY", "test-key-abc")
     monkeypatch.setenv("BINANCE_API_SECRET", "test-secret-xyz")
+    monkeypatch.delenv("EXCHANGE_VAULT_KEY", raising=False)
     monkeypatch.delenv("EXCHANGE_PAYOUT_BINANCE_LIVE", raising=False)
     monkeypatch.delenv("EXCHANGE_ARBITRAGE_LIVE", raising=False)
+    monkeypatch.delenv("EXCHANGE_AUTO_SWEEP_MIN_USD", raising=False)
+    monkeypatch.delenv("EXCHANGE_PAYOUT_PAYPAL_EMAIL", raising=False)
+    monkeypatch.delenv("EXCHANGE_PAYOUT_BINANCE_ADDRESS", raising=False)
 
     return {"ex": ex, "bwd": bwd, "pay": pay, "pool": pool}
 
@@ -52,6 +60,53 @@ def test_network_mapping(binance_env):
     bwd = binance_env["bwd"]
     assert bwd.binance_network_code("BEP20") == "BSC"
     assert bwd.binance_network_code("ERC20") == "ETH"
+
+
+def test_get_deposit_address_paper(binance_env, monkeypatch):
+    bwd = binance_env["bwd"]
+    monkeypatch.delenv("BINANCE_API_KEY", raising=False)
+    monkeypatch.delenv("BINANCE_API_SECRET", raising=False)
+    res = bwd.get_deposit_address("USDT", "TRC20", dry_run=True)
+    assert res["success"] is True
+    assert res.get("simulated") is True
+    assert res["coin"] == "USDT"
+    assert res["network"] == "TRX"
+    assert res["mode"] == "paper"
+
+
+def test_get_deposit_address_live_mocked(binance_env, monkeypatch):
+    bwd = binance_env["bwd"]
+    monkeypatch.setattr(bwd, "binance_withdraw_live_enabled", lambda: True)
+
+    captured = {}
+
+    def fake_http(method, url, *, headers=None, data=None, timeout=12.0):
+        captured["url"] = url
+        captured["method"] = method
+        return {
+            "success": True,
+            "status_code": 200,
+            "body": {"address": "TLiveUsdtDepositAddress111", "coin": "USDT", "tag": "", "url": "https://tronscan.org"},
+        }
+
+    monkeypatch.setattr(bwd, "_http_request", fake_http)
+    res = bwd.get_deposit_address("USDT", "TRC20", dry_run=False)
+    assert res["success"] is True
+    assert res["address"] == "TLiveUsdtDepositAddress111"
+    assert res["coin"] == "USDT"
+    assert "/sapi/v1/capital/deposit/address" in captured["url"]
+    assert "coin=USDT" in captured["url"]
+    assert "network=TRX" in captured["url"]
+
+
+def test_stable_deposit_network_defaults(binance_env, monkeypatch):
+    bwd = binance_env["bwd"]
+    monkeypatch.delenv("BINANCE_USDT_NETWORK", raising=False)
+    monkeypatch.delenv("BINANCE_USDC_NETWORK", raising=False)
+    assert bwd.stable_deposit_network("USDT") == "TRC20"
+    assert bwd.stable_deposit_network("USDC") == "TRC20"
+    monkeypatch.setenv("BINANCE_USDC_NETWORK", "ERC20")
+    assert bwd.stable_deposit_network("USDC") == "ERC20"
 
 
 def test_mask_address(binance_env):
