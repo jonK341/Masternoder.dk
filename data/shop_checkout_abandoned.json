@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "abandoned": [
+    {
+      "user_id": "user-shop-001",
+      "discord_id": "121212121",
+      "item_id": "mn2-pack-m",
+      "amount_usd": 19.99,
+      "abandoned_at": "2026-09-14T16:00:00Z"
+    },
+    {
+      "user_id": "user-shop-002",
+      "discord_id": null,
+      "item_id": "mn2-pack-s",
+      "amount_usd": 9.99,
+      "abandoned_at": "2026-09-13T11:00:00Z"
+    }
+  ]
+}

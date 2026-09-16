@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "env_vars": {
+    "YOUTUBE_API_KEY": "Optional — live YouTube subscriber/comment sync",
+    "FACEBOOK_PAGE_ACCESS_TOKEN": "Optional — live Facebook page/group/messenger sync"
+  },
+  "sources": [
+    {"id": "local_linked", "label": "Discord linked accounts", "weight": 10, "enabled": true, "scan": "scan_local_linked_users"},
+    {"id": "discord_api_guild", "label": "Discord guild members", "weight": 5, "enabled": true, "scan": "scan_discord_api_guild"},
+    {"id": "discord_api_channel", "label": "Discord MN2 channel authors", "weight": 6, "enabled": true, "scan": "scan_discord_api_channel"},
+    {"id": "purchase_intent", "label": "MN2 purchase intent signals", "weight": 15, "enabled": true, "scan": "scan_purchase_intent_buyers"},
+    {"id": "youtube_subscriber", "label": "YouTube subscribers", "weight": 8, "enabled": true, "data_file": "youtube_leads.json", "scan": "scan_youtube_subscribers"},
+    {"id": "youtube_commenter", "label": "YouTube commenters", "weight": 7, "enabled": true, "data_file": "youtube_leads.json", "scan": "scan_youtube_commenters"},
+    {"id": "facebook_page_fan", "label": "Facebook page fans", "weight": 8, "enabled": true, "data_file": "facebook_leads.json", "scan": "scan_facebook_page_fans"},
+    {"id": "facebook_group_member", "label": "Facebook group members", "weight": 7, "enabled": true, "data_file": "facebook_leads.json", "scan": "scan_facebook_group_members"},
+    {"id": "facebook_messenger_lead", "label": "Facebook Messenger leads", "weight": 9, "enabled": true, "data_file": "facebook_leads.json", "scan": "scan_facebook_messenger_leads"},
+    {"id": "shop_checkout_abandoned", "label": "Abandoned shop checkouts", "weight": 12, "enabled": true, "data_file": "shop_checkout_abandoned.json", "scan": "scan_shop_checkout_abandoned"},
+    {"id": "exchange_wallet_created", "label": "Exchange wallet created", "weight": 11, "enabled": true, "scan": "scan_exchange_wallet_created"},
+    {"id": "casino_discord_play", "label": "Casino Discord play clicks", "weight": 6, "enabled": true, "scan": "scan_casino_discord_play"},
+    {"id": "referral_signup", "label": "Referral signups", "weight": 10, "enabled": true, "scan": "scan_referral_signups"},
+    {"id": "p2p_listing_view", "label": "P2P listing viewers", "weight": 8, "enabled": true, "scan": "scan_p2p_listing_views"},
+    {"id": "camgirl_tip_intent", "label": "Camgirl tip intents", "weight": 9, "enabled": true, "scan": "scan_camgirl_tip_intents"},
+    {"id": "network_chat_active", "label": "Network chat active users", "weight": 7, "enabled": true, "scan": "scan_network_chat_active"},
+    {"id": "podcast_subscriber", "label": "Podcast subscribers", "weight": 6, "enabled": true, "data_file": "podcast_social.json", "scan": "scan_podcast_subscribers"},
+    {"id": "newsletter_optin", "label": "Newsletter opt-ins", "weight": 5, "enabled": true, "data_file": "newsletter_optins.json", "scan": "scan_newsletter_optins"},
+    {"id": "affiliate_click", "label": "Affiliate link clicks", "weight": 6, "enabled": true, "scan": "scan_affiliate_clicks"},
+    {"id": "trophy_shop_view", "label": "Trophy shop viewers", "weight": 5, "enabled": true, "data_file": "trophy_shop_views.json", "scan": "scan_trophy_shop_views"},
+    {"id": "wallet_earn_click", "label": "Wallet micro-earn clicks", "weight": 4, "enabled": true, "scan": "scan_wallet_earn_clicks"},
+    {"id": "hosting_inquiry", "label": "Masternode hosting inquiries", "weight": 10, "enabled": true, "data_file": "hosting_inquiries.json", "scan": "scan_hosting_inquiries"},
+    {"id": "masternode_interest", "label": "Masternode interest signals", "weight": 9, "enabled": true, "data_file": "masternode_interest.json", "scan": "scan_masternode_interest"},
+    {"id": "support_ticket_mn2", "label": "MN2 support tickets", "weight": 11, "enabled": true, "scan": "scan_support_ticket_mn2"},
+    {"id": "oauth_social_linked", "label": "OAuth social linked/pending", "weight": 8, "enabled": true, "scan": "scan_oauth_social_linked"}
+  ]
+}

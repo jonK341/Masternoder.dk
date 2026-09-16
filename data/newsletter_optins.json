@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "optins": [
+    {
+      "email_hash": "abc123",
+      "user_id": "user-nl-001",
+      "discord_id": "232323232",
+      "opted_in_at": "2026-09-12T08:00:00Z"
+    }
+  ]
+}

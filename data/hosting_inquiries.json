@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "inquiries": [
+    {
+      "user_id": "user-host-001",
+      "discord_id": "454545454",
+      "masternode_count": 1,
+      "inquired_at": "2026-09-10T07:00:00Z"
+    }
+  ]
+}

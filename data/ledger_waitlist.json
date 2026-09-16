@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "registrations": [
+    {
+      "user_id": "user-wl-001",
+      "discord_id": "565656565",
+      "email": "waitlist@example.com",
+      "registered_at": "2026-09-08T12:00:00Z"
+    }
+  ]
+}

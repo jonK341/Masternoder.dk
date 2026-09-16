@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "interests": [
+    {
+      "user_id": "user-mn-001",
+      "discord_id": null,
+      "interest_level": "high",
+      "registered_at": "2026-09-09T15:00:00Z"
+    }
+  ]
+}

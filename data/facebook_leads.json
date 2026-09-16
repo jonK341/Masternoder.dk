@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "updated_at": "2026-09-16T00:00:00Z",
+  "page_id": "masternoder-page",
+  "page_fans": [
+    {
+      "facebook_id": "fb_fan_001",
+      "display_name": "FB Crypto Fan",
+      "user_id": "user-fb-001",
+      "discord_id": null,
+      "liked_at": "2026-09-09T10:00:00Z"
+    }
+  ],
+  "group_members": [
+    {
+      "facebook_id": "fb_grp_201",
+      "display_name": "GroupMember Alpha",
+      "user_id": "user-fb-002",
+      "discord_id": "333444555",
+      "group_id": "mn2-community",
+      "joined_at": "2026-09-08T14:00:00Z"
+    }
+  ],
+  "messenger_leads": [
+    {
+      "facebook_id": "fb_msg_301",
+      "display_name": "Messenger Lead",
+      "user_id": null,
+      "discord_id": null,
+      "thread_id": "t_abc123",
+      "last_message_at": "2026-09-15T20:00:00Z",
+      "intent": "mn2_purchase"
+    }
+  ]
+}

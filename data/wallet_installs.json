@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "installs": [
+    {
+      "user_id": "user-install-mobile-001",
+      "discord_id": "787878787",
+      "platform": "mobile",
+      "installed_at": "2026-09-07T10:00:00Z"
+    },
+    {
+      "user_id": "user-install-desktop-001",
+      "discord_id": null,
+      "platform": "desktop",
+      "installed_at": "2026-09-06T14:00:00Z"
+    }
+  ]
+}

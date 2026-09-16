@@ -27,6 +27,7 @@ _INTENT_REGISTRY = os.path.join(_BASE, "data", "discord_mn2_purchase_intent.json
 _SOURCE_LOCAL = "local_linked"
 _SOURCE_API = "discord_api"
 _SOURCE_BUYER = "purchase_intent"
+# Legacy source buckets map to granular population source ids in community_ledger_population.
 
 
 def _iso() -> str:
@@ -568,55 +569,129 @@ def scan_purchase_intent_buyers() -> List[Dict[str, Any]]:
 
 
 def _canonical_source(sources: Set[str]) -> str:
-    ordered = [_SOURCE_LOCAL, _SOURCE_API, _SOURCE_BUYER]
-    present = [s for s in ordered if s in sources]
-    if len(present) == 0:
+    if not sources:
         return "unknown"
-    if len(present) == 1:
-        return present[0]
-    if len(present) == 3:
+    ordered_legacy = [_SOURCE_LOCAL, _SOURCE_API, _SOURCE_BUYER]
+    legacy_present = [s for s in ordered_legacy if s in sources]
+    granular = sorted(s for s in sources if s not in ordered_legacy)
+    if granular:
+        if len(granular) == 1 and not legacy_present:
+            return granular[0]
+        parts = legacy_present + granular
+        if len(parts) == 1:
+            return parts[0]
+        if len(legacy_present) >= 3:
+            return "all"
+        return "+".join(parts[:4]) + ("+more" if len(parts) > 4 else "")
+    if len(legacy_present) == 0:
+        return "unknown"
+    if len(legacy_present) == 1:
+        return legacy_present[0]
+    if len(legacy_present) >= 3:
         return "all"
-    return "+".join(present)
+    return "+".join(legacy_present)
+
+
+def _source_weight(source_id: str, cfg: Dict[str, Any]) -> int:
+    pw = cfg.get("priority_weights") or {}
+    if source_id in pw:
+        return int(pw.get(source_id) or 0)
+    legacy_map = {
+        "local_linked": "local_linked",
+        "discord_api_guild": "discord_api",
+        "discord_api_channel": "discord_api",
+        "discord_api": "discord_api",
+        "purchase_intent": "purchase_intent",
+    }
+    legacy_key = legacy_map.get(source_id)
+    if legacy_key:
+        return int(pw.get(legacy_key) or 0)
+    try:
+        from backend.services.community_ledger_population import load_population_catalog
+
+        for entry in load_population_catalog().get("sources") or []:
+            if entry.get("id") == source_id:
+                return int(entry.get("weight") or 0)
+    except Exception:
+        pass
+    return 0
 
 
 def _priority_score(sources: Set[str], buyer_score: float, linked: bool, cfg: Dict[str, Any]) -> int:
-    pw = cfg.get("priority_weights") or {}
     score = int(buyer_score)
-    if _SOURCE_LOCAL in sources:
-        score += int(pw.get("local_linked") or 0)
-    if _SOURCE_API in sources:
-        score += int(pw.get("discord_api") or 0)
-    if _SOURCE_BUYER in sources:
-        score += int(pw.get("purchase_intent") or 0)
-    if linked and _SOURCE_BUYER in sources:
-        score += int(pw.get("linked_and_buyer") or 0)
+    for sid in sources:
+        score += _source_weight(sid, cfg)
+    if linked and (_SOURCE_BUYER in sources or "purchase_intent" in sources):
+        score += int((cfg.get("priority_weights") or {}).get("linked_and_buyer") or 0)
     return score
 
 
-def _merge_seed(merged: Dict[str, Dict[str, Any]], row: Dict[str, Any], source_key: str) -> None:
+def _row_identity_keys(row: Dict[str, Any]) -> List[str]:
+    keys: List[str] = []
     did = str(row.get("discord_id") or "").strip()
-    if not did:
-        return
-    if did not in merged:
-        merged[did] = {
-            "discord_id": did,
+    yid = str(row.get("youtube_id") or "").strip()
+    fid = str(row.get("facebook_id") or "").strip()
+    uid = str(row.get("user_id") or "").strip()
+    if did:
+        keys.append(f"discord:{did}")
+    if yid:
+        keys.append(f"youtube:{yid}")
+    if fid:
+        keys.append(f"facebook:{fid}")
+    if uid:
+        keys.append(f"user:{uid}")
+    return keys
+
+
+def _new_merge_key(row: Dict[str, Any]) -> str:
+    keys = _row_identity_keys(row)
+    if keys:
+        return keys[0]
+    name = str(row.get("display_name") or row.get("discord_username") or "anon")
+    return f"anon:{row.get('source_id', 'unknown')}:{name}"
+
+
+def _merge_seed(merged: Dict[str, Dict[str, Any]], index: Dict[str, str], row: Dict[str, Any], source_key: str) -> None:
+    """Merge a population row by discord/youtube/facebook/user id."""
+    identity = _row_identity_keys(row)
+    if not identity:
+        identity = [_new_merge_key(row)]
+
+    merge_key: Optional[str] = None
+    for ik in identity:
+        if ik in index:
+            merge_key = index[ik]
+            break
+    if merge_key is None:
+        merge_key = identity[0]
+        merged[merge_key] = {
+            "discord_id": row.get("discord_id"),
+            "youtube_id": row.get("youtube_id"),
+            "facebook_id": row.get("facebook_id"),
             "user_id": row.get("user_id"),
-            "discord_username": row.get("discord_username"),
+            "discord_username": row.get("discord_username") or row.get("display_name"),
+            "display_name": row.get("display_name") or row.get("discord_username"),
             "sources": {source_key},
             "buyer_signals": list(row.get("buyer_signals") or []),
             "buyer_score": float(row.get("buyer_score") or 0),
         }
-        return
-    existing = merged[did]
-    existing["sources"].add(source_key)
-    if row.get("user_id") and not existing.get("user_id"):
-        existing["user_id"] = row["user_id"]
-    if row.get("discord_username") and not existing.get("discord_username"):
-        existing["discord_username"] = row["discord_username"]
-    for sig in row.get("buyer_signals") or []:
-        if sig not in existing["buyer_signals"]:
-            existing["buyer_signals"].append(sig)
-    existing["buyer_score"] = max(float(existing.get("buyer_score") or 0), float(row.get("buyer_score") or 0))
+    else:
+        existing = merged[merge_key]
+        existing["sources"].add(source_key)
+        for field in ("discord_id", "youtube_id", "facebook_id", "user_id"):
+            if row.get(field) and not existing.get(field):
+                existing[field] = row[field]
+        if row.get("discord_username") and not existing.get("discord_username"):
+            existing["discord_username"] = row["discord_username"]
+        if row.get("display_name") and not existing.get("display_name"):
+            existing["display_name"] = row["display_name"]
+        for sig in row.get("buyer_signals") or []:
+            if sig not in existing["buyer_signals"]:
+                existing["buyer_signals"].append(sig)
+        existing["buyer_score"] = max(float(existing.get("buyer_score") or 0), float(row.get("buyer_score") or 0))
+
+    for ik in _row_identity_keys(merged[merge_key]):
+        index[ik] = merge_key
 
 
 def _mn2_balance_for_user(user_id: Optional[str]) -> float:
@@ -790,6 +865,7 @@ def _save_order_list_export(doc: Dict[str, Any], rows: List[Dict[str, Any]]) -> 
         "partial": sum(1 for r in rows if r.get("fulfillment_status") == "partial"),
         "fulfilled": sum(1 for r in rows if r.get("fulfillment_status") == "fulfilled"),
         "sources": meta.get("sources", {}),
+        "population_source_count": meta.get("population_source_count", 0),
         "overlaps": meta.get("overlaps", {}),
         "buyer_signal_count": meta.get("buyer_signal_count", 0),
         "discord_api_used": bool(meta.get("discord_api_used")),
@@ -808,77 +884,104 @@ def build_order_list(
     use_local: bool = True,
     use_discord_api: bool = True,
     use_buyer_signals: bool = True,
+    use_all_sources: bool = True,
 ) -> Dict[str, Any]:
-    """Aggregate Discord users from 3 sources into fulfillment ledger."""
+    """Aggregate community users from up to 25 population sources into fulfillment ledger."""
     cfg = load_config()
     existing_doc = _load_ledger_doc()
-    existing_by_id = {
-        str(r.get("discord_id")): r
-        for r in (existing_doc.get("rows") or [])
-        if isinstance(r, dict) and r.get("discord_id")
-    }
+    existing_by_id: Dict[str, Dict[str, Any]] = {}
+    for r in existing_doc.get("rows") or []:
+        if not isinstance(r, dict):
+            continue
+        lid = str(r.get("ledger_row_id") or r.get("discord_id") or "").strip()
+        if lid:
+            existing_by_id[lid] = r
+        did = str(r.get("discord_id") or "").strip()
+        if did:
+            existing_by_id[f"discord:{did}"] = r
 
     merged: Dict[str, Dict[str, Any]] = {}
-    source_counts: Dict[str, int] = {
-        _SOURCE_LOCAL: 0,
-        _SOURCE_API: 0,
-        _SOURCE_BUYER: 0,
-    }
+    index: Dict[str, str] = {}
+    source_counts: Dict[str, int] = {}
     overlap_counts: Dict[str, int] = {
         "local_and_api": 0,
         "local_and_buyer": 0,
         "api_and_buyer": 0,
         "all_three": 0,
     }
-
-    if use_local:
-        for row in scan_local_linked_users():
-            _merge_seed(merged, row, _SOURCE_LOCAL)
-
     api_used = False
     api_notes: List[str] = []
 
-    if use_discord_api and _bot_token():
-        guild_result = fetch_discord_guild_members()
-        if guild_result.get("api_used"):
-            api_used = True
-        if guild_result.get("error"):
-            api_notes.append(f"guild_members: {guild_result['error']}")
-        for row in guild_result.get("members") or []:
-            _merge_seed(merged, row, _SOURCE_API)
+    if use_all_sources:
+        try:
+            from backend.services.community_ledger_population import scan_all_enabled_sources
 
-        channel_result = fetch_discord_channel_authors()
-        if channel_result.get("api_used"):
-            api_used = True
-        if channel_result.get("error"):
-            api_notes.append(f"channel_authors: {channel_result['error']}")
-        for row in channel_result.get("members") or []:
-            _merge_seed(merged, row, _SOURCE_API)
+            scan_result = scan_all_enabled_sources(use_discord_api=use_discord_api)
+            api_used = bool(scan_result.get("api_used"))
+            api_notes.extend(scan_result.get("api_notes") or [])
+            source_counts.update(scan_result.get("source_counts") or {})
+            for row in scan_result.get("rows") or []:
+                sid = str(row.get("source_id") or "unknown")
+                if sid == "local_linked" and not use_local:
+                    continue
+                if sid == "purchase_intent" and not use_buyer_signals:
+                    continue
+                _merge_seed(merged, index, row, sid)
+        except Exception as exc:
+            api_notes.append(f"population_scan: {exc}")
+    else:
+        if use_local:
+            for row in scan_local_linked_users():
+                _merge_seed(merged, index, row, _SOURCE_LOCAL)
+        if use_discord_api and _bot_token():
+            guild_result = fetch_discord_guild_members()
+            if guild_result.get("api_used"):
+                api_used = True
+            if guild_result.get("error"):
+                api_notes.append(f"guild_members: {guild_result['error']}")
+            for row in guild_result.get("members") or []:
+                _merge_seed(merged, index, row, "discord_api_guild")
+            channel_result = fetch_discord_channel_authors()
+            if channel_result.get("api_used"):
+                api_used = True
+            if channel_result.get("error"):
+                api_notes.append(f"channel_authors: {channel_result['error']}")
+            for row in channel_result.get("members") or []:
+                _merge_seed(merged, index, row, "discord_api_channel")
+        if use_buyer_signals:
+            for row in scan_purchase_intent_buyers():
+                _merge_seed(merged, index, row, _SOURCE_BUYER)
 
-    if use_buyer_signals:
-        for row in scan_purchase_intent_buyers():
-            _merge_seed(merged, row, _SOURCE_BUYER)
-
-    source_counts = {_SOURCE_LOCAL: 0, _SOURCE_API: 0, _SOURCE_BUYER: 0}
-    for did, seed in merged.items():
-        srcs = seed.get("sources") or set()
-        for s in srcs:
-            if s in source_counts:
-                source_counts[s] += 1
-        if _SOURCE_LOCAL in srcs and _SOURCE_API in srcs:
+    for _mk, seed in merged.items():
+        srcs: Set[str] = set(seed.get("sources") or [])
+        has_api = bool(srcs & {"discord_api", "discord_api_guild", "discord_api_channel"})
+        has_local = _SOURCE_LOCAL in srcs or "local_linked" in srcs
+        has_buyer = _SOURCE_BUYER in srcs or "purchase_intent" in srcs
+        if has_local and has_api:
             overlap_counts["local_and_api"] += 1
-        if _SOURCE_LOCAL in srcs and _SOURCE_BUYER in srcs:
+        if has_local and has_buyer:
             overlap_counts["local_and_buyer"] += 1
-        if _SOURCE_API in srcs and _SOURCE_BUYER in srcs:
+        if has_api and has_buyer:
             overlap_counts["api_and_buyer"] += 1
-        if len(srcs) >= 3:
+        if has_local and has_api and has_buyer:
             overlap_counts["all_three"] += 1
 
+    if not source_counts:
+        source_counts = {_SOURCE_LOCAL: 0, _SOURCE_API: 0, _SOURCE_BUYER: 0}
+        for seed in merged.values():
+            for s in seed.get("sources") or set():
+                source_counts[s] = source_counts.get(s, 0) + 1
+
     rows_out: List[Dict[str, Any]] = []
-    for discord_id, seed in sorted(merged.items(), key=lambda x: x[0]):
-        user_id = seed.get("user_id") or _resolve_user_id(discord_id)
+    for merge_key, seed in merged.items():
+        discord_id = seed.get("discord_id")
+        user_id = seed.get("user_id")
+        if discord_id and not user_id:
+            user_id = _resolve_user_id(str(discord_id))
+        if user_id and not discord_id:
+            discord_id = _resolve_discord_id(user_id)
         mn2_balance = _mn2_balance_for_user(user_id)
-        username = seed.get("discord_username")
+        username = seed.get("discord_username") or seed.get("display_name")
         if not username and user_id:
             username = _discord_username_for_user(user_id)
 
@@ -888,9 +991,12 @@ def build_order_list(
         linked = bool(user_id)
         priority = _priority_score(sources_set, buyer_score, linked, cfg)
 
-        prev = existing_by_id.get(discord_id) or {}
+        prev_key = merge_key
+        if discord_id and f"discord:{discord_id}" in existing_by_id:
+            prev_key = f"discord:{discord_id}"
+        prev = existing_by_id.get(prev_key) or existing_by_id.get(merge_key) or {}
         lines = _compute_order_lines(
-            discord_id,
+            str(discord_id or merge_key),
             user_id,
             mn2_balance,
             existing_lines=prev.get("order_lines"),
@@ -899,12 +1005,17 @@ def build_order_list(
             cfg=cfg,
         )
         row = {
+            "ledger_row_id": prev.get("ledger_row_id") or merge_key,
             "discord_id": discord_id,
+            "youtube_id": seed.get("youtube_id"),
+            "facebook_id": seed.get("facebook_id"),
             "discord_username": username,
+            "display_name": seed.get("display_name") or username,
             "user_id": user_id,
             "mn2_balance": mn2_balance,
             "source": _canonical_source(sources_set),
             "sources": sorted(sources_set),
+            "source_count": len(sources_set),
             "buyer_signal": bool(buyer_signals) and buyer_score >= float(cfg.get("buyer_signal_threshold") or 0),
             "buyer_signals": buyer_signals,
             "buyer_score": buyer_score,
@@ -917,14 +1028,24 @@ def build_order_list(
         }
         rows_out.append(row)
 
-    rows_out.sort(key=lambda r: (-int(r.get("priority_score") or 0), r.get("discord_id") or ""))
+    rows_out.sort(
+        key=lambda r: (
+            -int(r.get("priority_score") or 0),
+            -float(r.get("buyer_score") or 0),
+            -int(r.get("source_count") or 0),
+            r.get("created_at") or "",
+        )
+    )
+    for rank, row in enumerate(rows_out, start=1):
+        row["ledger_rank"] = rank
 
     doc = {
-        "version": 2,
+        "version": 3,
         "updated_at": _iso(),
         "rows": rows_out,
         "meta": {
             "sources": source_counts,
+            "population_source_count": len(source_counts),
             "overlaps": overlap_counts,
             "buyer_signal_count": sum(1 for r in rows_out if r.get("buyer_signal")),
             "discord_api_used": api_used,
@@ -936,6 +1057,7 @@ def build_order_list(
                 "local": use_local,
                 "discord_api": use_discord_api,
                 "buyer_signals": use_buyer_signals,
+                "all_population_sources": use_all_sources,
             },
         },
     }
@@ -991,6 +1113,16 @@ def get_row_for_discord(discord_id: str) -> Optional[Dict[str, Any]]:
         return None
     for row in _load_ledger_doc().get("rows") or []:
         if str(row.get("discord_id")) == did:
+            return row
+    return None
+
+
+def get_row_by_id(ledger_row_id: str) -> Optional[Dict[str, Any]]:
+    lid = (ledger_row_id or "").strip()
+    if not lid:
+        return None
+    for row in _load_ledger_doc().get("rows") or []:
+        if str(row.get("ledger_row_id")) == lid or str(row.get("discord_id")) == lid:
             return row
     return None
 

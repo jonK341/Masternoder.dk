@@ -7,7 +7,10 @@
     "mn2_onramp_funded": 45,
     "discord_click": 15,
     "coin_pack_purchase": 20,
-    "casino_discord_play": 10
+    "casino_discord_play": 10,
+    "wallet_intent_register": 40,
+    "shop_abandoned": 12,
+    "affiliate_click": 6
   },
   "buyer_signal_threshold": 20,
   "default_coin_pack_sku": "mn2-pack-s",
@@ -17,7 +20,13 @@
   "priority_weights": {
     "local_linked": 10,
     "discord_api": 5,
+    "discord_api_guild": 5,
+    "discord_api_channel": 6,
     "purchase_intent": 15,
-    "linked_and_buyer": 25
-  }
+    "linked_and_buyer": 25,
+    "youtube_subscriber": 8,
+    "facebook_messenger_lead": 9,
+    "shop_checkout_abandoned": 12
+  },
+  "population_catalog": "ledger_population_sources.json"
 }

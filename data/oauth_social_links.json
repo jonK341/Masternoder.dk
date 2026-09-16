@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "links": [
+    {
+      "provider": "google",
+      "user_id": "user-oauth-g-001",
+      "discord_id": null,
+      "status": "pending",
+      "display_name": "Google Pending User"
+    },
+    {
+      "provider": "facebook",
+      "user_id": "user-oauth-f-001",
+      "facebook_id": "fb_oauth_001",
+      "discord_id": "676767676",
+      "status": "linked",
+      "display_name": "FB Linked User"
+    },
+    {
+      "provider": "youtube",
+      "user_id": "user-oauth-yt-001",
+      "youtube_id": "yt_oauth_001",
+      "discord_id": null,
+      "status": "linked",
+      "display_name": "YouTube OAuth User"
+    }
+  ]
+}

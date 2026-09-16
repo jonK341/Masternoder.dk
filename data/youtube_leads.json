@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "updated_at": "2026-09-16T00:00:00Z",
+  "channel_id": "UC-masternoder-demo",
+  "subscribers": [
+    {
+      "youtube_id": "yt_sub_001",
+      "display_name": "CryptoLearner42",
+      "user_id": "user-yt-001",
+      "discord_id": null,
+      "subscribed_at": "2026-09-10T12:00:00Z"
+    },
+    {
+      "youtube_id": "yt_sub_002",
+      "display_name": "MN2Fan",
+      "user_id": null,
+      "discord_id": "555666777",
+      "subscribed_at": "2026-09-11T08:30:00Z"
+    }
+  ],
+  "commenters": [
+    {
+      "youtube_id": "yt_cmt_101",
+      "display_name": "CommentKing",
+      "user_id": "user-yt-002",
+      "discord_id": null,
+      "last_comment_at": "2026-09-15T18:00:00Z",
+      "video_id": "vid_mn2_intro"
+    },
+    {
+      "youtube_id": "yt_cmt_102",
+      "display_name": "WalletWatcher",
+      "user_id": "user-yt-003",
+      "discord_id": "888999000",
+      "last_comment_at": "2026-09-14T09:15:00Z",
+      "video_id": "vid_wallet_v2"
+    }
+  ]
+}
