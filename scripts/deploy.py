@@ -406,6 +406,7 @@ MANIFESTS = {
         "static/css/profile-hub.css",
         "static/css/shop-taxonomy.css",
         "static/css/navigation-toolbar.css",
+        "data/agent_marketplace_config.json",
     ],
     "casino": [
         "backend/register_blueprints.py",
