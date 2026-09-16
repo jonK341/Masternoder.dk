@@ -1,5 +1,10 @@
 export type TabId =
   | 'overview'
+  | 'portal'
+  | 'rewards'
+  | 'earn'
+  | 'shop'
+  | 'exchange'
   | 'send'
   | 'receive'
   | 'activity'
@@ -9,10 +14,16 @@ export type TabId =
   | 'battle'
   | 'peers'
   | 'staking'
+  | 'upgrades'
   | 'settings';
 
-export const TABS: { id: TabId; label: string }[] = [
+export const TABS: { id: TabId; label: string; primary?: boolean }[] = [
   { id: 'overview', label: 'Overview' },
+  { id: 'portal', label: 'Portal', primary: true },
+  { id: 'rewards', label: 'Rewards', primary: true },
+  { id: 'earn', label: 'Earn', primary: true },
+  { id: 'shop', label: 'Shop' },
+  { id: 'exchange', label: 'Exchange' },
   { id: 'send', label: 'Send' },
   { id: 'receive', label: 'Receive' },
   { id: 'activity', label: 'Activity' },
@@ -22,6 +33,7 @@ export const TABS: { id: TabId; label: string }[] = [
   { id: 'battle', label: 'Battle' },
   { id: 'peers', label: 'Peers' },
   { id: 'staking', label: 'Staking' },
+  { id: 'upgrades', label: 'Upgrades' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -48,19 +60,21 @@ export function TabNav({ active, onChange }: Props) {
     >
       {TABS.map((tab) => {
         const isActive = tab.id === active;
+        const isPrimary = Boolean(tab.primary);
         return (
           <button
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
             aria-current={isActive ? 'page' : undefined}
+            class={isPrimary ? 'wallet-tab-btn--primary' : undefined}
             style={{
               flex: '0 0 auto',
               border: 'none',
               borderBottom: isActive ? '2px solid var(--wallet-accent)' : '2px solid transparent',
               background: 'transparent',
-              color: isActive ? 'var(--wallet-accent)' : 'var(--wallet-muted)',
-              fontWeight: isActive ? 700 : 500,
+              color: isActive ? 'var(--wallet-accent)' : isPrimary ? 'var(--wallet-text)' : 'var(--wallet-muted)',
+              fontWeight: isActive || isPrimary ? 700 : 500,
               padding: '12px 14px',
               cursor: 'pointer',
               fontSize: '0.85rem',

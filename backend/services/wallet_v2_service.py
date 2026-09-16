@@ -59,7 +59,7 @@ def _trophy_counts(user_id: str) -> Dict[str, int]:
 
 
 def _network_snapshot() -> Dict[str, Any]:
-    """Lightweight network KPIs from cached chainz overview — best-effort, never raises."""
+    """Rich network KPIs from cached chainz overview — best-effort, never raises."""
     out: Dict[str, Any] = {
         "block_height": None,
         "connections": None,
@@ -67,8 +67,25 @@ def _network_snapshot() -> Dict[str, Any]:
         "mempool_bytes": None,
         "mn2_usd_price": None,
         "pool_apr_percent": None,
+        "pool_total_staked": None,
         "masternode_count": None,
+        "masternode_enabled": None,
         "sync_ok": None,
+        "difficulty": None,
+        "network_hashps": None,
+        "staking_weight": None,
+        "expected_stake_time_sec": None,
+        "circulating_supply": None,
+        "daemon_version": None,
+        "daemon_subversion": None,
+        "chain": None,
+        "verification_progress": None,
+        "headers": None,
+        "median_time": None,
+        "staking_health": None,
+        "peer_health": None,
+        "rpc_degraded": None,
+        "source": {},
     }
     try:
         from backend.services import mn2_chainz
@@ -76,17 +93,55 @@ def _network_snapshot() -> Dict[str, Any]:
         out["block_height"] = overview.get("block_height")
         out["connections"] = overview.get("connections")
         out["mempool_tx"] = overview.get("mempool_tx")
-        out["mempool_bytes"] = overview.get("mempool_bytes")
+        out["difficulty"] = overview.get("difficulty")
+        out["network_hashps"] = overview.get("network_hashps")
+        out["staking_weight"] = overview.get("staking_weight")
+        out["expected_stake_time_sec"] = overview.get("expected_stake_time_sec")
+        out["circulating_supply"] = overview.get("circulating_supply")
         out["mn2_usd_price"] = overview.get("mn2_usd_price")
         out["masternode_count"] = overview.get("masternode_count")
+        if isinstance(overview.get("source"), dict):
+            out["source"] = overview.get("source")
         daemon = overview.get("daemon") if isinstance(overview.get("daemon"), dict) else {}
+        out["mempool_bytes"] = daemon.get("mempool_bytes")
+        out["daemon_version"] = daemon.get("version")
+        out["daemon_subversion"] = daemon.get("subversion")
+        out["chain"] = daemon.get("chain")
+        out["verification_progress"] = daemon.get("verification_progress")
+        out["headers"] = daemon.get("headers")
+        out["median_time"] = daemon.get("median_time")
         if daemon.get("reachable") is not None:
             out["sync_ok"] = bool(daemon.get("reachable"))
+        if overview.get("rpc_degraded"):
+            out["rpc_degraded"] = True
     except Exception:
         pass
     try:
         from backend.services import mn2_staking_service as staking
         out["pool_apr_percent"] = staking.dynamic_apr()
+        out["pool_total_staked"] = staking.total_staked()
+    except Exception:
+        pass
+    try:
+        from backend.services.mn2_explorer_data import masternodes
+        mn = masternodes(limit=5) or {}
+        out["masternode_enabled"] = mn.get("enabled")
+        if out["masternode_count"] is None and mn.get("total"):
+            out["masternode_count"] = mn.get("total")
+    except Exception:
+        pass
+    try:
+        from backend.services import mn2_rpc_client
+        sh = mn2_rpc_client.staking_health()
+        if isinstance(sh, dict):
+            out["staking_health"] = sh
+    except Exception:
+        pass
+    try:
+        from backend.services.mn2_network_peers_service import peer_health_from_overview
+        from backend.services import mn2_chainz
+        overview = mn2_chainz.network_overview() or {}
+        out["peer_health"] = peer_health_from_overview(overview)
     except Exception:
         pass
     return out
@@ -293,3 +348,94 @@ def build_discord_status(user_id: str) -> Dict[str, Any]:
         payload["oauth_login_configured"] = False
 
     return payload
+
+
+# Canonical site feature matrix for wallet Site Features Hub (WR-PORTAL).
+_SITE_FEATURES: List[Dict[str, Any]] = [
+    {"id": "portal", "name": "Command Center", "icon": "🌀", "path": "/command-center", "category": "portal", "primary": True, "description": "Battle · Trophies · Game · Quests · Podcast hub with MN2 rewards"},
+    {"id": "rewards", "name": "Rewards & Points", "icon": "💎", "path": "/profile?tab=points", "category": "rewards", "primary": True, "description": "Unified points, XP, quests, achievements, and trophy score"},
+    {"id": "shop", "name": "Shop", "icon": "🛒", "path": "/shop", "category": "commerce", "description": "Trophies, boosts, digital goods, PayPal on-ramp"},
+    {"id": "exchange", "name": "Exchange", "icon": "💱", "path": "/exchange", "category": "commerce", "description": "25-crypto swap, limits, staking, tax records"},
+    {"id": "wallets", "name": "Wallets", "icon": "💾", "path": "/wallets", "category": "wallet", "description": "MN2 deposit, withdraw, monitors, upgrades"},
+    {"id": "generator", "name": "Generator", "icon": "🎬", "path": "/generator", "category": "create", "description": "AI video and content generation"},
+    {"id": "game", "name": "Game", "icon": "🎮", "path": "/game", "category": "play", "description": "Hunters game mode and progression"},
+    {"id": "battle", "name": "Battle", "icon": "⚔️", "path": "/battle", "category": "play", "description": "Tournaments, quick battle, fantasy arena"},
+    {"id": "trophies", "name": "Trophies", "icon": "🏆", "path": "/trophies", "category": "collect", "description": "Hunter trophies and social leaderboard"},
+    {"id": "quests", "name": "Quests", "icon": "📜", "path": "/quests", "category": "rewards", "description": "Quest MN2 rewards, XP, and streaks"},
+    {"id": "explorer", "name": "Explorer", "icon": "🔎", "path": "/explorer", "category": "network", "description": "MN2 crypto hub: blocks, staking, reserves, market"},
+    {"id": "staking-monitor", "name": "Staking Monitor", "icon": "🌱", "path": "/staking-monitor", "category": "network", "description": "Pool stats and stake health"},
+    {"id": "staking-leaderboard", "name": "Staking Leaderboard", "icon": "📊", "path": "/staking-leaderboard", "category": "network", "description": "MN2 staking ranks"},
+    {"id": "hosting", "name": "Masternode Hosting", "icon": "🖥️", "path": "/hosting", "category": "network", "description": "Hosted masternode status and payouts"},
+    {"id": "proof-of-reserves", "name": "Proof of Reserves", "icon": "🔐", "path": "/proof-of-reserves", "category": "network", "description": "Treasury transparency"},
+    {"id": "market", "name": "P2P Market", "icon": "📈", "path": "/market", "category": "commerce", "description": "Peer MN2 marketplace"},
+    {"id": "casino", "name": "Casino", "icon": "🎰", "path": "/casino/", "category": "play", "description": "Casino games and VIP rewards"},
+    {"id": "battlegrounds", "name": "Battlegrounds", "icon": "🗺️", "path": "/battlegrounds", "category": "play", "description": "Large-scale battle maps"},
+    {"id": "starmap25", "name": "Star Map 25", "icon": "🌌", "path": "/starmap25", "category": "play", "description": "Investigation rewards and invasion events"},
+    {"id": "aggregator", "name": "Aggregator", "icon": "📡", "path": "/aggregator", "category": "agents", "description": "75 AI aggregators — catalog and control panel"},
+    {"id": "agents", "name": "AI Agents", "icon": "🤖", "path": "/agents", "category": "agents", "description": "Agent marketplace and wallets"},
+    {"id": "agents-control", "name": "Agents Control", "icon": "🎛️", "path": "/dashboard/agents_control", "category": "agents", "description": "Agents control board"},
+    {"id": "podcast", "name": "Podcast", "icon": "🎙️", "path": "/podcast", "category": "social", "description": "YouTube, Discord, GitHub — crypto rewards"},
+    {"id": "social", "name": "Social", "icon": "👥", "path": "/social", "category": "social", "description": "Social hub and engagement"},
+    {"id": "profile", "name": "Profile", "icon": "👤", "path": "/profile", "category": "account", "description": "Points, stats, inventory, shop wallet"},
+    {"id": "compendium", "name": "Compendium", "icon": "📖", "path": "/compendium/?calm=1", "category": "library", "description": "Rulebooks V1–V16 and compendium points"},
+    {"id": "lab", "name": "Lab", "icon": "🔬", "path": "/lab", "category": "create", "description": "Discussion, experiments, research log"},
+    {"id": "gallery", "name": "Gallery", "icon": "🖼️", "path": "/gallery", "category": "create", "description": "Media gallery and showcases"},
+    {"id": "news", "name": "News", "icon": "📰", "path": "/news", "category": "social", "description": "Site news and updates"},
+    {"id": "profit", "name": "Profit Daemon", "icon": "⚡", "path": "/profit/", "category": "commerce", "description": "24/7 profit monitor and rentals"},
+    {"id": "business-control", "name": "Business Control", "icon": "🏢", "path": "/business-control", "category": "admin", "description": "Owner trading bots and fleet controls"},
+    {"id": "debugger", "name": "Debugger", "icon": "🔧", "path": "/debugger", "category": "tools", "description": "API routes, tests, and diagnostics"},
+    {"id": "agent-support", "name": "Agent Support", "icon": "🛠️", "path": "/agent_support", "category": "tools", "description": "Tickets, AI API keys, tools"},
+    {"id": "customers", "name": "Customers", "icon": "👥", "path": "/customers", "category": "admin", "description": "Customer directory"},
+]
+
+
+def build_site_features() -> Dict[str, Any]:
+    """Site feature matrix for wallet Site Features Hub — lazy-loaded."""
+    primary = [f for f in _SITE_FEATURES if f.get("primary")]
+    categories = sorted({f.get("category") or "other" for f in _SITE_FEATURES})
+    return {
+        "success": True,
+        "total": len(_SITE_FEATURES),
+        "primary_ids": [f["id"] for f in primary],
+        "categories": categories,
+        "features": _SITE_FEATURES,
+    }
+
+
+def build_rewards_snapshot(user_id: str) -> Dict[str, Any]:
+    """Unified points summary for wallet Rewards tab — wraps existing points DB."""
+    user_id = (user_id or "").strip() or "default_user"
+    guest = user_id in ("", "default_user", "guest")
+    out: Dict[str, Any] = {
+        "success": True,
+        "user_id": user_id,
+        "guest": guest,
+        "profile_points_url": "/profile?tab=points",
+        "quests_url": "/quests",
+        "command_center_url": "/command-center",
+        "points": {
+            "xp_total": 0,
+            "level": 1,
+            "coins": 0,
+            "trophy_points": 0,
+            "quest_points": 0,
+            "battle_points": 0,
+            "mn2_balance": 0,
+        },
+    }
+    if guest:
+        out["message"] = "Sign in to track unified points and quest rewards."
+        return out
+    try:
+        from backend.services.unified_points_database import unified_points_db
+        if unified_points_db and hasattr(unified_points_db, "get_all_points"):
+            result = unified_points_db.get_all_points(user_id) or {}
+            if result.get("success") and isinstance(result.get("points"), dict):
+                pts = result["points"]
+                for key in out["points"]:
+                    if key in pts:
+                        out["points"][key] = pts[key]
+                out["points_full"] = pts
+    except Exception as exc:
+        out["points_error"] = str(exc)
+    return out
