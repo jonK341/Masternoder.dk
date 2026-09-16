@@ -491,17 +491,81 @@
 
   function loadRentalCatalog() { api("/api/exchange/rental/catalog").then(renderRentals); }
 
+  var shopParentFilter = "all";
+  var shopCatFilter = "all";
+  var shopCatalogCache = { items: [] };
+
   function renderShop(cat, st) {
+    shopCatalogCache = cat || { items: [] };
+    var items = shopCatalogCache.items || [];
+    var tax = window.ShopTaxonomy;
+    var nav = $("cex-shop-subnav");
+    var parents = (tax && tax.EXCHANGE_PARENTS) || [{ id: "all", label: "All", categories: [] }];
+    var parentCounts = { all: items.length };
+    items.forEach(function (it) {
+      var pid = tax ? tax.exchangeParentFor(it.category || "other") : "other";
+      parentCounts[pid] = (parentCounts[pid] || 0) + 1;
+    });
+    if (nav) {
+      var parentTabs = parents.map(function (p) {
+        return { id: p.id, label: p.label, count: parentCounts[p.id] || 0 };
+      }).filter(function (t) { return t.id === "all" || t.count; });
+      if (tax) {
+        tax.renderChips(nav, parentTabs, shopParentFilter, function (id) {
+          shopParentFilter = id;
+          shopCatFilter = "all";
+          renderShop(shopCatalogCache, st);
+        });
+      }
+    }
+    var childNav = $("cex-shop-subcats");
+    if (!childNav && nav && nav.parentNode) {
+      childNav = document.createElement("nav");
+      childNav.id = "cex-shop-subcats";
+      childNav.className = "shop-subnav";
+      childNav.setAttribute("aria-label", "Exchange shop subcategories");
+      nav.parentNode.insertBefore(childNav, nav.nextSibling);
+    }
+    var cats = { all: 0 };
+    var labels = { all: "All", reward: "Rewards", skill: "Skills", rental: "Rentals", rental_voucher: "Vouchers", trust: "Trust", boost: "Boosts", fee: "Fees", tool: "Tools" };
+    var allowed = null;
+    if (shopParentFilter !== "all") {
+      var group = parents.find(function (p) { return p.id === shopParentFilter; });
+      allowed = {};
+      ((group && group.categories) || []).forEach(function (c) { allowed[c] = true; });
+    }
+    items.forEach(function (it) {
+      var k = it.category || "other";
+      if (allowed && !allowed[k]) return;
+      cats[k] = (cats[k] || 0) + 1;
+      cats.all += 1;
+    });
+    if (childNav && tax) {
+      var childTabs = Object.keys(cats).map(function (id) {
+        return { id: id, label: labels[id] || id, count: cats[id] };
+      });
+      tax.renderChips(childNav, childTabs, shopCatFilter, function (id) {
+        shopCatFilter = id;
+        renderShop(shopCatalogCache, st);
+      });
+    }
+    var visible = items.filter(function (it) {
+      var k = it.category || "other";
+      if (shopParentFilter !== "all" && tax && tax.exchangeParentFor(k) !== shopParentFilter) return false;
+      if (shopCatFilter !== "all" && k !== shopCatFilter) return false;
+      return true;
+    });
     var c = $("cex-shop-catalog");
     if (c) {
-      c.innerHTML = (cat.items || []).map(function (it) {
+      c.innerHTML = visible.map(function (it) {
         return '<div class="cex-shop-card"><img src="' + (it.image || "") + '" alt="" width="56" height="56" />' +
           "<h4>" + it.name + "</h4><p>" + (it.description || "") + "</p>" +
+          '<div class="cex-shop-cat">' + (it.category || "") + "</div>" +
           skillChips(it.skill_details, true) +
           '<div class="cex-market-price">' + it.price_mn2 + " MN2</div>" +
           '<button type="button" class="cex-btn" data-shop="' + it.id + '">Buy MN2</button>' +
           '<button type="button" class="cex-btn cex-btn--ghost" data-ctrl-shop="' + it.id + '">Checkout</button></div>';
-      }).join("");
+      }).join("") || '<p class="muted">No items in this subcategory.</p>';
       Array.prototype.forEach.call(c.querySelectorAll("[data-shop]"), function (b) {
         b.addEventListener("click", function () {
           var id = b.getAttribute("data-shop");

@@ -14,6 +14,7 @@ Usage:
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
   python scripts/deploy.py battle_hunter_quick   # battle RPS/queue + Hunter XP + battle/profile UI + tournaments JS
   python scripts/deploy.py service_check_backend --upload-only   # leaderboard/agents/service_check files; no uwsgi restart
+  python scripts/deploy.py shop_taxonomy   # shop/profile/exchange/casino subcategory grouping
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
 
@@ -372,6 +373,33 @@ MANIFESTS = {
         "backend/routes/trophies_routes.py",
         "backend/register_blueprints.py",
     ],
+    # Shop catalog parents + inventory/auction/history subcategory chips
+    # (shop, profile, exchange, casino shops). Restarts uwsgi so shop_routes
+    # picks up taxonomy enrichment on inventory/purchases/auction APIs.
+    "shop_taxonomy": [
+        "backend/routes/shop_routes.py",
+        "backend/services/shop_taxonomy_service.py",
+        "index.html",
+        "shop/index.html",
+        "profile/index.html",
+        "exchange/index.html",
+        "casino/index.html",
+        "game/index.html",
+        "explorer/index.html",
+        "battle/index.html",
+        "static/js/shop-taxonomy.js",
+        "static/js/shop-subnav.js",
+        "static/js/profile-hub-subtabs.js",
+        "static/js/profile-mn2-wallet.js",
+        "static/js/agent-marketplace.js",
+        "static/js/casino.js",
+        "static/js/navigation-toolbar.js",
+        "static/css/casino.css",
+        "static/css/crypto-exchange.css",
+        "static/css/profile-hub.css",
+        "static/css/shop-taxonomy.css",
+        "static/css/navigation-toolbar.css",
+    ],
     "casino": [
         "backend/register_blueprints.py",
         "backend/routes/casino_routes.py",
@@ -567,6 +595,15 @@ MANIFESTS = {
         "backend/services/mn2_p2p_service.py",
         "backend/services/mn2_masternode_service.py",
         "backend/services/mn2_masternode_hosting_service.py",
+        "backend/services/mn2_daemon_health_service.py",
+        "backend/services/mn2_chain_rewards_service.py",
+        "backend/services/game_mn2_rewards.py",
+        "backend/services/agent_mn2_settlement_service.py",
+        "backend/services/agent_shop_tick_service.py",
+        "backend/services/shop_mn2_purchase_core.py",
+        "backend/services/shop_taxonomy_service.py",
+        "backend/routes/agent_mn2_transaction_routes.py",
+        "backend/routes/agent_shop_crypto_routes.py",
         "backend/services/mn2_services_hub.py",
         "backend/services/discord_service.py",
         "backend/services/discord_m8_streams.py",
@@ -652,6 +689,16 @@ MANIFESTS = {
         "scripts/mn2_ops_optionals_remote.py",
         "scripts/mn2_p1_monetization_remote.py",
         "scripts/mn2_start_masternode.py",
+        "scripts/mn2_bring_rented_online.py",
+        "scripts/mn2_daemon_test.py",
+        "static/js/profile-hub-subtabs.js",
+        "static/js/profile-mn2-wallet.js",
+        "static/js/shop-subnav.js",
+        "static/js/shop-taxonomy.js",
+        "cron/mn2_agent_transactions.sh",
+        "cron/masternoder-mn2-agent-tx.cron.d",
+        "cron/mn2_masternode_provision.sh",
+        "data/agent_crypto_wallet_agents.json",
         "scripts/mn2_fix_daemon_privkey.sh",
         "scripts/mn2_ensure_rpc_conf.sh",
         "scripts/mn2_fix_config_permissions.sh",
@@ -795,6 +842,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "trophies",
     "compendium",
     "game_hub",
+    "shop_taxonomy",
     "casino",
     "config",
     "agent_daemon_env",
@@ -964,11 +1012,18 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
             except Exception:
                 pass
             try:
-                with open(local, "r", encoding="utf-8", errors="replace") as f:
-                    content = f.read()
-                with sftp.file(remote, "w") as rf:
-                    rf.write(content)
-                print(f"  [OK] {local}")
+                local_path = os.path.abspath(local)
+                sftp.put(local_path, remote)
+                ssh.exec_command(
+                    f"chown www-data:www-data '{remote}' 2>/dev/null || true; chmod 644 '{remote}'",
+                    timeout=5,
+                )
+                local_sz = os.path.getsize(local_path)
+                remote_sz = sftp.stat(remote).st_size
+                if local_sz != remote_sz:
+                    print(f"  [ERROR] {local}: size mismatch local={local_sz} remote={remote_sz}")
+                    continue
+                print(f"  [OK] {local} ({local_sz} bytes)")
                 deployed += 1
             except Exception as e:
                 print(f"  [ERROR] {local}: {e}")

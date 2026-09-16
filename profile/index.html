@@ -11,9 +11,10 @@
     <title>User Profile - MasterNoder</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260114110612">
-    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260916b">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/shop-taxonomy.css?v=20260916c">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -736,6 +737,35 @@
         }
         .mn2-5d-label { font-size: 0.65rem; color: rgba(255, 255, 255, 0.65); text-align: center; }
         .mn2-5d-net { font-size: 0.62rem; color: #00d4ff; font-family: ui-monospace, monospace; }
+        .mn2-system-monitor {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .mn2-monitor-chip {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            background: rgba(0, 0, 0, 0.28);
+            font-size: 0.75rem;
+        }
+        .mn2-monitor-chip strong { display: block; color: #00ff88; font-size: 0.95rem; }
+        #profile-mn2-qr canvas, #profile-mn2-qr img {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        .mn2-wallet-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            margin: 4px 0;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .mn2-wallet-row.active { border-color: rgba(0,255,136,0.45); }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -878,6 +908,7 @@
             <!-- Profile Header -->
             <div class="profile-header" id="profile-header"></div>
 
+            <nav class="shop-subnav profile-hub-parents" id="profile-hub-parents" aria-label="Profile groups"></nav>
             <nav class="profile-hub-nav page-tabs" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
                 <button type="button" class="tab-btn active" data-hub-scroll="overview" role="tab" aria-selected="true">Overview</button>
                 <button type="button" class="tab-btn" data-hub-scroll="avatar" role="tab" aria-selected="false">Avatar</button>
@@ -999,8 +1030,21 @@
                     <div class="section-card" id="profile-section-shop" data-profile-route="shop">
                         <h2 class="section-title">🛒 Shop inventory (v4)</h2>
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Items you buy with coins, unified points, or MN2 in <a href="/shop">Shop v4</a> are listed here via <code>/api/shop/inventory</code> (same data as the Shop inventory tab).</p>
+                        <nav class="shop-subnav profile-shop-inv-subnav" id="profile-shop-inventory-subnav" aria-label="Inventory subcategories"></nav>
                         <div id="profile-shop-v9-inventory">Loading…</div>
                         <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-account">Open inventory tab in Shop</a></p>
+                    </div>
+                    <div class="section-card" id="profile-section-shop-history" data-profile-route="shop">
+                        <h2 class="section-title">🕐 Purchase history</h2>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Same purchase log as Shop → Account → History, grouped by subcategory.</p>
+                        <nav class="shop-subnav" id="profile-shop-history-subnav" aria-label="Purchase history groups"></nav>
+                        <div id="profile-shop-history-list">Loading…</div>
+                    </div>
+                    <div class="section-card" id="profile-section-shop-stall" data-profile-route="shop">
+                        <h2 class="section-title">🏷️ My stall</h2>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Auction listings you are selling, sold, or bought — same stall as Shop Account.</p>
+                        <nav class="shop-subnav" id="profile-shop-stall-subnav" aria-label="Stall groups"></nav>
+                        <div id="profile-shop-stall-list">Loading…</div>
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
@@ -1032,6 +1076,11 @@
                                 <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals.</p>
                                 <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
                             </div>
+                            <div style="margin-top:14px;">
+                                <strong style="color:#00d4ff;">System monitor</strong>
+                                <p style="font-size:0.76rem;opacity:0.78;margin:4px 0 0;">Rewards &amp; bonuses from game, battle, quests, generator, and on-chain payouts.</p>
+                                <div id="profile-mn2-system-monitor" class="mn2-system-monitor">Loading…</div>
+                            </div>
                         </div>
                         <div data-wallet-panel="deposit" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
@@ -1039,7 +1088,7 @@
                             <p id="profile-mn2-deposit-error" style="display: none; font-size: 0.85rem; color: #ffaa00; margin: 6px 0;"></p>
                             <p id="profile-mn2-deposit-hint" style="display: none; font-size: 0.8rem; opacity: 0.85; margin: 4px 0;">No address yet. Click <strong>Request address</strong> to get one (from pool or wallet).</p>
                             <div style="display: flex; align-items: flex-start; gap: 12px; margin-top: 6px; flex-wrap: wrap;">
-                                <div id="profile-mn2-qr" style="flex-shrink: 0; width: 100px; height: 100px; background: #fff; border-radius: 6px;"></div>
+                                <div id="profile-mn2-qr" style="flex-shrink: 0; width: 128px; height: 128px; background: #fff; border-radius: 6px; overflow: hidden;"></div>
                                 <div style="flex: 1; min-width: 0;">
                                     <code id="profile-mn2-deposit-address" style="word-break: break-all; padding: 6px; background: rgba(0,0,0,0.3); border-radius: 6px; font-size: 0.85rem;">--</code>
                                     <div style="margin-top: 6px;">
@@ -1050,7 +1099,12 @@
                                     </div>
                                 </div>
                             </div>
-                            <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear after 6 confirmations.</p>
+                            <div id="profile-mn2-wallets-list" style="margin-top:12px;font-size:0.82rem;"></div>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
+                                <input type="text" id="profile-mn2-new-wallet-label" placeholder="New wallet label" style="min-width:140px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:#fff;font-size:0.82rem;">
+                                <button type="button" id="profile-mn2-create-wallet" style="padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;font-size:0.82rem;"><i class="fas fa-wallet"></i> Create new wallet</button>
+                            </div>
+                            <p id="profile-mn2-deposit-instant-msg" style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear instantly (0 confirmations).</p>
                         </div>
                         </div>
                         <div data-wallet-panel="withdraw" style="margin-bottom: 14px; display:none;">
@@ -1100,7 +1154,8 @@
                         </div>
                         <div>
                             <strong style="color: #00d4ff;">Recent transactions:</strong>
-                            <div id="profile-mn2-transactions" style="margin-top: 6px; max-height: 240px; overflow-y: auto; font-size: 0.85rem; opacity: 0.9;">Loading…</div>
+                            <nav class="shop-subnav" id="profile-mn2-tx-subnav" aria-label="MN2 transaction types"></nav>
+                            <div id="profile-mn2-transactions" class="taxonomy-scroll-panel" style="font-size: 0.85rem; opacity: 0.9;">Loading…</div>
                         </div>
 
                         <!-- Full statement & tax export (Top-10 #4) -->
@@ -1168,18 +1223,17 @@
                             if (sumEl) sumEl.textContent = 'Current balance ' + fmt(d.current_balance_mn2) + ' MN2 · ' + ((d.summary && d.summary.events) || 0) + ' events';
                             var rows = d.rows || [];
                             if (!rows.length) { rowsEl.innerHTML = '<p style="margin:0;">No transactions yet.</p>'; return; }
-                            rowsEl.innerHTML = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="opacity:0.7;">' +
-                              '<th style="text-align:left; padding:2px 8px;">Date</th><th style="text-align:left; padding:2px 8px;">Type</th>' +
-                              '<th style="text-align:right; padding:2px 8px;">Change</th><th style="text-align:right; padding:2px 8px;">Balance</th></tr></thead><tbody>' +
+                            rowsEl.innerHTML = '<div class="shop-data-table-wrap"><table class="shop-data-table"><thead><tr>' +
+                              '<th class="col-narrow">Date</th><th>Type</th><th class="num col-narrow">Change</th><th class="num col-narrow">Balance</th></tr></thead><tbody>' +
                               rows.map(function (r) {
                                 var pos = (r.delta_mn2 || 0) >= 0;
                                 var d2 = (r.created_at || '').slice(0, 16).replace('T', ' ');
-                                var dc = (r.delta_mn2 === 0) ? 'opacity:0.6;' : (pos ? 'color:#00ff88;' : 'color:#ffaa44;');
+                                var dc = (r.delta_mn2 === 0) ? 'muted' : (pos ? 'pos' : 'neg');
                                 var sign = (r.delta_mn2 > 0 ? '+' : '');
-                                return '<tr><td style="padding:2px 8px;">' + d2 + '</td><td style="padding:2px 8px;">' + (label[r.type] || r.type) +
-                                  '</td><td style="padding:2px 8px; text-align:right; ' + dc + '">' + (r.delta_mn2 === 0 ? '—' : sign + fmt(r.delta_mn2)) +
-                                  '</td><td style="padding:2px 8px; text-align:right;">' + fmt(r.running_balance_mn2) + '</td></tr>';
-                              }).join('') + '</tbody></table>';
+                                return '<tr><td>' + d2 + '</td><td>' + (label[r.type] || r.type) +
+                                  '</td><td class="num ' + dc + '">' + (r.delta_mn2 === 0 ? '—' : sign + fmt(r.delta_mn2)) +
+                                  '</td><td class="num">' + fmt(r.running_balance_mn2) + '</td></tr>';
+                              }).join('') + '</tbody></table></div>';
                           })
                           .catch(function () { rowsEl.innerHTML = 'Could not load statement.'; });
                       }
@@ -1662,21 +1716,23 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260916b"></script>
+        <script src="/static/js/profile-hub-subtabs.js?v=20260916"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260916d"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
-    <script src="/static/js/navigation-toolbar.js?v=20260114110612"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260916b"></script>
     <script src="/static/js/user-identification.js?v=20260122020000"></script>
-    <script src="/static/js/backend-connector.js?v=20260122020000"></script>
+    <script src="/static/js/backend-connector.js?v=20260916d"></script>
     <!-- Core Template System Scripts -->
     <!-- P4: defer non-critical scripts for faster parse -->
     <script src="/static/js/image-support.js?v=20260304" defer></script>
     <script src="/static/js/template-effects.js" defer></script>
-    <script src="/static/js/template-services.js" defer></script>
+    <script src="/static/js/template-services.js?v=20260916e" defer></script>
     <script src="/static/js/agent-skill-sets.js" defer></script>
     <script src="/static/js/template-engine-core.js" defer></script>
-    <script src="/static/js/unified-point-counters.js" defer></script>
+    <script src="/static/js/unified-point-counters.js?v=20260916e" defer></script>
     <script src="/static/js/comprehensive-api-integration.js" defer></script>
     <script src="/static/js/sync-status-widget.js?v=20260304" defer></script>
     <script src="/static/js/toast-notifications.js" defer></script>
@@ -3197,7 +3253,7 @@
                 if (!header) return;
                 const prefs = this.currentPreferences || {};
                 const displayName = prefs.display_name || profile.display_name || profile.username || 'User';
-                const avatarUrl = profileSafeUrl(prefs.avatar_url || profile.avatar_url, '/static/img/default-avatar.png');
+                const avatarUrl = profileSafeUrl(prefs.avatar_url || profile.avatar_url, '/static/img/default-avatar.svg');
                 const bio = prefs.bio || profile.bio || '';
                 const skillPathName = stats.skill_path_name || 'Balanced';
                 const fallbackInitial = profileEscapeHtml(String(displayName || 'U').charAt(0).toUpperCase() || 'U');
@@ -3343,16 +3399,46 @@
                         el.innerHTML = '<p style="opacity:0.85;">No shop items yet. Buy in <a href="/shop">Shop</a> (V.9 — coins, unified points, or MN2).</p>';
                         return;
                     }
-                    el.innerHTML = '<div style="display:grid;gap:10px;">' + rows.map(function(i) {
+                    var tax = window.ShopTaxonomy;
+                    var classified = rows.map(function (r) { return tax ? tax.enrich(r) : r; });
+                    var self = this;
+                    self._profileInvSubcat = self._profileInvSubcat || 'all';
+                    if (tax) {
+                        var counts = {};
+                        classified.forEach(function (r) {
+                            counts[r.subcategory || 'other'] = (counts[r.subcategory || 'other'] || 0) + 1;
+                        });
+                        var tabs = [{ id: 'all', label: 'All', count: classified.length }].concat(
+                            tax.INVENTORY_SUBCATS.filter(function (s) { return s.id !== 'all' && counts[s.id]; })
+                                .map(function (s) { return { id: s.id, label: s.label, count: counts[s.id] }; })
+                        );
+                        tax.renderChips(document.getElementById('profile-shop-inventory-subnav'), tabs, self._profileInvSubcat, function (id) {
+                            self._profileInvSubcat = id;
+                            self.loadShopInventoryV9();
+                        });
+                    }
+                    var visible = self._profileInvSubcat === 'all'
+                        ? classified
+                        : classified.filter(function (r) { return r.subcategory === self._profileInvSubcat; });
+                    var groups = {};
+                    visible.forEach(function (i) {
+                        var key = i.subcategory || 'other';
+                        (groups[key] = groups[key] || []).push(i);
+                    });
+                    el.innerHTML = Object.keys(groups).map(function (key) {
+                        var label = tax ? tax.subcatLabel(key) : key;
+                        var cards = groups[key].map(function (i) {
                         var itemId = String(i.item_id || '').replace(/"/g, '&quot;').replace(/</g, '');
                         var itemName = String(i.item_name || i.item_id || '').replace(/</g, '&lt;');
-                        return '<div style="display:grid;grid-template-columns:1fr auto minmax(120px,180px) auto;gap:8px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;background:rgba(255,255,255,0.04);">' +
-                            '<div><strong>' + itemName + '</strong><div style="font-size:0.78rem;opacity:0.7;">' + itemId + '</div></div>' +
+                        return '<div class="stall-row">' +
+                            '<div><strong>' + itemName + '</strong><div style="font-size:0.78rem;opacity:0.7;">' + itemId + ' · ' + label + '</div></div>' +
                             '<div>× ' + (i.quantity || 1) + '</div>' +
-                            '<input type="number" min="1" step="1" value="' + Math.max(1, Math.ceil(Number(i.quantity || 1) * 35)) + '" data-profile-auction-price="' + itemId + '" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.25);color:#fff;" aria-label="Listing price in coins">' +
+                            '<input type="number" min="1" step="1" value="' + Math.max(1, Math.ceil(Number(i.quantity || 1) * 35)) + '" data-profile-auction-price="' + itemId + '" aria-label="Listing price in coins">' +
                             '<button type="button" data-profile-auction-sell="' + itemId + '" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,215,0,0.45);background:rgba(255,215,0,0.16);color:#FFD700;cursor:pointer;">Sell 1</button>' +
                         '</div>';
-                    }).join('') + '</div><p style="margin-top:10px;font-size:0.85rem;opacity:0.78;">Profile sell controls list one item at a time in the Shop v5 Auction House.</p>';
+                        }).join('');
+                        return '<h4 class="taxonomy-group-title">' + label + '</h4><div class="stall-table">' + cards + '</div>';
+                    }).join('') + '<p style="margin-top:10px;font-size:0.85rem;opacity:0.78;">Profile sell controls list one item at a time in the Shop v5 Auction House.</p>';
                     el.querySelectorAll('[data-profile-auction-sell]').forEach((btn) => {
                         btn.addEventListener('click', async () => {
                             const itemId = btn.getAttribute('data-profile-auction-sell') || '';
@@ -3384,6 +3470,101 @@
 
             async loadShopInventoryV4() {
                 return this.loadShopInventoryV9();
+            }
+
+            async loadShopHistoryV9() {
+                const el = document.getElementById('profile-shop-history-list');
+                if (!el) return;
+                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const tax = window.ShopTaxonomy;
+                try {
+                    const r = await fetch(`${window.location.origin}/api/shop/purchases?user_id=${encodeURIComponent(uid)}&limit=30`);
+                    const d = r.ok ? await r.json() : {};
+                    let rows = (d.success && d.purchases) ? d.purchases : [];
+                    const classified = rows.map((p) => tax ? tax.enrich(p) : p);
+                    this._profileHistorySubcat = this._profileHistorySubcat || 'all';
+                    if (tax) {
+                        tax.renderChips(
+                            document.getElementById('profile-shop-history-subnav'),
+                            tax.countedTabs(tax.INVENTORY_SUBCATS, classified, (row) => row.subcategory),
+                            this._profileHistorySubcat,
+                            (id) => {
+                                this._profileHistorySubcat = id;
+                                this.loadShopHistoryV9();
+                            }
+                        );
+                    }
+                    const visible = this._profileHistorySubcat === 'all'
+                        ? classified
+                        : classified.filter((p) => p.subcategory === this._profileHistorySubcat);
+                    if (!classified.length) {
+                        el.innerHTML = '<p style="opacity:0.85;">No purchases yet. Buy in <a href="/shop">Shop</a>.</p>';
+                        return;
+                    }
+                    if (!visible.length) {
+                        el.innerHTML = '<p style="opacity:0.85;">No purchases in this subcategory.</p>';
+                        return;
+                    }
+                    el.innerHTML = '<ul class="taxonomy-list">' + visible.map((p) => {
+                        const name = String(p.item_name || p.item_id || 'item').replace(/</g, '&lt;');
+                        const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+                        const label = tax ? tax.subcatLabel(p.subcategory) : (p.subcategory || '');
+                        return '<li><strong>' + name + '</strong> × ' + (p.quantity || 1) +
+                            (label ? ' · ' + label : '') + (date ? ' (' + date + ')' : '') + '</li>';
+                    }).join('') + '</ul>';
+                } catch (e) {
+                    el.innerHTML = '<p style="color:#ffaa00;">Could not load purchase history.</p>';
+                }
+            }
+
+            async loadShopStallV9() {
+                const el = document.getElementById('profile-shop-stall-list');
+                if (!el) return;
+                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const tax = window.ShopTaxonomy;
+                try {
+                    const r = await fetch(`${window.location.origin}/api/shop/auction/my-listings?user_id=${encodeURIComponent(uid)}&limit=100`);
+                    const d = r.ok ? await r.json() : {};
+                    const selling = (d.success && d.selling) || [];
+                    const sold = (d.success && d.sold) || [];
+                    const bought = (d.success && d.bought) || [];
+                    const active = selling.filter((l) => l.status === 'active');
+                    this._profileStallSubcat = this._profileStallSubcat || 'all';
+                    const tabs = [
+                        { id: 'all', label: 'All', count: active.length + sold.length + bought.length },
+                        { id: 'active', label: 'Active', count: active.length },
+                        { id: 'sold', label: 'Sold', count: sold.length },
+                        { id: 'bought', label: 'Bought', count: bought.length },
+                    ].filter((t) => t.id === 'all' || t.count);
+                    if (tax) {
+                        tax.renderChips(document.getElementById('profile-shop-stall-subnav'), tabs, this._profileStallSubcat, (id) => {
+                            this._profileStallSubcat = id;
+                            this.loadShopStallV9();
+                        });
+                    }
+                    const sid = this._profileStallSubcat;
+                    const parts = [];
+                    if ((sid === 'all' || sid === 'active') && active.length) {
+                        parts.push('<h4 class="taxonomy-group-title" style="margin-top:0;">Active</h4><ul class="taxonomy-list">' +
+                            active.map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') +
+                            ' × ' + (l.quantity || 1) + ' · ' + Number(l.price_coins || 0).toLocaleString() + ' coins</li>').join('') + '</ul>');
+                    }
+                    if ((sid === 'all' || sid === 'sold') && sold.length) {
+                        parts.push('<h4 class="taxonomy-group-title">Sold</h4><ul class="taxonomy-list">' +
+                            sold.slice(0, 12).map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') + '</li>').join('') + '</ul>');
+                    }
+                    if ((sid === 'all' || sid === 'bought') && bought.length) {
+                        parts.push('<h4 class="taxonomy-group-title">Bought</h4><ul class="taxonomy-list">' +
+                            bought.slice(0, 12).map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') + '</li>').join('') + '</ul>');
+                    }
+                    if (!active.length && !sold.length && !bought.length) {
+                        el.innerHTML = '<p style="opacity:0.85;">No stall activity yet. Sell from Inventory or <a href="/shop#shop-account">Shop Account</a>.</p>';
+                        return;
+                    }
+                    el.innerHTML = parts.join('') || '<p style="opacity:0.85;">No stall rows in this subcategory.</p>';
+                } catch (e) {
+                    el.innerHTML = '<p style="color:#ffaa00;">Could not load stall.</p>';
+                }
             }
 
             renderCommunicationPsychology(cp) {
@@ -3945,7 +4126,9 @@
                 x.classList.toggle('active', on);
                 x.setAttribute('aria-selected', on ? 'true' : 'false');
             });
-            if (activeRoute === 'wallet' && window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
+            if (window.ProfileHubSubtabs && typeof window.ProfileHubSubtabs.onMainRoute === 'function') {
+                window.ProfileHubSubtabs.onMainRoute(activeRoute);
+            } else if (activeRoute === 'wallet' && window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
                 window.ProfileMn2Wallet.load();
             }
             if (activeRoute === 'security') {

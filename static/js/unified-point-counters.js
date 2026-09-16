@@ -287,7 +287,12 @@ class UnifiedPointCounters {
                 detail: { points, source: 'unified-point-counters', updatedAt: Date.now() }
             }));
             document.dispatchEvent(new CustomEvent('serviceUpdate', {
-                detail: { serviceName: 'points', data: points, source: 'unified-point-counters' }
+                detail: {
+                    serviceName: 'points',
+                    method: 'update',
+                    data: points,
+                    source: 'unified-point-counters'
+                }
             }));
         } catch (error) {
             console.warn('[UnifiedPointCounters] Could not dispatch point events:', error);

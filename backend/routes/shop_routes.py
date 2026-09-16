@@ -1173,6 +1173,177 @@ def _seed_shop_items():
             item_id=f"top25-{n:02d}",
         )
 
+    for wave_item in _upgrade_wave_shop_items():
+        add(
+            wave_item["name"],
+            wave_item["description"],
+            wave_item["category"],
+            wave_item["price"],
+            wave_item.get("icon", "🛍️"),
+            wave_item.get("rarity", "rare"),
+            tags=wave_item.get("tags"),
+            item_id=wave_item["id"],
+        )
+
+    return items
+
+
+def _upgrade_wave_shop_items():
+    """Catalog SKUs for taxonomy, MN2 daemons, agent settlement, and profile/shop chips (Sep 2026)."""
+    return [
+        {
+            "id": "shop-taxonomy-navigator",
+            "name": "Shop Taxonomy Navigator",
+            "description": "Ops kit that groups catalog, inventory, auctions, and special tables into parent chips (Play, Look, Wallet, Ops).",
+            "category": "inventory",
+            "price": 95,
+            "icon": "🗂️",
+            "rarity": "rare",
+            "tags": ["taxonomy", "navigator", "kit", "shop_wave_sep2026"],
+        },
+        {
+            "id": "agent-settlement-cron-badge",
+            "name": "Agent Settlement Cron Badge",
+            "description": "Cosmetic badge for operators who run agent MN2 settlement on the cron — finish-move flair on Profile.",
+            "category": "cosmetic",
+            "price": 80,
+            "icon": "🎖️",
+            "rarity": "rare",
+            "tags": ["agent", "settlement", "cron", "shop_wave_sep2026"],
+        },
+        {
+            "id": "agent-shop-finish-token",
+            "name": "Agent Shop Finish Token",
+            "description": "One-shot token that marks an agent catalog finish-move on the MN2 settlement tick.",
+            "category": "inventory",
+            "price": 140,
+            "icon": "🏁",
+            "rarity": "epic",
+            "tags": ["agent", "shop", "finish", "kit", "shop_wave_sep2026"],
+        },
+        {
+            "id": "mn2-daemon-health-probe",
+            "name": "MN2 Daemon Health Probe",
+            "description": "Wallet-side probe token: surface daemon health without hanging Explorer when a rented masternode is catching up.",
+            "category": "mn2_services",
+            "price": 110,
+            "icon": "🩺",
+            "rarity": "rare",
+            "tags": ["mn2", "daemon", "health", "shop_wave_sep2026"],
+        },
+        {
+            "id": "rented-mn-uptime-pass-7d",
+            "name": "Rented MN Uptime Pass — 7d",
+            "description": "Seven-day uptime pass for a rented masternode — keeps the node in the live set without Explorer RPC hang.",
+            "category": "mn2_services",
+            "price": 220,
+            "icon": "🛰️",
+            "rarity": "epic",
+            "tags": ["mn2", "masternode", "uptime", "hosting", "shop_wave_sep2026"],
+        },
+        {
+            "id": "instant-mn2-reward-chest",
+            "name": "Instant MN2 Reward Chest",
+            "description": "Collectible chest themed on instant MN2 reward credit after settlement cron (presentation token; spend MN2 in Shop).",
+            "category": "mn2_crypto",
+            "price": 175,
+            "icon": "🧰",
+            "rarity": "epic",
+            "tags": ["mn2", "reward", "chest", "shop_wave_sep2026"],
+        },
+        {
+            "id": "multi-wallet-ledger-ribbon",
+            "name": "Multi-Wallet Ledger Ribbon",
+            "description": "Inventory ribbon for the profile multi-wallet list — labels active + trusted addresses on the MN2 card.",
+            "category": "inventory",
+            "price": 90,
+            "icon": "🎀",
+            "rarity": "rare",
+            "tags": ["wallet", "ledger", "profile", "shop_wave_sep2026"],
+        },
+        {
+            "id": "profile-subtab-unlock-flair",
+            "name": "Profile Subtab Unlock Flair",
+            "description": "Look flair that celebrates grouped Profile hub parents (You, Play, Shop & wallet, Ops) plus shop history/stall subtabs.",
+            "category": "cosmetic",
+            "price": 75,
+            "icon": "✨",
+            "rarity": "rare",
+            "tags": ["profile", "subtab", "flair", "shop_wave_sep2026"],
+        },
+        {
+            "id": "casino-subtab-chip-pack",
+            "name": "Casino Subtab Chip Pack",
+            "description": "Play pack that groups casino shop cosmetics into Look / Play / VIP parent chips.",
+            "category": "boosts",
+            "price": 120,
+            "icon": "🎰",
+            "rarity": "rare",
+            "tags": ["casino", "chips", "booster", "shop_wave_sep2026"],
+        },
+        {
+            "id": "agent-tx-cron-scheduler",
+            "name": "Agent Tx Cron Scheduler",
+            "description": "Build upgrade: schedule agent MN2 transactions on the settlement cron instead of firing them ad-hoc.",
+            "category": "tech",
+            "price": 160,
+            "icon": "⏱️",
+            "rarity": "epic",
+            "tags": ["agent", "cron", "scheduler", "shop_wave_sep2026"],
+        },
+        {
+            "id": "mn2-wallet-api-shield",
+            "name": "MN2 Wallet API Shield",
+            "description": "Tech shield for wallet API calls — deposit/withdraw/tx chips stay grouped even when RPC is slow.",
+            "category": "tech",
+            "price": 130,
+            "icon": "🛡️",
+            "rarity": "rare",
+            "tags": ["mn2", "wallet", "api", "shop_wave_sep2026"],
+        },
+        {
+            "id": "settlement-finish-bundle",
+            "name": "Settlement Finish Bundle",
+            "description": "Bundle: finish token + cron badge + daemon probe — one checkout for today's agent/MN2 upgrade stack.",
+            "category": "bundles",
+            "price": 320,
+            "icon": "📦",
+            "rarity": "legendary",
+            "tags": ["bundle", "settlement", "agent", "mn2", "shop_wave_sep2026"],
+        },
+    ]
+
+
+def _mn2_services_shop_items():
+    """Expose monetization_config mn2_services[] in the main shop catalog."""
+    try:
+        from backend.services.monetization_config_service import get_public_mn2_services
+        services = get_public_mn2_services()
+    except Exception:
+        return []
+    items = []
+    for svc in services:
+        if not isinstance(svc, dict) or not svc.get("id"):
+            continue
+        price_coins = int(svc.get("price_coins") or 0)
+        items.append({
+            "id": svc.get("id"),
+            "name": svc.get("name") or svc.get("id"),
+            "description": svc.get("description") or "",
+            "category": "mn2_services",
+            "price": price_coins,
+            "price_usd": float(svc.get("price_usd") or 0),
+            "icon": svc.get("icon") or "🪙",
+            "rarity": "epic" if price_coins else "common",
+            "tags": ["mn2_service", svc.get("service_id") or "", "shop_wave_sep2026"],
+            "payment_rails": svc.get("payment_rails") or [],
+            "delivery": svc.get("delivery") or "external_link",
+            "checkout_url": svc.get("checkout_url") or "/explorer",
+            "service_id": svc.get("service_id"),
+            "checkout_mode": svc.get("checkout_mode"),
+            "max_slots_per_order": svc.get("max_slots_per_order"),
+            "billing_label": svc.get("billing_label"),
+        })
     return items
 
 
@@ -1517,6 +1688,14 @@ def _get_shop_items():
         items = None
     items = items if items else _seed_shop_items()
     existing_ids = {i.get("id") for i in items or [] if isinstance(i, dict)}
+    for wave_item in _upgrade_wave_shop_items():
+        if wave_item.get("id") not in existing_ids:
+            items.append(wave_item)
+            existing_ids.add(wave_item.get("id"))
+    for mn2_service_item in _mn2_services_shop_items():
+        if mn2_service_item.get("id") not in existing_ids:
+            items.append(mn2_service_item)
+            existing_ids.add(mn2_service_item.get("id"))
     for digital_item in _digital_goods_shop_items():
         if digital_item.get("id") not in existing_ids:
             items.append(digital_item)
@@ -1958,6 +2137,12 @@ def shop_purchases():
             purchases = get_purchases(user_id, limit=limit)
         except Exception:
             purchases = []
+        try:
+            from backend.services.shop_taxonomy_service import enrich_rows
+            catalog_by_id = {str(i.get("id")): i for i in (_get_shop_items() or []) if i.get("id")}
+            purchases = enrich_rows(purchases or [], catalog_by_id)
+        except Exception:
+            pass
         return jsonify({'success': True, 'user_id': user_id, 'purchases': purchases}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'purchases': []}), 500
@@ -1973,6 +2158,12 @@ def shop_inventory():
             inventory = get_inventory(user_id)
         except Exception:
             inventory = []
+        try:
+            from backend.services.shop_taxonomy_service import enrich_rows
+            catalog_by_id = {str(i.get("id")): i for i in (_get_shop_items() or []) if i.get("id")}
+            inventory = enrich_rows(inventory or [], catalog_by_id)
+        except Exception:
+            pass
         return jsonify({'success': True, 'user_id': user_id, 'inventory': inventory}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'inventory': []}), 500
@@ -2001,6 +2192,12 @@ def shop_auction_listings():
                 feat.sort(key=lambda r: r.get('created_at') or '', reverse=True)
                 rest.sort(key=lambda r: r.get('created_at') or '', reverse=True)
                 listings = feat + rest
+        except Exception:
+            pass
+        try:
+            from backend.services.shop_taxonomy_service import enrich_rows
+            catalog_by_id = {str(i.get("id")): i for i in (_get_shop_items() or []) if i.get("id")}
+            listings = enrich_rows(listings or [], catalog_by_id)
         except Exception:
             pass
         return jsonify({'success': True, 'listings': listings, 'count': len(listings)}), 200

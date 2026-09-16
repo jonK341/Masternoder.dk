@@ -530,13 +530,18 @@ def _claim_battle_crypto(user_id: str, option_id: str):
     now = _utc_now()
     amount = _battle_crypto_reward_amount(option, progress)
     next_claim_at = (now + timedelta(seconds=int(option.get("cooldown_sec", 0) or 0))).isoformat()
+    ref = f"battle:{user_id}:{option_id}:{now.strftime('%Y%m%d%H%M%S')}"
     try:
-        from backend.services.unified_points_database import unified_points_db
-        unified_points_db.add_points(
-            user_id, "mn2_balance", amount,
+        from backend.services.game_mn2_rewards import credit_mn2
+        cr = credit_mn2(
+            user_id,
+            amount,
             source="battle_crypto_claim",
+            reference=ref,
             metadata={"option_id": option_id, "option_name": option.get("name"), "progress": progress},
         )
+        if not cr.get("success") and not cr.get("duplicate"):
+            return {"success": False, "error": "MN2 award failed: " + str(cr.get("error", "unknown"))}, 500
     except Exception as e:
         return {"success": False, "error": "MN2 award failed: " + str(e)}, 500
 

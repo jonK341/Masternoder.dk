@@ -288,7 +288,35 @@ def masternode_provision_pending():
             limit = int(raw_limit)
         except (TypeError, ValueError):
             limit = 20
-        return jsonify(mn_service.process_pending_hosts(limit=limit)), 200
+        skip_explorer = request.args.get("skip_explorer") in ("1", "true", "yes")
+        return jsonify(mn_service.process_pending_hosts(limit=limit, skip_explorer=skip_explorer)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/rented-status", methods=["GET"])
+def masternode_rented_status():
+    """Registry + daemon snapshot without listmasternodes (does not hang)."""
+    try:
+        return jsonify(mn_service.rented_masternodes_snapshot()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/bring-online", methods=["POST"])
+def masternode_bring_online():
+    """Ops: restore paid-order hosts, provision pending slots, startmasternode."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        raw_limit = request.args.get("limit", 20)
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = 20
+        result = mn_service.bring_rented_masternodes_online(limit=limit)
+        code = 200 if result.get("success") else 503
+        return jsonify(result), code
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

@@ -136,6 +136,14 @@
     "daily_wheel_href": "/casino/?tab=home#casino-daily-wheel",
     "shop_frames_href": "/casino/?tab=compete"
   },
+  "game_categories": [
+    { "id": "instant", "label": "Instant", "icon": "⚡", "description": "Crash, Plinko, Mines, dice, and quick-play games" },
+    { "id": "tables", "label": "Tables", "icon": "🃏", "description": "Blackjack, Baccarat, Roulette, Hi-Lo, Keno" },
+    { "id": "arcade", "label": "Arcade", "icon": "🎮", "description": "RPS, PvP duel, counter-pick" },
+    { "id": "slots", "label": "Slots", "icon": "🎰", "description": "All slot machines and jackpots" },
+    { "id": "battle", "label": "Battle", "icon": "⚔️", "description": "Battle-linked wagers and meta games" },
+    { "id": "live", "label": "Live", "icon": "🏆", "description": "Tournaments and live events" }
+  ],
   "featured_games": [
     {
       "id": "crash",

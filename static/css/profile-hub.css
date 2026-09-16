@@ -31,6 +31,21 @@
     margin-bottom: 16px;
 }
 
+.profile-hub-subnav.page-tabs {
+    flex-wrap: wrap;
+    margin: 0 0 18px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.22);
+}
+
+.profile-hub-subnav .tab-btn {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    padding: 6px 12px;
+}
+
 .profile-layer-security-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -75,6 +90,8 @@
     border: 4px solid #00ff88;
     object-fit: cover;
     background: linear-gradient(135deg, #00ff88, #00d4ff);
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 .profile-avatar-picker {
@@ -112,6 +129,8 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 .profile-avatar-url-row {

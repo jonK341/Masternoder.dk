@@ -87,6 +87,47 @@
         apiBase: window.location.origin + APP_BASE
     };
 
+    const NAV_GROUPS = (typeof window !== 'undefined' && window.ShopTaxonomy && window.ShopTaxonomy.NAV_GROUPS)
+        ? window.ShopTaxonomy.NAV_GROUPS
+        : [
+            { id: 'all', label: 'All', ids: [] },
+            { id: 'play', label: 'Play', ids: ['game', 'battle', 'trophies', 'quests', 'casino', 'battlegrounds', 'starmap25'] },
+            { id: 'create', label: 'Create', ids: ['generator', 'podcast', 'gallery', 'lab', 'library'] },
+            { id: 'market', label: 'Market', ids: ['shop', 'exchange', 'market', 'wallets', 'explorer', 'staking_leaderboard', 'staking_teams'] },
+            { id: 'people', label: 'People', ids: ['profile', 'agents', 'social', 'chat', 'customers', 'camgirls'] },
+            { id: 'ops', label: 'Ops', ids: ['agent_support', 'debugger', 'aggregator', 'agents_control', 'hosting', 'profit', 'news'] },
+        ];
+
+    let activeNavGroup = 'all';
+
+    function _groupIdForLink(link) {
+        if (!link || link.id === 'home') return 'all';
+        const tax = (typeof window !== 'undefined' && window.ShopTaxonomy);
+        if (tax && typeof tax.navGroupFor === 'function') return tax.navGroupFor(link.id);
+        const hit = NAV_GROUPS.find(g => (g.ids || []).indexOf(link.id) !== -1);
+        return hit ? hit.id : 'ops';
+    }
+
+    function _linksForGroup(groupId) {
+        if (!groupId || groupId === 'all') return NAV_CONFIG.links;
+        return NAV_CONFIG.links.filter(link => link.id === 'home' || _groupIdForLink(link) === groupId);
+    }
+
+    function _renderGroupChips() {
+        return NAV_GROUPS.map(g => {
+            const on = g.id === activeNavGroup;
+            return `<button type="button" class="nav-toolbar-group-btn${on ? ' active' : ''}" data-nav-group="${g.id}" role="tab" aria-selected="${on ? 'true' : 'false'}">${g.label}</button>`;
+        }).join('');
+    }
+
+    function _renderGroupedPortal() {
+        return NAV_GROUPS.filter(g => g.id !== 'all').map(g => {
+            const links = NAV_CONFIG.links.filter(link => _groupIdForLink(link) === g.id);
+            if (!links.length) return '';
+            return `<div class="nav-toolbar-portal-group"><p class="nav-toolbar-portal-group-label">${g.label}</p><div class="nav-toolbar-portal-grid">${links.map(link => _renderLinkAnchor(link, 'nav-toolbar-portal-grid-link')).join('')}</div></div>`;
+        }).join('');
+    }
+
     function _resolveIconImg(link) {
         return link.iconImg || NAV_ICON_IMAGES[link.id] || null;
     }
@@ -124,9 +165,9 @@
     function createToolbarHTML() {
         const portalVoid = typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID;
 
-        const linksHTML = NAV_CONFIG.links.map(link => _renderLinkAnchor(link, '')).join('');
+        const linksHTML = _linksForGroup(activeNavGroup).map(link => _renderLinkAnchor(link, '')).join('');
 
-        const portalGridHTML = NAV_CONFIG.links.map(link => _renderLinkAnchor(link, 'nav-toolbar-portal-grid-link')).join('');
+        const portalGridHTML = _renderGroupedPortal();
 
         if (portalVoid) {
             return `
@@ -169,8 +210,8 @@
 
                 <div id="navPortalPanel" class="nav-toolbar-portal-panel" role="menu" aria-hidden="true" hidden>
                     <div class="nav-toolbar-portal-inner">
-                        <p class="nav-toolbar-portal-hint">Alle sider — ét sted</p>
-                        <div class="nav-toolbar-portal-grid" id="navPortalGrid">
+                        <p class="nav-toolbar-portal-hint">Alle sider — ét sted, grouped</p>
+                        <div id="navPortalGrid">
                             ${portalGridHTML}
                         </div>
                     </div>
@@ -212,9 +253,15 @@
                         </button>
                     </div>
                 </div>
-                
+                <div class="nav-toolbar-groups" id="navToolbarGroups" role="tablist" aria-label="Site sections">
+                    ${_renderGroupChips()}
+                </div>
+
                 <div class="nav-toolbar-mobile" id="navToolbarMobile">
-                    ${NAV_CONFIG.links.map(link => `
+                    <div class="nav-toolbar-groups nav-toolbar-groups--mobile" id="navToolbarMobileGroups" role="tablist" aria-label="Site sections">
+                        ${_renderGroupChips()}
+                    </div>
+                    ${_linksForGroup(activeNavGroup).map(link => `
                         <a href="${link.url}" class="nav-toolbar-mobile-link${link.favorite ? ' nav-toolbar-mobile-link-favorite' : ''}" data-page-id="${link.id}">
                             ${_renderIcon(link)}
                             <span>${link.name}</span>
@@ -223,6 +270,52 @@
                 </div>
             </nav>
         `;
+    }
+
+    function applyNavGroup(groupId) {
+        activeNavGroup = groupId || 'all';
+        const linksEl = document.getElementById('navToolbarLinks');
+        if (linksEl) {
+            linksEl.innerHTML = _linksForGroup(activeNavGroup).map(link => _renderLinkAnchor(link, '')).join('');
+        }
+        document.querySelectorAll('[data-nav-group]').forEach(btn => {
+            const on = btn.getAttribute('data-nav-group') === activeNavGroup;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        const mobile = document.getElementById('navToolbarMobile');
+        if (mobile) {
+            const chips = `<div class="nav-toolbar-groups nav-toolbar-groups--mobile" id="navToolbarMobileGroups" role="tablist" aria-label="Site sections">${_renderGroupChips()}</div>`;
+            const links = _linksForGroup(activeNavGroup).map(link => `
+                        <a href="${link.url}" class="nav-toolbar-mobile-link${link.favorite ? ' nav-toolbar-mobile-link-favorite' : ''}" data-page-id="${link.id}">
+                            ${_renderIcon(link)}
+                            <span>${link.name}</span>
+                        </a>
+                    `).join('');
+            mobile.innerHTML = chips + links;
+        }
+        highlightActiveLink();
+    }
+
+    function setupNavGroups() {
+        const current = NAV_CONFIG.links.find(link => {
+            try {
+                const path = new URL(link.url, window.location.origin).pathname;
+                return path === window.location.pathname || (window.location.pathname.startsWith(path) && path !== '/');
+            } catch (e) {
+                return false;
+            }
+        });
+        if (current) {
+            activeNavGroup = _groupIdForLink(current);
+            applyNavGroup(activeNavGroup);
+        }
+        document.addEventListener('click', function (ev) {
+            const btn = ev.target.closest && ev.target.closest('[data-nav-group]');
+            if (!btn) return;
+            ev.preventDefault();
+            applyNavGroup(btn.getAttribute('data-nav-group'));
+        });
     }
 
     /**
@@ -237,6 +330,11 @@
         // Create and insert toolbar
         const toolbarHTML = createToolbarHTML();
         document.body.insertAdjacentHTML('afterbegin', toolbarHTML);
+        if (document.getElementById('navToolbarGroups')) {
+            document.body.classList.add('nav-has-groups');
+        }
+
+        setupNavGroups();
 
         // Highlight active link
         highlightActiveLink();

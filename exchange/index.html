@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Exchange — MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
-    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260916b">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
+    <link rel="stylesheet" href="/static/css/shop-taxonomy.css?v=20260916c">
     <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260702a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -302,16 +303,16 @@
                         </label>
                         <button type="button" id="cex-ppp-search-btn" class="cex-btn cex-btn--ghost">Search</button>
                     </div>
-                    <div id="cex-ppp-table-wrap" class="cex-ppp-table-wrap">
+                    <div id="cex-ppp-table-wrap" class="cex-ppp-table-wrap shop-data-table-wrap">
                         <table class="cex-ppp-table" id="cex-ppp-table">
                             <thead>
                                 <tr>
-                                    <th>Time</th>
-                                    <th>Phase</th>
-                                    <th>Route</th>
-                                    <th>Net bps</th>
-                                    <th>Decision</th>
-                                    <th>Skip / note</th>
+                                    <th class="cex-ppp-col-time">Time</th>
+                                    <th class="cex-ppp-col-phase">Phase</th>
+                                    <th class="cex-ppp-col-route">Route</th>
+                                    <th class="cex-ppp-col-bps">Net bps</th>
+                                    <th class="cex-ppp-col-decision">Decision</th>
+                                    <th class="cex-ppp-col-note">Skip / note</th>
                                 </tr>
                             </thead>
                             <tbody id="cex-ppp-table-body">
@@ -501,6 +502,7 @@
             <section class="cex-shop" id="cex-exchange-shop">
                 <h3><img src="/static/img/exchange/shop-chest.svg" alt="" class="cex-section-icon" width="40" height="40" /> Exchange shop — rewards &amp; boosts</h3>
                 <p class="cex-market-sub">Rewards, skill packs, trust badges, profit boosts, and rental extensions — all paid in MN2.</p>
+                <nav class="shop-subnav" id="cex-shop-subnav" aria-label="Exchange shop categories"></nav>
                 <div id="cex-shop-active" class="cex-shop-active muted"></div>
                 <div id="cex-shop-catalog" class="cex-shop-grid">Loading shop…</div>
             </section>
@@ -509,11 +511,12 @@
     </div>
 
     <script src="/static/js/error-manager.js"></script>
-    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/shop-taxonomy.js?v=20260916b"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260916b"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
     <script src="/static/js/exchange-hub.js?v=20260704a"></script>
     <script src="/static/js/crypto-exchange.js?v=20260702a"></script>
-    <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
+    <script src="/static/js/agent-marketplace.js?v=20260915a"></script>
 </body>
 </html>

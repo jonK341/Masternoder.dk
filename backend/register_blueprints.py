@@ -193,6 +193,22 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_p2p: {e}")
     try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if "mn2_masternode" not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            n += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_masternode: {e}")
+    try:
+        from backend.routes.agent_mn2_transaction_routes import agent_mn2_tx_bp
+        if "agent_mn2_tx" not in app.blueprints:
+            app.register_blueprint(agent_mn2_tx_bp)
+            n += 1
+            print("  [OK] Registered agent_mn2_tx blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_mn2_tx: {e}")
+    try:
         from backend.routes.ptc_ads_routes import ptc_ads_bp
         app.register_blueprint(ptc_ads_bp)
         n += 1
@@ -336,6 +352,14 @@ def register_lite_blueprints(app):
             print("  [OK] Registered agent_treasury blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP agent_treasury: {e}")
+    try:
+        from backend.routes.agent_trader_staking_routes import agent_trader_staking_bp
+        if "agent_trader_staking" not in app.blueprints:
+            app.register_blueprint(agent_trader_staking_bp)
+            n += 1
+            print("  [OK] Registered agent_trader_staking blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP agent_trader_staking: {e}")
     try:
         from backend.routes.security_cron_routes import security_cron_bp
         if "security_cron" not in app.blueprints:
@@ -992,6 +1016,26 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import mn2_p2p: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering mn2_p2p: {e}")
+    try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if "mn2_masternode" not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_masternode: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_masternode: {e}")
+    try:
+        from backend.routes.agent_mn2_transaction_routes import agent_mn2_tx_bp
+        if "agent_mn2_tx" not in app.blueprints:
+            app.register_blueprint(agent_mn2_tx_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_mn2_tx blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_mn2_tx: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_mn2_tx: {e}")
 
     # PTC ads + traffic rotator (internal rewards first; advertiser packages later)
     try:
@@ -1611,6 +1655,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import agent_treasury: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering agent_treasury: {e}")
+
+    try:
+        from backend.routes.agent_trader_staking_routes import agent_trader_staking_bp
+        if "agent_trader_staking" not in app.blueprints:
+            app.register_blueprint(agent_trader_staking_bp)
+            registered_count += 1
+            print("  [OK] Registered agent_trader_staking blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import agent_trader_staking: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering agent_trader_staking: {e}")
 
     try:
         from backend.routes.security_cron_routes import security_cron_bp

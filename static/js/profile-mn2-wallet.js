@@ -5,6 +5,8 @@
   'use strict';
 
   var TIMEOUT_MS = 12000;
+  var POLL_MS = 15000;
+  var _pollTimer = null;
 
   function uid() {
     return (
@@ -21,15 +23,22 @@
 
   function fetchJson(url, opts) {
     opts = opts || {};
+    var method = (opts.method || 'GET').toUpperCase();
+    var headers = Object.assign({}, opts.headers || {});
+    var body = opts.body ? JSON.stringify(opts.body) : undefined;
+    // Flask rejects GET requests that send Content-Type: application/json (400 Bad Request).
+    if (body && !headers['Content-Type'] && !headers['content-type']) {
+      headers['Content-Type'] = 'application/json';
+    }
     var ctrl = new AbortController();
     var timer = setTimeout(function () {
       ctrl.abort();
     }, opts.timeout || TIMEOUT_MS);
     return fetch(url, {
-      method: opts.method || 'GET',
+      method: method,
       credentials: 'same-origin',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {}),
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      headers: headers,
+      body: body,
       signal: ctrl.signal,
     })
       .then(function (r) {
@@ -69,7 +78,7 @@
     if (!balData || !balData.success) {
       if (balanceEl) balanceEl.textContent = '—';
       var showcaseErr = document.getElementById('profile-mn2-showcase-balance');
-      if (showcaseErr) showcaseErr.textContent = (balData && balData.error) ? balData.error : '—';
+      if (showcaseErr) showcaseErr.textContent = '—';
       return;
     }
     var balNum = Number(balData.mn2_balance) || 0;
@@ -144,7 +153,12 @@
       if (qrEl && typeof QRCode !== 'undefined') {
         qrEl.innerHTML = '';
         try {
-          new QRCode(qrEl, { text: addrData.deposit_address, width: 96, height: 96 });
+          new QRCode(qrEl, {
+            text: addrData.deposit_address,
+            width: 128,
+            height: 128,
+            correctLevel: QRCode.CorrectLevel ? QRCode.CorrectLevel.H : undefined,
+          });
         } catch (e) {
           qrEl.innerHTML = '';
         }
@@ -164,17 +178,45 @@
     }
   }
 
+  var currentTxSubcat = 'all';
+  var txCache = [];
+
   function renderTransactions(txData) {
     var txList = document.getElementById('profile-mn2-transactions');
+    var nav = document.getElementById('profile-mn2-tx-subnav');
     if (!txList) return;
     var txs = txData && txData.success && txData.transactions ? txData.transactions : [];
+    txCache = txs;
+    paintTransactions();
+  }
+
+  function paintTransactions() {
+    var txList = document.getElementById('profile-mn2-transactions');
+    var nav = document.getElementById('profile-mn2-tx-subnav');
+    if (!txList) return;
+    var tax = global.ShopTaxonomy;
+    var txs = (txCache || []).map(function (t) {
+      var sub = tax ? tax.txSubcategoryFor(t.type) : 'other';
+      return Object.assign({}, t, { subcategory: sub });
+    });
+    if (tax) {
+      tax.renderChips(nav, tax.countedTabs(tax.TX_SUBCATS, txs, function (r) { return r.subcategory; }), currentTxSubcat, function (id) {
+        currentTxSubcat = id;
+        paintTransactions();
+      });
+    }
+    var visible = currentTxSubcat === 'all' ? txs : txs.filter(function (t) { return t.subcategory === currentTxSubcat; });
     if (!txs.length) {
       txList.innerHTML = '<p style="margin:0;">No transactions yet.</p>';
       return;
     }
+    if (!visible.length) {
+      txList.innerHTML = '<p style="margin:0;">No transactions in this subcategory.</p>';
+      return;
+    }
     txList.innerHTML =
-      '<ul style="margin:0;padding-left:1.2rem;">' +
-      txs
+      '<ul class="taxonomy-list" style="margin:0;">' +
+      visible
         .map(function (t) {
           var type = t.type || '—';
           var amt = t.amount != null ? Number(t.amount).toFixed(4) : '—';
@@ -189,6 +231,75 @@
         })
         .join('') +
       '</ul>';
+  }
+
+  function renderWalletsList(data) {
+    var listEl = document.getElementById('profile-mn2-wallets-list');
+    if (!listEl) return;
+    var rows = (data && data.success && data.addresses) ? data.addresses : [];
+    if (!rows.length) {
+      listEl.innerHTML = '<p style="margin:0;opacity:0.75;">No wallets yet.</p>';
+      return;
+    }
+    listEl.innerHTML = rows
+      .map(function (w) {
+        var addr = w.address || '—';
+        var lbl = w.label || 'wallet';
+        var active = w.active ? ' active' : '';
+        var explorer = w.explorer_address_url
+          ? ' <a href="' + w.explorer_address_url + '" target="_blank" rel="noopener" style="color:#00d4ff;font-size:0.72rem;">explorer</a>'
+          : '';
+        return (
+          '<div class="mn2-wallet-row' +
+          active +
+          '"><span style="color:#00ff88;font-weight:600;">' +
+          lbl +
+          '</span><code style="flex:1;word-break:break-all;font-size:0.72rem;">' +
+          addr +
+          '</code>' +
+          explorer +
+          '</div>'
+        );
+      })
+      .join('');
+  }
+
+  function renderSystemMonitor(monData) {
+    var el = document.getElementById('profile-mn2-system-monitor');
+    if (!el) return;
+    if (!monData || !monData.success) {
+      el.innerHTML = '<span style="opacity:0.7;font-size:0.82rem;">Monitor unavailable.</span>';
+      return;
+    }
+    var systems = monData.by_system || {};
+    var keys = Object.keys(systems);
+    if (!keys.length) {
+      el.innerHTML = '<span style="opacity:0.7;font-size:0.82rem;">No reward activity yet.</span>';
+      return;
+    }
+    el.innerHTML = keys
+      .map(function (k) {
+        var s = systems[k] || {};
+        var total = Number(s.total_mn2 || 0).toFixed(4);
+        return (
+          '<div class="mn2-monitor-chip"><span>' +
+          k +
+          '</span><strong>+' +
+          total +
+          '</strong><span style="opacity:0.7;">' +
+          (s.count || 0) +
+          ' tx</span></div>'
+        );
+      })
+      .join('');
+    var instantMsg = document.getElementById('profile-mn2-deposit-instant-msg');
+    if (instantMsg) {
+      var conf = monData.confirmations_required != null ? monData.confirmations_required : 0;
+      instantMsg.textContent =
+        monData.instant_deposits
+          ? 'Credits appear instantly (' + conf + ' confirmations).'
+          : 'Credits appear after ' + conf + ' confirmations.';
+    }
   }
 
   function renderActivity(actData) {
@@ -299,6 +410,31 @@
         });
       });
     }
+    var createWalletBtn = document.getElementById('profile-mn2-create-wallet');
+    if (createWalletBtn && !createWalletBtn._mn2Wired) {
+      createWalletBtn._mn2Wired = true;
+      createWalletBtn.addEventListener('click', function () {
+        var labelEl = document.getElementById('profile-mn2-new-wallet-label');
+        var label = (labelEl && labelEl.value ? labelEl.value.trim() : '') || 'wallet';
+        createWalletBtn.disabled = true;
+        fetchJson(base() + '/api/mn2/wallet/create', {
+          method: 'POST',
+          body: { user_id: uid(), label: label },
+          timeout: 20000,
+        })
+          .then(function (res) {
+            var data = res.data || {};
+            if (data.success) {
+              if (typeof toast !== 'undefined') toast.success('New wallet created');
+              if (labelEl) labelEl.value = '';
+              load();
+            } else if (typeof toast !== 'undefined') toast.error(data.error || 'Could not create wallet');
+          })
+          .finally(function () {
+            createWalletBtn.disabled = false;
+          });
+      });
+    }
     if (withdrawBtn && !withdrawBtn._mn2Wired) {
       withdrawBtn._mn2Wired = true;
       withdrawBtn.addEventListener('click', function () {
@@ -386,6 +522,25 @@
     fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
       renderActivity(res.data);
     });
+    fetchJson(base() + '/api/mn2/wallet/addresses?user_id=' + q).then(function (res) {
+      renderWalletsList(res.data);
+    });
+    fetchJson(base() + '/api/mn2/profile-monitor?user_id=' + q + '&days=5').then(function (res) {
+      renderSystemMonitor(res.data);
+    });
+
+    if (_pollTimer) clearInterval(_pollTimer);
+    _pollTimer = setInterval(function () {
+      fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
+        renderTransactions(res.data);
+      });
+      fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
+        renderBalance(res.data);
+      });
+      fetchJson(base() + '/api/mn2/profile-monitor?user_id=' + q + '&days=5').then(function (res) {
+        renderSystemMonitor(res.data);
+      });
+    }, POLL_MS);
   }
 
   global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress };
