@@ -1469,8 +1469,8 @@
                     · <span style="color:#ffb347;text-transform:uppercase;">${shopEscape(stats.rarity || 'common')}</span>
                    </div>`
                 : '';
-            const nftBadge = isBlock
-                ? '<span style="display:inline-block;padding:2px 8px;border:1px solid rgba(255,180,0,0.55);color:#ffb347;font-size:0.7rem;border-radius:2px;margin-bottom:6px;margin-left:4px;">AI Smiley NFT</span>'
+            const trophyBadge = isBlock
+                ? '<span style="display:inline-block;padding:2px 8px;border:1px solid rgba(255,180,0,0.55);color:#ffb347;font-size:0.7rem;border-radius:2px;margin-bottom:6px;margin-left:4px;">AI Smiley Trophy</span>'
                 : '';
             const explorer = (item.explorer_url || (isBlock && item.block_height ? '/explorer?height=' + item.block_height : ''))
                 ? `<a href="${shopEscape(item.explorer_url || ('/explorer?height=' + item.block_height))}" class="shop-hub-link" style="font-size:0.78rem;">View block #${item.block_height || ''} on explorer →</a>`
@@ -1491,7 +1491,7 @@
                 : '';
             return `<article class="shop-item shop-trophy-card" style="text-align:left;border:1px solid rgba(255,215,0,0.35);">
                 ${owned}
-                ${blockBadge}${nftBadge}
+                ${blockBadge}${trophyBadge}
                 ${img}
                 <div class="item-icon">${item.icon || (isBlock ? '😊' : '🏆')}</div>
                 <div class="item-name">${shopEscape(item.name || item.id)}</div>

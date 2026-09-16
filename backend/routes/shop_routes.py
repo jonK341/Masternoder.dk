@@ -2236,13 +2236,14 @@ def shop_block_mint_claim():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@shop_bp.route('/api/shop/block-nft/stats', methods=['GET'])
-def shop_block_nft_stats():
-    """Battle stats for a block smiley NFT edition or catalog preview."""
+@shop_bp.route('/api/shop/block-trophy/stats', methods=['GET'])
+@shop_bp.route('/api/shop/block-nft/stats', methods=['GET'])  # legacy alias
+def shop_block_trophy_stats():
+    """Battle stats for a block smiley trophy edition or catalog preview."""
     try:
         edition_key = (request.args.get('edition_key') or '').strip()
         block_height = request.args.get('block_height') or request.args.get('height')
-        from backend.services.block_nft_stats_service import generate_battle_stats, stats_for_edition
+        from backend.services.block_trophy_battle_service import generate_battle_stats, stats_for_edition
 
         if edition_key:
             user_id = (request.args.get('user_id') or '').strip() or _resolve_user_id()
@@ -2271,29 +2272,31 @@ def shop_block_nft_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@shop_bp.route('/api/shop/block-nft/battle', methods=['POST'])
-def shop_block_nft_battle():
-    """Battle with an owned block smiley NFT to earn rewards."""
+@shop_bp.route('/api/shop/block-trophy/battle', methods=['POST'])
+@shop_bp.route('/api/shop/block-nft/battle', methods=['POST'])  # legacy alias
+def shop_block_trophy_battle():
+    """Battle with an owned block smiley trophy to earn rewards."""
     try:
         data = request.get_json() or {}
         user_id = (data.get('user_id') or '').strip() or _resolve_user_id()
         edition_key = (data.get('edition_key') or '').strip()
-        from backend.services.block_nft_stats_service import battle_with_nft
+        from backend.services.block_trophy_battle_service import battle_with_trophy
 
-        result = battle_with_nft(user_id, edition_key)
+        result = battle_with_trophy(user_id, edition_key)
         status = 200 if result.get('success') else 400
         return jsonify(result), status
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@shop_bp.route('/api/shop/block-nft/battle/history', methods=['GET'])
-def shop_block_nft_battle_history():
-    """Recent block NFT arena battles for a user."""
+@shop_bp.route('/api/shop/block-trophy/battle/history', methods=['GET'])
+@shop_bp.route('/api/shop/block-nft/battle/history', methods=['GET'])  # legacy alias
+def shop_block_trophy_battle_history():
+    """Recent block trophy arena battles for a user."""
     try:
         user_id = (request.args.get('user_id') or '').strip() or _resolve_user_id()
         limit = min(int(request.args.get('limit', 20)), 100)
-        from backend.services.block_nft_stats_service import battle_history
+        from backend.services.block_trophy_battle_service import battle_history
 
         return jsonify(battle_history(user_id, limit=limit)), 200
     except Exception as e:

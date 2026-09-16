@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import {
-  battleBlockNft,
+  battleBlockTrophy,
   fetchWalletTrophies,
   transferTrophyEdition,
   type TrophyEdition,
@@ -58,7 +58,7 @@ export function Trophies() {
           <div>
             <div class="wallet-panel-title">Trophy collection</div>
             <div class="wallet-panel-subtitle">
-              Platform-ledger editions — not on-chain NFTs
+              Platform-ledger trophy editions
             </div>
           </div>
           {counts && counts.total_editions > 0 && (
@@ -175,7 +175,7 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
   const [battling, setBattling] = useState(false);
   const [battleMsg, setBattleMsg] = useState<string | null>(null);
   const canTransfer = !edition.hold_until && !edition.legacy_stack && edition.trade_actions?.peer_transfer;
-  const isBlockNft = edition.platform_nft || edition.item_id?.startsWith('block-') || edition.series === 'block_mint';
+  const isBlockTrophy = edition.platform_trophy || edition.item_id?.startsWith('block-') || edition.series === 'block_mint';
   const stats = edition.battle_stats;
   const mediaSrc = edition.gif_url || edition.image_url;
 
@@ -184,7 +184,7 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
     setBattling(true);
     setBattleMsg(null);
     try {
-      const res = await battleBlockNft(edition.edition_key);
+      const res = await battleBlockTrophy(edition.edition_key);
       if (!res.success) {
         setBattleMsg(res.error || 'Battle failed');
         return;
@@ -301,7 +301,7 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
               Transfer
             </button>
           )}
-          {isBlockNft && edition.edition_key && (
+          {isBlockTrophy && edition.edition_key && (
             <button
               type="button"
               class="wallet-trophy-cta wallet-trophy-cta--btn wallet-trophy-cta--battle"

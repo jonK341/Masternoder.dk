@@ -65,7 +65,7 @@ export type TrophyEdition = {
   anchor_explorer_url?: string;
   serial_number?: string;
   block_height?: number;
-  platform_nft?: boolean;
+  platform_trophy?: boolean;
   battle_stats?: {
     serial_number?: string;
     power?: number;
@@ -150,7 +150,7 @@ export async function fetchTrophyMonitor4d(): Promise<TrophyMonitor4dResponse> {
   return res.json() as Promise<TrophyMonitor4dResponse>;
 }
 
-export async function battleBlockNft(edition_key: string): Promise<{
+export async function battleBlockTrophy(edition_key: string): Promise<{
   success: boolean;
   error?: string;
   result?: string;
@@ -158,7 +158,7 @@ export async function battleBlockNft(edition_key: string): Promise<{
   message?: string;
   scores?: { attacker?: number; defender?: number; margin?: number };
 }> {
-  const res = await fetch('/api/shop/block-nft/battle', {
+  const res = await fetch('/api/shop/block-trophy/battle', {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },

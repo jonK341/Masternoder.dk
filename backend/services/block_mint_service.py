@@ -90,7 +90,7 @@ def _media_for_height(height: int) -> Dict[str, str]:
 
 def _battle_stats_preview(height: int) -> Dict[str, Any]:
     try:
-        from backend.services.block_nft_stats_service import generate_battle_stats
+        from backend.services.block_trophy_battle_service import generate_battle_stats
 
         preview_key = f"TRO-{block_item_id(height)}-preview"
         return generate_battle_stats(height, preview_key, edition_no=1)
@@ -107,10 +107,10 @@ def _catalog_row(height: int, manifest_row: Optional[Dict[str, Any]] = None) -> 
     serial = stats.get("serial_number") or f"BLK-{int(height):07d}-E0001"
     return {
         "id": iid,
-        "name": f"Block Smiley NFT #{height}",
+        "name": f"Block Smiley Trophy #{height}",
         "kind": "trophy",
         "series": "block_mint",
-        "tags": ["block_mint", "trophy", "block_nft", "battle"],
+        "tags": ["block_mint", "trophy", "block_trophy", "battle"],
         "category": "trophies",
         "block_height": height,
         "supply": 1,
@@ -119,7 +119,7 @@ def _catalog_row(height: int, manifest_row: Optional[Dict[str, Any]] = None) -> 
         "base_price_usd": float(cfg.get("base_price_usd") or 2.99),
         "price": max(99, int(float(cfg.get("base_price_usd") or 2.99) * 100)),
         "on_chain_mint": False,
-        "platform_nft": True,
+        "platform_trophy": True,
         "ai_generated": True,
         "serial_number": serial,
         "serial_key": serial,
@@ -307,7 +307,7 @@ def claim_block_trophy(
         catalog["name"],
         acquired_via="block_mint",
         price_type=method,
-        extra={"block_height": h, "platform_nft": True, "ai_generated": True},
+        extra={"block_height": h, "platform_trophy": True, "ai_generated": True},
     )
     if not grant.get("success"):
         return grant
@@ -318,7 +318,7 @@ def claim_block_trophy(
 
     battle_stats: Dict[str, Any] = {}
     try:
-        from backend.services.block_nft_stats_service import generate_battle_stats
+        from backend.services.block_trophy_battle_service import generate_battle_stats
         from backend.services.trophy_fulfillment_service import patch_edition_fields
 
         battle_stats = generate_battle_stats(
@@ -334,7 +334,7 @@ def claim_block_trophy(
                 "battle_stats": battle_stats,
                 "serial_number": battle_stats.get("serial_number"),
                 "block_height": h,
-                "platform_nft": True,
+                "platform_trophy": True,
             },
         )
         edition = {**edition, "battle_stats": battle_stats, "serial_number": battle_stats.get("serial_number")}

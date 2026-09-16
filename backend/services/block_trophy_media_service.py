@@ -1,4 +1,4 @@
-"""Generate smiley PNG + animated GIF for block-height NFTs (plan 004)."""
+"""Generate smiley PNG + animated GIF for block-height trophies (plan 004)."""
 from __future__ import annotations
 
 import hashlib
@@ -281,7 +281,7 @@ def ensure_block_media(height: int, *, duration: float = 3.0, force: bool = Fals
         entry["clip_url"] = paths["clip_url"]
     entry["clip_duration_s"] = duration
     entry["block_height"] = h
-    entry["media_kind"] = "block_smiley_nft"
+    entry["media_kind"] = "block_smiley_trophy"
     entry["ai_generated"] = True
     entry["generated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     manifest[iid] = entry

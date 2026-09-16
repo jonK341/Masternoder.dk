@@ -99,7 +99,7 @@ def _expand_editions(
                     "serial_number": ed.get("serial_number"),
                     "battle_stats": ed.get("battle_stats"),
                     "block_height": ed.get("block_height"),
-                    "platform_nft": ed.get("platform_nft"),
+                    "platform_trophy": ed.get("platform_trophy") or ed.get("platform_nft"),
                     "acquired_via": ed.get("acquired_via"),
                     "image_url": media.get("image_url"),
                     "gif_url": media.get("gif_url"),
