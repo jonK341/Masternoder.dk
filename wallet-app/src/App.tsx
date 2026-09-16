@@ -16,6 +16,7 @@ import { RewardsHub } from './tabs/RewardsHub';
 import { Settings } from './tabs/Settings';
 import { ShopHub } from './tabs/ShopHub';
 import { Trophies } from './tabs/Trophies';
+import { TrophyMonitor4D } from './tabs/TrophyMonitor4D';
 import { Upgrades } from './tabs/Upgrades';
 
 function tabFromQuery(): TabId {
@@ -118,6 +119,8 @@ export function App() {
         return <Upgrades />;
       case 'trophies':
         return <Trophies />;
+      case 'monitor-4d':
+        return <TrophyMonitor4D />;
       default:
         return (
           <div class="wallet-panel wallet-tab-panel wallet-placeholder-tab">

@@ -538,6 +538,35 @@
     ]).then(function (arr) { renderShop(arr[0], arr[1]); });
   }
 
+  var CEX_TROPHY_SERIES = "";
+
+  function renderTrophyCatalog(data) {
+    var c = $("cex-trophy-catalog");
+    if (!c) return;
+    var items = (data && data.items) || [];
+    if (!items.length) {
+      c.innerHTML = '<p class="muted">No trophy SKUs in this series yet.</p>';
+      return;
+    }
+    c.innerHTML = items.map(function (it) {
+      var price = it.effective_price_usd != null ? ("$" + Number(it.effective_price_usd).toFixed(2)) : "—";
+      var img = it.image_url ? ('<img src="' + it.image_url + '" alt="" width="56" height="56" style="border-radius:8px;object-fit:cover;" />') : "🏆";
+      var trending = (it.price_factors && it.price_factors.demand_multiplier > 1.05)
+        ? '<span class="cex-badge">Trending</span> ' : "";
+      return '<div class="cex-shop-card">' + img +
+        "<h4>" + trending + (it.name || it.id) + "</h4>" +
+        '<p class="cex-muted">Platform trophy · not on-chain</p>' +
+        '<div class="cex-market-price">' + price + '</div>' +
+        '<a class="cex-btn" href="/shop?tab=trophies&highlight=' + encodeURIComponent(it.id) + '">Shop</a>' +
+        '<a class="cex-btn cex-btn--ghost" href="/shop?tab=trophies&highlight=' + encodeURIComponent(it.id) + '">PayPal / MN2</a></div>';
+    }).join("");
+  }
+
+  function loadTrophyCatalog() {
+    var qs = CEX_TROPHY_SERIES ? ("?series=" + encodeURIComponent(CEX_TROPHY_SERIES)) : "";
+    api("/api/shop/trophies" + qs).then(function (data) { renderTrophyCatalog(data); });
+  }
+
   function ctrlUpdatePayRails(q) {
     Array.prototype.forEach.call(document.querySelectorAll("[data-pay]"), function (b) {
       var m = b.getAttribute("data-pay");
@@ -937,6 +966,7 @@
       loadRentalCatalog(),
       loadMyRentals(),
       loadShop(),
+      loadTrophyCatalog(),
       loadController(),
       loadBridgeProduct(),
     ]).then(function () {
@@ -975,10 +1005,23 @@
     handleControllerPayPalReturn();
   }
 
+  function initTrophySection() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-cex-trophy-series]"), function (btn) {
+      btn.addEventListener("click", function () {
+        CEX_TROPHY_SERIES = btn.getAttribute("data-cex-trophy-series") || "";
+        Array.prototype.forEach.call(document.querySelectorAll("[data-cex-trophy-series]"), function (b) {
+          b.classList.toggle("cex-trophy-chip--active", b === btn);
+        });
+        loadTrophyCatalog();
+      });
+    });
+  }
+
   function init() {
     if (!$("cex-agent-marketplace") && !$("cex-daemon-control")) return;
     initController();
     initDaemonControl();
+    initTrophySection();
     if (window.ExchangeHub) {
       window.ExchangeHub.onTab("bots", loadBotsTab);
       window.ExchangeHub.onTab("marketplace", loadMarketplaceTab);

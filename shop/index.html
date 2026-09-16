@@ -771,6 +771,10 @@
                 </label>
                 <button type="button" id="auction-refresh-btn" class="btn-purchase" style="width:auto;">Refresh market</button>
             </div>
+            <div class="shop-trophy-chips" id="auction-trophy-filters" role="group" aria-label="Auction filters" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:var(--spacing-md);">
+                <button type="button" class="shop-trophy-chip shop-trophy-chip--active" data-auction-filter="all">All listings</button>
+                <button type="button" class="shop-trophy-chip" data-auction-filter="trophy">Trophies only</button>
+            </div>
             <div id="auction-listings" class="auction-board">
                 <div class="auction-card">Loading auction listings…</div>
             </div>
@@ -1106,6 +1110,9 @@
         let userInventory = [];
         let userPurchases = [];
         let auctionListings = [];
+        let auctionTrophyOnly = false;
+        let trophyCatalogById = {};
+        let myTrophyEditions = [];
         let myAuctionState = { selling: [], bought: [], sold: [] };
         let allShopItems = [];
         let categoryCounts = {};
@@ -1365,7 +1372,7 @@
             document.querySelectorAll('.shop-tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     showShopTab(btn.dataset.tab);
-                    if (btn.dataset.tab === 'auction') loadAuctionListings();
+                    if (btn.dataset.tab === 'auction') { loadTrophyCatalogForAuction(); loadMyTrophyEditions(); loadAuctionListings(); }
                     if (btn.dataset.tab === 'account') { loadMyAuctionState(); loadDigitalDownloads(); }
                     if (btn.dataset.tab === 'deals') loadDealsPanel();
                     if (btn.dataset.tab === 'mn2') { loadMn2HostingStatus(); loadTierBOnrampPanel(); }
@@ -2286,20 +2293,33 @@
                 if (countEl) countEl.textContent = userInventory.length + ' item' + (userInventory.length !== 1 ? 's' : '');
                 if (el) {
                     if (userInventory.length === 0) el.innerHTML = '<p style="margin:0;">No items in inventory yet. Purchase items from the shop above.</p>';
-                    else el.innerHTML = '<div class="shop-stall-table">' + userInventory.map(i => {
+                    else {
+                        await loadMyTrophyEditions();
+                        el.innerHTML = '<div class="shop-stall-table">' + userInventory.map(i => {
                         const dl = i.download_url
                             ? `<a href="${shopEscape(i.download_url)}" class="btn-purchase" style="width:auto;padding:6px 10px;font-size:0.8rem;margin-top:4px;text-decoration:none;display:inline-block;" download>⬇ Download</a>`
                             : '';
+                        const trophy = isTrophySku(i.item_id);
+                        const editions = trophy ? myTrophyEditions.filter(e => e.item_id === i.item_id && !e.listed_listing_id) : [];
+                        const editionPicker = trophy && editions.length
+                            ? `<select data-auction-edition="${shopEscape(i.item_id)}" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.25);color:var(--text-primary);">${editions.map(e => `<option value="${e.edition_no}">Edition #${e.edition_no}${e.hold_until ? ' (held)' : ''}</option>`).join('')}</select>`
+                            : (trophy ? '<span style="font-size:0.78rem;color:var(--text-secondary);">No editions</span>' : '');
                         return `
                         <div class="stall-row">
                             <div><strong>${shopEscape(i.item_name || i.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(i.item_id)}</div>${dl}</div>
                             <div>× ${Number(i.quantity || 1)}</div>
+                            ${trophy ? `<div>${editionPicker}</div>` : ''}
                             <input type="number" min="1" step="1" value="${Math.max(1, Math.ceil(Number(i.quantity || 1) * 35))}" data-auction-price="${shopEscape(i.item_id)}" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.25);color:var(--text-primary);" aria-label="Listing price in coins">
                             <button type="button" class="btn-purchase btn-list-auction" data-item-id="${shopEscape(i.item_id)}" data-quantity="1" style="width:auto;padding:8px 12px;">Sell 1</button>
                         </div>`;
                     }).join('') + '</div>';
+                    }
                     el.querySelectorAll('.btn-list-auction').forEach(btn => {
-                        btn.addEventListener('click', () => createAuctionListing(btn.dataset.itemId, parseInt(btn.dataset.quantity, 10) || 1));
+                        btn.addEventListener('click', () => {
+                            const sel = document.querySelector(`select[data-auction-edition="${btn.dataset.itemId}"]`);
+                            const editionNo = sel ? sel.value : null;
+                            createAuctionListing(btn.dataset.itemId, parseInt(btn.dataset.quantity, 10) || 1, editionNo);
+                        });
                     });
                 }
             } catch (e) {
@@ -2381,11 +2401,37 @@
             }
         }
 
+        async function loadTrophyCatalogForAuction() {
+            try {
+                const r = await fetch(`${BASE_URL}/api/shop/trophies?limit=200`);
+                const data = await r.json();
+                const items = (data.success && data.items) ? data.items : [];
+                trophyCatalogById = {};
+                items.forEach(i => { if (i && i.id) trophyCatalogById[i.id] = i; });
+            } catch (e) {
+                trophyCatalogById = {};
+            }
+        }
+
+        async function loadMyTrophyEditions() {
+            if (!userId || userId === 'default_user') { myTrophyEditions = []; return; }
+            try {
+                const r = await fetch(`${BASE_URL}/api/shop/trophies/my-editions?user_id=${encodeURIComponent(userId)}`);
+                const data = await r.json();
+                myTrophyEditions = (data.success && data.editions) ? data.editions : [];
+            } catch (e) {
+                myTrophyEditions = [];
+            }
+        }
+
         function renderAuctionListings() {
             const root = document.getElementById('auction-listings');
             if (!root) return;
             const search = ((document.getElementById('auction-search-input') || {}).value || '').trim().toLowerCase();
             let rows = auctionListings || [];
+            if (auctionTrophyOnly) {
+                rows = rows.filter(l => l.kind === 'trophy' || (l.edition_no != null) || String(l.item_id || '').startsWith('top25-') || String(l.item_id || '').startsWith('block-'));
+            }
             if (search) {
                 rows = rows.filter(l => String(l.item_name || l.item_id || '').toLowerCase().includes(search));
             }
@@ -2395,11 +2441,21 @@
             }
             root.innerHTML = rows.map(l => {
                 const own = l.seller_id === userId;
+                const cat = trophyCatalogById[l.item_id] || {};
+                const floorUsd = cat.effective_price_usd != null ? Number(cat.effective_price_usd).toFixed(2) : null;
+                const editionLine = (l.edition_no != null)
+                    ? `<div style="font-size:0.82rem;color:var(--secondary);margin-top:4px;">Edition #${Number(l.edition_no)}${l.serial_key ? ' · ' + shopEscape(l.serial_key) : ''}</div>`
+                    : '';
+                const floorLine = floorUsd
+                    ? `<div style="font-size:0.8rem;color:var(--text-secondary);">Shop floor: $${floorUsd}${l.price_coins ? ' · ask ' + Number(l.price_coins).toLocaleString() + ' 🪙' : ''}</div>`
+                    : '';
                 return `
                     <article class="auction-card">
-                        <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">${own ? 'Your listing' : 'Player listing'}</div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">${own ? 'Your listing' : 'Player listing'}${l.kind === 'trophy' ? ' · Trophy' : ''}</div>
                         <h3 style="margin:6px 0;color:var(--text-primary);font-size:1.05rem;">${shopEscape(l.item_name || l.item_id)}</h3>
                         <div style="color:var(--text-secondary);font-size:0.85rem;">Seller: ${shopEscape(l.seller_id || 'unknown')} · Qty ${Number(l.quantity || 1)}</div>
+                        ${editionLine}
+                        ${floorLine}
                         <div class="auction-price">${Number(l.price_coins || 0).toLocaleString()} 🪙</div>
                         <div style="font-size:0.82rem;color:var(--secondary);">Highest bid: ${Number(l.highest_bid_coins || 0).toLocaleString()} 🪙 · ${Number(l.bid_count || 0)} bid${Number(l.bid_count || 0) === 1 ? '' : 's'}</div>
                         <div style="font-size:0.8rem;color:var(--text-secondary);">Market fee: ${Math.round(Number(l.fee_rate || 0.05) * 100)}% paid from seller proceeds.</div>
@@ -2496,7 +2552,12 @@
             renderMyAuctionState();
         }
 
-        async function createAuctionListing(itemId, quantity) {
+        function isTrophySku(itemId) {
+            const id = String(itemId || '');
+            return id.startsWith('top25-') || id.startsWith('block-') || id.startsWith('bundle-top25-');
+        }
+
+        async function createAuctionListing(itemId, quantity, editionNo) {
             if (!userId || userId === 'default_user') {
                 if (typeof toast !== 'undefined') toast.error('Create a profile before selling items.');
                 return;
@@ -2507,11 +2568,23 @@
                 if (typeof toast !== 'undefined') toast.error('Set a coin price greater than zero.');
                 return;
             }
+            let resolvedEdition = editionNo;
+            if (isTrophySku(itemId) && (resolvedEdition == null || resolvedEdition === '')) {
+                const editions = myTrophyEditions.filter(e => e.item_id === itemId && !e.listed_listing_id && !e.hold_until);
+                if (!editions.length) {
+                    if (typeof toast !== 'undefined') toast.error('No clear trophy editions to list. Refresh inventory or pick an edition number.');
+                    return;
+                }
+                const pick = editions[0];
+                resolvedEdition = pick.edition_no;
+            }
+            const body = { user_id: userId, item_id: itemId, quantity, price_coins: price };
+            if (resolvedEdition != null && resolvedEdition !== '') body.edition_no = parseInt(resolvedEdition, 10);
             try {
                 const r = await fetch(`${BASE_URL}/api/shop/auction/list`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, item_id: itemId, quantity, price_coins: price })
+                    body: JSON.stringify(body)
                 });
                 const data = await r.json();
                 if (!data.success) throw new Error(data.error || 'Could not create listing');
@@ -3732,7 +3805,14 @@
             await loadShopConfig();
             loadPaymentHealth();
             document.getElementById('auction-search-input')?.addEventListener('input', renderAuctionListings);
-            document.getElementById('auction-refresh-btn')?.addEventListener('click', loadAuctionListings);
+            document.getElementById('auction-refresh-btn')?.addEventListener('click', () => { loadTrophyCatalogForAuction(); loadAuctionListings(); });
+            document.querySelectorAll('[data-auction-filter]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    auctionTrophyOnly = btn.dataset.auctionFilter === 'trophy';
+                    document.querySelectorAll('[data-auction-filter]').forEach(b => b.classList.toggle('shop-trophy-chip--active', b === btn));
+                    renderAuctionListings();
+                });
+            });
             document.getElementById('my-stall-refresh-btn')?.addEventListener('click', loadMyAuctionState);
             document.getElementById('shop-product-line-toggle')?.addEventListener('click', () => {
                 const d = document.getElementById('shop-product-line-details');

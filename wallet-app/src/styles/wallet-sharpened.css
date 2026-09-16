@@ -1026,3 +1026,71 @@ body {
   color: var(--wallet-muted);
   line-height: 1.3;
 }
+
+.wallet-monitor-4d-network {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.wallet-monitor-4d-stat {
+  padding: 10px 12px;
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  background: var(--wallet-bg-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--wallet-muted);
+}
+
+.wallet-monitor-4d-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.wallet-monitor-4d-card {
+  border: var(--wallet-border);
+  border-radius: var(--wallet-radius);
+  overflow: hidden;
+  background: var(--wallet-bg-elevated);
+}
+
+.wallet-monitor-4d-gif {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.wallet-monitor-4d-card-body {
+  padding: 8px 10px;
+}
+
+.wallet-trophy-cta--btn {
+  background: transparent;
+  border: 1px solid var(--wallet-border);
+  cursor: pointer;
+}
+
+.wallet-trophy-transfer-modal {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--wallet-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wallet-trophy-transfer-input {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: var(--wallet-radius);
+  border: var(--wallet-border);
+  background: var(--wallet-bg);
+  color: var(--wallet-text);
+}

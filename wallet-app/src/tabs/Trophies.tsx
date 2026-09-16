@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import {
   fetchWalletTrophies,
+  transferTrophyEdition,
   type TrophyEdition,
   type WalletTrophiesResponse,
 } from '../api/client';
@@ -41,6 +42,13 @@ export function Trophies() {
 
   const counts = data?.counts;
   const editions = data?.editions ?? [];
+
+  const reload = () => {
+    setLoading(true);
+    fetchWalletTrophies(series || undefined)
+      .then((res) => { setData(res); setLoading(false); })
+      .catch((err: Error) => { setError(err.message); setLoading(false); });
+  };
 
   return (
     <div class="wallet-tab-panel wallet-trophies-tab">
@@ -111,7 +119,7 @@ export function Trophies() {
         <section class="wallet-panel" aria-label="Owned trophy editions">
           <div class="wallet-trophy-gallery" role="list">
             {editions.map((ed) => (
-              <TrophyEditionCard key={ed.edition_key} edition={ed} />
+              <TrophyEditionCard key={ed.edition_key} edition={ed} onTransferred={reload} />
             ))}
           </div>
         </section>
@@ -157,8 +165,41 @@ export function Trophies() {
   );
 }
 
-function TrophyEditionCard({ edition }: { edition: TrophyEdition }) {
+function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition; onTransferred: () => void }) {
   const title = edition.item_name || edition.item_id;
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [recipient, setRecipient] = useState('');
+  const [transferError, setTransferError] = useState<string | null>(null);
+  const [transferring, setTransferring] = useState(false);
+  const canTransfer = !edition.hold_until && !edition.legacy_stack && edition.trade_actions?.peer_transfer;
+
+  const submitTransfer = async () => {
+    if (!recipient.trim()) {
+      setTransferError('Enter a recipient profile ID');
+      return;
+    }
+    setTransferring(true);
+    setTransferError(null);
+    try {
+      const res = await transferTrophyEdition({
+        recipient_id: recipient.trim(),
+        item_id: edition.item_id,
+        edition_no: edition.edition_no,
+      });
+      if (!res.success) {
+        setTransferError(res.error || res.message || 'Transfer failed');
+        return;
+      }
+      setShowTransfer(false);
+      setRecipient('');
+      onTransferred();
+    } catch (err) {
+      setTransferError((err as Error).message || 'Transfer failed');
+    } finally {
+      setTransferring(false);
+    }
+  };
+
   return (
     <article class="wallet-trophy-gallery-card" role="listitem">
       {edition.image_url ? (
@@ -195,7 +236,39 @@ function TrophyEditionCard({ edition }: { edition: TrophyEdition }) {
           >
             List
           </a>
+          {canTransfer && (
+            <button
+              type="button"
+              class="wallet-trophy-cta wallet-trophy-cta--btn"
+              onClick={() => setShowTransfer((v) => !v)}
+            >
+              Transfer
+            </button>
+          )}
         </div>
+        {showTransfer && (
+          <div class="wallet-trophy-transfer-modal">
+            <label class="wallet-trophy-transfer-label">
+              Recipient profile ID
+              <input
+                type="text"
+                class="wallet-trophy-transfer-input"
+                value={recipient}
+                onInput={(e) => setRecipient((e.target as HTMLInputElement).value)}
+                placeholder="user_id"
+              />
+            </label>
+            {transferError && <div class="wallet-trophies-error" role="alert">{transferError}</div>}
+            <button
+              type="button"
+              class="wallet-discord-btn wallet-discord-btn-primary"
+              disabled={transferring}
+              onClick={submitTransfer}
+            >
+              {transferring ? 'Sending…' : 'Send edition'}
+            </button>
+          </div>
+        )}
       </div>
     </article>
   );

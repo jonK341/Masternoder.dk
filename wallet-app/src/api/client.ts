@@ -95,6 +95,62 @@ export type WalletTrophiesResponse = {
   auction_url?: string;
 };
 
+export type TrophyMonitor4dResponse = {
+  success: boolean;
+  guest?: boolean;
+  network?: NetworkSnapshot;
+  trophies?: Array<{
+    item_id: string;
+    item_name?: string;
+    edition_no?: number;
+    edition_key?: string;
+    gif_url?: string | null;
+    image_url?: string | null;
+    sound_url?: string | null;
+    hold_until?: string;
+  }>;
+  block_teaser?: {
+    height?: number;
+    item_id?: string;
+    name?: string;
+    gif_url?: string;
+    explorer_url?: string;
+    effective_price_usd?: number;
+    claimed?: boolean;
+  } | null;
+  counts?: Record<string, number>;
+};
+
+export async function fetchTrophyMonitor4d(): Promise<TrophyMonitor4dResponse> {
+  const res = await fetch('/api/wallet/v2/trophy-monitor/4d', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`4D monitor failed (${res.status})`);
+  }
+  return res.json() as Promise<TrophyMonitor4dResponse>;
+}
+
+export async function transferTrophyEdition(payload: {
+  recipient_id: string;
+  item_id: string;
+  edition_no: number;
+  note?: string;
+}): Promise<{ success: boolean; error?: string; message?: string }> {
+  const res = await fetch('/api/shop/trophies/transfer', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok && !data.error) {
+    throw new Error(`Transfer failed (${res.status})`);
+  }
+  return data;
+}
+
 export async function fetchWalletTrophies(series?: string): Promise<WalletTrophiesResponse> {
   const params = new URLSearchParams();
   if (series) params.set('series', series);
