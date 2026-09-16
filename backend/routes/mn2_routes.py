@@ -569,6 +569,25 @@ def _ops_authorized() -> bool:
     return token == secret
 
 
+@mn2_bp.route("/api/mn2/ops/seed-pool-addresses", methods=["POST"])
+def mn2_ops_seed_pool_addresses():
+    """Register pre-generated MN2 addresses as pool_N (fallback when getnewaddress RPC is disabled)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    raw = data.get("addresses") or data.get("address") or request.args.get("addresses") or ""
+    if isinstance(raw, str):
+        addrs = [a.strip() for a in raw.replace(",", "\n").splitlines() if a.strip()]
+    elif isinstance(raw, list):
+        addrs = [str(a).strip() for a in raw if str(a).strip()]
+    else:
+        addrs = []
+    from backend.services.mn2_wallet_service import seed_pool_addresses
+    result = seed_pool_addresses(addrs)
+    status = 200 if result.get("success") else 200
+    return jsonify(result), status
+
+
 @mn2_bp.route("/api/mn2/ops/create-addresses", methods=["POST", "GET"])
 def mn2_ops_create_addresses():
     """Ask the daemon to create N deposit addresses and store as pool_1, pool_2, ... (max 100). Requires MN2_OPS_SECRET or MN2_SCAN_SECRET if set."""

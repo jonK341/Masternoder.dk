@@ -27,6 +27,24 @@ class TestMN2WalletService(unittest.TestCase):
             self.assertEqual(res.get("deposit_address"), "MxTest123")
             self.assertEqual(res.get("label"), "savings")
 
+    def test_seed_pool_addresses(self):
+        import tempfile
+        from backend.services import mn2_wallet_service as ws
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_user_addresses.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"user_a": "MxPrimary"}, f)
+            with patch.object(ws, "_addresses_path", return_value=path):
+                with patch.object(ws, "_data_dir", return_value=tmp):
+                    res = ws.seed_pool_addresses(["MxPool1", "MxPool2", "MxPrimary"])
+            self.assertTrue(res.get("success"))
+            self.assertEqual(res.get("count"), 2)
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            self.assertEqual(data.get("pool_1"), "MxPool1")
+            self.assertEqual(data.get("pool_2"), "MxPool2")
+
     def test_create_additional_wallet_pool_fallback(self):
         import tempfile
         from backend.services import mn2_wallet_service as ws

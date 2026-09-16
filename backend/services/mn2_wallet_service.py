@@ -168,6 +168,51 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
     return {"success": True, "deposit_address": new_addr, "user_id": user_id}
 
 
+def seed_pool_addresses(addresses_list: List[str]) -> Dict[str, Any]:
+    """Register pre-generated MN2 addresses as pool_N for use when RPC getnewaddress is unavailable."""
+    raw = [str(a or "").strip() for a in (addresses_list or [])]
+    addrs = [a for a in raw if a]
+    if not addrs:
+        return {"success": False, "error": "no addresses provided", "created": [], "count": 0}
+    addresses = _load_addresses()
+    existing = {str(v).strip() for v in addresses.values() if isinstance(v, str)}
+    for entry in addresses.values():
+        if isinstance(entry, dict):
+            existing.update(_all_addresses_for_entry(entry))
+    pool_keys = [k for k in addresses if isinstance(k, str) and k.startswith("pool_")]
+
+    def _next_pool_n() -> int:
+        if not pool_keys:
+            return 1
+        nums = []
+        for k in pool_keys:
+            try:
+                nums.append(int(k.replace("pool_", "")))
+            except ValueError:
+                pass
+        return max(nums or [0]) + 1
+
+    created = []
+    next_n = _next_pool_n()
+    for addr in addrs:
+        if addr in existing:
+            continue
+        key = f"pool_{next_n}"
+        next_n += 1
+        addresses[key] = addr
+        pool_keys.append(key)
+        existing.add(addr)
+        created.append({"user_id": key, "deposit_address": addr})
+    if created:
+        _save_addresses(addresses)
+    return {
+        "success": bool(created),
+        "created": created,
+        "count": len(created),
+        "error": None if created else "all addresses already registered",
+    }
+
+
 def create_deposit_addresses(count: int) -> Dict[str, Any]:
     """
     Ask the daemon to create count new deposit addresses and store them as pool_1, pool_2, ...
