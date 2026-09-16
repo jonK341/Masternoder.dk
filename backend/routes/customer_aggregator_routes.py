@@ -22,7 +22,8 @@ def customers_list():
     limit = request.args.get("limit", 50, type=int)
     offset = request.args.get("offset", 0, type=int)
     search = request.args.get("search")
-    return jsonify(list_customers(limit=limit, offset=offset, search=search)), 200
+    source = request.args.get("source")
+    return jsonify(list_customers(limit=limit, offset=offset, search=search, source=source)), 200
 
 
 @customer_aggregator_bp.route("/api/customers/stats", methods=["GET"])

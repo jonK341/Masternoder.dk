@@ -150,7 +150,7 @@ def list_upgrades_for_user(
     }
 
 
-def purchase_upgrade(user_id: str, upgrade_id: str) -> Dict[str, Any]:
+def purchase_upgrade(user_id: str, upgrade_id: str, *, skip_payment: bool = False) -> Dict[str, Any]:
     cat = catalog_by_id()
     uid = str(upgrade_id or "").strip()
     if uid not in cat:
@@ -164,34 +164,18 @@ def purchase_upgrade(user_id: str, upgrade_id: str) -> Dict[str, Any]:
     if meta.get("free"):
         cost = 0.0
 
-    mn2_spent = 0.0
-    if cost > 0:
-        try:
-            from backend.services.mn2_earn_auth import require_earn_user
-            from backend.services.unified_points_database import unified_points_db
+    if cost > 0 and not skip_payment:
+        from backend.services.encoder_order_service import create_balance_order
 
-            ok, uid_or_err = require_earn_user(user_id)
-            if not ok:
-                return {"success": False, "error": uid_or_err, "mn2_cost": cost}
-            spend = unified_points_db.add_points(
-                uid_or_err,
-                "mn2_balance",
-                -cost,
-                source="encoder_v2_unlock",
-                metadata={"reference": f"encoder-v2:{uid}", "upgrade_id": uid},
-            )
-            if not spend.get("success"):
-                return {
-                    "success": False,
-                    "error": spend.get("error") or "mn2_spend_failed",
-                    "mn2_cost": cost,
-                }
-            mn2_spent = cost
-        except Exception as exc:
-            return {"success": False, "error": str(exc)[:120], "mn2_cost": cost}
+        return create_balance_order(
+            user_id,
+            "encoder_v2_unlock",
+            {"upgrade_id": uid},
+            auto_fulfill=True,
+        )
 
     res = unlock_upgrade(user_id, uid)
-    res["mn2_spent"] = mn2_spent
+    res["mn2_spent"] = 0.0
     res["progress"] = get_user_progress(user_id)
     res["upgrade"] = cat[uid]
     return res

@@ -39,6 +39,16 @@
       "free_starter_unlocks": 12
     }
   },
+  "encoder_orders": {
+    "enabled": true,
+    "require_order_for_create_app_encode": false,
+    "ledger_entry_type": "encoder_payment"
+  },
+  "discord_customers": {
+    "enabled": true,
+    "channel_id": "",
+    "guild_id": ""
+  },
   "click_rewards": {
     "enabled": true,
     "instant": true,

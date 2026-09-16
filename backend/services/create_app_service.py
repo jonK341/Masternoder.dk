@@ -37,6 +37,40 @@ def _mn2_config() -> Dict[str, Any]:
         return {}
 
 
+def _encoder_orders_cfg() -> Dict[str, Any]:
+    root = _mn2_config()
+    enc = root.get("encoder_orders") if isinstance(root, dict) else {}
+    return enc if isinstance(enc, dict) else {}
+
+
+def _start_encode_with_optional_order(user_id: str, app: Dict[str, Any], *, force: bool = False) -> Dict[str, Any]:
+    from backend.services.create_app_encode_service import start_encode_jobs_for_app
+
+    cfg = _encoder_orders_cfg()
+    if cfg.get("require_order_for_create_app_encode"):
+        from backend.services.encoder_order_service import create_balance_order
+
+        order_res = create_balance_order(
+            user_id,
+            "create_app_encode",
+            {
+                "app_id": app.get("id"),
+                "quality_goal": app.get("quality_goal"),
+                "duration_sec": app.get("duration_sec"),
+                "include_podcast": (app.get("targets") or {}).get("podcast"),
+                "include_playstore": (app.get("targets") or {}).get("playstore"),
+                "force": force,
+            },
+            auto_fulfill=True,
+        )
+        if not order_res.get("success"):
+            return order_res
+        fulfillment = order_res.get("fulfillment") or {}
+        return fulfillment if fulfillment.get("encode_jobs") else order_res
+
+    return start_encode_jobs_for_app(user_id, app, force=force)
+
+
 def _agents_for_template(template_id: str) -> List[str]:
     for tpl in catalog().get("templates") or []:
         if tpl.get("id") == template_id:
@@ -161,9 +195,7 @@ def create_app(
     data["apps"] = apps[-100:]
     _save_apps(data)
 
-    from backend.services.create_app_encode_service import start_encode_jobs_for_app
-
-    encode_start = start_encode_jobs_for_app(user_id, entry)
+    encode_start = _start_encode_with_optional_order(user_id, entry)
     entry["encode_jobs"] = encode_start.get("encode_jobs") or {}
     for i, a in enumerate(data.get("apps") or []):
         if a.get("id") == app_id:
@@ -229,9 +261,7 @@ def finish_product(user_id: str, app_id: str) -> Dict[str, Any]:
     app["progress"] = int(finish.get("finish_percent") or 0)
     app["updated_at"] = _now_iso()
 
-    from backend.services.create_app_encode_service import start_encode_jobs_for_app
-
-    encode_start = start_encode_jobs_for_app(user_id, app, force=False)
+    encode_start = _start_encode_with_optional_order(user_id, app, force=False)
     app["encode_jobs"] = encode_start.get("encode_jobs") or app.get("encode_jobs") or {}
 
     if not finish.get("product_finished"):
@@ -326,9 +356,11 @@ def super_encode_for_app(user_id: str, app_id: str, body: Dict[str, Any]) -> Dic
         app["duration_sec"] = int(body.get("duration_sec") or 120)
     app["updated_at"] = _now_iso()
 
-    from backend.services.create_app_encode_service import start_encode_jobs_for_app
-
-    encode_start = start_encode_jobs_for_app(user_id, app, force=bool(body.get("restart_encode_jobs", True)))
+    encode_start = _start_encode_with_optional_order(
+        user_id,
+        app,
+        force=bool(body.get("restart_encode_jobs", True)),
+    )
     app["encode_jobs"] = encode_start.get("encode_jobs") or app.get("encode_jobs") or {}
 
     for i, a in enumerate(data.get("apps") or []):

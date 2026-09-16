@@ -36,8 +36,23 @@ def _load_identifiers(user_id: str) -> Dict[str, Any]:
     return out
 
 
+def _discord_meta_for_user(user_id: str) -> Optional[Dict[str, Any]]:
+    try:
+        from backend.services.discord_customer_ingest_service import _load_index
+
+        index = _load_index()
+        for row in (index.get("customers") or {}).values():
+            if row.get("user_id") == user_id:
+                return row
+    except Exception:
+        pass
+    return None
+
+
 def _customer_row(user_id: str, raw: dict) -> Dict[str, Any]:
     systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
+    discord = raw.get("discord") if isinstance(raw.get("discord"), dict) else _discord_meta_for_user(user_id)
+    source = raw.get("source") or ("discord_channel" if discord else "site")
     return {
         "user_id": user_id,
         "level": int(raw.get("level") or 1),
@@ -47,6 +62,8 @@ def _customer_row(user_id: str, raw: dict) -> Dict[str, Any]:
         "last_active": raw.get("updated_at") or raw.get("last_source"),
         "avatar_url": _avatar_url(user_id),
         "identifiers": _load_identifiers(user_id),
+        "source": source,
+        "discord": discord,
     }
 
 
@@ -55,24 +72,58 @@ def list_customers(
     limit: int = 50,
     offset: int = 0,
     search: Optional[str] = None,
+    source: Optional[str] = None,
 ) -> Dict[str, Any]:
-    if not os.path.isdir(_POINTS_DIR):
-        return {"success": True, "customers": [], "total": 0}
     rows: List[Dict[str, Any]] = []
     q = (search or "").strip().lower()
-    for name in os.listdir(_POINTS_DIR):
-        if not name.endswith(".json"):
-            continue
-        uid = name[:-5]
-        if q and q not in uid.lower():
-            continue
-        path = os.path.join(_POINTS_DIR, name)
+    src = (source or "").strip().lower()
+
+    if os.path.isdir(_POINTS_DIR):
+        for name in os.listdir(_POINTS_DIR):
+            if not name.endswith(".json"):
+                continue
+            uid = name[:-5]
+            if q and q not in uid.lower():
+                continue
+            path = os.path.join(_POINTS_DIR, name)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    raw = json.load(f) or {}
+                row = _customer_row(uid, raw)
+                if src and str(row.get("source") or "").lower() != src:
+                    continue
+                rows.append(row)
+            except Exception:
+                continue
+
+    if src in ("", "discord", "discord_channel"):
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                raw = json.load(f) or {}
-            rows.append(_customer_row(uid, raw))
+            from backend.services.discord_customer_ingest_service import list_discord_customers
+
+            dlist = list_discord_customers(limit=1000, offset=0).get("customers") or []
+            seen = {r.get("user_id") for r in rows}
+            for drow in dlist:
+                uid = drow.get("user_id")
+                if not uid or uid in seen:
+                    continue
+                if q and q not in str(uid).lower() and q not in str(drow.get("username") or "").lower():
+                    continue
+                rows.append({
+                    "user_id": uid,
+                    "level": 1,
+                    "xp_total": 0,
+                    "coins": 0,
+                    "mn2_balance": 0,
+                    "last_active": drow.get("last_seen_at"),
+                    "avatar_url": _avatar_url(uid),
+                    "identifiers": _load_identifiers(uid),
+                    "source": "discord_channel",
+                    "discord": drow,
+                })
+                seen.add(uid)
         except Exception:
-            continue
+            pass
+
     rows.sort(key=lambda r: str(r.get("last_active") or ""), reverse=True)
     total = len(rows)
     page = rows[offset: offset + limit]
@@ -96,9 +147,18 @@ def stats() -> Dict[str, Any]:
         1 for c in customers
         if str(c.get("last_active") or "").startswith(now)
     )
+    discord_stats = {}
+    try:
+        from backend.services.discord_customer_ingest_service import discord_customer_stats
+
+        discord_stats = discord_customer_stats()
+    except Exception:
+        discord_stats = {}
     return {
         "success": True,
         "total": listing.get("total", 0),
         "active_today": active_today,
         "with_mn2": sum(1 for c in customers if float(c.get("mn2_balance") or 0) > 0),
+        "discord": discord_stats,
+        "discord_sourced": sum(1 for c in customers if c.get("source") == "discord_channel"),
     }

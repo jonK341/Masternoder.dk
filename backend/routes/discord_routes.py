@@ -98,6 +98,43 @@ def discord_digest_run():
     return jsonify(result), 200
 
 
+@discord_bp.route("/api/discord/customers/sync", methods=["POST"])
+def discord_customers_sync():
+    """Sync Discord channel message authors into customer directory (ops)."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    from backend.services.discord_customer_ingest_service import sync_customers_from_channel
+
+    body = request.get_json(silent=True) or {}
+    result = sync_customers_from_channel(
+        channel_id=body.get("channel_id"),
+        include_guild_members=bool(body.get("include_guild_members")),
+        message_limit=int(body.get("message_limit") or 100),
+    )
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@discord_bp.route("/api/discord/customers", methods=["GET"])
+def discord_customers_list():
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    from backend.services.discord_customer_ingest_service import list_discord_customers
+
+    limit = min(200, max(1, int(request.args.get("limit") or 50)))
+    offset = max(0, int(request.args.get("offset") or 0))
+    return jsonify(list_discord_customers(limit=limit, offset=offset)), 200
+
+
+@discord_bp.route("/api/discord/customers/stats", methods=["GET"])
+def discord_customers_stats():
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    from backend.services.discord_customer_ingest_service import discord_customer_stats
+
+    return jsonify(discord_customer_stats()), 200
+
+
 @discord_bp.route("/api/discord/casino/fanout", methods=["POST"])
 def discord_casino_fanout():
     """Cron entry — casino activity_events → #casino (alias of /api/casino/discord/notify)."""

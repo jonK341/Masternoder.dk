@@ -161,6 +161,55 @@ def super_encoder_optimize():
     return jsonify({"success": True, "plan": result}), 200
 
 
+@create_app_bp.route("/api/create-app/encoder-orders/quote", methods=["POST"])
+def encoder_orders_quote():
+    from backend.services.encoder_order_service import quote_order
+
+    body = request.get_json(silent=True) or {}
+    kind = str(body.get("kind") or "").strip()
+    if not kind:
+        return jsonify({"success": False, "error": "kind_required"}), 400
+    return jsonify(quote_order(kind, body)), 200
+
+
+@create_app_bp.route("/api/create-app/encoder-orders", methods=["GET", "POST"])
+def encoder_orders_route():
+    if request.method == "GET":
+        from backend.services.encoder_order_service import list_orders
+
+        limit = min(100, max(1, int(request.args.get("limit") or 20)))
+        return jsonify(list_orders(_uid(), limit=limit)), 200
+
+    from backend.services.encoder_order_service import create_balance_order, create_onchain_order
+
+    body = request.get_json(silent=True) or {}
+    kind = str(body.get("kind") or "").strip()
+    if not kind:
+        return jsonify({"success": False, "error": "kind_required"}), 400
+    method = str(body.get("payment_method") or "balance").strip().lower()
+    cfg = dict(body.get("config") or body)
+    cfg.pop("kind", None)
+    cfg.pop("payment_method", None)
+    if method == "onchain":
+        result = create_onchain_order(_uid(), kind, cfg)
+    else:
+        result = create_balance_order(_uid(), kind, cfg, auto_fulfill=bool(body.get("auto_fulfill", True)))
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@create_app_bp.route("/api/create-app/encoder-orders/<order_id>", methods=["GET"])
+def encoder_orders_get(order_id: str):
+    from backend.services.encoder_order_service import get_order
+
+    order = get_order(order_id)
+    if not order:
+        return jsonify({"success": False, "error": "not_found"}), 404
+    if order.get("user_id") != _uid():
+        return jsonify({"success": False, "error": "forbidden"}), 403
+    return jsonify({"success": True, "order": order}), 200
+
+
 @create_app_bp.route("/api/create-app/agents/leaderboard", methods=["GET"])
 def create_app_agent_leaderboard():
     from backend.services.agent_leaderboard_rewards_service import build_agent_leaderboard

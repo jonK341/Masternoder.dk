@@ -385,6 +385,10 @@ MANIFESTS = {
         "backend/services/super_encoder_service.py",
         "backend/services/encoder_v2_service.py",
         "backend/services/encoder_upgrade_service.py",
+        "backend/services/encoder_order_service.py",
+        "backend/services/discord_customer_ingest_service.py",
+        "data/encoder_orders.json",
+        "data/discord_customer_index.json",
         "data/encoder_v2_catalog.json",
         "data/encoder_v2_progress.json",
         "scripts/build_encoder_v2_catalog.py",
@@ -1029,12 +1033,17 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
 
         if "create_app_release" in _manifests and not upload_only:
             print("[2aa] Create App writable data permissions...")
-            ssh.exec_command(
-                f"chown www-data:www-data {REMOTE_BASE}/data/encoder_v2_progress.json "
-                f"&& chmod 664 {REMOTE_BASE}/data/encoder_v2_progress.json 2>/dev/null || true",
-                timeout=10,
-            )
-            print("  [OK] encoder_v2_progress.json -> www-data (v2 unlock writes)")
+            for rel in (
+                "data/encoder_v2_progress.json",
+                "data/encoder_orders.json",
+                "data/discord_customer_index.json",
+            ):
+                ssh.exec_command(
+                    f"chown www-data:www-data {REMOTE_BASE}/{rel} "
+                    f"&& chmod 664 {REMOTE_BASE}/{rel} 2>/dev/null || true",
+                    timeout=10,
+                )
+            print("  [OK] encoder/discord writable data -> www-data")
             print()
 
         # If we uploaded systemd units, install them so EnvironmentFile=.env is used

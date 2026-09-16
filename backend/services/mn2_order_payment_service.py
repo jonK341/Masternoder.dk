@@ -217,6 +217,41 @@ def confirm_and_fulfill(payment_ref: str, txid: str, amount_received: Optional[f
     txid_val = (txid or "").strip()
 
     product = str(order.get("product") or "shop")
+    if product == "encoder":
+        try:
+            from backend.services.encoder_order_service import fulfill_onchain_payment
+
+            result = fulfill_onchain_payment(
+                order,
+                txid_val,
+                float(amount_received if amount_received is not None else order.get("amount_mn2") or 0),
+            )
+            if not result.get("success"):
+                order["status"] = "pending"
+                order["txid"] = txid_val
+                order["fulfillment_error"] = result.get("error") or "encoder fulfill failed"
+                orders[idx] = order
+                _save(orders)
+                return order
+            now_iso = datetime.utcnow().isoformat() + "Z"
+            order["status"] = "fulfilled"
+            order["txid"] = txid_val
+            order["fulfilled_at"] = now_iso
+            if amount_received is not None:
+                order["amount_received"] = round(float(amount_received), 8)
+            order.pop("fulfillment_error", None)
+            orders[idx] = order
+            _save(orders)
+            return order
+        except Exception as ex:
+            _log.exception("mn2_order_payment encoder fulfill failed ref=%s: %s", payment_ref, ex)
+            order["status"] = "pending"
+            order["txid"] = txid_val
+            order["fulfillment_error"] = str(ex)
+            orders[idx] = order
+            _save(orders)
+            return order
+
     if product == "mn2_masternode_hosting":
         hosting_qid = (order.get("hosting_quote_id") or order.get("item_id") or "").strip()
         try:
