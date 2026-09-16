@@ -314,6 +314,7 @@ def _run_generate_job(
         script,
         profile=encode_profile,
         episode_id=eid,
+        user_id=user_id,
     )
 
     if not audio_result.get("success"):

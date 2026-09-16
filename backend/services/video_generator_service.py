@@ -1761,6 +1761,7 @@ def _plan_ai_segments(
 def _generate_video_sync(doc_id: str, prompt: str, title: str, duration_sec: int,
                          width: int, height: int, on_progress: Optional[Callable[[int, str], None]] = None,
                          encode_profile: Optional[str] = None,
+                         user_id: Optional[str] = None,
                          ) -> Tuple[Optional[str], Optional[str]]:
     """
     Generate a video file synchronously.
@@ -1826,11 +1827,12 @@ def _generate_video_sync(doc_id: str, prompt: str, title: str, duration_sec: int
                 clip = clips_to_concat[0] if clips_to_concat else ColorClip(size=(w, h), color=(15, 25, 45), duration=duration_sec)
             if on_progress:
                 on_progress(60, 'Encoding video...')
-            from backend.services.generator_encode_service import build_write_kwargs, resolve_encode_profile, moviepy_write_kwargs
+            from backend.services.generator_encode_service import resolve_encode_profile, moviepy_write_kwargs
+            from backend.services.encoder_v2_service import write_kwargs_with_v2
             prof = str(encode_profile or "fast_ai").strip().lower()
             if prof not in ("fast_ai", "standard", "premium", "ultra"):
-                prof = resolve_encode_profile({"encode_profile": encode_profile})
-            write_kw = build_write_kwargs(doc_id, prof, add_audio=False, videos_dir=VIDEOS_DIR)
+                prof = resolve_encode_profile({"encode_profile": encode_profile, "user_id": user_id})
+            write_kw = write_kwargs_with_v2(doc_id, prof, user_id=user_id, add_audio=False, videos_dir=VIDEOS_DIR)
             clip.write_videofile(out_path, **moviepy_write_kwargs(write_kw))
             try:
                 if not os.path.isfile(out_path) or os.path.getsize(out_path) < _MIN_VALID_MP4_BYTES:
@@ -2035,6 +2037,7 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                     visual_profile=clip_vp,
                     video_ai_preference=video_ai_pref,
                     encode_profile=str(config.get("encode_profile") or "fast_ai"),
+                    user_id=str(config.get("user_id") or ""),
                 )
                 if not path:
                     path, err = _generate_video_sync(
@@ -2045,6 +2048,8 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                         w,
                         h,
                         None,
+                        encode_profile=str(config.get("encode_profile") or "fast_ai"),
+                        user_id=str(config.get("user_id") or ""),
                     )
                 if path:
                     relative_clip_url = f'/api/documentary/video/{clip_doc_id}'
@@ -2542,6 +2547,7 @@ def generate_rich_video_sync(
     metrics_out: Optional[Dict[str, Any]] = None,
     video_ai_preference: Optional[str] = None,
     encode_profile: Optional[str] = None,
+    user_id: Optional[str] = None,
 ) -> Tuple[Optional[str], Optional[str]]:
     """
     Generate a longer video from segments (pictures/slides + optional text).
@@ -2862,15 +2868,19 @@ def generate_rich_video_sync(
 
     try:
         import gc
-        from backend.services.generator_encode_service import build_write_kwargs, resolve_encode_profile, ENCODE_CRF, moviepy_write_kwargs
+        from backend.services.generator_encode_service import resolve_encode_profile, ENCODE_CRF, moviepy_write_kwargs
+        from backend.services.encoder_v2_service import write_kwargs_with_v2
         gc.collect()
         prof = str(encode_profile or "fast_ai").strip().lower()
         if prof not in ENCODE_CRF:
-            prof = resolve_encode_profile({"encode_profile": encode_profile})
-        write_kwargs = build_write_kwargs(doc_id, prof, add_audio=add_audio, videos_dir=VIDEOS_DIR)
+            prof = resolve_encode_profile({"encode_profile": encode_profile, "user_id": user_id})
+        write_kwargs = write_kwargs_with_v2(doc_id, prof, user_id=user_id, add_audio=add_audio, videos_dir=VIDEOS_DIR)
         if metrics_out is not None:
             metrics_out["encode_profile"] = prof
-            metrics_out["encode_crf"] = ENCODE_CRF.get(prof, 28)
+            v2_tune = write_kwargs.get("encoder_v2_tuning") or {}
+            base_crf = ENCODE_CRF.get(prof, 28)
+            metrics_out["encode_crf"] = base_crf + int(v2_tune.get("crf_delta") or 0)
+            metrics_out["encoder_v2_tuning"] = v2_tune
             if write_kwargs.get("hw_encode"):
                 metrics_out["hw_encode"] = write_kwargs.get("hw_encode")
         final.write_videofile(out_path, **moviepy_write_kwargs(write_kwargs))
@@ -2878,9 +2888,10 @@ def generate_rich_video_sync(
         _cleanup_partial(out_path)
         try:
             import gc
-            from backend.services.generator_encode_service import build_write_kwargs, moviepy_write_kwargs
+            from backend.services.encoder_v2_service import write_kwargs_with_v2
+            from backend.services.generator_encode_service import moviepy_write_kwargs
             gc.collect()
-            fallback = build_write_kwargs(doc_id, "fast_ai", add_audio=False, videos_dir=VIDEOS_DIR)
+            fallback = write_kwargs_with_v2(doc_id, "fast_ai", user_id=user_id, add_audio=False, videos_dir=VIDEOS_DIR)
             final.write_videofile(out_path, **moviepy_write_kwargs(fallback))
         except Exception as e2:
             _cleanup_partial(out_path)
@@ -3309,7 +3320,11 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
 
     try:
         from backend.services.generator_encode_service import resolve_encode_profile, is_fast_encode_profile
+        from backend.services.encoder_v2_service import resolve_v2_encode_profile
+
         enc_prof = resolve_encode_profile(config)
+        _uid = config.get("user_id", "default_user")
+        enc_prof = resolve_v2_encode_profile({**config, "encode_profile": enc_prof, "user_id": _uid})
         config["encode_profile"] = enc_prof
     except Exception:
         enc_prof = str(config.get("encode_profile") or "fast_ai")
@@ -3538,6 +3553,7 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
                         visual_profile=config.get("_visual_profile"),
                         metrics_out=video_cogs_metrics,
                         encode_profile=enc_prof,
+                        user_id=str(_uid),
                     )
                     config["_video_cogs_metrics"] = video_cogs_metrics
                     try:
@@ -3566,7 +3582,8 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
         require_ai_content = bool(config.get("require_ai_content", False))
         if not path and not require_ai_content:
             path, error_message = _generate_video_sync(
-                doc_id, prompt, title, duration, w, h, on_progress, encode_profile=enc_prof,
+                doc_id, prompt, title, duration, w, h, on_progress,
+                encode_profile=enc_prof, user_id=str(_uid),
             )
         elif not path and require_ai_content:
             error_message = error_message or "AI content required, but AI scene planning/encoding failed"

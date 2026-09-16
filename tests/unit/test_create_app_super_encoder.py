@@ -327,6 +327,55 @@ def test_encoder_v2_build_package():
     assert "v2_tuning" in pkg
 
 
+def test_write_kwargs_with_v2_adjusts_crf():
+    from backend.services.encoder_v2_service import ensure_free_unlocks, write_kwargs_with_v2
+    from backend.services.generator_encode_service import ENCODE_CRF
+
+    uid = "_test_v2_write_kwargs"
+    ensure_free_unlocks(uid)
+    base_prof = "fast_ai"
+    kw = write_kwargs_with_v2("job-v2", base_prof, user_id=uid, add_audio=False, videos_dir="/tmp")
+    params = kw.get("ffmpeg_params") or []
+    crf_idx = params.index("-crf") if "-crf" in params else -1
+    assert crf_idx >= 0
+    effective_crf = int(params[crf_idx + 1])
+    assert effective_crf < ENCODE_CRF[base_prof]
+    assert kw.get("encoder_v2_tuning")
+    assert kw["encoder_v2_tuning"].get("crf_delta", 0) < 0
+
+
+def test_write_kwargs_without_user_id_is_unchanged():
+    from backend.services.encoder_v2_service import write_kwargs_with_v2
+    from backend.services.generator_encode_service import build_write_kwargs
+
+    base = build_write_kwargs("job-plain", "premium", add_audio=False, videos_dir="/tmp")
+    kw = write_kwargs_with_v2("job-plain", "premium", user_id=None, add_audio=False, videos_dir="/tmp")
+    assert kw.get("ffmpeg_params") == base.get("ffmpeg_params")
+    assert "encoder_v2_tuning" not in kw
+
+
+def test_apply_v2_audio_filter_chain_lufs():
+    from backend.services.encoder_upgrade_service import unlock_upgrade
+    from backend.services.encoder_v2_service import apply_v2_audio_filter_chain, ensure_free_unlocks
+
+    uid = "_test_v2_audio_lufs"
+    ensure_free_unlocks(uid)
+    unlock_upgrade(uid, "v2_aud_001")
+    chain = "highpass=f=80,loudnorm=I=-16:TP=-1.5:LRA=11"
+    out = apply_v2_audio_filter_chain(chain, uid)
+    assert "loudnorm=I=-17" in out
+    assert out != chain
+
+
+def test_resolve_v2_encode_profile_quality_bias():
+    from backend.services.encoder_v2_service import ensure_free_unlocks, resolve_v2_encode_profile
+
+    uid = "_test_v2_profile"
+    ensure_free_unlocks(uid)
+    prof = resolve_v2_encode_profile({"encode_profile": "fast_ai", "user_id": uid})
+    assert prof in ("fast_ai", "standard", "premium", "ultra")
+
+
 def test_super_encode_rerun(create_app_client, monkeypatch):
     monkeypatch.setenv("MN2_EARN_ALLOW_TEST_USER", "1")
     create_app_client.post(

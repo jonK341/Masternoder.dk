@@ -341,3 +341,35 @@ def gather_encoder_v2_hub(config: Optional[Dict[str, Any]] = None) -> Dict[str, 
 def write_kwargs_with_v2(doc_id: str, profile: str, user_id: Optional[str] = None, **kwargs: Any) -> Dict[str, Any]:
     base = build_write_kwargs(doc_id, profile, **kwargs)
     return apply_v2_write_kwargs(base, user_id, profile)
+
+
+def apply_v2_audio_filter_chain(filter_chain: str, user_id: Optional[str]) -> str:
+    """Adjust loudnorm LUFS target in FFmpeg audio filter chain from v2 unlocks."""
+    import re
+
+    chain = str(filter_chain or "")
+    if not chain or not user_id:
+        return chain
+    cfg = _create_app_cfg()
+    if not (cfg.get("encoder_v2") or {}).get("enabled", True):
+        return chain
+    tuning = aggregate_tuning(str(user_id))
+    lufs = tuning.get("lufs_target")
+    if lufs is None:
+        return chain
+    target = int(lufs) if float(lufs).is_integer() else float(lufs)
+    return re.sub(r"(loudnorm=I=)-?\d+(?:\.\d+)?", rf"\g<1>{target}", chain)
+
+
+def resolve_v2_encode_profile(config: Optional[Dict[str, Any]]) -> str:
+    """Merge v1 profile selection with v2 unlock bias for the effective video profile."""
+    cfg = dict(config or {})
+    user_id = cfg.get("user_id")
+    base_profile = str(cfg.get("encode_profile") or "fast_ai").strip().lower()
+    if not user_id:
+        return base_profile if base_profile in VALID_PROFILES else "fast_ai"
+    pkg = apply_v2_to_package(
+        build_super_encode_package({"encode_profile": base_profile, "user_id": user_id}),
+        str(user_id),
+    )
+    return str(pkg.get("video_profile") or base_profile)

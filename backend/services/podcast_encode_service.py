@@ -120,9 +120,17 @@ def encode_audio_file(
     profile: str = "standard",
     *,
     apply_filters: bool = True,
+    user_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     prof = profile if profile in VALID_AUDIO_PROFILES else "standard"
-    cfg = AUDIO_ENCODE_PROFILES[prof]
+    cfg = dict(AUDIO_ENCODE_PROFILES[prof])
+    if user_id and cfg.get("filter_chain"):
+        try:
+            from backend.services.encoder_v2_service import apply_v2_audio_filter_chain
+
+            cfg["filter_chain"] = apply_v2_audio_filter_chain(cfg["filter_chain"], user_id)
+        except Exception:
+            pass
     if not os.path.isfile(input_path):
         return {"success": False, "error": "input_not_found", "input_path": input_path}
 
@@ -178,6 +186,7 @@ def generate_episode_audio(
     profile: str = "standard",
     dest_dir: Optional[str] = None,
     episode_id: Optional[str] = None,
+    user_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     text = (script or "").strip()
     if not text:
@@ -210,7 +219,7 @@ def generate_episode_audio(
         except Exception:
             pass
 
-    enc = encode_audio_file(raw_path, final_path, prof)
+    enc = encode_audio_file(raw_path, final_path, prof, user_id=user_id)
     if not enc.get("success"):
         return enc
 
