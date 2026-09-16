@@ -1709,9 +1709,26 @@ def shop_purchase():
         
         if not item:
             return jsonify({'success': False, 'error': f'Item {item_id} not found'}), 404
+
+        trophy_checkout = _is_trophy_catalog_item(item)
+        trophy_pricing = None
+        if trophy_checkout:
+            from backend.services.trophy_pricing_service import get_effective_price
+
+            trophy_pricing = get_effective_price(item_id)
+            if not trophy_pricing.get('success'):
+                return jsonify({
+                    'success': False,
+                    'error': trophy_pricing.get('error', 'trophy_pricing_failed'),
+                    'item_id': item_id,
+                }), 404
         
         # Get item price
         item_price = item.get('price', 0)
+        if trophy_checkout and trophy_pricing:
+            item_price = int(trophy_pricing.get('effective_price_coins') or 0)
+            if item_price <= 0:
+                return jsonify({'success': False, 'error': 'price_not_configured', 'item_id': item_id}), 400
         
         # Handle unified points pricing (object with multiple point types)
         if isinstance(item_price, dict):
@@ -2136,9 +2153,12 @@ def shop_auction_create_listing():
         item_id = (data.get('item_id') or '').strip()
         quantity = int(data.get('quantity') or 1)
         price_coins = int(data.get('price_coins') or 0)
+        edition_no = data.get('edition_no')
+        if edition_no is not None:
+            edition_no = int(edition_no)
         from backend.services.shop_auction_service import AuctionError, create_listing
         try:
-            listing = create_listing(user_id, item_id, quantity, price_coins)
+            listing = create_listing(user_id, item_id, quantity, price_coins, edition_no=edition_no)
         except AuctionError as ex:
             return jsonify({'success': False, 'error': str(ex)}), 400
         return jsonify({'success': True, 'listing': listing}), 200

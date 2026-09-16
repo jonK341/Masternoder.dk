@@ -68,7 +68,7 @@ def _save(listings: List[Dict[str, Any]]) -> None:
 def _public_listing(row: Dict[str, Any]) -> Dict[str, Any]:
     bids = row.get("bids") if isinstance(row.get("bids"), list) else []
     highest_bid = max((int(b.get("bid_coins") or 0) for b in bids if isinstance(b, dict) and b.get("status") == "active"), default=0)
-    return {
+    out = {
         "listing_id": row.get("listing_id"),
         "seller_id": row.get("seller_id"),
         "buyer_id": row.get("buyer_id"),
@@ -85,6 +85,13 @@ def _public_listing(row: Dict[str, Any]) -> Dict[str, Any]:
         "highest_bid_coins": highest_bid,
         "bids": bids[-10:] if bids else [],
     }
+    if row.get("edition_no") is not None:
+        out["edition_no"] = int(row.get("edition_no") or 0)
+    if row.get("edition_key"):
+        out["edition_key"] = row.get("edition_key")
+    if row.get("serial_key"):
+        out["serial_key"] = row.get("serial_key")
+    return out
 
 
 def list_active_listings(*, seller_id: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
@@ -120,7 +127,29 @@ def list_user_listings(user_id: str, limit: int = 100) -> Dict[str, List[Dict[st
     return {"selling": selling[:cap], "bought": bought[:cap], "sold": sold[:cap]}
 
 
-def create_listing(user_id: str, item_id: str, quantity: int, price_coins: int) -> Dict[str, Any]:
+def _catalog_serial_key(item_id: str) -> Optional[str]:
+    iid = (item_id or "").strip()
+    if not iid:
+        return None
+    try:
+        from backend.routes.shop_routes import _get_shop_items
+
+        item = next((i for i in (_get_shop_items() or []) if (i.get("id") or "") == iid), None)
+        if item and item.get("serial_key"):
+            return str(item.get("serial_key"))
+    except Exception:
+        pass
+    return None
+
+
+def create_listing(
+    user_id: str,
+    item_id: str,
+    quantity: int,
+    price_coins: int,
+    *,
+    edition_no: Optional[int] = None,
+) -> Dict[str, Any]:
     uid = (user_id or "").strip()
     iid = (item_id or "").strip()
     qty = int(quantity or 0)
@@ -135,13 +164,38 @@ def create_listing(user_id: str, item_id: str, quantity: int, price_coins: int) 
         raise AuctionError("price_coins must be greater than zero")
 
     from backend.services.shop_db_service import add_to_inventory, reserve_inventory
+    from backend.services.trophy_fulfillment_service import (
+        is_trophy_item,
+        mark_edition_listed,
+        validate_edition_for_listing,
+    )
+
+    trophy_listing = is_trophy_item(iid)
+    edition_row: Optional[Dict[str, Any]] = None
+    if trophy_listing:
+        if edition_no is None:
+            raise AuctionError("edition_no is required for trophy listings")
+        if qty != 1:
+            raise AuctionError("trophy listings must have quantity 1")
+        check = validate_edition_for_listing(uid, iid, int(edition_no))
+        if not check.get("success"):
+            err = check.get("error") or "edition_not_listable"
+            if err == "edition_paypal_held":
+                raise AuctionError("PayPal-held editions cannot be listed until hold clears")
+            if err == "edition_already_listed":
+                raise AuctionError("This edition is already listed")
+            if err == "edition_not_found":
+                raise AuctionError(f"Edition #{edition_no} not found in your collection")
+            raise AuctionError(str(err))
+        edition_row = check.get("edition") or {}
 
     reserved = reserve_inventory(uid, iid, qty)
     if not reserved:
         raise AuctionError("You do not have enough of this item to list it")
 
+    listing_id = str(uuid.uuid4())[:12]
     listing = {
-        "listing_id": str(uuid.uuid4())[:12],
+        "listing_id": listing_id,
         "seller_id": uid,
         "buyer_id": None,
         "item_id": iid,
@@ -156,6 +210,15 @@ def create_listing(user_id: str, item_id: str, quantity: int, price_coins: int) 
         "bids": [],
     }
 
+    if trophy_listing and edition_row:
+        eno = int(edition_no or edition_row.get("edition_no") or 0)
+        listing["edition_no"] = eno
+        listing["edition_key"] = edition_row.get("edition_key") or f"TRO-{iid}-{eno}"
+        listing["serial_key"] = _catalog_serial_key(iid) or listing["edition_key"]
+        if not mark_edition_listed(uid, iid, eno, listing_id):
+            add_to_inventory(uid, iid, listing["item_name"], qty)
+            raise AuctionError("Could not reserve trophy edition for listing")
+
     try:
         with _LOCK:
             listings = _load()
@@ -163,6 +226,10 @@ def create_listing(user_id: str, item_id: str, quantity: int, price_coins: int) 
             _save(listings)
     except Exception as ex:
         add_to_inventory(uid, iid, listing["item_name"], qty)
+        if trophy_listing and edition_row:
+            from backend.services.trophy_fulfillment_service import release_edition_listing
+
+            release_edition_listing(uid, iid, int(edition_no or 0))
         raise AuctionError(f"Could not create listing: {ex}") from ex
     return _public_listing(listing)
 
@@ -185,6 +252,10 @@ def cancel_listing(user_id: str, listing_id: str) -> Dict[str, Any]:
             if row.get("status") != "active":
                 raise AuctionError("Listing is not active")
             _release_all_bid_escrows(row)
+            if row.get("edition_no") is not None:
+                from backend.services.trophy_fulfillment_service import release_edition_listing
+
+                release_edition_listing(uid, row.get("item_id") or "", int(row.get("edition_no") or 0))
             if not add_to_inventory(uid, row.get("item_id") or "", row.get("item_name") or "", int(row.get("quantity") or 1)):
                 raise AuctionError("Could not restore item to inventory")
             row["status"] = "cancelled"
@@ -304,7 +375,32 @@ def buy_listing(
         if not debit.get("success", True):
             raise AuctionError("Could not debit buyer balance")
 
-        if not add_to_inventory(buyer, item_id, item_name, qty):
+        edition_transfer = None
+        if row.get("edition_no") is not None:
+            from backend.services.trophy_fulfillment_service import transfer_edition_to_buyer
+
+            edition_transfer = transfer_edition_to_buyer(
+                seller_id=seller,
+                buyer_id=buyer,
+                item_id=item_id,
+                edition_no=int(row.get("edition_no") or 0),
+                listing_id=lid,
+                price_coins=price,
+                payment_method=method,
+            )
+            if not edition_transfer.get("success"):
+                if escrow_bid:
+                    _release_bid_escrow(unified_points_db, escrow_bid, lid, reason="edition_transfer_failed")
+                else:
+                    _refund_buyer(unified_points_db, buyer, method, price, price_mn2, lid, item_id, "edition_transfer_failed")
+                raise AuctionError(edition_transfer.get("error") or "Could not transfer trophy edition")
+            if not add_to_inventory(buyer, item_id, item_name, qty):
+                if escrow_bid:
+                    _release_bid_escrow(unified_points_db, escrow_bid, lid, reason="buyer_inventory_failed")
+                else:
+                    _refund_buyer(unified_points_db, buyer, method, price, price_mn2, lid, item_id, "buyer_inventory_failed")
+                raise AuctionError("Could not attach item to buyer inventory; payment refunded")
+        elif not add_to_inventory(buyer, item_id, item_name, qty):
             if escrow_bid:
                 _release_bid_escrow(unified_points_db, escrow_bid, lid, reason="buyer_inventory_failed")
             else:
@@ -328,7 +424,10 @@ def buy_listing(
                 metadata={"listing_id": lid, "item_id": item_id, "buyer_id": buyer, "gross": price, "fee": fee},
             )
         if not payout.get("success", True):
-            reserve_inventory(buyer, item_id, qty)
+            if edition_transfer:
+                reserve_inventory(buyer, item_id, qty)
+            else:
+                reserve_inventory(buyer, item_id, qty)
             if escrow_bid:
                 _release_bid_escrow(unified_points_db, escrow_bid, lid, reason="seller_payout_failed")
             else:
@@ -363,6 +462,9 @@ def buy_listing(
             "price_mn2": price_mn2 if method == "mn2" else None,
             "fee_mn2": fee_mn2 if method == "mn2" else None,
             "seller_payout_mn2": seller_payout_mn2 if method == "mn2" else None,
+            "edition_no": row.get("edition_no"),
+            "edition_key": row.get("edition_key"),
+            "edition": (edition_transfer or {}).get("edition") if edition_transfer else None,
         }
 
 

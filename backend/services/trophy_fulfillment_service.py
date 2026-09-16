@@ -47,13 +47,17 @@ def _read_json(path: str, default: Any) -> Any:
         return default
 
 
-def _write_json(path: str, data: Any) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
-    with _LOCK:
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-        os.replace(tmp, path)
+def _write_json(path: str, data: Any) -> bool:
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = path + ".tmp"
+        with _LOCK:
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp, path)
+        return True
+    except Exception:
+        return False
 
 
 def payment_ref_for_capture(capture_id: str, item_id: str) -> str:
@@ -111,6 +115,169 @@ def get_trophy_editions(user_id: str, item_id: Optional[str] = None) -> List[Dic
         iid = item_id.strip()
         rows = [e for e in rows if (e.get("item_id") or "") == iid]
     return rows
+
+
+def _find_edition_index(editions: List[Dict[str, Any]], item_id: str, edition_no: int) -> Optional[int]:
+    for idx, row in enumerate(editions):
+        if not isinstance(row, dict):
+            continue
+        if (row.get("item_id") or "") != item_id:
+            continue
+        try:
+            if int(row.get("edition_no") or 0) == int(edition_no):
+                return idx
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def get_edition(user_id: str, item_id: str, edition_no: int) -> Optional[Dict[str, Any]]:
+    rows = get_trophy_editions(user_id, item_id)
+    for row in rows:
+        try:
+            if int(row.get("edition_no") or 0) == int(edition_no):
+                return dict(row)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _is_edition_held(edition: Dict[str, Any]) -> bool:
+    hold = edition.get("hold_until")
+    if not hold:
+        return False
+    try:
+        hold_dt = datetime.fromisoformat(str(hold).replace("Z", "+00:00"))
+        if hold_dt.tzinfo is None:
+            hold_dt = hold_dt.replace(tzinfo=timezone.utc)
+        return hold_dt > datetime.now(timezone.utc)
+    except Exception:
+        return False
+
+
+def validate_edition_for_listing(user_id: str, item_id: str, edition_no: int) -> Dict[str, Any]:
+    """Ensure a specific trophy edition can be listed on the auction house."""
+    uid = (user_id or "").strip()
+    iid = (item_id or "").strip()
+    try:
+        eno = int(edition_no)
+    except (TypeError, ValueError):
+        return {"success": False, "error": "invalid_edition_no"}
+
+    edition = get_edition(uid, iid, eno)
+    if not edition:
+        return {"success": False, "error": "edition_not_found", "edition_no": eno}
+
+    if _is_edition_held(edition):
+        return {"success": False, "error": "edition_paypal_held", "hold_until": edition.get("hold_until")}
+
+    if edition.get("listed_listing_id"):
+        return {"success": False, "error": "edition_already_listed", "listed_listing_id": edition.get("listed_listing_id")}
+
+    return {"success": True, "edition": edition}
+
+
+def mark_edition_listed(user_id: str, item_id: str, edition_no: int, listing_id: str) -> bool:
+    uid = (user_id or "").strip()
+    iid = (item_id or "").strip()
+    lid = (listing_id or "").strip()
+    if not uid or not iid or not lid:
+        return False
+    path = _editions_file_path(uid)
+    doc = _read_json(path, {"editions": []})
+    editions = doc.setdefault("editions", [])
+    idx = _find_edition_index(editions, iid, edition_no)
+    if idx is None:
+        return False
+    editions[idx]["listed_listing_id"] = lid
+    editions[idx]["listed_at"] = _iso()
+    doc["updated_at"] = _iso()
+    return _write_json(path, doc)
+
+
+def release_edition_listing(user_id: str, item_id: str, edition_no: int) -> bool:
+    uid = (user_id or "").strip()
+    iid = (item_id or "").strip()
+    path = _editions_file_path(uid)
+    doc = _read_json(path, {"editions": []})
+    editions = doc.setdefault("editions", [])
+    idx = _find_edition_index(editions, iid, edition_no)
+    if idx is None:
+        return False
+    editions[idx].pop("listed_listing_id", None)
+    editions[idx].pop("listed_at", None)
+    editions[idx]["released_from_listing_at"] = _iso()
+    doc["updated_at"] = _iso()
+    return _write_json(path, doc)
+
+
+def transfer_edition_to_buyer(
+    *,
+    seller_id: str,
+    buyer_id: str,
+    item_id: str,
+    edition_no: int,
+    listing_id: str,
+    price_coins: int,
+    payment_method: str = "coins",
+) -> Dict[str, Any]:
+    """Move a listed edition from seller to buyer with provenance."""
+    seller = (seller_id or "").strip()
+    buyer = (buyer_id or "").strip()
+    iid = (item_id or "").strip()
+    lid = (listing_id or "").strip()
+    try:
+        eno = int(edition_no)
+    except (TypeError, ValueError):
+        return {"success": False, "error": "invalid_edition_no"}
+
+    seller_path = _editions_file_path(seller)
+    seller_doc = _read_json(seller_path, {"editions": []})
+    seller_editions = seller_doc.setdefault("editions", [])
+    idx = _find_edition_index(seller_editions, iid, eno)
+    if idx is None:
+        return {"success": False, "error": "edition_not_found"}
+
+    edition = dict(seller_editions[idx])
+    if (edition.get("listed_listing_id") or "") != lid:
+        return {"success": False, "error": "edition_not_reserved_for_listing"}
+
+    transfer_event = {
+        "from_user_id": seller,
+        "to_user_id": buyer,
+        "listing_id": lid,
+        "price_coins": int(price_coins or 0),
+        "payment_method": (payment_method or "coins").strip().lower(),
+        "transferred_at": _iso(),
+    }
+    history = edition.get("transfer_history")
+    if not isinstance(history, list):
+        history = []
+    history.append(transfer_event)
+    edition["transfer_history"] = history[-20:]
+    edition["acquired_via"] = "auction"
+    edition["price_type"] = payment_method
+    edition.pop("listed_listing_id", None)
+    edition.pop("listed_at", None)
+    edition["acquired_at"] = _iso()
+    edition["last_listing_id"] = lid
+
+    seller_editions.pop(idx)
+    seller_doc["updated_at"] = _iso()
+    if not _write_json(seller_path, seller_doc):
+        return {"success": False, "error": "seller_update_failed"}
+
+    buyer_path = _editions_file_path(buyer)
+    buyer_doc = _read_json(buyer_path, {"editions": []})
+    buyer_editions = buyer_doc.setdefault("editions", [])
+    buyer_editions.append(edition)
+    buyer_doc["updated_at"] = _iso()
+    if not _write_json(buyer_path, buyer_doc):
+        seller_editions.insert(idx, edition)
+        _write_json(seller_path, seller_doc)
+        return {"success": False, "error": "buyer_update_failed"}
+
+    return {"success": True, "edition": edition, "edition_no": eno, "edition_key": edition.get("edition_key")}
 
 
 def _append_edition_record(user_id: str, edition: Dict[str, Any]) -> None:
