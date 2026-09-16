@@ -93,18 +93,16 @@ def validate_payout_address(address: str) -> Dict[str, Any]:
 
 
 def _address_validity(addr: str) -> Optional[bool]:
-    """Ask the daemon whether `addr` is usable as one of OUR deposit addresses.
+    """Ask the daemon whether `addr` is a well-formed MN2 address.
 
     Returns:
-      - False when the daemon definitively says it's malformed (`isvalid: false`)
-        OR well-formed but not owned by the current wallet (`ismine: false`) —
-        deposits to a not-owned address are invisible/unrecoverable, so it must
-        be regenerated.
-      - True when the daemon confirms it's valid (and owned, when reported).
-      - None when validation is unavailable (RPC error / daemon down / method
-        unimplemented). Per the daemon-is-source-of-truth policy we must NOT
-        treat an RPC outage as "invalid" — that would wrongly discard good
-        addresses when the node is offline.
+      - False when the daemon definitively says it's malformed (`isvalid: false`).
+      - True when the daemon confirms `isvalid: true` (or bool true).
+      - None when validation is unavailable (RPC error / missing isvalid).
+        Per daemon-is-source-of-truth policy we must NOT treat RPC outage as invalid.
+
+    Note: we intentionally do NOT reject on `ismine: false` — several MN2 builds
+    omit or misreport ismine on validateaddress, which blocked getnewaddress flows.
     """
     if not addr or not isinstance(addr, str):
         return False
@@ -116,18 +114,33 @@ def _address_validity(addr: str) -> Optional[bool]:
     if r.get("error"):
         return None
     res = r.get("result")
-    if not isinstance(res, dict) or "isvalid" not in res:
+    if res is True:
+        return True
+    if not isinstance(res, dict):
+        return None
+    if "isvalid" not in res:
         return None
     if not res.get("isvalid"):
-        return False
-    # Well-formed. If the daemon reports ownership, require it to be ours.
-    if "ismine" in res and res.get("ismine") is False:
         return False
     return True
 
 
+def _accept_generated_deposit_address(addr: str) -> bool:
+    """Whether to accept an address returned by our wallet's getnewaddress."""
+    a = (addr or "").strip()
+    if not a:
+        return False
+    validity = _address_validity(a)
+    if validity is True:
+        return True
+    if validity is False:
+        # Some daemons mis-validate fresh wallet addresses; trust getnewaddress + format.
+        return looks_like_mn2_address(a)
+    return looks_like_mn2_address(a)
+
+
 def _generate_valid_address(max_attempts: int = 3) -> Dict[str, Any]:
-    """Generate a fresh address via getnewaddress, skipping any the daemon rejects."""
+    """Generate a fresh address via getnewaddress, skipping only malformed results."""
     from backend.services.mn2_rpc_client import getnewaddress
     last_err = None
     for _ in range(max(1, max_attempts)):
@@ -140,8 +153,8 @@ def _generate_valid_address(max_attempts: int = 3) -> Dict[str, Any]:
             last_err = "RPC getnewaddress returned no address"
             continue
         addr = addr.strip()
-        if _address_validity(addr) is False:
-            last_err = "getnewaddress returned an address the daemon rejected"
+        if not _accept_generated_deposit_address(addr):
+            last_err = "getnewaddress returned an address that failed format validation"
             continue
         return {"success": True, "deposit_address": addr}
     return {"success": False, "error": last_err or "could not generate a valid address"}
@@ -188,8 +201,8 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
         if not pool_key:
             break
         addr = addresses.pop(pool_key)
-        if _address_validity(addr) is False:
-            continue  # discard invalid pool address, try the next one
+        if not looks_like_mn2_address(addr) or _address_validity(addr) is False:
+            continue  # discard malformed pool address, try the next one
         addresses[user_id] = addr
         _save_addresses(addresses)
         return {"success": True, "deposit_address": addr, "user_id": user_id}

@@ -21,6 +21,17 @@ class TestMN2WalletService(unittest.TestCase):
             res = ws.validate_payout_address("Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ")
         self.assertTrue(res.get("valid"))
 
+    def test_generate_valid_address_accepts_when_ismine_false(self):
+        from backend.services import mn2_wallet_service as ws
+
+        with patch("backend.services.mn2_rpc_client.getnewaddress") as mock_new:
+            with patch("backend.services.mn2_rpc_client.validateaddress") as mock_va:
+                mock_new.return_value = {"result": "Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ"}
+                mock_va.return_value = {"result": {"isvalid": True, "ismine": False}}
+                res = ws._generate_valid_address()
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("deposit_address"), "Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ")
+
     def test_validate_payout_address_rejects_malformed(self):
         from backend.services import mn2_wallet_service as ws
 
