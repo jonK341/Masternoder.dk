@@ -73,6 +73,40 @@ def agent_mn2_masternodes_status():
     return jsonify(rented_masternodes_snapshot()), 200
 
 
+@agent_mn2_tx_bp.route("/api/agent/mn2/peers/mesh", methods=["POST", "GET"])
+def agent_mn2_peer_mesh():
+    """Agent-to-agent on-chain dust transfers (rotating mesh). Auth required."""
+    if not _authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    dry_run = (request.args.get("dry_run") == "1") or data.get("dry_run") is True
+    try:
+        max_txs = int(data.get("max_txs") or request.args.get("max_txs") or 50)
+    except (TypeError, ValueError):
+        max_txs = 50
+    from backend.services.agent_peer_transactions_service import run_agent_peer_mesh
+    result = run_agent_peer_mesh(max_txs=max_txs, dry_run=dry_run)
+    status = 200 if result.get("success") else 503
+    return jsonify(result), status
+
+
+@agent_mn2_tx_bp.route("/api/agent/mn2/micro/burst", methods=["POST", "GET"])
+def agent_mn2_micro_burst():
+    """Dust on-chain MN2 micro-transaction burst. Auth required."""
+    if not _authorized():
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    dry_run = (request.args.get("dry_run") == "1") or data.get("dry_run") is True
+    try:
+        max_txs = int(data.get("max_txs") or request.args.get("max_txs") or 80)
+    except (TypeError, ValueError):
+        max_txs = 80
+    from backend.services.mn2_micro_transactions_service import run_micro_transaction_burst
+    result = run_micro_transaction_burst(max_txs=max_txs, dry_run=dry_run)
+    status = 200 if result.get("success") else 503
+    return jsonify(result), status
+
+
 @agent_mn2_tx_bp.route("/api/agent/mn2/masternodes/bring-online", methods=["POST"])
 def agent_mn2_masternodes_bring_online():
     if not _authorized():

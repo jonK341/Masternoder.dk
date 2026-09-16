@@ -624,9 +624,15 @@ def health_check() -> Dict[str, Any]:
             out["status"] = "unreachable"
         return out
     try:
-        out["block_height"] = int(r["result"])
-        out["status"] = "healthy"
+        height = int(r["result"])
+        out["block_height"] = height
+        if height < 0:
+            out["status"] = "unhealthy"
+            out["error"] = out.get("error") or "invalid block height from RPC"
+        else:
+            out["status"] = "healthy"
     except (TypeError, ValueError):
         out["block_height"] = r.get("result")
-        out["status"] = "healthy"
+        out["status"] = "unhealthy"
+        out["error"] = out.get("error") or "non-integer block height from RPC"
     return out

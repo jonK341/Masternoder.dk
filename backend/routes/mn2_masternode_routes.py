@@ -243,9 +243,30 @@ def masternode_my_orders():
         user_id = resolve_user_id(from_body=False, from_query=True)
         if not user_id or user_id == "default_user":
             return jsonify({"success": False, "error": "auth_required", "orders": []}), 401
-        limit = int(request.args.get("limit") or 20)
+        limit = int(request.args.get("limit") or 200)
         orders = mn_hosting.list_user_orders(user_id, limit=limit)
         return jsonify({"success": True, "user_id": user_id, "orders": orders}), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc), "orders": []}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/orders", methods=["GET"])
+def masternode_ops_orders():
+    """Ops: sanitized paid/pending hosting order list (no private keys)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        status = (request.args.get("status") or "").strip()
+        try:
+            limit = int(request.args.get("limit") or 100)
+        except (TypeError, ValueError):
+            limit = 100
+        try:
+            offset = int(request.args.get("offset") or 0)
+        except (TypeError, ValueError):
+            offset = 0
+        payload = mn_hosting.list_ops_orders(status=status or None, limit=limit, offset=offset)
+        return jsonify(payload), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc), "orders": []}), 500
 

@@ -13,6 +13,7 @@ _log = logging.getLogger(__name__)
 from backend.services.account_resolution_service import resolve_user_id
 from backend.services.mn2_wallet_service import (
     get_balance,
+    ensure_user_wallet,
     get_or_create_deposit_address,
     list_user_addresses,
     create_additional_wallet,
@@ -62,11 +63,13 @@ def mn2_balance():
     result = get_balance(user_id)
     if not result.get("success"):
         return jsonify({"success": False, "error": result.get("error", "Unknown error")}), 500
+    wallet = ensure_user_wallet(user_id)
     config = _load_mn2_config()
     coins_per_mn2 = float(config.get("coins_per_mn2") or 100)
     shop_revenue_address = (config.get("shop_revenue_address") or "").strip()
     base = _explorer_base_url().rstrip("/")
     shop_revenue_explorer_url = f"{base}/address.dws?addr={shop_revenue_address}" if shop_revenue_address else ""
+    deposit_addr = (wallet.get("deposit_address") or "").strip() if wallet.get("success") else ""
     payload = {
         "success": True,
         "user_id": result.get("user_id"),
@@ -74,7 +77,14 @@ def mn2_balance():
         "coins_per_mn2": coins_per_mn2,
         "shop_revenue_address": shop_revenue_address or None,
         "shop_revenue_explorer_url": shop_revenue_explorer_url or None,
+        "wallet_ready": bool(deposit_addr),
+        "deposit_address": deposit_addr or None,
+        "wallet_type": wallet.get("wallet_type") if wallet.get("success") else None,
     }
+    if deposit_addr:
+        payload["explorer_address_url"] = f"{base}/address.dws?addr={deposit_addr}"
+    elif wallet.get("error"):
+        payload["wallet_error"] = _user_facing_rpc_error(str(wallet.get("error")))
     if config.get("withdrawal_requires_verification"):
         try:
             from backend.services.mn2_verification import is_verified
@@ -307,7 +317,8 @@ def mn2_wallet_create():
     label = (data.get("label") or request.args.get("label") or "wallet").strip()
     result = create_additional_wallet(user_id, label=label)
     if not result.get("success"):
-        return jsonify(result), 200
+        err = result.get("error", "Unknown error")
+        return jsonify({"success": False, "error": _user_facing_rpc_error(str(err))}), 200
     addr = (result.get("deposit_address") or "").strip()
     base = _explorer_base_url().rstrip("/")
     return jsonify({
@@ -335,6 +346,33 @@ def mn2_wallet_refresh():
         "user_id": result.get("user_id"),
         "deposit_address": addr,
         "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/agent-wallets", methods=["GET"])
+def mn2_agent_wallets():
+    """List peer-mesh agent wallets with deposit addresses and balances."""
+    provision = request.args.get("provision", "1") != "0"
+    try:
+        from backend.services.agent_peer_transactions_service import list_mesh_agent_wallets
+        result = list_mesh_agent_wallets(provision=provision)
+    except Exception as e:
+        _log.exception("mn2_agent_wallets failed")
+        return jsonify({"success": False, "error": str(e), "agents": []}), 500
+    base = _explorer_base_url().rstrip("/")
+    rows = []
+    for row in result.get("agents") or []:
+        item = dict(row)
+        addr = (item.get("address") or "").strip()
+        if addr:
+            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+        rows.append(item)
+    return jsonify({
+        "success": True,
+        "agents": rows,
+        "count": result.get("count") or len(rows),
+        "unique_addresses": result.get("unique_addresses") or len({r.get("address") for r in rows if r.get("address")}),
+        "mesh_enabled": result.get("mesh_enabled"),
     }), 200
 
 
@@ -539,6 +577,92 @@ def _ops_authorized() -> bool:
         return True
     token = (request.headers.get("X-Scanner-Token") or request.headers.get("X-Ops-Token") or request.args.get("token") or "").strip()
     return token == secret
+
+
+@mn2_bp.route("/api/mn2/user-wallet-map", methods=["GET"])
+def mn2_user_wallet_map():
+    """Table of all users with wallet status and clone/copy flags. ?provision=1 assigns missing wallets."""
+    try:
+        limit = min(500, max(1, int(request.args.get("limit", 200))))
+        offset = max(0, int(request.args.get("offset", 0)))
+    except (TypeError, ValueError):
+        limit, offset = 200, 0
+    search = request.args.get("search") or request.args.get("q")
+    provision = request.args.get("provision", "0") in ("1", "true", "yes")
+    from backend.services.user_wallet_map_service import build_user_wallet_table
+    result = build_user_wallet_table(
+        limit=limit,
+        offset=offset,
+        search=search,
+        provision=provision,
+    )
+    base = _explorer_base_url().rstrip("/")
+    for row in result.get("users") or []:
+        addr = (row.get("deposit_address") or "").strip()
+        if addr:
+            row["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+    return jsonify(result), 200
+
+
+@mn2_bp.route("/api/mn2/ops/provision-all-wallets", methods=["POST", "GET"])
+def mn2_ops_provision_all_wallets():
+    """Bulk-assign wallets to users missing one. Query: limit, offset, search."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        batch = min(500, max(1, int(request.args.get("limit", 200))))
+        offset = max(0, int(request.args.get("offset", 0)))
+    except (TypeError, ValueError):
+        batch, offset = 200, 0
+    search = request.args.get("search") or request.args.get("q")
+    from backend.services.user_wallet_map_service import (
+        build_user_wallet_table,
+        collect_all_user_ids,
+        provision_wallets_batch,
+    )
+    all_uids = sorted(collect_all_user_ids(), reverse=True)
+    q = (search or "").strip().lower()
+    if q:
+        all_uids = [u for u in all_uids if q in u.lower()]
+    slice_ids = all_uids[offset: offset + batch]
+    prov = provision_wallets_batch(slice_ids, limit=batch)
+    table = build_user_wallet_table(limit=batch, offset=offset, search=search, provision=False)
+    return jsonify({
+        "success": True,
+        "total_users": len(all_uids),
+        "batch_offset": offset,
+        "batch_limit": batch,
+        **prov,
+        "table": table,
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/ops/normalize-wallets", methods=["POST", "GET"])
+def mn2_ops_normalize_wallets():
+    """Upgrade bare address strings to full wallet records (users + agents). Ops auth required."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    from backend.services.mn2_wallet_service import normalize_all_legacy_wallets
+    return jsonify(normalize_all_legacy_wallets()), 200
+
+
+@mn2_bp.route("/api/mn2/ops/seed-pool-addresses", methods=["POST"])
+def mn2_ops_seed_pool_addresses():
+    """Register pre-generated MN2 addresses as pool_N (fallback when getnewaddress RPC is disabled)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    raw = data.get("addresses") or data.get("address") or request.args.get("addresses") or ""
+    if isinstance(raw, str):
+        addrs = [a.strip() for a in raw.replace(",", "\n").splitlines() if a.strip()]
+    elif isinstance(raw, list):
+        addrs = [str(a).strip() for a in raw if str(a).strip()]
+    else:
+        addrs = []
+    from backend.services.mn2_wallet_service import seed_pool_addresses
+    result = seed_pool_addresses(addrs)
+    status = 200 if result.get("success") else 200
+    return jsonify(result), status
 
 
 @mn2_bp.route("/api/mn2/ops/create-addresses", methods=["POST", "GET"])
