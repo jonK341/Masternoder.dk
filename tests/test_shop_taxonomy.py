@@ -154,6 +154,27 @@ class TestShopTaxonomy(unittest.TestCase):
         self.assertIn("exchange_parents", payload)
 
 
+class TestNavToolbarGroupLayout(unittest.TestCase):
+    def test_group_chips_are_sibling_bar_below_link_row(self):
+        from pathlib import Path
+        nav = (Path(BASE) / "static/js/navigation-toolbar.js").read_text(encoding="utf-8")
+        links_i = nav.index('id="navToolbarLinks"')
+        groups_i = nav.index('id="navToolbarGroups"')
+        mobile_i = nav.index('id="navToolbarMobile"')
+        self.assertLess(links_i, groups_i)
+        self.assertLess(groups_i, mobile_i)
+        self.assertNotIn("nav-toolbar-navcol", nav)
+        self.assertEqual(nav.count('id="navToolbarUserBtn"'), 2)
+        self.assertEqual(nav.count('id="navToolbarGroups"'), 1)
+
+    def test_group_bar_css_does_not_stack_inside_link_row(self):
+        from pathlib import Path
+        css = (Path(BASE) / "static/css/navigation-toolbar.css").read_text(encoding="utf-8")
+        self.assertIn("flex-direction: column", css)
+        self.assertIn("body:has(#navToolbarGroups)", css)
+        self.assertNotIn(".nav-toolbar-navcol", css)
+
+
 class TestShopUpgradeWave(unittest.TestCase):
     def test_seed_includes_upgrade_wave_ids(self):
         from backend.routes.shop_routes import _seed_shop_items
