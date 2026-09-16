@@ -86,4 +86,8 @@ data/crypto_exchange/grid_bot_state.json
 data/crypto_exchange/grid_bot_ledger.jsonl
 data/crypto_exchange/cross_trade_audit.jsonl
 data/crypto_exchange/cross_trade_state.json
+# Per-user runtime state (created on server; do not commit from dev)
+data/click_game/
+data/trophy_income/
+data/trophy_quests/
 data/paypal_shop_orders.json

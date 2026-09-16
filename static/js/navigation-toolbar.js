@@ -62,6 +62,7 @@
             { name: 'Profile', icon: '👤', url: APP_BASE + '/profile', id: 'profile', title: 'Points, stats, leaderboard, shop & inventory' },
             { name: 'AI Agents', icon: '🤖', url: APP_BASE + '/agents', id: 'agents' },
             { name: 'Podcast', icon: '🎙️', url: APP_BASE + '/podcast', id: 'podcast', title: 'YouTube, Facebook, Discord, GitHub — crypto rewards & AI encoder' },
+            { name: 'Create App', icon: '📱', url: APP_BASE + '/create-app', id: 'create_app', title: 'Play Store + Podcast TWA · Super Encoder nr. 1 · 100 finish checks · MN2 rewards' },
             { name: 'News', icon: '📰', url: APP_BASE + '/news', id: 'news' },
             { name: 'Library', icon: '📖', url: APP_BASE + '/compendium/?calm=1', id: 'library', title: 'Calm reading — rulebooks V1–V16, compendium points' },
             { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab', title: 'Discussion, experiments, and system lab' },

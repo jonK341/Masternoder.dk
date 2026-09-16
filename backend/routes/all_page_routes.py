@@ -50,7 +50,7 @@ PAGES = [
     'social-monitor', 'explorer', 'proof-of-reserves',
     'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
-    'wallets', 'podcast', 'business-control',
+    'wallets', 'podcast', 'create-app', 'business-control',
 ]
 
 # Legacy page aliases that no longer have standalone index.html files.

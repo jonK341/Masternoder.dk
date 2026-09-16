@@ -193,6 +193,32 @@
         document.body.classList.add('mn-install-banner-visible');
     }
 
+    function triggerInstall() {
+        if (isIos()) {
+            showIosSheet();
+            return;
+        }
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.catch(function () {});
+            return;
+        }
+        showIosSheet();
+        var sheet = document.getElementById('mn-install-ios-sheet');
+        if (sheet && isAndroid()) {
+            sheet.querySelector('h2').textContent = 'Install on Android';
+            var ol = sheet.querySelector('ol');
+            if (ol) {
+                ol.innerHTML =
+                    '<li>Open Chrome menu (⋮) at the top right.</li>'
+                    + '<li>Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li>'
+                    + '<li>Confirm — MasterNoder opens full-screen like an app.</li>';
+            }
+        }
+    }
+
+    window.__mnInstallPwa = triggerInstall;
+
     function boot() {
         injectHeadTags();
         registerServiceWorker();

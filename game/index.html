@@ -5148,10 +5148,13 @@
                         }
                     }
                     
-                    // Update click reward display
+                    // Update click reward display (points + instant MN2)
                     const clickRewardEl = document.getElementById('click-reward-display');
                     if (clickRewardEl) {
                         let displayText = `+${pointsEarned} points (Level ${clickGame.currentLevel})`;
+                        if (result.mn2 && result.mn2.success && result.mn2.amount_mn2) {
+                            displayText += ` · ⚡ +${result.mn2.amount_mn2} MN2 instant`;
+                        }
                         if (result.critical) displayText += ' 💥';
                         if (result.combo > 1) displayText += ` (${result.combo}x Combo)`;
                         clickRewardEl.textContent = displayText;

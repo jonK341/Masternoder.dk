@@ -1,0 +1,4891 @@
+{
+  "version": 2,
+  "encoder_id": "encoder_v2",
+  "label": "Super Encoder v2 \u2014 250 upgrades",
+  "upgrade_count": 250,
+  "categories": [
+    {
+      "id": "video",
+      "prefix": "v2_vid",
+      "count": 38,
+      "label": "Video"
+    },
+    {
+      "id": "audio",
+      "prefix": "v2_aud",
+      "count": 33,
+      "label": "Audio"
+    },
+    {
+      "id": "hardware",
+      "prefix": "v2_hw",
+      "count": 24,
+      "label": "E1 HW"
+    },
+    {
+      "id": "ai",
+      "prefix": "v2_ai",
+      "count": 28,
+      "label": "AI tune"
+    },
+    {
+      "id": "mobile",
+      "prefix": "v2_mob",
+      "count": 28,
+      "label": "Mobile"
+    },
+    {
+      "id": "podcast",
+      "prefix": "v2_pod",
+      "count": 22,
+      "label": "Podcast"
+    },
+    {
+      "id": "workflow",
+      "prefix": "v2_wf",
+      "count": 23,
+      "label": "Workflow"
+    },
+    {
+      "id": "mn2",
+      "prefix": "v2_mn2",
+      "count": 18,
+      "label": "MN2"
+    },
+    {
+      "id": "qa",
+      "prefix": "v2_qa",
+      "count": 19,
+      "label": "QA"
+    },
+    {
+      "id": "ops",
+      "prefix": "v2_ops",
+      "count": 17,
+      "label": "Ops"
+    }
+  ],
+  "upgrades": [
+    {
+      "id": "v2_vid_001",
+      "index": 1,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 1",
+      "desc": "Super Encoder v2 video tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_002",
+      "index": 2,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 2",
+      "desc": "Super Encoder v2 video tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_003",
+      "index": 3,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 3",
+      "desc": "Super Encoder v2 video tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_004",
+      "index": 4,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 4",
+      "desc": "Super Encoder v2 video tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_005",
+      "index": 5,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 5",
+      "desc": "Super Encoder v2 video tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_006",
+      "index": 6,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 6",
+      "desc": "Super Encoder v2 video tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_007",
+      "index": 7,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 7",
+      "desc": "Super Encoder v2 video tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_008",
+      "index": 8,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 8",
+      "desc": "Super Encoder v2 video tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_009",
+      "index": 9,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 9",
+      "desc": "Super Encoder v2 video tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_010",
+      "index": 10,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 10",
+      "desc": "Super Encoder v2 video tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_011",
+      "index": 11,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 11",
+      "desc": "Super Encoder v2 video tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_012",
+      "index": 12,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 12",
+      "desc": "Super Encoder v2 video tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_vid_013",
+      "index": 13,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 13",
+      "desc": "Super Encoder v2 video tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_vid_014",
+      "index": 14,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 14",
+      "desc": "Super Encoder v2 video tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_vid_015",
+      "index": 15,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 15",
+      "desc": "Super Encoder v2 video tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_vid_016",
+      "index": 16,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 16",
+      "desc": "Super Encoder v2 video tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_vid_017",
+      "index": 17,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 17",
+      "desc": "Super Encoder v2 video tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_vid_018",
+      "index": 18,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 18",
+      "desc": "Super Encoder v2 video tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_vid_019",
+      "index": 19,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 19",
+      "desc": "Super Encoder v2 video tuning lane 19 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_vid_020",
+      "index": 20,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 20",
+      "desc": "Super Encoder v2 video tuning lane 20 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_vid_021",
+      "index": 21,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 21",
+      "desc": "Super Encoder v2 video tuning lane 21 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_vid_022",
+      "index": 22,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 22",
+      "desc": "Super Encoder v2 video tuning lane 22 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_vid_023",
+      "index": 23,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 23",
+      "desc": "Super Encoder v2 video tuning lane 23 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_vid_024",
+      "index": 24,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 24",
+      "desc": "Super Encoder v2 video tuning lane 24 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_vid_025",
+      "index": 25,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 25",
+      "desc": "Super Encoder v2 video tuning lane 25 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_vid_026",
+      "index": 26,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 26",
+      "desc": "Super Encoder v2 video tuning lane 26 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_vid_027",
+      "index": 27,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 27",
+      "desc": "Super Encoder v2 video tuning lane 27 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_vid_028",
+      "index": 28,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 28",
+      "desc": "Super Encoder v2 video tuning lane 28 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_vid_029",
+      "index": 29,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 29",
+      "desc": "Super Encoder v2 video tuning lane 29 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_vid_030",
+      "index": 30,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 30",
+      "desc": "Super Encoder v2 video tuning lane 30 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_vid_031",
+      "index": 31,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 31",
+      "desc": "Super Encoder v2 video tuning lane 31 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_vid_032",
+      "index": 32,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 32",
+      "desc": "Super Encoder v2 video tuning lane 32 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_vid_033",
+      "index": 33,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 33",
+      "desc": "Super Encoder v2 video tuning lane 33 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_vid_034",
+      "index": 34,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 34",
+      "desc": "Super Encoder v2 video tuning lane 34 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_vid_035",
+      "index": 35,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 35",
+      "desc": "Super Encoder v2 video tuning lane 35 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_vid_036",
+      "index": 36,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 36",
+      "desc": "Super Encoder v2 video tuning lane 36 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": 0,
+        "preset_step": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_vid_037",
+      "index": 37,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 37",
+      "desc": "Super Encoder v2 video tuning lane 37 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -1,
+        "preset_step": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_vid_038",
+      "index": 38,
+      "chapter": "video",
+      "category": "video",
+      "icon": "\ud83c\udfac",
+      "name": "Video Upgrade 38",
+      "desc": "Super Encoder v2 video tuning lane 38 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "video_tune",
+        "crf_delta": -2,
+        "preset_step": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_aud_001",
+      "index": 39,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 1",
+      "desc": "Super Encoder v2 audio tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -17,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_aud_002",
+      "index": 40,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 2",
+      "desc": "Super Encoder v2 audio tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -18,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_aud_003",
+      "index": 41,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 3",
+      "desc": "Super Encoder v2 audio tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -19,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_aud_004",
+      "index": 42,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 4",
+      "desc": "Super Encoder v2 audio tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -20,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_aud_005",
+      "index": 43,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 5",
+      "desc": "Super Encoder v2 audio tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -16,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_aud_006",
+      "index": 44,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 6",
+      "desc": "Super Encoder v2 audio tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -17,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_aud_007",
+      "index": 45,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 7",
+      "desc": "Super Encoder v2 audio tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -18,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_aud_008",
+      "index": 46,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 8",
+      "desc": "Super Encoder v2 audio tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -19,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_aud_009",
+      "index": 47,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 9",
+      "desc": "Super Encoder v2 audio tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -20,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_aud_010",
+      "index": 48,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 10",
+      "desc": "Super Encoder v2 audio tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -16,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_aud_011",
+      "index": 49,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 11",
+      "desc": "Super Encoder v2 audio tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -17,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_aud_012",
+      "index": 50,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 12",
+      "desc": "Super Encoder v2 audio tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -18,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_aud_013",
+      "index": 51,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 13",
+      "desc": "Super Encoder v2 audio tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -19,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_aud_014",
+      "index": 52,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 14",
+      "desc": "Super Encoder v2 audio tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -20,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_aud_015",
+      "index": 53,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 15",
+      "desc": "Super Encoder v2 audio tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -16,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_aud_016",
+      "index": 54,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 16",
+      "desc": "Super Encoder v2 audio tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -17,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_aud_017",
+      "index": 55,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 17",
+      "desc": "Super Encoder v2 audio tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -18,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_aud_018",
+      "index": 56,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 18",
+      "desc": "Super Encoder v2 audio tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -19,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_aud_019",
+      "index": 57,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 19",
+      "desc": "Super Encoder v2 audio tuning lane 19 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -20,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_aud_020",
+      "index": 58,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 20",
+      "desc": "Super Encoder v2 audio tuning lane 20 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -16,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_aud_021",
+      "index": 59,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 21",
+      "desc": "Super Encoder v2 audio tuning lane 21 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -17,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_aud_022",
+      "index": 60,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 22",
+      "desc": "Super Encoder v2 audio tuning lane 22 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -18,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_aud_023",
+      "index": 61,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 23",
+      "desc": "Super Encoder v2 audio tuning lane 23 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -19,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_aud_024",
+      "index": 62,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 24",
+      "desc": "Super Encoder v2 audio tuning lane 24 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -20,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_aud_025",
+      "index": 63,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 25",
+      "desc": "Super Encoder v2 audio tuning lane 25 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -16,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_aud_026",
+      "index": 64,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 26",
+      "desc": "Super Encoder v2 audio tuning lane 26 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -17,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_aud_027",
+      "index": 65,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 27",
+      "desc": "Super Encoder v2 audio tuning lane 27 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -18,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_aud_028",
+      "index": 66,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 28",
+      "desc": "Super Encoder v2 audio tuning lane 28 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -19,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_aud_029",
+      "index": 67,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 29",
+      "desc": "Super Encoder v2 audio tuning lane 29 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -20,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_aud_030",
+      "index": 68,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 30",
+      "desc": "Super Encoder v2 audio tuning lane 30 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -16,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_aud_031",
+      "index": 69,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 31",
+      "desc": "Super Encoder v2 audio tuning lane 31 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -17,
+        "filter_stage": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_aud_032",
+      "index": 70,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 32",
+      "desc": "Super Encoder v2 audio tuning lane 32 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -18,
+        "filter_stage": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_aud_033",
+      "index": 71,
+      "chapter": "audio",
+      "category": "audio",
+      "icon": "\ud83c\udf99\ufe0f",
+      "name": "Audio Upgrade 33",
+      "desc": "Super Encoder v2 audio tuning lane 33 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "audio_tune",
+        "lufs_target": -19,
+        "filter_stage": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_hw_001",
+      "index": 72,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 1",
+      "desc": "Super Encoder v2 e1 hw tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_hw_002",
+      "index": 73,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 2",
+      "desc": "Super Encoder v2 e1 hw tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_hw_003",
+      "index": 74,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 3",
+      "desc": "Super Encoder v2 e1 hw tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_hw_004",
+      "index": 75,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 4",
+      "desc": "Super Encoder v2 e1 hw tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_hw_005",
+      "index": 76,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 5",
+      "desc": "Super Encoder v2 e1 hw tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_hw_006",
+      "index": 77,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 6",
+      "desc": "Super Encoder v2 e1 hw tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_hw_007",
+      "index": 78,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 7",
+      "desc": "Super Encoder v2 e1 hw tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_hw_008",
+      "index": 79,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 8",
+      "desc": "Super Encoder v2 e1 hw tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_hw_009",
+      "index": 80,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 9",
+      "desc": "Super Encoder v2 e1 hw tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_hw_010",
+      "index": 81,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 10",
+      "desc": "Super Encoder v2 e1 hw tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_hw_011",
+      "index": 82,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 11",
+      "desc": "Super Encoder v2 e1 hw tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_hw_012",
+      "index": 83,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 12",
+      "desc": "Super Encoder v2 e1 hw tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_hw_013",
+      "index": 84,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 13",
+      "desc": "Super Encoder v2 e1 hw tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_hw_014",
+      "index": 85,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 14",
+      "desc": "Super Encoder v2 e1 hw tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_hw_015",
+      "index": 86,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 15",
+      "desc": "Super Encoder v2 e1 hw tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_hw_016",
+      "index": 87,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 16",
+      "desc": "Super Encoder v2 e1 hw tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_hw_017",
+      "index": 88,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 17",
+      "desc": "Super Encoder v2 e1 hw tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_hw_018",
+      "index": 89,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 18",
+      "desc": "Super Encoder v2 e1 hw tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_hw_019",
+      "index": 90,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 19",
+      "desc": "Super Encoder v2 e1 hw tuning lane 19 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_hw_020",
+      "index": 91,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 20",
+      "desc": "Super Encoder v2 e1 hw tuning lane 20 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_hw_021",
+      "index": 92,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 21",
+      "desc": "Super Encoder v2 e1 hw tuning lane 21 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_hw_022",
+      "index": 93,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 22",
+      "desc": "Super Encoder v2 e1 hw tuning lane 22 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_hw_023",
+      "index": 94,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 23",
+      "desc": "Super Encoder v2 e1 hw tuning lane 23 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_hw_024",
+      "index": 95,
+      "chapter": "hardware",
+      "category": "hardware",
+      "icon": "\u26a1",
+      "name": "E1 HW Upgrade 24",
+      "desc": "Super Encoder v2 e1 hw tuning lane 24 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "hw_path",
+        "prefer_codec_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_ai_001",
+      "index": 96,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 1",
+      "desc": "Super Encoder v2 ai tune tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_ai_002",
+      "index": 97,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 2",
+      "desc": "Super Encoder v2 ai tune tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_ai_003",
+      "index": 98,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 3",
+      "desc": "Super Encoder v2 ai tune tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_ai_004",
+      "index": 99,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 4",
+      "desc": "Super Encoder v2 ai tune tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 4
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_ai_005",
+      "index": 100,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 5",
+      "desc": "Super Encoder v2 ai tune tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_ai_006",
+      "index": 101,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 6",
+      "desc": "Super Encoder v2 ai tune tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_ai_007",
+      "index": 102,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 7",
+      "desc": "Super Encoder v2 ai tune tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_ai_008",
+      "index": 103,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 8",
+      "desc": "Super Encoder v2 ai tune tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_ai_009",
+      "index": 104,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 9",
+      "desc": "Super Encoder v2 ai tune tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 4
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_ai_010",
+      "index": 105,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 10",
+      "desc": "Super Encoder v2 ai tune tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_ai_011",
+      "index": 106,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 11",
+      "desc": "Super Encoder v2 ai tune tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_ai_012",
+      "index": 107,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 12",
+      "desc": "Super Encoder v2 ai tune tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_ai_013",
+      "index": 108,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 13",
+      "desc": "Super Encoder v2 ai tune tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_ai_014",
+      "index": 109,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 14",
+      "desc": "Super Encoder v2 ai tune tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 4
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_ai_015",
+      "index": 110,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 15",
+      "desc": "Super Encoder v2 ai tune tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_ai_016",
+      "index": 111,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 16",
+      "desc": "Super Encoder v2 ai tune tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_ai_017",
+      "index": 112,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 17",
+      "desc": "Super Encoder v2 ai tune tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_ai_018",
+      "index": 113,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 18",
+      "desc": "Super Encoder v2 ai tune tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_ai_019",
+      "index": 114,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 19",
+      "desc": "Super Encoder v2 ai tune tuning lane 19 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 4
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_ai_020",
+      "index": 115,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 20",
+      "desc": "Super Encoder v2 ai tune tuning lane 20 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_ai_021",
+      "index": 116,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 21",
+      "desc": "Super Encoder v2 ai tune tuning lane 21 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_ai_022",
+      "index": 117,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 22",
+      "desc": "Super Encoder v2 ai tune tuning lane 22 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_ai_023",
+      "index": 118,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 23",
+      "desc": "Super Encoder v2 ai tune tuning lane 23 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_ai_024",
+      "index": 119,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 24",
+      "desc": "Super Encoder v2 ai tune tuning lane 24 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 4
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_ai_025",
+      "index": 120,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 25",
+      "desc": "Super Encoder v2 ai tune tuning lane 25 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_ai_026",
+      "index": 121,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 26",
+      "desc": "Super Encoder v2 ai tune tuning lane 26 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_ai_027",
+      "index": 122,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 27",
+      "desc": "Super Encoder v2 ai tune tuning lane 27 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_ai_028",
+      "index": 123,
+      "chapter": "ai",
+      "category": "ai",
+      "icon": "\ud83e\udd16",
+      "name": "AI tune Upgrade 28",
+      "desc": "Super Encoder v2 ai tune tuning lane 28 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ai_rule",
+        "quality_bias": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_mob_001",
+      "index": 124,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 1",
+      "desc": "Super Encoder v2 mobile tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_mob_002",
+      "index": 125,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 2",
+      "desc": "Super Encoder v2 mobile tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_mob_003",
+      "index": 126,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 3",
+      "desc": "Super Encoder v2 mobile tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_mob_004",
+      "index": 127,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 4",
+      "desc": "Super Encoder v2 mobile tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_mob_005",
+      "index": 128,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 5",
+      "desc": "Super Encoder v2 mobile tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_mob_006",
+      "index": 129,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 6",
+      "desc": "Super Encoder v2 mobile tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_mob_007",
+      "index": 130,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 7",
+      "desc": "Super Encoder v2 mobile tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_mob_008",
+      "index": 131,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 8",
+      "desc": "Super Encoder v2 mobile tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_mob_009",
+      "index": 132,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 9",
+      "desc": "Super Encoder v2 mobile tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_mob_010",
+      "index": 133,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 10",
+      "desc": "Super Encoder v2 mobile tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_mob_011",
+      "index": 134,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 11",
+      "desc": "Super Encoder v2 mobile tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_mob_012",
+      "index": 135,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 12",
+      "desc": "Super Encoder v2 mobile tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_mob_013",
+      "index": 136,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 13",
+      "desc": "Super Encoder v2 mobile tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_mob_014",
+      "index": 137,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 14",
+      "desc": "Super Encoder v2 mobile tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_mob_015",
+      "index": 138,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 15",
+      "desc": "Super Encoder v2 mobile tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_mob_016",
+      "index": 139,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 16",
+      "desc": "Super Encoder v2 mobile tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_mob_017",
+      "index": 140,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 17",
+      "desc": "Super Encoder v2 mobile tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_mob_018",
+      "index": 141,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 18",
+      "desc": "Super Encoder v2 mobile tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_mob_019",
+      "index": 142,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 19",
+      "desc": "Super Encoder v2 mobile tuning lane 19 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_mob_020",
+      "index": 143,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 20",
+      "desc": "Super Encoder v2 mobile tuning lane 20 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_mob_021",
+      "index": 144,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 21",
+      "desc": "Super Encoder v2 mobile tuning lane 21 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_mob_022",
+      "index": 145,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 22",
+      "desc": "Super Encoder v2 mobile tuning lane 22 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_mob_023",
+      "index": 146,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 23",
+      "desc": "Super Encoder v2 mobile tuning lane 23 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_mob_024",
+      "index": 147,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 24",
+      "desc": "Super Encoder v2 mobile tuning lane 24 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_mob_025",
+      "index": 148,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 25",
+      "desc": "Super Encoder v2 mobile tuning lane 25 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_mob_026",
+      "index": 149,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 26",
+      "desc": "Super Encoder v2 mobile tuning lane 26 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_mob_027",
+      "index": 150,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 27",
+      "desc": "Super Encoder v2 mobile tuning lane 27 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_mob_028",
+      "index": 151,
+      "chapter": "mobile",
+      "category": "mobile",
+      "icon": "\ud83d\udcf1",
+      "name": "Mobile Upgrade 28",
+      "desc": "Super Encoder v2 mobile tuning lane 28 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mobile_surface",
+        "shortcut_rank": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_pod_001",
+      "index": 152,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 1",
+      "desc": "Super Encoder v2 podcast tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_pod_002",
+      "index": 153,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 2",
+      "desc": "Super Encoder v2 podcast tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_pod_003",
+      "index": 154,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 3",
+      "desc": "Super Encoder v2 podcast tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_pod_004",
+      "index": 155,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 4",
+      "desc": "Super Encoder v2 podcast tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_pod_005",
+      "index": 156,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 5",
+      "desc": "Super Encoder v2 podcast tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_pod_006",
+      "index": 157,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 6",
+      "desc": "Super Encoder v2 podcast tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_pod_007",
+      "index": 158,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 7",
+      "desc": "Super Encoder v2 podcast tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_pod_008",
+      "index": 159,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 8",
+      "desc": "Super Encoder v2 podcast tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_pod_009",
+      "index": 160,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 9",
+      "desc": "Super Encoder v2 podcast tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_pod_010",
+      "index": 161,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 10",
+      "desc": "Super Encoder v2 podcast tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_pod_011",
+      "index": 162,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 11",
+      "desc": "Super Encoder v2 podcast tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_pod_012",
+      "index": 163,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 12",
+      "desc": "Super Encoder v2 podcast tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_pod_013",
+      "index": 164,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 13",
+      "desc": "Super Encoder v2 podcast tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_pod_014",
+      "index": 165,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 14",
+      "desc": "Super Encoder v2 podcast tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_pod_015",
+      "index": 166,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 15",
+      "desc": "Super Encoder v2 podcast tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_pod_016",
+      "index": 167,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 16",
+      "desc": "Super Encoder v2 podcast tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_pod_017",
+      "index": 168,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 17",
+      "desc": "Super Encoder v2 podcast tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_pod_018",
+      "index": 169,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 18",
+      "desc": "Super Encoder v2 podcast tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_pod_019",
+      "index": 170,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 19",
+      "desc": "Super Encoder v2 podcast tuning lane 19 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_pod_020",
+      "index": 171,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 20",
+      "desc": "Super Encoder v2 podcast tuning lane 20 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_pod_021",
+      "index": 172,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 21",
+      "desc": "Super Encoder v2 podcast tuning lane 21 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_pod_022",
+      "index": 173,
+      "chapter": "podcast",
+      "category": "podcast",
+      "icon": "\ud83d\udcfb",
+      "name": "Podcast Upgrade 22",
+      "desc": "Super Encoder v2 podcast tuning lane 22 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "podcast_meta",
+        "episode_template": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_wf_001",
+      "index": 174,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 1",
+      "desc": "Super Encoder v2 workflow tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_wf_002",
+      "index": 175,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 2",
+      "desc": "Super Encoder v2 workflow tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_wf_003",
+      "index": 176,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 3",
+      "desc": "Super Encoder v2 workflow tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_wf_004",
+      "index": 177,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 4",
+      "desc": "Super Encoder v2 workflow tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_wf_005",
+      "index": 178,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 5",
+      "desc": "Super Encoder v2 workflow tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_wf_006",
+      "index": 179,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 6",
+      "desc": "Super Encoder v2 workflow tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_wf_007",
+      "index": 180,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 7",
+      "desc": "Super Encoder v2 workflow tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_wf_008",
+      "index": 181,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 8",
+      "desc": "Super Encoder v2 workflow tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_wf_009",
+      "index": 182,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 9",
+      "desc": "Super Encoder v2 workflow tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_wf_010",
+      "index": 183,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 10",
+      "desc": "Super Encoder v2 workflow tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_wf_011",
+      "index": 184,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 11",
+      "desc": "Super Encoder v2 workflow tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_wf_012",
+      "index": 185,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 12",
+      "desc": "Super Encoder v2 workflow tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_wf_013",
+      "index": 186,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 13",
+      "desc": "Super Encoder v2 workflow tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_wf_014",
+      "index": 187,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 14",
+      "desc": "Super Encoder v2 workflow tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_wf_015",
+      "index": 188,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 15",
+      "desc": "Super Encoder v2 workflow tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_wf_016",
+      "index": 189,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 16",
+      "desc": "Super Encoder v2 workflow tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_wf_017",
+      "index": 190,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 17",
+      "desc": "Super Encoder v2 workflow tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_wf_018",
+      "index": 191,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 18",
+      "desc": "Super Encoder v2 workflow tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_wf_019",
+      "index": 192,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 19",
+      "desc": "Super Encoder v2 workflow tuning lane 19 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_wf_020",
+      "index": 193,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 20",
+      "desc": "Super Encoder v2 workflow tuning lane 20 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_wf_021",
+      "index": 194,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 21",
+      "desc": "Super Encoder v2 workflow tuning lane 21 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_wf_022",
+      "index": 195,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 22",
+      "desc": "Super Encoder v2 workflow tuning lane 22 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_wf_023",
+      "index": 196,
+      "chapter": "workflow",
+      "category": "workflow",
+      "icon": "\ud83d\udee0\ufe0f",
+      "name": "Workflow Upgrade 23",
+      "desc": "Super Encoder v2 workflow tuning lane 23 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "workflow",
+        "retry_policy": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_mn2_001",
+      "index": 197,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 1",
+      "desc": "Super Encoder v2 mn2 tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_mn2_002",
+      "index": 198,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 2",
+      "desc": "Super Encoder v2 mn2 tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_mn2_003",
+      "index": 199,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 3",
+      "desc": "Super Encoder v2 mn2 tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_mn2_004",
+      "index": 200,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 4",
+      "desc": "Super Encoder v2 mn2 tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 4
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_mn2_005",
+      "index": 201,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 5",
+      "desc": "Super Encoder v2 mn2 tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 5
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_mn2_006",
+      "index": 202,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 6",
+      "desc": "Super Encoder v2 mn2 tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 6
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_mn2_007",
+      "index": 203,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 7",
+      "desc": "Super Encoder v2 mn2 tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 7
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_mn2_008",
+      "index": 204,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 8",
+      "desc": "Super Encoder v2 mn2 tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 8
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_mn2_009",
+      "index": 205,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 9",
+      "desc": "Super Encoder v2 mn2 tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 9
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_mn2_010",
+      "index": 206,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 10",
+      "desc": "Super Encoder v2 mn2 tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_mn2_011",
+      "index": 207,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 11",
+      "desc": "Super Encoder v2 mn2 tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_mn2_012",
+      "index": 208,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 12",
+      "desc": "Super Encoder v2 mn2 tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_mn2_013",
+      "index": 209,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 13",
+      "desc": "Super Encoder v2 mn2 tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_mn2_014",
+      "index": 210,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 14",
+      "desc": "Super Encoder v2 mn2 tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 4
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_mn2_015",
+      "index": 211,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 15",
+      "desc": "Super Encoder v2 mn2 tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 5
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_mn2_016",
+      "index": 212,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 16",
+      "desc": "Super Encoder v2 mn2 tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 6
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_mn2_017",
+      "index": 213,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 17",
+      "desc": "Super Encoder v2 mn2 tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 7
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_mn2_018",
+      "index": 214,
+      "chapter": "mn2",
+      "category": "mn2",
+      "icon": "\ud83d\udca0",
+      "name": "MN2 Upgrade 18",
+      "desc": "Super Encoder v2 mn2 tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "mn2_rebate",
+        "bps": 8
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_qa_001",
+      "index": 215,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 1",
+      "desc": "Super Encoder v2 qa tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 1
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_qa_002",
+      "index": 216,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 2",
+      "desc": "Super Encoder v2 qa tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 2
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_qa_003",
+      "index": 217,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 3",
+      "desc": "Super Encoder v2 qa tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_qa_004",
+      "index": 218,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 4",
+      "desc": "Super Encoder v2 qa tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_qa_005",
+      "index": 219,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 5",
+      "desc": "Super Encoder v2 qa tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_qa_006",
+      "index": 220,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 6",
+      "desc": "Super Encoder v2 qa tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_qa_007",
+      "index": 221,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 7",
+      "desc": "Super Encoder v2 qa tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_qa_008",
+      "index": 222,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 8",
+      "desc": "Super Encoder v2 qa tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_qa_009",
+      "index": 223,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 9",
+      "desc": "Super Encoder v2 qa tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_qa_010",
+      "index": 224,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 10",
+      "desc": "Super Encoder v2 qa tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_qa_011",
+      "index": 225,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 11",
+      "desc": "Super Encoder v2 qa tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_qa_012",
+      "index": 226,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 12",
+      "desc": "Super Encoder v2 qa tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_qa_013",
+      "index": 227,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 13",
+      "desc": "Super Encoder v2 qa tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_qa_014",
+      "index": 228,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 14",
+      "desc": "Super Encoder v2 qa tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_qa_015",
+      "index": 229,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 15",
+      "desc": "Super Encoder v2 qa tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_qa_016",
+      "index": 230,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 16",
+      "desc": "Super Encoder v2 qa tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 0
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_qa_017",
+      "index": 231,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 17",
+      "desc": "Super Encoder v2 qa tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 1
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_qa_018",
+      "index": 232,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 18",
+      "desc": "Super Encoder v2 qa tuning lane 18 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 2
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_qa_019",
+      "index": 233,
+      "chapter": "qa",
+      "category": "qa",
+      "icon": "\u2705",
+      "name": "QA Upgrade 19",
+      "desc": "Super Encoder v2 qa tuning lane 19 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "qa_gate",
+        "strictness": 3
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_ops_001",
+      "index": 234,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 1",
+      "desc": "Super Encoder v2 ops tuning lane 1 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_1"
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_ops_002",
+      "index": 235,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 2",
+      "desc": "Super Encoder v2 ops tuning lane 2 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_2"
+      },
+      "unlock": {
+        "free": true,
+        "mn2_cost": 0.0
+      }
+    },
+    {
+      "id": "v2_ops_003",
+      "index": 236,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 3",
+      "desc": "Super Encoder v2 ops tuning lane 3 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_3"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_ops_004",
+      "index": 237,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 4",
+      "desc": "Super Encoder v2 ops tuning lane 4 \u2014 unlocks finer encode control.",
+      "tier": "Core",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_4"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_ops_005",
+      "index": 238,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 5",
+      "desc": "Super Encoder v2 ops tuning lane 5 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_5"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_ops_006",
+      "index": 239,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 6",
+      "desc": "Super Encoder v2 ops tuning lane 6 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_6"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_ops_007",
+      "index": 240,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 7",
+      "desc": "Super Encoder v2 ops tuning lane 7 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_7"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_ops_008",
+      "index": 241,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 8",
+      "desc": "Super Encoder v2 ops tuning lane 8 \u2014 unlocks finer encode control.",
+      "tier": "Signal",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_8"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_ops_009",
+      "index": 242,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 9",
+      "desc": "Super Encoder v2 ops tuning lane 9 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_9"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_ops_010",
+      "index": 243,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 10",
+      "desc": "Super Encoder v2 ops tuning lane 10 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_10"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    },
+    {
+      "id": "v2_ops_011",
+      "index": 244,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 11",
+      "desc": "Super Encoder v2 ops tuning lane 11 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_11"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.004
+      }
+    },
+    {
+      "id": "v2_ops_012",
+      "index": 245,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 12",
+      "desc": "Super Encoder v2 ops tuning lane 12 \u2014 unlocks finer encode control.",
+      "tier": "Pro",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_12"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.001
+      }
+    },
+    {
+      "id": "v2_ops_013",
+      "index": 246,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 13",
+      "desc": "Super Encoder v2 ops tuning lane 13 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_13"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0015
+      }
+    },
+    {
+      "id": "v2_ops_014",
+      "index": 247,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 14",
+      "desc": "Super Encoder v2 ops tuning lane 14 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_14"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.002
+      }
+    },
+    {
+      "id": "v2_ops_015",
+      "index": 248,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 15",
+      "desc": "Super Encoder v2 ops tuning lane 15 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_15"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0025
+      }
+    },
+    {
+      "id": "v2_ops_016",
+      "index": 249,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 16",
+      "desc": "Super Encoder v2 ops tuning lane 16 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_16"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.003
+      }
+    },
+    {
+      "id": "v2_ops_017",
+      "index": 250,
+      "chapter": "ops",
+      "category": "ops",
+      "icon": "\ud83d\udce1",
+      "name": "Ops Upgrade 17",
+      "desc": "Super Encoder v2 ops tuning lane 17 \u2014 unlocks finer encode control.",
+      "tier": "Ultra",
+      "encoder_version": 2,
+      "effect": {
+        "type": "ops_hook",
+        "metric": "enc_v2_17"
+      },
+      "unlock": {
+        "free": false,
+        "mn2_cost": 0.0035
+      }
+    }
+  ]
+}

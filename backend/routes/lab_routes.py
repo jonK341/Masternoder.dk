@@ -1088,6 +1088,24 @@ def lab_v2_status_get():
     }), 200
 
 
+@lab_bp.route("/api/lab/projects/catalog", methods=["GET"])
+def lab_projects_catalog():
+    """Featured lab seed projects + Create App templates (Play Store, Podcast, Super Encoder)."""
+    seed = _load_data_json("lab_projects_seed.json") or {}
+    projects = seed.get("projects") if isinstance(seed, dict) else []
+    try:
+        from backend.services.create_app_service import catalog as create_app_catalog
+        create_meta = create_app_catalog()
+    except Exception:
+        create_meta = {"success": False}
+    return jsonify({
+        "success": True,
+        "seed_projects": projects if isinstance(projects, list) else [],
+        "create_app": create_meta,
+        "super_encoder_id": "new_encoder_nr_1",
+    }), 200
+
+
 @lab_bp.route("/api/lab/projects", methods=["GET"])
 def lab_projects_get():
     """Research projects with a 6h creation cooldown."""

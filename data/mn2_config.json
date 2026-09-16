@@ -26,6 +26,41 @@
   },
   "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
   "coins_per_mn2": 100,
+  "create_app": {
+    "enabled": true,
+    "join_reward_mn2": 0.01,
+    "finish_reward_mn2": 0.025,
+    "agent_leaderboard_daily_cap_mn2": 0.1,
+    "super_encoder_ai_enabled": true,
+    "encoder_v2": {
+      "enabled": true,
+      "upgrade_count": 250,
+      "encoder_id": "encoder_v2",
+      "free_starter_unlocks": 12
+    }
+  },
+  "encoder_orders": {
+    "enabled": true,
+    "require_order_for_create_app_encode": false,
+    "ledger_entry_type": "encoder_payment"
+  },
+  "discord_customers": {
+    "enabled": true,
+    "channel_id": "",
+    "guild_id": ""
+  },
+  "click_rewards": {
+    "enabled": true,
+    "instant": true,
+    "base_per_click_mn2": 0.0001,
+    "critical_multiplier": 3.0,
+    "combo_bonus_per_level_mn2": 0.00002,
+    "mission_win_mn2": 0.002,
+    "quest_win_mn2": 0.003,
+    "achievement_win_mn2": 0.005,
+    "level_up_mn2": 0.01,
+    "daily_cap_mn2": 0.5
+  },
   "generator": {
     "enabled": true,
     "earn_on_finish_mn2": 0.005,
