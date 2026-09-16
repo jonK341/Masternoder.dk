@@ -5,8 +5,12 @@ See docs/MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md Phase 2.
 """
 import os
 import json
+import re
 import threading
 from typing import Dict, Any, Optional, List
+
+# MasterNoder2 base58 addresses (mainnet typically J…; tests/dev may use M…).
+_MN2_PAYOUT_ADDR_RE = re.compile(r"^[MJ][1-9A-HJ-NP-Za-km-z]{24,55}$")
 
 _ADDRESSES_LOCK = threading.Lock()
 _ADDRESSES_FILENAME = "mn2_user_addresses.json"
@@ -43,19 +47,62 @@ def _save_addresses(addresses: Dict[str, str]) -> None:
             json.dump(addresses, f, indent=2)
 
 
+def looks_like_mn2_address(addr: str) -> bool:
+    """Local format check when RPC validateaddress is missing or inconclusive."""
+    a = (addr or "").strip()
+    return bool(a and _MN2_PAYOUT_ADDR_RE.match(a))
+
+
+def validate_payout_address(address: str) -> Dict[str, Any]:
+    """
+    Validate an external payout address for withdrawals / whitelist / address book.
+    Unlike deposit-address checks, external payouts must NOT require ismine=true.
+    """
+    addr = (address or "").strip()
+    if not addr:
+        return {"valid": False, "error": "address is required"}
+    if addr in ("--", "—", "…"):
+        return {"valid": False, "error": "Enter a valid MN2 address"}
+    try:
+        from backend.services.mn2_rpc_client import validateaddress
+        r = validateaddress(addr)
+    except Exception:
+        r = {"error": "rpc_unavailable"}
+    if r.get("error"):
+        if looks_like_mn2_address(addr):
+            return {"valid": True, "rpc_confirmed": False}
+        return {
+            "valid": False,
+            "error": "Could not verify address with the wallet node. Check the format and try again.",
+            "code": "address_check_failed",
+        }
+    res = r.get("result")
+    if res is True:
+        return {"valid": True, "rpc_confirmed": True}
+    if isinstance(res, dict):
+        if res.get("isvalid") is True:
+            return {"valid": True, "rpc_confirmed": True}
+        if res.get("isvalid") is False:
+            return {"valid": False, "error": "Invalid MN2 address", "code": "invalid_address"}
+        # Daemon responded but omitted isvalid — accept well-formed local addresses.
+        if looks_like_mn2_address(addr):
+            return {"valid": True, "rpc_confirmed": False}
+    if looks_like_mn2_address(addr):
+        return {"valid": True, "rpc_confirmed": False}
+    return {"valid": False, "error": "Invalid MN2 address", "code": "invalid_address"}
+
+
 def _address_validity(addr: str) -> Optional[bool]:
-    """Ask the daemon whether `addr` is usable as one of OUR deposit addresses.
+    """Ask the daemon whether `addr` is a well-formed MN2 address.
 
     Returns:
-      - False when the daemon definitively says it's malformed (`isvalid: false`)
-        OR well-formed but not owned by the current wallet (`ismine: false`) —
-        deposits to a not-owned address are invisible/unrecoverable, so it must
-        be regenerated.
-      - True when the daemon confirms it's valid (and owned, when reported).
-      - None when validation is unavailable (RPC error / daemon down / method
-        unimplemented). Per the daemon-is-source-of-truth policy we must NOT
-        treat an RPC outage as "invalid" — that would wrongly discard good
-        addresses when the node is offline.
+      - False when the daemon definitively says it's malformed (`isvalid: false`).
+      - True when the daemon confirms `isvalid: true` (or bool true).
+      - None when validation is unavailable (RPC error / missing isvalid).
+        Per daemon-is-source-of-truth policy we must NOT treat RPC outage as invalid.
+
+    Note: we intentionally do NOT reject on `ismine: false` — several MN2 builds
+    omit or misreport ismine on validateaddress, which blocked getnewaddress flows.
     """
     if not addr or not isinstance(addr, str):
         return False
@@ -67,18 +114,33 @@ def _address_validity(addr: str) -> Optional[bool]:
     if r.get("error"):
         return None
     res = r.get("result")
-    if not isinstance(res, dict) or "isvalid" not in res:
+    if res is True:
+        return True
+    if not isinstance(res, dict):
+        return None
+    if "isvalid" not in res:
         return None
     if not res.get("isvalid"):
-        return False
-    # Well-formed. If the daemon reports ownership, require it to be ours.
-    if "ismine" in res and res.get("ismine") is False:
         return False
     return True
 
 
+def _accept_generated_deposit_address(addr: str) -> bool:
+    """Whether to accept an address returned by our wallet's getnewaddress."""
+    a = (addr or "").strip()
+    if not a:
+        return False
+    validity = _address_validity(a)
+    if validity is True:
+        return True
+    if validity is False:
+        # Some daemons mis-validate fresh wallet addresses; trust getnewaddress + format.
+        return looks_like_mn2_address(a)
+    return looks_like_mn2_address(a)
+
+
 def _generate_valid_address(max_attempts: int = 3) -> Dict[str, Any]:
-    """Generate a fresh address via getnewaddress, skipping any the daemon rejects."""
+    """Generate a fresh address via getnewaddress, skipping only malformed results."""
     from backend.services.mn2_rpc_client import getnewaddress
     last_err = None
     for _ in range(max(1, max_attempts)):
@@ -91,8 +153,8 @@ def _generate_valid_address(max_attempts: int = 3) -> Dict[str, Any]:
             last_err = "RPC getnewaddress returned no address"
             continue
         addr = addr.strip()
-        if _address_validity(addr) is False:
-            last_err = "getnewaddress returned an address the daemon rejected"
+        if not _accept_generated_deposit_address(addr):
+            last_err = "getnewaddress returned an address that failed format validation"
             continue
         return {"success": True, "deposit_address": addr}
     return {"success": False, "error": last_err or "could not generate a valid address"}
@@ -139,8 +201,8 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
         if not pool_key:
             break
         addr = addresses.pop(pool_key)
-        if _address_validity(addr) is False:
-            continue  # discard invalid pool address, try the next one
+        if not looks_like_mn2_address(addr) or _address_validity(addr) is False:
+            continue  # discard malformed pool address, try the next one
         addresses[user_id] = addr
         _save_addresses(addresses)
         return {"success": True, "deposit_address": addr, "user_id": user_id}
@@ -257,6 +319,45 @@ def list_user_addresses(user_id: str) -> Dict[str, Any]:
         if addr:
             rows = [{"label": "primary", "address": addr, "type": "core", "active": True}]
     return {"success": True, "user_id": uid, "addresses": rows, "wallet_type": (entry or {}).get("wallet_type") if isinstance(entry, dict) else "core"}
+
+
+def create_additional_wallet(user_id: str, label: str = "wallet") -> Dict[str, Any]:
+    """Create a new labeled deposit address for the user without rotating the primary."""
+    if not (user_id or "").strip():
+        return {"success": False, "error": "user_id required"}
+    uid = str(user_id).strip()
+    lbl = (label or "wallet").strip()[:48] or "wallet"
+    gen = _generate_valid_address()
+    if not gen.get("success"):
+        return gen
+    new_addr = gen["deposit_address"]
+    addresses = _load_addresses()
+    entry = addresses.get(uid)
+    if not isinstance(entry, dict):
+        primary = _entry_primary(entry)
+        entry = {
+            "primary": primary or new_addr,
+            "wallet_type": "core",
+            "addresses": [],
+        }
+        if primary:
+            entry["addresses"].append({"label": "primary", "address": primary, "type": "core", "active": True})
+    rows = entry.setdefault("addresses", [])
+    if not isinstance(rows, list):
+        rows = []
+        entry["addresses"] = rows
+    rows.append({
+        "label": lbl,
+        "address": new_addr,
+        "type": "core",
+        "active": True,
+        "created_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+    })
+    if not (entry.get("primary") or "").strip():
+        entry["primary"] = new_addr
+    addresses[uid] = entry
+    _save_addresses(addresses)
+    return {"success": True, "user_id": uid, "deposit_address": new_addr, "label": lbl, "addresses": rows}
 
 
 def refresh_deposit_address(user_id: str) -> Dict[str, Any]:

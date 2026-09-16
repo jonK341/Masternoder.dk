@@ -11,7 +11,14 @@ from flask import Blueprint, jsonify, request
 _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
-from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
+from backend.services.mn2_wallet_service import (
+    get_balance,
+    get_or_create_deposit_address,
+    list_user_addresses,
+    create_additional_wallet,
+    refresh_deposit_address,
+    validate_payout_address,
+)
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
 
 
@@ -268,6 +275,201 @@ def mn2_statement():
         "disclaimer": ("Informational record derived from your in-app MN2 ledger. Not tax advice — "
                        "consult a professional. Balance is a derived view and may differ from on-chain."),
     }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/addresses", methods=["GET"])
+def mn2_wallet_addresses():
+    """List all labeled deposit addresses for the current user."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    result = list_user_addresses(user_id)
+    if not result.get("success"):
+        return jsonify(result), 200
+    base = _explorer_base_url().rstrip("/")
+    rows = []
+    for row in result.get("addresses") or []:
+        item = dict(row)
+        addr = (item.get("address") or "").strip()
+        if addr:
+            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+        rows.append(item)
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "addresses": rows,
+        "wallet_type": result.get("wallet_type"),
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/create", methods=["POST"])
+def mn2_wallet_create():
+    """Create a new labeled deposit address for the current user."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    data = request.get_json(silent=True) or {}
+    label = (data.get("label") or request.args.get("label") or "wallet").strip()
+    result = create_additional_wallet(user_id, label=label)
+    if not result.get("success"):
+        return jsonify(result), 200
+    addr = (result.get("deposit_address") or "").strip()
+    base = _explorer_base_url().rstrip("/")
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "deposit_address": addr,
+        "label": result.get("label"),
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+        "addresses": result.get("addresses"),
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])
+def mn2_wallet_refresh():
+    """Rotate primary deposit address (keeps legacy addresses in history)."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    result = refresh_deposit_address(user_id)
+    if not result.get("success"):
+        err = result.get("error", "Unknown error")
+        return jsonify({"success": False, "error": _user_facing_rpc_error(err)}), 200
+    addr = (result.get("deposit_address") or "").strip()
+    base = _explorer_base_url().rstrip("/")
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id"),
+        "deposit_address": addr,
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/address-book", methods=["GET", "POST", "DELETE"])
+def mn2_address_book():
+    """Trusted withdrawal addresses (labeled; cleared after first successful withdraw)."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in to manage trusted addresses.", "code": "auth_required"}), 401
+    from backend.services.mn2_address_book import list_addresses, add_address, remove_address
+
+    if request.method == "GET":
+        return jsonify({"success": True, "user_id": user_id, "addresses": list_addresses(user_id)}), 200
+
+    data = request.get_json(silent=True) or {}
+    address = (data.get("address") or request.args.get("address") or "").strip()
+    label = (data.get("label") or "").strip()
+
+    if request.method == "DELETE":
+        result = remove_address(user_id, address)
+        return jsonify(result), 200 if result.get("success") else 400
+
+    pwd = (data.get("password") or data.get("verification_token") or "").strip()
+    if pwd:
+        try:
+            from backend.services.password_protection_service import verify_password
+            verified = verify_password(user_id, pwd)
+            if not verified.get("success"):
+                return jsonify({
+                    "success": False,
+                    "error": verified.get("error") or "Profile password required to add trusted addresses.",
+                    "code": "password_required",
+                }), 403
+        except ImportError:
+            pass
+
+    chk = validate_payout_address(address)
+    if not chk.get("valid"):
+        return jsonify({
+            "success": False,
+            "error": chk.get("error") or "Invalid MN2 address",
+            "code": chk.get("code", "invalid_address"),
+        }), 400
+
+    result = add_address(user_id, address, label=label)
+    return jsonify(result), 200 if result.get("success") else 400
+
+
+@mn2_bp.route("/api/mn2/transfer", methods=["POST"])
+def mn2_transfer():
+    """Internal MN2 gift to another user (by user_id or deposit address)."""
+    user_id = resolve_user_id(from_body=True, from_query=False, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in to send MN2.", "code": "auth_required"}), 401
+    data = request.get_json(silent=True) or {}
+    to = (data.get("to") or data.get("recipient") or "").strip()
+    try:
+        amount = float(data.get("amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    note = (data.get("note") or data.get("message") or "").strip()
+    from backend.services.mn2_gift_service import transfer as gift_transfer
+    result = gift_transfer(user_id, to, amount, note=note)
+    return jsonify(result), 200 if result.get("success") else 400
+
+
+@mn2_bp.route("/api/mn2/profile-monitor", methods=["GET"])
+def mn2_profile_monitor():
+    """Unified MN2 monitor: ledger activity, system breakdown, wallet list."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    try:
+        days = int(request.args.get("days", 5))
+    except (TypeError, ValueError):
+        days = 5
+    days = max(1, min(days, 31))
+    config = _load_mn2_config()
+    from backend.services.mn2_ledger import get_wallet_activity_days, get_entries_by_user
+
+    buckets = get_wallet_activity_days(user_id, days=days)
+    entries = get_entries_by_user(user_id, limit=200)
+    by_system: dict = {}
+    chain_txs = 0
+    for e in entries:
+        t = (e.get("type") or "other").strip()
+        meta = e.get("metadata") or {}
+        src = (meta.get("source") or t).strip()
+        bucket = by_system.setdefault(src, {"count": 0, "total_mn2": 0.0})
+        bucket["count"] += 1
+        try:
+            bucket["total_mn2"] = round(bucket["total_mn2"] + float(e.get("amount") or 0), 8)
+        except (TypeError, ValueError):
+            pass
+        if (e.get("txid") or "").strip() and t in ("deposit", "withdrawal", "chain_reward"):
+            chain_txs += 1
+
+    wallets = list_user_addresses(user_id)
+    return jsonify({
+        "success": True,
+        "user_id": user_id,
+        "days": days,
+        "buckets": buckets,
+        "by_system": by_system,
+        "chain_tx_count": chain_txs,
+        "instant_rewards": bool(config.get("instant_rewards", True)),
+        "instant_deposits": bool(config.get("instant_deposits", True)),
+        "confirmations_required": int(config.get("confirmations") or 0),
+        "wallets": wallets.get("addresses") or [],
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/daemon/health", methods=["GET"])
+def mn2_daemon_health():
+    """Probe masternoder2d RPC health (block height, latency, optional wallet)."""
+    from backend.services.mn2_daemon_health_service import probe_daemon
+    extended = request.args.get("extended", "0") == "1"
+    return jsonify(probe_daemon(extended=extended)), 200
+
+
+@mn2_bp.route("/api/mn2/ops/settle-ecosystem", methods=["POST"])
+def mn2_ops_settle_ecosystem():
+    """Run agent MN2 settlement (battle auto-claim, chain payouts, deposit scan). Ops auth required."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    systems_raw = data.get("systems") or request.args.get("systems") or "all"
+    if isinstance(systems_raw, str):
+        systems = [s.strip() for s in systems_raw.split(",") if s.strip()]
+    else:
+        systems = list(systems_raw) if systems_raw else ["all"]
+    dry_run = (request.args.get("dry_run") == "1") or data.get("dry_run") is True
+    from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
+    result = run_mn2_ecosystem_settlement(systems=systems, dry_run=dry_run)
+    status = 200 if result.get("success") else 500
+    return jsonify(result), status
 
 
 @mn2_bp.route("/api/mn2/wallet-activity", methods=["GET"])
@@ -821,7 +1023,7 @@ def mn2_withdraw():
     Deducts full amount from balance; sends (amount - fee) to address. Returns txid and explorer_tx_url.
     """
     from datetime import datetime, timedelta
-    from backend.services.mn2_rpc_client import validateaddress, sendtoaddress
+    from backend.services.mn2_rpc_client import sendtoaddress
     from backend.services.unified_points_database import unified_points_db
 
     # Identity for withdrawals is resolved server-side ONLY (session > IP/fingerprint
@@ -912,14 +1114,14 @@ def mn2_withdraw():
     if amount_sent <= 0:
         return jsonify({"success": False, "error": f"Amount must be greater than withdrawal fee ({fee} MN2)"}), 400
 
-    # Validate address (RPC)
-    r = validateaddress(address)
-    if r.get("error"):
-        return jsonify({"success": False, "error": f"Address check failed: {r['error']}"}), 500
-    res = r.get("result")
-    is_valid = res is True if isinstance(res, bool) else (isinstance(res, dict) and res.get("isvalid") is True)
-    if not is_valid:
-        return jsonify({"success": False, "error": "Invalid MN2 address"}), 400
+    # Validate payout address (RPC when available; local format fallback for external sends)
+    addr_check = validate_payout_address(address)
+    if not addr_check.get("valid"):
+        return jsonify({
+            "success": False,
+            "error": addr_check.get("error") or "Invalid MN2 address",
+            "code": addr_check.get("code", "invalid_address"),
+        }), 400
 
     # New-address cooling-off: a payout address this user has never used is held for
     # `withdrawal_new_address_cooldown_hours` before it can receive funds. Blunts the

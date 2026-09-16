@@ -79,6 +79,17 @@ def add_whitelist_address(user_id: str, address: str) -> Dict[str, Any]:
     addr = (address or "").strip()
     if not uid or not addr:
         return {"success": False, "error": "user_id and address required"}
+    try:
+        from backend.services.mn2_wallet_service import validate_payout_address
+        chk = validate_payout_address(addr)
+        if not chk.get("valid"):
+            return {
+                "success": False,
+                "error": chk.get("error") or "Invalid MN2 address",
+                "code": chk.get("code", "invalid_address"),
+            }
+    except ImportError:
+        pass
     with _LOCK:
         data = _load()
         row = _user_row(data, uid)
