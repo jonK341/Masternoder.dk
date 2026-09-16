@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/loading-states.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260916b">
-    <link rel="stylesheet" href="/static/css/shop-taxonomy.css?v=20260916b">
+    <link rel="stylesheet" href="/static/css/shop-taxonomy.css?v=20260916c">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
@@ -860,7 +860,7 @@
                 <div>
                     <strong style="color: var(--secondary);">Recent transactions:</strong>
                     <nav class="shop-subnav" id="mn2-tx-subnav" aria-label="MN2 transaction types"></nav>
-                    <div id="mn2-transactions-list" style="margin-top: 8px; max-height: 200px; overflow-y: auto; font-size: 0.9rem; color: var(--text-secondary);">Loading...</div>
+                    <div id="mn2-transactions-list" class="taxonomy-scroll-panel" style="font-size: 0.9rem; color: var(--text-secondary);">Loading...</div>
                 </div>
                 <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.85; color: var(--text-secondary); border-top: 1px solid var(--border-primary); padding-top: 10px;">MN2 value can be volatile. Not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: var(--secondary);">Terms</a>.</p>
             </div>
@@ -3365,7 +3365,7 @@
                 txList.innerHTML = '<p style="margin:0;">No transactions in this subcategory.</p>';
                 return;
             }
-            txList.innerHTML = '<ul class="taxonomy-list">' + visible.map(t => {
+            txList.innerHTML = '<ul class="taxonomy-list" style="margin:0;">' + visible.map(t => {
                 const type = t.type || '—';
                 const amt = (t.amount != null) ? Number(t.amount).toFixed(4) : '—';
                 const link = t.explorer_tx_url ? `<a href="${t.explorer_tx_url}" target="_blank" rel="noopener" style="color: var(--secondary);">View</a>` : '';
@@ -3922,9 +3922,9 @@
                     const okN = rows.filter(function(x) { return x.ok; }).length;
                     if (summary) summary.textContent = okN + '/' + rows.length + ' OK' + (okN < rows.length ? ' — inspect failing rows' : '');
                     if (table) {
-                        table.innerHTML = '<table class="shop-data-table"><thead><tr><th>Endpoint</th><th>OK</th><th class="num">ms</th><th>Note</th></tr></thead><tbody>' +
+                        table.innerHTML = '<table class="shop-data-table"><thead><tr><th>Endpoint</th><th class="col-xs">OK</th><th class="num col-narrow">ms</th><th class="col-note">Note</th></tr></thead><tbody>' +
                             rows.map(function(r) {
-                                return '<tr><td>' + String(r.label).replace(/</g, '') + '</td><td>' + (r.ok ? '✓' : '✗') + '</td><td class="num">' + r.ms + '</td><td style="word-break:break-all;">' + String(r.detail).replace(/</g, '') + '</td></tr>';
+                                return '<tr><td>' + String(r.label).replace(/</g, '') + '</td><td class="col-xs">' + (r.ok ? '✓' : '✗') + '</td><td class="num col-narrow">' + r.ms + '</td><td class="col-note">' + String(r.detail).replace(/</g, '') + '</td></tr>';
                             }).join('') + '</tbody></table>';
                     }
                 } catch (e) {

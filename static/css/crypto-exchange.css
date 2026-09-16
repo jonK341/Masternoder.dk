@@ -549,16 +549,26 @@
 }
 .cex-ppp-table {
     width: 100%;
+    max-width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     font-size: 0.8rem;
     line-height: 1.35;
 }
 .cex-ppp-table th,
 .cex-ppp-table td {
-    padding: 9px 14px;
+    padding: 9px 10px;
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
+.cex-ppp-table .cex-ppp-col-time { width: 18%; }
+.cex-ppp-table .cex-ppp-col-phase { width: 12%; }
+.cex-ppp-table .cex-ppp-col-route { width: 22%; }
+.cex-ppp-table .cex-ppp-col-bps { width: 10%; white-space: nowrap; }
+.cex-ppp-table .cex-ppp-col-decision { width: 14%; }
+.cex-ppp-table .cex-ppp-col-note { width: 24%; }
 .cex-ppp-table th {
     position: sticky;
     top: 0;

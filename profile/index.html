@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260916b">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260623">
-    <link rel="stylesheet" href="/static/css/shop-taxonomy.css?v=20260916b">
+    <link rel="stylesheet" href="/static/css/shop-taxonomy.css?v=20260916c">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -1155,7 +1155,7 @@
                         <div>
                             <strong style="color: #00d4ff;">Recent transactions:</strong>
                             <nav class="shop-subnav" id="profile-mn2-tx-subnav" aria-label="MN2 transaction types"></nav>
-                            <div id="profile-mn2-transactions" style="margin-top: 6px; max-height: 240px; overflow-y: auto; font-size: 0.85rem; opacity: 0.9;">Loading…</div>
+                            <div id="profile-mn2-transactions" class="taxonomy-scroll-panel" style="font-size: 0.85rem; opacity: 0.9;">Loading…</div>
                         </div>
 
                         <!-- Full statement & tax export (Top-10 #4) -->
@@ -1224,7 +1224,7 @@
                             var rows = d.rows || [];
                             if (!rows.length) { rowsEl.innerHTML = '<p style="margin:0;">No transactions yet.</p>'; return; }
                             rowsEl.innerHTML = '<div class="shop-data-table-wrap"><table class="shop-data-table"><thead><tr>' +
-                              '<th>Date</th><th>Type</th><th class="num">Change</th><th class="num">Balance</th></tr></thead><tbody>' +
+                              '<th class="col-narrow">Date</th><th>Type</th><th class="num col-narrow">Change</th><th class="num col-narrow">Balance</th></tr></thead><tbody>' +
                               rows.map(function (r) {
                                 var pos = (r.delta_mn2 || 0) >= 0;
                                 var d2 = (r.created_at || '').slice(0, 16).replace('T', ' ');
