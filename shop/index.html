@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/loading-states.css">
-    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260916">
+    <link rel="stylesheet" href="/static/css/shop-taxonomy.css?v=20260916">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
@@ -54,21 +55,6 @@
         .shop-header h1 .shop-version-badge {
             -webkit-text-fill-color: var(--primary);
             flex-shrink: 0;
-        }
-
-        #shop-v9-api-test-table table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        #shop-v9-api-test-table th,
-        #shop-v9-api-test-table td {
-            padding: 6px 8px;
-            border-bottom: 1px solid var(--border-primary);
-            vertical-align: top;
-        }
-        #shop-v9-api-test-table thead th {
-            color: var(--text-secondary);
-            font-weight: 600;
         }
 
         .currency-display {
@@ -329,31 +315,6 @@
             color: #000;
             border-color: var(--primary);
         }
-        .shop-subnav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 0 0 16px;
-            padding: 8px 10px;
-            border-radius: 12px;
-            border: 1px solid var(--border-primary);
-            background: rgba(0,0,0,0.22);
-        }
-        .shop-subnav-btn {
-            padding: 6px 12px;
-            border-radius: 999px;
-            border: 1px solid var(--border-primary);
-            background: rgba(255,255,255,0.04);
-            color: var(--text-secondary);
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .shop-subnav-btn.active {
-            background: linear-gradient(135deg, var(--secondary, #00d4ff), #0099cc);
-            color: #000;
-            border-color: transparent;
-        }
         .shop-panel > .card[hidden] { display: none !important; }
         .shop-panel { display: none; animation: shopFade 0.2s ease; }
         .shop-panel.active { display: block; }
@@ -383,17 +344,8 @@
             color: var(--primary);
             margin: 8px 0;
         }
-        .stall-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 70px 110px auto;
-            gap: 8px;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-primary);
-        }
         @media (max-width: 760px) {
             .auction-hero { grid-template-columns: 1fr; }
-            .stall-row { grid-template-columns: 1fr; }
         }
         .shop-category-select-wrap {
             flex: 1;
@@ -602,7 +554,7 @@
                     <button type="button" id="shop-v9-run-api-tests" class="btn-purchase" style="padding:6px 14px;font-size:0.85rem;">Run checks</button>
                     <span id="shop-v9-api-test-summary" style="font-size:0.8rem;color:var(--text-secondary);"></span>
                 </div>
-                <div id="shop-v9-api-test-table" style="margin-top:8px;font-size:0.8rem;max-height:240px;overflow:auto;"></div>
+                <div id="shop-v9-api-test-table" class="shop-data-table-wrap" style="margin-top:8px;"></div>
             </div>
         </div>
 
@@ -2388,7 +2340,7 @@
                             <button type="button" class="btn-purchase btn-list-auction" data-item-id="${shopEscape(i.item_id)}" data-quantity="1" style="width:auto;padding:8px 12px;">Sell 1</button>
                         </div>`;
                 }).join('');
-                return `<h4 style="margin:16px 0 8px;color:var(--secondary);font-size:0.92rem;">${shopEscape(label)}</h4>${cards}`;
+                return `<h4 class="taxonomy-group-title">${shopEscape(label)}</h4><div class="stall-table">${cards}</div>`;
             }).join('');
             el.querySelectorAll('.btn-list-auction').forEach(btn => {
                 btn.addEventListener('click', () => createAuctionListing(btn.dataset.itemId, parseInt(btn.dataset.quantity, 10) || 1));
@@ -2483,7 +2435,7 @@
                                 } else if (p.price_paid_points) price = 'points';
                                 return `<li><strong>${shopEscape(p.item_name || p.item_id)}</strong> × ${p.quantity || 1} ${price ? ' — ' + price : ''} ${date ? ' (' + date + ')' : ''}</li>`;
                             }).join('');
-                            return `<h4 style="margin:14px 0 6px;color:var(--secondary);font-size:0.92rem;">${shopEscape(label)}</h4><ul style="margin:0; padding-left: 1.2rem;">${items}</ul>`;
+                            return `<h4 class="taxonomy-group-title">${shopEscape(label)}</h4><ul class="taxonomy-list">${items}</ul>`;
                         }).join('');
                     }
                 }
@@ -2594,7 +2546,7 @@
             const showBought = currentStallSubcat === 'all' || currentStallSubcat === 'bought';
             const sections = [];
             if (showActive && active.length) {
-                sections.push('<h4 style="margin:0 0 8px;color:var(--secondary);">Active listings</h4>' + active.map(l => `
+                sections.push('<h4 class="taxonomy-group-title" style="margin-top:0;">Active listings</h4><div class="stall-table">' + active.map(l => `
                     <div class="stall-row">
                         <div><strong>${shopEscape(l.item_name || l.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(l.listing_id)}</div></div>
                         <div>× ${Number(l.quantity || 1)}</div>
@@ -2602,7 +2554,7 @@
                         <button type="button" class="btn-purchase btn-cancel-auction" data-listing-id="${shopEscape(l.listing_id)}" style="width:auto;padding:8px 12px;background:rgba(255,170,0,0.18);border:1px solid rgba(255,170,0,0.45);">Cancel</button>
                         ${(l.bids || []).filter(b => b.status === 'active').slice(-3).map(b => `<button type="button" class="btn-purchase btn-accept-auction-bid" data-listing-id="${shopEscape(l.listing_id)}" data-bid-id="${shopEscape(b.bid_id)}" style="width:auto;padding:8px 12px;background:rgba(0,255,136,0.18);">Accept ${Number(b.bid_coins || 0).toLocaleString()} 🪙</button>`).join('')}
                     </div>
-                `).join(''));
+                `).join('') + '</div>');
             }
             sections.push(`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px;">
                 <div class="auction-card"><div style="color:var(--text-secondary);font-size:0.8rem;">Active</div><strong>${active.length}</strong></div>
@@ -2610,11 +2562,11 @@
                 <div class="auction-card"><div style="color:var(--text-secondary);font-size:0.8rem;">Bought</div><strong>${bought.length}</strong></div>
             </div>`);
             if (showSold && sold.length) {
-                sections.push('<h4 style="margin:12px 0 8px;color:var(--secondary);">Sold</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                sections.push('<h4 class="taxonomy-group-title">Sold</h4><ul class="taxonomy-list">' +
                     sold.slice(0, 12).map(l => `<li>${shopEscape(l.item_name || l.item_id)} × ${Number(l.quantity || 1)}</li>`).join('') + '</ul>');
             }
             if (showBought && bought.length) {
-                sections.push('<h4 style="margin:12px 0 8px;color:var(--secondary);">Bought</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                sections.push('<h4 class="taxonomy-group-title">Bought</h4><ul class="taxonomy-list">' +
                     bought.slice(0, 12).map(l => `<li>${shopEscape(l.item_name || l.item_id)} × ${Number(l.quantity || 1)}</li>`).join('') + '</ul>');
             }
             if (!active.length && !sold.length && !bought.length) {
@@ -3413,7 +3365,7 @@
                 txList.innerHTML = '<p style="margin:0;">No transactions in this subcategory.</p>';
                 return;
             }
-            txList.innerHTML = '<ul style="margin:0; padding-left: 1.2rem;">' + visible.map(t => {
+            txList.innerHTML = '<ul class="taxonomy-list">' + visible.map(t => {
                 const type = t.type || '—';
                 const amt = (t.amount != null) ? Number(t.amount).toFixed(4) : '—';
                 const link = t.explorer_tx_url ? `<a href="${t.explorer_tx_url}" target="_blank" rel="noopener" style="color: var(--secondary);">View</a>` : '';
@@ -3970,9 +3922,9 @@
                     const okN = rows.filter(function(x) { return x.ok; }).length;
                     if (summary) summary.textContent = okN + '/' + rows.length + ' OK' + (okN < rows.length ? ' — inspect failing rows' : '');
                     if (table) {
-                        table.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><thead><tr><th align="left">Endpoint</th><th>OK</th><th>ms</th><th align="left">Note</th></tr></thead><tbody>' +
+                        table.innerHTML = '<table class="shop-data-table"><thead><tr><th>Endpoint</th><th>OK</th><th class="num">ms</th><th>Note</th></tr></thead><tbody>' +
                             rows.map(function(r) {
-                                return '<tr><td>' + String(r.label).replace(/</g, '') + '</td><td>' + (r.ok ? '✓' : '✗') + '</td><td>' + r.ms + '</td><td style="word-break:break-all;">' + String(r.detail).replace(/</g, '') + '</td></tr>';
+                                return '<tr><td>' + String(r.label).replace(/</g, '') + '</td><td>' + (r.ok ? '✓' : '✗') + '</td><td class="num">' + r.ms + '</td><td style="word-break:break-all;">' + String(r.detail).replace(/</g, '') + '</td></tr>';
                             }).join('') + '</tbody></table>';
                     }
                 } catch (e) {

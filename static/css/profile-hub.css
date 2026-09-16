@@ -46,32 +46,6 @@
     padding: 6px 12px;
 }
 
-.profile-hub-parents,
-.profile-shop-inv-subnav,
-.shop-subnav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 0 0 12px;
-}
-
-.shop-subnav-btn {
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.04);
-    color: #cfe;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.shop-subnav-btn.active {
-    background: linear-gradient(135deg, #00d4ff, #0099cc);
-    color: #000;
-    border-color: transparent;
-}
-
 .profile-layer-security-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

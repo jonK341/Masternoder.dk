@@ -227,13 +227,8 @@
                         <span>${NAV_CONFIG.brand.name}</span>
                     </a>
                     
-                    <div class="nav-toolbar-navcol">
-                    <div class="nav-toolbar-groups" id="navToolbarGroups" role="tablist" aria-label="Site sections">
-                        ${_renderGroupChips()}
-                    </div>
                     <div class="nav-toolbar-links" id="navToolbarLinks">
                         ${linksHTML}
-                    </div>
                     </div>
                     
                     <div class="nav-toolbar-user">
@@ -258,7 +253,10 @@
                         </button>
                     </div>
                 </div>
-                
+                <div class="nav-toolbar-groups" id="navToolbarGroups" role="tablist" aria-label="Site sections">
+                    ${_renderGroupChips()}
+                </div>
+
                 <div class="nav-toolbar-mobile" id="navToolbarMobile">
                     <div class="nav-toolbar-groups nav-toolbar-groups--mobile" id="navToolbarMobileGroups" role="tablist" aria-label="Site sections">
                         ${_renderGroupChips()}

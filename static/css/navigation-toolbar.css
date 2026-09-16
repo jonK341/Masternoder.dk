@@ -10,6 +10,8 @@
     left: 0;
     right: 0;
     z-index: 10000;
+    display: flex;
+    flex-direction: column;
     background: linear-gradient(135deg, #2d1b4e 0%, #1a0a2e 50%, #3d2463 100%);
     backdrop-filter: blur(20px);
     border-bottom: 2px solid rgba(0, 255, 136, 0.4);
@@ -28,6 +30,8 @@
     justify-content: space-between;
     padding: 6px 14px;
     gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Logo/Brand — compact */
@@ -54,20 +58,23 @@
 }
 
 /* Navigation Links Container */
-.nav-toolbar-navcol {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-}
-
 .nav-toolbar-groups {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
     justify-content: center;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    padding: 4px 14px 6px;
+    border-top: 1px solid rgba(57, 255, 20, 0.12);
+}
+
+.nav-toolbar-groups--mobile {
+    border-top: none;
+    padding: 0 0 10px;
+    justify-content: flex-start;
 }
 
 .nav-toolbar-group-btn {
@@ -257,9 +264,15 @@
     border-color: rgba(57, 255, 20, 0.4);
 }
 
-/* Page Content Offset — compact so all content is visible and not blocked */
+/* Page Content Offset — extra room when group chips sit on a second toolbar row */
 body {
     padding-top: 48px;
+}
+
+@media (min-width: 969px) {
+    body:has(#navToolbarGroups) {
+        padding-top: 76px;
+    }
 }
 
 /* Responsive Design */
@@ -280,6 +293,10 @@ body {
     }
     
     .nav-toolbar-links {
+        display: none;
+    }
+
+    .nav-toolbar-groups:not(.nav-toolbar-groups--mobile) {
         display: none;
     }
     
@@ -483,7 +500,7 @@ body {
     position: fixed;
     left: 0;
     right: 0;
-    top: 48px;
+    top: 76px;
     max-height: min(78vh, 640px);
     overflow-y: auto;
     z-index: 9998;

@@ -393,6 +393,7 @@ MANIFESTS = {
         "static/css/casino.css",
         "static/css/crypto-exchange.css",
         "static/css/profile-hub.css",
+        "static/css/shop-taxonomy.css",
         "static/css/navigation-toolbar.css",
     ],
     "casino": [

@@ -11,9 +11,10 @@
     <title>User Profile - MasterNoder</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260114110612">
-    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260916">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/shop-taxonomy.css?v=20260916">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -1222,18 +1223,17 @@
                             if (sumEl) sumEl.textContent = 'Current balance ' + fmt(d.current_balance_mn2) + ' MN2 · ' + ((d.summary && d.summary.events) || 0) + ' events';
                             var rows = d.rows || [];
                             if (!rows.length) { rowsEl.innerHTML = '<p style="margin:0;">No transactions yet.</p>'; return; }
-                            rowsEl.innerHTML = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="opacity:0.7;">' +
-                              '<th style="text-align:left; padding:2px 8px;">Date</th><th style="text-align:left; padding:2px 8px;">Type</th>' +
-                              '<th style="text-align:right; padding:2px 8px;">Change</th><th style="text-align:right; padding:2px 8px;">Balance</th></tr></thead><tbody>' +
+                            rowsEl.innerHTML = '<div class="shop-data-table-wrap"><table class="shop-data-table"><thead><tr>' +
+                              '<th>Date</th><th>Type</th><th class="num">Change</th><th class="num">Balance</th></tr></thead><tbody>' +
                               rows.map(function (r) {
                                 var pos = (r.delta_mn2 || 0) >= 0;
                                 var d2 = (r.created_at || '').slice(0, 16).replace('T', ' ');
-                                var dc = (r.delta_mn2 === 0) ? 'opacity:0.6;' : (pos ? 'color:#00ff88;' : 'color:#ffaa44;');
+                                var dc = (r.delta_mn2 === 0) ? 'muted' : (pos ? 'pos' : 'neg');
                                 var sign = (r.delta_mn2 > 0 ? '+' : '');
-                                return '<tr><td style="padding:2px 8px;">' + d2 + '</td><td style="padding:2px 8px;">' + (label[r.type] || r.type) +
-                                  '</td><td style="padding:2px 8px; text-align:right; ' + dc + '">' + (r.delta_mn2 === 0 ? '—' : sign + fmt(r.delta_mn2)) +
-                                  '</td><td style="padding:2px 8px; text-align:right;">' + fmt(r.running_balance_mn2) + '</td></tr>';
-                              }).join('') + '</tbody></table>';
+                                return '<tr><td>' + d2 + '</td><td>' + (label[r.type] || r.type) +
+                                  '</td><td class="num ' + dc + '">' + (r.delta_mn2 === 0 ? '—' : sign + fmt(r.delta_mn2)) +
+                                  '</td><td class="num">' + fmt(r.running_balance_mn2) + '</td></tr>';
+                              }).join('') + '</tbody></table></div>';
                           })
                           .catch(function () { rowsEl.innerHTML = 'Could not load statement.'; });
                       }
@@ -3505,7 +3505,7 @@
                         el.innerHTML = '<p style="opacity:0.85;">No purchases in this subcategory.</p>';
                         return;
                     }
-                    el.innerHTML = '<ul style="margin:0;padding-left:1.2rem;">' + visible.map((p) => {
+                    el.innerHTML = '<ul class="taxonomy-list">' + visible.map((p) => {
                         const name = String(p.item_name || p.item_id || 'item').replace(/</g, '&lt;');
                         const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
                         const label = tax ? tax.subcatLabel(p.subcategory) : (p.subcategory || '');
@@ -3545,16 +3545,16 @@
                     const sid = this._profileStallSubcat;
                     const parts = [];
                     if ((sid === 'all' || sid === 'active') && active.length) {
-                        parts.push('<h4 style="margin:0 0 8px;color:#7ee8ff;">Active</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                        parts.push('<h4 class="taxonomy-group-title" style="margin-top:0;">Active</h4><ul class="taxonomy-list">' +
                             active.map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') +
                             ' × ' + (l.quantity || 1) + ' · ' + Number(l.price_coins || 0).toLocaleString() + ' coins</li>').join('') + '</ul>');
                     }
                     if ((sid === 'all' || sid === 'sold') && sold.length) {
-                        parts.push('<h4 style="margin:12px 0 8px;color:#7ee8ff;">Sold</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                        parts.push('<h4 class="taxonomy-group-title">Sold</h4><ul class="taxonomy-list">' +
                             sold.slice(0, 12).map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') + '</li>').join('') + '</ul>');
                     }
                     if ((sid === 'all' || sid === 'bought') && bought.length) {
-                        parts.push('<h4 style="margin:12px 0 8px;color:#7ee8ff;">Bought</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                        parts.push('<h4 class="taxonomy-group-title">Bought</h4><ul class="taxonomy-list">' +
                             bought.slice(0, 12).map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') + '</li>').join('') + '</ul>');
                     }
                     if (!active.length && !sold.length && !bought.length) {

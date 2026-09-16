@@ -215,7 +215,7 @@
       return;
     }
     txList.innerHTML =
-      '<ul style="margin:0;padding-left:1.2rem;">' +
+      '<ul class="taxonomy-list">' +
       visible
         .map(function (t) {
           var type = t.type || '—';
