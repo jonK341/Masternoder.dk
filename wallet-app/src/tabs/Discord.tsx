@@ -83,6 +83,10 @@ export function DiscordPanel() {
   const onConnectOAuth = () => {
     if (!status) return;
     const returnUrl = `${window.location.pathname}?tab=settings&panel=discord`;
+    if (status.linked_role_connect_path) {
+      window.location.href = status.linked_role_connect_path;
+      return;
+    }
     if (status.linked_role_oauth_url) {
       window.location.href = status.linked_role_oauth_url;
       return;

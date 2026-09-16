@@ -4,6 +4,7 @@ Delegates to existing MN2 wallet, ledger, chainz, and shop inventory services.
 """
 import json
 import os
+import urllib.parse
 from typing import Any, Dict, List, Optional, Set
 
 _DEFAULT_SECTIONS = ("balance", "trophy_counts", "flags", "network")
@@ -181,12 +182,22 @@ def _discord_profile_from_user(user_id: str) -> Dict[str, Any]:
     if not (user_id or "").strip():
         return out
     try:
-        from backend.services.user_profile import get_user_profile
+        from backend.services.user_onboarding import user_onboarding
 
-        profile = get_user_profile(user_id) or {}
-        prefs = profile.get("preferences") if isinstance(profile.get("preferences"), dict) else {}
-        out["username"] = prefs.get("discord_username") or prefs.get("display_name") or profile.get("username")
-        out["avatar_url"] = prefs.get("discord_avatar_url") or prefs.get("avatar_url") or profile.get("avatar_url")
+        profile = user_onboarding.get_user_profile(user_id) or {}
+        prefs_raw = profile.get("preferences")
+        if isinstance(prefs_raw, str):
+            prefs = json.loads(prefs_raw) if prefs_raw.strip() else {}
+        elif isinstance(prefs_raw, dict):
+            prefs = prefs_raw
+        else:
+            prefs = {}
+        social = prefs.get("social_auth") if isinstance(prefs.get("social_auth"), dict) else {}
+        if (social.get("provider") or "").lower() == "discord":
+            out["username"] = social.get("email") or profile.get("username")
+            out["avatar_url"] = social.get("avatar")
+        out["username"] = out["username"] or prefs.get("discord_username") or prefs.get("display_name") or profile.get("username")
+        out["avatar_url"] = out["avatar_url"] or prefs.get("discord_avatar_url") or prefs.get("avatar_url") or profile.get("avatar_url")
     except Exception:
         pass
     return out
@@ -205,9 +216,18 @@ def build_discord_status(user_id: str) -> Dict[str, Any]:
         "discord_id": None,
         "server_invite_url": invite,
         "manual_link_supported": True,
-        "profile_discord_path": "/profile?tab=integrations",
-        "share_supported": False,
-        "notification_prefs_note": "Notification toggles are stored locally until WR-U10 ships server prefs.",
+        "profile_discord_path": "/profile#discord-link-card",
+        "share_supported": bool(os.environ.get("DISCORD_WEBHOOK_URL")),
+        "notification_prefs": {
+            "balance_alerts": False,
+            "trophy_drops": False,
+            "block_trophy_mint": False,
+            "battle_results": False,
+        },
+        "notification_prefs_note": (
+            "Per-user Discord DM notifications require bot DM scope — "
+            "toggles are saved locally until WR-DISCORD-2 ships server prefs."
+        ),
         "roles_available": [],
     }
     if guest:
@@ -244,24 +264,31 @@ def build_discord_status(user_id: str) -> Dict[str, Any]:
     payload["roles_available"] = roles
 
     try:
-        from backend.services.discord_linked_roles_service import configured, build_oauth_start
+        from backend.services.discord_linked_roles_service import configured as linked_role_configured
 
-        payload["linked_role_configured"] = bool(configured())
-        if configured():
-            start = build_oauth_start(user_id_hint=user_id)
-            if isinstance(start, dict) and start.get("url"):
-                payload["linked_role_oauth_url"] = start.get("url")
+        payload["linked_role_configured"] = bool(linked_role_configured())
+        payload["linked_role_verification_path"] = "/api/discord/linked-role"
+        if payload["linked_role_configured"]:
+            payload["linked_role_connect_path"] = (
+                f"/api/discord/linked-role?user_id={urllib.parse.quote(user_id)}&redirect=1"
+            )
     except Exception:
         payload["linked_role_configured"] = False
 
     try:
-        from backend.services.social_auth_service import discord_oauth_configured, discord_login_start_path
+        from backend.services.social_auth_service import list_providers
 
-        payload["oauth_login_configured"] = bool(discord_oauth_configured())
-        if payload["oauth_login_configured"]:
-            payload["oauth_login_start_path"] = discord_login_start_path(
-                return_url="/wallets?tab=settings&panel=discord"
+        providers = list_providers().get("providers") or []
+        discord_provider = next((p for p in providers if p.get("id") == "discord"), None)
+        if discord_provider and discord_provider.get("configured"):
+            payload["oauth_login_configured"] = True
+            return_url = urllib.parse.quote("/wallets?tab=settings&panel=discord")
+            payload["oauth_login_start_path"] = (
+                f"/api/auth/discord/start?redirect=1&return_url={return_url}"
+                f"&user_id_hint={urllib.parse.quote(user_id)}"
             )
+        else:
+            payload["oauth_login_configured"] = False
     except Exception:
         payload["oauth_login_configured"] = False
 

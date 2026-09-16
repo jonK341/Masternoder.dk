@@ -67,6 +67,8 @@ export type DiscordStatus = {
   hosting_vip_message?: string;
   roles_available?: string[];
   linked_role_oauth_url?: string | null;
+  linked_role_connect_path?: string | null;
+  linked_role_verification_path?: string;
   linked_role_configured?: boolean;
   oauth_login_configured?: boolean;
   oauth_login_start_path?: string | null;
