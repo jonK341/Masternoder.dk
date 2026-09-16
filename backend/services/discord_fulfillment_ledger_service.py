@@ -232,7 +232,11 @@ def _discord_username_for_user(user_id: str) -> Optional[str]:
         return None
 
 
-def _line_template(line_id: str, status: str = "pending", **meta: Any) -> Dict[str, Any]:
+def _line_template(
+    line_id: str,
+    status: str = "pending",
+    metadata: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     labels = {
         "account_link": "Account link verified",
         "role_sync": "Linked role metadata sync",
@@ -247,8 +251,8 @@ def _line_template(line_id: str, status: str = "pending", **meta: Any) -> Dict[s
         "status": status,
         "fulfilled_at": _iso() if status == "fulfilled" else None,
     }
-    if meta:
-        row["metadata"] = meta
+    if metadata:
+        row["metadata"] = metadata
     return row
 
 
@@ -296,7 +300,7 @@ def _compute_order_lines(
             meta["default_amount_mn2"] = float(os.environ.get("DISCORD_FULFILLMENT_MN2_CREDIT", "0") or 0)
         if line_id == "trophy_grant":
             meta["trophy_sku"] = os.environ.get("DISCORD_FULFILLMENT_TROPHY_SKU", "discord-community")
-        lines.append(_line_template(line_id, status=status, **({"metadata": meta} if meta else {})))
+        lines.append(_line_template(line_id, status=status, metadata=meta or None))
 
     return lines
 
