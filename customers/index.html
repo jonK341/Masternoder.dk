@@ -27,6 +27,11 @@
         pre.json { background: #0a0a12; padding: 10px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 200px; }
         .status-ok { color: #6f6; }
         .status-warn { color: #fc6; }
+        .tier-badge { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+        .tier-funded_never_bought { background: rgba(255,200,0,0.2); color: #fc6; border: 1px solid rgba(255,200,0,0.5); }
+        .tier-high_spender, .tier-repeat_buyer, .tier-active_buyer { background: rgba(100,255,150,0.15); color: #8f8; border: 1px solid rgba(100,255,150,0.4); }
+        .tier-needs_funding, .tier-lapsed_buyer { background: rgba(255,100,100,0.12); color: #f99; border: 1px solid rgba(255,100,100,0.35); }
+        .buy-panel { max-width: 1100px; margin: 0 auto 16px; padding: 12px 16px; background: rgba(20,40,30,0.55); border: 1px solid rgba(100,255,150,0.25); border-radius: 10px; font-size: 0.85rem; }
         .micro-rewards { max-width: 1100px; margin: 0 auto 16px; padding: 12px 16px; background: rgba(30,30,50,0.7); border: 1px solid rgba(170,0,255,0.25); border-radius: 10px; }
         .micro-rewards label { display: inline-flex; align-items: center; gap: 6px; margin: 4px 10px 4px 0; font-size: 0.85rem; }
     </style>
@@ -42,6 +47,15 @@
             <option value="ledger">Ledger</option>
             <option value="discord_channel">Discord</option>
         </select>
+        <select id="buyTierFilter" class="btn" style="padding:8px 10px;">
+            <option value="">All buy tiers</option>
+            <option value="funded_never_bought">Funded, never bought</option>
+            <option value="high_spender">High spenders</option>
+            <option value="repeat_buyer">Repeat buyers</option>
+            <option value="active_buyer">Active buyers</option>
+            <option value="needs_funding">Needs funding</option>
+        </select>
+        <button class="btn" id="btnNudgeBuyers">Nudge funded buyers</button>
         <button class="btn" id="btnRefresh">Refresh</button>
         <a class="btn" href="/create-app/" style="text-decoration:none;display:inline-block">Open Encoder Hub</a>
     </div>
@@ -51,6 +65,7 @@
         <span id="microRewardsList"></span>
     </div>
     <p class="customers-stats" id="fulfillStatus"></p>
+    <div class="buy-panel" id="buyPanel" hidden></div>
     <div class="page-grid page-grid-tight" id="grid"></div>
     </div>
 
@@ -120,12 +135,21 @@
                 const s = await fetch('/api/customers/stats', {headers: hdrGet}).then(r => r.json());
                 const f = await fetch('/api/customers/fulfill/stats', {headers: hdrGet}).then(r => r.json()).catch(() => ({}));
                 const c = await fetch('/api/customers/control/stats', {headers: hdrGet}).then(r => r.json()).catch(() => ({}));
+                const b = await fetch('/api/customers/buy-potential/stats', {headers: hdrGet}).then(r => r.json()).catch(() => ({}));
                 if (s.success) {
                     const discord = s.discord || {};
                     document.getElementById('stats').textContent =
                         `Total: ${s.total || 0} · Ledger: ${s.ledger_total || 0} · Active today: ${s.active_today || 0} · Discord: ${discord.total || s.discord_sourced || 0}` +
                         (f.total_fulfilled != null ? ` · Encoder fulfilled: ${f.total_fulfilled}` : '') +
-                        (c.total_assigned != null ? ` · Controlled: ${c.total_assigned}` : '');
+                        (c.total_assigned != null ? ` · Controlled: ${c.total_assigned}` : '') +
+                        (b.funded_never_bought != null ? ` · Funded never bought: ${b.funded_never_bought}` : '');
+                }
+                if (b.success) {
+                    const panel = document.getElementById('buyPanel');
+                    const catalog = (b.purchase_catalog || []).slice(0, 4).map(i => `${i.label} (${Number(i.price_mn2).toFixed(3)} MN2)`).join(' · ');
+                    panel.innerHTML = `<strong>Buy potential</strong> — ${b.total_customers || 0} ledger customers · est. spendable ${Number(b.total_estimated_spendable_mn2 || 0).toFixed(4)} MN2` +
+                        (catalog ? `<br><span style="opacity:.8">Affordable SKUs: ${catalog}</span>` : '');
+                    panel.hidden = false;
                 }
             } catch (e) {}
         }
@@ -142,17 +166,40 @@
             } catch (e) {}
         }
 
+        function buyTier(c) {
+            return (c.buy_potential || c.ledger?.buy_potential || {}).tier || '';
+        }
+
+        function spendable(c) {
+            const bp = c.buy_potential || c.ledger?.buy_potential || {};
+            return Number(bp.spendable_mn2 ?? c.mn2_balance ?? 0);
+        }
+
         async function loadCustomers() {
             const grid = document.getElementById('grid');
             const source = document.getElementById('sourceFilter').value;
-            const qs = source ? `limit=48&source=${encodeURIComponent(source)}` : 'limit=48';
+            const tier = document.getElementById('buyTierFilter').value;
             try {
-                const r = await fetch(`/api/customers?${qs}`, {headers: hdrGet}).then(x => x.json());
-                if (!r.success) {
-                    grid.innerHTML = '<p>Admin access required (ops secret).</p>';
-                    return;
+                let customers = [];
+                if (tier) {
+                    const r = await fetch(`/api/customers/buy-potential?limit=48&tier=${encodeURIComponent(tier)}`, {headers: hdrGet}).then(x => x.json());
+                    if (!r.success) { grid.innerHTML = '<p>Admin access required (ops secret).</p>'; return; }
+                    customers = (r.customers || []).map(row => ({
+                        user_id: row.user_id,
+                        mn2_balance: spendable(row),
+                        source: 'ledger',
+                        ledger: row,
+                        buy_potential: row.buy_potential,
+                        control: null,
+                        avatar_url: `/static/img/agents/default.svg`
+                    }));
+                } else {
+                    const qs = source ? `limit=48&source=${encodeURIComponent(source)}` : 'limit=48';
+                    const r = await fetch(`/api/customers?${qs}`, {headers: hdrGet}).then(x => x.json());
+                    if (!r.success) { grid.innerHTML = '<p>Admin access required (ops secret).</p>'; return; }
+                    customers = r.customers || [];
                 }
-                renderGrid(r.customers || []);
+                renderGrid(customers);
             } catch (e) {
                 grid.textContent = 'Failed to load customers.';
             }
@@ -160,13 +207,20 @@
 
         function renderGrid(customers) {
             const grid = document.getElementById('grid');
-            grid.innerHTML = (customers || []).map(c => `
+            grid.innerHTML = (customers || []).map(c => {
+                const tier = buyTier(c);
+                const suggestions = (c.buy_potential || c.ledger?.buy_potential || {}).suggested_purchases || [];
+                const afford = suggestions.find(s => s.affordable);
+                return `
                 <div class="card" data-uid="${c.user_id}">
                     <img src="${c.avatar_url || '/static/img/agents/default.svg'}" alt="">
                     <div>${c.discord?.username || c.user_id}</div>
-                    <small>${(c.mn2_balance || 0).toFixed(4)} MN2</small>
-                    <div class="tag">${c.source || 'site'}${c.ledger?.entry_count ? ` · ${c.ledger.entry_count} ledger` : ''}${c.control ? ` · ${c.control.controller_type}` : ''}${c.fulfillment ? ' · fulfilled' : ''}</div>
-                </div>`).join('');
+                    <small>${spendable(c).toFixed(4)} MN2 spendable</small>
+                    ${tier ? `<div class="tier-badge tier-${tier}">${tier.replace(/_/g, ' ')}</div>` : ''}
+                    ${afford ? `<div class="tag">Can buy: ${afford.label}</div>` : ''}
+                    <div class="tag">${c.source || 'site'}${c.ledger?.entry_count ? ` · ${c.ledger.entry_count} ledger` : ''}${c.control ? ` · ${c.control.controller_type}` : ''}</div>
+                </div>`;
+            }).join('');
             grid.querySelectorAll('.card').forEach(el => el.addEventListener('click', () => openCustomer(el.dataset.uid)));
         }
 
@@ -176,15 +230,23 @@
             document.getElementById('modalTitle').textContent = userId;
             document.getElementById('modalJson').textContent = 'Loading…';
             try {
-                const r = await fetch(`/api/customers/${encodeURIComponent(userId)}/ledger`, {headers: hdrGet}).then(x => x.json());
+                const [ledgerR, buyR] = await Promise.all([
+                    fetch(`/api/customers/${encodeURIComponent(userId)}/ledger`, {headers: hdrGet}).then(x => x.json()),
+                    fetch(`/api/customers/${encodeURIComponent(userId)}/buy-potential`, {headers: hdrGet}).then(x => x.json()).catch(() => ({}))
+                ]);
+                const r = ledgerR;
                 if (!r.success) {
                     document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
                     return;
                 }
                 const assign = r.control?.assignment;
+                const bp = buyR.buy_potential || r.customer?.ledger?.buy_potential || {};
+                const suggestions = (bp.suggested_purchases || []).filter(s => s.affordable).map(s => s.label).join(', ');
                 document.getElementById('modalMeta').innerHTML =
                     `Source: <span class="status-ok">${r.customer?.source || '?'}</span> · ` +
-                    `MN2: ${(r.customer?.mn2_balance || 0).toFixed(4)} · ` +
+                    `Spendable: ${Number(bp.spendable_mn2 ?? r.customer?.mn2_balance ?? 0).toFixed(4)} MN2 · ` +
+                    (bp.tier ? `Buy tier: <span class="status-warn">${bp.tier}</span> · ` : '') +
+                    (suggestions ? `Can afford: <span class="status-ok">${suggestions}</span> · ` : '') +
                     (assign ? `Controller: <span class="status-warn">${assign.controller_type}/${assign.controller_id || 'default'}</span>` : 'No controller assigned');
                 if (assign) {
                     document.getElementById('ctrlType').value = assign.controller_type || 'ai';
@@ -194,7 +256,7 @@
                     }
                 }
                 toggleAgentPick();
-                document.getElementById('modalJson').textContent = JSON.stringify(r, null, 2);
+                document.getElementById('modalJson').textContent = JSON.stringify({ledger: r, buy_potential: buyR}, null, 2);
             } catch (e) {
                 document.getElementById('modalJson').textContent = String(e);
             }
@@ -217,6 +279,28 @@
         });
 
         document.getElementById('sourceFilter').addEventListener('change', loadCustomers);
+        document.getElementById('buyTierFilter').addEventListener('change', loadCustomers);
+
+        document.getElementById('btnNudgeBuyers').addEventListener('click', async () => {
+            const btn = document.getElementById('btnNudgeBuyers');
+            const status = document.getElementById('fulfillStatus');
+            const tier = document.getElementById('buyTierFilter').value || 'funded_never_bought';
+            btn.disabled = true;
+            status.textContent = `Nudging ${tier.replace(/_/g, ' ')} customers via assigned agents…`;
+            try {
+                const r = await fetch('/api/customers/buy-potential/nudge', {
+                    method: 'POST', headers: hdr,
+                    body: JSON.stringify({tier, limit: 15})
+                }).then(x => x.json());
+                status.textContent = r.success
+                    ? `Nudged ${r.nudged_count || 0} ${tier} customers`
+                    : (r.error || 'Nudge failed');
+            } catch (e) {
+                status.textContent = String(e);
+            } finally {
+                btn.disabled = false;
+            }
+        });
 
         document.getElementById('btnRefresh').addEventListener('click', () => { loadStats(); loadCustomers(); });
 

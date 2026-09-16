@@ -396,6 +396,7 @@ MANIFESTS = {
         "backend/services/ops_secret_service.py",
         "backend/services/ledger_customer_control_service.py",
         "backend/services/ledger_customer_aggregator_service.py",
+        "backend/services/ledger_buy_potential_service.py",
         "backend/services/mn2_ledger.py",
         "backend/services/customer_aggregator_service.py",
         "customers/index.html",

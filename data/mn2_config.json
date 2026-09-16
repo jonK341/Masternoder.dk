@@ -69,7 +69,11 @@
     "enabled": true,
     "default_controller": "ai",
     "auto_assign_agent": true,
-    "default_agent_id": "master_fix"
+    "default_agent_id": "master_fix",
+    "buy_potential": {
+      "high_spender_mn2": 0.5,
+      "min_spendable_mn2": 0.01
+    }
   },
   "click_rewards": {
     "enabled": true,

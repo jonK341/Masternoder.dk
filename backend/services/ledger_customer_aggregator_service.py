@@ -251,12 +251,18 @@ def assign_agents_to_ledger_customers(
             continue
         agent_id = agents[idx % len(agents)]
         idx += 1
+        bp = (row.get("buy_potential") or {})
         res = assign_controller(
             uid,
             controller_type,
             agent_id=agent_id,
             notes="auto-assigned from ledger sync",
-            metadata={"source": "ledger_customer_aggregator", "ledger_entries": row.get("entry_count")},
+            metadata={
+                "source": "ledger_customer_aggregator",
+                "ledger_entries": row.get("entry_count"),
+                "buy_potential_tier": bp.get("tier"),
+                "spendable_mn2": bp.get("spendable_mn2"),
+            },
         )
         if res.get("success"):
             assigned.append({"user_id": uid, "agent_id": agent_id, "assignment": res.get("assignment")})

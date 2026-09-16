@@ -196,6 +196,53 @@ def customers_sync_agents():
     return jsonify(result), code
 
 
+@customer_aggregator_bp.route("/api/customers/buy-potential", methods=["GET"])
+def customers_buy_potential():
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.ledger_buy_potential_service import list_buy_opportunities
+
+    limit = request.args.get("limit", 50, type=int)
+    offset = request.args.get("offset", 0, type=int)
+    tier = request.args.get("tier")
+    sort = request.args.get("sort", "spendable")
+    return jsonify(list_buy_opportunities(limit=limit, offset=offset, tier=tier, sort=sort)), 200
+
+
+@customer_aggregator_bp.route("/api/customers/buy-potential/stats", methods=["GET"])
+def customers_buy_potential_stats():
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.ledger_buy_potential_service import buy_potential_stats
+    return jsonify(buy_potential_stats()), 200
+
+
+@customer_aggregator_bp.route("/api/customers/<user_id>/buy-potential", methods=["GET"])
+def customer_buy_potential(user_id: str):
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.ledger_buy_potential_service import compute_buy_potential
+
+    live = request.args.get("live", "1") not in ("0", "false", "no")
+    result = compute_buy_potential(user_id, live_balance=live)
+    code = 200 if result.get("success") else 404
+    return jsonify(result), code
+
+
+@customer_aggregator_bp.route("/api/customers/buy-potential/nudge", methods=["POST"])
+def customers_buy_potential_nudge():
+    if not _admin_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.ledger_buy_potential_service import nudge_buy_tier
+
+    data = request.get_json(silent=True) or {}
+    result = nudge_buy_tier(
+        tier=str(data.get("tier") or "funded_never_bought"),
+        limit=int(data.get("limit") or 10),
+    )
+    return jsonify(result), 200
+
+
 @customer_aggregator_bp.route("/api/customers/sync/ledger-agents", methods=["POST"])
 def customers_sync_ledger_agents():
     if not _admin_ok():
