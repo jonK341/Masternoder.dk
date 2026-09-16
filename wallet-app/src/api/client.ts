@@ -559,9 +559,37 @@ export type CamgirlPerformer = {
   bio?: string;
   tier?: string;
   price_mn2?: number;
+  tip_min_mn2?: number;
+  wallet_user_id?: string;
+  mn2_balance?: number;
+  deposit_address?: string | null;
+  explorer_url?: string | null;
   avatar_url?: string;
   online?: boolean;
   studio_path?: string;
+};
+
+export type CamgirlWalletDetail = {
+  success: boolean;
+  camgirl_id?: string;
+  wallet_user_id?: string;
+  mn2_balance?: number;
+  name?: string;
+  tip_min_mn2?: number;
+  deposit_address?: string | null;
+  explorer_url?: string | null;
+  error?: string;
+};
+
+export type CamgirlTipResult = {
+  success: boolean;
+  camgirl_id?: string;
+  wallet_user_id?: string;
+  amount_mn2?: number;
+  camgirl_balance?: number;
+  error?: string;
+  message?: string;
+  tip_min_mn2?: number;
 };
 
 export type CamgirlUpgrade = {
@@ -697,6 +725,24 @@ export async function fetchCamgirlsCatalog(): Promise<CamgirlsCatalog> {
   });
   if (!res.ok) throw new Error(`Camgirls catalog failed (${res.status})`);
   return res.json() as Promise<CamgirlsCatalog>;
+}
+
+export async function fetchCamgirlWallet(camgirlId: string): Promise<CamgirlWalletDetail> {
+  const res = await fetch(`/api/wallet/v2/camgirls/${encodeURIComponent(camgirlId)}/wallet`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  return res.json() as Promise<CamgirlWalletDetail>;
+}
+
+export async function postCamgirlTip(camgirlId: string, amountMn2: number): Promise<CamgirlTipResult> {
+  const res = await fetch(`/api/wallet/v2/camgirls/${encodeURIComponent(camgirlId)}/tip`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ amount_mn2: amountMn2 }),
+  });
+  return res.json() as Promise<CamgirlTipResult>;
 }
 
 export async function fetchCamgirlsUpgrades(category?: string): Promise<CamgirlsUpgradesCatalog> {

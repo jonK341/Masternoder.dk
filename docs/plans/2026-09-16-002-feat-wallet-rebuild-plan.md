@@ -1609,6 +1609,17 @@ Phase-1 functional scaffold wiring exchange, encoder, shop, news, podcast, netwo
 | **WR-INT-CHAT** | Network Chat | `GET/POST /api/wallet/v2/network-chat/*` | `network_chat_config.json`, JSONL messages |
 | **WR-INT-CAM** | Camgirls | `GET /api/wallet/v2/camgirls/catalog` | `camgirls_catalog.json` (25 performers) |
 | **WR-INT-CAM-UPG** | Camgirls → Upgrades | `GET/POST /api/wallet/v2/camgirls/upgrades/*` | `camgirls_upgrades_catalog.json` (250) |
+| **WR-INT-CAM-WAL** | Camgirls wallets | `GET /api/wallet/v2/camgirls/<id>/wallet`, `POST …/tip` | Synthetic `wallet_user_id` = `camgirl_{id}` in platform ledger |
+
+### Camgirl MN2 wallets (WR-INT-CAM-WAL)
+
+Each wallet-catalog camgirl has a **synthetic ledger account**:
+
+- `wallet_user_id` pattern: `camgirl_{camgirl_id}` (e.g. `camgirl_cg_wallet_nova`)
+- Auto-provisioned on catalog load via `camgirls_wallet_registry.json` (0 MN2 start)
+- Balance from `mn2_wallet_service.get_balance` / unified points — **no deposit RPC** in phase 1
+- Tips: `POST /api/wallet/v2/camgirls/<id>/tip` debits tipper via `mn2_gift_service.transfer`
+- Explorer link shown only when a deposit address already exists in `mn2_user_addresses.json`
 
 ### Tab groups (wallet TabNav)
 

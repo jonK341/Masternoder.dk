@@ -24,6 +24,16 @@ def _cleanup_user_progress(user_id: str):
         os.remove(path)
 
 
+def _cleanup_wallet_registry():
+    path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "data",
+        "camgirls_wallet_registry.json",
+    )
+    if os.path.isfile(path):
+        os.remove(path)
+
+
 def test_camgirls_catalog_returns_25():
     client = _app().test_client()
     r = client.get("/api/wallet/v2/camgirls/catalog")
@@ -35,6 +45,66 @@ def test_camgirls_catalog_returns_25():
     assert performers[0].get("id")
     assert performers[0].get("name")
     assert performers[0].get("wallet_sfw") is True
+    assert performers[0].get("wallet_user_id") == f"camgirl_{performers[0]['id']}"
+    assert "mn2_balance" in performers[0]
+    assert data.get("wallet_user_id_pattern") == "camgirl_{camgirl_id}"
+
+
+def test_camgirls_wallet_endpoint_provisions():
+    _cleanup_wallet_registry()
+    client = _app().test_client()
+    r = client.get("/api/wallet/v2/camgirls/cg_wallet_nova/wallet")
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data.get("success") is True
+    assert data.get("wallet_user_id") == "camgirl_cg_wallet_nova"
+    assert data.get("mn2_balance") == 0.0
+    assert data.get("camgirl_id") == "cg_wallet_nova"
+    _cleanup_wallet_registry()
+
+
+def test_camgirls_all_wallets_list():
+    _cleanup_wallet_registry()
+    client = _app().test_client()
+    r = client.get("/api/wallet/v2/camgirls/wallets")
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data.get("success") is True
+    assert data.get("total") == 25
+    wallets = data.get("wallets") or []
+    assert wallets[0].get("wallet_user_id", "").startswith("camgirl_")
+    _cleanup_wallet_registry()
+
+
+@patch("backend.routes.wallet_v2_routes.resolve_user_id")
+@patch("backend.services.mn2_gift_service.transfer")
+def test_camgirls_tip_transfer(mock_transfer, mock_resolve):
+    mock_resolve.return_value = "tipper_user_1"
+    tip_amount = 7.0  # cg_wallet_nova tip_min_mn2 = max(5, 15//2)
+    mock_transfer.return_value = {
+        "success": True,
+        "amount_mn2": tip_amount,
+        "from_user": "tipper_user_1",
+        "to_user": "camgirl_cg_wallet_nova",
+    }
+    _cleanup_wallet_registry()
+    client = _app().test_client()
+    r = client.post(
+        "/api/wallet/v2/camgirls/cg_wallet_nova/tip",
+        json={"amount_mn2": tip_amount},
+        query_string={"user_id": "tipper_user_1"},
+    )
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data.get("success") is True
+    assert data.get("wallet_user_id") == "camgirl_cg_wallet_nova"
+    assert data.get("amount_mn2") == tip_amount
+    mock_transfer.assert_called_once()
+    args = mock_transfer.call_args[0]
+    assert args[0] == "tipper_user_1"
+    assert args[1] == "camgirl_cg_wallet_nova"
+    assert args[2] == tip_amount
+    _cleanup_wallet_registry()
 
 
 def test_camgirls_upgrades_returns_250():

@@ -3,6 +3,7 @@ import {
   fetchCamgirlsCatalog,
   fetchCamgirlsUpgrades,
   fetchCamgirlsUpgradesProgress,
+  postCamgirlTip,
   unlockCamgirlUpgrade,
   type CamgirlPerformer,
   type CamgirlUpgrade,
@@ -36,6 +37,8 @@ export function CamgirlsHub() {
   const [upgradesLoaded, setUpgradesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unlocking, setUnlocking] = useState<string | null>(null);
+  const [tipping, setTipping] = useState<string | null>(null);
+  const [tipFlash, setTipFlash] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
@@ -85,6 +88,39 @@ export function CamgirlsHub() {
 
   const unlocked = new Set(progress?.unlocked_ids || []);
   const available = new Set(progress?.available_ids || []);
+
+  const handleTip = async (performer: CamgirlPerformer) => {
+    if (tipping) return;
+    const min = performer.tip_min_mn2 ?? 5;
+    const raw = window.prompt(`Tip ${performer.name} (min ${min} MN2):`, String(min));
+    if (raw == null) return;
+    const amount = parseFloat(raw);
+    if (!Number.isFinite(amount) || amount < min) {
+      setTipFlash(`Minimum tip is ${min} MN2`);
+      window.setTimeout(() => setTipFlash(null), 3000);
+      return;
+    }
+    setTipping(performer.id);
+    setTipFlash(null);
+    try {
+      const result = await postCamgirlTip(performer.id, amount);
+      if (result.success) {
+        setTipFlash(`Tipped ${amount} MN2 → balance ${result.camgirl_balance?.toFixed(4) ?? '—'}`);
+        setPerformers((prev) => prev.map((p) => (
+          p.id === performer.id
+            ? { ...p, mn2_balance: result.camgirl_balance ?? p.mn2_balance }
+            : p
+        )));
+      } else {
+        setTipFlash(result.error || result.message || 'Tip failed');
+      }
+    } catch (err: unknown) {
+      setTipFlash(err instanceof Error ? err.message : 'Tip failed');
+    } finally {
+      setTipping(null);
+      window.setTimeout(() => setTipFlash(null), 4000);
+    }
+  };
 
   const handleUnlock = async (upgrade: CamgirlUpgrade) => {
     if (unlocking || unlocked.has(upgrade.id)) return;
@@ -140,34 +176,60 @@ export function CamgirlsHub() {
           ) : error ? (
             <div class="wallet-error wallet-error--inline" role="alert">{error}</div>
           ) : (
-            <div class="wallet-shop-grid" style={{ marginTop: '12px' }}>
-              {performers.map((p) => (
-                <a
-                  key={p.id}
-                  href={p.studio_path || '/camgirls'}
-                  class="wallet-shop-card"
-                  style={{ textDecoration: 'none' }}
-                >
-                  <img
-                    src={p.avatar_url || '/static/camgirls/avatar-demo.svg'}
-                    alt=""
-                    width={48}
-                    height={48}
-                    style={{ borderRadius: 'var(--wallet-radius)' }}
-                  />
-                  <span class="wallet-shop-card-name">
-                    {p.name}
-                    {p.online ? (
-                      <span style={{ color: 'var(--wallet-accent)', marginLeft: '6px', fontSize: '0.7rem' }}>● online</span>
-                    ) : null}
-                  </span>
-                  <span class="wallet-shop-card-desc">{p.tagline}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--wallet-muted)' }}>
-                    {p.tier} · {p.price_mn2} MN2
-                  </span>
-                </a>
-              ))}
-            </div>
+            <>
+              {tipFlash && (
+                <div style={{ marginTop: '12px', fontSize: '0.85rem', color: 'var(--wallet-accent)' }}>{tipFlash}</div>
+              )}
+              <div class="wallet-shop-grid" style={{ marginTop: '12px' }}>
+                {performers.map((p) => (
+                  <div key={p.id} class="wallet-shop-card" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <img
+                      src={p.avatar_url || '/static/camgirls/avatar-demo.svg'}
+                      alt=""
+                      width={48}
+                      height={48}
+                      style={{ borderRadius: 'var(--wallet-radius)' }}
+                    />
+                    <span class="wallet-shop-card-name">
+                      {p.name}
+                      {p.online ? (
+                        <span style={{ color: 'var(--wallet-accent)', marginLeft: '6px', fontSize: '0.7rem' }}>● online</span>
+                      ) : null}
+                    </span>
+                    <span class="wallet-shop-card-desc">{p.tagline}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--wallet-muted)' }}>
+                      {p.tier} · unlock {p.price_mn2} MN2
+                    </span>
+                    <span style={{ fontFamily: 'var(--wallet-font-mono)', fontSize: '0.85rem', color: 'var(--wallet-accent)' }}>
+                      {(p.mn2_balance ?? 0).toFixed(4)} MN2
+                    </span>
+                    {p.wallet_user_id && (
+                      <span style={{ fontSize: '0.65rem', color: 'var(--wallet-muted)', wordBreak: 'break-all' }}>
+                        {p.wallet_user_id}
+                      </span>
+                    )}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                      <button
+                        type="button"
+                        class="wallet-discord-btn wallet-discord-btn-primary"
+                        disabled={tipping === p.id}
+                        onClick={() => handleTip(p)}
+                      >
+                        {tipping === p.id ? 'Tipping…' : 'Tip'}
+                      </button>
+                      <a href={p.studio_path || '/camgirls'} class="wallet-discord-btn" style={{ textDecoration: 'none' }}>
+                        Studio
+                      </a>
+                      {p.explorer_url ? (
+                        <a href={p.explorer_url} class="wallet-discord-btn" style={{ textDecoration: 'none' }} target="_blank" rel="noopener noreferrer">
+                          Explorer
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </>
       )}
