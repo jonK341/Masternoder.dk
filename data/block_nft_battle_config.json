@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "battles_per_edition_per_day": 12,
+  "win_battle_points": 15,
+  "loss_battle_points": 3,
+  "draw_battle_points": 7,
+  "win_game_points": 25,
+  "loss_game_points": 5
+}

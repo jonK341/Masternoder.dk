@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import {
+  battleBlockNft,
   fetchWalletTrophies,
   transferTrophyEdition,
   type TrophyEdition,
@@ -171,7 +172,32 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
   const [recipient, setRecipient] = useState('');
   const [transferError, setTransferError] = useState<string | null>(null);
   const [transferring, setTransferring] = useState(false);
+  const [battling, setBattling] = useState(false);
+  const [battleMsg, setBattleMsg] = useState<string | null>(null);
   const canTransfer = !edition.hold_until && !edition.legacy_stack && edition.trade_actions?.peer_transfer;
+  const isBlockNft = edition.platform_nft || edition.item_id?.startsWith('block-') || edition.series === 'block_mint';
+  const stats = edition.battle_stats;
+  const mediaSrc = edition.gif_url || edition.image_url;
+
+  const runBattle = async () => {
+    if (!edition.edition_key) return;
+    setBattling(true);
+    setBattleMsg(null);
+    try {
+      const res = await battleBlockNft(edition.edition_key);
+      if (!res.success) {
+        setBattleMsg(res.error || 'Battle failed');
+        return;
+      }
+      const bp = res.rewards?.battle_points ?? 0;
+      const gp = res.rewards?.game_points ?? 0;
+      setBattleMsg(`${res.message || res.result} (+${bp} ⚔️, +${gp} 🎮)`);
+    } catch (err) {
+      setBattleMsg((err as Error).message || 'Battle failed');
+    } finally {
+      setBattling(false);
+    }
+  };
 
   const submitTransfer = async () => {
     if (!recipient.trim()) {
@@ -202,8 +228,8 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
 
   return (
     <article class="wallet-trophy-gallery-card" role="listitem">
-      {edition.image_url ? (
-        <img src={edition.image_url} alt="" class="wallet-trophy-gallery-img" loading="lazy" />
+      {mediaSrc ? (
+        <img src={mediaSrc} alt="" class="wallet-trophy-gallery-img" loading="lazy" />
       ) : (
         <div class="wallet-trophy-gallery-icon-wrap">
           <span class="wallet-trophy-gallery-icon" aria-hidden="true">🏆</span>
@@ -213,8 +239,17 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
         <div class="wallet-trophy-gallery-name">{title}</div>
         <div class="wallet-trophy-gallery-meta">
           Edition #{edition.edition_no}
-          {edition.serial_key ? ` · ${edition.serial_key}` : ''}
+          {edition.serial_number ? ` · ${edition.serial_number}` : edition.serial_key ? ` · ${edition.serial_key}` : ''}
         </div>
+        {stats ? (
+          <div class="wallet-trophy-battle-stats" aria-label="Battle stats">
+            <span>⚔ {stats.combat_rating ?? '—'}</span>
+            <span>PWR {stats.power}</span>
+            <span>DEF {stats.defense}</span>
+            <span>SPD {stats.speed}</span>
+            <span class="wallet-trophy-rarity">{stats.rarity}</span>
+          </div>
+        ) : null}
         {edition.legacy_stack ? (
           <div class="wallet-trophy-gallery-tag">Legacy stack</div>
         ) : edition.acquired_via ? (
@@ -266,7 +301,18 @@ function TrophyEditionCard({ edition, onTransferred }: { edition: TrophyEdition;
               Transfer
             </button>
           )}
+          {isBlockNft && edition.edition_key && (
+            <button
+              type="button"
+              class="wallet-trophy-cta wallet-trophy-cta--btn wallet-trophy-cta--battle"
+              disabled={battling}
+              onClick={runBattle}
+            >
+              {battling ? 'Fighting…' : 'Battle'}
+            </button>
+          )}
         </div>
+        {battleMsg ? <div class="wallet-trophy-gallery-meta wallet-trophy-battle-msg">{battleMsg}</div> : null}
         {showTransfer && (
           <div class="wallet-trophy-transfer-modal">
             <label class="wallet-trophy-transfer-label">

@@ -37,14 +37,19 @@ def test_ensure_block_media_skips_when_manifest_has_files():
         assert result.get("skipped") is True
 
 
-def test_ensure_block_media_requires_ffmpeg():
+def test_ensure_block_media_unavailable_without_generators():
     from backend.services import block_trophy_media_service as btm
 
-    with patch.object(btm, "_ffmpeg", return_value=None):
-        result = btm.ensure_block_media(9999)
+    with tempfile.TemporaryDirectory() as tmp:
+        with patch.object(btm, "_BASE", tmp):
+            with patch.object(btm, "_ffmpeg", return_value=None):
+                with patch.object(btm, "_generate_smiley_gif_pil", return_value=False):
+                    with patch("backend.services.shop_media_service.load_manifest", return_value={}):
+                        with patch("backend.services.shop_media_service.save_manifest"):
+                            result = btm.ensure_block_media(9999)
 
     assert result["success"] is False
-    assert result["error"] == "ffmpeg_not_available"
+    assert result["error"] == "media_generation_unavailable"
 
 
 def test_generate_media_route():

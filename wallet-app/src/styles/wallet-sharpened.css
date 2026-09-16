@@ -355,6 +355,30 @@ body {
   text-decoration: underline;
 }
 
+.wallet-trophy-battle-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-family: var(--wallet-font-mono);
+  color: var(--wallet-muted);
+  margin-top: 4px;
+}
+
+.wallet-trophy-rarity {
+  text-transform: uppercase;
+  color: var(--wallet-accent);
+}
+
+.wallet-trophy-cta--battle {
+  color: #ffb347;
+}
+
+.wallet-trophy-battle-msg {
+  margin-top: 6px;
+  color: var(--wallet-accent);
+}
+
 .wallet-trophy-gallery-price {
   font-size: 0.8rem;
   font-family: var(--wallet-font-mono);

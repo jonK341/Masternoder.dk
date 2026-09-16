@@ -2236,6 +2236,70 @@ def shop_block_mint_claim():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@shop_bp.route('/api/shop/block-nft/stats', methods=['GET'])
+def shop_block_nft_stats():
+    """Battle stats for a block smiley NFT edition or catalog preview."""
+    try:
+        edition_key = (request.args.get('edition_key') or '').strip()
+        block_height = request.args.get('block_height') or request.args.get('height')
+        from backend.services.block_nft_stats_service import generate_battle_stats, stats_for_edition
+
+        if edition_key:
+            user_id = (request.args.get('user_id') or '').strip() or _resolve_user_id()
+            if user_id and user_id not in ('default_user', 'guest'):
+                from backend.services.trophy_fulfillment_service import get_trophy_editions
+
+                for ed in get_trophy_editions(user_id):
+                    if (ed.get('edition_key') or '') == edition_key:
+                        return jsonify({'success': True, 'stats': stats_for_edition(ed)}), 200
+            if block_height:
+                h = int(block_height)
+                stats = generate_battle_stats(h, edition_key, edition_no=1)
+                return jsonify({'success': True, 'stats': stats, 'preview': True}), 200
+            return jsonify({'success': False, 'error': 'edition_not_found'}), 404
+
+        if block_height:
+            h = int(block_height)
+            from backend.services.block_mint_service import block_item_id
+
+            iid = block_item_id(h)
+            stats = generate_battle_stats(h, f'TRO-{iid}-preview', edition_no=1)
+            return jsonify({'success': True, 'stats': stats, 'preview': True}), 200
+
+        return jsonify({'success': False, 'error': 'edition_key_or_block_height_required'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/block-nft/battle', methods=['POST'])
+def shop_block_nft_battle():
+    """Battle with an owned block smiley NFT to earn rewards."""
+    try:
+        data = request.get_json() or {}
+        user_id = (data.get('user_id') or '').strip() or _resolve_user_id()
+        edition_key = (data.get('edition_key') or '').strip()
+        from backend.services.block_nft_stats_service import battle_with_nft
+
+        result = battle_with_nft(user_id, edition_key)
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@shop_bp.route('/api/shop/block-nft/battle/history', methods=['GET'])
+def shop_block_nft_battle_history():
+    """Recent block NFT arena battles for a user."""
+    try:
+        user_id = (request.args.get('user_id') or '').strip() or _resolve_user_id()
+        limit = min(int(request.args.get('limit', 20)), 100)
+        from backend.services.block_nft_stats_service import battle_history
+
+        return jsonify(battle_history(user_id, limit=limit)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e), 'battles': []}), 500
+
+
 @shop_bp.route('/api/shop/auction/listings', methods=['GET'])
 def shop_auction_listings():
     """Shop v5 auction house: active fixed-price user listings."""

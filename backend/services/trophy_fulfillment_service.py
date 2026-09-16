@@ -131,6 +131,29 @@ def _find_edition_index(editions: List[Dict[str, Any]], item_id: str, edition_no
     return None
 
 
+def patch_edition_fields(
+    user_id: str,
+    item_id: str,
+    edition_no: int,
+    fields: Dict[str, Any],
+) -> bool:
+    """Merge fields onto a stored trophy edition row."""
+    uid = (user_id or "").strip()
+    iid = (item_id or "").strip()
+    if not uid or not iid or not fields:
+        return False
+    path = _editions_file_path(uid)
+    doc = _read_json(path, {"editions": []})
+    editions = doc.get("editions") or []
+    idx = _find_edition_index(editions, iid, int(edition_no))
+    if idx is None:
+        return False
+    editions[idx] = {**editions[idx], **fields}
+    doc["editions"] = editions
+    doc["updated_at"] = _iso()
+    return _write_json(path, doc)
+
+
 def get_edition(user_id: str, item_id: str, edition_no: int) -> Optional[Dict[str, Any]]:
     rows = get_trophy_editions(user_id, item_id)
     for row in rows:

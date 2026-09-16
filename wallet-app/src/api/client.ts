@@ -63,6 +63,20 @@ export type TrophyEdition = {
   anchor_commitment?: string;
   anchor_txid?: string;
   anchor_explorer_url?: string;
+  serial_number?: string;
+  block_height?: number;
+  platform_nft?: boolean;
+  battle_stats?: {
+    serial_number?: string;
+    power?: number;
+    defense?: number;
+    speed?: number;
+    luck?: number;
+    smile?: number;
+    combat_rating?: number;
+    rarity?: string;
+    mood?: string;
+  };
   image_url?: string | null;
   gif_url?: string | null;
   sound_url?: string | null;
@@ -134,6 +148,27 @@ export async function fetchTrophyMonitor4d(): Promise<TrophyMonitor4dResponse> {
     throw new Error(`4D monitor failed (${res.status})`);
   }
   return res.json() as Promise<TrophyMonitor4dResponse>;
+}
+
+export async function battleBlockNft(edition_key: string): Promise<{
+  success: boolean;
+  error?: string;
+  result?: string;
+  rewards?: { battle_points?: number; game_points?: number };
+  message?: string;
+  scores?: { attacker?: number; defender?: number; margin?: number };
+}> {
+  const res = await fetch('/api/shop/block-nft/battle', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ edition_key }),
+  });
+  const data = await res.json();
+  if (!res.ok && !data.error) {
+    throw new Error(`Battle failed (${res.status})`);
+  }
+  return data;
 }
 
 export async function transferTrophyEdition(payload: {

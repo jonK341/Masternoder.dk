@@ -1,13 +1,24 @@
-"""Generate PNG + GIF media for block-height trophies (plan 001 BM-U2)."""
+"""Generate smiley PNG + animated GIF for block-height NFTs (plan 004)."""
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
 import subprocess
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+SMILEY_PALETTES: List[Tuple[Tuple[int, int, int], Tuple[int, int, int]]] = [
+    ((255, 214, 0), (255, 120, 0)),
+    ((255, 235, 59), (255, 87, 34)),
+    ((255, 193, 7), (244, 67, 54)),
+    ((255, 238, 88), (255, 152, 0)),
+    ((255, 241, 118), (255, 64, 129)),
+    ((255, 213, 79), (156, 39, 176)),
+    ((255, 202, 40), (63, 81, 181)),
+]
 
 
 def _ffmpeg() -> Optional[str]:
@@ -50,12 +61,118 @@ def _run(cmd: list, timeout: int = 120) -> bool:
         return False
 
 
+def _palette_for_height(height: int) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+    idx = int(hashlib.sha256(f"smiley-palette|{height}".encode()).hexdigest(), 16) % len(SMILEY_PALETTES)
+    return SMILEY_PALETTES[idx]
+
+
+def _draw_smiley_frame(
+    size: int,
+    face: Tuple[int, int, int],
+    accent: Tuple[int, int, int],
+    *,
+    frame_idx: int,
+    block_height: int,
+) -> "Any":
+    from PIL import Image, ImageDraw
+
+    img = Image.new("RGBA", (size, size), (13, 27, 42, 255))
+    draw = ImageDraw.Draw(img)
+    cx, cy = size // 2, size // 2
+    radius = int(size * 0.34)
+
+    draw.ellipse(
+        (cx - radius, cy - radius, cx + radius, cy + radius),
+        fill=face + (255,),
+        outline=accent + (255,),
+        width=max(3, size // 80),
+    )
+
+    eye_y = cy - radius // 3
+    eye_dx = radius // 2
+    eye_r = max(6, radius // 8)
+    wink = frame_idx % 8 == 3
+
+    if wink:
+        draw.line((cx - eye_dx - eye_r, eye_y, cx - eye_dx + eye_r, eye_y), fill=(40, 30, 20, 255), width=max(3, eye_r // 2))
+        draw.ellipse((cx + eye_dx - eye_r, eye_y - eye_r, cx + eye_dx + eye_r, eye_y + eye_r), fill=(40, 30, 20, 255))
+    else:
+        for ex in (cx - eye_dx, cx + eye_dx):
+            draw.ellipse((ex - eye_r, eye_y - eye_r, ex + eye_r, eye_y + eye_r), fill=(40, 30, 20, 255))
+
+    mouth_modes = ("smile", "grin", "open", "smile", "flat", "grin", "smile", "beam")
+    mouth = mouth_modes[frame_idx % len(mouth_modes)]
+    mouth_y = cy + radius // 3
+    mouth_w = radius
+    if mouth == "grin":
+        draw.arc(
+            (cx - mouth_w, mouth_y - mouth_w // 2, cx + mouth_w, mouth_y + mouth_w),
+            start=10,
+            end=170,
+            fill=(40, 30, 20, 255),
+            width=max(4, radius // 10),
+        )
+        draw.rectangle((cx - mouth_w // 2, mouth_y, cx + mouth_w // 2, mouth_y + mouth_w // 3), fill=(180, 60, 60, 220))
+    elif mouth == "open":
+        draw.ellipse(
+            (cx - mouth_w // 2, mouth_y - mouth_w // 4, cx + mouth_w // 2, mouth_y + mouth_w // 2),
+            fill=(120, 30, 30, 255),
+        )
+    elif mouth == "flat":
+        draw.line((cx - mouth_w // 2, mouth_y, cx + mouth_w // 2, mouth_y), fill=(40, 30, 20, 255), width=max(3, radius // 12))
+    else:
+        draw.arc(
+            (cx - mouth_w, mouth_y - mouth_w // 2, cx + mouth_w, mouth_y + mouth_w),
+            start=15,
+            end=165,
+            fill=(40, 30, 20, 255),
+            width=max(4, radius // 10),
+        )
+
+    label = f"#{block_height}"
+    draw.text((12, size - 28), label, fill=(200, 230, 255, 220))
+    badge = "AI"
+    draw.rectangle((size - 44, 10, size - 10, 34), fill=accent + (200,))
+    draw.text((size - 38, 12), badge, fill=(255, 255, 255, 255))
+    return img
+
+
+def _generate_smiley_gif_pil(height: int, gif_path: str, png_path: str, *, frames: int = 8) -> bool:
+    try:
+        from PIL import Image
+    except ImportError:
+        return False
+
+    face, accent = _palette_for_height(height)
+    size = 480
+    images: List[Image.Image] = []
+    for i in range(frames):
+        frame = _draw_smiley_frame(size, face, accent, frame_idx=i, block_height=height)
+        images.append(frame.convert("P", palette=Image.ADAPTIVE))
+
+    if not images:
+        return False
+
+    images[0].save(
+        png_path,
+        format="PNG",
+    )
+    images[0].save(
+        gif_path,
+        save_all=True,
+        append_images=images[1:],
+        duration=130,
+        loop=0,
+        disposal=2,
+    )
+    return os.path.isfile(gif_path) and os.path.isfile(png_path)
+
+
 def ensure_block_media(height: int, *, duration: float = 3.0, force: bool = False) -> Dict[str, Any]:
-    """Create block trophy poster PNG and ~3s GIF; update shop_item_media.json."""
+    """Create AI smiley poster PNG and animated GIF; update shop_item_media.json."""
     h = int(height)
     iid = block_item_id(h)
     paths = _paths(h)
-    ffmpeg = _ffmpeg()
 
     from backend.services.shop_media_service import load_manifest, save_manifest
 
@@ -65,92 +182,95 @@ def ensure_block_media(height: int, *, duration: float = 3.0, force: bool = Fals
         if os.path.isfile(os.path.join(_BASE, existing["image_url"].lstrip("/"))):
             return {"success": True, "item_id": iid, "skipped": True, "media": existing}
 
-    if not ffmpeg:
-        return {"success": False, "error": "ffmpeg_not_available", "item_id": iid}
-
-    label = f"Block #{h}"
-    # Poster still — dark gradient + height label
-    vf_still = (
-        "drawtext=text='" + label + "':fontsize=48:fontcolor=white:"
-        "x=(w-text_w)/2:y=(h-text_h)/2"
-    )
-    png_ok = _run(
-        [
-            ffmpeg,
-            "-y",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-f",
-            "lavfi",
-            "-i",
-            "color=c=0x0d1b2a:s=640x640:d=1",
-            "-vf",
-            vf_still,
-            "-frames:v",
-            "1",
-            paths["png"],
-        ],
-        timeout=60,
-    )
-    if not png_ok or not os.path.isfile(paths["png"]):
-        return {"success": False, "error": "png_generation_failed", "item_id": iid}
-
-    frames = int(max(1, round(duration * 30)))
-    vf_zoom = (
-        f"scale=640:640,format=rgba,"
-        f"zoompan=z='min(zoom+0.002,1.35)':d={frames}:"
-        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=640x640:fps=30"
-    )
-    mp4_ok = _run(
-        [
-            ffmpeg,
-            "-y",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-loop",
-            "1",
-            "-i",
-            paths["png"],
-            "-vf",
-            vf_zoom,
-            "-t",
-            str(duration),
-            "-c:v",
-            "libx264",
-            "-pix_fmt",
-            "yuv420p",
-            "-movflags",
-            "+faststart",
-            paths["mp4"],
-        ],
-        timeout=120,
-    )
-
-    gif_ok = False
-    if mp4_ok and os.path.isfile(paths["mp4"]):
-        vf_gif = (
-            "fps=12,scale=480:-1:flags=lanczos,split[s0][s1];"
-            "[s0]palettegen=stats_mode=single[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5"
+    gif_ok = _generate_smiley_gif_pil(h, paths["gif"], paths["png"])
+    if not gif_ok:
+        ffmpeg = _ffmpeg()
+        if not ffmpeg:
+            return {"success": False, "error": "media_generation_unavailable", "item_id": iid}
+        label = f"Block #{h} :-)"
+        vf_still = (
+            "drawtext=text='" + label + "':fontsize=48:fontcolor=yellow:"
+            "x=(w-text_w)/2:y=(h-text_h)/2"
         )
-        gif_ok = _run(
+        png_ok = _run(
             [
                 ffmpeg,
                 "-y",
                 "-hide_banner",
                 "-loglevel",
                 "error",
+                "-f",
+                "lavfi",
                 "-i",
-                paths["mp4"],
+                "color=c=0x0d1b2a:s=640x640:d=1",
                 "-vf",
-                vf_gif,
+                vf_still,
+                "-frames:v",
+                "1",
+                paths["png"],
+            ],
+            timeout=60,
+        )
+        if not png_ok:
+            return {"success": False, "error": "png_generation_failed", "item_id": iid}
+        gif_ok = False
+
+    mp4_ok = False
+    ffmpeg = _ffmpeg()
+    if ffmpeg and os.path.isfile(paths["png"]):
+        frames = int(max(1, round(duration * 30)))
+        vf_zoom = (
+            f"scale=640:640,format=rgba,"
+            f"zoompan=z='min(zoom+0.002,1.2)':d={frames}:"
+            f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=640x640:fps=30"
+        )
+        mp4_ok = _run(
+            [
+                ffmpeg,
+                "-y",
+                "-hide_banner",
+                "-loglevel",
+                "error",
                 "-loop",
-                "0",
-                paths["gif"],
+                "1",
+                "-i",
+                paths["png"],
+                "-vf",
+                vf_zoom,
+                "-t",
+                str(duration),
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-movflags",
+                "+faststart",
+                paths["mp4"],
             ],
             timeout=120,
         )
+        if not gif_ok and mp4_ok:
+            vf_gif = (
+                "fps=12,scale=480:-1:flags=lanczos,split[s0][s1];"
+                "[s0]palettegen=stats_mode=single[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5"
+            )
+            gif_ok = _run(
+                [
+                    ffmpeg,
+                    "-y",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-i",
+                    paths["mp4"],
+                    "-vf",
+                    vf_gif,
+                    "-loop",
+                    "0",
+                    paths["gif"],
+                ],
+                timeout=120,
+            )
 
     entry = dict(existing)
     entry["image_url"] = paths["png_url"]
@@ -161,6 +281,8 @@ def ensure_block_media(height: int, *, duration: float = 3.0, force: bool = Fals
         entry["clip_url"] = paths["clip_url"]
     entry["clip_duration_s"] = duration
     entry["block_height"] = h
+    entry["media_kind"] = "block_smiley_nft"
+    entry["ai_generated"] = True
     entry["generated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     manifest[iid] = entry
     save_manifest(manifest)
@@ -173,4 +295,5 @@ def ensure_block_media(height: int, *, duration: float = 3.0, force: bool = Fals
         "gif_url": entry.get("gif_url"),
         "clip_url": entry.get("clip_url"),
         "skipped": False,
+        "ai_smiley": True,
     }

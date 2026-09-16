@@ -88,17 +88,29 @@ def _media_for_height(height: int) -> Dict[str, str]:
     }
 
 
+def _battle_stats_preview(height: int) -> Dict[str, Any]:
+    try:
+        from backend.services.block_nft_stats_service import generate_battle_stats
+
+        preview_key = f"TRO-{block_item_id(height)}-preview"
+        return generate_battle_stats(height, preview_key, edition_no=1)
+    except Exception:
+        return {}
+
+
 def _catalog_row(height: int, manifest_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     cfg = get_config()
     iid = block_item_id(height)
     media = _media_for_height(height)
     claimed = bool((manifest_row or {}).get("claimed_by"))
+    stats = _battle_stats_preview(height)
+    serial = stats.get("serial_number") or f"BLK-{int(height):07d}-E0001"
     return {
         "id": iid,
-        "name": f"Block Trophy #{height}",
+        "name": f"Block Smiley NFT #{height}",
         "kind": "trophy",
         "series": "block_mint",
-        "tags": ["block_mint", "trophy"],
+        "tags": ["block_mint", "trophy", "block_nft", "battle"],
         "category": "trophies",
         "block_height": height,
         "supply": 1,
@@ -107,6 +119,15 @@ def _catalog_row(height: int, manifest_row: Optional[Dict[str, Any]] = None) -> 
         "base_price_usd": float(cfg.get("base_price_usd") or 2.99),
         "price": max(99, int(float(cfg.get("base_price_usd") or 2.99) * 100)),
         "on_chain_mint": False,
+        "platform_nft": True,
+        "ai_generated": True,
+        "serial_number": serial,
+        "serial_key": serial,
+        "battle_stats": stats,
+        "description": (
+            f"AI smiley .gif collectible minted for MN2 block #{height}. "
+            f"Serial {serial} · CR {stats.get('combat_rating', '—')} · {stats.get('rarity', 'common')} mood."
+        ),
         "explorer_url": f"{cfg.get('explorer_base_url', '/explorer?height=')}{height}",
         "image_url": media.get("image_url"),
         "gif_url": media.get("gif_url"),
@@ -286,7 +307,7 @@ def claim_block_trophy(
         catalog["name"],
         acquired_via="block_mint",
         price_type=method,
-        extra={"block_height": h},
+        extra={"block_height": h, "platform_nft": True, "ai_generated": True},
     )
     if not grant.get("success"):
         return grant
@@ -294,6 +315,31 @@ def claim_block_trophy(
     edition_key = grant.get("edition_key")
     proof_hash = grant.get("proof_hash")
     edition = grant.get("edition") or {}
+
+    battle_stats: Dict[str, Any] = {}
+    try:
+        from backend.services.block_nft_stats_service import generate_battle_stats
+        from backend.services.trophy_fulfillment_service import patch_edition_fields
+
+        battle_stats = generate_battle_stats(
+            h,
+            edition_key or f"TRO-{iid}-{edition_no}",
+            edition_no=int(edition_no or 1),
+        )
+        patch_edition_fields(
+            uid,
+            iid,
+            int(edition_no or 1),
+            {
+                "battle_stats": battle_stats,
+                "serial_number": battle_stats.get("serial_number"),
+                "block_height": h,
+                "platform_nft": True,
+            },
+        )
+        edition = {**edition, "battle_stats": battle_stats, "serial_number": battle_stats.get("serial_number")}
+    except Exception:
+        pass
 
     row["claimed_by"] = uid
     row["claimed_at"] = _iso()
@@ -330,5 +376,8 @@ def claim_block_trophy(
         "edition_no": edition_no,
         "edition_key": edition_key,
         "edition": edition,
+        "battle_stats": battle_stats,
+        "serial_number": (battle_stats or {}).get("serial_number"),
         "explorer_url": catalog.get("explorer_url"),
+        "gif_url": catalog.get("gif_url"),
     }
