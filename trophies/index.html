@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trophy Vault NFTs - MasterNoder</title>
-    <meta name="cache-version" content="20260916a">
+    <meta name="cache-version" content="20260916c">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
-    <link rel="stylesheet" href="/static/css/trophies-nft-theme.css?v=20260916a">
+    <link rel="stylesheet" href="/static/css/trophies-nft-theme.css?v=20260916c">
     <style>
         :root {
             --trophy-primary: #FFD700;
@@ -38,21 +38,32 @@
             margin: 0 auto;
             position: relative;
             z-index: 5;
+            padding-top: 220px !important;
         }
 
         .trophies-header {
             text-align: center;
-            padding: 40px 20px;
-            margin-bottom: 40px;
+            padding: 12px 20px 28px;
+            margin-bottom: 24px;
         }
 
         .trophies-header h1 {
-            font-size: 4rem;
+            font-size: clamp(2.1rem, 5vw, 3.2rem);
             font-weight: 900;
-            margin: 0;
-            background: linear-gradient(135deg, var(--trophy-primary), var(--trophy-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            margin: 0 0 8px;
+            -webkit-text-fill-color: unset;
+            color: var(--trophy-primary);
+            background: none;
+            filter: none;
+            text-shadow: 0 0 24px rgba(139, 92, 246, 0.35);
+        }
+
+        body.trophy-theme-nft .trophies-header h1 {
+            color: #ddd6fe;
+            -webkit-text-fill-color: #c4b5fd;
+            background: none;
+            filter: none;
+            text-shadow: 0 0 22px rgba(34, 211, 238, 0.45);
         }
 
         .stats-grid {
@@ -663,13 +674,43 @@
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
+    <style>
+        /* Beat page-layout-metrics so the vault title sits below the multi-row nav. */
+        body.layout-standard .trophies-container {
+            padding-top: 230px !important;
+        }
+        @media (min-width: 1100px) {
+            body.layout-standard .trophies-container {
+                padding-right: 210px !important;
+            }
+        }
+        @media (max-width: 900px) {
+            body.layout-standard .trophies-container {
+                padding-top: 96px !important;
+            }
+        }
+        .trophies-header h1,
+        body.trophy-theme-nft .trophies-header h1,
+        .vault-title {
+            color: #c4b5fd !important;
+            -webkit-text-fill-color: #c4b5fd !important;
+            background: none !important;
+            font-size: 2.6rem !important;
+            margin: 0 0 10px !important;
+        }
+        body.trophy-theme-gold .trophies-header h1,
+        body.trophy-theme-gold .vault-title {
+            color: #ffd700 !important;
+            -webkit-text-fill-color: #ffd700 !important;
+        }
+    </style>
 </head>
 <body class="layout-standard trophy-theme-nft">
     <div id="navigation-toolbar"></div>
 
-    <div class="trophies-container">
+    <div class="trophies-container" style="padding-top: 280px !important; padding-right: 220px !important;">
         <div class="trophies-header">
-            <h1>Trophy Vault</h1>
+            <h1 class="vault-title">Trophy Vault</h1>
             <div class="trophy-theme-switcher" role="group" aria-label="Trophy page theme">
                 <button type="button" id="trophy-theme-nft" class="active">NFT Vault</button>
                 <button type="button" id="trophy-theme-gold">Gold Classic</button>

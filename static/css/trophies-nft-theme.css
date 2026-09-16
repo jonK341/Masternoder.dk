@@ -64,14 +64,9 @@ body.trophy-theme-nft::before {
     color: #07060f;
 }
 
-body.trophy-theme-nft .trophies-header h1 {
+.vault-title {
     font-family: Orbitron, Syne, sans-serif;
-    letter-spacing: 0.04em;
-    background: linear-gradient(120deg, #22d3ee, #c4b5fd 40%, #f472b6 70%, #f5d76e);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 18px rgba(139, 92, 246, 0.45));
+    letter-spacing: 0.06em;
 }
 
 body.trophy-theme-nft .trophies-header p {
@@ -409,10 +404,23 @@ body.trophy-theme-nft .trophy-modal-close {
     100% { transform: translateX(30%) rotate(12deg); }
 }
 
-@media (max-width: 720px) {
-    .nft-modal-layout { grid-template-columns: 1fr; }
-    body.trophy-theme-nft .trophies-header h1 { font-size: 2.2rem; }
-    .nft-gallery { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+body.layout-standard .trophies-container {
+    padding-top: 220px !important;
+}
+
+@media (min-width: 1100px) {
+    body.layout-standard .trophies-container {
+        padding-right: 210px !important;
+    }
+}
+
+@media (max-width: 900px) {
+    body.layout-standard .trophies-container {
+        padding-top: 96px !important;
+    }
+    body.trophy-theme-nft .trophies-header h1 {
+        font-size: 2.1rem;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
