@@ -30,6 +30,7 @@ These are the scripts that should be considered the primary migration set going 
 | Hunters + rewards | `scripts/migrate_hunters_game_complete.py` | `rewards`, `user_rewards` (+ model-backed game tables) | present |
 | Communication psychology | `scripts/communication_psychology_migration.py` | `comm_psych_theory_unlocks`, `comm_psych_activity_log` | present |
 | Star map / hunters extras | `scripts/hunters_star_map_migration.py` | `star_map_visits`, `hunters_game_sessions`, `hunters_profiles`, `hunters_spells`, `agent_geo_refs` | present |
+| Unified points sync device | `scripts/sync_database_migration.py` | `sync_state`, `sync_domain_state`, `sync_audit`, `sync_health` | ops_script — run on server after DB health green; idempotent |
 
 ## Scripts to mark legacy/overlapping (do not run by default)
 
@@ -80,3 +81,9 @@ Use these labels in future automation:
 1. Patched `scripts/battle_migration.py` standalone compatibility (no `Connection.commit` failure path).
 2. Re-ran `scripts/run_all_migrations.py` with all modules reporting `ok`.
 3. Recorded Phase 7 execution metadata in `schema_migrations`.
+
+## Phase 8 updates (2026-07-20)
+
+1. Registered `scripts/sync_database_migration.py` as `ops_script` for Unified Points Sync Device DB tables.
+2. Prod probe: `GET /api/health/database` → **200**, `missing_tables: []`; `GET /api/sync/status` → **200**.
+3. Gate A follow-up: verify sync tables on server via SSH; confirm `sync_state` row (not JSON-only fallback).
