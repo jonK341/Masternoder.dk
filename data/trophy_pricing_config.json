@@ -1,0 +1,11 @@
+{
+  "defaults": {
+    "baseline_weekly": 5,
+    "max_boost": 0.5,
+    "pop_cap": 0.3,
+    "pop_weight": 0.05,
+    "floor_multiplier": 1.0,
+    "ceiling_multiplier": 3.0
+  },
+  "items": {}
+}

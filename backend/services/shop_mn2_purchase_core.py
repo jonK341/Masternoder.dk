@@ -26,7 +26,7 @@ def purchase_with_mn2_balance(
     if not uid or not iid:
         return {"success": False, "error": "user_id and item_id required"}, 400
 
-    from backend.routes.shop_routes import _get_shop_items, _apply_shop_item_effects
+    from backend.routes.shop_routes import _get_shop_items, _apply_shop_item_effects, _is_trophy_catalog_item
 
     all_items = _get_shop_items()
     item = next((i for i in all_items or [] if (i.get("id") or "") == iid), None)
@@ -36,6 +36,16 @@ def purchase_with_mn2_balance(
     item_price = item.get("price", 0)
     if isinstance(item_price, dict):
         return {"success": False, "error": "MN2 purchase only for coin-priced items"}, 400
+
+    if _is_trophy_catalog_item(item):
+        from backend.services.trophy_pricing_service import get_effective_price
+
+        pricing = get_effective_price(iid)
+        if not pricing.get("success"):
+            return {"success": False, "error": pricing.get("error", "trophy_pricing_failed"), "item_id": iid}, 404
+        item_price = int(pricing.get("effective_price_coins") or 0)
+        if item_price <= 0:
+            return {"success": False, "error": "price_not_configured", "item_id": iid}, 400
 
     total_cost = int(item_price) * qty
     base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
