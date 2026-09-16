@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trophies - MasterNoder</title>
-    <meta name="cache-version" content="20260607b">
+    <title>Trophy Vault NFTs - MasterNoder</title>
+    <meta name="cache-version" content="20260916a">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
-    <link rel="stylesheet" href="/static/css/trophies-ww2-theme.css?v=20260618a">
+    <link rel="stylesheet" href="/static/css/trophies-nft-theme.css?v=20260916a">
     <style>
         :root {
             --trophy-primary: #FFD700;
@@ -664,31 +664,31 @@
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
 </head>
-<body class="layout-standard">
+<body class="layout-standard trophy-theme-nft">
     <div id="navigation-toolbar"></div>
 
     <div class="trophies-container">
         <div class="trophies-header">
-            <h1>🏆 Trophy Collection</h1>
+            <h1>Trophy Vault</h1>
             <div class="trophy-theme-switcher" role="group" aria-label="Trophy page theme">
-                <button type="button" id="trophy-theme-ww2" class="active">WW2 War Room</button>
+                <button type="button" id="trophy-theme-nft" class="active">NFT Vault</button>
                 <button type="button" id="trophy-theme-gold">Gold Classic</button>
             </div>
-            <p>Unlock trophies by completing achievements and milestones</p>
+            <p>Collectible NFTs minted from every achievement you unlock</p>
         </div>
 
         <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Total Trophies</div>
+                <div class="stat-label">Collection</div>
                 <div class="stat-value" id="total-trophies">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Unlocked</div>
+                <div class="stat-label">Minted</div>
                 <div class="stat-value" id="unlocked-trophies">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Locked</div>
+                <div class="stat-label">Unminted</div>
                 <div class="stat-value" id="locked-trophies">0</div>
             </div>
             <div class="stat-card">
@@ -714,7 +714,7 @@
         </div>
 
         <div style="text-align:center; margin-bottom:24px;">
-            <button type="button" id="trophy-share-btn" class="trophy-sort" style="cursor:pointer;">📸 Share my trophy card</button>
+            <button type="button" id="trophy-share-btn" class="trophy-sort" style="cursor:pointer;">Share my NFT card</button>
         </div>
 
         <!-- Completion ring + rarity breakdown -->
@@ -737,7 +737,7 @@
 
         <!-- Search + sort controls -->
         <div class="trophy-controls">
-            <input type="search" id="trophy-search" class="trophy-search" placeholder="Search trophies by name, description, requirement…" autocomplete="off">
+            <input type="search" id="trophy-search" class="trophy-search" placeholder="Search collectibles by name, trait, requirement…" autocomplete="off">
             <select id="trophy-sort" class="trophy-sort" title="Sort trophies">
                 <option value="default">Sort: Default</option>
                 <option value="name">Name (A–Z)</option>
@@ -751,9 +751,10 @@
 
         <!-- Tabs: Table view first, then categories, then extras -->
         <div class="tabs" id="trophies-tabs">
-            <button type="button" class="tab active" data-tab="table">Table</button>
-            <button type="button" class="tab" data-tab="unlocked">Unlocked</button>
-            <button type="button" class="tab" data-tab="locked">Locked</button>
+            <button type="button" class="tab active" data-tab="gallery">Gallery</button>
+            <button type="button" class="tab" data-tab="unlocked">Minted</button>
+            <button type="button" class="tab" data-tab="locked">Unminted</button>
+            <button type="button" class="tab" data-tab="ledger">Ledger</button>
             <button type="button" class="tab" data-tab="sets">🎯 Sets</button>
             <button type="button" class="tab" data-tab="quests">📋 Quests</button>
             <button type="button" class="tab" data-tab="seasonal">🗓️ Seasonal</button>
@@ -783,14 +784,23 @@
         <!-- Main content: table view (same layout as Game / Points tables) -->
         <div class="tab-content active" id="content-table">
             <section class="next-up-section" id="next-up-section" style="display:none;">
-                <h3 class="next-up-title">⏳ Closest to unlocking</h3>
+                <h3 class="next-up-title">Closest to minting</h3>
                 <div class="next-up-grid" id="next-up-grid"></div>
             </section>
             <section class="stats-section">
+                <div class="nft-collection-banner">
+                    <div>
+                        <strong>MN2 Trophies</strong>
+                        <div class="nft-contract-chip">Contract MN2-TROPHY · collectible achievements</div>
+                    </div>
+                    <span>Each trophy is a unique on-site NFT</span>
+                </div>
+                <div id="nft-gallery" class="nft-gallery" aria-label="Trophy NFT gallery"></div>
+                <div id="nft-ledger" class="nft-ledger" hidden>
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="card-title">Trophy list</h2>
-                        <p style="color: var(--text-secondary); margin-top: var(--spacing-xs);">All trophies — filter with tabs or category dropdown</p>
+                        <h2 class="card-title">On-chain ledger</h2>
+                        <p style="color: var(--text-secondary); margin-top: var(--spacing-xs);">All collectibles — filter with tabs or category dropdown</p>
                     </div>
                     <div class="table-responsive stats-table">
                         <table class="table table-striped" id="trophies-data-table">
@@ -813,6 +823,7 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
                 </div>
             </section>
         </div>
@@ -960,10 +971,21 @@
     <div class="trophy-modal-overlay" id="trophy-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="trophy-modal-name">
         <div class="trophy-modal">
             <button type="button" class="trophy-modal-close" id="trophy-modal-close" aria-label="Close">&times;</button>
-            <div class="trophy-modal-icon" id="trophy-modal-icon">🏆</div>
-            <div class="trophy-modal-name" id="trophy-modal-name">Trophy</div>
-            <div class="trophy-modal-desc" id="trophy-modal-desc"></div>
-            <dl class="trophy-modal-meta" id="trophy-modal-meta"></dl>
+            <div class="nft-modal-layout">
+                <div class="nft-modal-art">
+                    <div class="nft-card-hologram"></div>
+                    <div class="nft-card-hex"></div>
+                    <div class="trophy-modal-icon" id="trophy-modal-icon">🏆</div>
+                    <span class="nft-token-id" id="trophy-modal-token">#0000</span>
+                </div>
+                <div class="nft-modal-info">
+                    <div class="nft-collection">MN2 Trophies</div>
+                    <div class="trophy-modal-name" id="trophy-modal-name">Trophy</div>
+                    <div class="nft-contract" id="trophy-modal-contract">MN2-TROPHY</div>
+                    <div class="trophy-modal-desc" id="trophy-modal-desc"></div>
+                    <dl class="trophy-modal-meta" id="trophy-modal-meta"></dl>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -972,6 +994,7 @@
 
         <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/trophy-nft.js?v=20260916a"></script>
     <script>
         const API_BASE = '/api';
         const userId = localStorage.getItem('game_user_id') || 'default_user';
@@ -1048,7 +1071,7 @@
             const el = document.createElement('div');
             el.className = 'trophy-toast' + (legendary ? ' legendary' : '');
             el.innerHTML = '<div class="trophy-toast-icon">' + (t.icon || '🏆') + '</div>' +
-                '<div><div class="trophy-toast-title">Trophy unlocked!</div>' +
+                '<div><div class="trophy-toast-title">Collectible minted!</div>' +
                 '<div class="trophy-toast-name">' + String(t.name || '').replace(/</g, '&lt;') +
                 (t.reward ? ' · +' + t.reward + ' pts' : '') + '</div></div>';
             stack.appendChild(el);
@@ -1067,6 +1090,16 @@
             document.getElementById('trophy-modal-icon').textContent = disp.icon;
             document.getElementById('trophy-modal-name').textContent = disp.name;
             document.getElementById('trophy-modal-desc').textContent = disp.description;
+            var tokenEl = document.getElementById('trophy-modal-token');
+            var contractEl = document.getElementById('trophy-modal-contract');
+            var tokenId = (window.TrophyNft && TrophyNft.tokenIdFromTrophy)
+                ? TrophyNft.tokenIdFromTrophy(t, cachedAllTrophies)
+                : '';
+            if (tokenEl) tokenEl.textContent = tokenId || '#0000';
+            if (contractEl) {
+                var cid = (window.TrophyNft && TrophyNft.contractId) ? TrophyNft.contractId() : 'MN2-TROPHY';
+                contractEl.textContent = cid + ' · token ' + (tokenId || '#0000');
+            }
             const prog = trophyProgress(t);
             let progRow = '';
             if (!t.unlocked && !t.hidden && prog.ratio != null) {
@@ -1075,10 +1108,11 @@
             }
             const metaEl = document.getElementById('trophy-modal-meta');
             metaEl.innerHTML =
-                '<dt>Status</dt><dd>' + (t.unlocked ? '✅ Unlocked' : '🔒 Locked') + '</dd>' +
+                '<dt>Token</dt><dd>' + (tokenId || '—') + '</dd>' +
+                '<dt>Status</dt><dd>' + (t.unlocked ? 'Minted' : 'Unminted') + '</dd>' +
                 '<dt>Category</dt><dd>' + esc(t.category || '—') + '</dd>' +
                 '<dt>Rarity</dt><dd class="rarity-' + (t.rarity || 'common') + '">' + esc(t.rarity || 'common') + '</dd>' +
-                '<dt>Reward</dt><dd>+' + (t.reward || 0) + ' trophy points</dd>' +
+                '<dt>Value</dt><dd>' + (t.reward || 0) + ' PTS</dd>' +
                 '<dt>Requirement</dt><dd>' + esc(disp.requirement) + '</dd>' +
                 progRow +
                 (t.unlocked_at ? '<dt>Unlocked</dt><dd>' + esc(new Date(t.unlocked_at).toLocaleString()) + '</dd>' : '');
@@ -1615,7 +1649,7 @@
             ctx.strokeStyle = 'rgba(255,215,0,0.6)'; ctx.lineWidth = 6; ctx.strokeRect(20, 20, W - 40, H - 40);
             ctx.textAlign = 'center';
             ctx.fillStyle = '#FFD700'; ctx.font = 'bold 64px sans-serif';
-            ctx.fillText('🏆 Trophy Collection', W / 2, 130);
+            ctx.fillText('MN2 Trophy NFTs', W / 2, 130);
             ctx.fillStyle = '#ffffff'; ctx.font = '28px monospace';
             ctx.fillText(String(userId), W / 2, 185);
             const stat = (x, label, value, color) => {
@@ -1624,7 +1658,7 @@
                 ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '26px sans-serif';
                 ctx.fillText(label, x, 410);
             };
-            stat(W * 0.22, 'Unlocked', unlocked + '/' + total, '#00ff88');
+            stat(W * 0.22, 'Minted', unlocked + '/' + total, '#00ff88');
             stat(W * 0.5, 'Trophy Score', score, '#FFD700');
             stat(W * 0.78, 'Points', pts.toLocaleString(), '#FFA500');
             ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '24px sans-serif';
@@ -1641,8 +1675,54 @@
             } catch (_) {}
         }
 
-        // Tab switching: table view shows all/unlocked/locked; extras load their own content
+        let currentView = 'gallery';
+        function setCollectionView(mode) {
+            currentView = mode === 'ledger' ? 'ledger' : 'gallery';
+            var gallery = document.getElementById('nft-gallery');
+            var ledger = document.getElementById('nft-ledger');
+            if (gallery) gallery.hidden = currentView === 'ledger';
+            if (ledger) ledger.hidden = currentView !== 'ledger';
+        }
+
+        function renderGallery(trophies, filter) {
+            var el = document.getElementById('nft-gallery');
+            if (!el) return;
+            var filtered = trophies || [];
+            if (window.TrophyNft && TrophyNft.filterCollection) {
+                filtered = TrophyNft.filterCollection(trophies, filter, currentSearch);
+            } else {
+                if (filter === 'unlocked') filtered = filtered.filter(function(t) { return t.unlocked; });
+                else if (filter === 'locked') filtered = filtered.filter(function(t) { return !t.unlocked; });
+                else if (filter && filter !== 'all' && filter !== 'gallery' && filter !== 'table' && filter !== 'ledger') {
+                    filtered = filtered.filter(function(t) { return t.category === filter; });
+                }
+            }
+            filtered = sortTrophies(filtered, currentSort);
+            if (!filtered.length) {
+                el.innerHTML = '<div class="info-message">No collectibles match this view</div>';
+                return;
+            }
+            if (!window.TrophyNft || !TrophyNft.buildNftCardHtml) {
+                el.innerHTML = '<div class="info-message">NFT gallery helper failed to load.</div>';
+                return;
+            }
+            el.innerHTML = filtered.map(function(t) {
+                return TrophyNft.buildNftCardHtml(t, {
+                    collection: trophies,
+                    display: displayTrophy(t),
+                    progress: trophyProgress(t)
+                });
+            }).join('');
+        }
+
+        function renderCollection(trophies, filter) {
+            renderGallery(trophies, filter);
+            renderTable(trophies, filter);
+        }
+
+        // Tab switching: gallery/minted/unminted share the collection panel; ledger is the table
         function showView(tabName) {
+            if (tabName === 'table') tabName = 'gallery';
             document.querySelectorAll('.tab[data-tab]').forEach(t => {
                 t.classList.remove('active');
                 t.setAttribute('aria-selected', 'false');
@@ -1656,14 +1736,15 @@
             }
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-            const tableViews = ['table', 'unlocked', 'locked'];
+            const tableViews = ['table', 'gallery', 'unlocked', 'locked', 'ledger'];
             if (tableViews.includes(tabName)) {
-                currentFilter = tabName === 'table' ? 'all' : tabName;
+                currentFilter = (tabName === 'unlocked' || tabName === 'locked') ? tabName : 'all';
                 const catSelect = document.getElementById('tab-category');
-                if (catSelect) catSelect.value = '';
+                if (catSelect && (tabName === 'gallery' || tabName === 'ledger' || tabName === 'table')) catSelect.value = '';
                 const contentTable = document.getElementById('content-table');
                 if (contentTable) contentTable.classList.add('active');
-                renderTable(cachedAllTrophies, currentFilter);
+                setCollectionView(tabName === 'ledger' ? 'ledger' : 'gallery');
+                renderCollection(cachedAllTrophies, currentFilter);
                 savePrefs();
             } else {
                 const contentId = 'content-' + tabName;
@@ -1749,12 +1830,13 @@
                 catSelect.addEventListener('change', function() {
                     currentFilter = this.value || 'all';
                     document.querySelectorAll('.tab[data-tab]').forEach(function(t) { t.classList.remove('active'); });
-                    var tableBtn = document.querySelector('.tab[data-tab="table"]');
-                    if (tableBtn) tableBtn.classList.add('active');
+                    var galleryBtn = document.querySelector('.tab[data-tab="gallery"]');
+                    if (galleryBtn) galleryBtn.classList.add('active');
                     document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
                     var ct = document.getElementById('content-table');
                     if (ct) ct.classList.add('active');
-                    renderTable(cachedAllTrophies, currentFilter);
+                    setCollectionView('gallery');
+                    renderCollection(cachedAllTrophies, currentFilter);
                     savePrefs();
                 });
             }
@@ -1767,7 +1849,7 @@
                     currentSearch = this.value || '';
                     clearTimeout(searchDebounce);
                     searchDebounce = setTimeout(function() {
-                        renderTable(cachedAllTrophies, currentFilter);
+                        renderCollection(cachedAllTrophies, currentFilter);
                         savePrefs();
                     }, 150);
                 });
@@ -1777,7 +1859,7 @@
                 sortSelect.value = currentSort || 'default';
                 sortSelect.addEventListener('change', function() {
                     currentSort = this.value || 'default';
-                    renderTable(cachedAllTrophies, currentFilter);
+                    renderCollection(cachedAllTrophies, currentFilter);
                     savePrefs();
                 });
             }
@@ -1785,6 +1867,21 @@
             var catSel = document.getElementById('tab-category');
             if (catSel && currentFilter && !['all', 'unlocked', 'locked'].includes(currentFilter)) {
                 catSel.value = currentFilter;
+            }
+            var galleryEl = document.getElementById('nft-gallery');
+            if (galleryEl) {
+                galleryEl.addEventListener('click', function(e) {
+                    var card = e.target && e.target.closest ? e.target.closest('.nft-card[data-trophy-id]') : null;
+                    if (card && card.getAttribute('data-trophy-id')) openTrophyModal(card.getAttribute('data-trophy-id'));
+                });
+                galleryEl.addEventListener('keydown', function(e) {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    var card = e.target && e.target.closest ? e.target.closest('.nft-card[data-trophy-id]') : null;
+                    if (card && card.getAttribute('data-trophy-id')) {
+                        e.preventDefault();
+                        openTrophyModal(card.getAttribute('data-trophy-id'));
+                    }
+                });
             }
             // Open detail modal when a trophy row is clicked
             var tbodyEl = document.getElementById('trophy-tbody');
@@ -2379,7 +2476,7 @@
             cachedAllTrophies = allTrophies;
             updateSummary(allTrophies, unlocked);
             detectNewUnlocks(allTrophies);
-            renderTable(allTrophies, currentFilter);
+            renderCollection(allTrophies, currentFilter);
             try { renderNextUp(); } catch (_) {}
         }
 
@@ -2593,7 +2690,7 @@
             if (list.length > 0) {
                 cachedAllTrophies = list;
                 if (!currentFilter) currentFilter = 'all';
-                renderTable(list, currentFilter);
+                renderCollection(list, currentFilter);
                 updateSummary(list);
                 var totalEl = document.getElementById('total-trophies');
                 if (totalEl) totalEl.textContent = String(list.length);
@@ -2698,21 +2795,23 @@
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.body.classList.add('trophy-theme-ww2');
-        var ww2 = document.getElementById('trophy-theme-ww2');
+        document.body.classList.add('trophy-theme-nft');
+        var nftTheme = document.getElementById('trophy-theme-nft');
         var gold = document.getElementById('trophy-theme-gold');
         function setTheme(name) {
-            document.body.classList.remove('trophy-theme-ww2', 'trophy-theme-gold');
-            document.body.classList.add(name === 'gold' ? 'trophy-theme-gold' : 'trophy-theme-ww2');
-            if (ww2) ww2.classList.toggle('active', name !== 'gold');
-            if (gold) gold.classList.toggle('active', name === 'gold');
-            try { localStorage.setItem('trophy_page_theme', name); } catch (e) {}
+            document.body.classList.remove('trophy-theme-ww2', 'trophy-theme-gold', 'trophy-theme-nft');
+            var theme = name === 'gold' ? 'gold' : 'nft';
+            document.body.classList.add('trophy-theme-' + theme);
+            if (nftTheme) nftTheme.classList.toggle('active', theme === 'nft');
+            if (gold) gold.classList.toggle('active', theme === 'gold');
+            try { localStorage.setItem('trophy_page_theme', theme); } catch (e) {}
         }
         try {
             var saved = localStorage.getItem('trophy_page_theme');
             if (saved === 'gold') setTheme('gold');
-        } catch (e) {}
-        if (ww2) ww2.addEventListener('click', function() { setTheme('ww2'); });
+            else setTheme('nft');
+        } catch (e) { setTheme('nft'); }
+        if (nftTheme) nftTheme.addEventListener('click', function() { setTheme('nft'); });
         if (gold) gold.addEventListener('click', function() { setTheme('gold'); });
         if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
             window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });

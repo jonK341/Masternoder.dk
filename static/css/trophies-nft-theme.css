@@ -1,0 +1,425 @@
+/* Trophy page — NFT vault theme (OpenSea / Blur-style collectibles) */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Syne:wght@400;600;700;800&display=swap');
+
+body.trophy-theme-nft {
+    --trophy-primary: #c4b5fd;
+    --trophy-secondary: #22d3ee;
+    --trophy-success: #4ade80;
+    --trophy-danger: #fb7185;
+    --trophy-warning: #fbbf24;
+    --trophy-dark: #07060f;
+    --trophy-card: #12101c;
+    --trophy-border: rgba(196, 181, 253, 0.28);
+    --nft-magenta: #f472b6;
+    --nft-cyan: #22d3ee;
+    --nft-violet: #8b5cf6;
+    --nft-gold: #f5d76e;
+    color: #f5f3ff;
+    font-family: Syne, 'Segoe UI', sans-serif;
+    background:
+        radial-gradient(1200px 600px at 12% -10%, rgba(139, 92, 246, 0.28), transparent 55%),
+        radial-gradient(900px 500px at 90% 8%, rgba(34, 211, 238, 0.18), transparent 50%),
+        radial-gradient(700px 480px at 70% 100%, rgba(244, 114, 182, 0.14), transparent 55%),
+        linear-gradient(180deg, #07060f 0%, #0d0a18 48%, #07060f 100%) !important;
+    background-attachment: fixed !important;
+}
+
+body.trophy-theme-nft::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        linear-gradient(rgba(196, 181, 253, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(196, 181, 253, 0.045) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+}
+
+.trophy-theme-switcher {
+    display: inline-flex;
+    gap: 8px;
+    margin: 16px 0 8px;
+    padding: 6px;
+    border-radius: 999px;
+    border: 1px solid var(--trophy-border);
+    background: rgba(8, 6, 18, 0.7);
+    backdrop-filter: blur(12px);
+}
+
+.trophy-theme-switcher button {
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font: 600 0.85em Syne, sans-serif;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.trophy-theme-switcher button.active {
+    background: linear-gradient(135deg, var(--nft-violet, #8b5cf6), var(--nft-cyan, #22d3ee));
+    color: #07060f;
+}
+
+body.trophy-theme-nft .trophies-header h1 {
+    font-family: Orbitron, Syne, sans-serif;
+    letter-spacing: 0.04em;
+    background: linear-gradient(120deg, #22d3ee, #c4b5fd 40%, #f472b6 70%, #f5d76e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 18px rgba(139, 92, 246, 0.45));
+}
+
+body.trophy-theme-nft .trophies-header p {
+    color: rgba(226, 232, 255, 0.72);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.82rem;
+}
+
+body.trophy-theme-nft .stat-card,
+body.trophy-theme-nft .trophy-summary,
+body.trophy-theme-nft .next-up-card,
+body.trophy-theme-nft .set-card,
+body.trophy-theme-nft .quest-card,
+body.trophy-theme-nft .seasonal-card,
+body.trophy-theme-nft .lb-row,
+body.trophy-theme-nft .compare-col,
+body.trophy-theme-nft .income-hero,
+body.trophy-theme-nft .card {
+    background: linear-gradient(180deg, rgba(24, 20, 40, 0.92), rgba(10, 8, 20, 0.92));
+    border-color: var(--trophy-border);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+body.trophy-theme-nft .stat-card:hover {
+    border-color: var(--nft-cyan, #22d3ee);
+    box-shadow: 0 12px 40px rgba(34, 211, 238, 0.18);
+}
+
+body.trophy-theme-nft .tab {
+    background: rgba(12, 10, 24, 0.7);
+    border-color: var(--trophy-border);
+    color: rgba(245, 243, 255, 0.75);
+    border-radius: 999px;
+}
+
+body.trophy-theme-nft .tab.active {
+    background: linear-gradient(135deg, #7c3aed, #22d3ee);
+    color: #07060f;
+    border-color: transparent;
+}
+
+body.trophy-theme-nft .trophy-search,
+body.trophy-theme-nft .trophy-sort,
+body.trophy-theme-nft .tab-category-select {
+    background: rgba(12, 10, 24, 0.8);
+    border-color: var(--trophy-border);
+    color: #f5f3ff;
+    border-radius: 999px;
+}
+
+.nft-collection-banner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 22px;
+    padding: 14px 18px;
+    border-radius: 16px;
+    border: 1px solid var(--trophy-border);
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.16), rgba(34, 211, 238, 0.08));
+}
+
+.nft-collection-banner .nft-contract-chip,
+.nft-contract {
+    font-family: Orbitron, ui-monospace, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: var(--nft-cyan, #22d3ee);
+}
+
+.nft-gallery[hidden],
+.nft-ledger[hidden] {
+    display: none !important;
+}
+
+.nft-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 22px;
+    margin-bottom: 40px;
+}
+
+body.trophy-theme-gold .trophy-theme-switcher button.active {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000;
+}
+
+.nft-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+    background: linear-gradient(180deg, #171325 0%, #0c0a14 100%);
+    border: 1px solid rgba(196, 181, 253, 0.22);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.nft-card:hover,
+.nft-card:focus-visible {
+    transform: translateY(-8px);
+    border-color: rgba(34, 211, 238, 0.7);
+    box-shadow: 0 18px 40px rgba(139, 92, 246, 0.28);
+    outline: none;
+}
+
+.nft-card-art {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.16), transparent 40%),
+        linear-gradient(145deg, #1b1433, #0b1224 55%, #1a0f2b);
+}
+
+.nft-card-hologram {
+    position: absolute;
+    inset: -40%;
+    background: linear-gradient(
+        115deg,
+        transparent 20%,
+        rgba(34, 211, 238, 0.18) 35%,
+        rgba(244, 114, 182, 0.22) 50%,
+        rgba(245, 215, 110, 0.18) 65%,
+        transparent 80%
+    );
+    animation: nftHoloSweep 7s linear infinite;
+    pointer-events: none;
+}
+
+.nft-card-hex {
+    position: absolute;
+    width: 62%;
+    height: 62%;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    border: 0;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(139, 92, 246, 0.12));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+}
+
+.nft-card-icon {
+    position: relative;
+    z-index: 1;
+    font-size: 4.2rem;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45));
+}
+
+.nft-token-id,
+.nft-rarity-chip {
+    position: absolute;
+    z-index: 2;
+    font-family: Orbitron, ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(7, 6, 15, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.nft-token-id { top: 10px; left: 10px; color: #e0f2fe; }
+.nft-rarity-chip { top: 10px; right: 10px; text-transform: uppercase; }
+
+.nft-card.rarity-common { box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.25); }
+.nft-card.rarity-rare { box-shadow: 0 0 24px rgba(56, 189, 248, 0.28); }
+.nft-card.rarity-epic { box-shadow: 0 0 28px rgba(168, 85, 247, 0.35); }
+.nft-card.rarity-legendary { box-shadow: 0 0 32px rgba(245, 215, 110, 0.4); }
+
+.nft-card.rarity-common .nft-rarity-chip { color: #cbd5e1; }
+.nft-card.rarity-rare .nft-rarity-chip { color: #7dd3fc; }
+.nft-card.rarity-epic .nft-rarity-chip { color: #d8b4fe; }
+.nft-card.rarity-legendary .nft-rarity-chip { color: #fde68a; }
+
+.nft-card.rarity-legendary .nft-card-art {
+    background:
+        radial-gradient(circle at 50% 30%, rgba(245, 215, 110, 0.28), transparent 50%),
+        linear-gradient(145deg, #2a1a08, #1b1433 55%, #3b1d4e);
+}
+
+.nft-card.unminted .nft-card-art {
+    filter: grayscale(0.75) brightness(0.72);
+}
+
+.nft-card.unminted::after {
+    content: 'UNMINTED';
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-12deg);
+    font-family: Orbitron, sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    color: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 4px 10px;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.nft-card-body {
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nft-collection {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(196, 181, 253, 0.8);
+}
+
+.nft-card-name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.nft-traits { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.nft-trait {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.nft-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.nft-status {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.nft-status.minted { color: #4ade80; }
+.nft-status.unminted { color: rgba(255, 255, 255, 0.5); }
+
+.nft-price {
+    font-family: Orbitron, ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: var(--nft-cyan, #22d3ee);
+}
+
+.nft-card-progress {
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.nft-card-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22d3ee, #a78bfa, #f472b6);
+}
+
+.nft-card-progress-text {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.nft-ledger .card-title { color: var(--trophy-primary); }
+
+body.trophy-theme-nft .trophy-modal {
+    background: linear-gradient(180deg, #161225, #0a0814);
+    border: 1px solid rgba(196, 181, 253, 0.35);
+    box-shadow: 0 30px 80px rgba(76, 29, 149, 0.35);
+    max-width: 720px;
+    width: min(720px, 94vw);
+}
+
+.nft-modal-layout {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.nft-modal-art {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #1b1433, #0b1224);
+}
+
+.nft-modal-art .trophy-modal-icon {
+    font-size: 5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.nft-modal-art .nft-token-id {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+
+.nft-modal-info .trophy-modal-name {
+    text-align: left;
+    margin-top: 4px;
+}
+
+.nft-modal-info .trophy-modal-desc {
+    text-align: left;
+}
+
+body.trophy-theme-nft .trophy-modal-close {
+    color: #e0e7ff;
+}
+
+@keyframes nftHoloSweep {
+    0% { transform: translateX(-30%) rotate(12deg); }
+    100% { transform: translateX(30%) rotate(12deg); }
+}
+
+@media (max-width: 720px) {
+    .nft-modal-layout { grid-template-columns: 1fr; }
+    body.trophy-theme-nft .trophies-header h1 { font-size: 2.2rem; }
+    .nft-gallery { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nft-card-hologram,
+    .nft-card,
+    body.trophy-theme-nft .stat-card {
+        animation: none;
+        transition: none;
+    }
+}
