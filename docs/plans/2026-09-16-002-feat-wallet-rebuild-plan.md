@@ -318,15 +318,15 @@ Legend: **Exists** = repo has working backend/UI today · **Wrap** = expose via 
 | # | Feature | Serious / Fun | Existing anchor |
 |---|---------|---------------|-----------------|
 | 1 | Fast balance + send/receive | Serious | `mn2_wallet_service`, `profile-mn2-wallet.js` |
-| 2 | 4D network monitor + alert sounds | Both | `mn2_chainz.py`, `mn2-explorer-overview.js`, `notification-alarm.js` |
-| 3 | 4D Trophy Monitor (GIF cards + edition stats) | Fun | `shop_item_media.json`, plan 001 trophies API |
-| 4 | 5D wallet activity + explorer story strip | Both | `wallet-activity`, `story-monitor-5d.js` |
-| 5 | Trophy gallery + auction list/transfer | Both | plan 001 T-U*, `shop_auction_service.py` |
-| 6 | Block trophy drop animations (per-height GIF) | Fun | `generate_shop_top_clips.py`, BM-U* |
-| 7 | Battle contest widget + tournament join | Fun | `battle_routes.py`, `battle_social_store.py` |
-| 8 | Staking snapshot + leaderboard deep link | Serious | `mn2_staking_service`, `mn2-staking-monitor.js` |
-| 9 | Withdraw 2FA + whitelist | Serious | `mn2_withdrawal_security.py` |
-| 10 | Desktop wallet (Tauri) with tray + deep links | Serious | Pattern from `mobile/casino-twa/` |
+| 2 | Sub-tab shell + Sharpened Edges balance cards | Serious | `wallet-app/` design tokens |
+| 3 | 4D network monitor + alert sounds | Both | `mn2_chainz.py`, `mn2-explorer-overview.js`, `notification-alarm.js` |
+| 4 | 4D Trophy Monitor (GIF cards + edition stats) | Fun | `shop_item_media.json`, plan 001 trophies API |
+| 5 | Extended send/receive + explorer tab + peers monitor | Serious | `mn2_routes` withdraw/deposit, `mn2_explorer_urls` |
+| 6 | 5D wallet activity + explorer story strip | Both | `wallet-activity`, `story-monitor-5d.js` |
+| 7 | Trophy gallery + auction list/transfer | Both | plan 001 T-U*, `shop_auction_service.py` |
+| 8 | Battle contest widget + tournament join | Fun | `battle_routes.py`, `battle_social_store.py` |
+| 9 | Staking snapshot + leaderboard deep link | Serious | `mn2_staking_service`, `mn2-staking-monitor.js` |
+| 10 | Desktop wallet (Tauri 2) with tray + deep links | Serious | `desktop/wallet-tauri/`, `mobile/casino-twa/` pattern |
 
 ---
 
@@ -428,6 +428,7 @@ All routes require same-origin session / `user_id` resolution as existing MN2 ro
 | GET | `/api/wallet/v2/network/4d` | Network monitor bundle (embedded in 4D Monitor strip) | `mn2_chainz.network_overview` + `mn2_network_stats.get_history(hours=24)` + `get_alerts(limit=5)` |
 | GET | `/api/wallet/v2/network/peers` | **Peers tab bundle** | `GET /api/mn2/network-peers` + `network_overview` (connections, mempool) + `network-history` latency series |
 | GET | `/api/wallet/v2/explorer/5d` | Explorer + wallet overlay | `mn2_explorer_data.recent_blocks(10)` + user recent txs + activity buckets |
+| GET | `/api/wallet/v2/explorer/search?q=` | Block / tx / address lookup | `mn2_explorer_urls` + `validateaddress` / RPC `getblock` |
 | GET | `/api/wallet/v2/staking` | Staking snapshot | `mn2_staking_service` summary fields |
 | GET | `/api/wallet/v2/trophies` | Owned trophies | proxy `GET /api/shop/trophies?user_id=` + inventory editions |
 | GET | `/api/wallet/v2/trophy-monitor/4d` | **4D Trophy Monitor bundle** | `network/4d` + owned trophies + `shop_item_media` URLs + block-mint latest drop |
@@ -508,20 +509,20 @@ All routes require same-origin session / `user_id` resolution as existing MN2 ro
 
 ---
 
-## 5D Explorer Monitor Panel (wallet context — personal layer)
+## Activity vs Explorer (personal vs chain)
 
-Two complementary layers:
+| Layer | Tab | Content |
+|-------|-----|---------|
+| **Personal 5D monitor** | **Activity** | 5 UTC-day in/out/net bars — `profile-mn2-5d-chart` + `/api/mn2/wallet-activity` |
+| **Chain 5D explorer** | **5D Explorer** | See [Explorer access](#explorer-access-5d-explorer-tab) — blocks, search, `/explorer` deep links |
 
-1. **5D wallet monitor (personal):** 5 UTC-day in/out/net bars — today `profile-mn2-5d-chart` + `/api/mn2/wallet-activity`. Moves to wallet **Activity** tab.
-2. **5D explorer monitor (chain + narrative):** Recent blocks from `mn2_explorer_data.recent_blocks`, cross-linked to user txs; optional compact `story-monitor-5d` strip (`data-story-context="wallet"`) for brand continuity — **lazy load** script on Explorer tab only.
-
-**Explorer deep links (mandatory):** All address, txid, block height fields use `mn2_explorer_urls.explorer_address_url`, `explorer_tx_url`, `explorer_block_url` — replace hardcoded `.dws` strings in v2 BFF responses.
+**Explorer deep links (mandatory):** All address, txid, block height fields across wallet tabs use `mn2_explorer_urls` — replace hardcoded `.dws` strings in v2 BFF responses.
 
 ---
 
 ## 4D Trophy Monitor (dedicated panel — WR-G1)
 
-**Definition:** A **wallet-native holodeck** combining the 4D **chain/network monitor** with the user’s **trophy collection** as animated cards — stats, sound cues, and GIF previews. This is the “fun” centerpiece the user asked for; distinct from the plain Network tab (WR-U5) which is serious ops KPIs only.
+**Definition:** A **wallet-native holodeck** combining the 4D **chain/network monitor** with the user’s **trophy collection** as animated cards — stats, sound cues, and GIF previews. This is the “fun” centerpiece the user asked for; distinct from the **Peers** tab (WR-U5) which is serious P2P topology only.
 
 **Layout (split viewport):**
 
@@ -543,7 +544,7 @@ Two complementary layers:
 
 | Layer | Source | Notes |
 |-------|--------|-------|
-| Network KPIs + history | `mn2_chainz.network_overview`, `mn2_network_stats` | Same as WR-U5 |
+| Network KPIs + history | `mn2_chainz.network_overview`, `mn2_network_stats` | Embedded network strip (subset of `v2/network/4d`) |
 | Live updates | `EventSource /api/mn2/explorer/stream` | Optional; fallback 30s poll |
 | Owned trophies + editions | plan 001 `GET /api/shop/trophies?user_id=` + inventory | Edition badges |
 | GIF / clip / sound URLs | `data/shop_item_media.json` | Merge by `item_id`; pattern from `shop/index.html` `.shop-sound-btn` |
@@ -571,7 +572,7 @@ Two complementary layers:
 - Aggregate: total editions, Top 25 series progress (`/api/shop/trophies` series field).
 - Battle cross-stat: `GET /api/battle/stats` win_rate when user has battle history.
 
-**Tab placement:** Dedicated **Trophy 4D** tab (or sub-tab under Trophies). Desktop default can pin as second tab when `wallet_fun_mode: true`.
+**Tab placement:** **4D Monitor** sub-tab (`monitor-4d`) in the main tab bar — not nested under Trophies. Desktop can default-open here when `wallet_fun_mode: true`.
 
 ---
 
@@ -633,19 +634,22 @@ flowchart LR
 
 ## Implementation Units
 
-### WR-U0. Wallet app scaffold
+### WR-U0. Wallet app scaffold + Sharpened Edges shell
 
-**Goal:** Vite + TypeScript + Preact app builds into Flask static tree.
+**Goal:** Vite + TypeScript + Preact app builds into Flask static tree with sub-tab navigation shell and angular design tokens.
 
 **Files:**
 
 - `wallet-app/` (new) — `package.json`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`
+- `wallet-app/src/shell/WalletShell.tsx`, `TabNav.tsx`, `BalanceHero.tsx`
+- `wallet-app/src/styles/sharpened-edges.css` — `--wallet-radius`, mono balance, panel borders
+- `wallet-app/src/router/tabRoutes.ts` — slug → lazy chunk map (11 tabs)
 - `wallet-app/vite.config.ts` → `outDir: ../static/wallet-v2`
 - `wallets/index.html` — SPA shell loading `/static/wallet-v2/assets/*`
 - `deploy.py` — add wallet-app build step (or document `npm run build` in CI)
 - `.gitignore` — ignore `static/wallet-v2/assets` if built in CI only (team choice: commit built assets for simpler ops)
 
-**Test:** `npm run build` succeeds; `/wallets/` returns 200 with mount node `#wallet-root`.
+**Test:** `npm run build` succeeds; `/wallets/` returns 200 with mount node `#wallet-root`; tab bar renders all 11 labels; BalanceHero uses monospace balance.
 
 ---
 
@@ -694,27 +698,29 @@ flowchart LR
 
 ---
 
-### WR-U3. Send + Receive (MVP core)
+### WR-U3. Extended Send + Receive
 
-**Goal:** Withdraw + deposit QR — full send/receive loop.
+**Goal:** Full send/receive loop with address book, fee preview, multi-step confirm, QR deposit, request amount, deposit history.
 
 **Dependencies:** WR-U2
 
 **Files:**
 
 - `wallet-app/src/tabs/Send.tsx`, `Receive.tsx`
-- `wallet-app/src/components/QrDeposit.tsx`
-- v2 routes: `deposit`, `send` delegating to existing mn2_routes logic
+- `wallet-app/src/components/QrDeposit.tsx`, `SendConfirmWizard.tsx`, `AddressBookPicker.tsx`, `FeeEstimate.tsx`
+- v2 routes: `deposit`, `deposit/history`, `send`, `send/preview` delegating to `mn2_routes` withdraw + `mn2_withdrawal_security`
 
 **Approach:**
 
-1. Receive tab single-flights deposit fetch; show spinner + retry.
-2. Send tab reuses validation messages from v1; wires withdraw security when enabled.
-3. Copy-to-clipboard + explorer address link on receive.
+1. Receive tab single-flights deposit fetch; show spinner + retry; deposit history from filtered transactions.
+2. Send tab: address book from whitelist + recent recipients; `POST send/preview` before confirm wizard; max button uses withdrawable − fee.
+3. Multi-step confirm: review → 2FA if required → result with `explorer_tx_url`.
+4. Copy-to-clipboard + explorer address link on receive; share link `wallet://tab/receive`.
 
 **Test scenarios:**
 
 - `tests/unit/test_wallet_v2_deposit.py` — explorer URL from `mn2_explorer_urls`.
+- `tests/unit/test_wallet_v2_send_preview.py` — invalid address rejected; fee math correct.
 - `tests/test_mn2_crypto.py` still passes (v1 unchanged).
 - Manual: send form disabled when `withdrawal_verified === false`.
 
@@ -739,43 +745,45 @@ flowchart LR
 
 ---
 
-### WR-U5. 4D Network monitor tab
+### WR-U5. Peers network monitor tab
 
-**Goal:** Network KPIs + sparklines + alerts in wallet.
+**Goal:** Peer list, connection count, mempool size, latency sparklines in dedicated Peers sub-tab.
 
 **Dependencies:** WR-U2
 
 **Files:**
 
-- `wallet-app/src/tabs/Network4D.tsx`
-- `wallet-app/src/components/Sparkline.tsx`
-- v2 `network/4d` aggregator route
-- Reuse field mapping from `static/js/mn2-explorer-overview.js`
+- `wallet-app/src/tabs/Peers.tsx` (uses shared `MonitorPanel.tsx`)
+- `wallet-app/src/components/Sparkline.tsx`, `PeerTable.tsx`
+- v2 `GET /api/wallet/v2/network/peers` aggregator route
+- Delegate to `mn2_network_peers_service`, `mn2_chainz.network_overview`, `mn2_network_stats.get_history`
 
 **Test scenarios:**
 
-- `test_mn2_network_monitor.py` still passes.
-- v2 network bundle includes `connections`, `mempool_tx`, `history` array, `alerts`.
-- Tab fetch only when Network opened (lazy).
+- `tests/unit/test_wallet_v2_peers.py` — bundle includes `peers[]`, `connections`, `mempool_tx`, `history`.
+- Tab fetch only when Peers opened (lazy).
+- Copy `addnode=` line produces valid host:port from peer row.
 
 ---
 
-### WR-U6. 5D Explorer monitor tab
+### WR-U6. Explorer access tab (5D Explorer)
 
-**Goal:** Recent blocks + user tx cross-links + optional story strip.
+**Goal:** In-app explorer with embedded recent blocks, search, deep links to `/explorer`, user tx overlay.
 
-**Dependencies:** WR-U4, WR-U5
+**Dependencies:** WR-U4
 
 **Files:**
 
-- `wallet-app/src/tabs/Explorer5D.tsx`
-- v2 `explorer/5d` route
-- Lazy import `story-monitor-5d.js` with `data-story-context="wallet"` OR lightweight inline σ readout (prefer lazy script to avoid duplicating BEATS)
+- `wallet-app/src/tabs/Explorer5D.tsx` (uses `MonitorPanel.tsx`)
+- `wallet-app/src/components/ExplorerSearch.tsx`, `BlockList.tsx`
+- v2 `explorer/5d` route + `explorer/search` proxy
+- Lazy import `story-monitor-5d.js` with `data-story-context="wallet"` when fun mode
 
 **Test scenarios:**
 
 - `tests/unit/test_mn2_explorer_data.py` — blocks appear in v2 payload.
-- Block rows link via `explorer_block_url(height)`.
+- `tests/unit/test_wallet_v2_explorer_search.py` — height/txid/address query resolves correct URL.
+- Block rows link via `explorer_block_url(height)`; “Open full explorer” href is `/explorer`.
 
 ---
 
@@ -817,7 +825,7 @@ flowchart LR
 
 **Goal:** Dedicated holodeck tab — network strip + animated trophy cards with GIF/sound/stats.
 
-**Dependencies:** WR-U5, WR-U8, plan 001 U1 (trophies API); optional BM-U1 for block drops
+**Dependencies:** WR-U8, plan 001 U1 (trophies API); network strip uses `v2/network/4d` inline; optional BM-U1 for block drops
 
 **Files:**
 
@@ -953,7 +961,8 @@ flowchart LR
 ```bash
 npm --prefix wallet-app run build
 pytest tests/unit/test_wallet_v2_summary.py tests/unit/test_wallet_v2_deposit.py \
-  tests/unit/test_wallet_v2_network.py tests/unit/test_mn2_network_monitor.py \
+  tests/unit/test_wallet_v2_send_preview.py tests/unit/test_wallet_v2_peers.py \
+  tests/unit/test_wallet_v2_explorer_search.py tests/unit/test_mn2_network_monitor.py \
   tests/unit/test_mn2_explorer_data.py tests/test_mn2_crypto.py -q
 ```
 
@@ -974,7 +983,7 @@ pytest tests/unit/test_wallet_v2_summary.py tests/unit/test_wallet_v2_deposit.py
 |-------|-------|----------|
 | **P0 Scaffold** | WR-U0, WR-U1 | Build pipeline + summary API |
 | **P1 MVP** | WR-U2, WR-U3, WR-U4 | Send, receive, QR, tx history, 5d activity |
-| **P2 Monitors** | WR-U5, WR-U6, WR-U7 | 4D network tab, 5D explorer tab, staking snapshot |
+| **P2 Monitors** | WR-U5, WR-U6, WR-U7 | Peers tab, 5D Explorer tab, staking snapshot |
 | **P3 Trophies** | WR-U8 | Gallery + trade CTAs (needs plan 001 T-U*) |
 | **P4 Migration** | WR-U9, WR-U10, WR-U11, WR-U12 | Settings, legacy sunset, tests, docs |
 | **P5 Desktop** | WR-D1 | Tauri installers Win/Mac/Linux; tray + deep links |
@@ -994,7 +1003,9 @@ pytest tests/unit/test_wallet_v2_summary.py tests/unit/test_wallet_v2_deposit.py
 |------|------------|
 | Deposit RPC still slow on Receive tab | Single-flight + cached address in SPA store; show last known address from localStorage with stale badge |
 | Duplicated API logic v1/v2 | v2 service delegates to existing functions; no forked withdraw math |
-| 4D/5D naming confusion (game starmap vs network) | Wallet tabs labeled **Network**, **Trophy 4D**, **Explorer**; tooltips explain chain vs collectible holodeck |
+| 4D/5D naming confusion (game starmap vs network) | Tabs labeled **4D Monitor**, **5D Explorer**, **Peers**; tooltips explain chain vs collectible holodeck |
+| Sharpened Edges clashes with shop CSS | Scope wallet tokens to `wallet-app/` only; no global override of `modern-design-system.css` |
+| Tab bar overflow on mobile | Horizontal scroll + priority tabs (Overview, Send, Receive) pinned left |
 | Trophy edition UI ahead of plan 001 | Trophy tab hidden until `trophy_counts` in summary >0 or plan 001 U1 shipped |
 | SPA deploy drift | Commit built `static/wallet-v2` or add deploy.py build hook |
 | Desktop auth / cookie bridge fragile | Document login flow; fallback “Open in browser” button; no local key storage |
@@ -1026,7 +1037,10 @@ pytest tests/unit/test_wallet_v2_summary.py tests/unit/test_wallet_v2_deposit.py
 - `/wallets` is the canonical MN2 wallet for logged-in users.
 - Send/receive works end-to-end with explorer links on address and tx.
 - Overview first paint does not call deposit RPC; p95 summary <800ms.
-- Network (4D) and Explorer (5D) tabs lazy-load chain/personal monitors.
+- Sub-tab navigation bar exposes all 11 wallet functions; each tab lazy-loads its API bundle.
+- Extended send/receive (address book, fee preview, multi-step confirm, deposit history) maps to v1 withdraw/deposit APIs.
+- Peers tab and 5D Explorer tab lazy-load chain monitors; explorer deep links to `/explorer`.
+- Sharpened Edges design (`--wallet-radius: 2px`) applied to balance cards and panels — separate from shop rounded UI.
 - Trophy tab integrates with plan 001 when available.
 - Profile and Shop stop eager-loading full wallet on unrelated page views.
 - Unit tests cover v2 summary, deposit delegation, and network bundle.
