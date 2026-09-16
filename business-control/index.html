@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Business Control · Owner Only</title>
-  <link rel="stylesheet" href="/static/css/business-control.css?v=20260726h" />
+  <link rel="stylesheet" href="/static/css/business-control.css?v=20260729c" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 </head>
 <body class="bc-body">
   <div class="wrap">
@@ -20,6 +21,7 @@
     <div id="app" class="hidden">
       <header class="bc-header">
         <h1>Business Control <small>All trading bots · profit & controls</small></h1>
+        <span class="bc-build-pill" id="bcBuildPill" title="UI build — hard-refresh if tabs look old">Build 2026-07-29c</span>
         <div class="bar">
           <a class="nav" href="/exchange">Exchange</a>
           <a class="nav" href="/command-center">Command Center</a>
@@ -32,6 +34,20 @@
       </header>
 
       <div class="status" id="topStatus"></div>
+
+      <nav class="bc-quicknav" id="bcQuicknav" aria-label="Control sections">
+        <button type="button" class="bc-qnav active" data-goto="overview">Overview</button>
+        <button type="button" class="bc-qnav" data-goto="fleet">Fleet</button>
+        <button type="button" class="bc-qnav" data-goto="orchestration">Orchestration</button>
+        <button type="button" class="bc-qnav" data-goto="livepack">Live pack</button>
+        <button type="button" class="bc-qnav" data-goto="local">Local laptop</button>
+        <button type="button" class="bc-qnav" data-goto="monitors">5D · Profit</button>
+        <button type="button" class="bc-qnav" data-goto="agents">Agents hub</button>
+        <button type="button" class="bc-qnav" data-goto="watch">Users</button>
+        <button type="button" class="bc-qnav" data-goto="payout">Payout</button>
+        <button type="button" class="bc-qnav" data-goto="predictions">Predictions</button>
+        <button type="button" class="bc-qnav" data-goto="boost">Boost</button>
+      </nav>
 
       <div class="tabs" id="tabs">
         <div class="tab active" data-tab="overview">Overview</div>
@@ -251,6 +267,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260729a"></script>
+  <script src="/static/js/business-control.js?v=20260729c"></script>
 </body>
 </html>
