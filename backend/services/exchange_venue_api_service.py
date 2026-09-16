@@ -106,9 +106,8 @@ def _secret_names(venue_id: str) -> Tuple[str, str, str]:
 
 
 def venue_has_credentials(venue_id: str) -> bool:
-    from backend.services import exchange_secrets_vault_service as vault
-    key_name, sec_name, _ = _secret_names(venue_id)
-    return bool(vault.get_secret(key_name) and vault.get_secret(sec_name))
+    creds = venue_credentials(venue_id)
+    return bool(creds.get("api_key") and creds.get("api_secret"))
 
 
 def venue_execution_eligible(venue_id: str) -> bool:
@@ -123,12 +122,20 @@ def venue_execution_eligible(venue_id: str) -> bool:
 
 
 def venue_credentials(venue_id: str) -> Dict[str, Optional[str]]:
+    """Resolve venue API creds from the encrypted vault, falling back to env vars
+    ``{VENUE}_API_KEY`` / ``_API_SECRET`` / ``_API_PASSPHRASE`` (so keys can live in .env or the
+    app config.json, e.g. NONKYC_API_KEY, and not only the vault)."""
     from backend.services import exchange_secrets_vault_service as vault
     key_name, sec_name, pass_name = _secret_names(venue_id)
+    vu = str(venue_id or "").upper()
+
+    def _env(suffix: str) -> Optional[str]:
+        return (os.environ.get(f"{vu}_{suffix}") or "").strip() or None
+
     return {
-        "api_key": vault.get_secret(key_name),
-        "api_secret": vault.get_secret(sec_name),
-        "passphrase": vault.get_secret(pass_name),
+        "api_key": vault.get_secret(key_name) or _env("API_KEY"),
+        "api_secret": vault.get_secret(sec_name) or _env("API_SECRET"),
+        "passphrase": vault.get_secret(pass_name) or _env("API_PASSPHRASE"),
     }
 
 
@@ -227,7 +234,9 @@ def venue_api_request(
     if use_paper or not vcfg.get("live_supported", True):
         return _simulate_response(venue_id, endpoint_key, params)
 
-    if not gate_ok:
+    # Explicit dry_run=False (balance reads / bots with their own live gate) skips the
+    # shared arb/spork gate. Enforce it only when the caller left dry_run as None.
+    if not gate_ok and dry_run is None:
         hint = "Set EXCHANGE_ROTATION_LIVE=1" if rotation else "Set EXCHANGE_ARBITRAGE_LIVE=1"
         return {"success": False, "error": "live_gated", "hint": hint}
 
