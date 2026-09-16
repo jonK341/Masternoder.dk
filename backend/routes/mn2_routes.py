@@ -382,6 +382,32 @@ def mn2_profile_monitor():
     }), 200
 
 
+@mn2_bp.route("/api/mn2/copy-trading/follow", methods=["POST"])
+def mn2_copy_trading_follow():
+    """Follow a trader agent for mirrored stake/reward share."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    data = request.get_json(silent=True) or {}
+    from backend.services.mn2_copy_trading import upsert_follower
+
+    result = upsert_follower(
+        user_id,
+        (data.get("leader_agent_id") or "").strip(),
+        scale=float(data.get("scale") or 0.25),
+        max_mn2_per_step=float(data.get("max_mn2_per_step") or 25),
+        enabled=bool(data.get("enabled", True)),
+    )
+    return jsonify(result), 200
+
+
+@mn2_bp.route("/api/mn2/copy-trading/unfollow", methods=["POST"])
+def mn2_copy_trading_unfollow():
+    """Stop mirroring a trader agent."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    from backend.services.mn2_copy_trading import remove_follower
+
+    return jsonify(remove_follower(user_id)), 200
+
+
 @mn2_bp.route("/api/mn2/daemon/health", methods=["GET"])
 def mn2_daemon_health():
     """Probe masternoder2d RPC health (block height, latency, optional wallet)."""

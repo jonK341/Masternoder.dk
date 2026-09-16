@@ -54,6 +54,76 @@ def list_followers(leader_agent_id: Optional[str] = None) -> Dict[str, Any]:
     return {"success": True, "followers": followers, "count": len(followers)}
 
 
+def remove_follower(follower_user_id: str) -> Dict[str, Any]:
+    uid = str(follower_user_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "follower_user_id required"}
+    data = _load()
+    followers = data.get("followers") or {}
+    if uid in followers:
+        del followers[uid]
+        data["followers"] = followers
+        _save(data)
+    return {"success": True}
+
+
+def mirror_leader_reward(
+    leader_agent_id: str,
+    reward_amount: float,
+    interval_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Credit followers who mirror a trader agent with a proportional reward share."""
+    lid = str(leader_agent_id or "").strip()
+    if not lid:
+        return {"success": False, "error": "leader_agent_id required"}
+    try:
+        reward = float(reward_amount or 0)
+    except (TypeError, ValueError):
+        return {"success": False, "error": "reward_amount must be a number"}
+    if reward <= 0:
+        return {"success": True, "mirrored": 0, "results": []}
+
+    import backend.services.mn2_staking_service as staking
+
+    data = _load()
+    followers = data.get("followers") or {}
+    mirrored = 0
+    results: List[Dict[str, Any]] = []
+    for uid, cfg in followers.items():
+        if not isinstance(cfg, dict) or not cfg.get("enabled"):
+            continue
+        if cfg.get("leader_agent_id") != lid:
+            continue
+        scale = float(cfg.get("scale") or 0.25)
+        share = round(reward * scale, 8)
+        if share <= 0:
+            continue
+        staking._points().add_points(
+            uid,
+            "mn2_balance",
+            share,
+            source="copy_trade_reward",
+            metadata={"leader_agent_id": lid, "interval_id": interval_id},
+        )
+        stakes = staking._load_stakes()
+        rec = staking._get_record(stakes, uid)
+        rec["total_earned"] = round(float(rec.get("total_earned", 0) or 0) + share, 8)
+        stakes[uid] = rec
+        staking._save_stakes(stakes)
+        _append(
+            {
+                "ts": _iso(),
+                "leader_agent_id": lid,
+                "follower": uid,
+                "share_mn2": share,
+                "interval_id": interval_id,
+            }
+        )
+        mirrored += 1
+        results.append({"follower": uid, "share_mn2": share})
+    return {"success": True, "mirrored": mirrored, "results": results}
+
+
 def upsert_follower(
     follower_user_id: str,
     leader_agent_id: str,

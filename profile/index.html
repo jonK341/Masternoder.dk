@@ -1729,10 +1729,10 @@
     <!-- P4: defer non-critical scripts for faster parse -->
     <script src="/static/js/image-support.js?v=20260304" defer></script>
     <script src="/static/js/template-effects.js" defer></script>
-    <script src="/static/js/template-services.js" defer></script>
+    <script src="/static/js/template-services.js?v=20260916e" defer></script>
     <script src="/static/js/agent-skill-sets.js" defer></script>
     <script src="/static/js/template-engine-core.js" defer></script>
-    <script src="/static/js/unified-point-counters.js" defer></script>
+    <script src="/static/js/unified-point-counters.js?v=20260916e" defer></script>
     <script src="/static/js/comprehensive-api-integration.js" defer></script>
     <script src="/static/js/sync-status-widget.js?v=20260304" defer></script>
     <script src="/static/js/toast-notifications.js" defer></script>
@@ -3253,7 +3253,7 @@
                 if (!header) return;
                 const prefs = this.currentPreferences || {};
                 const displayName = prefs.display_name || profile.display_name || profile.username || 'User';
-                const avatarUrl = profileSafeUrl(prefs.avatar_url || profile.avatar_url, '/static/img/default-avatar.png');
+                const avatarUrl = profileSafeUrl(prefs.avatar_url || profile.avatar_url, '/static/img/default-avatar.svg');
                 const bio = prefs.bio || profile.bio || '';
                 const skillPathName = stats.skill_path_name || 'Balanced';
                 const fallbackInitial = profileEscapeHtml(String(displayName || 'U').charAt(0).toUpperCase() || 'U');

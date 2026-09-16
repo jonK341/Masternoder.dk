@@ -63,7 +63,7 @@ class ChatNotificationAlarm {
             await this.showNotification({
                 title: `New Message from ${message.username}`,
                 body: message.text.substring(0, 100),
-                icon: message.avatar || '/static/images/default-avatar.png',
+                icon: message.avatar || '/static/img/default-avatar.svg',
                 tag: `chat-${message.id}`,
                 requireInteraction: false,
                 data: message
@@ -81,7 +81,7 @@ class ChatNotificationAlarm {
         await this.showNotification({
             title: `You were mentioned by ${mention.username}`,
             body: mention.text,
-            icon: mention.avatar || '/static/images/default-avatar.png',
+            icon: mention.avatar || '/static/img/default-avatar.svg',
             tag: `mention-${mention.id}`,
             requireInteraction: true,
             data: mention

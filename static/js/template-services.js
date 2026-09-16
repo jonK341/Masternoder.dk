@@ -221,6 +221,8 @@ window.templateServices = new TemplateServices();
 
 // Listen for service updates
 document.addEventListener('serviceUpdate', (event) => {
-    const { serviceName, method, data } = event.detail;
-    console.log(`Service update: ${serviceName}.${method}`, data);
+    const { serviceName, method, data } = event.detail || {};
+    if (!serviceName) return;
+    const label = method ? `${serviceName}.${method}` : serviceName;
+    console.log(`Service update: ${label}`, data);
 });
