@@ -13,6 +13,22 @@ os.chdir(BASE)
 
 
 class TestMN2WalletService(unittest.TestCase):
+    def test_validate_payout_address_local_when_rpc_omits_isvalid(self):
+        from backend.services import mn2_wallet_service as ws
+
+        with patch("backend.services.mn2_rpc_client.validateaddress") as mock_va:
+            mock_va.return_value = {"result": {"address": "Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ"}}
+            res = ws.validate_payout_address("Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ")
+        self.assertTrue(res.get("valid"))
+
+    def test_validate_payout_address_rejects_malformed(self):
+        from backend.services import mn2_wallet_service as ws
+
+        with patch("backend.services.mn2_rpc_client.validateaddress") as mock_va:
+            mock_va.return_value = {"result": {"isvalid": False}}
+            res = ws.validate_payout_address("not-a-real-address")
+        self.assertFalse(res.get("valid"))
+
     def test_create_additional_wallet(self):
         import tempfile
         from backend.services import mn2_wallet_service as ws

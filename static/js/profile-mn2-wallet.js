@@ -633,7 +633,9 @@
     if (withdrawBtn && !withdrawBtn._mn2Wired) {
       withdrawBtn._mn2Wired = true;
       withdrawBtn.addEventListener('click', function () {
-        var address = (document.getElementById('profile-mn2-withdraw-address') || {}).value.trim();
+        var address = (document.getElementById('profile-mn2-withdraw-address') || {}).value
+          .replace(/\s+/g, '')
+          .trim();
         var amount = parseFloat((document.getElementById('profile-mn2-withdraw-amount') || {}).value);
         if (!address) {
           if (typeof toast !== 'undefined') toast.error('Enter MN2 address');
@@ -663,7 +665,15 @@
               document.getElementById('profile-mn2-withdraw-amount').value = '';
               if (totpEl) totpEl.value = '';
               load();
-            } else if (typeof toast !== 'undefined') toast.error(data.error || 'Withdrawal failed');
+            } else {
+              var err = data.error || 'Withdrawal failed';
+              if (data.code === 'whitelist_required') {
+                err += ' Add it under Withdraw 2FA → whitelist, or use the Trusted tab.';
+              } else if (data.code === 'invalid_address') {
+                err = 'Invalid MN2 address — copy the full address (starts with J or M, no spaces).';
+              }
+              if (typeof toast !== 'undefined') toast.error(err);
+            }
           })
           .finally(function () {
             withdrawBtn.disabled = false;

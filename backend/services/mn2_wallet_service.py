@@ -5,8 +5,12 @@ See docs/MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md Phase 2.
 """
 import os
 import json
+import re
 import threading
 from typing import Dict, Any, Optional, List
+
+# MasterNoder2 base58 addresses (mainnet typically J…; tests/dev may use M…).
+_MN2_PAYOUT_ADDR_RE = re.compile(r"^[MJ][1-9A-HJ-NP-Za-km-z]{24,55}$")
 
 _ADDRESSES_LOCK = threading.Lock()
 _ADDRESSES_FILENAME = "mn2_user_addresses.json"
@@ -41,6 +45,51 @@ def _save_addresses(addresses: Dict[str, str]) -> None:
     with _ADDRESSES_LOCK:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(addresses, f, indent=2)
+
+
+def looks_like_mn2_address(addr: str) -> bool:
+    """Local format check when RPC validateaddress is missing or inconclusive."""
+    a = (addr or "").strip()
+    return bool(a and _MN2_PAYOUT_ADDR_RE.match(a))
+
+
+def validate_payout_address(address: str) -> Dict[str, Any]:
+    """
+    Validate an external payout address for withdrawals / whitelist / address book.
+    Unlike deposit-address checks, external payouts must NOT require ismine=true.
+    """
+    addr = (address or "").strip()
+    if not addr:
+        return {"valid": False, "error": "address is required"}
+    if addr in ("--", "—", "…"):
+        return {"valid": False, "error": "Enter a valid MN2 address"}
+    try:
+        from backend.services.mn2_rpc_client import validateaddress
+        r = validateaddress(addr)
+    except Exception:
+        r = {"error": "rpc_unavailable"}
+    if r.get("error"):
+        if looks_like_mn2_address(addr):
+            return {"valid": True, "rpc_confirmed": False}
+        return {
+            "valid": False,
+            "error": "Could not verify address with the wallet node. Check the format and try again.",
+            "code": "address_check_failed",
+        }
+    res = r.get("result")
+    if res is True:
+        return {"valid": True, "rpc_confirmed": True}
+    if isinstance(res, dict):
+        if res.get("isvalid") is True:
+            return {"valid": True, "rpc_confirmed": True}
+        if res.get("isvalid") is False:
+            return {"valid": False, "error": "Invalid MN2 address", "code": "invalid_address"}
+        # Daemon responded but omitted isvalid — accept well-formed local addresses.
+        if looks_like_mn2_address(addr):
+            return {"valid": True, "rpc_confirmed": False}
+    if looks_like_mn2_address(addr):
+        return {"valid": True, "rpc_confirmed": False}
+    return {"valid": False, "error": "Invalid MN2 address", "code": "invalid_address"}
 
 
 def _address_validity(addr: str) -> Optional[bool]:

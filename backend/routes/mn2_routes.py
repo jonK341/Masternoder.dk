@@ -17,6 +17,7 @@ from backend.services.mn2_wallet_service import (
     list_user_addresses,
     create_additional_wallet,
     refresh_deposit_address,
+    validate_payout_address,
 )
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
 
@@ -336,6 +337,69 @@ def mn2_wallet_refresh():
         "deposit_address": addr,
         "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
     }), 200
+
+
+@mn2_bp.route("/api/mn2/address-book", methods=["GET", "POST", "DELETE"])
+def mn2_address_book():
+    """Trusted withdrawal addresses (labeled; cleared after first successful withdraw)."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in to manage trusted addresses.", "code": "auth_required"}), 401
+    from backend.services.mn2_address_book import list_addresses, add_address, remove_address
+
+    if request.method == "GET":
+        return jsonify({"success": True, "user_id": user_id, "addresses": list_addresses(user_id)}), 200
+
+    data = request.get_json(silent=True) or {}
+    address = (data.get("address") or request.args.get("address") or "").strip()
+    label = (data.get("label") or "").strip()
+
+    if request.method == "DELETE":
+        result = remove_address(user_id, address)
+        return jsonify(result), 200 if result.get("success") else 400
+
+    pwd = (data.get("password") or data.get("verification_token") or "").strip()
+    if pwd:
+        try:
+            from backend.services.password_protection_service import verify_password
+            verified = verify_password(user_id, pwd)
+            if not verified.get("success"):
+                return jsonify({
+                    "success": False,
+                    "error": verified.get("error") or "Profile password required to add trusted addresses.",
+                    "code": "password_required",
+                }), 403
+        except ImportError:
+            pass
+
+    chk = validate_payout_address(address)
+    if not chk.get("valid"):
+        return jsonify({
+            "success": False,
+            "error": chk.get("error") or "Invalid MN2 address",
+            "code": chk.get("code", "invalid_address"),
+        }), 400
+
+    result = add_address(user_id, address, label=label)
+    return jsonify(result), 200 if result.get("success") else 400
+
+
+@mn2_bp.route("/api/mn2/transfer", methods=["POST"])
+def mn2_transfer():
+    """Internal MN2 gift to another user (by user_id or deposit address)."""
+    user_id = resolve_user_id(from_body=True, from_query=False, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in to send MN2.", "code": "auth_required"}), 401
+    data = request.get_json(silent=True) or {}
+    to = (data.get("to") or data.get("recipient") or "").strip()
+    try:
+        amount = float(data.get("amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    note = (data.get("note") or data.get("message") or "").strip()
+    from backend.services.mn2_gift_service import transfer as gift_transfer
+    result = gift_transfer(user_id, to, amount, note=note)
+    return jsonify(result), 200 if result.get("success") else 400
 
 
 @mn2_bp.route("/api/mn2/profile-monitor", methods=["GET"])
@@ -959,7 +1023,7 @@ def mn2_withdraw():
     Deducts full amount from balance; sends (amount - fee) to address. Returns txid and explorer_tx_url.
     """
     from datetime import datetime, timedelta
-    from backend.services.mn2_rpc_client import validateaddress, sendtoaddress
+    from backend.services.mn2_rpc_client import sendtoaddress
     from backend.services.unified_points_database import unified_points_db
 
     # Identity for withdrawals is resolved server-side ONLY (session > IP/fingerprint
@@ -1050,14 +1114,14 @@ def mn2_withdraw():
     if amount_sent <= 0:
         return jsonify({"success": False, "error": f"Amount must be greater than withdrawal fee ({fee} MN2)"}), 400
 
-    # Validate address (RPC)
-    r = validateaddress(address)
-    if r.get("error"):
-        return jsonify({"success": False, "error": f"Address check failed: {r['error']}"}), 500
-    res = r.get("result")
-    is_valid = res is True if isinstance(res, bool) else (isinstance(res, dict) and res.get("isvalid") is True)
-    if not is_valid:
-        return jsonify({"success": False, "error": "Invalid MN2 address"}), 400
+    # Validate payout address (RPC when available; local format fallback for external sends)
+    addr_check = validate_payout_address(address)
+    if not addr_check.get("valid"):
+        return jsonify({
+            "success": False,
+            "error": addr_check.get("error") or "Invalid MN2 address",
+            "code": addr_check.get("code", "invalid_address"),
+        }), 400
 
     # New-address cooling-off: a payout address this user has never used is held for
     # `withdrawal_new_address_cooldown_hours` before it can receive funds. Blunts the
