@@ -151,11 +151,17 @@ class BackendConnector {
         }
 
         try {
+            const method = (options.method || 'GET').toUpperCase();
+            const headers = { ...(options.headers || {}) };
+            const body = options.body;
+            // Flask/Werkzeug rejects GET/HEAD with Content-Type: application/json (400 Bad Request).
+            if (body && !headers['Content-Type'] && !headers['content-type']) {
+                headers['Content-Type'] = 'application/json';
+            }
             const defaultOptions = {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                ...options
+                ...options,
+                method,
+                headers,
             };
 
             const response = await fetch(url, defaultOptions);
