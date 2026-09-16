@@ -13,9 +13,12 @@ from backend.services import crypto_exchange_service as ex
 from backend.services.exchange_binance_withdraw_service import (
     binance_credentials,
     binance_withdraw_live_enabled,
+    get_spot_asset_free,
     get_spot_usdt_free,
     mask_address,
+    preflight_withdraw_asset,
     preflight_withdraw_usdt,
+    withdraw_asset,
     withdraw_usdt,
 )
 
@@ -129,6 +132,10 @@ def _load() -> Dict[str, Any]:
     cfg.setdefault("swept_total_usd", 0.0)
     cfg.setdefault("stash_asset", "USDT")
     cfg.setdefault("min_sweep_usd", 5.0)
+    wt = cfg.setdefault("withdraw_targets", {})
+    if isinstance(wt, dict):
+        wt.setdefault("binance", {})
+        wt.setdefault("nonkyc", {})
     env_addr = _binance_withdraw_address(cfg)
     if env_addr:
         b["withdraw_address"] = env_addr
@@ -760,6 +767,405 @@ def withdraw_binance(amount_usdt: Optional[float] = None, *,
         "binance": {k: v for k, v in withdraw_ref.items()
                     if k not in ("body",) and "secret" not in str(k).lower()},
         "note": note,
+    }
+
+
+_SUPPORTED_WITHDRAW_VENUES = ("binance", "nonkyc")
+
+
+def _pool_asset_balance(coin: str) -> float:
+    try:
+        from backend.services.exchange_sales_pool_service import sales_pool_user_id
+        pool_uid = sales_pool_user_id()
+        assets = (ex.get_wallet(pool_uid).get("assets") or {})
+        return round(float(assets.get(str(coin).upper()) or 0), 8)
+    except Exception:
+        return 0.0
+
+
+def configure_venue_withdraw(venue: str, targets: Dict[str, Any]) -> Dict[str, Any]:
+    """Set per-asset withdraw addresses for a venue.
+
+    ``targets`` maps COIN -> {"address": str, "network": str (binance only), "ticker": str (nonkyc)}.
+    """
+    venue = str(venue or "").strip().lower()
+    if venue not in _SUPPORTED_WITHDRAW_VENUES:
+        return {"success": False, "error": "unsupported_venue", "supported": list(_SUPPORTED_WITHDRAW_VENUES)}
+    if not isinstance(targets, dict) or not targets:
+        return {"success": False, "error": "no_targets"}
+
+    from backend.services import exchange_secrets_vault_service as vault
+
+    cfg = _load()
+    store = cfg.setdefault("withdraw_targets", {}).setdefault(venue, {})
+    saved = []
+    for coin, row in targets.items():
+        coin_u = str(coin).upper()
+        if not isinstance(row, dict):
+            continue
+        addr = str(row.get("address") or "").strip()
+        if not addr:
+            continue
+        entry = {"address": addr}
+        if row.get("network"):
+            entry["network"] = str(row.get("network")).strip().upper()
+        if row.get("ticker"):
+            entry["ticker"] = str(row.get("ticker")).strip()
+        store[coin_u] = entry
+        saved.append(coin_u)
+        try:
+            vault.register_wallet(
+                f"{venue}_withdraw_{coin_u.lower()}", addr,
+                venue=venue, asset=coin_u,
+                note=f"pool withdraw {entry.get('network') or entry.get('ticker') or ''}".strip(),
+            )
+        except Exception:
+            pass
+    _save(cfg)
+    ex._audit("payout_venue_withdraw_configured", user_id="owner", venue=venue, coins=saved)
+    return {
+        "success": True,
+        "venue": venue,
+        "configured_coins": saved,
+        "targets": {c: {**v, "address": mask_address(v.get("address", ""))} for c, v in store.items()},
+    }
+
+
+def _venue_withdraw_target(venue: str, coin: str, cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    cfg = cfg or _load()
+    coin_u = str(coin).upper()
+    store = ((cfg.get("withdraw_targets") or {}).get(venue) or {})
+    row = store.get(coin_u)
+    if isinstance(row, dict) and row.get("address"):
+        return dict(row)
+    # Back-compat: legacy single Binance USDT withdraw address.
+    if venue == "binance" and coin_u == "USDT":
+        addr = _binance_withdraw_address(cfg)
+        if addr:
+            return {"address": addr, "network": _binance_withdraw_network(cfg)}
+    return {}
+
+
+def withdraw_targets_status() -> Dict[str, Any]:
+    cfg = _load()
+    out: Dict[str, Any] = {"success": True, "venues": {}}
+    for venue in _SUPPORTED_WITHDRAW_VENUES:
+        store = ((cfg.get("withdraw_targets") or {}).get(venue) or {})
+        rows = {}
+        for coin, row in store.items():
+            if isinstance(row, dict) and row.get("address"):
+                rows[coin] = {**{k: v for k, v in row.items() if k != "address"},
+                              "address_masked": mask_address(row.get("address", ""))}
+        legacy = _venue_withdraw_target(venue, "USDT", cfg)
+        if venue == "binance" and legacy and "USDT" not in rows:
+            rows["USDT"] = {"network": legacy.get("network"),
+                            "address_masked": mask_address(legacy.get("address", ""))}
+        out["venues"][venue] = {
+            "coins": rows,
+            "live_enabled": _venue_withdraw_live_enabled(venue),
+        }
+    return out
+
+
+def _venue_withdraw_live_enabled(venue: str) -> bool:
+    if venue == "binance":
+        return binance_withdraw_live_enabled()
+    if venue == "nonkyc":
+        from backend.services.exchange_nonkyc_withdraw_service import nonkyc_withdraw_live_enabled
+        return nonkyc_withdraw_live_enabled(venue)
+    return False
+
+
+def asset_preflight_status(coin: str, *, venue: str = "binance",
+                           amount: Optional[float] = None) -> Dict[str, Any]:
+    """Preflight a pool asset withdraw (venue balance + whitelist/creds)."""
+    venue = str(venue or "binance").lower()
+    coin_u = str(coin or "").upper()
+    cfg = _load()
+    target = _venue_withdraw_target(venue, coin_u, cfg)
+    if not target.get("address"):
+        return {"success": False, "error": "missing_withdraw_target", "venue": venue, "coin": coin_u}
+    pool_amt = _pool_asset_balance(coin_u)
+    amt = pool_amt if amount is None else round(max(0.0, float(amount)), 8)
+
+    if venue == "binance":
+        pf = preflight_withdraw_asset(
+            coin_u, amt, target["address"], target.get("network") or "TRC20",
+            skip_live_gate=True, sales_pool_amount=pool_amt,
+        )
+    else:
+        from backend.services import exchange_nonkyc_withdraw_service as nk
+        pf = nk.preflight_withdraw_asset(
+            coin_u, amt, target["address"], venue=venue, sales_pool_amount=pool_amt,
+        )
+    return {
+        "success": True,
+        "venue": venue,
+        "coin": coin_u,
+        "amount": amt,
+        "sales_pool_balance": pool_amt,
+        "withdraw_address_masked": mask_address(target.get("address", "")),
+        "network": target.get("network"),
+        "preflight": pf,
+    }
+
+
+def withdraw_pool_asset(coin: str, amount: Optional[float] = None, *,
+                        venue: str = "binance",
+                        min_amount: Optional[float] = None) -> Dict[str, Any]:
+    """Withdraw any pool asset to a venue (Binance or NonKYC). Paper unless the venue live gate is on."""
+    venue = str(venue or "binance").lower()
+    coin_u = str(coin or "").upper()
+    if venue not in _SUPPORTED_WITHDRAW_VENUES:
+        return {"success": False, "error": "unsupported_venue", "supported": list(_SUPPORTED_WITHDRAW_VENUES)}
+    if not coin_u:
+        return {"success": False, "error": "missing_coin"}
+
+    cfg = _load()
+    target = _venue_withdraw_target(venue, coin_u, cfg)
+    if not target.get("address"):
+        return {"success": False, "error": "missing_withdraw_target", "venue": venue, "coin": coin_u,
+                "hint": "POST configure-venue-withdraw with an address for this coin"}
+
+    if venue == "binance":
+        creds = binance_credentials()
+        if not (creds.get("api_key") and creds.get("api_secret")):
+            return {"success": False, "error": "missing_binance_credentials"}
+    else:
+        from backend.services.exchange_nonkyc_withdraw_service import has_credentials
+        if not has_credentials(venue) and _venue_withdraw_live_enabled(venue):
+            return {"success": False, "error": f"missing_{venue}_credentials"}
+
+    try:
+        from backend.services.exchange_sales_pool_service import sales_pool_user_id
+        pool_uid = sales_pool_user_id()
+    except Exception:
+        pool_uid = "exchange_sales_pool"
+
+    pool_amt = _pool_asset_balance(coin_u)
+    amount = pool_amt if amount is None else round(max(0.0, float(amount)), 8)
+
+    # Minimum sweep threshold is expressed in USD; convert to coin units.
+    price = max(float(ex._price_usd(coin_u) or 0), 0.0)
+    min_usd = float(min_amount if min_amount is not None else _min_sweep_usd(cfg))
+    min_coin = (min_usd / price) if price > 0 else 0.0
+    if amount < min_coin:
+        return {"success": False, "error": "below_min_amount", "min_amount_coin": round(min_coin, 8),
+                "min_amount_usd": min_usd, "pool_balance": pool_amt, "coin": coin_u}
+    if amount > pool_amt:
+        return {"success": False, "error": "insufficient_sales_pool_balance",
+                "requested": amount, "pool_balance": pool_amt, "coin": coin_u}
+
+    _reset_daily_withdraw_counter(cfg)
+    amount_usd = round(amount * price, 4)
+    daily_left = _daily_withdraw_remaining(cfg)
+    if daily_left is not None and amount_usd > daily_left:
+        return {"success": False, "error": "daily_cap_exceeded",
+                "requested_usd": amount_usd, "daily_remaining_usd": daily_left}
+
+    live = _venue_withdraw_live_enabled(venue)
+    order_id = f"mn2-pool-{venue}-{coin_u}-{int(datetime.now(timezone.utc).timestamp())}"
+
+    if live:
+        if venue == "binance":
+            spot = get_spot_asset_free(coin_u, skip_live_gate=True)
+            spot_free = float(spot.get("free") or 0) if spot.get("success") else 0.0
+            pf = preflight_withdraw_asset(coin_u, amount, target["address"],
+                                          target.get("network") or "TRC20",
+                                          skip_live_gate=True, sales_pool_amount=pool_amt)
+        else:
+            from backend.services import exchange_nonkyc_withdraw_service as nk
+            spot = nk.get_spot_asset_free(coin_u, venue)
+            spot_free = float(spot.get("free") or 0) if not spot.get("simulated") else 0.0
+            pf = nk.preflight_withdraw_asset(coin_u, amount, target["address"],
+                                             venue=venue, sales_pool_amount=pool_amt)
+        if spot_free < amount:
+            return {
+                "success": False,
+                "error": "venue_spot_insufficient",
+                "venue": venue,
+                "coin": coin_u,
+                "sales_pool_balance": pool_amt,
+                "venue_spot_free": spot_free,
+                "requested": amount,
+                "message": (
+                    f"Sales pool ledger holds {pool_amt} {coin_u} but {venue} spot free is {spot_free}. "
+                    f"Deposit real {coin_u} to the {venue} account first; the internal pool is not on-venue balance."
+                ),
+            }
+        if not pf.get("ready"):
+            return {"success": False, "error": "preflight_failed", "preflight": pf,
+                    "venue": venue, "coin": coin_u, "sales_pool_balance": pool_amt}
+
+    with ex._LOCK:
+        pool_amt = _pool_asset_balance(coin_u)
+        if amount > pool_amt:
+            return {"success": False, "error": "insufficient_sales_pool_balance",
+                    "requested": amount, "pool_balance": pool_amt, "coin": coin_u}
+        try:
+            ex._adjust_balance(pool_uid, coin_u, -amount)
+        except Exception as exc:
+            return {"success": False, "error": "debit_failed", "detail": str(exc)}
+
+        if venue == "binance":
+            wref = withdraw_asset(coin_u, amount, target["address"], target.get("network") or "TRC20",
+                                  dry_run=None if live else True, withdraw_order_id=order_id)
+        else:
+            from backend.services import exchange_nonkyc_withdraw_service as nk
+            wref = nk.withdraw_asset(coin_u, amount, target["address"], venue=venue,
+                                     ticker=target.get("ticker"), dry_run=None if live else True)
+
+        if live and not wref.get("success"):
+            try:
+                ex._adjust_balance(pool_uid, coin_u, amount)
+            except Exception:
+                pass
+            return {"success": False, "error": wref.get("error", "venue_withdraw_failed"),
+                    "venue": venue, "coin": coin_u,
+                    "detail": {k: v for k, v in wref.items() if k not in ("body",) and "secret" not in str(k).lower()}}
+
+    record = {
+        "ts": _iso(),
+        "destination": venue,
+        "source": "sales_pool",
+        "sales_pool_user_id": pool_uid,
+        "coin": coin_u,
+        "amount": amount,
+        "amount_usd": amount_usd,
+        "network": target.get("network") or target.get("ticker"),
+        "address_masked": mask_address(target.get("address", "")),
+        "mode": "live" if live else "paper",
+        "withdraw_id": wref.get("withdraw_id"),
+        "withdraw_order_id": order_id,
+    }
+    ex._append_jsonl(_SWEEPS_PATH, record)
+    cfg["binance"]["withdrawn_today_usdt"] = round(
+        float(cfg["binance"].get("withdrawn_today_usdt") or 0) + amount_usd, 8
+    )
+    cfg["last_withdraw"] = record
+    _save(cfg)
+    ex._audit("payout_pool_withdraw", user_id="owner", venue=venue, coin=coin_u,
+              amount=amount, amount_usd=amount_usd, mode=record["mode"],
+              withdraw_id=record.get("withdraw_id"))
+
+    note = None
+    if not live:
+        note = (f"Paper withdraw: sales pool debited in ledger only; set "
+                f"EXCHANGE_PAYOUT_{venue.upper()}_LIVE=1 (+ EXCHANGE_ARBITRAGE_LIVE=1) for real {venue} withdraw.")
+    return {
+        "success": True,
+        "withdrawn": record,
+        "pool_balance_after": round(pool_amt - amount, 8),
+        "live": live,
+        "venue": venue,
+        "detail": {k: v for k, v in wref.items() if k not in ("body",) and "secret" not in str(k).lower()},
+        "note": note,
+    }
+
+
+def real_cash_readiness(*, probe: bool = False) -> Dict[str, Any]:
+    """Read-only report: how much of the sales-pool ledger is backed by REAL venue funds.
+
+    Moves no money. ``probe=True`` reads live venue spot balances (account reads only) and
+    reconciles them against the internal ledger so the gap between paper P&L and withdrawable
+    cash is explicit. Run with ``probe=True`` where the API keys are valid/whitelisted.
+    """
+    from backend.services import exchange_secrets_vault_service as vault
+    from backend.services import exchange_venue_api_service as vapi
+    from backend.services.exchange_fiat_converter_service import pool_valuation
+
+    try:
+        from backend.services.exchange_arbitrage_service import live_enabled as _arb_live
+        arb_live = bool(_arb_live())
+    except Exception:
+        arb_live = False
+    try:
+        from backend.services.exchange_fiat_converter_service import fiat_convert_live_enabled
+        fiat_live = bool(fiat_convert_live_enabled())
+    except Exception:
+        fiat_live = False
+
+    bcreds = binance_credentials()
+    gates = {
+        "arbitrage_live": arb_live,
+        "binance_withdraw_live": binance_withdraw_live_enabled(),
+        "nonkyc_withdraw_live": _venue_withdraw_live_enabled("nonkyc"),
+        "fiat_convert_live": fiat_live,
+        "paypal_live": _paypal_live_enabled(),
+    }
+    credentials = {
+        "binance": bool(bcreds.get("api_key") and bcreds.get("api_secret")),
+        "nonkyc": vapi.venue_has_credentials("nonkyc"),
+        "vault_encryption": vault.encryption_available(),
+    }
+
+    ledger = pool_valuation()
+    ledger_by_asset = {r["symbol"]: r for r in ledger.get("assets") or []}
+
+    venues: Dict[str, Any] = {}
+    real_by_asset: Dict[str, float] = {}
+    probe_errors: Dict[str, str] = {}
+    if probe:
+        for venue in _SUPPORTED_WITHDRAW_VENUES:
+            has = (credentials["binance"] if venue == "binance" else credentials["nonkyc"])
+            if not has:
+                venues[venue] = {"probed": False, "reason": "no_credentials"}
+                continue
+            try:
+                bals = vapi.parse_spot_balances(venue, dry_run=False) or {}
+                bals = {str(k).upper(): float(v) for k, v in bals.items() if float(v or 0) > 0}
+                venues[venue] = {"probed": True, "real_balances": bals}
+                for sym, amt in bals.items():
+                    real_by_asset[sym] = round(real_by_asset.get(sym, 0.0) + amt, 12)
+            except Exception as exc:
+                probe_errors[venue] = str(exc)
+                venues[venue] = {"probed": False, "error": str(exc)}
+
+    reconciliation: List[Dict[str, Any]] = []
+    materializable_usd = 0.0
+    for sym, row in ledger_by_asset.items():
+        ledger_amt = float(row.get("amount") or 0)
+        real_amt = float(real_by_asset.get(sym, 0.0))
+        matr = min(ledger_amt, real_amt) if probe else 0.0
+        price = float(row.get("price_usd") or 0)
+        matr_usd = round(matr * price, 4)
+        materializable_usd += matr_usd
+        reconciliation.append({
+            "symbol": sym,
+            "ledger_amount": round(ledger_amt, 8),
+            "ledger_usd": row.get("usd_value"),
+            "real_on_venue": round(real_amt, 8) if probe else None,
+            "materializable_amount": round(matr, 8) if probe else None,
+            "materializable_usd": matr_usd if probe else None,
+        })
+
+    all_creds = credentials["binance"] and credentials["nonkyc"]
+    verdict = "unknown_run_probe_on_prod"
+    if probe:
+        if materializable_usd <= 0:
+            verdict = "no_real_funds_backing_ledger"
+        elif materializable_usd < float(ledger.get("total_usd") or 0):
+            verdict = "partially_backed"
+        else:
+            verdict = "fully_backed"
+
+    return {
+        "success": True,
+        "probe": probe,
+        "gates": gates,
+        "credentials": credentials,
+        "ledger_total_usd": ledger.get("total_usd"),
+        "ledger_asset_count": ledger.get("asset_count"),
+        "venues": venues,
+        "reconciliation": reconciliation,
+        "real_materializable_usd": round(materializable_usd, 4) if probe else None,
+        "probe_errors": probe_errors or None,
+        "verdict": verdict,
+        "note": (
+            "Ledger balances are internal accounting until matched by real venue balances. "
+            "Paper P&L is not withdrawable. Deposit real capital to the venue and trade it live "
+            "to accumulate real, withdrawable funds."
+        ),
     }
 
 
