@@ -94,6 +94,11 @@ export function ExchangeHub() {
           <span class="wallet-shop-card-name">Tax report</span>
           <span class="wallet-shop-card-desc">Export trade history</span>
         </a>
+        <a href="/shop?tab=trophies" class="wallet-shop-card wallet-shop-card--highlight">
+          <span class="wallet-shop-card-icon">🏆</span>
+          <span class="wallet-shop-card-name">Trophy section</span>
+          <span class="wallet-shop-card-desc">Top 25 editions and block drops</span>
+        </a>
       </div>
     </div>
   );

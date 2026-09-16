@@ -2,10 +2,15 @@ import { useEffect, useState } from 'preact/hooks';
 import { fetchSummary, type WalletSummary } from './api/client';
 import { BalanceHero } from './components/BalanceHero';
 import { TabNav, type TabId } from './components/TabNav';
+import { CamgirlsHub } from './tabs/CamgirlsHub';
 import { CasinoHub } from './tabs/CasinoHub';
 import { Earn } from './tabs/Earn';
+import { EncoderHub } from './tabs/EncoderHub';
 import { ExchangeHub } from './tabs/ExchangeHub';
+import { NetworkChat } from './tabs/NetworkChat';
+import { NewsHub } from './tabs/NewsHub';
 import { Overview } from './tabs/Overview';
+import { PodcastHub } from './tabs/PodcastHub';
 import { PortalHub } from './tabs/PortalHub';
 import { RewardsHub } from './tabs/RewardsHub';
 import { Settings } from './tabs/Settings';
@@ -16,6 +21,7 @@ function tabFromQuery(): TabId {
   const tab = new URLSearchParams(window.location.search).get('tab');
   const valid: TabId[] = [
     'overview', 'portal', 'rewards', 'earn', 'casino', 'shop', 'exchange',
+    'encoder', 'news', 'podcast', 'network-chat', 'camgirls',
     'send', 'receive', 'activity', 'monitor-4d', 'explorer-5d',
     'trophies', 'battle', 'peers', 'staking', 'upgrades', 'settings',
   ];
@@ -95,6 +101,16 @@ export function App() {
         return <ShopHub trophyCounts={summary?.trophy_counts} />;
       case 'exchange':
         return <ExchangeHub />;
+      case 'encoder':
+        return <EncoderHub />;
+      case 'news':
+        return <NewsHub />;
+      case 'podcast':
+        return <PodcastHub />;
+      case 'network-chat':
+        return <NetworkChat />;
+      case 'camgirls':
+        return <CamgirlsHub />;
       case 'settings':
         return <Settings />;
       case 'upgrades':

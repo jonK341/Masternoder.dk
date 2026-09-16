@@ -469,6 +469,279 @@ export async function fetchExchangeWallet(): Promise<ExchangeWallet> {
   return res.json() as Promise<ExchangeWallet>;
 }
 
+export type IntegrationUnit = {
+  id?: string;
+  label?: string;
+  path?: string;
+  api?: string;
+  wallet_tab?: string;
+  asset_count?: number;
+  mn2_balance?: number | null;
+  recent_jobs_count?: number;
+  trophy_skus?: number;
+  item_count?: number;
+  episode_count?: number;
+  channel_count?: number;
+  online_count?: number;
+  message_count?: number;
+  performer_count?: number;
+  upgrade_count?: number;
+};
+
+export type IntegrationHub = {
+  success: boolean;
+  user_id?: string;
+  units?: Record<string, IntegrationUnit>;
+  tab_groups?: Record<string, string[]>;
+};
+
+export type NewsItem = {
+  id: string;
+  title: string;
+  summary?: string;
+  date?: string;
+  category?: string;
+  href?: string;
+  featured?: boolean;
+};
+
+export type PodcastEpisode = {
+  id: string;
+  title: string;
+  description?: string;
+  duration_sec?: number;
+  published_at?: string;
+  channel_id?: string;
+};
+
+export type ChatUser = {
+  user_id: string;
+  display_name?: string;
+  status?: string;
+  last_seen?: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  user_id: string;
+  display_name?: string;
+  text: string;
+  created_at?: string;
+  rating_avg?: number;
+  rating_count?: number;
+};
+
+export type NetworkChatStatus = {
+  success: boolean;
+  enabled?: boolean;
+  user_id?: string;
+  guest?: boolean;
+  room_id?: string;
+  online_count?: number;
+  online_users?: ChatUser[];
+  messages?: ChatMessage[];
+  message_count?: number;
+  engagement_disclaimer?: string;
+  rewards?: {
+    earned_today_mn2?: number;
+    global_daily_cap_mn2?: number;
+    message_post_mn2?: number;
+    rating_given_mn2?: number;
+    heartbeat_mn2?: number;
+  };
+  message?: string;
+};
+
+export type CamgirlPerformer = {
+  id: string;
+  name: string;
+  tagline?: string;
+  bio?: string;
+  tier?: string;
+  price_mn2?: number;
+  avatar_url?: string;
+  online?: boolean;
+  studio_path?: string;
+};
+
+export type CamgirlUpgrade = {
+  id: string;
+  name: string;
+  effect?: string;
+  category: string;
+  tier: string;
+  unlock?: WalletUpgradeUnlock;
+};
+
+export type CamgirlsCatalog = {
+  success: boolean;
+  total: number;
+  online_count?: number;
+  performers: CamgirlPerformer[];
+  studio_url?: string;
+};
+
+export type CamgirlsUpgradesCatalog = {
+  success: boolean;
+  total: number;
+  categories: string[];
+  upgrades: CamgirlUpgrade[];
+};
+
+export type CamgirlsUpgradesProgress = {
+  success: boolean;
+  user_id: string;
+  guest?: boolean;
+  unlocked_count: number;
+  available_count?: number;
+  locked_count: number;
+  total: number;
+  unlocked_ids: string[];
+  available_ids?: string[];
+  locked_ids: string[];
+  by_category?: Record<string, { unlocked: number; available?: number; locked?: number; total: number }>;
+  progress_hints?: Record<string, string>;
+};
+
+export async function fetchIntegrationHub(): Promise<IntegrationHub> {
+  const res = await fetch('/api/wallet/v2/integration/hub', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Integration hub failed (${res.status})`);
+  return res.json() as Promise<IntegrationHub>;
+}
+
+export async function fetchPlatformNews(limit = 10): Promise<{ success: boolean; news: NewsItem[]; count: number }> {
+  const res = await fetch(`/api/news/platform?limit=${limit}`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`News failed (${res.status})`);
+  return res.json() as Promise<{ success: boolean; news: NewsItem[]; count: number }>;
+}
+
+export async function fetchPodcastEpisodes(limit = 8): Promise<{ success: boolean; episodes: PodcastEpisode[] }> {
+  const res = await fetch(`/api/podcast/episodes?limit=${limit}`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Podcast failed (${res.status})`);
+  const data = await res.json() as { success?: boolean; episodes?: PodcastEpisode[] };
+  return { success: Boolean(data.success), episodes: data.episodes || [] };
+}
+
+export async function fetchNetworkChatStatus(): Promise<NetworkChatStatus> {
+  const res = await fetch('/api/wallet/v2/network-chat/status', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Network chat failed (${res.status})`);
+  return res.json() as Promise<NetworkChatStatus>;
+}
+
+export async function postNetworkChatMessage(text: string, displayName?: string): Promise<{
+  success: boolean;
+  message?: ChatMessage;
+  reward?: { mn2_awarded?: number };
+  error?: string;
+}> {
+  const res = await fetch('/api/wallet/v2/network-chat/message', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ text, display_name: displayName }),
+  });
+  return res.json() as Promise<{
+    success: boolean;
+    message?: ChatMessage;
+    reward?: { mn2_awarded?: number };
+    error?: string;
+  }>;
+}
+
+export async function postNetworkChatRating(messageId: string, stars: number): Promise<{
+  success: boolean;
+  message?: ChatMessage;
+  reward?: { mn2_awarded?: number };
+  error?: string;
+}> {
+  const res = await fetch('/api/wallet/v2/network-chat/rating', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ message_id: messageId, stars }),
+  });
+  return res.json() as Promise<{
+    success: boolean;
+    message?: ChatMessage;
+    reward?: { mn2_awarded?: number };
+    error?: string;
+  }>;
+}
+
+export async function postNetworkChatHeartbeat(displayName?: string): Promise<{ success: boolean }> {
+  const res = await fetch('/api/wallet/v2/network-chat/heartbeat', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ display_name: displayName }),
+  });
+  return res.json() as Promise<{ success: boolean }>;
+}
+
+export async function fetchCamgirlsCatalog(): Promise<CamgirlsCatalog> {
+  const res = await fetch('/api/wallet/v2/camgirls/catalog', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Camgirls catalog failed (${res.status})`);
+  return res.json() as Promise<CamgirlsCatalog>;
+}
+
+export async function fetchCamgirlsUpgrades(category?: string): Promise<CamgirlsUpgradesCatalog> {
+  const params = category ? `?category=${encodeURIComponent(category)}` : '';
+  const res = await fetch(`/api/wallet/v2/camgirls/upgrades${params}`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Camgirls upgrades failed (${res.status})`);
+  return res.json() as Promise<CamgirlsUpgradesCatalog>;
+}
+
+export async function fetchCamgirlsUpgradesProgress(): Promise<CamgirlsUpgradesProgress> {
+  const res = await fetch('/api/wallet/v2/camgirls/upgrades/progress', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Camgirls progress failed (${res.status})`);
+  return res.json() as Promise<CamgirlsUpgradesProgress>;
+}
+
+export async function unlockCamgirlUpgrade(upgradeId: string): Promise<{
+  success: boolean;
+  upgrade_id?: string;
+  name?: string;
+  progress?: CamgirlsUpgradesProgress;
+  error?: string;
+  message?: string;
+}> {
+  const res = await fetch('/api/wallet/v2/camgirls/upgrades/unlock', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ upgrade_id: upgradeId }),
+  });
+  return res.json() as Promise<{
+    success: boolean;
+    upgrade_id?: string;
+    name?: string;
+    progress?: CamgirlsUpgradesProgress;
+    error?: string;
+    message?: string;
+  }>;
+}
+
 export async function unlinkDiscord(
   userId: string,
 ): Promise<{ success: boolean; error?: string }> {

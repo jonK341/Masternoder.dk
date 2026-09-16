@@ -1582,3 +1582,46 @@ pytest tests/unit/test_wallet_v2_summary.py tests/unit/test_wallet_v2_deposit.py
 - Battle contest widget shows open tournaments + leaderboard snippet; joins via existing battle API.
 - `wallet_fun_mode` respects `prefers-reduced-motion`; no autoplay audio without user gesture.
 - Copy states platform-ledger trophies — **no on-chain mint promises**.
+
+---
+
+## Appendix: Mega Integration Hub (WR-INT)
+
+Phase-1 functional scaffold wiring exchange, encoder, shop, news, podcast, network chat, and camgirls into the wallet v2 SPA via a single BFF hub and grouped tab navigation.
+
+### Assumptions
+
+- **Exchange / shop / encoder** reuse existing site APIs (`/api/exchange/wallet`, `/api/shop/*`, `/api/generator/history`) — wallet only BFF-wraps counts and deep links.
+- **News / podcast** read from `data/platform_news.json` and `data/podcast_episodes.json` via existing routes.
+- **Network chat** is JSONL persistence + presence heartbeat stub — not full WebSocket infra in phase 1.
+- **Camgirls** wallet tab shows SFW cards; full studio experience remains on `/camgirls` module.
+- **Micro MN2** chat rewards use `network_chat_config.json` caps; credits via `game_mn2_rewards.credit_mn2`.
+
+### Units
+
+| Unit ID | Tab | API | Data |
+|---------|-----|-----|------|
+| **WR-INT-EXCH** | Exchange | `GET /api/wallet/v2/integration/hub` + `/api/exchange/wallet` | Exchange wallet assets |
+| **WR-INT-ENC** | Encoder | hub + `/api/generator/history` | Generator job count |
+| **WR-INT-SHOP** | Shop | hub + `/shop?tab=trophies` | Trophy / shop SKU counts |
+| **WR-INT-NEWS** | News | hub + `GET /api/news/platform` | `platform_news.json` |
+| **WR-INT-POD** | Podcast | hub + `GET /api/podcast/episodes` | `podcast_episodes.json` |
+| **WR-INT-CHAT** | Network Chat | `GET/POST /api/wallet/v2/network-chat/*` | `network_chat_config.json`, JSONL messages |
+| **WR-INT-CAM** | Camgirls | `GET /api/wallet/v2/camgirls/catalog` | `camgirls_catalog.json` (25 performers) |
+| **WR-INT-CAM-UPG** | Camgirls → Upgrades | `GET/POST /api/wallet/v2/camgirls/upgrades/*` | `camgirls_upgrades_catalog.json` (250) |
+
+### Tab groups (wallet TabNav)
+
+| Group | Tabs |
+|-------|------|
+| **Core** | Overview, Portal, Send, Receive, Activity, Settings |
+| **Earn** | Rewards, Earn, Casino, Upgrades |
+| **Media** | Encoder, News, Podcast |
+| **Social** | Network Chat, Exchange, Shop |
+| **Camgirls** | Camgirls (performers + upgrades sub-panel) |
+
+### Tests
+
+- `tests/unit/test_wallet_integration_hub.py`
+- `tests/unit/test_camgirls_wallet.py`
+- `tests/unit/test_network_chat.py`
