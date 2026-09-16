@@ -82,14 +82,44 @@
     var el = q('cex-wallet-balances');
     if (!el || !w || !w.success) return;
     var assets = w.assets || {};
-    var keys = Object.keys(assets).filter(function (k) { return Number(assets[k]) > 0; });
-    if (!keys.length) {
-      el.innerHTML = '<p class="cex-muted">No exchange balances yet. Buy assets via swap.</p>';
-      return;
-    }
+    var pinned = ['USDT', 'USDC'];
+    var keys = pinned.concat(Object.keys(assets).filter(function (k) {
+      return pinned.indexOf(k) < 0 && Number(assets[k]) > 0;
+    }));
     el.innerHTML = keys.map(function (k) {
       return '<div class="cex-wallet-row"><span>' + k + '</span><strong>' + fmt(assets[k], 8) + '</strong></div>';
     }).join('');
+  }
+
+  function renderQuoteSelects(quotes) {
+    var wanted = (quotes && quotes.length) ? quotes : ['MN2', 'COINS', 'USDT', 'USDC'];
+    ['cex-swap-quote', 'cex-limit-quote'].forEach(function (id) {
+      var el = q(id);
+      if (!el) return;
+      var cur = el.value;
+      el.innerHTML = wanted.map(function (item) {
+        return '<option value="' + item + '">' + (item === 'COINS' ? 'Coins' : item) + '</option>';
+      }).join('');
+      if (wanted.indexOf(cur) >= 0) el.value = cur;
+    });
+  }
+
+  function renderBinanceStables(data) {
+    var el = q('cex-binance-stables');
+    if (!el) return;
+    if (!data || !data.success) {
+      el.innerHTML = '<p class="cex-muted">Binance stable wallets unavailable.</p>';
+      return;
+    }
+    var rows = data.wallets || [];
+    el.innerHTML = rows.map(function (w) {
+      var conn = w.connected ? 'connected' : 'not connected';
+      var addr = w.address_masked || 'awaiting Binance address';
+      return '<div class="cex-wallet-row">' +
+        '<span>' + w.asset + ' · ' + (w.network || 'TRC20') + '</span>' +
+        '<strong>' + conn + '</strong></div>' +
+        '<div class="cex-muted">' + addr + (w.tradeable ? ' · tradable vs MN2' : '') + '</div>';
+    }).join('') || '<p class="cex-muted">USDT and USDC wallets will appear after Binance sync.</p>';
   }
 
   function renderRewards(r) {
@@ -277,6 +307,7 @@
       getJson('/api/exchange/wallet?user_id=' + u),
       getJson('/api/exchange/rewards?user_id=' + u),
       getJson('/api/exchange/trades?limit=10'),
+      getJson('/api/exchange/binance/stable-wallets'),
     ]).then(function (res) {
       catalog = res[0];
       if (catalog && catalog.success) {
@@ -288,6 +319,8 @@
         if (catalog.lawful_bonus && q('cex-bonus-desc')) {
           q('cex-bonus-desc').textContent = catalog.lawful_bonus.terms_summary || q('cex-bonus-desc').textContent;
         }
+        renderQuoteSelects(catalog.quote_currencies);
+        applyTradeParams();
         renderAssets(catalog.assets);
         renderStaking(catalog.assets);
         updateSelected();
@@ -295,6 +328,7 @@
       renderWallet(res[1]);
       renderRewards(res[2]);
       renderTrades(res[3]);
+      renderBinanceStables(res[4]);
     }).catch(function () { msg('Could not load exchange data.'); });
   }
 
@@ -378,7 +412,7 @@
       side: (q('cex-limit-side') || {}).value || 'buy',
       amount: parseFloat((q('cex-limit-amount') || {}).value || '0'),
       limit_price: parseFloat((q('cex-limit-price') || {}).value || '0'),
-      quote: 'MN2',
+      quote: (q('cex-limit-quote') || {}).value || 'MN2',
     }).then(function (res) {
       msg(res.success ? 'Limit order placed' : (res.error || 'Order failed'));
       refresh();
@@ -547,9 +581,21 @@
     }
   }
 
+  function applyTradeParams() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var asset = (params.get('asset') || '').toUpperCase();
+      var quote = (params.get('quote') || '').toUpperCase();
+      if (asset) selected = asset;
+      if (quote && q('cex-swap-quote')) q('cex-swap-quote').value = quote;
+      if (quote && q('cex-limit-quote')) q('cex-limit-quote').value = quote;
+    } catch (e) {}
+  }
+
   function init() {
     initTabs();
-    q('cex-swap-btn').addEventListener('click', doSwap);
+    applyTradeParams();
+    if (q('cex-swap-btn')) q('cex-swap-btn').addEventListener('click', doSwap);
     q('cex-swap-amount').addEventListener('change', function () { lastQuote = null; });
     q('cex-limit-btn').addEventListener('click', doLimit);
     q('cex-bonus-btn').addEventListener('click', doBonus);

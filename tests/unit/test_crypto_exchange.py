@@ -63,6 +63,13 @@ def test_catalog_has_25_assets(ex_env):
     assert cat["asset_count"] == 25
     symbols = {a["symbol"] for a in cat["assets"]}
     assert "BTC" in symbols and "MN2" in symbols and "ETH" in symbols
+    assert "USDT" in symbols and "USDC" in symbols
+    assert "USDT" in cat["quote_currencies"] and "USDC" in cat["quote_currencies"]
+    mn2 = next(a for a in cat["assets"] if a["symbol"] == "MN2")
+    assert mn2["price_usdt"] > 0
+    assert mn2["price_usdc"] > 0
+    usdt = next(a for a in cat["assets"] if a["symbol"] == "USDT")
+    assert usdt["price_mn2"] > 0
 
 
 def test_quote_swap_buy(ex_env):
@@ -110,6 +117,55 @@ def test_execute_swap_usdt_to_usdc(ex_env):
     assert res["success"] is True, res.get("error")
     w = ex_env.get_wallet("pool_user2")
     assert float(w["assets"].get("USDC") or 0) == pytest.approx(5.0, rel=1e-6)
+
+
+def test_quote_swap_rejects_same_asset(ex_env):
+    q = ex_env.quote_swap("u1", "USDT", "buy", 10.0, "USDT")
+    assert q["success"] is False
+    assert q["error"] == "same_asset"
+
+
+def test_quote_swap_rejects_invalid_quote(ex_env):
+    q = ex_env.quote_swap("u1", "BTC", "buy", 0.001, "XYZ")
+    assert q["success"] is False
+    assert q["error"] == "invalid_quote"
+
+
+def test_execute_swap_buy_usdt_with_mn2(ex_env, points_db):
+    points_db.add_points("mn2_usdt", "mn2_balance", 5000.0, source="seed", metadata={"reference": "seed"})
+    q = ex_env.quote_swap("mn2_usdt", "USDT", "buy", 10.0, "MN2")
+    assert q["success"] is True
+    assert q["quote_currency"] == "MN2"
+    res = ex_env.execute_swap("mn2_usdt", q["quote_id"], "USDT", "buy", 10.0, "MN2")
+    assert res["success"] is True, res.get("error")
+    w = ex_env.get_wallet("mn2_usdt")
+    assert float(w["assets"].get("USDT") or 0) == pytest.approx(10.0, rel=1e-6)
+    leftover = float(points_db.get_all_points("mn2_usdt")["points"]["mn2_balance"])
+    assert leftover < 5000.0
+
+
+def test_execute_swap_buy_usdc_with_mn2(ex_env, points_db):
+    points_db.add_points("mn2_usdc", "mn2_balance", 5000.0, source="seed", metadata={"reference": "seed"})
+    q = ex_env.quote_swap("mn2_usdc", "USDC", "buy", 8.0, "MN2")
+    assert q["success"] is True
+    res = ex_env.execute_swap("mn2_usdc", q["quote_id"], "USDC", "buy", 8.0, "MN2")
+    assert res["success"] is True, res.get("error")
+    w = ex_env.get_wallet("mn2_usdc")
+    assert float(w["assets"].get("USDC") or 0) == pytest.approx(8.0, rel=1e-6)
+
+
+def test_execute_swap_sell_usdt_for_mn2(ex_env, points_db):
+    points_db.add_points("sell_usdt", "mn2_balance", 1.0, source="seed", metadata={"reference": "seed"})
+    ex_env._adjust_balance("sell_usdt", "USDT", 20.0)
+    q = ex_env.quote_swap("sell_usdt", "USDT", "sell", 10.0, "MN2")
+    assert q["success"] is True
+    assert q["quote_received"] > 0
+    res = ex_env.execute_swap("sell_usdt", q["quote_id"], "USDT", "sell", 10.0, "MN2")
+    assert res["success"] is True, res.get("error")
+    w = ex_env.get_wallet("sell_usdt")
+    assert float(w["assets"].get("USDT") or 0) == pytest.approx(10.0, rel=1e-6)
+    mn2 = float(points_db.get_all_points("sell_usdt")["points"]["mn2_balance"])
+    assert mn2 > 1.0
 
 
 def test_welcome_bonus_once(ex_env, points_db):

@@ -121,8 +121,13 @@
               <label class="field">Binance API key<input type="password" id="binKey" placeholder="optional" /></label>
               <label class="field">Binance API secret<input type="password" id="binSecret" placeholder="optional" /></label>
               <label class="field">USDT deposit address<input type="text" id="binUsdt" placeholder="Binance USDT address" /></label>
+              <label class="field">USDC deposit address<input type="text" id="binUsdc" placeholder="Binance USDC address" /></label>
             </div>
-            <button class="btn small" id="binSave" style="margin-top:8px">Save Binance config</button>
+            <div class="bar" style="margin-top:8px">
+              <button class="btn small" id="binSave">Save Binance config</button>
+              <button class="btn small" id="binSyncWallets">Sync USDT/USDC from Binance API</button>
+            </div>
+            <div id="binWalletStatus" class="muted" style="margin-top:8px">USDT and USDC wallets sync from your Binance account deposit addresses.</div>
           </details>
           <p class="warn" style="font-size:12px;margin-top:10px">Paper mode records sweeps until live gates are on. PayPal needs Payouts enabled on your PayPal app.</p>
         </div>
@@ -251,6 +256,6 @@
       </div>
     </div>
   </div>
-  <script src="/static/js/business-control.js?v=20260729a"></script>
+  <script src="/static/js/business-control.js?v=20260916a"></script>
 </body>
 </html>

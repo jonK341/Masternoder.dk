@@ -278,7 +278,16 @@ def configure_binance(api_key: str, api_secret: str, *,
 
     for asset, addr in addrs.items():
         try:
-            vault.register_wallet(f"binance_{asset.lower()}", addr, venue="binance", asset=asset, note="payout stash")
+            from backend.services.exchange_binance_withdraw_service import stable_deposit_network
+            vault.register_wallet(
+                f"binance_{asset.lower()}",
+                addr,
+                venue="binance",
+                asset=asset,
+                note=f"Binance spot {asset} deposit wallet",
+                network=stable_deposit_network(asset),
+                mode="live" if stored_keys else "manual",
+            )
         except Exception:
             pass
     if waddr:
@@ -287,6 +296,15 @@ def configure_binance(api_key: str, api_secret: str, *,
                                   note=f"payout withdraw {_binance_withdraw_network(cfg)}")
         except Exception:
             pass
+    if stored_keys:
+        have = {str(k).upper() for k in (cfg["binance"].get("deposit_addresses") or {})}
+        if "USDT" not in have or "USDC" not in have:
+            try:
+                synced = sync_binance_stable_wallets(dry_run=None)
+                if synced.get("success"):
+                    cfg = _load()
+            except Exception:
+                pass
     ex._audit("payout_binance_configured", user_id="owner", account_label=account_label,
               assets=list(addrs.keys()), keys_stored=stored_keys,
               withdraw_address_masked=mask_address(waddr) if waddr else None,
@@ -298,6 +316,167 @@ def configure_binance(api_key: str, api_secret: str, *,
         "withdraw_address_masked": mask_address(_binance_withdraw_address(cfg)),
         "withdraw_network": _binance_withdraw_network(cfg),
         "withdraw_enabled": bool(cfg["binance"].get("withdraw_enabled")),
+    }
+
+
+_STABLE_WALLET_ASSETS = ("USDT", "USDC")
+
+
+def sync_binance_stable_wallets(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
+    """Register Binance USDT + USDC deposit wallets from the signed capital API."""
+    from backend.services import exchange_secrets_vault_service as vault
+    from backend.services.exchange_binance_withdraw_service import (
+        binance_credentials,
+        get_deposit_address,
+        get_spot_asset_free,
+        mask_address,
+        stable_deposit_network,
+    )
+
+    cfg = _load()
+    creds = binance_credentials()
+    keys_present = bool(creds.get("api_key") and creds.get("api_secret"))
+    addrs = dict(cfg.get("binance", {}).get("deposit_addresses") or {})
+    wallets: List[Dict[str, Any]] = []
+
+    for asset in _STABLE_WALLET_ASSETS:
+        network = stable_deposit_network(asset)
+        existing = str(addrs.get(asset) or "").strip()
+        fetched = get_deposit_address(asset, network, dry_run=dry_run, skip_live_gate=True)
+        fetched_addr = str(fetched.get("address") or "").strip()
+        address = fetched_addr or existing
+        mode = str(fetched.get("mode") or ("live" if keys_present and not fetched.get("simulated") else "paper"))
+        available = bool(fetched.get("success"))
+        err = None if available else (fetched.get("binance_msg") or fetched.get("error"))
+        if address:
+            addrs[asset] = address
+            vault.register_wallet(
+                f"binance_{asset.lower()}",
+                address,
+                venue="binance",
+                asset=asset,
+                note=f"Binance spot {asset} deposit ({network})",
+                network=network,
+                mode=mode,
+            )
+        else:
+            vault.register_wallet(
+                f"binance_{asset.lower()}",
+                "",
+                venue="binance",
+                asset=asset,
+                note=f"Binance spot {asset} wallet — awaiting deposit address from API",
+                network=network,
+                mode=mode,
+                allow_empty_address=True,
+            )
+        spot_free = None
+        if keys_present:
+            spot = get_spot_asset_free(asset, dry_run=dry_run, skip_live_gate=True)
+            if spot.get("success") or spot.get("simulated"):
+                try:
+                    spot_free = float(spot.get("free") or 0)
+                except (TypeError, ValueError):
+                    spot_free = 0.0
+        wallets.append({
+            "label": f"binance_{asset.lower()}",
+            "asset": asset,
+            "venue": "binance",
+            "network": network,
+            "address": address,
+            "address_masked": mask_address(address) if address else "",
+            "has_address": bool(address),
+            "connected": bool(address) or keys_present,
+            "mode": mode,
+            "simulated": bool(fetched.get("simulated")),
+            "available": available,
+            "spot_free": spot_free,
+            "tag": fetched.get("tag") or "",
+            "error": err,
+            "tradeable": True,
+        })
+
+    cfg.setdefault("binance", _default_binance_cfg())
+    cfg["binance"]["deposit_addresses"] = addrs
+    if keys_present:
+        cfg["binance"]["connected"] = True
+    _save(cfg)
+    ex._audit(
+        "binance_stable_wallets_synced",
+        user_id="owner",
+        assets=[w["asset"] for w in wallets],
+        keys_present=keys_present,
+        mode="live" if keys_present else "paper",
+    )
+    return {
+        "success": True,
+        "wallets": wallets,
+        "keys_present": keys_present,
+        "connected": bool(cfg["binance"].get("connected") or keys_present),
+        "deposit_assets": list(addrs.keys()),
+    }
+
+
+def binance_stable_wallets_status(*, include_spot: bool = False,
+                                  include_address: bool = False) -> Dict[str, Any]:
+    """Public status of Binance USDT/USDC wallets used by the MN2 exchange."""
+    from backend.services import exchange_secrets_vault_service as vault
+    from backend.services.exchange_binance_withdraw_service import (
+        binance_credentials,
+        get_spot_asset_free,
+        mask_address,
+        stable_deposit_network,
+    )
+
+    cfg = _load()
+    quotes = [str(q).upper() for q in (ex.load_config().get("quote_currencies") or [])]
+    asset_syms = {str(a.get("symbol") or "").upper() for a in (ex.load_config().get("assets") or [])}
+    creds = binance_credentials()
+    keys_present = bool(creds.get("api_key") and creds.get("api_secret"))
+    addrs = (cfg.get("binance") or {}).get("deposit_addresses") or {}
+    by_label = {w.get("label"): w for w in vault.list_wallets()}
+    wallets: List[Dict[str, Any]] = []
+    for asset in _STABLE_WALLET_ASSETS:
+        label = f"binance_{asset.lower()}"
+        row = by_label.get(label) or {}
+        address = str(addrs.get(asset) or row.get("address") or "").strip()
+        network = row.get("network") or stable_deposit_network(asset)
+        tradeable = asset in quotes and asset in asset_syms
+        entry: Dict[str, Any] = {
+            "label": label,
+            "asset": asset,
+            "venue": "binance",
+            "network": network,
+            "has_address": bool(address),
+            "address_masked": mask_address(address) if address else "",
+            "connected": bool(keys_present or address),
+            "mode": row.get("mode") or ("live" if keys_present else "paper"),
+            "tradeable": tradeable,
+            "note": row.get("note") or f"Trade {asset} against MN2 on the exchange. Connected to Binance spot.",
+        }
+        if include_address:
+            entry["address"] = address
+        if include_spot:
+            spot = get_spot_asset_free(asset, skip_live_gate=True)
+            if spot.get("success") or spot.get("simulated"):
+                try:
+                    entry["spot_free"] = float(spot.get("free") or 0)
+                except (TypeError, ValueError):
+                    entry["spot_free"] = None
+            else:
+                entry["spot_free"] = None
+        wallets.append(entry)
+
+    return {
+        "success": True,
+        "venue": "binance",
+        "wallets": wallets,
+        "quote_currencies": quotes,
+        "tradeable": all(w["tradeable"] for w in wallets) if wallets else False,
+        "keys_present": keys_present,
+        "connected": bool((cfg.get("binance") or {}).get("connected") or keys_present),
+        "account_label": str((cfg.get("binance") or {}).get("account_label") or ""),
+        "trade_hint": "Buy USDT or USDC with MN2 coins, or sell them back to MN2, on the exchange swap desk.",
     }
 
 
