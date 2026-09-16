@@ -166,7 +166,7 @@ def ensure_agents(*, target_listings: int = TARGET_OPEN_LISTINGS) -> Dict[str, A
     errors: List[str] = []
     agents = _agent_ids()
 
-    rebalanced = _rebalance_tier_mix(max_swaps=3)
+    rebalanced = _rebalance_tier_mix(max_swaps=5)
 
     for uid in agents:
         if _ensure_verified(uid):
