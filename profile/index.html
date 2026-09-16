@@ -907,6 +907,7 @@
             <!-- Profile Header -->
             <div class="profile-header" id="profile-header"></div>
 
+            <nav class="shop-subnav profile-hub-parents" id="profile-hub-parents" aria-label="Profile groups"></nav>
             <nav class="profile-hub-nav page-tabs" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
                 <button type="button" class="tab-btn active" data-hub-scroll="overview" role="tab" aria-selected="true">Overview</button>
                 <button type="button" class="tab-btn" data-hub-scroll="avatar" role="tab" aria-selected="false">Avatar</button>
@@ -1032,6 +1033,18 @@
                         <div id="profile-shop-v9-inventory">Loading…</div>
                         <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-account">Open inventory tab in Shop</a></p>
                     </div>
+                    <div class="section-card" id="profile-section-shop-history" data-profile-route="shop">
+                        <h2 class="section-title">🕐 Purchase history</h2>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Same purchase log as Shop → Account → History, grouped by subcategory.</p>
+                        <nav class="shop-subnav" id="profile-shop-history-subnav" aria-label="Purchase history groups"></nav>
+                        <div id="profile-shop-history-list">Loading…</div>
+                    </div>
+                    <div class="section-card" id="profile-section-shop-stall" data-profile-route="shop">
+                        <h2 class="section-title">🏷️ My stall</h2>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Auction listings you are selling, sold, or bought — same stall as Shop Account.</p>
+                        <nav class="shop-subnav" id="profile-shop-stall-subnav" aria-label="Stall groups"></nav>
+                        <div id="profile-shop-stall-list">Loading…</div>
+                    </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
                     <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
@@ -1140,6 +1153,7 @@
                         </div>
                         <div>
                             <strong style="color: #00d4ff;">Recent transactions:</strong>
+                            <nav class="shop-subnav" id="profile-mn2-tx-subnav" aria-label="MN2 transaction types"></nav>
                             <div id="profile-mn2-transactions" style="margin-top: 6px; max-height: 240px; overflow-y: auto; font-size: 0.85rem; opacity: 0.9;">Loading…</div>
                         </div>
 
@@ -1702,13 +1716,13 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-hub-subtabs.js?v=20260915"></script>
-        <script src="/static/js/shop-taxonomy.js?v=20260915"></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260915"></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260916"></script>
+        <script src="/static/js/profile-hub-subtabs.js?v=20260916"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20260916"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
-    <script src="/static/js/navigation-toolbar.js?v=20260114110612"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260916"></script>
     <script src="/static/js/user-identification.js?v=20260122020000"></script>
     <script src="/static/js/backend-connector.js?v=20260122020000"></script>
     <!-- Core Template System Scripts -->
@@ -3456,6 +3470,101 @@
 
             async loadShopInventoryV4() {
                 return this.loadShopInventoryV9();
+            }
+
+            async loadShopHistoryV9() {
+                const el = document.getElementById('profile-shop-history-list');
+                if (!el) return;
+                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const tax = window.ShopTaxonomy;
+                try {
+                    const r = await fetch(`${window.location.origin}/api/shop/purchases?user_id=${encodeURIComponent(uid)}&limit=30`);
+                    const d = r.ok ? await r.json() : {};
+                    let rows = (d.success && d.purchases) ? d.purchases : [];
+                    const classified = rows.map((p) => tax ? tax.enrich(p) : p);
+                    this._profileHistorySubcat = this._profileHistorySubcat || 'all';
+                    if (tax) {
+                        tax.renderChips(
+                            document.getElementById('profile-shop-history-subnav'),
+                            tax.countedTabs(tax.INVENTORY_SUBCATS, classified, (row) => row.subcategory),
+                            this._profileHistorySubcat,
+                            (id) => {
+                                this._profileHistorySubcat = id;
+                                this.loadShopHistoryV9();
+                            }
+                        );
+                    }
+                    const visible = this._profileHistorySubcat === 'all'
+                        ? classified
+                        : classified.filter((p) => p.subcategory === this._profileHistorySubcat);
+                    if (!classified.length) {
+                        el.innerHTML = '<p style="opacity:0.85;">No purchases yet. Buy in <a href="/shop">Shop</a>.</p>';
+                        return;
+                    }
+                    if (!visible.length) {
+                        el.innerHTML = '<p style="opacity:0.85;">No purchases in this subcategory.</p>';
+                        return;
+                    }
+                    el.innerHTML = '<ul style="margin:0;padding-left:1.2rem;">' + visible.map((p) => {
+                        const name = String(p.item_name || p.item_id || 'item').replace(/</g, '&lt;');
+                        const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+                        const label = tax ? tax.subcatLabel(p.subcategory) : (p.subcategory || '');
+                        return '<li><strong>' + name + '</strong> × ' + (p.quantity || 1) +
+                            (label ? ' · ' + label : '') + (date ? ' (' + date + ')' : '') + '</li>';
+                    }).join('') + '</ul>';
+                } catch (e) {
+                    el.innerHTML = '<p style="color:#ffaa00;">Could not load purchase history.</p>';
+                }
+            }
+
+            async loadShopStallV9() {
+                const el = document.getElementById('profile-shop-stall-list');
+                if (!el) return;
+                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const tax = window.ShopTaxonomy;
+                try {
+                    const r = await fetch(`${window.location.origin}/api/shop/auction/my-listings?user_id=${encodeURIComponent(uid)}&limit=100`);
+                    const d = r.ok ? await r.json() : {};
+                    const selling = (d.success && d.selling) || [];
+                    const sold = (d.success && d.sold) || [];
+                    const bought = (d.success && d.bought) || [];
+                    const active = selling.filter((l) => l.status === 'active');
+                    this._profileStallSubcat = this._profileStallSubcat || 'all';
+                    const tabs = [
+                        { id: 'all', label: 'All', count: active.length + sold.length + bought.length },
+                        { id: 'active', label: 'Active', count: active.length },
+                        { id: 'sold', label: 'Sold', count: sold.length },
+                        { id: 'bought', label: 'Bought', count: bought.length },
+                    ].filter((t) => t.id === 'all' || t.count);
+                    if (tax) {
+                        tax.renderChips(document.getElementById('profile-shop-stall-subnav'), tabs, this._profileStallSubcat, (id) => {
+                            this._profileStallSubcat = id;
+                            this.loadShopStallV9();
+                        });
+                    }
+                    const sid = this._profileStallSubcat;
+                    const parts = [];
+                    if ((sid === 'all' || sid === 'active') && active.length) {
+                        parts.push('<h4 style="margin:0 0 8px;color:#7ee8ff;">Active</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                            active.map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') +
+                            ' × ' + (l.quantity || 1) + ' · ' + Number(l.price_coins || 0).toLocaleString() + ' coins</li>').join('') + '</ul>');
+                    }
+                    if ((sid === 'all' || sid === 'sold') && sold.length) {
+                        parts.push('<h4 style="margin:12px 0 8px;color:#7ee8ff;">Sold</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                            sold.slice(0, 12).map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') + '</li>').join('') + '</ul>');
+                    }
+                    if ((sid === 'all' || sid === 'bought') && bought.length) {
+                        parts.push('<h4 style="margin:12px 0 8px;color:#7ee8ff;">Bought</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                            bought.slice(0, 12).map((l) => '<li>' + String(l.item_name || l.item_id || '').replace(/</g, '&lt;') + '</li>').join('') + '</ul>');
+                    }
+                    if (!active.length && !sold.length && !bought.length) {
+                        el.innerHTML = '<p style="opacity:0.85;">No stall activity yet. Sell from Inventory or <a href="/shop#shop-account">Shop Account</a>.</p>';
+                        return;
+                    }
+                    el.innerHTML = parts.join('') || '<p style="opacity:0.85;">No stall rows in this subcategory.</p>';
+                } catch (e) {
+                    el.innerHTML = '<p style="color:#ffaa00;">Could not load stall.</p>';
+                }
             }
 
             renderCommunicationPsychology(cp) {

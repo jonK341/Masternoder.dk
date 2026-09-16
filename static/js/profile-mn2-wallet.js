@@ -178,17 +178,45 @@
     }
   }
 
+  var currentTxSubcat = 'all';
+  var txCache = [];
+
   function renderTransactions(txData) {
     var txList = document.getElementById('profile-mn2-transactions');
+    var nav = document.getElementById('profile-mn2-tx-subnav');
     if (!txList) return;
     var txs = txData && txData.success && txData.transactions ? txData.transactions : [];
+    txCache = txs;
+    paintTransactions();
+  }
+
+  function paintTransactions() {
+    var txList = document.getElementById('profile-mn2-transactions');
+    var nav = document.getElementById('profile-mn2-tx-subnav');
+    if (!txList) return;
+    var tax = global.ShopTaxonomy;
+    var txs = (txCache || []).map(function (t) {
+      var sub = tax ? tax.txSubcategoryFor(t.type) : 'other';
+      return Object.assign({}, t, { subcategory: sub });
+    });
+    if (tax) {
+      tax.renderChips(nav, tax.countedTabs(tax.TX_SUBCATS, txs, function (r) { return r.subcategory; }), currentTxSubcat, function (id) {
+        currentTxSubcat = id;
+        paintTransactions();
+      });
+    }
+    var visible = currentTxSubcat === 'all' ? txs : txs.filter(function (t) { return t.subcategory === currentTxSubcat; });
     if (!txs.length) {
       txList.innerHTML = '<p style="margin:0;">No transactions yet.</p>';
       return;
     }
+    if (!visible.length) {
+      txList.innerHTML = '<p style="margin:0;">No transactions in this subcategory.</p>';
+      return;
+    }
     txList.innerHTML =
       '<ul style="margin:0;padding-left:1.2rem;">' +
-      txs
+      visible
         .map(function (t) {
           var type = t.type || '—';
           var amt = t.amount != null ? Number(t.amount).toFixed(4) : '—';

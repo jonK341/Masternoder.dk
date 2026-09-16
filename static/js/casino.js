@@ -1659,6 +1659,7 @@
         }
     }
 
+    async function shareCasinoOnFacebook() {
         var text = shareNetworks.default_share_text || 'Play at MasterNoder Casino — coins, MN2, and USD rails.';
         var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
         try {
@@ -1841,6 +1842,7 @@
         }
     }
 
+    var casinoShopParent = 'all';
     var casinoShopFilter = 'all';
     var casinoShopItems = [];
 
@@ -1854,42 +1856,93 @@
             el.textContent = (data && data.error) || 'Casino shop catalog unavailable.';
             return;
         }
-        var cats = { all: casinoShopItems.length };
+        renderCasinoShopNav();
+        renderCasinoShopGrid();
+    }
+
+    function renderCasinoShopNav() {
+        var nav = $('casino-shop-subnav');
+        if (!nav) return;
+        var tax = window.ShopTaxonomy;
+        var parents = (tax && tax.CASINO_PARENTS) || [
+            { id: 'all', label: 'All', categories: [] }
+        ];
+        var parentCounts = { all: casinoShopItems.length };
         casinoShopItems.forEach(function (it) {
-            var k = it.category || 'other';
-            cats[k] = (cats[k] || 0) + 1;
+            var pid = tax ? tax.casinoParentFor(it.category || 'other') : 'other';
+            parentCounts[pid] = (parentCounts[pid] || 0) + 1;
         });
+        var parentTabs = parents.map(function (p) {
+            return { id: p.id, label: p.label, count: parentCounts[p.id] || 0 };
+        }).filter(function (t) { return t.id === 'all' || t.count; });
+        if (tax) {
+            tax.renderChips(nav, parentTabs, casinoShopParent, function (id) {
+                casinoShopParent = id;
+                casinoShopFilter = 'all';
+                renderCasinoShopNav();
+                renderCasinoShopGrid();
+            });
+        } else {
+            nav.innerHTML = parentTabs.map(function (t) {
+                return '<a href="#casino-shop" data-cs-parent="' + t.id + '"' +
+                    (t.id === casinoShopParent ? ' class="active"' : '') + '>' +
+                    t.label + ' (' + t.count + ')</a>';
+            }).join('');
+        }
+        var childNav = $('casino-shop-subcats');
+        if (!childNav) {
+            childNav = document.createElement('nav');
+            childNav.id = 'casino-shop-subcats';
+            childNav.className = 'casino-toc';
+            childNav.setAttribute('aria-label', 'Casino shop subcategories');
+            nav.parentNode.insertBefore(childNav, nav.nextSibling);
+        }
+        var cats = { all: 0 };
         var labels = {
             all: 'All', avatar: 'Avatar', table_skin: 'Tables', card_back: 'Cards',
             slot_theme: 'Slots', booster: 'Boosters', vip_flair: 'VIP', emote: 'Emotes',
             celebration: 'Celebrations', token: 'Tokens', display: 'Display', banner: 'Banners'
         };
-        if (nav) {
-            nav.innerHTML = Object.keys(cats).map(function (id) {
-                return '<a href="#casino-shop" data-cs-cat="' + id + '"' +
-                    (id === casinoShopFilter ? ' class="active"' : '') + '>' +
-                    (labels[id] || id) + ' (' + cats[id] + ')</a>';
-            }).join('');
-            nav.querySelectorAll('[data-cs-cat]').forEach(function (a) {
-                a.addEventListener('click', function (ev) {
-                    ev.preventDefault();
-                    casinoShopFilter = a.getAttribute('data-cs-cat');
-                    renderCasinoShopGrid();
-                    nav.querySelectorAll('[data-cs-cat]').forEach(function (x) {
-                        x.classList.toggle('active', x === a);
-                    });
-                });
-            });
+        var allowed = null;
+        if (casinoShopParent !== 'all') {
+            var group = parents.find(function (p) { return p.id === casinoShopParent; });
+            allowed = new Set((group && group.categories) || []);
         }
-        renderCasinoShopGrid();
+        casinoShopItems.forEach(function (it) {
+            var k = it.category || 'other';
+            if (allowed && !allowed.has(k)) return;
+            cats[k] = (cats[k] || 0) + 1;
+            cats.all += 1;
+        });
+        var childTabs = Object.keys(cats).map(function (id) {
+            return { id: id, label: labels[id] || id, count: cats[id] };
+        });
+        if (tax) {
+            tax.renderChips(childNav, childTabs, casinoShopFilter, function (id) {
+                casinoShopFilter = id;
+                renderCasinoShopNav();
+                renderCasinoShopGrid();
+            });
+        } else {
+            childNav.innerHTML = childTabs.map(function (t) {
+                return '<a href="#casino-shop" data-cs-cat="' + t.id + '"' +
+                    (t.id === casinoShopFilter ? ' class="active"' : '') + '>' +
+                    t.label + ' (' + t.count + ')</a>';
+            }).join('');
+        }
     }
 
     function renderCasinoShopGrid() {
         var el = $('casino-shop');
         if (!el) return;
-        var rows = casinoShopFilter === 'all'
-            ? casinoShopItems
-            : casinoShopItems.filter(function (it) { return (it.category || 'other') === casinoShopFilter; });
+        var rows = casinoShopItems.filter(function (it) {
+            var cat = it.category || 'other';
+            if (casinoShopParent !== 'all' && window.ShopTaxonomy) {
+                if (window.ShopTaxonomy.casinoParentFor(cat) !== casinoShopParent) return false;
+            }
+            if (casinoShopFilter !== 'all' && cat !== casinoShopFilter) return false;
+            return true;
+        });
         if (!rows.length) {
             el.innerHTML = '<p>No items in this subcategory.</p>';
             return;
@@ -2307,6 +2360,8 @@
             await refreshBalance();
         }
     }
+
+    function setupFairnessExportLink() {
         var link = $('casino-fairness-export-link');
         if (!link) return;
         link.href = '/api/casino/fairness/export?user_id=' + encodeURIComponent(userId) + '&limit=100';

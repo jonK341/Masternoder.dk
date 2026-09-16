@@ -491,41 +491,70 @@
 
   function loadRentalCatalog() { api("/api/exchange/rental/catalog").then(renderRentals); }
 
+  var shopParentFilter = "all";
   var shopCatFilter = "all";
   var shopCatalogCache = { items: [] };
 
   function renderShop(cat, st) {
     shopCatalogCache = cat || { items: [] };
     var items = shopCatalogCache.items || [];
-    var cats = { all: items.length };
-    items.forEach(function (it) {
-      var k = it.category || "other";
-      cats[k] = (cats[k] || 0) + 1;
-    });
+    var tax = window.ShopTaxonomy;
     var nav = $("cex-shop-subnav");
+    var parents = (tax && tax.EXCHANGE_PARENTS) || [{ id: "all", label: "All", categories: [] }];
+    var parentCounts = { all: items.length };
+    items.forEach(function (it) {
+      var pid = tax ? tax.exchangeParentFor(it.category || "other") : "other";
+      parentCounts[pid] = (parentCounts[pid] || 0) + 1;
+    });
     if (nav) {
-      var labels = { all: "All", reward: "Rewards", skill: "Skills", rental: "Rentals", rental_voucher: "Vouchers", trust: "Trust", boost: "Boosts", fee: "Fees", tool: "Tools" };
-      var tabs = Object.keys(cats).map(function (id) {
-        return { id: id, label: labels[id] || id, count: cats[id] };
-      });
-      if (window.ShopTaxonomy) {
-        window.ShopTaxonomy.renderChips(nav, tabs, shopCatFilter, function (id) {
-          shopCatFilter = id;
+      var parentTabs = parents.map(function (p) {
+        return { id: p.id, label: p.label, count: parentCounts[p.id] || 0 };
+      }).filter(function (t) { return t.id === "all" || t.count; });
+      if (tax) {
+        tax.renderChips(nav, parentTabs, shopParentFilter, function (id) {
+          shopParentFilter = id;
+          shopCatFilter = "all";
           renderShop(shopCatalogCache, st);
-        });
-      } else {
-        nav.innerHTML = tabs.map(function (t) {
-          return '<button type="button" class="shop-subnav-btn' + (t.id === shopCatFilter ? ' active' : '') + '" data-ex-shop-cat="' + t.id + '">' + t.label + ' (' + t.count + ')</button>';
-        }).join("");
-        Array.prototype.forEach.call(nav.querySelectorAll("[data-ex-shop-cat]"), function (b) {
-          b.addEventListener("click", function () {
-            shopCatFilter = b.getAttribute("data-ex-shop-cat");
-            renderShop(shopCatalogCache, st);
-          });
         });
       }
     }
-    var visible = shopCatFilter === "all" ? items : items.filter(function (it) { return (it.category || "other") === shopCatFilter; });
+    var childNav = $("cex-shop-subcats");
+    if (!childNav && nav && nav.parentNode) {
+      childNav = document.createElement("nav");
+      childNav.id = "cex-shop-subcats";
+      childNav.className = "shop-subnav";
+      childNav.setAttribute("aria-label", "Exchange shop subcategories");
+      nav.parentNode.insertBefore(childNav, nav.nextSibling);
+    }
+    var cats = { all: 0 };
+    var labels = { all: "All", reward: "Rewards", skill: "Skills", rental: "Rentals", rental_voucher: "Vouchers", trust: "Trust", boost: "Boosts", fee: "Fees", tool: "Tools" };
+    var allowed = null;
+    if (shopParentFilter !== "all") {
+      var group = parents.find(function (p) { return p.id === shopParentFilter; });
+      allowed = {};
+      ((group && group.categories) || []).forEach(function (c) { allowed[c] = true; });
+    }
+    items.forEach(function (it) {
+      var k = it.category || "other";
+      if (allowed && !allowed[k]) return;
+      cats[k] = (cats[k] || 0) + 1;
+      cats.all += 1;
+    });
+    if (childNav && tax) {
+      var childTabs = Object.keys(cats).map(function (id) {
+        return { id: id, label: labels[id] || id, count: cats[id] };
+      });
+      tax.renderChips(childNav, childTabs, shopCatFilter, function (id) {
+        shopCatFilter = id;
+        renderShop(shopCatalogCache, st);
+      });
+    }
+    var visible = items.filter(function (it) {
+      var k = it.category || "other";
+      if (shopParentFilter !== "all" && tax && tax.exchangeParentFor(k) !== shopParentFilter) return false;
+      if (shopCatFilter !== "all" && k !== shopCatFilter) return false;
+      return true;
+    });
     var c = $("cex-shop-catalog");
     if (c) {
       c.innerHTML = visible.map(function (it) {

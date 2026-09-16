@@ -776,6 +776,7 @@
             <div style="padding: var(--spacing-lg);">
                 <h2 style="color: var(--primary); margin-bottom: var(--spacing-sm);">💰 Buy Coins with PayPal</h2>
                 <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">Get coins instantly with secure PayPal payment. Packs include <strong style="color: var(--text-primary);">generation credits</strong> priced against our reference job (see COGS docs).</p>
+                <nav class="shop-subnav" id="coin-packs-subnav" aria-label="Coin pack tiers"></nav>
                 <div id="coin-packs-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
                     <div class="skeleton-loader" style="height: 180px;"></div>
                     <div class="skeleton-loader" style="height: 180px;"></div>
@@ -834,6 +835,7 @@
             <p style="margin: 0 0 8px; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">Hosted masternode slots, PayPal on-ramp, staking pool, and P2P/trader market. Masternode hosting checks out here with PayPal — no need to leave the shop.</p>
             <p id="mn2-hosting-slot-meter" style="margin: 0 0 14px; font-size: 0.85rem; color: var(--secondary);">Loading slot availability…</p>
             <p id="mn2-hosting-checkout-msg" style="margin: 0 0 10px; font-size: 0.85rem; color: var(--text-secondary); min-height: 1.2em;"></p>
+            <nav class="shop-subnav" id="mn2-services-subnav" aria-label="MN2 service groups"></nav>
             <div id="mn2-services-shop-grid" class="shop-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));"></div>
         </div>
         <div class="card" id="tier-b-onramp-card" style="margin-bottom: var(--spacing-xl); border: 1px solid rgba(170,0,255,0.35); background: rgba(170,0,255,0.05); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
@@ -905,6 +907,7 @@
                 </div>
                 <div>
                     <strong style="color: var(--secondary);">Recent transactions:</strong>
+                    <nav class="shop-subnav" id="mn2-tx-subnav" aria-label="MN2 transaction types"></nav>
                     <div id="mn2-transactions-list" style="margin-top: 8px; max-height: 200px; overflow-y: auto; font-size: 0.9rem; color: var(--text-secondary);">Loading...</div>
                 </div>
                 <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.85; color: var(--text-secondary); border-top: 1px solid var(--border-primary); padding-top: 10px;">MN2 value can be volatile. Not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: var(--secondary);">Terms</a>.</p>
@@ -924,6 +927,7 @@
                 </div>
                 <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 var(--spacing-md);">Daily skirmish reset: every UTC midnight · Weekly arena: Sundays 18:00 UTC (displayed below).</p>
                 <h3 style="color: var(--secondary); font-size: 1rem; margin: 0 0 10px;">Active boosters (API)</h3>
+                <nav class="shop-subnav" id="shop-boosters-subnav" aria-label="Booster groups"></nav>
                 <div id="shop-boosters-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;"></div>
                 <p style="margin-top: 14px; font-size: 0.85rem;"><a href="/aggregator" style="color: var(--primary); font-weight: 600;">Open aggregator monitor →</a> · <a href="/battle" style="color: var(--secondary);">Battle page</a></p>
             </div>
@@ -977,6 +981,7 @@
             <div class="card" id="mystery-boxes-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">📦 Mystery Boxes</h3>
                 <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-secondary);">Each box has published odds. VIP members get a discount.</p>
+                <nav class="shop-subnav" id="mystery-boxes-subnav" aria-label="Mystery box tiers"></nav>
                 <div id="mystery-boxes-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;">Loading…</div>
                 <div id="mystery-box-result" style="margin-top:10px; font-weight:600;"></div>
             </div>
@@ -1027,6 +1032,7 @@
                 <button type="button" id="my-stall-refresh-btn" class="btn-purchase" style="width:auto;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">Refresh stall</button>
             </div>
             <div style="padding: var(--spacing-md); border-top: 1px solid var(--border-primary);">
+                <nav class="shop-subnav" id="shop-stall-subnav" aria-label="Stall groups"></nav>
                 <div id="my-stall-list" style="min-height: 60px; color: var(--text-secondary);">Loading...</div>
             </div>
         </div>
@@ -1091,8 +1097,8 @@
     </div>
     
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/shop-taxonomy.js?v=20260915"></script>
-        <script src="/static/js/shop-subnav.js?v=20260915"></script>
+        <script src="/static/js/shop-taxonomy.js?v=20260916"></script>
+        <script src="/static/js/shop-subnav.js?v=20260916"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js" defer></script>
     <script src="/static/js/toast-notifications.js" defer></script>
@@ -1104,6 +1110,17 @@
         let currentInventorySubcat = 'all';
         let currentAuctionSubcat = 'all';
         let currentHistorySubcat = 'all';
+        let currentCoinPackSubcat = 'all';
+        let currentMn2ServiceSubcat = 'all';
+        let currentBoosterSubcat = 'all';
+        let currentMysteryBoxSubcat = 'all';
+        let currentStallSubcat = 'all';
+        let currentMn2TxSubcat = 'all';
+        let coinPackCache = [];
+        let mn2ServiceCache = [];
+        let boosterRowCache = [];
+        let mysteryBoxCache = [];
+        let mn2TxCache = [];
         let userInventory = [];
         let userPurchases = [];
         let auctionListings = [];
@@ -1397,6 +1414,7 @@
 
         async function loadShopBoostersPanel() {
             const grid = document.getElementById('shop-boosters-grid');
+            const nav = document.getElementById('shop-boosters-subnav');
             if (!grid) return;
             grid.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">Loading boosters…</p>';
             try {
@@ -1404,18 +1422,63 @@
                 const r = await fetch('/api/battle/fantasy/resources?user_id=' + encodeURIComponent(uid));
                 const data = await r.json();
                 const res = (data && data.resources) || {};
-                const cards = [];
+                const rows = [];
                 Object.keys(res).forEach((k) => {
-                    cards.push('<div class="shop-item" style="text-align:left;"><div class="item-icon">⚡</div><div class="item-name">' +
-                        k.replace(/_/g, ' ') + '</div><div class="item-price">' + res[k] + '</div></div>');
+                    rows.push({
+                        kind: 'resource',
+                        id: k,
+                        name: k.replace(/_/g, ' '),
+                        description: 'Battle fantasy resource',
+                        value: res[k],
+                        icon: '⚡',
+                    });
                 });
-                if (!cards.length) {
-                    cards.push('<div class="shop-item" style="grid-column:1/-1;text-align:left;"><div class="item-name">Default reserves</div><p style="font-size:0.85rem;color:var(--text-secondary);margin:8px 0 0;">energy, shards, boost_tokens — see battle fantasy resources API.</p></div>');
+                (allShopItems || []).forEach((item) => {
+                    const cat = String(item.category || '').toLowerCase();
+                    if (cat !== 'boosts' && cat !== 'battle' && cat !== 'starmap25') return;
+                    const blob = ((item.name || '') + ' ' + (item.id || '')).toLowerCase();
+                    if (cat === 'starmap25' && blob.indexOf('boost') === -1 && blob.indexOf('game time') === -1) return;
+                    rows.push(Object.assign({ kind: 'catalog' }, item));
+                });
+                if (!rows.length) {
+                    rows.push({ kind: 'resource', id: 'default', name: 'Default reserves', description: 'energy, shards, boost_tokens — see battle fantasy resources API.', value: '—', icon: '⚡' });
                 }
-                grid.innerHTML = cards.join('');
+                boosterRowCache = rows;
+                renderShopBoostersPanel();
             } catch (e) {
                 grid.innerHTML = '<p style="color:#f88;grid-column:1/-1;">Could not load resources: ' + (e.message || e) + '</p>';
             }
+        }
+
+        function renderShopBoostersPanel() {
+            const grid = document.getElementById('shop-boosters-grid');
+            const nav = document.getElementById('shop-boosters-subnav');
+            const tax = window.ShopTaxonomy;
+            if (!grid) return;
+            const classified = (boosterRowCache || []).map((row) => {
+                const sub = tax ? tax.specialSubcategoryFor('boosters', row) : 'boosts';
+                return Object.assign({}, row, { subcategory: sub });
+            });
+            if (tax) {
+                tax.renderChips(nav, tax.countedTabs(tax.SPECIAL_GROUPS.boosters, classified, (r) => r.subcategory), currentBoosterSubcat, (id) => {
+                    currentBoosterSubcat = id;
+                    renderShopBoostersPanel();
+                });
+            }
+            const visible = currentBoosterSubcat === 'all'
+                ? classified
+                : classified.filter((r) => r.subcategory === currentBoosterSubcat);
+            if (!visible.length) {
+                grid.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">No boosters in this subcategory.</p>';
+                return;
+            }
+            grid.innerHTML = visible.map((row) => {
+                const price = row.price != null ? row.price : row.value;
+                const desc = row.description || '';
+                return '<div class="shop-item" style="text-align:left;"><div class="item-icon">' + (row.icon || '⚡') + '</div><div class="item-name">' +
+                    shopEscape(row.name || row.id) + '</div><div style="font-size:0.8rem;color:var(--text-secondary);min-height:36px;">' + shopEscape(desc) +
+                    '</div><div class="item-price">' + shopEscape(price) + '</div></div>';
+            }).join('');
         }
 
         function initShopBoostersPanel() {
@@ -1750,6 +1813,7 @@
                 const filteredItems = filterAndSortItems();
                 renderShopGrid(filteredItems);
                 renderMn2ServicesPanel(allItems);
+                loadShopBoostersPanel();
                 const ss = document.getElementById('shop-service-status');
                 if (ss) {
                     ss.textContent = 'Catalog: ' + allItems.length + ' items · API OK';
@@ -2195,14 +2259,30 @@
 
         function renderMn2ServicesPanel(items) {
             const grid = document.getElementById('mn2-services-shop-grid');
+            const nav = document.getElementById('mn2-services-subnav');
             if (!grid) return;
-            const services = (items || []).filter(i => (i.category || '') === 'mn2_services');
-            if (!services.length) {
-                grid.innerHTML = '<p style="color:var(--text-secondary);font-size:0.9rem;margin:0;">No MN2 services in catalog.</p>';
+            const tax = window.ShopTaxonomy;
+            const incoming = (items || []).filter(i => (i.category || '') === 'mn2_services');
+            if (incoming.length) mn2ServiceCache = incoming;
+            const services = (mn2ServiceCache || []).map((item) => {
+                const sub = tax ? tax.specialSubcategoryFor('mn2_services', item) : 'wallet';
+                return Object.assign({}, item, { subcategory: sub });
+            });
+            if (tax) {
+                tax.renderChips(nav, tax.countedTabs(tax.SPECIAL_GROUPS.mn2_services, services, (r) => r.subcategory), currentMn2ServiceSubcat, (id) => {
+                    currentMn2ServiceSubcat = id;
+                    renderMn2ServicesPanel();
+                });
+            }
+            const visible = currentMn2ServiceSubcat === 'all'
+                ? services
+                : services.filter((i) => i.subcategory === currentMn2ServiceSubcat);
+            if (!visible.length) {
+                grid.innerHTML = '<p style="color:var(--text-secondary);font-size:0.9rem;margin:0;">No MN2 services in this subcategory.</p>';
                 return;
             }
             const maxSlots = (mn2HostingStatus && mn2HostingStatus.paypal && mn2HostingStatus.paypal.max_slots_per_order) || 5;
-            grid.innerHTML = services.map(item => {
+            grid.innerHTML = visible.map(item => {
                 const delivery = String(item.delivery || '').toLowerCase();
                 const href = item.checkout_url || '/explorer';
                 const isHosting = item.service_id === 'masternode_hosting';
@@ -2490,13 +2570,30 @@
 
         function renderMyAuctionState() {
             const root = document.getElementById('my-stall-list');
+            const nav = document.getElementById('shop-stall-subnav');
             if (!root) return;
             const selling = myAuctionState.selling || [];
             const sold = myAuctionState.sold || [];
             const bought = myAuctionState.bought || [];
             const active = selling.filter(l => l.status === 'active');
+            const tax = window.ShopTaxonomy;
+            const stallTabs = [
+                { id: 'all', label: 'All', count: active.length + sold.length + bought.length },
+                { id: 'active', label: 'Active', count: active.length },
+                { id: 'sold', label: 'Sold', count: sold.length },
+                { id: 'bought', label: 'Bought', count: bought.length },
+            ].filter((t) => t.id === 'all' || t.count);
+            if (tax) {
+                tax.renderChips(nav, stallTabs, currentStallSubcat, (id) => {
+                    currentStallSubcat = id;
+                    renderMyAuctionState();
+                });
+            }
+            const showActive = currentStallSubcat === 'all' || currentStallSubcat === 'active';
+            const showSold = currentStallSubcat === 'all' || currentStallSubcat === 'sold';
+            const showBought = currentStallSubcat === 'all' || currentStallSubcat === 'bought';
             const sections = [];
-            if (active.length) {
+            if (showActive && active.length) {
                 sections.push('<h4 style="margin:0 0 8px;color:var(--secondary);">Active listings</h4>' + active.map(l => `
                     <div class="stall-row">
                         <div><strong>${shopEscape(l.item_name || l.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(l.listing_id)}</div></div>
@@ -2512,8 +2609,18 @@
                 <div class="auction-card"><div style="color:var(--text-secondary);font-size:0.8rem;">Sold</div><strong>${sold.length}</strong></div>
                 <div class="auction-card"><div style="color:var(--text-secondary);font-size:0.8rem;">Bought</div><strong>${bought.length}</strong></div>
             </div>`);
+            if (showSold && sold.length) {
+                sections.push('<h4 style="margin:12px 0 8px;color:var(--secondary);">Sold</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                    sold.slice(0, 12).map(l => `<li>${shopEscape(l.item_name || l.item_id)} × ${Number(l.quantity || 1)}</li>`).join('') + '</ul>');
+            }
+            if (showBought && bought.length) {
+                sections.push('<h4 style="margin:12px 0 8px;color:var(--secondary);">Bought</h4><ul style="margin:0;padding-left:1.2rem;">' +
+                    bought.slice(0, 12).map(l => `<li>${shopEscape(l.item_name || l.item_id)} × ${Number(l.quantity || 1)}</li>`).join('') + '</ul>');
+            }
             if (!active.length && !sold.length && !bought.length) {
                 sections.unshift('<p style="margin:0;color:var(--text-secondary);">No auction activity yet. Use the Sell buttons in My Inventory below.</p>');
+            } else if (!sections.filter(s => s.indexOf('<h4') !== -1).length && currentStallSubcat !== 'all') {
+                sections.unshift('<p style="margin:0;color:var(--text-secondary);">No stall rows in this subcategory.</p>');
             }
             root.innerHTML = sections.join('');
             root.querySelectorAll('.btn-cancel-auction').forEach(btn => {
@@ -2730,8 +2837,37 @@
                     container.innerHTML = '<p style="color: var(--text-secondary);">Coin packs unavailable.</p>';
                     return;
                 }
-                const packs = [...data.coin_packs].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
-                container.innerHTML = packs.map(pack => {
+                coinPackCache = [...data.coin_packs].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+                renderCoinPacks();
+            } catch (e) {
+                const container = document.getElementById('coin-packs-container');
+                if (container) container.innerHTML = '<p style="color: var(--danger);">Failed to load coin packs.</p>';
+            }
+        }
+
+        function renderCoinPacks() {
+            const container = document.getElementById('coin-packs-container');
+            const nav = document.getElementById('coin-packs-subnav');
+            if (!container) return;
+            const tax = window.ShopTaxonomy;
+            const packs = (coinPackCache || []).map((pack) => {
+                const sub = tax ? tax.specialSubcategoryFor('coin_packs', pack) : 'starter';
+                return Object.assign({}, pack, { subcategory: sub });
+            });
+            if (tax) {
+                tax.renderChips(nav, tax.countedTabs(tax.SPECIAL_GROUPS.coin_packs, packs, (r) => r.subcategory), currentCoinPackSubcat, (id) => {
+                    currentCoinPackSubcat = id;
+                    renderCoinPacks();
+                });
+            }
+            const visible = currentCoinPackSubcat === 'all'
+                ? packs
+                : packs.filter((p) => p.subcategory === currentCoinPackSubcat);
+            if (!visible.length) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">No packs in this subcategory.</p>';
+                return;
+            }
+            container.innerHTML = visible.map(pack => {
                     const featured = !!(pack.featured || pack.tag === 'featured' || pack.id === 'coin-pack-m');
                     const border = featured ? '3px solid var(--primary)' : '2px solid rgba(0,255,136,0.45)';
                     const badge = featured ? '<div style="position:absolute;top:8px;right:8px;background:var(--primary);color:#000;font-size:0.65rem;font-weight:800;padding:2px 8px;border-radius:999px;">BEST VALUE</div>' : '';
@@ -2748,18 +2884,14 @@
                         </button>
                     </div>`;
                 }).join('');
-                container.querySelectorAll('.btn-paypal').forEach(btn => {
-                    btn.addEventListener('click', () => buyCoinsWithPayPal(
-                        btn.dataset.packId,
-                        parseFloat(btn.dataset.amount),
-                        btn.dataset.name,
-                        parseInt(btn.dataset.coins, 10)
-                    ));
-                });
-            } catch (e) {
-                const container = document.getElementById('coin-packs-container');
-                if (container) container.innerHTML = '<p style="color: var(--danger);">Failed to load coin packs.</p>';
-            }
+            container.querySelectorAll('.btn-paypal').forEach(btn => {
+                btn.addEventListener('click', () => buyCoinsWithPayPal(
+                    btn.dataset.packId,
+                    parseFloat(btn.dataset.amount),
+                    btn.dataset.name,
+                    parseInt(btn.dataset.coins, 10)
+                ));
+            });
         }
 
         async function loadSubscriptionPlans() {
@@ -3255,6 +3387,41 @@
             window.history.replaceState({}, '', window.location.pathname);
         }
 
+        function renderMn2TxList() {
+            const txList = document.getElementById('mn2-transactions-list');
+            const nav = document.getElementById('mn2-tx-subnav');
+            if (!txList) return;
+            const tax = window.ShopTaxonomy;
+            const txs = (mn2TxCache || []).map((t) => {
+                const sub = tax ? tax.txSubcategoryFor(t.type) : 'other';
+                return Object.assign({}, t, { subcategory: sub });
+            });
+            if (tax) {
+                tax.renderChips(nav, tax.countedTabs(tax.TX_SUBCATS, txs, (r) => r.subcategory), currentMn2TxSubcat, (id) => {
+                    currentMn2TxSubcat = id;
+                    renderMn2TxList();
+                });
+            }
+            const visible = currentMn2TxSubcat === 'all'
+                ? txs
+                : txs.filter((t) => t.subcategory === currentMn2TxSubcat);
+            if (!txs.length) {
+                txList.innerHTML = '<p style="margin:0;">No transactions yet.</p>';
+                return;
+            }
+            if (!visible.length) {
+                txList.innerHTML = '<p style="margin:0;">No transactions in this subcategory.</p>';
+                return;
+            }
+            txList.innerHTML = '<ul style="margin:0; padding-left: 1.2rem;">' + visible.map(t => {
+                const type = t.type || '—';
+                const amt = (t.amount != null) ? Number(t.amount).toFixed(4) : '—';
+                const link = t.explorer_tx_url ? `<a href="${t.explorer_tx_url}" target="_blank" rel="noopener" style="color: var(--secondary);">View</a>` : '';
+                const date = t.created_at ? new Date(t.created_at).toLocaleString() : '';
+                return `<li>${type}: ${amt} MN2 ${link} ${date ? ' (' + date + ')' : ''}</li>`;
+            }).join('') + '</ul>';
+        }
+
         async function loadMn2Wallet() {
             const badge = document.getElementById('mn2-wallet-balance-badge');
             const balanceEl = document.getElementById('mn2-wallet-balance');
@@ -3317,17 +3484,8 @@
                     if (qrEl) qrEl.innerHTML = '';
                 }
                 const txs = (txData.success && txData.transactions) ? txData.transactions : [];
-                if (txList) {
-                    if (txs.length === 0) txList.innerHTML = '<p style="margin:0;">No transactions yet.</p>';
-                    else txList.innerHTML = '<ul style="margin:0; padding-left: 1.2rem;">' + txs.map(t => {
-                        const type = t.type || '—';
-                        const amt = (t.amount != null) ? Number(t.amount).toFixed(4) : '—';
-                        const txid = (t.txid || '').trim();
-                        const link = t.explorer_tx_url ? `<a href="${t.explorer_tx_url}" target="_blank" rel="noopener" style="color: var(--secondary);">View</a>` : '';
-                        const date = t.created_at ? new Date(t.created_at).toLocaleString() : '';
-                        return `<li>${type}: ${amt} MN2 ${link} ${date ? ' (' + date + ')' : ''}</li>`;
-                    }).join('') + '</ul>';
-                }
+                mn2TxCache = txs;
+                renderMn2TxList();
             } catch (e) {
                 if (addrEl) addrEl.textContent = 'Error loading';
                 if (txList) txList.innerHTML = '<p style="margin:0;">Could not load transactions.</p>';
@@ -3670,8 +3828,32 @@
             try {
                 const d = await dealsApi('/api/shop/mystery-boxes?user_id=' + encodeURIComponent(userId));
                 const boxes = (d && d.boxes) || [];
-                if (!boxes.length) { grid.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">No mystery boxes configured.</p>'; return; }
-                grid.innerHTML = boxes.map(b => {
+                mysteryBoxCache = boxes;
+                renderMysteryBoxes();
+            } catch (e) { grid.innerHTML = '<p style="color:#f88;grid-column:1/-1;">Could not load boxes.</p>'; }
+        }
+
+        function renderMysteryBoxes() {
+            const grid = document.getElementById('mystery-boxes-grid');
+            const nav = document.getElementById('mystery-boxes-subnav');
+            if (!grid) return;
+            const tax = window.ShopTaxonomy;
+            const boxes = (mysteryBoxCache || []).map((b) => {
+                const sub = tax ? tax.specialSubcategoryFor('mystery_boxes', b) : (b.rarity || 'common');
+                return Object.assign({}, b, { subcategory: sub });
+            });
+            if (!boxes.length) { grid.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">No mystery boxes configured.</p>'; return; }
+            if (tax) {
+                tax.renderChips(nav, tax.countedTabs(tax.SPECIAL_GROUPS.mystery_boxes, boxes, (r) => r.subcategory), currentMysteryBoxSubcat, (id) => {
+                    currentMysteryBoxSubcat = id;
+                    renderMysteryBoxes();
+                });
+            }
+            const visible = currentMysteryBoxSubcat === 'all'
+                ? boxes
+                : boxes.filter((b) => b.subcategory === currentMysteryBoxSubcat);
+            if (!visible.length) { grid.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">No boxes in this subcategory.</p>'; return; }
+            grid.innerHTML = visible.map(b => {
                     const price = b.effective_price_coins != null ? b.effective_price_coins : b.price_coins;
                     const discounted = b.effective_price_coins != null && b.effective_price_coins < b.price_coins;
                     const odds = (b.odds || []).map(o => '<li>' + dealsEsc(o.label) + ' — ' + o.chance_pct + '%</li>').join('');
@@ -3684,7 +3866,7 @@
                         '<button type="button" class="btn-purchase" style="width:100%;margin-top:8px;" data-box="' + dealsEsc(b.id) + '">Open box</button>' +
                         '</div>';
                 }).join('');
-                grid.querySelectorAll('button[data-box]').forEach(btn => btn.addEventListener('click', async () => {
+            grid.querySelectorAll('button[data-box]').forEach(btn => btn.addEventListener('click', async () => {
                     btn.disabled = true;
                     const res = await dealsApi('/api/shop/mystery-box/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, box_id: btn.dataset.box }) });
                     const out = document.getElementById('mystery-box-result');
@@ -3700,7 +3882,6 @@
                     loadMysteryBoxes();
                     loadLoyaltyCard();
                 }));
-            } catch (e) { grid.innerHTML = '<p style="color:#f88;grid-column:1/-1;">Could not load boxes.</p>'; }
         }
 
         async function loadFlashSales() {
@@ -3859,7 +4040,7 @@
             </div>
         </div>
     </div>
-    <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260916" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="shop" defer></script>
     <script src="/static/js/mn2-withdrawal-security.js?v=20260614d" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

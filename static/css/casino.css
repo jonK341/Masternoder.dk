@@ -137,12 +137,21 @@
     margin: var(--spacing-sm) 0 var(--spacing-md);
 }
 
+.casino-toc .shop-subnav-btn,
 .casino-toc a {
     padding: 6px 10px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.05);
     font-size: var(--font-size-xs);
+    color: #7df9ff;
+    cursor: pointer;
+}
+
+.casino-toc .shop-subnav-btn.active,
+.casino-toc a.active {
+    background: rgba(0, 212, 255, 0.28);
+    color: #fff;
 }
 
 .casino-cockpit-grid {

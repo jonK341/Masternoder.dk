@@ -45,7 +45,11 @@
       { id: 'leaderboard', label: 'Leaderboard', card: 'profile-section-leaderboard' },
     ],
     points: [{ id: 'points', label: 'Points', card: 'profile-section-points' }],
-    shop: [{ id: 'inventory', label: 'Inventory', card: 'profile-section-shop' }],
+    shop: [
+      { id: 'inventory', label: 'Inventory', card: 'profile-section-shop' },
+      { id: 'history', label: 'History', card: 'profile-section-shop-history' },
+      { id: 'stall', label: 'My stall', card: 'profile-section-shop-stall' },
+    ],
     skills: [{ id: 'skills', label: 'Skills', card: 'profile-section-skills' }],
     trophies: [{ id: 'trophies', label: 'Trophies', card: 'profile-trophies-card' }],
     leaderboard: [{ id: 'leaderboard', label: 'Leaderboard', card: 'profile-section-leaderboard' }],
@@ -130,6 +134,14 @@
     if (route === 'wallet' && sid === 'mn2' && global.ProfileMn2Wallet && typeof global.ProfileMn2Wallet.load === 'function') {
       global.ProfileMn2Wallet.load();
     }
+    if (route === 'shop' && global.profileManager) {
+      if (sid === 'history' && typeof global.profileManager.loadShopHistoryV9 === 'function') {
+        global.profileManager.loadShopHistoryV9();
+      }
+      if (sid === 'stall' && typeof global.profileManager.loadShopStallV9 === 'function') {
+        global.profileManager.loadShopStallV9();
+      }
+    }
   }
 
   function onMainRoute(route) {
@@ -146,9 +158,40 @@
     applySubtab(route, fromUrl || activeSubtab[route] || tabs[0].id);
   }
 
-  function init() {
+    var activeHubParent = 'all';
+
+    function applyHubParent(parentId) {
+      var tax = global.ShopTaxonomy;
+      var nav = document.getElementById('profile-hub-parents');
+      var hub = document.getElementById('profile-hub-nav');
+      if (!tax || !hub) return;
+      activeHubParent = parentId || 'all';
+      var parents = tax.PROFILE_HUB_PARENTS || [];
+      tax.renderChips(nav, parents, activeHubParent, function (id) {
+        applyHubParent(id);
+      });
+      var allowed = null;
+      if (activeHubParent !== 'all') {
+        var group = parents.find(function (p) { return p.id === activeHubParent; });
+        allowed = new Set((group && group.routes) || []);
+      }
+      hub.querySelectorAll('[data-hub-scroll]').forEach(function (btn) {
+        var route = btn.getAttribute('data-hub-scroll');
+        var show = !allowed || allowed.has(route);
+        btn.hidden = !show;
+        btn.style.display = show ? '' : 'none';
+      });
+      var active = hub.querySelector('[data-hub-scroll].active');
+      if (active && active.hidden) {
+        var first = hub.querySelector('[data-hub-scroll]:not([hidden])');
+        if (first) first.click();
+      }
+    }
+
+    function init() {
     var nav = ensureSubnavEl();
     if (!nav) return;
+    applyHubParent(activeHubParent);
     nav.addEventListener('click', function (ev) {
       var btn = ev.target.closest('[data-profile-subtab]');
       if (!btn) return;
@@ -164,7 +207,7 @@
     });
   }
 
-  global.ProfileHubSubtabs = { init: init, onMainRoute: onMainRoute, applySubtab: applySubtab };
+  global.ProfileHubSubtabs = { init: init, onMainRoute: onMainRoute, applySubtab: applySubtab, applyHubParent: applyHubParent };
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
