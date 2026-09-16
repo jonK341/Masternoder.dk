@@ -91,9 +91,23 @@ def conservation_gate() -> Dict[str, Any]:
         gen = {"ready": False, "error": str(e)}
         checks.append({"name": "generation_health", "ok": False, "hard": False, "error": str(e)})
 
+    # 5. Float gate (soft — amber if insufficient hot wallet headroom)
+    float_gate = {"verdict": None, "allowed": True}
+    try:
+        from backend.services.mn2_float_gate import assess
+
+        float_gate = assess(0)
+        fg_ok = float_gate.get("verdict") != "red"
+        checks.append({"name": "float_gate", "ok": fg_ok, "hard": False})
+        if float_gate.get("verdict") == "red" and not hard_fail:
+            pass  # verdict handled below
+    except Exception as e:
+        float_gate = {"error": str(e), "verdict": "unknown"}
+        checks.append({"name": "float_gate", "ok": False, "hard": False, "error": str(e)})
+
     if hard_fail:
         verdict = "red"
-    elif gen.get("ready") is False:
+    elif gen.get("ready") is False or float_gate.get("verdict") == "red":
         verdict = "amber"
     else:
         verdict = "green"
@@ -108,4 +122,5 @@ def conservation_gate() -> Dict[str, Any]:
         "casino_tournaments": tournaments,
         "arena": arena,
         "generation_health": gen,
+        "float_gate": float_gate,
     }

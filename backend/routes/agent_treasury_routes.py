@@ -70,7 +70,7 @@ def treasury_sign_off():
         return jsonify(tss.get_signoff()), 200
     body = request.get_json(silent=True) or {}
     result = tss.record_signoff(
-        approver=(body.get("approver") or body.get("approved_by") or "ops").strip(),
+        approver=(body.get("approver") or body.get("approved_by") or "").strip(),
         cold_wallet_address=(body.get("cold_wallet_address") or body.get("cold_wallet") or "").strip(),
         hot_cap_mn2=body.get("hot_cap_mn2"),
         max_batch_mn2=float(body.get("max_batch_mn2") or 600000),

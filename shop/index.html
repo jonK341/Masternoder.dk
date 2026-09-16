@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/loading-states.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -414,6 +416,82 @@
                 font-size: clamp(1.35rem, 5vw, var(--font-size-5xl));
             }
         }
+        .shop-upsell-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 12000;
+            background: rgba(0, 0, 0, 0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .shop-upsell-backdrop.open { display: flex; }
+        .shop-upsell-modal {
+            width: min(480px, 100%);
+            background: linear-gradient(160deg, rgba(18, 22, 34, 0.98), rgba(10, 12, 20, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 22px 20px 18px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+        }
+        .shop-upsell-modal h3 {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+        }
+        .shop-upsell-modal p.lead {
+            margin: 0 0 14px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+        .shop-upsell-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .shop-upsell-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .shop-upsell-card strong {
+            display: block;
+            font-size: 0.92rem;
+            margin-bottom: 2px;
+        }
+        .shop-upsell-card span {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .shop-upsell-card a {
+            white-space: nowrap;
+            font-size: 0.78rem;
+            padding: 7px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            background: var(--primary);
+            color: #fff;
+        }
+        .shop-upsell-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .shop-upsell-dismiss {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
     </style>
     <link rel="stylesheet" href="/static/css/image-support.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/template-effects.css" media="print" onload="this.media='all'">
@@ -473,7 +551,7 @@
             <div class="shop-vision-row">
                 <div class="shop-vision-pill"><strong>Play &amp; points</strong>Earn coins and unified points in-game, then spend them here on themes, boosters, and upgrades.</div>
                 <div class="shop-vision-pill"><strong>PayPal</strong>Fiat on-ramp: coin packs and Pro subscription on the <em>PayPal &amp; coins</em> tab — instant credits after checkout.</div>
-                <div class="shop-vision-pill"><strong>MN2</strong>Optional native token: deposit for an in-wallet balance, pay from balance in the catalog, or use <em>Pay on-chain</em> for a one-time address and exact amount.</div>
+                <div class="shop-vision-pill"><strong>MN2</strong>Optional native token: deposit for an in-wallet balance, pay from balance in the catalog, or use <em>Pay on-chain</em> for a one-time address and exact amount. <em>MN2 Services</em> category links to masternode hosting ($4.99 PayPal), on-ramp, staking, and market.</div>
             </div>
         </section>
 
@@ -515,6 +593,14 @@
         <div id="shop-panel-catalog" class="shop-panel active" role="tabpanel" data-panel="catalog">
         <div class="currency-display" id="currency-display">
             <div class="skeleton-loader" style="height: 40px; width: 200px; margin: 0 auto;"></div>
+        </div>
+
+        <div class="shop-revenue-strip card" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:var(--spacing-md);padding:14px 16px;border:1px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.06),rgba(0,212,255,0.06));">
+            <a href="/shop?tab=mn2" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;">🏛️ Host MN2 node · $4.99/slot</a>
+            <a href="/shop?tab=coins" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;background:linear-gradient(135deg,#0070ba,#1546a0);">💰 Buy coins (PayPal)</a>
+            <a href="/shop?category=boosts" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">⚡ Staking boosters</a>
+            <a href="/camgirls/" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;">🎭 Live performers</a>
+            <a href="/explorer?tab=masternodes" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;background:rgba(255,255,255,0.08);">Explorer hosting →</a>
         </div>
         
         <p style="text-align:center;margin-bottom:8px;"><a href="/agent_support" style="color:var(--primary);font-size:0.95rem;">View agent skills &amp; support →</a></p>
@@ -652,10 +738,14 @@
 
         <!-- Buy Coins with PayPal -->
         <div id="shop-panel-coins" class="shop-panel" role="tabpanel" data-panel="coins">
+        <div id="monetization-allowance-banner" class="card" style="display:none; margin-bottom: var(--spacing-md); border: 1px solid rgba(255,170,0,0.35); background: rgba(255,170,0,0.07); padding: var(--spacing-md);">
+            <p id="monetization-allowance-text" style="margin:0 0 10px; color: var(--text-primary); font-size: 0.92rem;"></p>
+            <div id="monetization-overage-actions" style="display:none; flex-wrap: wrap; gap: 8px;"></div>
+        </div>
         <div class="card" id="buy-coins-section" style="margin-bottom: var(--spacing-xl); border: 2px solid var(--primary); background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,212,255,0.08));">
             <div style="padding: var(--spacing-lg);">
                 <h2 style="color: var(--primary); margin-bottom: var(--spacing-sm);">💰 Buy Coins with PayPal</h2>
-                <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">Get coins instantly with secure PayPal payment.</p>
+                <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">Get coins instantly with secure PayPal payment. Packs include <strong style="color: var(--text-primary);">generation credits</strong> priced against our reference job (see COGS docs).</p>
                 <div id="coin-packs-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
                     <div class="skeleton-loader" style="height: 180px;"></div>
                     <div class="skeleton-loader" style="height: 180px;"></div>
@@ -667,10 +757,31 @@
             <div style="padding: var(--spacing-lg);">
                 <h2 style="color: var(--secondary); margin-bottom: var(--spacing-sm);">⭐ Pro subscription (PayPal)</h2>
                 <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md); max-width: 52rem;">
-                    Monthly coins and tier benefits. Uses PayPal Subscriptions — after you approve, we link the subscription to your account. Replace placeholder plan ids in <code style="font-size:0.85em;">data/monetization_config.json</code> with your live PayPal billing plan id.
+                    Monthly coins and tier benefits via PayPal Subscriptions. Goes live when ops sets <code style="font-size:0.85em;">PAYPAL_SUBSCRIPTION_PLAN_PRO</code> on the server — no JSON rename required.
                 </p>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:var(--spacing-md);padding:12px;border-radius:var(--radius-md);border:1px solid rgba(0,255,136,0.25);background:rgba(0,255,136,0.05);">
+                    <label style="flex:1;min-width:200px;">
+                        <span style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px;">Promo code (optional)</span>
+                        <input type="text" id="shop-promo-code" placeholder="e.g. WELCOME10" style="width:100%;padding:10px 14px;border-radius:var(--radius-md);border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);text-transform:uppercase;">
+                    </label>
+                    <button type="button" id="shop-promo-validate-btn" class="btn-purchase" style="width:auto;">Apply code</button>
+                    <span id="shop-promo-status" style="font-size:0.85rem;color:var(--text-secondary);min-width:140px;"></span>
+                </div>
                 <div id="subscription-plans-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--spacing-md);">
                     <p style="color: var(--text-secondary); margin: 0;">Loading subscription options…</p>
+                </div>
+            </div>
+        </div>
+        <div class="card" id="scr-deposit-section" style="margin-bottom: var(--spacing-xl); border: 2px solid rgba(170,0,255,0.35); background: linear-gradient(135deg, rgba(170,0,255,0.06), rgba(0,212,255,0.05));">
+            <div style="padding: var(--spacing-lg);">
+                <h2 style="color: #cc88ff; margin-bottom: var(--spacing-sm);">🏢 Studio Cash Rail (B2B deposit)</h2>
+                <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md); max-width: 52rem;">Self-serve PayPal deposit for studio SKUs — credits your org pool after capture. Set <code>org_label</code> in Profile → Monetization for metering attribution.</p>
+                <label style="display:block;margin-bottom:10px;max-width:320px;">
+                    <span style="display:block;font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px;">Org label (optional)</span>
+                    <input type="text" id="scr-org-label" placeholder="acme-studio" style="width:100%;padding:10px 14px;border-radius:var(--radius-md);border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
+                </label>
+                <div id="scr-skus-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--spacing-md);">
+                    <p style="color: var(--text-secondary); margin: 0;">Loading studio SKUs…</p>
                 </div>
             </div>
         </div>
@@ -686,6 +797,19 @@
                 <strong style="color: var(--text-primary);"> Withdraw</strong> → send MN2 back to your address when enabled. Status for the node and PayPal appears in the strip above.
             </p>
             <div data-ptc-placement="shop_mn2" data-ptc-limit="1"></div>
+        </div>
+        <div class="card" style="margin-bottom: var(--spacing-xl); border: 1px solid rgba(0, 255, 136, 0.35); background: rgba(0, 255, 136, 0.05); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
+            <h2 style="margin: 0 0 10px; font-size: 1.05rem; color: var(--primary);">MN2 platform services</h2>
+            <p style="margin: 0 0 8px; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">Hosted masternode slots, PayPal on-ramp, staking pool, and P2P/trader market. Masternode hosting checks out here with PayPal — no need to leave the shop.</p>
+            <p id="mn2-hosting-slot-meter" style="margin: 0 0 14px; font-size: 0.85rem; color: var(--secondary);">Loading slot availability…</p>
+            <p id="mn2-hosting-checkout-msg" style="margin: 0 0 10px; font-size: 0.85rem; color: var(--text-secondary); min-height: 1.2em;"></p>
+            <div id="mn2-services-shop-grid" class="shop-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));"></div>
+        </div>
+        <div class="card" id="tier-b-onramp-card" style="margin-bottom: var(--spacing-xl); border: 1px solid rgba(170,0,255,0.35); background: rgba(170,0,255,0.05); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
+            <h2 style="margin: 0 0 8px; font-size: 1.05rem; color: #cc88ff;">Tier B — On-ramp + hosting bundle</h2>
+            <p style="margin: 0 0 12px; font-size: 0.88rem; color: var(--text-secondary);">Buy MN2 via PayPal on-ramp, then reserve hosting with bundle promo within the window.</p>
+            <div id="tier-b-onramp-steps" style="font-size:0.9rem;color:var(--text-secondary);">Loading bundle steps…</div>
+            <p id="tier-b-auction-fee" style="margin-top:12px;font-size:0.82rem;color:var(--text-secondary);"></p>
         </div>
         <div class="card" id="mn2-wallet-section" style="margin-bottom: var(--spacing-xl); border: 2px solid var(--secondary); background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.06));">
             <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="var b=document.getElementById('mn2-wallet-body'); if(b) b.style.display = b.style.display === 'none' ? 'block' : 'none';">
@@ -782,6 +906,18 @@
                 <p style="margin:0; color: var(--text-secondary); font-size:0.92rem; max-width:52rem;">Membership perks, mystery boxes, a daily wheel, flash sales, gifting, and loyalty cashback. All pay with your existing coins / MN2 balance.</p>
             </div>
 
+            <!-- Battle pass -->
+            <div class="card" id="battle-pass-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:2px solid rgba(170,0,255,0.45);">
+                <h3 style="margin:0 0 8px; color:#cc88ff;">🎫 Season Battle Pass</h3>
+                <div id="battle-pass-status" style="color:var(--text-secondary); font-size:0.9rem;">Loading…</div>
+            </div>
+
+            <!-- Copy-trading premium (B7) -->
+            <div class="card" id="copy-trading-premium-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:2px solid rgba(0,212,255,0.45);">
+                <h3 style="margin:0 0 8px; color:var(--secondary);">📈 Copy-trading premium</h3>
+                <div id="copy-trading-premium-status" style="color:var(--text-secondary); font-size:0.9rem;">Loading…</div>
+            </div>
+
             <!-- VIP + Loyalty row -->
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
                 <div class="card" id="vip-card" style="border:2px solid rgba(255,215,0,0.5); padding: var(--spacing-md);">
@@ -871,6 +1007,16 @@
             </div>
         </div>
         
+        <div class="card" style="margin-top: var(--spacing-md); border: 2px solid rgba(170,0,255,0.45);">
+            <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="document.getElementById('digital-downloads-body').style.display = document.getElementById('digital-downloads-body').style.display === 'none' ? 'block' : 'none';">
+                <h3 style="color: #cc88ff; margin: 0;">⬇ Digital downloads</h3>
+                <span id="digital-downloads-count" style="color: var(--text-secondary);">—</span>
+            </div>
+            <div id="digital-downloads-body" style="display: none; padding: var(--spacing-md); border-top: 1px solid var(--border-primary);">
+                <div id="digital-downloads-list" style="min-height: 40px; color: var(--text-secondary);">Loading…</div>
+            </div>
+        </div>
+        
         <!-- Purchase History (Phase 4 migration) -->
         <div class="card" style="margin-top: var(--spacing-md); border: 2px solid var(--secondary);">
             <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="document.getElementById('purchase-history-body').style.display = document.getElementById('purchase-history-body').style.display === 'none' ? 'block' : 'none';">
@@ -924,8 +1070,11 @@
         let allShopItems = [];
         let categoryCounts = {};
         let mn2Balance = 0;
+        let userCoins = 0;
         let coinsPerMn2 = 100;
         let mn2UsdPrice = null;
+        let mn2HostingStatus = null;
+        let mn2HostingCheckoutConfig = null;
         let useShopV3 = true;  // From GET /api/shop/config
 
         let shopUiVersion = '9.2.0';
@@ -1101,10 +1250,16 @@
             'social': '👥 Social',
             'achievement': '🏆 Achievements',
             'trophies': '💒 Trophies',
-            'stories': '📜 Stories'
+            'stories': '📜 Stories',
+            'digital_goods': '📦 Digital goods',
+            'bundles': '🧰 Bundles',
+            'exclusive': '⭐ Exclusive',
+            'mn2_services': '🛡️ MN2 Services',
+            'marketing': '📣 Marketing',
+            'lab': '🔬 Lab'
         };
 
-        const QUICK_CHIPS = ['', 'top25', 'starmap25', 'buy_coins', 'boosts', 'themes', 'premium'];
+        const QUICK_CHIPS = ['', 'mn2_services', 'top25', 'starmap25', 'buy_coins', 'boosts', 'themes', 'premium'];
 
         function updateCategoryButtonLabels() {
             const sel = document.getElementById('shop-category-select');
@@ -1145,8 +1300,9 @@
                 btn.addEventListener('click', () => {
                     showShopTab(btn.dataset.tab);
                     if (btn.dataset.tab === 'auction') loadAuctionListings();
-                    if (btn.dataset.tab === 'account') loadMyAuctionState();
+                    if (btn.dataset.tab === 'account') { loadMyAuctionState(); loadDigitalDownloads(); }
                     if (btn.dataset.tab === 'deals') loadDealsPanel();
+                    if (btn.dataset.tab === 'mn2') { loadMn2HostingStatus(); loadTierBOnrampPanel(); }
                 });
             });
             const h = (location.hash || '').replace(/^#/, '');
@@ -1389,6 +1545,7 @@
                 const data = await currencyRes.json();
                 const mn2Data = mn2Res.ok ? await mn2Res.json() : {};
                 if (data.success) {
+                    userCoins = Number(data.currency) || 0;
                     mn2Balance = Number(mn2Data.mn2_balance) || 0;
                     coinsPerMn2 = Number(mn2Data.coins_per_mn2) || 100;
                     mn2UsdPrice = typeof mn2Data.mn2_usd_price === 'number' ? mn2Data.mn2_usd_price : null;
@@ -1444,6 +1601,7 @@
                                     <div class="item-icon">${pack.icon || '🪙'}</div>
                                     <div class="item-name">${pack.name}</div>
                                     <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: var(--spacing-sm);">${pack.description}</div>
+                                    ${coinPackRefEqLine(pack)}
                                     <div class="item-price" style="font-size: 1.2rem;">$${pack.price_usd?.toFixed(2) || '0.00'}</div>
                                     <button class="btn-purchase btn-paypal" data-pack-id="${pack.id}" data-amount="${pack.price_usd}" data-name="${(pack.name || '').replace(/"/g, '&quot;')}" data-coins="${pack.coins_granted}">
                                         <i class="fab fa-paypal"></i> Pay with PayPal
@@ -1470,8 +1628,10 @@
                 }
                 updateCategoryButtonLabels();
                 
+                await loadMn2HostingStatus();
                 const filteredItems = filterAndSortItems();
                 renderShopGrid(filteredItems);
+                renderMn2ServicesPanel(allItems);
                 const ss = document.getElementById('shop-service-status');
                 if (ss) {
                     ss.textContent = 'Catalog: ' + allItems.length + ' items · API OK';
@@ -1527,22 +1687,65 @@
                             priceDisplay = `${item.price} 🪙`;
                             priceInfo = `coins: ${item.price}`;
                         }
+                        const delivery = String(item.delivery || '').toLowerCase();
+                        const checkoutUrl = item.checkout_url || '';
+                        const isExternal = delivery === 'external_checkout' || delivery === 'external_link';
+                        const isFreeInfo = delivery === 'free_info';
+                        const rails = Array.isArray(item.payment_rails) ? item.payment_rails : null;
+                        if (isExternal && item.service_id === 'masternode_hosting' && item.price_usd != null && item.price_usd > 0) {
+                            const hp = hostingPricePerSlot(item);
+                            priceDisplay = `$${Number(item.price_usd).toFixed(2)} / slot`;
+                            priceInfo = `${hp.coins} coins · ${hp.mn2.toFixed(4)} MN2 · PayPal or on-chain`;
+                        } else if (delivery === 'external_checkout' && item.price_usd != null && item.price_usd > 0) {
+                            priceDisplay = `$${Number(item.price_usd).toFixed(2)} USD`;
+                            priceInfo = 'PayPal checkout on Explorer';
+                        } else if (isExternal && (!item.price || item.price === 0)) {
+                            priceDisplay = 'Free to open';
+                            priceInfo = 'External service';
+                        }
                         const priceCoins = typeof item.price === 'number' ? item.price : 0;
+                        const allowCredits = !rails || rails.includes('credits');
+                        const allowMn2 = !rails || rails.includes('mn2');
+                        const allowPayPal = !rails || rails.includes('paypal');
                         const priceMn2 = coinsPerMn2 > 0 ? (priceCoins / coinsPerMn2) : 0;
                         const usdApprox = (mn2UsdPrice != null && mn2UsdPrice > 0 && priceMn2 > 0) ? ` (≈ $${(priceMn2 * mn2UsdPrice).toFixed(2)} USD)` : '';
-                        const mn2Line = priceCoins > 0 && priceMn2 > 0
+                        const mn2Line = (!isExternal && allowMn2 && priceCoins > 0 && priceMn2 > 0)
                             ? `<div style="font-size: 0.8rem; color: var(--secondary); margin-top: 4px;">or ${priceMn2.toFixed(4)} MN2${usdApprox}</div>` : '';
-                        const mn2Btn = priceCoins > 0 && priceMn2 > 0
+                        const mn2Btn = (!isExternal && allowMn2 && priceCoins > 0 && priceMn2 > 0)
                             ? `<button class="btn-purchase btn-mn2" data-item-id="${item.id}" data-price-coins="${priceCoins}" data-quantity="1" style="margin-top: 6px; background: linear-gradient(135deg, #00d4ff, #0099cc); color: #000;">
                                 <i class="fas fa-coins"></i> Pay with MN2
                             </button>
                             <button class="btn-purchase btn-mn2-onchain" data-item-id="${item.id}" data-quantity="1" style="margin-top: 4px; background: linear-gradient(135deg, #00ff88, #00aa55); color: #000;">
                                 <i class="fas fa-link"></i> Pay on-chain (MN2)
                             </button>` : '';
-                        const hasPayPal = item.price_usd != null && item.price_usd > 0;
+                        const hasPayPal = !isExternal && allowPayPal && item.price_usd != null && item.price_usd > 0;
                         const payPalBtn = hasPayPal
                             ? `<button class="btn-purchase btn-paypal-item" data-item-id="${item.id}" data-amount="${item.price_usd}" data-name="${(item.name || '').replace(/"/g, '&quot;')}" style="margin-top: 6px; background: linear-gradient(135deg, #0070ba, #1546a0);">
                                 <i class="fab fa-paypal"></i> Pay $${(item.price_usd || 0).toFixed(2)}
+                            </button>`
+                            : '';
+                        let externalBtn = '';
+                        if (isExternal && item.checkout_mode === 'inline_paypal' && item.service_id === 'masternode_hosting') {
+                            const maxSlots = item.max_slots_per_order || 5;
+                            externalBtn = renderMasternodeHostingCheckoutHtml(maxSlots, 'shop-mn-slots-input', item)
+                                + `<a href="${checkoutUrl || '/explorer?tab=masternodes'}" style="display:block;margin-top:6px;font-size:0.78rem;color:var(--secondary);">Explorer details →</a>`;
+                        } else if (isExternal && checkoutUrl) {
+                            const href = checkoutUrl.startsWith('/') ? checkoutUrl : checkoutUrl;
+                            if (delivery === 'external_checkout' && item.price_usd > 0) {
+                                externalBtn = `<a href="${href}" class="btn-purchase" style="display:inline-block;margin-top:8px;text-decoration:none;text-align:center;background:linear-gradient(135deg,#0070ba,#1546a0);">
+                                    <i class="fab fa-paypal"></i> Checkout $${Number(item.price_usd).toFixed(2)} →
+                                </a>`;
+                            } else {
+                                externalBtn = `<a href="${href}" class="btn-purchase" style="display:inline-block;margin-top:8px;text-decoration:none;text-align:center;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">
+                                    Open service →
+                                </a>`;
+                            }
+                        } else if (isFreeInfo && checkoutUrl) {
+                            externalBtn = `<a href="${checkoutUrl}" class="btn-purchase" style="display:inline-block;margin-top:8px;text-decoration:none;text-align:center;">View / download</a>`;
+                        }
+                        const coinPurchaseBtn = (!isExternal && !isFreeInfo && allowCredits)
+                            ? `<button class="btn-purchase" onclick="purchaseItem('${item.id}')" data-item-id="${item.id}" data-price='${JSON.stringify(item.price)}' style="${hasPayPal || mn2Btn ? 'margin-top: 6px;' : ''}">
+                                ${typeof item.price === 'object' ? 'Buy with Points' : (hasPayPal || mn2Btn ? 'Or use coins' : 'Purchase')}
                             </button>`
                             : '';
                         
@@ -1584,11 +1787,10 @@
                             ${soundLine}
                             ${mn2Line}
                             ${priceInfo && typeof item.price === 'object' ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 5px; opacity: 0.7;">${priceInfo}</div>` : ''}
+                            ${externalBtn}
                             ${payPalBtn}
                             ${mn2Btn}
-                            <button class="btn-purchase" onclick="purchaseItem('${item.id}')" data-item-id="${item.id}" data-price='${JSON.stringify(item.price)}' style="${hasPayPal || mn2Btn ? 'margin-top: 6px;' : ''}">
-                                ${typeof item.price === 'object' ? 'Buy with Points' : (hasPayPal || mn2Btn ? 'Or use coins' : 'Purchase')}
-                            </button>
+                            ${coinPurchaseBtn}
                         </div>
                     `;
             }).join('');
@@ -1625,6 +1827,294 @@
                     } catch (_) {}
                 });
             });
+            attachMasternodeHostingPayHandlers(grid, '.shop-mn-slots-input');
+        }
+
+        function shopMn2ReturnBase() {
+            return window.location.origin + '/shop?tab=mn2';
+        }
+
+        function hostingRailsFromConfig(item) {
+            const rails = item && Array.isArray(item.payment_rails) ? item.payment_rails : null;
+            if (rails && rails.length) return rails;
+            const shop = (mn2HostingCheckoutConfig && mn2HostingCheckoutConfig.shop_payments) || {};
+            return shop.payment_rails || ['paypal', 'mn2', 'credits', 'mn2_onchain'];
+        }
+
+        function hostingPricePerSlot(item) {
+            const sample = (mn2HostingCheckoutConfig && mn2HostingCheckoutConfig.pricing_sample) || {};
+            const pp = (mn2HostingStatus && mn2HostingStatus.paypal) || {};
+            const usd = Number((item && item.price_usd) || pp.price_usd_per_slot || sample.usd_per_slot || 4.99);
+            let coins = Number((item && item.price_coins) || sample.coins_per_slot || 0);
+            if (!coins && sample.coins_per_mn2 && sample.mn2_per_slot) {
+                coins = Math.round(sample.mn2_per_slot * sample.coins_per_mn2);
+            }
+            if (!coins) coins = Math.max(1, Math.round(usd * 100));
+            const cpm = Number(sample.coins_per_mn2 || coinsPerMn2 || 100);
+            const mn2 = Number(sample.mn2_per_slot || (cpm > 0 ? coins / cpm : usd));
+            return { usd, coins, mn2, cpm };
+        }
+
+        function renderMasternodeHostingCheckoutHtml(maxSlots, inputClass, item) {
+            const rails = hostingRailsFromConfig(item);
+            const p = hostingPricePerSlot(item);
+            const priceLine = `$${p.usd.toFixed(2)}/slot · ${p.coins} coins · ${p.mn2.toFixed(4)} MN2`;
+            let btns = '';
+            if (rails.includes('paypal')) {
+                btns += `<button type="button" class="btn-purchase btn-mn-hosting-pay" data-pay="paypal" style="display:block;margin-top:6px;width:100%;background:linear-gradient(135deg,#0070ba,#1546a0);">
+                    <i class="fab fa-paypal"></i> PayPal — $${p.usd.toFixed(2)}/slot
+                </button>`;
+            }
+            if (rails.includes('credits')) {
+                btns += `<button type="button" class="btn-purchase btn-mn-hosting-pay" data-pay="coins" style="display:block;margin-top:6px;width:100%;">
+                    <i class="fas fa-coins"></i> Pay ${p.coins} coins/slot
+                </button>`;
+            }
+            if (rails.includes('mn2')) {
+                btns += `<button type="button" class="btn-purchase btn-mn-hosting-pay" data-pay="mn2" style="display:block;margin-top:6px;width:100%;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">
+                    <i class="fas fa-wallet"></i> Pay ${p.mn2.toFixed(4)} MN2/slot
+                </button>`;
+            }
+            if (rails.includes('mn2_onchain')) {
+                btns += `<button type="button" class="btn-purchase btn-mn-hosting-pay" data-pay="onchain" style="display:block;margin-top:6px;width:100%;background:linear-gradient(135deg,#00ff88,#00aa55);color:#000;">
+                    <i class="fas fa-link"></i> Pay on-chain (MN2)
+                </button>`;
+            }
+            return `<div class="mn-hosting-checkout-wrap" style="margin-top:8px;">
+                <label style="font-size:0.85rem;color:var(--text-secondary);">Slots
+                    <input type="number" min="1" max="${maxSlots}" value="1" class="${inputClass}" data-max="${maxSlots}" style="width:56px;padding:6px;margin-left:6px;border-radius:6px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
+                </label>
+                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:6px;">${priceLine}</div>
+                ${btns}
+            </div>`;
+        }
+
+        function attachMasternodeHostingPayHandlers(root, inputSelector) {
+            if (!root) return;
+            root.querySelectorAll('.btn-mn-hosting-pay').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const wrap = btn.closest('.shop-item') || btn.closest('.mn-hosting-checkout-wrap') || root;
+                    const input = wrap ? wrap.querySelector(inputSelector) : null;
+                    const slots = parseInt((input && input.value) || '1', 10) || 1;
+                    startMasternodeHostingCheckout(slots, btn.getAttribute('data-pay') || 'paypal');
+                });
+            });
+        }
+
+        async function loadMn2HostingStatus() {
+            const meter = document.getElementById('mn2-hosting-slot-meter');
+            try {
+                const [r, cfgR] = await Promise.all([
+                    fetch(`${BASE_URL}/api/mn2/masternode/service`, { credentials: 'same-origin' }),
+                    fetch(`${BASE_URL}/api/mn2/masternode/checkout/config`, { credentials: 'same-origin' })
+                ]);
+                const d = r.ok ? await r.json() : {};
+                mn2HostingStatus = d;
+                mn2HostingCheckoutConfig = cfgR.ok ? await cfgR.json() : null;
+                const avail = d.slots_available != null ? d.slots_available : '—';
+                const max = d.max_hosted_nodes != null ? d.max_hosted_nodes : 50;
+                const hosted = d.hosted_count != null ? d.hosted_count : '—';
+                const price = d.paypal && d.paypal.price_usd_per_slot != null ? d.paypal.price_usd_per_slot : 4.99;
+                if (meter) {
+                    meter.textContent = `Hosting slots: ${avail} available · ${hosted}/${max} in use · $${Number(price).toFixed(2)}/slot`;
+                    meter.style.color = Number(avail) > 0 ? 'var(--primary)' : '#ffaa00';
+                }
+            } catch (_) {
+                if (meter) meter.textContent = 'Could not load slot availability — try again from Explorer.';
+            }
+        }
+
+        async function fetchMasternodeHostingQuote(slots) {
+            const quoteRes = await fetch(`${BASE_URL}/api/mn2/masternode/checkout/quote`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slots: slots, user_id: userId })
+            });
+            return quoteRes.json();
+        }
+
+        async function startMasternodeHostingCheckout(slots, method) {
+            const msgEl = document.getElementById('mn2-hosting-checkout-msg');
+            const setMsg = (t) => { if (msgEl) msgEl.textContent = t || ''; };
+            slots = Math.max(1, parseInt(slots, 10) || 1);
+            method = method || 'paypal';
+            setMsg('Creating quote…');
+            try {
+                const quote = await fetchMasternodeHostingQuote(slots);
+                if (!quote.success) {
+                    setMsg(quote.error || 'Quote failed');
+                    if (typeof toast !== 'undefined') toast.error(quote.error || 'Quote failed');
+                    return;
+                }
+                if (method === 'coins') {
+                    setMsg('Paying with coins…');
+                    const payRes = await fetch(`${BASE_URL}/api/mn2/masternode/checkout/pay-coins`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ quote_id: quote.quote_id, user_id: userId })
+                    });
+                    const pay = await payRes.json();
+                    if (!pay.success) {
+                        setMsg(pay.error || 'Coin payment failed');
+                        if (typeof toast !== 'undefined') toast.error(pay.error || 'Coin payment failed');
+                        return;
+                    }
+                    const okMsg = pay.message || 'Paid with coins — your masternode is provisioning.';
+                    setMsg(okMsg);
+                    if (typeof toast !== 'undefined') toast.success(okMsg);
+                    await Promise.all([loadCurrency(), loadUnifiedPoints(), loadPurchases(), loadMn2HostingStatus()]);
+                    return;
+                }
+                if (method === 'mn2') {
+                    setMsg('Paying with MN2 balance…');
+                    const payRes = await fetch(`${BASE_URL}/api/mn2/masternode/checkout/pay-mn2`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ quote_id: quote.quote_id, user_id: userId })
+                    });
+                    const pay = await payRes.json();
+                    if (!pay.success) {
+                        setMsg(pay.error || 'MN2 payment failed');
+                        if (typeof toast !== 'undefined') toast.error(pay.error || 'MN2 payment failed');
+                        return;
+                    }
+                    const okMsg = pay.message || 'Paid with MN2 — your masternode is provisioning.';
+                    setMsg(okMsg);
+                    if (typeof toast !== 'undefined') toast.success(okMsg);
+                    await Promise.all([loadCurrency(), loadUnifiedPoints(), loadPurchases(), loadMn2HostingStatus()]);
+                    return;
+                }
+                if (method === 'onchain') {
+                    setMsg('Creating on-chain payment…');
+                    const payRes = await fetch(`${BASE_URL}/api/mn2/masternode/checkout/pay-onchain`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ quote_id: quote.quote_id, user_id: userId })
+                    });
+                    const pay = await payRes.json();
+                    if (!pay.success) {
+                        setMsg(pay.error || 'On-chain setup failed');
+                        if (typeof toast !== 'undefined') toast.error(pay.error || 'On-chain setup failed');
+                        return;
+                    }
+                    setMsg('Send the exact MN2 amount shown in the modal.');
+                    openMn2OnchainModal(pay, {
+                        successMessage: 'Payment confirmed! Your masternode slot is provisioning.',
+                        onFulfilled: async () => {
+                            await Promise.all([loadCurrency(), loadPurchases(), loadMn2HostingStatus()]);
+                        }
+                    });
+                    return;
+                }
+                setMsg('Opening PayPal…');
+                const returnUrl = shopMn2ReturnBase() + '&paypal=success&mn_quote=' + encodeURIComponent(quote.quote_id) + '&user_id=' + encodeURIComponent(userId);
+                const cancelUrl = shopMn2ReturnBase() + '&paypal=cancel';
+                const orderRes = await fetch(`${BASE_URL}/api/mn2/masternode/checkout/order`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        quote_id: quote.quote_id,
+                        user_id: userId,
+                        return_url: returnUrl,
+                        cancel_url: cancelUrl,
+                        promo_code: getShopPromoCode() || tierBAutoPromo || undefined
+                    })
+                });
+                const order = await orderRes.json();
+                if (!order.success || !order.approve_url) {
+                    setMsg(order.error || 'PayPal order failed');
+                    if (typeof toast !== 'undefined') toast.error(order.error || 'PayPal order failed');
+                    return;
+                }
+                window.location.href = order.approve_url;
+            } catch (e) {
+                setMsg('Checkout failed — try again.');
+                if (typeof toast !== 'undefined') toast.error('Checkout failed');
+            }
+        }
+
+        async function handleMasternodePayPalReturn() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('paypal') !== 'success') return;
+            const quoteId = params.get('mn_quote');
+            if (!quoteId) return;
+            const msgEl = document.getElementById('mn2-hosting-checkout-msg');
+            if (msgEl) msgEl.textContent = 'Confirming masternode payment…';
+            showShopTab('mn2');
+            try {
+                const r = await fetch(`${BASE_URL}/api/mn2/masternode/checkout/capture`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: quoteId, user_id: userId })
+                });
+                const d = await r.json();
+                const okMsg = d.success
+                    ? (d.message || 'Payment confirmed — your masternode is provisioning.')
+                    : (d.error || 'Capture failed');
+                if (msgEl) msgEl.textContent = okMsg;
+                if (typeof toast !== 'undefined') toast[d.success ? 'success' : 'error'](okMsg);
+                if (d.success) {
+                    await Promise.all([loadPurchases(), loadMn2HostingStatus()]);
+                    if (Array.isArray(d.upsell) && d.upsell.length) {
+                        showPostPurchaseUpsell(d.upsell, {
+                            lead: 'Hosting slot confirmed — stack rewards with these add-ons.'
+                        });
+                    }
+                }
+            } catch (_) {
+                if (msgEl) msgEl.textContent = 'Capture failed — contact support if PayPal charged you.';
+            }
+            const clean = new URL(window.location.href);
+            ['paypal', 'mn_quote', 'token', 'PayerID'].forEach(k => clean.searchParams.delete(k));
+            window.history.replaceState({}, '', clean.pathname + (clean.search || ''));
+        }
+
+        function renderMn2ServicesPanel(items) {
+            const grid = document.getElementById('mn2-services-shop-grid');
+            if (!grid) return;
+            const services = (items || []).filter(i => (i.category || '') === 'mn2_services');
+            if (!services.length) {
+                grid.innerHTML = '<p style="color:var(--text-secondary);font-size:0.9rem;margin:0;">No MN2 services in catalog.</p>';
+                return;
+            }
+            const maxSlots = (mn2HostingStatus && mn2HostingStatus.paypal && mn2HostingStatus.paypal.max_slots_per_order) || 5;
+            grid.innerHTML = services.map(item => {
+                const delivery = String(item.delivery || '').toLowerCase();
+                const href = item.checkout_url || '/explorer';
+                const isHosting = item.service_id === 'masternode_hosting';
+                const priceUsd = Number(item.price_usd || (mn2HostingStatus && mn2HostingStatus.paypal && mn2HostingStatus.paypal.price_usd_per_slot) || 4.99);
+                const hp = hostingPricePerSlot(item);
+                let priceLine = (delivery === 'external_checkout' && priceUsd > 0)
+                    ? `<div style="font-weight:700;color:var(--primary);margin:8px 0;">$${priceUsd.toFixed(2)}/slot · ${hp.coins} coins · ${hp.mn2.toFixed(4)} MN2</div>`
+                    : '<div style="font-size:0.85rem;color:var(--text-secondary);margin:8px 0;">Open linked page</div>';
+                let action = '';
+                if (isHosting && item.checkout_mode === 'inline_paypal') {
+                    action = renderMasternodeHostingCheckoutHtml(item.max_slots_per_order || maxSlots, 'mn2-svc-slots', item)
+                        + `<a href="${href}" style="display:block;margin-top:6px;font-size:0.78rem;color:var(--secondary);">Explorer details →</a>`;
+                } else {
+                    const btnLabel = (delivery === 'external_checkout' && priceUsd > 0)
+                        ? `Checkout $${priceUsd.toFixed(2)} →`
+                        : 'Open →';
+                    const btnStyle = (delivery === 'external_checkout' && priceUsd > 0)
+                        ? 'background:linear-gradient(135deg,#0070ba,#1546a0);'
+                        : 'background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;';
+                    action = `<a href="${href}" class="btn-purchase" style="display:inline-block;margin-top:6px;text-decoration:none;text-align:center;${btnStyle}">${btnLabel}</a>`;
+                }
+                return `<div class="shop-item" style="border:1px solid rgba(0,255,136,0.35);">
+                    <div class="item-icon">${item.icon || '🪙'}</div>
+                    <div class="item-name">${item.name}</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);min-height:48px;">${item.description || ''}</div>
+                    ${priceLine}
+                    ${action}
+                </div>`;
+            }).join('');
+            attachMasternodeHostingPayHandlers(grid, '.mn2-svc-slots');
         }
         
         async function loadInventory() {
@@ -1638,14 +2128,18 @@
                 if (countEl) countEl.textContent = userInventory.length + ' item' + (userInventory.length !== 1 ? 's' : '');
                 if (el) {
                     if (userInventory.length === 0) el.innerHTML = '<p style="margin:0;">No items in inventory yet. Purchase items from the shop above.</p>';
-                    else el.innerHTML = userInventory.map(i => `
+                    else el.innerHTML = userInventory.map(i => {
+                        const dl = i.download_url
+                            ? `<a href="${shopEscape(i.download_url)}" class="btn-purchase" style="width:auto;padding:6px 10px;font-size:0.8rem;margin-top:4px;text-decoration:none;display:inline-block;" download>⬇ Download</a>`
+                            : '';
+                        return `
                         <div class="stall-row">
-                            <div><strong>${shopEscape(i.item_name || i.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(i.item_id)}</div></div>
+                            <div><strong>${shopEscape(i.item_name || i.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(i.item_id)}</div>${dl}</div>
                             <div>× ${Number(i.quantity || 1)}</div>
                             <input type="number" min="1" step="1" value="${Math.max(1, Math.ceil(Number(i.quantity || 1) * 35))}" data-auction-price="${shopEscape(i.item_id)}" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.25);color:var(--text-primary);" aria-label="Listing price in coins">
                             <button type="button" class="btn-purchase btn-list-auction" data-item-id="${shopEscape(i.item_id)}" data-quantity="1" style="width:auto;padding:8px 12px;">Sell 1</button>
-                        </div>
-                    `).join('');
+                        </div>`;
+                    }).join('');
                     el.querySelectorAll('.btn-list-auction').forEach(btn => {
                         btn.addEventListener('click', () => createAuctionListing(btn.dataset.itemId, parseInt(btn.dataset.quantity, 10) || 1));
                     });
@@ -1654,6 +2148,28 @@
                 userInventory = [];
                 const el = document.getElementById('my-inventory-list');
                 if (el) el.innerHTML = '<p style="margin:0;">Could not load inventory.</p>';
+            }
+        }
+        
+        async function loadDigitalDownloads() {
+            const el = document.getElementById('digital-downloads-list');
+            const countEl = document.getElementById('digital-downloads-count');
+            if (!el) return;
+            try {
+                const r = await fetch(`${BASE_URL}/api/shop/digital-goods?user_id=${encodeURIComponent(userId)}`);
+                const d = await r.json();
+                const rows = (d.digital_goods || []).filter(g => g.owned && g.download_url);
+                if (countEl) countEl.textContent = rows.length + ' file' + (rows.length === 1 ? '' : 's');
+                if (!rows.length) {
+                    el.innerHTML = '<p style="margin:0;">No downloadable digital goods yet. Theme packs and prompt packs appear here after purchase.</p>';
+                    return;
+                }
+                el.innerHTML = '<ul style="margin:0;padding-left:1.2rem;">' + rows.map(g =>
+                    `<li style="margin-bottom:8px;"><strong>${shopEscape(g.name || g.id)}</strong><br>
+                    <a href="${shopEscape(g.download_url)}" class="btn-purchase" style="display:inline-block;margin-top:4px;padding:6px 12px;font-size:0.85rem;text-decoration:none;" download>Download</a></li>`
+                ).join('') + '</ul>';
+            } catch (_) {
+                el.innerHTML = '<p style="margin:0;">Could not load digital downloads.</p>';
             }
         }
         
@@ -1680,7 +2196,11 @@
                         const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
                         let price = '';
                         if (p.price_type === 'coins') price = (p.price_paid_coins || 0) + ' coins';
-                        else if (p.price_type === 'mn2' || p.price_type === 'mn2_onchain') {
+                        else if (p.price_type === 'paypal_mn2_hosting') {
+                            const usd = (p.price_paid_points && p.price_paid_points.usd != null) ? Number(p.price_paid_points.usd).toFixed(2) : '';
+                            price = usd ? ('$' + usd + ' PayPal') : 'PayPal hosting';
+                            if (p.purchase_status) price += ' · ' + p.purchase_status;
+                        } else if (p.price_type === 'mn2' || p.price_type === 'mn2_onchain') {
                             const mn2Paid = (p.price_paid_points && typeof p.price_paid_points === 'object' && p.price_paid_points.mn2 != null) ? p.price_paid_points.mn2 : (p.price_paid_points || '');
                             price = (typeof mn2Paid === 'number' ? mn2Paid.toFixed(4) : mn2Paid) + ' MN2' + (p.price_type === 'mn2_onchain' ? ' (on-chain)' : '');
                         } else if (p.price_paid_points) price = 'points';
@@ -1928,6 +2448,66 @@
             }
         }
         
+        function coinPackRefEqLine(pack) {
+            if (pack && pack.reference_eq_label) {
+                return `<div style="font-size:0.82rem;color:var(--secondary);margin-bottom:6px;font-weight:600;">${String(pack.reference_eq_label).replace(/</g, '')}</div>`;
+            }
+            return '';
+        }
+
+        async function loadUsageAllowance() {
+            const banner = document.getElementById('monetization-allowance-banner');
+            const text = document.getElementById('monetization-allowance-text');
+            const actions = document.getElementById('monetization-overage-actions');
+            if (!banner || !text) return;
+            if (!userId || userId === 'default_user') {
+                banner.style.display = 'none';
+                return;
+            }
+            try {
+                const [allowR, overR] = await Promise.all([
+                    fetch(`${BASE_URL}/api/monetization/usage-allowance?user_id=${encodeURIComponent(userId)}`),
+                    fetch(`${BASE_URL}/api/monetization/overage-offers?user_id=${encodeURIComponent(userId)}`)
+                ]);
+                const d = await allowR.json();
+                const over = await overR.json();
+                if (!d.success || !d.nudge || !d.nudge.nudge_message) {
+                    banner.style.display = 'none';
+                    if (actions) actions.style.display = 'none';
+                    return;
+                }
+                const level = d.nudge.nudge_level || 'info';
+                const colors = { info: 'var(--secondary)', warning: '#ffaa00', upsell: '#ff6b6b' };
+                text.style.color = colors[level] || 'var(--text-primary)';
+                text.textContent = d.nudge.nudge_message;
+                banner.style.display = 'block';
+                if (actions && over.success && over.overage_eligible && over.packs?.length) {
+                    const rec = over.recommended_pack_id;
+                    actions.innerHTML = over.packs.map(p => {
+                        const isRec = p.id === rec;
+                        return `<button type="button" class="btn-purchase btn-overage-paypal" data-pack-id="${String(p.id).replace(/"/g, '')}" data-amount="${p.price_usd}" data-name="${String(p.name || '').replace(/"/g, '&quot;')}" data-coins="${p.coins_granted || 0}" style="font-size:0.85rem;${isRec ? ' border: 2px solid var(--primary);' : ''}">
+                            <i class="fab fa-paypal"></i> ${String(p.name || p.id).replace(/</g, '')} — $${Number(p.price_usd || 0).toFixed(2)}${isRec ? ' ★' : ''}
+                        </button>`;
+                    }).join('');
+                    actions.style.display = 'flex';
+                    actions.querySelectorAll('.btn-overage-paypal').forEach(btn => {
+                        btn.addEventListener('click', () => buyCoinsWithPayPal(
+                            btn.dataset.packId,
+                            parseFloat(btn.dataset.amount),
+                            btn.dataset.name,
+                            parseInt(btn.dataset.coins, 10) || 0
+                        ));
+                    });
+                } else if (actions) {
+                    actions.style.display = 'none';
+                    actions.innerHTML = '';
+                }
+            } catch (e) {
+                banner.style.display = 'none';
+                if (actions) actions.style.display = 'none';
+            }
+        }
+
         async function loadCoinPacks() {
             try {
                 const response = await fetch(`${BASE_URL}/api/shop/coin-packs`);
@@ -1938,17 +2518,24 @@
                     container.innerHTML = '<p style="color: var(--text-secondary);">Coin packs unavailable.</p>';
                     return;
                 }
-                container.innerHTML = data.coin_packs.map(pack => `
-                    <div class="shop-item" style="border: 2px solid var(--primary);">
+                const packs = [...data.coin_packs].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+                container.innerHTML = packs.map(pack => {
+                    const featured = !!(pack.featured || pack.tag === 'featured' || pack.id === 'coin-pack-m');
+                    const border = featured ? '3px solid var(--primary)' : '2px solid rgba(0,255,136,0.45)';
+                    const badge = featured ? '<div style="position:absolute;top:8px;right:8px;background:var(--primary);color:#000;font-size:0.65rem;font-weight:800;padding:2px 8px;border-radius:999px;">BEST VALUE</div>' : '';
+                    return `
+                    <div class="shop-item" style="position:relative;border:${border};${featured ? 'box-shadow:0 0 24px rgba(0,255,136,0.15);' : ''}">
+                        ${badge}
                         <div class="item-icon">${pack.icon || '🪙'}</div>
                         <div class="item-name">${pack.name}</div>
                         <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: var(--spacing-sm);">${pack.description}</div>
+                        ${coinPackRefEqLine(pack)}
                         <div class="item-price" style="font-size: 1.2rem;">$${pack.price_usd?.toFixed(2) || '0.00'}</div>
                         <button class="btn-purchase btn-paypal" data-pack-id="${pack.id}" data-amount="${pack.price_usd}" data-name="${(pack.name || '').replace(/"/g, '&quot;')}" data-coins="${pack.coins_granted}">
                             <i class="fab fa-paypal"></i> Pay with PayPal
                         </button>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
                 container.querySelectorAll('.btn-paypal').forEach(btn => {
                     btn.addEventListener('click', () => buyCoinsWithPayPal(
                         btn.dataset.packId,
@@ -1972,7 +2559,10 @@
                 const plans = (d.success && d.subscriptions && d.subscriptions.plans) ? d.subscriptions.plans : {};
                 const ids = Object.keys(plans);
                 if (!ids.length) {
-                    container.innerHTML = '<p style="color: var(--text-secondary); margin: 0;">No subscription plans configured.</p>';
+                    const pending = !d.subscription_pro_live;
+                    container.innerHTML = pending
+                        ? '<p style="color: var(--text-secondary); margin: 0;">Pro subscription is being configured — check back soon.</p>'
+                        : '<p style="color: var(--text-secondary); margin: 0;">No subscription plans configured.</p>';
                     return;
                 }
                 container.innerHTML = ids.map(pid => {
@@ -1980,18 +2570,22 @@
                     const label = (p.label || pid).replace(/</g, '');
                     const tier = (p.tier || '').replace(/</g, '');
                     const credits = p.monthly_generation_credits != null ? p.monthly_generation_credits : '—';
+                    const refEq = p.reference_eq_label_monthly ? String(p.reference_eq_label_monthly).replace(/</g, '') : '';
                     const price = p.price_usd_monthly != null ? `$${Number(p.price_usd_monthly).toFixed(2)}/mo` : 'See PayPal';
+                    const subscribable = p.subscribable !== false;
+                    const btn = subscribable
+                        ? `<button type="button" class="btn-purchase btn-subscribe-paypal" data-plan-id="${String(pid).replace(/"/g, '&quot;')}" style="margin-top: 10px; background: linear-gradient(135deg, #0070ba, #1546a0); width: 100%;">
+                                <i class="fab fa-paypal"></i> Subscribe with PayPal
+                           </button>`
+                        : `<p style="margin:10px 0 0;font-size:0.85rem;color:var(--text-secondary);">Not live yet — ops must set PAYPAL_SUBSCRIPTION_PLAN_PRO.</p>`;
                     return `
                         <div class="shop-item" style="border: 2px solid var(--secondary); text-align: left;">
                             <div class="item-name">${label}</div>
-                            <div style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 8px;">Plan id: <code style="font-size:0.75rem;word-break:break-all;">${String(pid).replace(/</g, '')}</code></div>
                             <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">
-                                ~${credits} generation credits / month · tier: <strong>${tier || '—'}</strong>
+                                ~${credits} generation credits / month${refEq ? ` · <strong style="color:var(--secondary);">${refEq}</strong>` : ''} · tier: <strong>${tier || '—'}</strong>
                             </div>
                             <div class="item-price" style="font-size: 1.15rem;">${price}</div>
-                            <button type="button" class="btn-purchase btn-subscribe-paypal" data-plan-id="${String(pid).replace(/"/g, '&quot;')}" style="margin-top: 10px; background: linear-gradient(135deg, #0070ba, #1546a0); width: 100%;">
-                                <i class="fab fa-paypal"></i> Subscribe with PayPal
-                            </button>
+                            ${btn}
                         </div>
                     `;
                 }).join('');
@@ -2036,6 +2630,11 @@
             }
         }
 
+        function getShopPromoCode() {
+            const el = document.getElementById('shop-promo-code');
+            return el ? (el.value || '').trim().toUpperCase() : '';
+        }
+
         async function buyItemWithPayPal(itemId, amount, itemName) {
             if (!userId || userId === 'default_user') {
                 if (typeof toast !== 'undefined') toast.error('Create an account first. Go to Profile → Account.');
@@ -2059,7 +2658,8 @@
                         amount: amount,
                         item_id: itemId,
                         item_name: itemName || 'Shop Item',
-                        user_id: userId
+                        user_id: userId,
+                        promo_code: getShopPromoCode() || undefined
                     })
                 });
                 const data = await response.json();
@@ -2099,7 +2699,8 @@
                         amount: amount,
                         item_id: itemId,
                         item_name: itemName || `${coinsGranted} Coins`,
-                        user_id: userId
+                        user_id: userId,
+                        promo_code: getShopPromoCode() || undefined
                     })
                 });
                 const data = await response.json();
@@ -2177,6 +2778,48 @@
         }
 
         let mn2OnChainPollTimer = null;
+        function openMn2OnchainModal(data, options) {
+            options = options || {};
+            const modal = document.getElementById('mn2-onchain-modal');
+            const addrEl = document.getElementById('mn2-onchain-address');
+            const amountEl = document.getElementById('mn2-onchain-amount');
+            const qrEl = document.getElementById('mn2-onchain-qr');
+            const statusEl = document.getElementById('mn2-onchain-status');
+            if (!modal || !addrEl || !data || !data.payment_ref) return;
+            addrEl.textContent = data.address || '';
+            amountEl.textContent = `Send exactly ${(data.amount_mn2 || 0).toFixed(8)} MN2`;
+            statusEl.textContent = 'Waiting for payment…';
+            qrEl.innerHTML = '';
+            if (typeof QRCode !== 'undefined' && data.address) {
+                try { new QRCode(qrEl, { text: data.address, width: 120, height: 120 }); } catch (e) { qrEl.innerHTML = '<span>QR N/A</span>'; }
+            }
+            document.getElementById('mn2-onchain-copy').onclick = () => {
+                navigator.clipboard.writeText(data.address || '').then(() => { if (typeof toast !== 'undefined') toast.success('Address copied'); }).catch(() => {});
+            };
+            modal.style.display = 'flex';
+            if (mn2OnChainPollTimer) clearInterval(mn2OnChainPollTimer);
+            mn2OnChainPollTimer = setInterval(async () => {
+                try {
+                    const r = await fetch(`${BASE_URL}/api/mn2/order-payment/status?payment_ref=${encodeURIComponent(data.payment_ref)}&user_id=${encodeURIComponent(userId)}`);
+                    const s = r.ok ? await r.json() : {};
+                    if (s.status === 'fulfilled') {
+                        if (mn2OnChainPollTimer) { clearInterval(mn2OnChainPollTimer); mn2OnChainPollTimer = null; }
+                        modal.style.display = 'none';
+                        const msg = options.successMessage || 'Payment confirmed!';
+                        if (typeof toast !== 'undefined') toast.success(msg);
+                        if (typeof options.onFulfilled === 'function') {
+                            await options.onFulfilled(s);
+                        }
+                    } else if (s.status === 'expired') {
+                        if (mn2OnChainPollTimer) { clearInterval(mn2OnChainPollTimer); mn2OnChainPollTimer = null; }
+                        statusEl.textContent = 'Payment expired.';
+                    } else if (s.status === 'confirmed') {
+                        statusEl.textContent = 'Confirming…';
+                    }
+                } catch (e) {}
+            }, 10000);
+        }
+
         async function startOnChainPayment(itemId, quantity) {
             const qty = Math.max(1, quantity || 1);
             try {
@@ -2190,42 +2833,13 @@
                     if (typeof toast !== 'undefined') toast.error(data.error || 'Could not create payment');
                     return;
                 }
-                const modal = document.getElementById('mn2-onchain-modal');
-                const addrEl = document.getElementById('mn2-onchain-address');
-                const amountEl = document.getElementById('mn2-onchain-amount');
-                const qrEl = document.getElementById('mn2-onchain-qr');
-                const statusEl = document.getElementById('mn2-onchain-status');
-                if (!modal || !addrEl) return;
-                addrEl.textContent = data.address || '';
-                amountEl.textContent = `Send exactly ${(data.amount_mn2 || 0).toFixed(8)} MN2`;
-                statusEl.textContent = 'Waiting for payment…';
-                qrEl.innerHTML = '';
-                if (typeof QRCode !== 'undefined' && data.address) {
-                    try { new QRCode(qrEl, { text: data.address, width: 120, height: 120 }); } catch (e) { qrEl.innerHTML = '<span>QR N/A</span>'; }
-                }
-                document.getElementById('mn2-onchain-copy').onclick = () => {
-                    navigator.clipboard.writeText(data.address || '').then(() => { if (typeof toast !== 'undefined') toast.success('Address copied'); }).catch(() => {});
-                };
-                modal.style.display = 'flex';
-                if (mn2OnChainPollTimer) clearInterval(mn2OnChainPollTimer);
-                mn2OnChainPollTimer = setInterval(async () => {
-                    try {
-                        const r = await fetch(`${BASE_URL}/api/mn2/order-payment/status?payment_ref=${encodeURIComponent(data.payment_ref)}&user_id=${encodeURIComponent(userId)}`);
-                        const s = r.ok ? await r.json() : {};
-                        if (s.status === 'fulfilled') {
-                            if (mn2OnChainPollTimer) { clearInterval(mn2OnChainPollTimer); mn2OnChainPollTimer = null; }
-                            modal.style.display = 'none';
-                            if (typeof toast !== 'undefined') toast.success('Payment confirmed! Item added to inventory.');
-                            if (window.ShopV9) ShopV9.recordPurchase({ success: true, item_id: itemId, quantity: qty, item: { id: itemId, name: itemId } });
-                            loadCurrency(); loadUnifiedPoints(); loadInventory(); loadPurchases(); loadShopItems();
-                        } else if (s.status === 'expired') {
-                            if (mn2OnChainPollTimer) { clearInterval(mn2OnChainPollTimer); mn2OnChainPollTimer = null; }
-                            statusEl.textContent = 'Payment expired.';
-                        } else if (s.status === 'confirmed') {
-                            statusEl.textContent = 'Confirming…';
-                        }
-                    } catch (e) {}
-                }, 10000);
+                openMn2OnchainModal(data, {
+                    successMessage: 'Payment confirmed! Item added to inventory.',
+                    onFulfilled: async () => {
+                        if (window.ShopV9) ShopV9.recordPurchase({ success: true, item_id: itemId, quantity: qty, item: { id: itemId, name: itemId } });
+                        loadCurrency(); loadUnifiedPoints(); loadInventory(); loadPurchases(); loadShopItems();
+                    }
+                });
             } catch (e) {
                 if (typeof toast !== 'undefined') toast.error('Failed to start on-chain payment');
             }
@@ -2304,6 +2918,40 @@
             }
         }
         
+        function showPostPurchaseUpsell(upsellItems, opts) {
+            const list = Array.isArray(upsellItems) ? upsellItems : [];
+            if (!list.length) return;
+            const backdrop = document.getElementById('shop-post-purchase-upsell');
+            const listEl = document.getElementById('shop-upsell-list');
+            const leadEl = document.getElementById('shop-upsell-lead');
+            if (!backdrop || !listEl) return;
+            if (leadEl && opts && opts.lead) leadEl.textContent = opts.lead;
+            listEl.innerHTML = list.map(function (row) {
+                const href = row.href || '/shop';
+                const cta = row.cta || 'Open';
+                const title = row.title || 'Recommended';
+                const desc = row.desc || '';
+                return '<div class="shop-upsell-card"><div><strong>' + title + '</strong><span>' + desc + '</span></div>'
+                    + '<a href="' + href + '">' + cta + '</a></div>';
+            }).join('');
+            backdrop.classList.add('open');
+            backdrop.setAttribute('aria-hidden', 'false');
+        }
+
+        function initPostPurchaseUpsellModal() {
+            const backdrop = document.getElementById('shop-post-purchase-upsell');
+            const dismiss = document.getElementById('shop-upsell-dismiss');
+            if (!backdrop) return;
+            function closeUpsell() {
+                backdrop.classList.remove('open');
+                backdrop.setAttribute('aria-hidden', 'true');
+            }
+            if (dismiss) dismiss.addEventListener('click', closeUpsell);
+            backdrop.addEventListener('click', function (ev) {
+                if (ev.target === backdrop) closeUpsell();
+            });
+        }
+
         async function handlePayPalReturn() {
             const params = new URLSearchParams(window.location.search);
             const paypalStatus = params.get('paypal');
@@ -2340,6 +2988,9 @@
                         }
                         loadCurrency();
                         loadUnifiedPoints();
+                        if (Array.isArray(data.upsell) && data.upsell.length) {
+                            showPostPurchaseUpsell(data.upsell);
+                        }
                     } else if (typeof toast !== 'undefined') toast.error(data.error || 'Payment capture failed');
                 } catch (e) {
                     if (typeof toast !== 'undefined') toast.error('Failed to complete payment');
@@ -2530,7 +3181,165 @@
         }
 
         async function loadDealsPanel() {
-            await Promise.all([loadVipCard(), loadLoyaltyCard(), loadSpinCard(), loadMysteryBoxes(), loadFlashSales(), loadTop25Card()]);
+            await Promise.all([loadBattlePassCard(), loadCopyTradingPremiumCard(), loadVipCard(), loadLoyaltyCard(), loadSpinCard(), loadMysteryBoxes(), loadFlashSales(), loadTop25Card()]);
+        }
+
+        let tierBAutoPromo = '';
+
+        async function loadTierBOnrampPanel() {
+            const stepsEl = document.getElementById('tier-b-onramp-steps');
+            const feeEl = document.getElementById('tier-b-auction-fee');
+            if (!stepsEl) return;
+            try {
+                const [offer, fee] = await Promise.all([
+                    fetch(`${BASE_URL}/api/shop/tier-b/onramp-hosting?user_id=${encodeURIComponent(userId)}`).then(r => r.json()),
+                    fetch(`${BASE_URL}/api/shop/tier-b/auction-fee`).then(r => r.json()),
+                ]);
+                tierBAutoPromo = (offer.auto_promo_code || '').trim().toUpperCase();
+                if (tierBAutoPromo) {
+                    const promoEl = document.getElementById('shop-promo-code');
+                    if (promoEl && !(promoEl.value || '').trim()) promoEl.value = tierBAutoPromo;
+                }
+                if (offer.success && (offer.steps || []).length) {
+                    stepsEl.innerHTML = (offer.steps || []).map(s => {
+                        const done = s.done ? '✓' : '○';
+                        const note = s.discount_note ? `<div style="font-size:0.8rem;margin-top:4px;color:var(--secondary);">${dealsEsc(s.discount_note)}</div>` : '';
+                        return `<div style="margin:8px 0;padding:10px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.2);">
+                            <div style="font-weight:600;color:var(--text-primary);">${done} Step ${s.step}: ${dealsEsc(s.title || '')}</div>
+                            ${note}
+                            <a href="${dealsEsc(s.href || '#')}" style="display:inline-block;margin-top:6px;color:var(--primary);font-size:0.85rem;">${dealsEsc(s.cta || 'Open')} →</a>
+                        </div>`;
+                    }).join('');
+                } else {
+                    stepsEl.textContent = offer.error || 'Bundle not configured.';
+                }
+                if (feeEl && fee.success) {
+                    feeEl.textContent = `Auction house fee: ${fee.fee_percent}% — ${fee.description || ''}`;
+                }
+            } catch (e) {
+                stepsEl.textContent = 'Could not load Tier B bundle.';
+            }
+        }
+
+        async function loadCopyTradingPremiumCard() {
+            const el = document.getElementById('copy-trading-premium-status');
+            if (!el) return;
+            try {
+                const d = await dealsApi('/api/mn2/copy-trading/premium?user_id=' + encodeURIComponent(userId));
+                if (!d.success) {
+                    el.textContent = d.error || 'Copy-trading premium not configured.';
+                    return;
+                }
+                let html = '<div style="font-size:0.85rem;margin-bottom:8px;">' +
+                    (d.active ? '<span style="color:var(--secondary);">Premium active' + (d.expires_at ? ' until ' + dealsEsc(d.expires_at) : '') + '</span>' :
+                        'Unlock monthly premium: $' + Number(d.price_usd || 0).toFixed(2) + ' or ' + (d.price_coins || 0) + ' coins') + '</div>';
+                if ((d.perks || []).length) {
+                    html += '<ul style="margin:0 0 8px;padding-left:1.2rem;font-size:0.82rem;">' +
+                        d.perks.map(p => '<li>' + dealsEsc(p) + '</li>').join('') + '</ul>';
+                }
+                if (!d.active) {
+                    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+                        '<button type="button" id="ct-paypal-btn" class="btn-purchase" style="width:auto;"><i class="fab fa-paypal"></i> Pay $' + Number(d.price_usd || 0).toFixed(2) + '</button>' +
+                        '<button type="button" id="ct-coins-btn" class="btn-purchase" style="width:auto;background:linear-gradient(135deg,#00d4ff,#0099cc);">Buy with ' + (d.price_coins || 0) + ' coins</button>' +
+                        '</div>';
+                }
+                el.innerHTML = html;
+                document.getElementById('ct-paypal-btn')?.addEventListener('click', () => buyItemWithPayPal('copy-trading-premium', parseFloat(d.price_usd || 0), 'Copy-trading premium'));
+                document.getElementById('ct-coins-btn')?.addEventListener('click', async () => {
+                    const res = await dealsApi('/api/mn2/copy-trading/premium/purchase', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, source: 'shop_coins' }) });
+                    dealsToast(res.success, res.success ? 'Copy-trading premium activated!' : (res.error || 'Purchase failed'));
+                    if (res.success) { loadCurrency(); loadUnifiedPoints(); loadCopyTradingPremiumCard(); }
+                });
+            } catch (e) {
+                el.textContent = 'Could not load copy-trading premium.';
+            }
+        }
+
+        async function loadBattlePassCard() {
+            const el = document.getElementById('battle-pass-status');
+            if (!el) return;
+            try {
+                const d = await dealsApi('/api/shop/battle-pass?user_id=' + encodeURIComponent(userId));
+                if (!d.success) {
+                    el.textContent = d.error || 'Battle pass not configured.';
+                    return;
+                }
+                let html = '<div style="font-weight:700;color:var(--text-primary);">' + dealsEsc(d.name || d.season_id) + '</div>' +
+                    '<div style="margin:6px 0;">Tier ' + (d.tier_level || 0) + ' · XP ' + (d.xp || 0) + '</div>';
+                if (d.premium_owned) {
+                    html += '<div style="color:var(--secondary);">Premium track active</div>';
+                } else {
+                    const usd = Number(d.price_usd || 0).toFixed(2);
+                    const coins = d.price_coins || 0;
+                    html += '<div style="margin:8px 0;font-size:0.85rem;">Unlock premium: $' + usd + ' or ' + coins + ' coins (deducted from balance; instant bonus on unlock)</div>' +
+                        '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">' +
+                        '<button type="button" id="bp-paypal-btn" class="btn-purchase" style="width:auto;"><i class="fab fa-paypal"></i> Pay $' + usd + '</button>' +
+                        '<button type="button" id="bp-coins-btn" class="btn-purchase" style="width:auto;background:linear-gradient(135deg,#00ff88,#00d4ff);">Buy with ' + coins + ' coins</button>' +
+                        '</div>';
+                }
+                if ((d.quests || []).length) {
+                    html += '<div style="margin-top:12px;font-size:0.82rem;"><strong style="color:var(--text-primary);">Season quests</strong><ul style="margin:6px 0 0;padding-left:1.2rem;">' +
+                        d.quests.map(q => '<li style="' + (q.completed ? 'opacity:0.7;text-decoration:line-through;' : '') + '">' + dealsEsc(q.label || q.id) + ' (+' + (q.xp || 0) + ' XP)</li>').join('') +
+                        '</ul></div>';
+                }
+                el.innerHTML = html;
+                document.getElementById('bp-paypal-btn')?.addEventListener('click', () => buyItemWithPayPal('battle-pass-premium', parseFloat(d.price_usd || 0), d.name || 'Battle Pass'));
+                document.getElementById('bp-coins-btn')?.addEventListener('click', async () => {
+                    const res = await dealsApi('/api/shop/battle-pass/purchase', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, source: 'shop_coins' }) });
+                    dealsToast(res.success, res.success ? 'Premium battle pass unlocked!' : (res.error || 'Purchase failed'));
+                    if (res.success) { loadCurrency(); loadUnifiedPoints(); loadBattlePassCard(); }
+                });
+            } catch (e) {
+                el.textContent = 'Could not load battle pass.';
+            }
+        }
+
+        async function loadScrDepositSkus() {
+            const container = document.getElementById('scr-skus-container');
+            if (!container) return;
+            try {
+                const d = await fetch(`${BASE_URL}/api/monetization/scr/skus`).then(r => r.json());
+                if (!d.success || !d.skus || !d.skus.length) {
+                    container.innerHTML = '<p style="color:var(--text-secondary);margin:0;">No self-serve studio SKUs configured.</p>';
+                    return;
+                }
+                container.innerHTML = d.skus.map(s => `
+                    <div class="card" style="padding:var(--spacing-md);border:1px solid rgba(170,0,255,0.25);">
+                        <div style="font-weight:700;color:var(--text-primary);">${dealsEsc(s.label || s.id)}</div>
+                        <div style="font-size:0.85rem;color:var(--text-secondary);margin:6px 0;">${dealsEsc(s.description || '')}</div>
+                        <div style="font-size:1.1rem;font-weight:800;color:#cc88ff;">$${Number(s.list_price_usd || 0).toFixed(2)}</div>
+                        ${s.generation_credits_pool ? '<div style="font-size:0.8rem;color:var(--text-secondary);">Pool: ' + s.generation_credits_pool + ' credits</div>' : ''}
+                        <button type="button" class="btn-purchase btn-scr-deposit" data-sku="${dealsEsc(s.id)}" style="width:100%;margin-top:10px;"><i class="fab fa-paypal"></i> Deposit with PayPal</button>
+                    </div>
+                `).join('');
+                container.querySelectorAll('.btn-scr-deposit').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!userId || userId === 'default_user') {
+                            if (typeof toast !== 'undefined') toast.error('Create an account in Profile first.');
+                            return;
+                        }
+                        btn.disabled = true;
+                        const orgLabel = (document.getElementById('scr-org-label')?.value || '').trim();
+                        try {
+                            const res = await fetch(`${BASE_URL}/api/monetization/scr/deposit/create`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: userId, studio_sku_id: btn.dataset.sku, org_label: orgLabel || undefined })
+                            }).then(r => r.json());
+                            if (res.success && res.approve_url) window.location.href = res.approve_url;
+                            else {
+                                if (typeof toast !== 'undefined') toast.error(res.error || 'Could not start SCR deposit');
+                                btn.disabled = false;
+                            }
+                        } catch (e) {
+                            if (typeof toast !== 'undefined') toast.error('SCR deposit failed');
+                            btn.disabled = false;
+                        }
+                    });
+                });
+            } catch (e) {
+                container.innerHTML = '<p style="color:var(--danger);margin:0;">Failed to load studio SKUs.</p>';
+            }
         }
 
         async function loadTop25Card() {
@@ -2730,10 +3539,19 @@
                 const sel = document.getElementById('shop-category-select');
                 if (sel) sel.value = catParam;
                 if (catParam === 'buy_coins') showShopTab('coins');
+                if (catParam === 'mn2_services') showShopTab('mn2');
+            }
+            const tabParam = (params.get('tab') || '').trim().toLowerCase();
+            if (tabParam) showShopTab(tabParam);
+            if (params.get('bundle') === 'hosting') {
+                showShopTab('mn2');
+                if (typeof toast !== 'undefined') toast.info('On-ramp bundle: reserve hosting — promo HOSTMN5 applies when eligible.');
             }
             initShopTabs();
+            initPostPurchaseUpsellModal();
             initShopBoostersPanel();
             syncProfileBar();
+            await handleMasternodePayPalReturn();
             await handlePayPalReturn();
             await handlePayPalSubscriptionReturn();
             await loadShopConfig();
@@ -2772,11 +3590,46 @@
             loadUnifiedPoints();
             loadCoinPacks();
             loadSubscriptionPlans();
-            await Promise.all([loadInventory(), loadPurchases()]);
+            loadScrDepositSkus();
+            loadUsageAllowance();
+            document.getElementById('shop-promo-validate-btn')?.addEventListener('click', async () => {
+                const code = getShopPromoCode();
+                const status = document.getElementById('shop-promo-status');
+                if (!code) { if (status) status.textContent = 'Enter a code first.'; return; }
+                try {
+                    const res = await fetch(`${BASE_URL}/api/shop/promo/apply`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code, user_id: userId, amount_usd: 9.99 })
+                    }).then(r => r.json());
+                    if (status) {
+                        if (res.success && res.mode === 'redeem') {
+                            const parts = [];
+                            if (res.reward_coins) parts.push('+' + res.reward_coins + ' coins');
+                            if (res.reward_mn2) parts.push('+' + res.reward_mn2 + ' MN2');
+                            status.textContent = parts.length ? parts.join(' · ') + ' credited' : 'Code redeemed';
+                            status.style.color = 'var(--secondary)';
+                            loadUnifiedPoints();
+                        } else if (res.success) {
+                            status.textContent = res.discount_percent
+                                ? res.discount_percent + '% off applied at checkout'
+                                : 'Code valid at checkout';
+                            status.style.color = 'var(--secondary)';
+                        } else {
+                            status.textContent = res.error || 'Invalid code';
+                            status.style.color = 'var(--danger)';
+                        }
+                    }
+                } catch (e) {
+                    if (status) status.textContent = 'Could not apply code.';
+                }
+            });
+            await Promise.all([loadInventory(), loadPurchases(), loadDigitalDownloads()]);
             loadAuctionListings();
             loadMyAuctionState();
             loadShopItems();
             loadMn2Wallet();
+            loadTierBOnrampPanel();
             initMn2WalletHandlers();
             initDealsHandlers();
             if ((location.hash || '') === '#shop-deals') loadDealsPanel();
@@ -2784,7 +3637,18 @@
             setInterval(() => loadUnifiedPoints(), 10000);
         });
     </script>
+    <div id="shop-post-purchase-upsell" class="shop-upsell-backdrop" aria-hidden="true">
+        <div class="shop-upsell-modal" role="dialog" aria-labelledby="shop-upsell-title">
+            <h3 id="shop-upsell-title">You're all set — unlock more</h3>
+            <p class="lead" id="shop-upsell-lead">Your purchase completed. These picks pair well with what you just bought.</p>
+            <div class="shop-upsell-list" id="shop-upsell-list"></div>
+            <div class="shop-upsell-actions">
+                <button type="button" class="shop-upsell-dismiss" id="shop-upsell-dismiss">Continue shopping</button>
+            </div>
+        </div>
+    </div>
     <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="shop" defer></script>
     <script src="/static/js/mn2-withdrawal-security.js?v=20260614d" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
     <script src="/static/js/progression-display.js" defer></script>

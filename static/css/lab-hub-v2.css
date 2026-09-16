@@ -1,0 +1,78 @@
+/* Lab V2.1 hub — nav tabs, news, systems, ideas, rewards, social, projects */
+.lab-hub-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    max-width: 1100px;
+    margin: 0 auto 20px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 14px;
+    border: 1px solid rgba(127, 219, 255, 0.28);
+}
+.lab-hub-nav::-webkit-scrollbar { height: 6px; }
+.lab-hub-nav::-webkit-scrollbar-thumb {
+    background: rgba(127, 219, 255, 0.35);
+    border-radius: 999px;
+}
+.lab-hub-tab {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(127, 219, 255, 0.35);
+    background: rgba(127, 219, 255, 0.08);
+    color: #b8e8ff;
+    cursor: pointer;
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+.lab-hub-tab:hover, .lab-hub-tab.active {
+    background: rgba(127, 219, 255, 0.2);
+    color: #fff;
+}
+.lab-route-note {
+    max-width: 1100px;
+    margin: 0 auto 16px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(127, 219, 255, 0.28);
+    background: rgba(127, 219, 255, 0.08);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.88rem;
+}
+.lab-tab-panel[hidden] { display: none !important; }
+.lab-muted { opacity: 0.78; font-size: 0.85rem; }
+.lab-news-item { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.lab-news-item h3 { margin: 0 0 6px; font-size: 1rem; color: #7fdbff; }
+.lab-news-item h3 a { color: inherit; text-decoration: none; }
+.lab-news-meta { font-size: 0.72rem; opacity: 0.65; margin: 0 0 6px; }
+.lab-news-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 999px; background: rgba(255,215,0,0.15); color: #FFD700; }
+.lab-systems-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 10px; }
+.lab-systems-table th, .lab-systems-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.lab-systems-table tr.ok td:last-child { color: #00ff88; }
+.lab-systems-table tr.fail td:last-child { color: #ff6b8a; }
+.lab-systems-summary { font-weight: 600; margin: 0 0 8px; }
+.lab-idea-row { padding: 10px; border-radius: 10px; border: 1px solid rgba(255,215,0,0.2); background: rgba(0,0,0,0.22); margin-bottom: 8px; }
+.lab-idea-meta { font-size: 0.72rem; opacity: 0.7; }
+.lab-v2-milestones { margin: 0; padding-left: 1.1rem; font-size: 0.82rem; opacity: 0.9; }
+.lab-rewards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+.lab-reward-card { padding: 12px; border-radius: 10px; border: 1px solid rgba(255,215,0,0.22); background: rgba(0,0,0,0.24); font-size: 0.82rem; }
+.lab-reward-icon { font-size: 1.4rem; display: block; margin-bottom: 6px; }
+.lab-social-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
+.lab-social-card { padding: 12px; border-radius: 10px; border: 1px solid rgba(0,255,136,0.25); background: rgba(0,0,0,0.28); text-decoration: none; color: #e8fff4; display: block; }
+.lab-social-card:hover { border-color: rgba(0,255,136,0.5); background: rgba(0,255,136,0.08); }
+.lab-project-seed { padding: 14px; border-radius: 12px; border: 1px solid rgba(127,219,255,0.28); background: rgba(0,0,0,0.3); margin-bottom: 12px; }
+.lab-project-media { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.lab-project-media img { max-width: 120px; max-height: 80px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.12); }
+.lab-ref-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.lab-ref-links a { font-size: 0.74rem; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(127,219,255,0.35); color: #7fdbff; text-decoration: none; }
+.lab-toc-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin: 10px 0; }
+.lab-toc-table th, .lab-toc-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.lab-v2-release { font-size: 0.72rem; opacity: 0.7; margin-top: 6px; }
+.lab-media-clip { animation: lab-clip-pulse 2.4s ease-in-out infinite; }
+@keyframes lab-clip-pulse { 0%, 100% { opacity: 0.85; transform: scale(1); } 50% { opacity: 1; transform: scale(1.03); } }
+.lab-brainstorm-out { margin-top: 10px; font-size: 0.8rem; padding: 10px; border-radius: 8px; background: rgba(127,219,255,0.06); border: 1px solid rgba(127,219,255,0.2); }
+.lab-brainstorm-out ul { margin: 6px 0 0; padding-left: 1.1rem; }

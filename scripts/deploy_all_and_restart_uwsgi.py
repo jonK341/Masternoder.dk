@@ -9,7 +9,8 @@ Usage:
   python scripts/deploy_all_and_restart_uwsgi.py --no-upload                 # restart uwsgi-vidgenerator only (e.g. after config change)
 
 After deploy: run python scripts/test_url_timing.py (with BASE_URL to production) to verify. See docs/CHECKPOINTS_RECHECK.md.
-Uses DEPLOY_PASS from env (or default) for SSH. Server: masternoder.dk, REMOTE_BASE /var/www/html.
+SSH: tries DEPLOY_KEY_PATH / ~/.ssh keys first, then DEPLOY_PASS (.env or --ask-pass).
+Server: masternoder.dk, REMOTE_BASE /var/www/html.
 """
 import os
 import sys
@@ -18,6 +19,12 @@ import time
 import argparse
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
+
+SCRIPT_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = SCRIPT_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     import paramiko
@@ -25,14 +32,11 @@ except ImportError:
     print("Install paramiko: pip install paramiko")
     sys.exit(1)
 
-# Same as deploy.py
-SERVER_HOST = os.environ.get("DEPLOY_HOST", "masternoder.dk")
-SERVER_USER = os.environ.get("DEPLOY_USER", "root")
-SERVER_PASS = (os.environ.get("DEPLOY_PASS") or "").strip() or (_ for _ in ()).throw(SystemExit("Set DEPLOY_PASS for SSH."))
-REMOTE_BASE = "/var/www/html"
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 
-SCRIPT_DIR = Path(__file__).parent.resolve()
-PROJECT_ROOT = SCRIPT_DIR.parent
+SERVER_HOST = deploy_host()
+SERVER_USER = deploy_user()
+REMOTE_BASE = "/var/www/html"
 
 
 def _exec(ssh, cmd, timeout=15):
@@ -112,6 +116,7 @@ def run(
     dry_run: bool = False,
     no_upload: bool = False,
     skip_gunicorn_check: bool = False,
+    server_pass: Optional[str] = None,
 ):
     ssh = None
     sftp = None
@@ -127,14 +132,12 @@ def run(
 
         print("[1] Connecting...")
         sys.stdout.flush()
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(SERVER_HOST, username=SERVER_USER, password=SERVER_PASS, timeout=30)
+        ssh, auth_method, _ = connect_deploy_ssh(server_pass)
         if no_upload:
             print("  [SKIP] Upload disabled (--no-upload)")
         else:
             sftp = ssh.open_sftp()
-        print("  [OK] Connected")
+        print(f"  [OK] Connected ({auth_method})")
         print()
         sys.stdout.flush()
 
@@ -316,7 +319,10 @@ def main():
     ap.add_argument("--no-upload", action="store_true", help="Do not upload files; only restart uwsgi-vidgenerator (still stop, clear port, start)")
     ap.add_argument("--skip-gunicorn-check", action="store_true", help="Do not kill gunicorn / free port 5000 (not recommended)")
     ap.add_argument("--manifest", nargs="+", metavar="NAME", help="Deploy only these manifest names from deploy.py (e.g. profile loading); default: all files")
+    ap.add_argument("--ask-pass", action="store_true", help="Prompt for SSH password (ignores DEPLOY_PASS in .env)")
     args = ap.parse_args()
+
+    server_pass = require_deploy_pass(force_prompt=args.ask_pass)
 
     if args.manifest:
         files = get_manifest_files(PROJECT_ROOT, args.manifest)
@@ -330,6 +336,7 @@ def main():
         dry_run=args.dry_run,
         no_upload=args.no_upload,
         skip_gunicorn_check=args.skip_gunicorn_check,
+        server_pass=server_pass,
     )
     sys.exit(0 if ok else 1)
 

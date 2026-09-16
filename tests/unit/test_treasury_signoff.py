@@ -82,3 +82,35 @@ def test_distribute_blocked_without_signoff(tmp_path, monkeypatch):
     ok = aw.distribute_agent_funding()
     assert ok.get("success") is True
     assert ok.get("distributed_total") == pytest.approx(600_000, rel=1e-6)
+
+
+def test_distribute_fails_closed_when_signoff_raises(tmp_path, monkeypatch):
+    from backend.services import agent_wallet_service as aw
+    from backend.services import unified_points_database as upd
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _noop_ctx():
+        yield
+
+    monkeypatch.setattr(upd, "_unified_points_db_context", _noop_ctx)
+    monkeypatch.setattr(upd, "_IDEMPOTENCY_CACHE", {})
+    db = upd.UnifiedPointsDatabase(base_dir=str(tmp_path / "points"))
+    monkeypatch.setattr(upd, "unified_points_db", db)
+    monkeypatch.setattr(aw, "_WALLETS_FILE", str(tmp_path / "wallets.json"))
+    monkeypatch.setattr(aw, "_TREASURY_FILE", str(tmp_path / "treasury.json"))
+    monkeypatch.setattr("backend.services.mn2_ledger.append_entry", lambda *a, **k: {"success": True})
+    monkeypatch.setattr("backend.services.activity_events_service.emit", lambda *a, **k: {"success": True})
+    monkeypatch.setattr(
+        "backend.services.treasury_signoff_service.assert_distribution_allowed",
+        lambda **k: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+
+    aw.set_treasury_address("treasury_addr_test", per_agent_mn2=100, trader_count=1)
+    db.add_points(aw.TREASURY_POOL_USER, "mn2_balance", 200, source="seed", metadata={"reference": "pool-seed-failclosed"})
+
+    blocked = aw.distribute_agent_funding()
+    assert blocked.get("success") is False
+    assert "signoff" in (blocked.get("error") or "").lower()
+    assert aw.get_balance("trader_agent_1") == pytest.approx(0, abs=1e-6)
+    assert aw.get_treasury_pool_balance() == pytest.approx(200, rel=1e-6)

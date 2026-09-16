@@ -157,8 +157,12 @@ def distribute_agent_funding() -> Dict[str, Any]:
         gate_err = assert_distribution_allowed(estimated_total_mn2=estimated_total)
         if gate_err:
             return {"success": False, "error": gate_err, "estimated_total_mn2": estimated_total}
-    except Exception:
-        pass
+    except Exception as exc:
+        return {
+            "success": False,
+            "error": f"treasury_signoff_unavailable: {exc}",
+            "estimated_total_mn2": estimated_total,
+        }
 
     from backend.services.unified_points_database import unified_points_db
     from backend.services.mn2_ledger import append_entry
