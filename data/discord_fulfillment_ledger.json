@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "updated_at": "2026-09-16T02:50:34.863067Z",
+  "rows": [],
+  "meta": {
+    "sources": {
+      "local_linked": 0,
+      "discord_api_guild": 0,
+      "discord_api_channel": 0
+    },
+    "discord_api_used": true,
+    "discord_api_notes": [
+      "guild_members: HTTP 403: {\"message\": \"Missing Access\", \"code\": 50001}",
+      "channel_authors: mn2_channel_or_bot_not_configured"
+    ],
+    "bot_configured": true,
+    "guild_configured": true,
+    "mn2_channel_configured": false
+  }
+}

@@ -325,6 +325,70 @@ export function DiscordPanel() {
           Casino VIP requires {status.min_mn2_for_vip ?? 100} MN2 balance.
         </p>
       ) : null}
+
+      {status.linked && (status.fulfillment_status || status.fulfillment_order_lines?.length) ? (
+        <section
+          style={{
+            marginTop: '20px',
+            padding: '14px',
+            background: 'var(--wallet-bg-elevated)',
+            border: 'var(--wallet-border)',
+            borderRadius: 'var(--wallet-radius)',
+          }}
+        >
+          <h3 style={{ margin: '0 0 8px', fontSize: '0.95rem' }}>Community fulfillment</h3>
+          <p style={{ margin: '0 0 10px', fontSize: '0.8rem', color: 'var(--wallet-muted)' }}>
+            Your row on the MN2 Discord community order list.
+          </p>
+          <div style={{ fontSize: '0.85rem', marginBottom: '10px' }}>
+            Status:{' '}
+            <span
+              style={{
+                fontWeight: 700,
+                color:
+                  status.fulfillment_status === 'fulfilled'
+                    ? 'var(--wallet-accent)'
+                    : 'var(--wallet-muted)',
+              }}
+            >
+              {status.fulfillment_status || 'pending'}
+            </span>
+          </div>
+          {status.fulfillment_order_lines && status.fulfillment_order_lines.length > 0 ? (
+            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.85rem' }}>
+              {status.fulfillment_order_lines
+                .filter((ln) => ln.status !== 'skipped')
+                .map((ln) => (
+                  <li key={ln.id} style={{ marginBottom: '4px' }}>
+                    {ln.label}: {ln.status}
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
+
+      {status.fulfillment_ledger ? (
+        <section
+          style={{
+            marginTop: '16px',
+            padding: '12px',
+            border: '1px dashed var(--wallet-border)',
+            borderRadius: 'var(--wallet-radius)',
+            fontSize: '0.8rem',
+            color: 'var(--wallet-muted)',
+          }}
+        >
+          <strong style={{ color: 'var(--wallet-text)' }}>Discord fulfillment ledger (admin)</strong>
+          <div style={{ marginTop: '6px' }}>
+            {status.fulfillment_ledger.total} members · {status.fulfillment_ledger.pending} pending ·{' '}
+            {status.fulfillment_ledger.fulfilled} fulfilled
+          </div>
+          <div style={{ marginTop: '4px', fontFamily: 'var(--wallet-font-mono)' }}>
+            API: {status.fulfillment_ledger.order_list_api}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

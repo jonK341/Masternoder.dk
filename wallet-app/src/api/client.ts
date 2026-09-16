@@ -95,9 +95,53 @@ export type DiscordStatus = {
   notification_prefs?: DiscordNotificationPrefs;
   notification_prefs_note?: string;
   share_supported?: boolean;
+  fulfillment_ledger?: {
+    total: number;
+    pending: number;
+    fulfilled: number;
+    order_list_api: string;
+    fulfillment_status_api: string;
+  };
+  fulfillment_status?: string;
+  fulfillment_order_lines?: Array<{
+    id: string;
+    label: string;
+    status: string;
+    fulfilled_at?: string | null;
+  }>;
   message?: string;
   error?: string;
 };
+
+export type DiscordFulfillmentStatus = {
+  success: boolean;
+  user_id?: string;
+  guest?: boolean;
+  linked?: boolean;
+  discord_id?: string;
+  in_order_list?: boolean;
+  fulfillment_status?: string;
+  order_lines?: Array<{
+    id: string;
+    label: string;
+    status: string;
+    fulfilled_at?: string | null;
+  }>;
+  mn2_balance?: number;
+  order_list_api?: string;
+  message?: string;
+};
+
+export async function fetchDiscordFulfillmentStatus(): Promise<DiscordFulfillmentStatus> {
+  const res = await fetch('/api/wallet/v2/discord/fulfillment-status', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Discord fulfillment status failed (${res.status})`);
+  }
+  return res.json() as Promise<DiscordFulfillmentStatus>;
+}
 
 export async function fetchDiscordStatus(): Promise<DiscordStatus> {
   const res = await fetch('/api/wallet/v2/discord/status', {

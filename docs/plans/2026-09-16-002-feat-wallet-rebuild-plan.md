@@ -401,7 +401,7 @@ The **Overview** tab is the wallet’s main face: network KPIs render on first p
 | 25 | **Global balance bar → /wallets** — site-wide deep link to new wallet | UX | `mn2-global-bar.js` migration |
 | 26 | **Discord Settings panel** — link/unlink, roles, invite, notification opt-in | Social | `v2/discord/status`, `discord_link_service`, `discord_linked_roles_service` |
 
-**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test. **WR-U-MAP / WR-U-STATS / WR-U-UPG250** scaffold shipped: Overview trophy carousel slot, masternode online grid, rich network stats list, 250-upgrade catalog + lazy API + Upgrades tab. **WR-EARN-1…5** scaffold shipped: micro-earn click events, daily caps, Earn tab + v2 earn API. **WR-CASINO-1** shipped: Casino hub tab, `GET /api/wallet/v2/casino/snapshot`, Overview hero CTA, Site Features Hub primary emphasis, unit test. **WR-MOBILE-1** scaffold shipped: `mobile/wallet-twa/`, `mobile/wallet-app/`, PWA manifest, download docs, CI workflow stub, Settings download links.
+**Implementation status (2026-09-16):** WR-U0 scaffold shipped (`wallet-app/`, `wallets/index.html`, Sharpened Edges). WR-U1 summary API shipped (`wallet_v2_routes`, `wallet_v2_service`, unit test). WR-U2 Overview + network face partially complete (Overview tab + `NetworkFace`; remaining tabs placeholder). **WR-DISCORD-1** shipped: Settings → Discord panel, `GET /api/wallet/v2/discord/status`, unit test. **WR-DISCORD-4** shipped (2026-09-16): Discord community fulfillment ledger — `discord_fulfillment_ledger_service`, `data/discord_fulfillment_ledger.json`, `data/discord_order_list.json`, `scripts/sync_discord_order_list.py`, ops routes `GET /api/discord/fulfillment/order-list` + `POST /api/discord/fulfillment/fulfill`, wallet `GET /api/wallet/v2/discord/fulfillment-status`, Settings panel order-line display + admin ledger stub. **WR-U-MAP / WR-U-STATS / WR-U-UPG250** scaffold shipped: Overview trophy carousel slot, masternode online grid, rich network stats list, 250-upgrade catalog + lazy API + Upgrades tab. **WR-EARN-1…5** scaffold shipped: micro-earn click events, daily caps, Earn tab + v2 earn API. **WR-CASINO-1** shipped: Casino hub tab, `GET /api/wallet/v2/casino/snapshot`, Overview hero CTA, Site Features Hub primary emphasis, unit test. **WR-MOBILE-1** scaffold shipped: `mobile/wallet-twa/`, `mobile/wallet-app/`, PWA manifest, download docs, CI workflow stub, Settings download links.
 
 ---
 
@@ -662,8 +662,13 @@ Wallet surfaces existing repo Discord features — **no new OAuth stack**. Maps 
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/api/wallet/v2/discord/status` | Link state, roles, OAuth URLs, invite, notification defaults |
+| GET | `/api/wallet/v2/discord/fulfillment-status` | User's row on MN2 Discord community order list |
+| GET | `/api/discord/fulfillment/order-list` | Ops — full order list (`X-Ops-Secret`; `?refresh=1` rebuilds) |
+| POST | `/api/discord/fulfillment/fulfill` | Ops — fulfill one user or `{"all_pending": true}` batch |
 
 Link/unlink POSTs remain on `/api/discord/link*` (same as Profile) to avoid duplicating `discord_link_service`.
+
+**WR-DISCORD-4 data sources (priority):** (1) `logs/user_identifiers/discord_*.json` linked accounts; (2) Discord API guild members + `DISCORD_MN2_CHANNEL_ID` recent authors when `DISCORD_BOT_TOKEN` + `DISCORD_GUILD_ID` set; (3) local-only stub when API unavailable (live deploy needs bot token + Server Members intent for full guild scan).
 
 ### Assumptions (WR-DISCORD-1)
 
@@ -1447,6 +1452,16 @@ flowchart LR
 **Goal:** Trophy card “Share” → rich embed with edition, GIF preview, shop link.
 
 **Dependencies:** WR-U8 trophies tab; `discord_service` or user webhook
+
+---
+
+### WR-DISCORD-4. Community fulfillment ledger — **shipped ✓ (2026-09-16)**
+
+**Goal:** Final order list for MN2 Discord community members — link status, MN2 balance snapshot, per-line fulfillment (account link, role sync, VIP roles, MN2 credit, trophy grant).
+
+**Files:** `backend/services/discord_fulfillment_ledger_service.py`, `data/discord_fulfillment_ledger.json`, `data/discord_order_list.json`, `scripts/sync_discord_order_list.py`, `tests/unit/test_discord_fulfillment_ledger.py`, wallet `Discord.tsx` fulfillment section.
+
+**Ops:** `python3 scripts/sync_discord_order_list.py` (add `--no-api` for linked-users-only). Guild member scan requires bot **Server Members** privileged intent; channel author scan needs `DISCORD_MN2_CHANNEL_ID`.
 
 ---
 

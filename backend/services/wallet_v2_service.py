@@ -337,6 +337,36 @@ def build_discord_status(user_id: str) -> Dict[str, Any]:
         payload["linked_role_configured"] = False
 
     try:
+        from backend.services.discord_fulfillment_ledger_service import get_order_list
+
+        ledger = get_order_list()
+        payload["fulfillment_ledger"] = {
+            "total": ledger.get("total", 0),
+            "pending": ledger.get("pending", 0),
+            "fulfilled": ledger.get("fulfilled", 0),
+            "order_list_api": "/api/discord/fulfillment/order-list",
+            "fulfillment_status_api": "/api/wallet/v2/discord/fulfillment-status",
+        }
+    except Exception:
+        payload["fulfillment_ledger"] = {
+            "total": 0,
+            "pending": 0,
+            "fulfilled": 0,
+            "order_list_api": "/api/discord/fulfillment/order-list",
+            "fulfillment_status_api": "/api/wallet/v2/discord/fulfillment-status",
+        }
+
+    try:
+        from backend.services.discord_fulfillment_ledger_service import get_user_fulfillment_status
+
+        fulfillment = get_user_fulfillment_status(user_id)
+        if fulfillment.get("in_order_list"):
+            payload["fulfillment_status"] = fulfillment.get("fulfillment_status")
+            payload["fulfillment_order_lines"] = fulfillment.get("order_lines") or []
+    except Exception:
+        pass
+
+    try:
         from backend.services.social_auth_service import list_providers
 
         providers = list_providers().get("providers") or []
