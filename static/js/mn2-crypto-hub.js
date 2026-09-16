@@ -18,6 +18,7 @@
   var mnPayPalReturnDone = false;
   var mnCheckoutConfig = null;
   var mnOnChainPollTimer = null;
+  var mnRefreshTimer = null;
 
   function uid() {
     if (window.Mn2SiteBridge && window.Mn2SiteBridge.uid) return window.Mn2SiteBridge.uid();
@@ -68,7 +69,8 @@
     if (tabId === 'leaderboard') loadLeaderboard();
     if (tabId === 'teams') loadTeams();
     if (tabId === 'reserves' && !porLoaded) { porLoaded = true; loadProofOfReserves(); }
-    if (tabId === 'masternodes' && !mnLoaded) { mnLoaded = true; loadMasternodeHosting(); }
+    if (tabId === 'masternodes' && !mnLoaded) { mnLoaded = true; loadMasternodeHosting(); setupMasternodeRefresh(); }
+    if (tabId === 'masternodes' && mnLoaded) setupMasternodeRefresh();
     if (tabId === 'market' && !marketChecked) { marketChecked = true; checkMarketEnabled(); }
   }
 
@@ -266,9 +268,30 @@
   function mnBadge(status) {
     var s = String(status || 'unknown').toLowerCase();
     var cls = 'mn-badge--planned';
-    if (s === 'enabled' || s === 'active') cls = 'mn-badge--enabled';
-    else if (s === 'queued' || s === 'pending_collateral') cls = 'mn-badge--queued';
+    if (s === 'enabled') cls = 'mn-badge--enabled';
+    else if (s === 'active') cls = 'mn-badge--active';
+    else if (s === 'missing') cls = 'mn-badge--queued';
+    else if (s === 'queued' || s === 'pending_collateral' || s === 'provisioning') cls = 'mn-badge--queued';
     return '<span class="mn-badge ' + cls + '">' + (status || 'unknown') + '</span>';
+  }
+
+  function fleetHostBadges(h) {
+    var chainSt = h.on_chain_status;
+    var regSt = h.status || 'unknown';
+    var parts = [];
+    if (chainSt) {
+      parts.push(mnBadge(chainSt));
+      parts.push(activetimeBadge(h.on_chain_activetime, chainSt));
+    } else if (regSt === 'provisioning' || regSt === 'queued' || regSt === 'planned') {
+      parts.push(mnBadge(regSt));
+      parts.push('<span class="mn-badge mn-badge--queued">awaiting broadcast</span>');
+    } else {
+      parts.push(mnBadge(regSt));
+      if (!h.synced) {
+        parts.push('<span class="mn-badge mn-badge--queued">not on list</span>');
+      }
+    }
+    return parts.join('');
   }
 
   function formatActivetime(seconds, status) {
@@ -308,6 +331,51 @@
     }
   }
 
+  function mnStatusCounts(d) {
+    var enabled = d && d.enabled != null ? Number(d.enabled) : NaN;
+    var active = d && d.active != null ? Number(d.active) : NaN;
+    var list = (d && d.list) || [];
+    if (!isFinite(enabled) || !isFinite(active)) {
+      enabled = 0;
+      active = 0;
+      list.forEach(function (m) {
+        var st = String((m && m.status) || '').toUpperCase();
+        if (st === 'ENABLED') enabled += 1;
+        else if (st === 'ACTIVE') active += 1;
+      });
+    }
+    var total = d && d.total != null ? Number(d.total) : (enabled + active);
+    if (!isFinite(total)) total = list.length;
+    return { total: total, enabled: enabled, active: active };
+  }
+
+  function updateMnNetworkStatTiles(d) {
+    if (!d || !d.success) return;
+    var c = mnStatusCounts(d);
+    if (q('mn-net-total-val')) q('mn-net-total-val').textContent = fmtNum(c.total, 0);
+    if (q('mn-net-enabled')) {
+      q('mn-net-enabled').textContent = fmtNum(c.enabled, 0) + ' ENABLED · ' +
+        fmtNum(c.active, 0) + ' ACTIVE';
+    }
+  }
+
+  function sortMasternodeList(list) {
+    return (list || []).slice().sort(function (a, b) {
+      var sa = String((a && a.status) || '').toUpperCase();
+      var sb = String((b && b.status) || '').toUpperCase();
+      if (sa !== sb) {
+        if (sa === 'ENABLED') return -1;
+        if (sb === 'ENABLED') return 1;
+        if (sa === 'ACTIVE') return -1;
+        if (sb === 'ACTIVE') return 1;
+      }
+      var ta = Number((a && a.activetime) || 0);
+      var tb = Number((b && b.activetime) || 0);
+      if (tb !== ta) return tb - ta;
+      return (Number(a.rank) || 0) - (Number(b.rank) || 0);
+    });
+  }
+
   function renderNodeCard(title, addr, badges, extraClass) {
     return '<div class="mn-node-card ' + (extraClass || '') + '">' +
       '<div class="mn-node-title">' + title + '</div>' +
@@ -322,16 +390,30 @@
         if (!d || !d.success) return;
         var max = d.max_hosted_nodes || 100;
         var used = d.hosted_count || 0;
+        var regCount = d.registry_count != null ? d.registry_count : used;
         var open = d.slots_available != null ? d.slots_available : Math.max(0, max - used);
         var pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0;
+        var net = d.network || {};
+        var syncedOnChain = 0;
+        var hosts = d.hosts || [];
+        hosts.forEach(function (h) { if (h.synced) syncedOnChain += 1; });
+
         if (q('mn-meter-label')) q('mn-meter-label').textContent = used + ' / ' + max + ' slots used';
         if (q('mn-meter-fill')) q('mn-meter-fill').style.width = pct + '%';
-        if (q('mn-net-enabled')) q('mn-net-enabled').textContent = fmtNum((d.network || {}).enabled, 0);
-        if (q('mn-net-total')) q('mn-net-total').textContent = fmtNum((d.network || {}).total, 0) + ' on chain';
+        if (q('mn-platform-onchain')) q('mn-platform-onchain').textContent = fmtNum(syncedOnChain, 0);
+        if (q('mn-platform-enabled')) {
+          q('mn-platform-enabled').textContent = fmtNum(d.platform_enabled_on_chain, 0) + ' ENABLED in fleet';
+        }
         if (q('mn-slots')) q('mn-slots').textContent = used;
-        if (q('mn-collateral')) q('mn-collateral').textContent = fmtNum(d.collateral_mn2, 0) + ' MN2 each';
+        if (q('mn-collateral')) {
+          q('mn-collateral').textContent = regCount + ' hosts · ' + fmtNum(d.collateral_mn2, 0) + ' MN2 each';
+        }
         if (q('mn-open-slots')) q('mn-open-slots').textContent = open;
-        if (q('mn-slots-cap')) q('mn-slots-cap').textContent = 'up to ' + max + ' total';
+        if (q('mn-slots-cap')) q('mn-slots-cap').textContent = 'up to ' + max + ' slots';
+        if (q('mn-hero-collateral')) q('mn-hero-collateral').textContent = fmtNum(d.collateral_mn2, 0) + ' MN2';
+        if (q('mn-checkout-collateral')) {
+          q('mn-checkout-collateral').textContent = fmtNum(d.collateral_mn2, 0);
+        }
         applyMasternodeCheckoutSoldOut(open);
         var daemon = d.daemon || {};
         if (q('mn-daemon')) {
@@ -350,10 +432,9 @@
         applyMasternodeCheckoutPricing();
         var notes = q('mn-public-notes');
         if (notes) notes.textContent = d.public_notes || '';
-        var hosts = d.hosts || [];
         if (q('mn-host-summary')) {
-          q('mn-host-summary').textContent = '(' + hosts.length + ' in fleet · ' +
-            (d.platform_enabled_on_chain || 0) + ' live on-chain)';
+          q('mn-host-summary').textContent = '(' + hosts.length + ' shown · ' +
+            syncedOnChain + ' on network list)';
         }
         renderMnRpcBanner((d.network || {}).rpc_error || null);
         var grid = q('mn-node-grid');
@@ -362,17 +443,15 @@
             grid.innerHTML = renderNodeCard('No hosts yet', null, mnBadge('open'), 'mn-node-card--empty');
           } else {
             grid.innerHTML = hosts.map(function (h) {
-              var st = h.on_chain_status || h.status || 'unknown';
-              var cls = String(st).toUpperCase() === 'ENABLED' ? 'mn-node-card--enabled' :
-                (h.status === 'queued' ? 'mn-node-card--queued' : 'mn-node-card--active');
-              var act = h.on_chain_activetime != null ? h.on_chain_activetime : null;
-              return renderNodeCard(
-                h.label || h.id,
-                h.broadcast_address || h.collateral_address || '—',
-                mnBadge(st) + mnBadge(h.synced ? 'synced' : 'pending') +
-                  activetimeBadge(act, st),
-                cls
-              );
+              var st = (h.on_chain_status || h.status || 'unknown').toUpperCase();
+              var cls = st === 'ENABLED' ? 'mn-node-card--enabled' :
+                (h.status === 'queued' || h.status === 'provisioning' ? 'mn-node-card--queued' : 'mn-node-card--active');
+              var title = h.label || h.id;
+              var sub = h.broadcast_address || h.collateral_address || '';
+              if (h.collateral_txid) {
+                sub = (sub ? sub + ' · ' : '') + String(h.collateral_txid).slice(0, 10) + '…';
+              }
+              return renderNodeCard(title, sub || '—', fleetHostBadges(h), cls);
             }).join('');
           }
         }
@@ -383,11 +462,10 @@
       .then(function (d) {
         var tbody = q('mn-net-table');
         var grid = q('mn-net-grid');
-        var list = (d && d.list) || [];
+        var list = sortMasternodeList((d && d.list) || []);
         var rpcErr = (d && d.rpc_error) ? String(d.rpc_error) : '';
         if (d && d.success) {
-          if (q('mn-net-enabled')) q('mn-net-enabled').textContent = fmtNum(d.enabled, 0);
-          if (q('mn-net-total')) q('mn-net-total').textContent = fmtNum(d.total, 0) + ' on chain';
+          updateMnNetworkStatTiles(d);
         }
         renderMnRpcBanner(rpcErr || null);
         if (tbody) {
@@ -398,12 +476,14 @@
           } else {
             tbody.innerHTML = list.map(function (m) {
               var st = m.status || '—';
+              var stU = String(st).toUpperCase();
+              var rowCls = stU === 'ENABLED' ? 'mn-row-enabled' : (stU === 'ACTIVE' ? 'mn-row-active' : '');
               var addr = m.addr ? '<span class="mn-node-addr">' + m.addr + '</span>' : '—';
-              return '<tr class="' + (String(st).toUpperCase() === 'ENABLED' ? 'mn-row-enabled' : '') + '">' +
-                '<td>' + (m.rank != null ? m.rank : '—') + '</td>' +
+              return '<tr class="' + rowCls + '">' +
+                '<td class="num">' + (m.rank != null ? m.rank : '—') + '</td>' +
                 '<td>' + addr + '</td>' +
                 '<td>' + mnBadge(st) + '</td>' +
-                '<td>' + (formatActivetime(m.activetime, st) || '—') + '</td>' +
+                '<td class="num">' + (formatActivetime(m.activetime, st) || '—') + '</td>' +
                 '</tr>';
             }).join('');
           }
@@ -736,6 +816,22 @@
       }).catch(function () {
         if (msg) msg.textContent = 'Could not confirm payment.';
       });
+  }
+
+  function setupMasternodeRefresh() {
+    var btn = q('mn-refresh-btn');
+    if (btn && !btn.getAttribute('data-bound')) {
+      btn.setAttribute('data-bound', '1');
+      btn.addEventListener('click', function () {
+        mnLoaded = true;
+        loadMasternodeHosting();
+      });
+    }
+    if (mnRefreshTimer) clearInterval(mnRefreshTimer);
+    mnRefreshTimer = setInterval(function () {
+      var panel = document.querySelector('.mn2-tab-panel[data-mn2-tab="masternodes"]');
+      if (panel && !panel.hidden) loadMasternodeHosting();
+    }, 60000);
   }
 
   function checkMarketEnabled() {

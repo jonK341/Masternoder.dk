@@ -6,7 +6,7 @@
     <title>Crypto Exchange — MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
-    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
+    <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260725a">
     <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260702a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -17,7 +17,7 @@
                 <img src="/static/img/exchange/hero-exchange.svg" alt="" class="cex-hero-img" width="1200" height="320" />
                 <div class="cex-hero-text">
                     <h1><i class="fas fa-chart-line"></i> MasterNoder Exchange</h1>
-                    <p class="cex-sub">25 cryptocurrencies · instant swap · limit orders · staking rewards · tax records</p>
+                    <p class="cex-sub" id="cex-hero-sub">Loading markets… · instant swap · limit orders · staking rewards · tax records</p>
                 </div>
             </div>
             <div class="cex-visual-row" aria-hidden="true">
@@ -61,11 +61,16 @@
                 <div class="mn2-page-metric"><span>USD / MN2</span><strong id="cex-mn2-rate">—</strong></div>
                 <div class="mn2-page-metric"><span>Fee tier</span><strong id="cex-fee-tier">—</strong></div>
             </div>
+            <p class="mn2-page-strip-links">
+                <a href="/explorer?tab=masternodes">Masternode hosting</a>
+                <a href="/explorer">Network explorer</a>
+                <a href="/shop?tab=mn2">Reserve a slot</a>
+            </p>
         </section>
 
         <div class="cex-grid">
             <aside class="cex-panel cex-assets">
-                <h2>Markets <span id="cex-asset-count" class="cex-badge">25</span></h2>
+                <h2>Markets <span id="cex-asset-count" class="cex-badge">—</span></h2>
                 <input type="search" id="cex-asset-search" placeholder="Search BTC, ETH…" class="cex-input">
                 <div id="cex-asset-list" class="cex-asset-list">Loading…</div>
             </aside>
@@ -513,7 +518,7 @@
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
     <script src="/static/js/exchange-hub.js?v=20260704a"></script>
-    <script src="/static/js/crypto-exchange.js?v=20260702a"></script>
+    <script src="/static/js/crypto-exchange.js?v=20260725a"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
 </body>
 </html>

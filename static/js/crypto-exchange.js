@@ -280,7 +280,13 @@
     ]).then(function (res) {
       catalog = res[0];
       if (catalog && catalog.success) {
-        q('cex-asset-count').textContent = String(catalog.asset_count || 25);
+        var n = catalog.asset_count || 0;
+        q('cex-asset-count').textContent = String(n || '—');
+        var heroSub = q('cex-hero-sub');
+        if (heroSub) {
+          heroSub.textContent = (n ? n + ' cryptocurrencies' : 'Multi-asset') +
+            ' · instant swap · limit orders · staking rewards · tax records';
+        }
         q('cex-legal-notice').textContent = catalog.legal_notice || '';
         if (catalog.lawful_bonus && catalog.lawful_bonus.terms_version) {
           termsVersion = catalog.lawful_bonus.terms_version;

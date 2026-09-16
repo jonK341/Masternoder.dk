@@ -19,6 +19,20 @@
     color: rgba(255, 255, 255, 0.75);
 }
 
+.mn2-page-strip-links {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    font-size: 0.85rem;
+}
+.mn2-page-strip-links a {
+    color: #00ff88;
+    font-weight: 600;
+    text-decoration: none;
+}
+.mn2-page-strip-links a:hover { text-decoration: underline; }
+
 .mn2-page-metrics {
     display: flex;
     flex-wrap: wrap;
