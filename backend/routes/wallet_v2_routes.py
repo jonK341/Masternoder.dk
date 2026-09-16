@@ -12,6 +12,19 @@ from backend.services.wallet_upgrades_service import (
 )
 from backend.services.wallet_micro_earn_service import get_status as micro_earn_status
 from backend.services.wallet_micro_earn_service import record_click as micro_earn_click
+from backend.services.camgirls_wallet_service import (
+    get_progress as camgirls_get_progress,
+    list_performers,
+    list_upgrades as camgirls_list_upgrades,
+    unlock_upgrade as camgirls_unlock_upgrade,
+)
+from backend.services.network_chat_service import (
+    get_status as network_chat_status,
+    heartbeat as network_chat_heartbeat,
+    post_message as network_chat_post_message,
+    post_rating as network_chat_post_rating,
+)
+from backend.services.wallet_integration_service import build_integration_hub
 from backend.services.wallet_v2_service import (
     build_casino_snapshot,
     build_discord_status,
@@ -115,3 +128,86 @@ def wallet_v2_earn_click():
     result = micro_earn_click(user_id, event_id, captcha_token=captcha_token)
     status = 200 if result.get("success") else 400
     return jsonify(result), status
+
+
+@wallet_v2_bp.route("/api/wallet/v2/integration/hub", methods=["GET"])
+def wallet_v2_integration_hub():
+    """Mega integration hub — links and snapshot counts for wallet platform tabs."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    return jsonify(build_integration_hub(user_id)), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/catalog", methods=["GET"])
+def wallet_v2_camgirls_catalog():
+    """25 camgirl wallet profiles — SFW cards with studio deep links."""
+    return jsonify(list_performers()), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/upgrades", methods=["GET"])
+def wallet_v2_camgirls_upgrades_list():
+    """250 camgirl section upgrades catalog — lazy-loaded."""
+    category = request.args.get("category")
+    return jsonify(camgirls_list_upgrades(category=category)), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/upgrades/progress", methods=["GET"])
+def wallet_v2_camgirls_upgrades_progress():
+    """Per-user camgirl upgrade unlock progress."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    return jsonify(camgirls_get_progress(user_id)), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/camgirls/upgrades/unlock", methods=["POST"])
+def wallet_v2_camgirls_upgrades_unlock():
+    """Unlock one camgirl upgrade when conditions are met."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    body = request.get_json(silent=True) or {}
+    upgrade_id = body.get("upgrade_id") or request.args.get("upgrade_id")
+    result = camgirls_unlock_upgrade(user_id, upgrade_id)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
+
+
+@wallet_v2_bp.route("/api/wallet/v2/network-chat/status", methods=["GET"])
+def wallet_v2_network_chat_status():
+    """Network chat room status — online users stub, recent messages, reward caps."""
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    limit = request.args.get("limit", "50")
+    try:
+        lim = int(limit)
+    except (TypeError, ValueError):
+        lim = 50
+    return jsonify(network_chat_status(user_id, limit=lim)), 200
+
+
+@wallet_v2_bp.route("/api/wallet/v2/network-chat/message", methods=["POST"])
+def wallet_v2_network_chat_message():
+    """Post a network chat message (JSONL store) and earn micro MN2 when within caps."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    body = request.get_json(silent=True) or {}
+    text = body.get("text") or body.get("message") or ""
+    display_name = body.get("display_name")
+    result = network_chat_post_message(user_id, text, display_name=display_name)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
+
+
+@wallet_v2_bp.route("/api/wallet/v2/network-chat/rating", methods=["POST"])
+def wallet_v2_network_chat_rating():
+    """Rate a chat message 1–5 stars and earn micro MN2 for activity."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    body = request.get_json(silent=True) or {}
+    message_id = body.get("message_id") or request.args.get("message_id")
+    stars = body.get("stars") or request.args.get("stars")
+    result = network_chat_post_rating(user_id, message_id, stars)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
+
+
+@wallet_v2_bp.route("/api/wallet/v2/network-chat/heartbeat", methods=["POST"])
+def wallet_v2_network_chat_heartbeat():
+    """Presence heartbeat for online roster and micro-earn."""
+    user_id = resolve_user_id(from_body=True, from_query=True, use_session=True, use_identification=True)
+    body = request.get_json(silent=True) or {}
+    display_name = body.get("display_name")
+    return jsonify(network_chat_heartbeat(user_id, display_name=display_name)), 200
