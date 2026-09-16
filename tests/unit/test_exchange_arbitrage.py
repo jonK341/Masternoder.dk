@@ -1,0 +1,386 @@
+"""Cross-venue arbitrage: connector, scanner, paper agents, and vault tests."""
+import os
+import pytest
+
+
+@pytest.fixture
+def arb_env(tmp_path, monkeypatch):
+    from backend.services import crypto_exchange_service as ex
+    from backend.services import external_exchange_connector_service as conn
+    from backend.services import exchange_arbitrage_service as arb
+    from backend.services import exchange_secrets_vault_service as vault
+
+    data = tmp_path / "crypto_exchange"
+    (data / "agent_accounts").mkdir(parents=True)
+
+    monkeypatch.setattr(ex, "_AUDIT_PATH", str(data / "audit_log.jsonl"))
+    monkeypatch.setattr(conn, "_PRICE_CACHE_PATH", str(data / "external_prices.json"))
+    monkeypatch.setattr(arb, "_ACCOUNTS_DIR", str(data / "agent_accounts"))
+    monkeypatch.setattr(vault, "_DATA_DIR", str(data))
+    monkeypatch.setattr(vault, "_VAULT_PATH", str(data / "secrets_vault.enc"))
+    monkeypatch.setattr(vault, "_REGISTRY_PATH", str(data / "wallet_registry.json"))
+
+    return {"ex": ex, "conn": conn, "arb": arb, "vault": vault}
+
+
+def test_list_venues_has_major_connections(arb_env):
+    venues = arb_env["conn"].list_venues()
+    assert venues["success"] is True
+    assert venues["venue_count"] >= 20
+    ids = {v["id"] for v in venues["venues"]}
+    assert {"binance", "coinbase", "nonkyc", "bingx", "upbit", "poloniex"}.issubset(ids)
+
+
+def test_build_pair_applies_overrides_and_templates(arb_env):
+    conn = arb_env["conn"]
+    vmap = conn._venue_map()
+    assert conn.build_pair(vmap["binance"], "BTC") == "BTCUSDC"
+    assert conn.build_pair(vmap["binance"], "DOGE") == "DOGEUSDC"
+    assert conn.build_pair(vmap["coinbase"], "BTC") == "BTC-USD"
+    assert conn.build_pair(vmap["nonkyc"], "BTC") == "BTC_USDT"
+    assert conn.build_pair(vmap["bitstamp"], "BTC") == "btcusd"  # lowercase
+    assert conn.build_pair(vmap["upbit"], "BTC") == "USDT-BTC"
+
+
+def test_parsers_normalize_each_venue_shape(arb_env):
+    conn = arb_env["conn"]
+    assert conn._p_binance({"bidPrice": "100", "askPrice": "101"})["bid"] == 100.0
+    assert conn._p_coinbase({"bid": "100", "ask": "101", "price": "100.5"})["last"] == 100.5
+    assert conn._p_kraken({"result": {"XXBTZUSD": {"a": ["101"], "b": ["100"], "c": ["100.5"]}}})["ask"] == 101.0
+    assert conn._p_nonkyc({"bid": "100", "ask": "101", "last_price": "100.5"})["last"] == 100.5
+    assert conn._p_bitfinex([100, 1, 101, 1, 0, 0, 100.5, 0, 0, 0])["bid"] == 100.0
+    assert conn._p_gateio([{"highest_bid": "100", "lowest_ask": "101", "last": "100.5"}])["ask"] == 101.0
+    assert conn._p_bingx({"data": {"bidPrice": "100", "askPrice": "101"}})["bid"] == 100.0
+    assert conn._p_poloniex({"bid": "100", "ask": "101", "close": "100.5"})["ask"] == 101.0
+    assert conn._p_bitmart({"data": {"bid_px": "100", "ask_px": "101", "last": "100.5"}})["bid"] == 100.0
+    assert conn._p_coinex({"data": {"ticker": {"buy": "100", "sell": "101", "last": "100.5"}}})["bid"] == 100.0
+    assert conn._p_upbit([{"orderbook_units": [{"bid_price": 100, "ask_price": 101}]}])["ask"] == 101.0
+    assert conn._p_xt({"result": [{"bp": "100", "ap": "101", "c": "100.5"}]})["bid"] == 100.0
+
+
+def test_scan_finds_profitable_spread(arb_env):
+    arb = arb_env["arb"]
+    injected = {
+        "binance": {"BTC": {"bid": 99.9, "ask": 100.0, "last": 100.0}},
+        "coinbase": {"BTC": {"bid": 105.0, "ask": 105.1, "last": 105.0}},
+    }
+    res = arb.scan_opportunities(["BTC"], ["binance", "coinbase"], injected=injected)
+    assert res["success"] is True
+    assert res["opportunity_count"] == 1
+    opp = res["opportunities"][0]
+    assert opp["buy_venue"] == "binance"
+    assert opp["sell_venue"] == "coinbase"
+    assert opp["net_bps"] > 0
+    assert opp["profitable"] is True
+
+
+def test_run_paper_tick_credits_agent_account(arb_env):
+    arb = arb_env["arb"]
+    # Wide spread on BTC across the btc/eth agent's venues.
+    injected = {
+        "binance": {"BTC": {"bid": 99.9, "ask": 100.0, "last": 100.0}},
+        "coinbase": {"BTC": {"bid": 108.0, "ask": 108.1, "last": 108.0}},
+        "nonkyc": {"BTC": {"bid": 101.0, "ask": 101.2, "last": 101.0}},
+        "bitstamp": {"BTC": {"bid": 100.5, "ask": 100.6, "last": 100.5}},
+    }
+    res = arb.run_paper_tick(injected=injected)
+    assert res["success"] is True
+    assert res["executed_count"] >= 1
+
+    accounts = arb.agent_accounts()
+    btc_eth = next(a for a in accounts["accounts"] if a["agent_id"] == "arb_agent_btc_eth")
+    assert btc_eth["realized_profit_usd"] > 0
+    assert btc_eth["trade_count"] == 1
+    assert accounts["total_realized_profit_usd"] > 0
+
+
+def test_run_paper_tick_attempts_when_net_bps_above_threshold(arb_env, monkeypatch):
+    """Live-mode mock: funded opportunity with net_bps >= min_margin must attempt execution."""
+    arb = arb_env["arb"]
+    conn = arb_env["conn"]
+
+    cfg = conn.load_connectors_config()
+    cfg = dict(cfg)
+    cfg["min_margin_bps"] = 12
+    monkeypatch.setattr(conn, "load_connectors_config", lambda: cfg)
+    monkeypatch.setattr(arb, "live_enabled", lambda: True)
+
+    injected = {
+        "binance": {"LINK": {"bid": 7.86, "ask": 7.82, "last": 7.84}},
+        "nonkyc": {"LINK": {"bid": 7.80, "ask": 7.81, "last": 7.80}},
+    }
+
+    sample_opp = {
+        "symbol": "LINK",
+        "buy_venue": "nonkyc",
+        "buy_ask": 7.81,
+        "sell_venue": "binance",
+        "sell_bid": 7.86,
+        "gross_bps": 64.0,
+        "fee_bps": 30.0,
+        "net_bps": 34.0,
+        "notional_usd": 75.0,
+        "est_profit_usd": 0.25,
+        "profitable": True,
+    }
+
+    monkeypatch.setattr(
+        arb,
+        "prepare_live_opportunity",
+        lambda opp, **kw: {"ok": True, "opportunity": sample_opp, "max_funded_usd": 75.0},
+    )
+    exec_calls = []
+
+    def fake_execute(opp, *, agent_id, dry_run=None):
+        exec_calls.append({"agent_id": agent_id, "opp": opp})
+        return {"success": True, "mode": "paper", "est_profit_usd": opp.get("est_profit_usd", 0.1)}
+
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.execute_spatial_arbitrage",
+        fake_execute,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.book_agent_profit",
+        lambda agent_id, opp, exec_res: {
+            "agent_id": agent_id,
+            "last_action": {"agent_id": agent_id, "executed": exec_res.get("success"), "best": opp},
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_path_service.record_scan",
+        lambda **kw: "path-test",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_path_service.record_execution",
+        lambda **kw: None,
+    )
+
+    res = arb.run_paper_tick(injected=injected)
+    assert res["success"] is True
+    assert res["executed_count"] >= 1
+    assert len(exec_calls) >= 1
+    assert exec_calls[0]["opp"]["net_bps"] >= 12
+
+
+def test_run_paper_tick_force_global_when_hot_spread(arb_env, monkeypatch):
+    """When per-agent scans skip but global best >= 18 bps, force arb_live_dual_farm attempt."""
+    arb = arb_env["arb"]
+    conn = arb_env["conn"]
+
+    cfg = conn.load_connectors_config()
+    cfg = dict(cfg)
+    cfg["min_margin_bps"] = 14
+    monkeypatch.setattr(conn, "load_connectors_config", lambda: cfg)
+    monkeypatch.setattr(arb, "live_enabled", lambda: True)
+
+    injected = {
+        "binance": {"LINK": {"bid": 7.86, "ask": 7.82, "last": 7.84}},
+        "nonkyc": {"LINK": {"bid": 7.80, "ask": 7.81, "last": 7.80}},
+    }
+
+    sample_opp = {
+        "symbol": "LINK",
+        "buy_venue": "nonkyc",
+        "buy_ask": 7.81,
+        "sell_venue": "binance",
+        "sell_bid": 7.86,
+        "gross_bps": 64.0,
+        "fee_bps": 30.0,
+        "net_bps": 34.0,
+        "notional_usd": 75.0,
+        "est_profit_usd": 0.25,
+        "profitable": True,
+    }
+
+    monkeypatch.setattr(
+        arb,
+        "prepare_live_opportunity",
+        lambda opp, **kw: {"ok": True, "opportunity": sample_opp, "max_funded_usd": 75.0},
+    )
+    exec_calls = []
+
+    def fake_execute(opp, *, agent_id, dry_run=None):
+        exec_calls.append({"agent_id": agent_id, "opp": opp})
+        return {"success": True, "mode": "live", "est_profit_usd": opp.get("est_profit_usd", 0.1)}
+
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.execute_spatial_arbitrage",
+        fake_execute,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.book_agent_profit",
+        lambda agent_id, opp, exec_res: {
+            "agent_id": agent_id,
+            "last_action": {"agent_id": agent_id, "executed": exec_res.get("success"), "best": opp},
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_path_service.record_scan",
+        lambda **kw: "path-force",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_path_service.record_execution",
+        lambda **kw: None,
+    )
+
+    res = arb.run_paper_tick(injected=injected)
+    assert res["success"] is True
+    assert res["executed_count"] >= 1
+    assert res.get("best_qualifying", {}).get("net_bps", 0) >= 18
+    assert len(exec_calls) >= 1
+
+
+def test_summarize_best_qualifying_funding(arb_env):
+    arb = arb_env["arb"]
+    actions = [
+        {
+            "agent_id": "arb_agent_btc_eth",
+            "executed": False,
+            "reason": "below_threshold",
+            "best": {"net_bps": 8.0, "est_profit_usd": 0.05},
+        },
+        {
+            "agent_id": "arb_live_dual_farm",
+            "executed": False,
+            "reason": "insufficient_venue_balance",
+            "max_funded_usd": 5.0,
+            "best": {"net_bps": 38.2, "est_profit_usd": 0.28},
+        },
+    ]
+    summary = arb._summarize_best_qualifying(actions, 14.0)
+    assert summary["agent_id"] == "arb_live_dual_farm"
+    assert summary["net_bps"] == 38.2
+    assert summary["qualifies"] is True
+    assert summary["funded"] is False
+
+
+def test_prepare_live_opportunity_scales_to_cap(arb_env, monkeypatch):
+    """When quote balance caps notional below configured, scale down and attempt."""
+    arb = arb_env["arb"]
+    opp = {
+        "symbol": "LINK",
+        "buy_venue": "nonkyc",
+        "buy_ask": 7.81,
+        "sell_venue": "binance",
+        "sell_bid": 7.86,
+        "net_bps": 34.0,
+        "notional_usd": 75.0,
+        "est_profit_usd": 0.25,
+    }
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.max_funded_notional_usd",
+        lambda *a, **kw: 22.0,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.opportunity_funded",
+        lambda opp, **kw: {"ok": True},
+    )
+    prepared = arb.prepare_live_opportunity(opp, configured_usd=75.0, min_live_usd=10.0)
+    assert prepared["ok"] is True
+    assert prepared["opportunity"]["notional_usd"] == 22.0
+    assert prepared["max_funded_usd"] == 22.0
+
+
+def test_force_global_when_threshold_state_ready(arb_env, monkeypatch):
+    """Per-agent below threshold but arb_threshold_state ready triggers global attempt."""
+    arb = arb_env["arb"]
+    conn = arb_env["conn"]
+
+    cfg = conn.load_connectors_config()
+    cfg = dict(cfg)
+    cfg["min_margin_bps"] = 14
+    monkeypatch.setattr(conn, "load_connectors_config", lambda: cfg)
+    monkeypatch.setattr(arb, "live_enabled", lambda: True)
+    monkeypatch.setattr(
+        "backend.services.exchange_extended_profit_service.read_arb_threshold_state",
+        lambda: {
+            "ready": True,
+            "best_net_bps": 22.0,
+            "threshold_bps": 12,
+            "top_symbol": "LINK",
+            "buy_venue": "nonkyc",
+            "sell_venue": "binance",
+            "est_profit_usd": 0.2,
+        },
+    )
+
+    injected = {
+        "binance": {"LINK": {"bid": 7.86, "ask": 7.82, "last": 7.84}},
+        "nonkyc": {"LINK": {"bid": 7.80, "ask": 7.81, "last": 7.80}},
+    }
+    sample_opp = {
+        "symbol": "LINK",
+        "buy_venue": "nonkyc",
+        "buy_ask": 7.81,
+        "sell_venue": "binance",
+        "sell_bid": 7.86,
+        "gross_bps": 64.0,
+        "fee_bps": 30.0,
+        "net_bps": 34.0,
+        "notional_usd": 22.0,
+        "est_profit_usd": 0.08,
+        "profitable": True,
+    }
+    monkeypatch.setattr(
+        arb,
+        "prepare_live_opportunity",
+        lambda opp, **kw: {"ok": True, "opportunity": sample_opp, "max_funded_usd": 22.0},
+    )
+    exec_calls = []
+
+    def fake_execute(opp, *, agent_id, dry_run=None):
+        exec_calls.append({"agent_id": agent_id, "opp": opp})
+        return {"success": True, "mode": "live", "est_profit_usd": opp.get("est_profit_usd", 0.1)}
+
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.execute_spatial_arbitrage",
+        fake_execute,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.book_agent_profit",
+        lambda agent_id, opp, exec_res: {
+            "agent_id": agent_id,
+            "last_action": {"agent_id": agent_id, "executed": exec_res.get("success"), "best": opp},
+        },
+    )
+    monkeypatch.setattr("backend.services.exchange_profit_path_service.record_scan", lambda **kw: "path-state")
+    monkeypatch.setattr("backend.services.exchange_profit_path_service.record_execution", lambda **kw: None)
+
+    res = arb.run_paper_tick(injected=injected)
+    assert res["success"] is True
+    assert res["executed_count"] >= 1
+    assert any(c["agent_id"] == "arb_live_dual_farm" for c in exec_calls)
+
+
+def test_wallet_registry_stores_public_addresses(arb_env):
+    vault = arb_env["vault"]
+    r = vault.register_wallet("arb_btc_eth_wallet", "bc1qexampleaddress", venue="binance", asset="BTC")
+    assert r["success"] is True
+    wallets = vault.list_wallets()
+    assert any(w["label"] == "arb_btc_eth_wallet" and w["address"] == "bc1qexampleaddress" for w in wallets)
+
+
+def test_secret_write_refused_without_key(arb_env, monkeypatch):
+    vault = arb_env["vault"]
+    monkeypatch.delenv("EXCHANGE_VAULT_KEY", raising=False)
+    r = vault.set_secret("binance_api_key", "supersecret")
+    assert r["success"] is False
+    assert r["error"] == "encryption_unavailable"
+
+
+def test_secret_roundtrip_with_key(arb_env, monkeypatch):
+    pytest.importorskip("cryptography")
+    vault = arb_env["vault"]
+    monkeypatch.setenv("EXCHANGE_VAULT_KEY", "test-passphrase-123")
+    assert vault.encryption_available() is True
+    assert vault.set_secret("binance_api_key", "supersecret")["success"] is True
+    assert vault.get_secret("binance_api_key") == "supersecret"
+    assert "binance_api_key" in vault.list_secret_names()
+
+
+def test_rebalance_tick_skips_without_two_venues(arb_env):
+    arb = arb_env["arb"]
+    r = arb.run_rebalance_tick()
+    assert r["success"] is True
+    assert r.get("skipped") is True
+    assert r.get("reason") == "need_two_credentialed_venues"

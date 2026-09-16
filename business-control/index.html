@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Business Control · Owner Only</title>
+  <link rel="stylesheet" href="/static/css/business-control.css?v=20260726h" />
+</head>
+<body class="bc-body">
+  <div class="wrap">
+    <div id="gate" class="gate">
+      <h1>Business Control</h1>
+      <p style="color:var(--muted);font-size:13px">Owner access only. Enter your exchange admin key.</p>
+      <input id="key" type="password" placeholder="Admin key" autocomplete="off" />
+      <button class="btn primary" id="unlock" style="width:100%">Unlock</button>
+      <div class="status" id="gateStatus"></div>
+    </div>
+
+    <div id="app" class="hidden">
+      <header class="bc-header">
+        <h1>Business Control <small>All trading bots · profit & controls</small></h1>
+        <div class="bar">
+          <a class="nav" href="/exchange">Exchange</a>
+          <a class="nav" href="/command-center">Command Center</a>
+          <button type="button" class="btn small" id="refresh">Refresh</button>
+          <button type="button" class="btn small" id="runFleet" title="Supervisor fleet only (no arb/AI/cross)">Run fleet</button>
+          <button type="button" class="btn small primary" id="runAll">Run all bots</button>
+          <button type="button" class="btn small danger" id="kill">Kill switch</button>
+          <button type="button" class="btn small" id="lock">Lock</button>
+        </div>
+      </header>
+
+      <div class="status" id="topStatus"></div>
+
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="overview">Overview</div>
+        <div class="tab" data-tab="predictions">Predictions</div>
+        <div class="tab" data-tab="boost">Profit Boost</div>
+        <div class="tab" data-tab="payout">Payout · PayPal</div>
+        <div class="tab" data-tab="livepack">Live pack</div>
+        <div class="tab" data-tab="orchestration">Orchestration</div>
+        <div class="tab" data-tab="fleet">Fleet ops</div>
+        <div class="tab" data-tab="local">Local laptop</div>
+        <div class="tab" data-tab="monitors">5D · Profit TV</div>
+        <div class="tab" data-tab="agents">Agents hub</div>
+        <div class="tab" data-tab="watch">Live Watch</div>
+      </div>
+
+      <div class="tabpane active" id="pane-overview">
+        <div class="cards" id="kpis"></div>
+        <div class="section">
+          <h2>Supervisor agents</h2>
+          <div class="sup-grid" id="supervisors"></div>
+        </div>
+        <div class="section">
+          <h2>Fleet bots (27 mechanics)</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 8px">5 Profit Analyst · 6 Extended · 3 Treasury · 5 Risk · 4 Winnable executors · XP & reward tiers</p>
+          <div id="fleetSummary" class="muted">—</div>
+          <div id="fleetCommander" class="fleet-commander muted" style="margin-top:8px;display:none"></div>
+          <div id="fleetRoster" style="margin-top:12px"></div>
+        </div>
+        <div class="section">
+          <h2>Trading bots — profit calculator</h2>
+          <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Bot</th><th>Type</th><th>Supervisor</th><th>Realized $</th><th>Unrealized $</th><th>Total $</th><th>Trades</th><th>State</th></tr>
+            </thead>
+            <tbody id="bots"></tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-predictions">
+        <div class="section">
+          <h2>Prediction radar</h2>
+          <p class="muted">Live ranked symbols by predicted net edge. Heuristic signals — no profit is guaranteed.</p>
+          <table>
+            <thead><tr><th>Symbol</th><th>Direction</th><th>Confidence</th><th>Expected move</th><th>Edge uplift</th><th>Score</th></tr></thead>
+            <tbody id="predRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-boost">
+        <div class="section">
+          <h2>How much can we boost the bots?</h2>
+          <div class="grid2">
+            <label class="field">Capital (USD)<input type="number" id="boostCapital" value="5000" /></label>
+            <label class="field">Skills (comma ids)<input type="text" id="boostSkills" value="spatial_arbitrage,triangular_arbitrage,funding_rate_carry" /></label>
+          </div>
+          <button class="btn primary small" id="boostRun">Calculate boost</button>
+          <table style="margin-top:14px">
+            <thead><tr><th>Scenario</th><th>Premium</th><th>Edge</th><th>Cycles/day</th><th>Daily $</th><th>Monthly $</th><th>ROI/mo</th></tr></thead>
+            <tbody id="boostRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-payout">
+        <div class="section">
+          <h2>PayPal profit payout — your account</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Trading profit is stashed on-platform, then swept to your PayPal email. Set <code>EXCHANGE_PAYOUT_PAYPAL_LIVE=1</code> for real Payouts API transfers.</p>
+          <div id="payoutStatus" class="muted">Loading…</div>
+          <div class="grid2" style="margin-top:12px">
+            <label class="field">PayPal email<input type="email" id="ppEmail" placeholder="you@paypal.com" /></label>
+            <label class="field">Profit share to PayPal (%)<input type="number" id="ppShare" value="50" min="1" max="100" /></label>
+            <label class="field">Min sweep (USD)<input type="number" id="ppMin" value="5" /></label>
+          </div>
+          <div class="bar">
+            <button class="btn small" id="ppSave">Save PayPal config</button>
+            <button class="btn small" id="ppPlan">Plan sweep</button>
+            <button class="btn small primary" id="ppSweep">Sweep to PayPal now</button>
+          </div>
+          <div id="payoutResult" class="muted" style="margin-top:10px"></div>
+          <details style="margin-top:16px;font-size:12px">
+            <summary>Advanced: Binance stash (optional)</summary>
+            <div class="grid2" style="margin-top:8px">
+              <label class="field">Binance API key<input type="password" id="binKey" placeholder="optional" /></label>
+              <label class="field">Binance API secret<input type="password" id="binSecret" placeholder="optional" /></label>
+              <label class="field">USDT deposit address<input type="text" id="binUsdt" placeholder="Binance USDT address" /></label>
+            </div>
+            <button class="btn small" id="binSave" style="margin-top:8px">Save Binance config</button>
+          </details>
+          <p class="warn" style="font-size:12px;margin-top:10px">Paper mode records sweeps until live gates are on. PayPal needs Payouts enabled on your PayPal app.</p>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-livepack">
+        <div class="section">
+          <h2>Live profit pack</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Arb live gate, venue credentials, pair search, payout mode. Fix blockers to move from paper to full live.</p>
+          <div id="livePackPanel" class="muted">Loading…</div>
+        </div>
+        <div class="section">
+          <h2>Winnable pairs radar</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Ranked routes from profit pair search — Winnable Pairs Executor trades these when score and spread thresholds pass.</p>
+          <div id="winnablePanel" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-orchestration">
+        <div class="section">
+          <h2>Orchestrator — last run-all tick</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Each daemon or manual <em>Run all bots</em> executes trading ticks plus risk, analytics, and treasury supervisor passes.</p>
+          <div id="orchPanel" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-fleet">
+        <div class="section">
+          <h2>Supervisor fleet — operations</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;">Run one supervisor lane or the full 23-bot fleet. XP and levels update on each tick; commander rank reflects total fleet XP.</p>
+          <div id="fleetOpsPanel" class="muted">Loading…</div>
+          <div id="fleetPreflightPanel" class="muted" style="margin-top:12px"></div>
+          <div id="fleetRunStatus" class="status" style="min-height:18px;margin-top:8px"></div>
+          <div class="bar" style="margin-top:12px;flex-wrap:wrap" id="fleetRunBar">
+            <button type="button" class="btn small primary" data-fleet-kind="all">Run all fleet kinds</button>
+            <button type="button" class="btn small" data-fleet-kind="winnable_pairs">Winnable</button>
+            <button type="button" class="btn small" data-fleet-kind="analytics">Profit analyst</button>
+            <button type="button" class="btn small" data-fleet-kind="extended_profit">Extended</button>
+            <button type="button" class="btn small" data-fleet-kind="treasury">Treasury</button>
+            <button type="button" class="btn small" data-fleet-kind="risk">Risk</button>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Fleet roster</h2>
+          <div id="fleetCommanderTab" class="fleet-commander muted" style="margin-bottom:10px;display:none"></div>
+          <div id="fleetRosterTab"></div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-local">
+        <div class="section">
+          <h2>Local bridge · 127.0.0.1:8800</h2>
+          <p class="muted" style="font-size:12px;margin:0 0 10px">
+            Start on your PC: <code>scripts\run_local_business_control.cmd</code> — then this tab drives
+            grid bot, profit live, casino agents, and Flask from one place (browser → localhost only).
+          </p>
+          <div id="localBridgeStatus" class="muted">Checking local server…</div>
+          <div class="bar" style="margin-top:10px;flex-wrap:wrap" id="localJobBar"></div>
+          <div class="bc-frame-grid" style="margin-top:14px">
+            <div class="bc-frame">
+              <div class="bc-frame-head">Grid daemon log</div>
+              <pre id="localGridLog" class="bc-log">—</pre>
+            </div>
+            <div class="bc-frame">
+              <div class="bc-frame-head">Profit / cmd log</div>
+              <pre id="localProfitLog" class="bc-log">—</pre>
+            </div>
+          </div>
+          <div class="bar" style="margin-top:10px">
+            <button type="button" class="btn small primary" id="localGridTick">Grid tick once</button>
+            <button type="button" class="btn small" id="localGridReseed">Grid reseed</button>
+          </div>
+          <div id="localGridStatus" class="muted" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-monitors">
+        <div class="bc-frame-grid">
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Profit daemon monitor (site)</div>
+            <iframe id="frameProfitMonitor" title="Profit monitor" src="/profit/" loading="lazy"></iframe>
+          </div>
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">5D story monitor feed</div>
+            <iframe id="frame5d" title="5D monitor" src="/aggregator/" loading="lazy"></iframe>
+          </div>
+        </div>
+        <div class="section" style="margin-top:14px">
+          <h2>Profit broadcast (YouTube / news)</h2>
+          <div id="profitBroadcastFeed" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-agents">
+        <div class="bc-frame-grid">
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Casino agents</div>
+            <iframe title="Casino" src="/casino/" loading="lazy"></iframe>
+          </div>
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Trading · exchange</div>
+            <iframe title="Exchange" src="/exchange/" loading="lazy"></iframe>
+          </div>
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Podcast agents</div>
+            <iframe title="Podcast" src="/podcast/" loading="lazy"></iframe>
+          </div>
+          <div class="bc-frame bc-frame-tall">
+            <div class="bc-frame-head">Site users · profiles</div>
+            <iframe title="Users" src="/user/" loading="lazy"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpane" id="pane-watch">
+        <div class="section">
+          <h2>Live Watch — trust & activations (all users)</h2>
+          <div id="watchTotals" class="muted">Loading…</div>
+          <table style="margin-top:12px">
+            <thead><tr><th>User</th><th>Trust</th><th>Tier</th><th>Agents</th><th>Active</th><th>Pending</th><th>Profit $</th><th>Avg IQ</th></tr></thead>
+            <tbody id="watchUsers"></tbody>
+          </table>
+          <h2 style="margin-top:18px">Global trust feed</h2>
+          <div id="watchFeed" class="muted"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/static/js/business-control.js?v=20260729a"></script>
+</body>
+</html>

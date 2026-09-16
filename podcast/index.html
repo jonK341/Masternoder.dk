@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podcast — MasterNoder · Blue Bubble Cheese Gum</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/podcast-hub.css?v=20260622">
+    <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260622">
+</head>
+<body class="podcast-page">
+    <div class="podcast-bbcg-bg" aria-hidden="true">
+        <div class="podcast-bubble b1"></div>
+        <div class="podcast-bubble b2"></div>
+        <div class="podcast-bubble b3"></div>
+        <div class="podcast-bubble b4"></div>
+    </div>
+
+    <header class="podcast-header">
+        <span class="podcast-flavor-badge">🫧 Blue Bubble Cheese Gum flavor</span>
+        <h1>🎙️ MasterNoder Podcast</h1>
+        <p class="podcast-tagline">Extended visuals · verified sound · news &amp; changes comments · YouTube · Facebook · Discord · GitHub · MN2</p>
+        <div class="podcast-sound-banner" id="sound-banner">Checking audio…</div>
+        <div class="podcast-stats" id="stats-bar">Loading stats…</div>
+    </header>
+
+    <nav class="podcast-tabs" id="tabs">
+        <button class="podcast-tab" data-tab="sound-lab">Sound Lab</button>
+        <button class="podcast-tab" data-tab="leaderboard">Leaderboard</button>
+        <button class="podcast-tab active" data-tab="channels">Channels</button>
+        <button class="podcast-tab" data-tab="episodes">Episodes</button>
+        <button class="podcast-tab" data-tab="news">News &amp; Changes</button>
+        <button class="podcast-tab" data-tab="social">Social</button>
+        <button class="podcast-tab" data-tab="generate">AI Generate</button>
+        <button class="podcast-tab" data-tab="crypto">Crypto</button>
+        <button class="podcast-tab" data-tab="shop">Shop</button>
+        <button class="podcast-tab" data-tab="customers">Customers</button>
+        <button class="podcast-tab" data-tab="agents">Agents</button>
+    </nav>
+
+    <main class="podcast-main">
+        <section class="podcast-panel" id="panel-sound-lab">
+            <h2>🔊 Sound Lab — BBCG Audio Diagnostics</h2>
+            <p>Verified sound pipeline: TTS encode → BBCG flavor synth → stream repair.</p>
+            <button type="button" class="podcast-btn primary" id="sound-repair-btn">Repair all audio</button>
+            <div id="sound-lab-grid" class="podcast-sound-lab-grid">Loading…</div>
+        </section>
+
+        <section class="podcast-panel" id="panel-leaderboard">
+            <h2>🏆 Podcast Leaderboard</h2>
+            <p>Top kommenters, news discussers, and channel followers — attract the crew.</p>
+            <div id="leaderboard-table" class="podcast-leaderboard">Loading…</div>
+        </section>
+
+        <section class="podcast-panel active" id="panel-channels">
+            <h2>Podcast Channels</h2>
+            <div class="podcast-grid" id="channels-grid"></div>
+        </section>
+
+        <section class="podcast-panel" id="panel-episodes">
+            <h2>Episodes — sound verified on play</h2>
+            <select id="channel-filter" class="podcast-select"><option value="">All channels</option></select>
+            <div class="podcast-episodes" id="episodes-list"></div>
+            <div class="podcast-player" id="player-area" hidden>
+                <div class="podcast-visual-stage">
+                    <div class="podcast-cover-bubble" id="cover-bubble">🫧</div>
+                    <canvas id="podcast-visualizer" width="800" height="120"></canvas>
+                </div>
+                <h3 id="player-title"></h3>
+                <p id="sound-status" class="episode-meta"></p>
+                <div class="podcast-player-controls">
+                    <label>Speed
+                        <select id="playback-speed">
+                            <option value="0.75">0.75×</option>
+                            <option value="1" selected>1×</option>
+                            <option value="1.25">1.25×</option>
+                            <option value="1.5">1.5×</option>
+                            <option value="2">2×</option>
+                        </select>
+                    </label>
+                    <button type="button" class="podcast-btn" id="viz-mode-btn">🫧 Bubble viz</button>
+                    <button type="button" class="podcast-btn" id="queue-add-btn">+ Queue</button>
+                    <button type="button" class="podcast-btn" id="queue-play-btn">▶ Queue</button>
+                    <a class="podcast-btn" href="/api/podcast/rss.xml" target="_blank" rel="noopener">RSS</a>
+                </div>
+                <div id="chapters-list" class="podcast-chapters"></div>
+                <audio id="audio-player" controls preload="metadata"></audio>
+                <details class="podcast-transcript-box" id="transcript-box" hidden>
+                    <summary>Transcript</summary>
+                    <pre id="transcript-text"></pre>
+                </details>
+                <ul id="queue-list" class="podcast-queue-list" hidden></ul>
+                <div class="podcast-share-row" id="share-row"></div>
+                <p class="podcast-reward-msg" id="reward-msg"></p>
+                <div id="episode-social">
+                    <button type="button" class="podcast-btn podcast-like-btn" id="like-btn">❤️ Like</button>
+                    <span id="like-count"></span>
+                    <div class="podcast-comment-form">
+                        <textarea id="comment-input" placeholder="Komment — blue bubble cheese gum vibes + MN2…" maxlength="2000"></textarea>
+                        <button type="button" class="podcast-btn primary" id="comment-submit">Comment</button>
+                    </div>
+                    <div class="podcast-social-feed" id="comments-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="podcast-panel" id="panel-news">
+            <h2>News &amp; Platform Changes</h2>
+            <p>Comment on live platform news — attract discussion, earn MN2 crypto rewards.</p>
+            <div class="podcast-news-grid" id="news-grid"></div>
+        </section>
+
+        <section class="podcast-panel" id="panel-social">
+            <h2>Podcast Social Feed</h2>
+            <div id="activity-feed" class="podcast-social-feed"></div>
+        </section>
+
+        <section class="podcast-panel" id="panel-generate">
+            <h2>Generator Intelligence — AI Podcast</h2>
+            <form id="generate-form" class="podcast-form">
+                <label>Topic <input type="text" name="topic" placeholder="MN2 crypto rewards" required></label>
+                <label>Title <input type="text" name="title" placeholder="Episode title"></label>
+                <label>Description <textarea name="description" rows="3"></textarea></label>
+                <label>Encode profile
+                    <select name="encode_profile" id="encode-profile-select">
+                        <option value="premium">Premium (recommended)</option>
+                        <option value="broadcast">Broadcast AAC (M4A)</option>
+                        <option value="studio">Studio AAC (BBCG broadcast)</option>
+                        <option value="ultra">Ultra MP3</option>
+                        <option value="standard">Standard MP3</option>
+                        <option value="opus_web">Opus web</option>
+                    </select>
+                </label>
+                <label>Assigned agent
+                    <select name="assigned_agent">
+                        <option value="podcast_producer_agent">podcast_producer_agent</option>
+                        <option value="content_generator_agent">content_generator_agent</option>
+                        <option value="reporter_agent">reporter_agent</option>
+                    </select>
+                </label>
+                <button type="submit" class="podcast-btn primary">Generate Episode</button>
+            </form>
+            <div id="generate-progress" class="podcast-progress" hidden></div>
+        </section>
+
+        <section class="podcast-panel" id="panel-crypto">
+            <h2>Crypto Rewards (MN2)</h2>
+            <div id="crypto-info" class="podcast-crypto-card">Loading…</div>
+            <ul class="podcast-crypto-list">
+                <li>▶ Play · 🔗 Share · ✅ Listen complete · 💬 Comment · 📰 News comment · 🤖 Generate</li>
+            </ul>
+        </section>
+
+        <section class="podcast-panel" id="panel-shop">
+            <h2>Shop — MN2 Crypto</h2>
+            <div class="podcast-shop-grid" id="shop-items">
+                <div class="podcast-shop-card"><h4>Premium Unlock</h4><span class="price">399 MN2</span><button class="podcast-btn buy-btn" data-item="podcast-premium-ep-unlock">Buy</button></div>
+                <div class="podcast-shop-card"><h4>Pro Pass</h4><span class="price">799 MN2</span><button class="podcast-btn buy-btn" data-item="podcast-pro-pass">Buy</button></div>
+                <div class="podcast-shop-card"><h4>AI Credits (5)</h4><span class="price">499 MN2</span><button class="podcast-btn buy-btn" data-item="podcast-generate-credits">Buy</button></div>
+            </div>
+            <p id="shop-result" class="podcast-reward-msg"></p>
+        </section>
+
+        <section class="podcast-panel" id="panel-customers">
+            <h2>Big Customers</h2>
+            <p id="customers-summary"></p>
+            <div class="podcast-customers-grid" id="customers-grid"></div>
+        </section>
+
+        <section class="podcast-panel" id="panel-agents">
+            <h2>Agents</h2>
+            <button class="podcast-btn primary" id="assign-agent-btn">Assign podcast_producer_agent</button>
+            <div id="agent-projects" class="podcast-agent-projects"></div>
+        </section>
+    </main>
+
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/podcast-hub.js?v=20260622"></script>
+</body>
+</html>

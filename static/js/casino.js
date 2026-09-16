@@ -4,6 +4,7 @@
     const userId = localStorage.getItem('game_user_id') || 'default_user';
     const baseUrl = window.location.origin;
     let leaderboardPeriod = 'today';
+    let leaderboardScope = 'local';
     let lastDoubleBetId = null;
     let activeCurrency = localStorage.getItem('casino_currency') || 'coins';
     let realMoneyEnabled = false;
@@ -13,6 +14,45 @@
     let disclaimers = { coins: '', mn2: '', paypal: '' };
     let securityToken = localStorage.getItem('casino_security_token') || '';
     let securityExpires = localStorage.getItem('casino_security_expires') || '';
+    let activeMainTab = localStorage.getItem('casino_main_tab') || 'home';
+    let featuredGames = [];
+    let socialLinks = [];
+    let shareNetworks = [];
+    let lastBigWin = null;
+    let lastLossBet = null;
+    let mobileConfig = null;
+    let deferredInstallPrompt = null;
+    let metaPixelId = null;
+
+    function initMetaPixel(pixelId) {
+        if (!pixelId || metaPixelId || window.fbq) return;
+        metaPixelId = String(pixelId);
+        (function (f, b, e, v) {
+            if (f.fbq) return;
+            var n = f.fbq = function () {
+                n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = true;
+            n.version = '2.0';
+            n.queue = [];
+            var t = b.createElement(e);
+            t.async = true;
+            t.src = v;
+            var s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s);
+        })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+        window.fbq('init', metaPixelId);
+        window.fbq('track', 'PageView');
+    }
+
+    function trackMetaEvent(name, params) {
+        if (!metaPixelId || !window.fbq) return;
+        try {
+            window.fbq('trackCustom', name, params || {});
+        } catch (e) { /* optional analytics */ }
+    }
 
     function securityTokenValid() {
         if (!securityToken || !securityExpires) return false;
@@ -27,6 +67,9 @@
         const body = Object.assign({ user_id: userId, currency: activeCurrency }, extra || {});
         if ((activeCurrency === 'mn2' || activeCurrency === 'usd') && securityTokenValid()) {
             body.verification_token = securityToken;
+        }
+        if (document.querySelector('.podcast-portal-strip')) {
+            body.podcast_active = true;
         }
         return body;
     }
@@ -58,7 +101,10 @@
         if (!soundEnabled) return;
         try {
             audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-            var notes = { tick: [660, 0.04, 0.05], win: [880, 0.06, 0.16], big: [1200, 0.09, 0.32], bust: [180, 0.07, 0.3] };
+            var notes = {
+                tick: [660, 0.04, 0.05], win: [880, 0.06, 0.16], big: [1200, 0.09, 0.32], bust: [180, 0.07, 0.3],
+                spin: [520, 0.025, 0.03], stop: [320, 0.07, 0.09], scatter: [1040, 0.08, 0.22], jackpot: [880, 0.12, 0.45]
+            };
             var spec = notes[type] || notes.win;
             var osc = audioCtx.createOscillator();
             var gain = audioCtx.createGain();
@@ -110,9 +156,18 @@
         if (bet <= 0 || payout <= 0) return;
         var multiple = payout / bet;
         if (multiple >= 10) {
+            lastBigWin = { net: data.net, currency: data.currency, game: data.game, multiple: multiple };
             celebrate('MEGA WIN', '+' + formatNet(data.net) + ' ' + currencyLabel(data.currency) + ' · ' + multiple.toFixed(2) + '×', 'mega');
         } else if (multiple >= 3) {
+            lastBigWin = { net: data.net, currency: data.currency, game: data.game, multiple: multiple };
             celebrate('BIG WIN', '+' + formatNet(data.net) + ' ' + currencyLabel(data.currency) + ' · ' + multiple.toFixed(2) + '×', 'big');
+        }
+        if (multiple >= 3) {
+            trackMetaEvent('CasinoBigWin', {
+                game: data.game || 'unknown',
+                multiple: multiple,
+                currency: data.currency || 'coins',
+            });
         }
     }
 
@@ -182,6 +237,7 @@
         refreshHouseStats();
         refreshSocialBoard();
         safeRefresh('jackpotMeter', refreshJackpotMeter);
+        safeRefresh('rgBanner', refreshResponsibleGamingBanner);
         safeRefresh('tournaments', refreshTournaments);
     }
 
@@ -259,7 +315,9 @@
             ['casino-disclaimer-text', 'Casino data unavailable — refresh the page'],
             ['casino-slots-grid', 'Slot machines unavailable — refresh the page'],
             ['casino-deposit-packs', 'PayPal deposits unavailable'],
-            ['casino-social-board', 'Social board unavailable'],
+            ['casino-featured-grid', 'Featured games unavailable'],
+            ['casino-activity-charts', 'Activity monitor unavailable'],
+            ['casino-social-follow-grid', 'Social links unavailable'],
             ['counter-pick-hint', 'Counter hint unavailable'],
             ['rps-distribution-stats', 'Battle stats unavailable'],
             ['outcome-distribution-stats', 'Battle outcomes unavailable'],
@@ -291,6 +349,216 @@
         return uid.slice(0, 10) + '…';
     }
 
+    function avatarInitial(uid) {
+        var s = String(uid || '?');
+        return s.charAt(0).toUpperCase();
+    }
+
+    var TAB_ALIASES = { lobby: 'home', walk: 'home', lounge: 'home', games: 'home' };
+
+    function normalizeDeepLinkTab(tab) {
+        if (!tab) return null;
+        var key = String(tab).toLowerCase();
+        return TAB_ALIASES[key] || key;
+    }
+
+    function resolveDeepLinkTabFromUrl() {
+        if (window.__casinoMobile && window.__casinoMobile.resolveDeepLinkTab) {
+            return window.__casinoMobile.resolveDeepLinkTab();
+        }
+        var params = new URLSearchParams(window.location.search);
+        var game = params.get('game');
+        if (game && document.getElementById('casino-tab-' + game)) return game;
+        var tab = normalizeDeepLinkTab(params.get('tab'));
+        if (tab && document.getElementById('casino-tab-' + tab)) return tab;
+        var hash = (window.location.hash || '').replace(/^#tab-/, '');
+        if (hash && document.getElementById('casino-tab-' + hash)) return hash;
+        return null;
+    }
+
+    function applyDeepLinks() {
+        var target = resolveDeepLinkTabFromUrl();
+        if (target) switchMainTab(target);
+    }
+
+    function isStandaloneDisplay() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true ||
+            new URLSearchParams(window.location.search).get('app') === 'casino-twa';
+    }
+
+    function isAndroid() {
+        return /Android/i.test(navigator.userAgent || '');
+    }
+
+    async function initMobileInstall() {
+        var panel = $('casino-play-install');
+        var badge = $('casino-play-store-badge');
+        var pwaBtn = $('casino-pwa-install-btn');
+        if (!panel) return;
+        try {
+            mobileConfig = await fetch(baseUrl + '/api/casino/mobile/config').then(function (r) { return r.json(); });
+        } catch (e) {
+            mobileConfig = null;
+        }
+        if (badge && mobileConfig && mobileConfig.play_store_url) {
+            badge.href = mobileConfig.play_store_url;
+        }
+        if (!isStandaloneDisplay() && (isAndroid() || deferredInstallPrompt)) {
+            panel.classList.remove('hidden');
+        }
+        if (pwaBtn && deferredInstallPrompt) {
+            pwaBtn.classList.remove('hidden');
+            pwaBtn.addEventListener('click', async function () {
+                if (!deferredInstallPrompt) return;
+                deferredInstallPrompt.prompt();
+                try { await deferredInstallPrompt.userChoice; } catch (e) { /* ignore */ }
+                deferredInstallPrompt = null;
+                pwaBtn.classList.add('hidden');
+            });
+        }
+    }
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        var panel = $('casino-play-install');
+        var pwaBtn = $('casino-pwa-install-btn');
+        if (panel) panel.classList.remove('hidden');
+        if (pwaBtn) pwaBtn.classList.remove('hidden');
+    });
+
+    function switchMainTab(tabId) {
+        activeMainTab = tabId || 'home';
+        localStorage.setItem('casino_main_tab', activeMainTab);
+        document.querySelectorAll('.casino-main-tab').forEach(function (btn) {
+            var on = btn.getAttribute('data-tab') === activeMainTab;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('.casino-tab-panel').forEach(function (panel) {
+            var match = panel.id === 'casino-tab-' + activeMainTab;
+            panel.classList.toggle('active', match);
+            panel.hidden = !match;
+        });
+        if (activeMainTab === 'leaderboard') {
+            safeRefresh('leaderboard', refreshLeaderboard);
+        } else if (activeMainTab === 'activity') {
+            safeRefresh('activityMonitor', refreshActivityMonitor);
+            safeRefresh('revenueDashboard', refreshRevenueDashboard);
+        } else if (activeMainTab === 'social') {
+            safeRefresh('socialTab', initSocialTab);
+        } else if (activeMainTab === 'compete') {
+            safeRefresh('competeTab', refreshCompeteTab);
+        } else if (activeMainTab === 'home') {
+            safeRefresh('agentSpectator', refreshAgentSpectator);
+        }
+        try {
+            if (history.replaceState) {
+                var qs = new URLSearchParams(window.location.search);
+                if (qs.get('game')) {
+                    history.replaceState(null, '', window.location.pathname + window.location.search + '#tab-' + activeMainTab);
+                } else {
+                    history.replaceState(null, '', '#tab-' + activeMainTab);
+                }
+            }
+        } catch (e) { /* optional */ }
+        try {
+            if (window.__casinoMobile && window.__casinoMobile.hapticLight) {
+                window.__casinoMobile.hapticLight();
+            }
+        } catch (e) { /* optional haptics */ }
+    }
+
+    window.__casinoSwitchTab = switchMainTab;
+
+    function renderFeaturedGames() {
+        var grid = $('casino-featured-grid');
+        if (!grid) return;
+        if (!featuredGames.length) {
+            grid.textContent = 'No featured games configured.';
+            return;
+        }
+        grid.innerHTML = '';
+        featuredGames.forEach(function (fg) {
+            var card = document.createElement('article');
+            card.className = 'casino-featured-card';
+            card.setAttribute('data-game', fg.id);
+            card.innerHTML =
+                '<div class="casino-featured-icon">' + (fg.icon || '🎮') + '</div>' +
+                (fg.tag ? '<span class="casino-featured-tag">' + fg.tag + '</span>' : '') +
+                '<div class="casino-featured-label">' + (fg.label || fg.id) + '</div>' +
+                '<div class="casino-featured-blurb">' + (fg.blurb || 'Play now') + '</div>' +
+                '<button type="button" class="casino-featured-play">Quick play</button>';
+            card.querySelector('.casino-featured-play').addEventListener('click', function (e) {
+                e.stopPropagation();
+                switchMainTab(fg.id);
+            });
+            card.addEventListener('click', function () { switchMainTab(fg.id); });
+            grid.appendChild(card);
+        });
+    }
+
+    function initMainTabNav() {
+        var nav = $('casino-main-tabs');
+        var panelsRoot = $('casino-tab-panels');
+        var grid = $('casino-games-grid');
+        if (!nav || !panelsRoot) return;
+
+        function addTabBtn(id, label, isActive) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'casino-main-tab' + (isActive ? ' active' : '');
+            btn.id = 'casino-tab-btn-' + id;
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('data-tab', id);
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            btn.textContent = label;
+            btn.addEventListener('click', function () { switchMainTab(id); });
+            nav.appendChild(btn);
+            return btn;
+        }
+
+        nav.innerHTML = '';
+        addTabBtn('home', '🏠 Home', activeMainTab === 'home');
+
+        if (grid) {
+            var cards = grid.querySelectorAll('.casino-card[data-casino-game]');
+            cards.forEach(function (card) {
+                var gameId = card.getAttribute('data-casino-game');
+                var label = card.getAttribute('data-casino-label') || gameId;
+                var panel = document.createElement('section');
+                panel.className = 'casino-tab-panel';
+                panel.id = 'casino-tab-' + gameId;
+                panel.setAttribute('role', 'tabpanel');
+                panel.hidden = true;
+                panel.appendChild(card);
+                panelsRoot.insertBefore(panel, $('casino-tab-leaderboard'));
+                addTabBtn(gameId, label, activeMainTab === gameId);
+            });
+            grid.remove();
+        }
+
+        addTabBtn('leaderboard', '🏆 Leaderboard', activeMainTab === 'leaderboard');
+        addTabBtn('activity', '📊 Activity', activeMainTab === 'activity');
+        addTabBtn('compete', '⚔️ Compete', activeMainTab === 'compete');
+        addTabBtn('social', '🌐 Social', activeMainTab === 'social');
+
+        var deepTab = resolveDeepLinkTabFromUrl();
+        if (deepTab) {
+            activeMainTab = deepTab;
+        } else {
+            var hash = (window.location.hash || '').replace(/^#tab-/, '');
+            if (hash && document.getElementById('casino-tab-' + hash)) {
+                activeMainTab = hash;
+            }
+        }
+        switchMainTab(activeMainTab);
+        try {
+            window.dispatchEvent(new CustomEvent('casino:ready'));
+        } catch (e) { /* optional */ }
+    }
+
     function setResult(el, data) {
         if (data && data.success && data.jackpot) {
             try { jackpotCelebrate(data.jackpot); } catch (e) { /* optional */ }
@@ -304,6 +572,9 @@
             return;
         }
         el.classList.add(data.outcome || 'draw');
+        if (data.outcome === 'loss' && Number(data.bet || 0) > 0) {
+            lastLossBet = { bet: Number(data.bet), currency: data.currency || activeCurrency, game: data.game };
+        }
         const details = data.details || {};
         if (data.game === 'coin_flip') {
             el.textContent = data.outcome.toUpperCase() + ': ' + details.result + ' (picked ' + details.choice + ') — net ' + data.net;
@@ -394,28 +665,53 @@
     async function refreshDepositPacks() {
         const el = $('casino-deposit-packs');
         if (!el) return;
-        const data = await api('/api/casino/paypal/deposit-packs');
+        const data = await api('/api/casino/deposit/packs?user_id=' + encodeURIComponent(userId));
         if (!data.success || !(data.packs || []).length) {
             el.textContent = 'PayPal deposits unavailable';
             return;
         }
         el.innerHTML = '';
         (data.packs || []).forEach(function (pack) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'casino-deposit-pack-btn';
-            btn.textContent = pack.label + ' ($' + Number(pack.amount_usd).toFixed(2) + ')';
-            btn.addEventListener('click', function () { startPayPalDeposit(pack.id); });
-            el.appendChild(btn);
+            if (pack.available === false) return;
+            const card = document.createElement('article');
+            card.className = 'casino-deposit-pack-card';
+            const badge = pack.badge ? '<span class="casino-deposit-pack-badge">' + pack.badge + '</span>' : '';
+            const bonusUsd = Number(pack.bonus_usd || 0);
+            const bonusCoins = Number(pack.bonus_coins || 0);
+            let bonusTxt = '';
+            if (bonusUsd > 0) bonusTxt += '+$' + bonusUsd.toFixed(2) + ' bonus';
+            if (bonusCoins > 0) bonusTxt += (bonusTxt ? ' · ' : '') + '+' + bonusCoins + ' coins';
+            card.innerHTML =
+                badge +
+                '<h4>' + (pack.label || pack.id) + '</h4>' +
+                '<p class="casino-deposit-pack-price">$' + Number(pack.amount_usd).toFixed(2) + ' USD</p>' +
+                (bonusTxt ? '<p class="casino-deposit-pack-bonus">' + bonusTxt + '</p>' : '') +
+                (pack.starter_only ? '<p class="casino-deposit-pack-starter">One-time starter offer</p>' : '') +
+                '<button type="button" class="casino-deposit-pack-btn">Deposit with PayPal</button>';
+            card.querySelector('.casino-deposit-pack-btn').addEventListener('click', function () {
+                startPayPalDeposit(pack.id);
+            });
+            el.appendChild(card);
         });
+        if (!el.children.length) {
+            el.textContent = 'No deposit packs available right now.';
+        }
     }
 
     async function startPayPalDeposit(packId) {
-        const data = await api('/api/casino/paypal/deposit', {
+        const body = { user_id: userId, pack_id: packId };
+        if (securityTokenValid()) body.verification_token = securityToken;
+        const data = await api('/api/casino/deposit/paypal/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, pack_id: packId }),
+            body: JSON.stringify(body),
         });
+        if (data.code === 'SECURITY_VERIFICATION_REQUIRED') {
+            const secBar = $('casino-security-bar');
+            if (secBar) secBar.classList.remove('hidden');
+            alert(data.error || 'Verify your password before depositing.');
+            return;
+        }
         if (data.success && data.approve_url) {
             window.location.href = data.approve_url;
         } else {
@@ -467,6 +763,9 @@
             }
         }
         if (!data.success) return;
+        featuredGames = data.featured_games || [];
+        socialLinks = data.social_links || [];
+        try { renderFeaturedGames(); } catch (e) { /* optional */ }
         try {
             realMoneyEnabled = !!(data.real_money && data.real_money.enabled);
             paypalEnabled = realMoneyEnabled && (data.real_money.rails || []).indexOf('paypal') >= 0;
@@ -739,40 +1038,560 @@
     }
 
     async function refreshLeaderboard() {
-        const tbody = $('casino-leaderboard-body');
-        const rankBar = $('casino-rank-bar');
-        if (!tbody) return;
-        const data = await api(apiPathWithCurrency('/api/casino/leaderboard?period=' + encodeURIComponent(leaderboardPeriod) + '&limit=10'));
-        tbody.innerHTML = '';
+        var podium = $('casino-lb-podium');
+        var list = $('casino-lb-list');
+        var youEl = $('casino-lb-you');
+        var rankBar = $('casino-rank-bar');
+        if (!list && !podium) {
+            return;
+        }
+        var lbPath = leaderboardScope === 'global'
+            ? '/api/casino/global/leaderboard'
+            : '/api/casino/leaderboard';
+        var data = await api(apiPathWithCurrency(lbPath + '?period=' + encodeURIComponent(leaderboardPeriod) + '&limit=25'));
+        var badge = $('casino-lb-network-badge');
+        if (badge) {
+            if (leaderboardScope === 'global' && data.network_label) {
+                badge.textContent = data.network_label;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
         if (!data.success) {
-            tbody.innerHTML = '<tr><td colspan="5">' + (data.error || 'Leaderboard unavailable') + '</td></tr>';
+            if (list) list.innerHTML = '<li>' + (data.error || 'Leaderboard unavailable') + '</li>';
+            if (podium) podium.innerHTML = '';
+            if (youEl) youEl.textContent = '';
             if (rankBar) rankBar.textContent = data.error || 'Rank unavailable';
             return;
         }
-        (data.leaderboard || []).forEach(function (row) {
-            const tr = document.createElement('tr');
-            const highlight = row.user_id === userId ? ' class="casino-you"' : '';
-            tr.innerHTML =
-                '<td' + highlight + '>' + row.rank + '</td>' +
-                '<td' + highlight + '>' + shortUser(row.user_id) + '</td>' +
-                '<td' + highlight + '>' + row.net + '</td>' +
-                '<td' + highlight + '>' + (row.win_rate != null ? row.win_rate + '%' : '—') + '</td>' +
-                '<td' + highlight + '>' + (row.roi != null ? row.roi + '%' : '—') + '</td>';
-            tbody.appendChild(tr);
-        });
-        if (!(data.leaderboard || []).length) {
-            tbody.innerHTML = '<tr><td colspan="5">No bets yet for this period</td></tr>';
+        var rows = data.leaderboard || [];
+        var medals = ['🥇', '🥈', '🥉'];
+
+        if (podium) {
+            podium.innerHTML = '';
+            [1, 0, 2].forEach(function (idx) {
+                var row = rows[idx];
+                var rank = idx + 1;
+                var slot = document.createElement('div');
+                slot.className = 'casino-lb-podium-slot rank-' + rank;
+                if (!row) {
+                    slot.innerHTML = '<div class="casino-lb-medal">' + medals[idx] + '</div><div class="casino-lb-handle">—</div>';
+                } else {
+                    slot.innerHTML =
+                        '<div class="casino-lb-medal">' + medals[idx] + '</div>' +
+                        '<div class="casino-lb-avatar" aria-hidden="true">' + avatarInitial(row.user_id) + '</div>' +
+                        '<div class="casino-lb-handle">' + shortUser(row.user_id) + '</div>' +
+                        '<div class="casino-lb-net">+' + row.net + ' ' + currencyLabel(row.currency) + '</div>';
+                }
+                podium.appendChild(slot);
+            });
         }
-        if (rankBar) {
-            const you = data.your_rank;
-            if (!you) {
-                rankBar.textContent = 'Your rank: unranked this period — place a bet to appear.';
+
+        if (list) {
+            list.innerHTML = '';
+            if (!rows.length) {
+                list.innerHTML = '<li class="casino-lb-row">No bets yet for this period</li>';
             } else {
-                rankBar.textContent =
-                    'Your rank #' + you.rank + ' · Net ' + you.net + ' · Win ' + you.win_rate + '% · ROI ' + you.roi + '%' +
+                rows.forEach(function (row) {
+                    var li = document.createElement('li');
+                    var extra = '';
+                    if (row.rank === 1) extra = ' top-gold';
+                    else if (row.rank === 2) extra = ' top-silver';
+                    else if (row.rank === 3) extra = ' top-bronze';
+                    if (row.user_id === userId) extra += ' you';
+                    li.className = 'casino-lb-row' + extra;
+                    li.innerHTML =
+                        '<span class="casino-lb-rank-num">' + row.rank + '</span>' +
+                        '<span class="casino-lb-mini-avatar" aria-hidden="true">' + avatarInitial(row.user_id) + '</span>' +
+                        '<span class="casino-lb-handle">' + shortUser(row.user_id) + '</span>' +
+                        '<span class="casino-lb-net">' + row.net + '</span>' +
+                        '<span class="casino-lb-roi">' + (row.win_rate != null ? row.win_rate + '% win' : '') + '</span>';
+                    list.appendChild(li);
+                });
+            }
+        }
+
+        if (youEl) {
+            var you = data.your_rank;
+            if (!you) {
+                youEl.textContent = 'Your rank: unranked this period — place a bet to appear.';
+            } else {
+                youEl.textContent =
+                    'You are #' + you.rank + ' · Net ' + you.net + ' · Win ' + you.win_rate + '% · ROI ' + you.roi + '%' +
                     (you.gap_to_first > 0 ? ' · ' + you.gap_to_first + ' behind #1' : ' · Leading!');
             }
         }
+        if (rankBar) {
+            var yr = data.your_rank;
+            var rakeNote = '';
+            var rakePct = rankBar.getAttribute('data-rake-pct');
+            if (rakePct) rakeNote = ' · Trophy rebate ' + rakePct + '%';
+            if (!yr) {
+                rankBar.textContent = 'Your rank: unranked — open Leaderboard tab after your first bet.' + rakeNote;
+            } else {
+                rankBar.textContent =
+                    'Your rank #' + yr.rank + ' · Net ' + yr.net + ' · Win ' + yr.win_rate + '% · ROI ' + yr.roi + '%' +
+                    (yr.gap_to_first > 0 ? ' · ' + yr.gap_to_first + ' behind #1' : ' · Leading!') + rakeNote;
+            }
+        }
+        refreshRakeRebateProgress();
+    }
+
+    async function refreshActivityMonitor() {
+        var charts = $('casino-activity-charts');
+        var feedList = $('casino-activity-feed-list');
+        if (!charts) return;
+        var data = await api(apiPathWithCurrency('/api/casino/activity-stats?days=5'));
+        if (!data.success || !(data.daily || []).length) {
+            charts.textContent = data.error || 'Activity data unavailable';
+            return;
+        }
+        var daily = data.daily;
+        var metrics = [
+            { key: 'bets', label: 'Bets', color: '#60a5fa' },
+            { key: 'wins', label: 'Wins', color: '#34d399' },
+            { key: 'unique_players', label: 'Unique players', color: '#c084fc' },
+            { key: 'jackpot_hits', label: 'Jackpot hits', color: '#fbbf24' },
+        ];
+        charts.innerHTML = '';
+        metrics.forEach(function (metric) {
+            var max = 1;
+            daily.forEach(function (d) { max = Math.max(max, Number(d[metric.key] || 0)); });
+            var block = document.createElement('div');
+            block.className = 'casino-activity-metric';
+            block.innerHTML = '<h3>' + metric.label + '</h3><div class="casino-activity-bars"></div>';
+            var bars = block.querySelector('.casino-activity-bars');
+            daily.forEach(function (d) {
+                var val = Number(d[metric.key] || 0);
+                var wrap = document.createElement('div');
+                wrap.className = 'casino-activity-bar-wrap';
+                var bar = document.createElement('div');
+                bar.className = 'casino-activity-bar';
+                bar.style.height = Math.max(4, Math.round((val / max) * 64)) + 'px';
+                bar.style.background = 'linear-gradient(180deg, ' + metric.color + ', #7c3aed)';
+                bar.title = String(val);
+                wrap.appendChild(bar);
+                var lbl = document.createElement('span');
+                lbl.textContent = (d.day || '').slice(5);
+                wrap.appendChild(lbl);
+                bars.appendChild(wrap);
+            });
+            charts.appendChild(block);
+        });
+        if (data.tournament_joins != null) {
+            var tnote = document.createElement('p');
+            tnote.className = 'casino-activity-sub';
+            tnote.textContent = 'Tournament buy-ins (5d): ' + data.tournament_joins;
+            charts.appendChild(tnote);
+        }
+        if (feedList) {
+            var feed = await api('/api/casino/activity-feed?limit=8');
+            if (!feed.success || !(feed.feed || []).length) {
+                feedList.textContent = 'No recent wins yet.';
+            } else {
+                feedList.innerHTML = '<h3>Recent wins</h3>' + feed.feed.map(function (f) {
+                    return '<div class="casino-activity-feed-item">🏆 ' + shortUser(f.user_id) + ' won ' +
+                        formatFeedAmount(f.net, f.currency) + ' on ' + prettyGame(f.game) + '</div>';
+                }).join('');
+            }
+        }
+    }
+
+    function buildSocialLinkCard(link, isShare) {
+        var a = document.createElement('a');
+        a.className = 'casino-social-link-card';
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        var href = link.url || '#';
+        if (isShare && link.share_url) {
+            var text = encodeURIComponent(shareNetworks.default_share_text || 'MasterNoder Casino');
+            var url = encodeURIComponent((shareNetworks.share_base_url || baseUrl) + '/casino/');
+            href = link.share_url.replace('{text}', text).replace('{url}', url);
+        } else if (href.indexOf('/') === 0) {
+            href = baseUrl + href;
+        }
+        a.href = href;
+        a.innerHTML =
+            '<span class="casino-social-link-icon">' + (link.icon || '🌐') + '</span>' +
+            '<span class="casino-social-link-label">' + (link.label || link.name || link.id) + '</span>';
+        return a;
+    }
+
+    async function initSocialTab() {
+        var followGrid = $('casino-social-follow-grid');
+        var shareGrid = $('casino-social-share-grid');
+        if (!followGrid) return;
+
+        var linksData = null;
+        try {
+            linksData = await api('/api/casino/social/links');
+        } catch (e) {
+            linksData = null;
+        }
+        if (linksData && linksData.success) {
+            shareNetworks = {
+                share_base_url: linksData.share_base_url || baseUrl,
+                default_share_text: linksData.default_share_text || 'MasterNoder Casino',
+                networks: linksData.share_networks || [],
+            };
+            socialLinks = linksData.follow_links || socialLinks;
+            var discord = linksData.discord || {};
+            var fb = linksData.facebook || {};
+            var playBadge = $('casino-play-store-badge');
+            if (playBadge && linksData.mobile && linksData.mobile.play_store_url) {
+                playBadge.href = linksData.mobile.play_store_url;
+            }
+            var discordActivity = $('casino-discord-activity-link');
+            if (discordActivity && discord.activity_invite_url) {
+                discordActivity.href = discord.activity_invite_url;
+                discordActivity.classList.remove('hidden');
+            }
+            if (fb.page_url) {
+                var hasFb = socialLinks.some(function (l) { return l.id === 'facebook'; });
+                if (!hasFb) {
+                    socialLinks.push({ id: 'facebook', label: 'Facebook', icon: 'f', url: fb.page_url, type: 'follow' });
+                }
+            }
+            if (fb.pixel_id) {
+                initMetaPixel(fb.pixel_id);
+            }
+        } else if (!shareNetworks.networks) {
+            try {
+                var sn = await fetch(baseUrl + '/data/social_networks.json').then(function (r) { return r.json(); });
+                shareNetworks = sn || {};
+            } catch (e) {
+                shareNetworks = {};
+            }
+        }
+
+        followGrid.innerHTML = '';
+        (socialLinks.length ? socialLinks : []).forEach(function (link) {
+            if (link.type === 'play' || link.type === 'follow' || link.type === 'mobile') {
+                followGrid.appendChild(buildSocialLinkCard(link, false));
+            }
+        });
+        if (!socialLinks.length) {
+            followGrid.textContent = 'Social links loading from config…';
+        }
+
+        if (shareGrid) {
+            shareGrid.innerHTML = '';
+            (shareNetworks.networks || []).forEach(function (net) {
+                shareGrid.appendChild(buildSocialLinkCard(net, true));
+            });
+        }
+
+        var prefs = await api('/api/casino/social/preferences');
+        var toggle = $('casino-share-wins-toggle');
+        if (toggle && prefs.success && prefs.preferences) {
+            toggle.checked = !!prefs.preferences.share_wins;
+        }
+        var discordLink = $('casino-discord-play-link');
+        if (discordLink) {
+            if (prefs.discord_earn_href) discordLink.href = prefs.discord_earn_href;
+            if (prefs.discord_earn_coins) {
+                var earnStrip = $('casino-discord-earn');
+                if (earnStrip) {
+                    var p = earnStrip.querySelector('p');
+                    if (p) {
+                        p.textContent = 'Opt in to mirror big wins to Discord. Join the server to earn ' +
+                            prefs.discord_earn_coins + ' bonus coins.';
+                    }
+                }
+            }
+        }
+        initMobileInstall();
+        await refreshReferralInvite();
+        await refreshReferralLeaderboard();
+        await refreshReferralQuests();
+        await refreshFollowLeaders();
+        await refreshCrewChallengeHook();
+        await refreshSocialActivityFeed();
+    }
+
+    async function refreshReferralInvite() {
+        var codeEl = $('casino-referral-code');
+        if (!codeEl) return;
+        var data = await api('/api/casino/social/referral?user_id=' + encodeURIComponent(userId));
+        if (!data.success) {
+            codeEl.textContent = data.error || 'Unavailable';
+            return;
+        }
+        codeEl.textContent = data.referral_code || '—';
+        codeEl.dataset.inviteUrl = data.invite_url || '';
+        codeEl.dataset.copyText = data.copy_text || '';
+        codeEl.dataset.whatsappUrl = data.whatsapp_url || '';
+    }
+
+    function copyReferralCode() {
+        var codeEl = $('casino-referral-code');
+        if (!codeEl || !codeEl.textContent || codeEl.textContent === 'Loading…') return;
+        navigator.clipboard.writeText(codeEl.textContent).then(function () {
+            showToast('Referral code copied');
+        }).catch(function () {
+            showToast('Copy: ' + codeEl.textContent);
+        });
+    }
+
+    function copyReferralLink() {
+        var codeEl = $('casino-referral-code');
+        var link = (codeEl && codeEl.dataset.inviteUrl) || (baseUrl + '/casino/');
+        navigator.clipboard.writeText(link).then(function () {
+            showToast('Invite link copied');
+        }).catch(function () {
+            showToast('Copy link: ' + link);
+        });
+    }
+
+    async function refreshFollowLeaders() {
+        var list = $('casino-follow-leaders-list');
+        if (!list) return;
+        var data = await api('/api/casino/social/follow?user_id=' + encodeURIComponent(userId) + '&period=week&limit=5');
+        if (!data.success || !(data.players || []).length) {
+            list.textContent = 'No leaderboard players yet this week.';
+            return;
+        }
+        list.innerHTML = '';
+        data.players.forEach(function (p) {
+            var row = document.createElement('div');
+            row.className = 'casino-follow-row';
+            row.innerHTML = '<span>#' + (p.rank || '?') + ' ' + (p.display || shortUser(p.user_id)) +
+                ' (' + (p.net || 0) + ')</span>';
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'casino-share-site-btn';
+            btn.textContent = p.following ? 'Following' : 'Follow';
+            btn.disabled = !!p.following;
+            btn.addEventListener('click', async function () {
+                var res = await api('/api/casino/social/follow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, target_user_id: p.user_id }),
+                });
+                if (res.success) {
+                    btn.textContent = 'Following';
+                    btn.disabled = true;
+                    showToast('Following ' + (p.display || 'player'));
+                }
+            });
+            row.appendChild(btn);
+            list.appendChild(row);
+        });
+    }
+
+    async function refreshCrewChallengeHook() {
+        var body = $('casino-crew-challenge-body');
+        if (!body) return;
+        var data = await api('/api/casino/social/crew-challenge?user_id=' + encodeURIComponent(userId));
+        if (!data.success) {
+            body.textContent = data.error || 'Crew data unavailable';
+            return;
+        }
+        if (!data.in_crew) {
+            body.innerHTML = '<p>Join a crew on the <a href="/game#social">game social hub</a> to compete in crew casino leaderboards.</p>';
+            return;
+        }
+        var rank = data.your_crew_rank ? ('#' + data.your_crew_rank) : '—';
+        body.innerHTML = '<p><strong>' + (data.crew_name || 'Your crew') + '</strong> · ' +
+            (data.member_count || 0) + ' members · crew rank ' + rank + '</p>' +
+            '<p>' + (data.compete_tab_hint || '') + '</p>' +
+            '<button type="button" class="casino-share-site-btn" id="casino-goto-compete">Open Compete tab</button>';
+        var go = $('casino-goto-compete');
+        if (go) {
+            go.addEventListener('click', function () {
+                var tab = document.querySelector('[data-casino-tab="compete"]');
+                if (tab) tab.click();
+            });
+        }
+    }
+
+    async function refreshSocialActivityFeed() {
+        var list = $('casino-social-feed-list');
+        if (!list) return;
+        var feed = await api('/api/casino/activity-feed?limit=6');
+        if (!feed.success || !(feed.feed || []).length) {
+            list.textContent = 'No recent wins yet.';
+            return;
+        }
+        var ids = feed.feed.map(function (f) { return f.bet_id || (f.user_id + '-' + (f.created_at || '')); }).join(',');
+        var reactions = { reactions: {} };
+        try {
+            reactions = await api('/api/casino/social/feed/reactions?item_ids=' + encodeURIComponent(ids));
+        } catch (e) { /* optional */ }
+        list.innerHTML = '';
+        feed.feed.forEach(function (f) {
+            var itemId = f.bet_id || (f.user_id + '-' + (f.created_at || ''));
+            var row = document.createElement('div');
+            row.className = 'casino-social-feed-item';
+            row.innerHTML = '<div>🏆 ' + shortUser(f.user_id) + ' · ' + formatFeedAmount(f.net, f.currency) +
+                ' on ' + prettyGame(f.game) + '</div>';
+            var reactBar = document.createElement('div');
+            reactBar.className = 'casino-feed-reactions';
+            ['fire', 'clap', 'wow'].forEach(function (emoji) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'casino-feed-react-btn';
+                var counts = (reactions.reactions && reactions.reactions[itemId]) || {};
+                b.textContent = emoji + (counts[emoji] ? ' ' + counts[emoji] : '');
+                b.addEventListener('click', async function () {
+                    var res = await api('/api/casino/social/feed/reactions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: userId, item_id: itemId, reaction: emoji }),
+                    });
+                    if (res.success) {
+                        b.textContent = emoji + (res.counts && res.counts[emoji] ? ' ' + res.counts[emoji] : '');
+                    }
+                });
+                reactBar.appendChild(b);
+            });
+            row.appendChild(reactBar);
+            list.appendChild(row);
+        });
+    }
+
+    async function shareViaWhatsApp() {
+        var codeEl = $('casino-referral-code');
+        if (codeEl && codeEl.dataset.whatsappUrl) {
+            window.open(codeEl.dataset.whatsappUrl, '_blank', 'noopener');
+            return;
+        }
+        var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
+        var text = shareNetworks.default_share_text || 'Play at MasterNoder Casino';
+        window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener');
+    }
+
+    async function shareXThread() {
+        var payload = lastBigWin ? {
+            user_id: userId,
+            game: lastBigWin.game,
+            net: lastBigWin.net,
+            currency: lastBigWin.currency,
+            multiplier: lastBigWin.multiple,
+        } : { user_id: userId, game: 'casino', net: 0, currency: 'coins' };
+        var card = await api('/api/casino/share/big-win', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (card && card.thread_share && card.thread_share.x_intent_url) {
+            window.open(card.thread_share.x_intent_url, '_blank', 'noopener');
+            showToast('X thread starter opened — paste follow-up lines from share card');
+            return;
+        }
+        shareCasinoWin();
+    }
+
+    async function registerCasinoReferralFromUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var ref = params.get('ref');
+        if (!ref || userId === 'default_user') return;
+        try {
+            await api('/api/casino/social/referral/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, referral_code: ref }),
+            });
+        } catch (e) { /* best effort */ }
+    }
+
+    async function shareCasinoWin() {
+        if (!lastBigWin) {
+            showToast('Win something big first (3× or more), then share!');
+            return;
+        }
+        var payload = {
+            user_id: userId,
+            game: lastBigWin.game,
+            net: lastBigWin.net,
+            currency: lastBigWin.currency,
+            multiplier: lastBigWin.multiple,
+        };
+        var card = null;
+        try {
+            card = await api('/api/casino/share/big-win', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+        } catch (e) {
+            card = null;
+        }
+        if (card && card.success && card.share_urls) {
+            if (card.svg_url) {
+                window.open(card.svg_url, '_blank', 'noopener');
+            }
+            window.open(card.share_urls.twitter || card.share_urls.facebook, '_blank', 'noopener');
+            showToast('Share card ready — pick your network');
+            return;
+        }
+        var text = 'I just won ' + formatNet(lastBigWin.net) + ' ' + currencyLabel(lastBigWin.currency) +
+            ' on ' + prettyGame(lastBigWin.game) + ' at MasterNoder Casino!';
+        var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
+        var xUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
+        window.open(xUrl, '_blank', 'noopener');
+    }
+
+    async function openBigWinClipCard() {
+        if (!lastBigWin) {
+            showToast('Win something big first (3× or more), then open the clip card.');
+            return;
+        }
+        var params = new URLSearchParams({
+            user_id: userId,
+            game: lastBigWin.game || 'casino',
+            net: String(lastBigWin.net || 0),
+            currency: lastBigWin.currency || activeCurrency,
+        });
+        if (lastBigWin.multiple >= 1) params.set('mult', String(lastBigWin.multiple));
+        window.open('/api/casino/share/big-win/card.svg?' + params.toString(), '_blank', 'noopener');
+    }
+
+    async function redeemLabCoupon() {
+        var code = (($('casino-coupon-code') || {}).value || '').trim();
+        if (!code) {
+            showToast('Enter a coupon code');
+            return;
+        }
+        var data = await api('/api/casino/coupons/redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, code: code }),
+        });
+        setResult($('casino-coupon-result'), data);
+        if (data.success) {
+            showToast(data.message || 'Coupon redeemed!');
+            refreshBalance();
+        }
+    }
+
+        var text = shareNetworks.default_share_text || 'Play at MasterNoder Casino — coins, MN2, and USD rails.';
+        var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
+        try {
+            var card = await api('/api/casino/share/big-win', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, game: 'casino', net: 0, currency: 'coins' }),
+            });
+            if (card && card.success && card.share_urls && card.share_urls.facebook) {
+                window.open(card.share_urls.facebook, '_blank', 'noopener');
+                showToast('Facebook share opened');
+                return;
+            }
+        } catch (e) { /* fallback */ }
+        var fb = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+        window.open(fb, '_blank', 'noopener');
+        showToast('Share dialog opened — paste your message: ' + text);
+    }
+
+    async function toggleShareWins(enabled) {
+        await api('/api/casino/social/preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ share_wins: !!enabled, user_id: userId }),
+        });
+        showToast(enabled ? 'Discord win sharing enabled' : 'Discord win sharing off');
     }
 
     function refreshFreeBetStatus(status) {
@@ -821,6 +1640,649 @@
             block.textContent = week.week + ': ' + (names || 'No bets');
             el.appendChild(block);
         });
+    }
+
+    async function refreshBigWinHallOfFame() {
+        var el = $('casino-big-win-hof');
+        if (!el) return;
+        var data = await api('/api/casino/big-wins/hall-of-fame?days=7&limit=8');
+        if (!data.success || !(data.wins || []).length) {
+            el.textContent = 'No big multipliers in the last 7 days yet — be the first!';
+            return;
+        }
+        el.innerHTML = (data.wins || []).map(function (w) {
+            return '<div class="casino-big-win-row">#' + w.rank + ' ' + shortUser(w.user_id) +
+                ' · ' + Number(w.multiplier).toFixed(2) + '× on ' + prettyGame(w.game) +
+                ' · +' + formatFeedAmount(w.net, w.currency) + '</div>';
+        }).join('');
+    }
+
+    async function refreshSlotOfTheDay() {
+        var el = $('casino-slot-of-day');
+        if (!el) return;
+        var data = await api('/api/casino/slot-of-the-day');
+        if (!data.success || !data.enabled || !data.slot) {
+            el.classList.add('hidden');
+            return;
+        }
+        var slot = data.slot;
+        el.classList.remove('hidden');
+        el.innerHTML = '<span>⭐ ' + (data.badge_label || 'Slot of the Day') + '</span>' +
+            '<span>' + (slot.icon || '🎰') + ' ' + (slot.label || slot.id) + '</span>';
+        el.title = slot.blurb || 'Play today\'s featured slot';
+        el.onclick = function () { switchMainTab('slots'); };
+    }
+
+    async function refreshSeasonalBadge() {
+        var el = $('casino-seasonal-badge');
+        if (!el) return;
+        var data = await api('/api/casino/seasonal/slots');
+        if (!data.success || !data.enabled || !(data.slots || []).length) {
+            el.classList.add('hidden');
+            return;
+        }
+        el.classList.remove('hidden');
+        var winLabel = (data.active_windows && data.active_windows[0]) ? data.active_windows[0].label : 'Seasonal';
+        var slotLabels = (data.slots || []).slice(0, 3).map(function (s) {
+            return (s.icon || '🎃') + ' ' + (s.label || s.id);
+        }).join(' · ');
+        el.innerHTML = '<span>🍂 ' + (data.badge_label || 'Seasonal') + '</span>' +
+            '<span>' + winLabel + '</span>' +
+            '<span class="casino-seasonal-slots">' + slotLabels + '</span>';
+        el.title = 'Limited-time slot reskins — same RTP, new look';
+        el.onclick = function () { switchMainTab('slots'); };
+    }
+
+    async function refreshVipLounge() {
+        var wrap = $('casino-vip-lounge');
+        var body = $('casino-vip-lounge-body');
+        if (!wrap || !body) return;
+        var data = await api('/api/casino/vip/lounge?user_id=' + encodeURIComponent(userId));
+        if (!data.success || !data.enabled) {
+            wrap.classList.add('hidden');
+            return;
+        }
+        wrap.classList.remove('hidden');
+        if (!data.unlocked) {
+            body.innerHTML = '<p class="casino-vip-locked">🔒 Unlock at ' + Math.round(data.min_xp) +
+                ' XP — you have ' + Math.round(data.user_xp || 0) + ' (' +
+                Math.round(data.xp_to_unlock || 0) + ' to go). Cosmetic lounge only.</p>';
+            return;
+        }
+        var frames = (data.frame_previews || []).map(function (f) {
+            return '<span class="casino-vip-frame" style="--frame-color:' + (f.preview_color || '#ffd700') + '">' +
+                (f.icon || '🖼️') + ' ' + (f.label || f.id) + '</span>';
+        }).join('');
+        var wheelNote = data.daily_wheel && data.daily_wheel.available
+            ? 'Daily wheel ready — same odds for everyone.'
+            : (data.daily_wheel && data.daily_wheel.spun_today ? 'Daily wheel spun today.' : '');
+        body.innerHTML = '<p class="casino-vip-unlocked">✨ ' + (data.title || 'VIP Lounge') + ' — ' +
+            (data.subtitle || '') + '</p>' +
+            '<div class="casino-vip-frames">' + frames + '</div>' +
+            '<p class="casino-vip-wheel-note">' + wheelNote + '</p>';
+    }
+
+    async function refreshReferralQuests() {
+        var el = $('casino-referral-quests');
+        if (!el) return;
+        var data = await api('/api/casino/social/referral/quests?user_id=' + encodeURIComponent(userId));
+        if (!data.success) {
+            el.textContent = 'Referral quests unavailable.';
+            return;
+        }
+        if (!(data.referrals || []).length) {
+            el.innerHTML = '<p>Share your invite link — earn coin trophies when friends complete their first 10 bets. No RTP perks.</p>';
+            return;
+        }
+        el.innerHTML = (data.referrals || []).map(function (r) {
+            var tiers = (r.tiers || []).map(function (t) {
+                var mark = t.claimed ? '✓' : (t.completed ? '○' : '·');
+                return mark + ' ' + (t.badge || '') + ' ' + (t.label || t.bets_required) +
+                    ' (' + t.bets_required + ' bets, +' + t.referrer_coins + ' coins)';
+            }).join('<br>');
+            return '<div class="casino-ref-quest-row"><strong>' + (r.display || 'Friend') +
+                '</strong> · ' + r.bet_count + '/' + r.max_bets + ' bets<br>' + tiers + '</div>';
+        }).join('');
+        if (data.total_coins_earned) {
+            el.innerHTML += '<p class="casino-ref-quest-total">Total quest coins earned: ' + data.total_coins_earned + '</p>';
+        }
+    }
+
+    async function refreshCompeteTab() {
+        var crewEl = $('casino-crew-board');
+        if (crewEl) {
+            var crew = await api('/api/casino/crew/leaderboard?user_id=' + encodeURIComponent(userId) +
+                '&currency=' + encodeURIComponent(activeCurrency));
+            if (!crew.success || !(crew.crew_leaderboard || []).length) {
+                crewEl.textContent = 'No crew data yet — join a crew on the game social hub.';
+            } else {
+                crewEl.innerHTML = '<p class="casino-crew-week">Week ' + (crew.week_key || '') + ' · ' +
+                    (crew.currency || 'coins') + '</p>' +
+                    (crew.crew_leaderboard || []).map(function (c) {
+                        var tag = c.is_yours ? ' ★' : '';
+                        return '<div class="casino-crew-row">#' + c.rank + ' ' + (c.name || c.crew_id) +
+                            tag + ' · net ' + c.week_net + ' · ' + (c.member_count || 0) + ' members</div>';
+                    }).join('');
+            }
+        }
+        var rivalsEl = $('casino-rivals');
+        if (rivalsEl) {
+            var rivals = await api('/api/casino/rival-board?user_id=' + encodeURIComponent(userId) +
+                '&period=week&currency=' + encodeURIComponent(activeCurrency));
+            if (!rivals.success || !(rivals.board || []).length) {
+                rivalsEl.textContent = 'Rival board loads after you and friends place bets.';
+            } else {
+                rivalsEl.innerHTML = (rivals.board || []).slice(0, 8).map(function (r) {
+                    return '<div>#' + (r.rank || '?') + ' ' + shortUser(r.user_id) +
+                        (r.is_you ? ' (you)' : '') + ' · net ' + r.net + '</div>';
+                }).join('');
+            }
+        }
+        var racesEl = $('casino-achievement-races');
+        if (racesEl) {
+            var races = await api('/api/casino/achievement-races?user_id=' + encodeURIComponent(userId));
+            if (!races.success || !(races.races || []).length) {
+                racesEl.textContent = 'Achievement races — compete for cosmetic coin prizes.';
+            } else {
+                racesEl.innerHTML = (races.races || []).map(function (r) {
+                    return '<div>' + (r.title || r.id) + ' — ' + (r.status || 'open') + '</div>';
+                }).join('');
+            }
+        }
+        var bpEl = $('casino-battle-pass');
+        if (bpEl) {
+            var bp = await api('/api/shop/battle-pass?user_id=' + encodeURIComponent(userId));
+            if (!bp.success) {
+                bpEl.textContent = bp.error || 'Battle pass not configured.';
+            } else {
+                bpEl.innerHTML = '<p><strong>' + (bp.name || 'Season pass') + '</strong> · tier ' +
+                    (bp.tier_level || 0) + ' · ' + (bp.xp || 0) + ' XP</p>' +
+                    '<p>' + (bp.premium_owned ? 'Premium lane unlocked' : 'Free lane — upgrade for bonus cosmetics') + '</p>' +
+                    (bp.premium_owned ? '' : '<button type="button" class="casino-share-site-btn" id="casino-bp-buy">Buy premium (' +
+                        (bp.price_coins || '?') + ' coins)</button>');
+                var buyBtn = $('casino-bp-buy');
+                if (buyBtn) {
+                    buyBtn.addEventListener('click', async function () {
+                        var purchased = await api('/api/shop/battle-pass/purchase', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, source: 'casino' }),
+                        });
+                        showToast(purchased.success ? 'Battle pass premium unlocked!' : (purchased.error || 'Purchase failed'));
+                        refreshCompeteTab();
+                    });
+                }
+            }
+        }
+        var shieldEl = $('casino-streak-shield');
+        if (shieldEl) {
+            var shield = await api('/api/casino/streak-shield?user_id=' + encodeURIComponent(userId));
+            if (!shield.enabled) {
+                shieldEl.textContent = 'Streak shields are off.';
+            } else {
+                shieldEl.innerHTML = '<p>Week ' + (shield.week_key || '') + ' · ' +
+                    (shield.shields_remaining || 0) + ' shield(s) left · refunds ' +
+                    (shield.refund_pct || 50) + '% of a loss (coins only)</p>' +
+                    '<button type="button" class="casino-share-site-btn" id="casino-shield-use">Use shield on last bet</button>';
+                var useBtn = $('casino-shield-use');
+                if (useBtn) {
+                    useBtn.disabled = !(shield.shields_remaining > 0 && lastLossBet && lastLossBet.bet > 0);
+                    useBtn.addEventListener('click', async function () {
+                        var betAmt = lastLossBet ? lastLossBet.bet : 25;
+                        var cur = lastLossBet ? lastLossBet.currency : 'coins';
+                        var applied = await api('/api/casino/streak-shield/apply', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, bet: betAmt, currency: cur }),
+                        });
+                        showToast(applied.success ? ('Shield applied — +' + applied.refund + ' coins') : (applied.error || 'Failed'));
+                        refreshBalance();
+                        refreshCompeteTab();
+                    });
+                }
+            }
+        }
+        await refreshAgentSpectator('casino-compete-spectator');
+        await refreshMinesDuels();
+        await refreshKenoSyndicates();
+        await refreshBjTournament();
+        await refreshWheelRaid();
+        await refreshRakeRebateProgress();
+    }
+
+    var pendingDuelInvite = null;
+
+    async function applyDuelDeepLink() {
+        var params = new URLSearchParams(window.location.search);
+        var token = params.get('duel');
+        if (!token) return;
+        switchMainTab('compete');
+        var data = await api('/api/casino/duels/invite/' + encodeURIComponent(token));
+        var panel = $('casino-duel-invite');
+        var text = $('casino-duel-invite-text');
+        if (!panel || !text) return;
+        panel.classList.remove('hidden');
+        if (!data.success || !data.duel) {
+            text.textContent = data.error || 'Duel invite not found.';
+            return;
+        }
+        pendingDuelInvite = data.duel;
+        text.textContent = (data.duel.game || 'duel') + ' · ' + (data.duel.bet || '?') + ' ' +
+            currencyLabel(data.duel.currency) + ' — accept to play?';
+    }
+
+    async function acceptDuelInvite() {
+        if (!pendingDuelInvite) return;
+        var d = pendingDuelInvite;
+        var path = '/api/casino/duels/accept';
+        var body = { user_id: userId, duel_id: d.duel_id };
+        if (d.game === 'mines_duel') path = '/api/casino/duels/mines/accept';
+        else if (d.game === 'plinko_battle') path = '/api/casino/duels/plinko-battle/accept';
+        else if (d.duel_source === 'pvp') {
+            var choice = ($('duel-choice') || {}).value || 'tails';
+            body.choice = choice;
+        }
+        var data = await api(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        showToast(data.success ? ('Duel resolved — ' + (data.winner_id === userId ? 'you won!' : 'done')) : (data.error || 'Failed'));
+        pendingDuelInvite = null;
+        var panel = $('casino-duel-invite');
+        if (panel) panel.classList.add('hidden');
+        await refreshBalance();
+        refreshCompeteTab();
+    }
+
+    async function refreshKenoSyndicates() {
+        var list = $('keno-syndicate-open');
+        if (!list) return;
+        var data = await api('/api/casino/keno-syndicate?status=open');
+        if (!data.success || !(data.syndicates || []).length) {
+            list.textContent = 'No open syndicates — create one above.';
+            return;
+        }
+        list.innerHTML = (data.syndicates || []).map(function (s) {
+            return '<div class="casino-duel-row">Syndicate · ' + s.member_count + '/' + s.max_players +
+                ' · ' + s.stake_per_player + ' ' + currencyLabel(s.currency) +
+                ' <button type="button" class="keno-syndicate-join-btn" data-id="' + s.syndicate_id + '">Join</button></div>';
+        }).join('');
+        list.querySelectorAll('.keno-syndicate-join-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { joinKenoSyndicate(btn.getAttribute('data-id')); });
+        });
+    }
+
+    function parseKenoSpots() {
+        var raw = (($('keno-syndicate-spots') || {}).value || '').trim();
+        if (!raw) return [];
+        return raw.split(/[,\s]+/).map(function (x) { return parseInt(x, 10); }).filter(function (n) { return !isNaN(n); });
+    }
+
+    async function createKenoSyndicate() {
+        var stake = parseFloat(($('keno-syndicate-stake') || {}).value) || 25;
+        var data = await api('/api/casino/keno-syndicate/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(betPayload({ stake: stake })),
+        });
+        setResult($('keno-syndicate-result'), data);
+        if (data.success && data.syndicate) {
+            var spots = parseKenoSpots();
+            if (spots.length) {
+                await api('/api/casino/keno-syndicate/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, syndicate_id: data.syndicate.syndicate_id, spots: spots }),
+                });
+            }
+            refreshKenoSyndicates();
+        }
+    }
+
+    async function joinKenoSyndicate(sid) {
+        var spots = parseKenoSpots();
+        if (!spots.length) {
+            showToast('Enter spots in the field above first');
+            return;
+        }
+        var data = await api('/api/casino/keno-syndicate/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, syndicate_id: sid, spots: spots }),
+        });
+        setResult($('keno-syndicate-result'), data);
+        if (data.success) {
+            await refreshBalance();
+            refreshKenoSyndicates();
+        }
+    }
+
+    async function refreshBjTournament() {
+        var el = $('casino-bj-tournament');
+        if (!el) return;
+        var data = await api('/api/casino/blackjack-tournaments/open');
+        if (!data.success || !data.tournament) {
+            el.textContent = data.error || 'BJ tournament unavailable';
+            return;
+        }
+        var t = data.tournament;
+        el.innerHTML = '<p><strong>' + (t.status || 'open') + '</strong> · buy-in ' + t.buy_in + ' ' +
+            currencyLabel(t.currency) + ' · pool ' + (t.pool || 0) + ' · ' +
+            (t.entrant_count || 0) + '/' + (t.bracket_size || 8) + ' players</p>' +
+            (t.winner_id ? '<p>Winner: ' + shortUser(t.winner_id) + '</p>' : '') +
+            (t.status === 'open' ? '<button type="button" id="bj-tournament-join" class="casino-share-site-btn">Join bracket</button>' : '');
+        var joinBtn = $('bj-tournament-join');
+        if (joinBtn) {
+            joinBtn.addEventListener('click', async function () {
+                var joined = await api('/api/casino/blackjack-tournaments/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(betPayload({ tournament_id: t.tournament_id })),
+                });
+                showToast(joined.success ? 'Joined BJ tournament!' : (joined.error || 'Join failed'));
+                refreshBjTournament();
+                refreshBalance();
+            });
+        }
+    }
+
+    async function refreshWheelRaid() {
+        var el = $('casino-wheel-raid');
+        if (!el) return;
+        var data = await api('/api/casino/wheel-raid/status');
+        if (!data.success) {
+            el.textContent = 'Wheel raid unavailable';
+            return;
+        }
+        var pct = data.progress_pct || 0;
+        el.innerHTML = '<p>Community spins: ' + (data.spin_count || 0) + ' / ' + (data.spin_threshold || 500) +
+            ' (' + pct + '%)</p>' +
+            '<div class="casino-rake-progress-bar" style="height:8px;background:#333;border-radius:4px;overflow:hidden">' +
+            '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#f59e0b,#ef4444)"></div></div>' +
+            '<p class="casino-activity-sub">Raid boss seeds bonus jackpots when the bar fills.</p>';
+    }
+
+    async function refreshRakeRebateProgress() {
+        var el = $('casino-rake-rebate-progress');
+        if (!el) return;
+        var data = await api('/api/casino/trophy-rake-rebate/progress?user_id=' + encodeURIComponent(userId));
+        if (!data.enabled) {
+            el.textContent = 'Trophy rake rebate is off.';
+            return;
+        }
+        var pct = data.progress_pct || 0;
+        var cur = Math.round((data.current_rebate_pct || 0) * 1000) / 10;
+        var nxt = data.next_tier_rebate_pct != null ? Math.round(data.next_tier_rebate_pct * 1000) / 10 : null;
+        el.innerHTML = '<p>Trophies: ' + (data.trophies || 0) + ' · rebate ' + cur + '%' +
+            (nxt != null ? ' → next ' + nxt + '% at ' + data.next_tier_min_trophies + ' trophies' : ' (max tier)') + '</p>' +
+            '<div class="casino-rake-progress-bar" style="height:8px;background:#333;border-radius:4px;overflow:hidden">' +
+            '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#34d399,#60a5fa)"></div></div>';
+        var rankBar = $('casino-rank-bar');
+        if (rankBar && data.trophies != null) {
+            rankBar.setAttribute('data-rake-pct', String(cur));
+        }
+    }
+
+    async function refreshAgentSpectator(targetId) {
+        var el = $(targetId || 'casino-agent-spectator');
+        if (!el) return;
+        var data = await api('/api/casino/agents/spectate?limit=8');
+        if (!data.success || !(data.events || []).length) {
+            el.innerHTML = '<p>Watch Kelly Optimizer, Safe Grinder, and Meta Oracle — run <code>scripts/run_casino_agent_daemon.cmd</code> to feed live bets.</p>';
+            return;
+        }
+        el.innerHTML = (data.events || []).map(function (ev) {
+            var line = ev.spectator_line || ('Bet on ' + (ev.game || 'casino'));
+            var net = ev.net != null ? ' · net ' + ev.net : '';
+            return '<div class="casino-spectator-row"><strong>' + (ev.agent_name || ev.agent_id) +
+                '</strong> · ' + (ev.game || '?') + ' · ' + (ev.bet || '?') + ' ' +
+                currencyLabel(ev.currency || 'coins') + net + '<br><em>' + line + '</em></div>';
+        }).join('');
+    }
+
+    var minesDuel = { duelId: null, tiles: 25, revealed: [] };
+
+    async function refreshMinesDuels() {
+        var list = $('mines-duel-open');
+        if (!list) return;
+        var data = await api('/api/casino/duels/mines?status=open');
+        if (!data.success || !(data.duels || []).length) {
+            list.textContent = 'No open mines duels — create one above.';
+            return;
+        }
+        list.innerHTML = (data.duels || []).map(function (d) {
+            return '<div class="casino-duel-row">Mines duel · ' + d.bet + ' ' + currencyLabel(d.currency) +
+                ' <button type="button" class="mines-duel-accept-btn" data-id="' + d.duel_id + '">Accept</button></div>';
+        }).join('');
+        list.querySelectorAll('.mines-duel-accept-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { acceptMinesDuel(btn.getAttribute('data-id')); });
+        });
+        if (minesDuel.duelId) {
+            var st = await api('/api/casino/duels/mines/' + encodeURIComponent(minesDuel.duelId) +
+                '?user_id=' + encodeURIComponent(userId));
+            if (st.success && st.duel && st.duel.status === 'live') renderMinesDuelBoard(st.duel);
+        }
+    }
+
+    async function refreshMinesDuelsOpen() {
+        await refreshMinesDuels();
+    }
+
+    function renderMinesDuelBoard(duel) {
+        var board = $('mines-duel-board');
+        if (!board) return;
+        var tiles = duel.tiles || minesDuel.tiles || 25;
+        minesDuel.tiles = tiles;
+        minesDuel.revealed = duel.revealed || [];
+        board.classList.remove('hidden');
+        board.innerHTML = '';
+        board.style.display = 'grid';
+        board.style.gridTemplateColumns = 'repeat(' + Math.round(Math.sqrt(tiles)) + ', 1fr)';
+        board.style.gap = '4px';
+        for (var i = 0; i < tiles; i++) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = minesDuel.revealed.indexOf(i) >= 0 ? '💎' : '?';
+            btn.disabled = minesDuel.revealed.indexOf(i) >= 0 || duel.turn !== userId;
+            btn.dataset.tile = String(i);
+            btn.addEventListener('click', function () { pickMinesDuelTile(parseInt(this.dataset.tile, 10)); });
+            board.appendChild(btn);
+        }
+    }
+
+    async function createMinesDuel() {
+        var bet = parseFloat(($('mines-duel-bet') || {}).value) || 25;
+        var data = await api('/api/casino/duels/mines/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+        });
+        setResult($('mines-duel-result'), data);
+        if (data.success && data.duel) {
+            minesDuel.duelId = data.duel.duel_id;
+            refreshMinesDuelsOpen();
+        }
+    }
+
+    async function acceptMinesDuel(duelId) {
+        var data = await api('/api/casino/duels/mines/accept', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, duel_id: duelId }),
+        });
+        setResult($('mines-duel-result'), data);
+        if (data.success) {
+            minesDuel.duelId = duelId;
+            var st = await api('/api/casino/duels/mines/' + encodeURIComponent(duelId) + '?user_id=' + encodeURIComponent(userId));
+            if (st.success && st.duel) renderMinesDuelBoard(st.duel);
+        }
+    }
+
+    async function pickMinesDuelTile(tile) {
+        if (!minesDuel.duelId) return;
+        var data = await api('/api/casino/duels/mines/pick', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, duel_id: minesDuel.duelId, tile: tile }),
+        });
+        setResult($('mines-duel-result'), data);
+        if (data.status === 'live') {
+            var st = await api('/api/casino/duels/mines/' + encodeURIComponent(minesDuel.duelId) + '?user_id=' + encodeURIComponent(userId));
+            if (st.success && st.duel) renderMinesDuelBoard(st.duel);
+        } else if (data.success && data.winner_id) {
+            await refreshBalance();
+        }
+    }
+        var link = $('casino-fairness-export-link');
+        if (!link) return;
+        link.href = '/api/casino/fairness/export?user_id=' + encodeURIComponent(userId) + '&limit=100';
+        link.setAttribute('download', 'casino-fairness-audit.csv');
+    }
+
+    var activityFeedEventSource = null;
+
+    function renderActivityFeedItems(feed) {
+        var track = $('casino-ticker-track');
+        if (!track) return;
+        if (!(feed || []).length) {
+            track.innerHTML = '<span class="casino-ticker-item">Be the first big win today…</span>';
+            return;
+        }
+        var items = feed.map(function (f) {
+            var mult = f.multiplier ? (' @ ' + Number(f.multiplier).toFixed(2) + '×') : '';
+            return '<span class="casino-ticker-item">🏆 ' + shortUser(f.user_id) + ' won ' +
+                formatFeedAmount(f.net, f.currency) + ' on ' + prettyGame(f.game) + mult + '</span>';
+        });
+        track.innerHTML = items.join('') + items.join('');
+    }
+
+    function startActivityFeedStream() {
+        if (typeof EventSource === 'undefined') return false;
+        try {
+            if (activityFeedEventSource) {
+                activityFeedEventSource.close();
+            }
+            var url = '/api/casino/activity-feed/stream?limit=12&interval=8';
+            if (activeCurrency) url += '&currency=' + encodeURIComponent(activeCurrency);
+            activityFeedEventSource = new EventSource(url);
+            activityFeedEventSource.onmessage = function (ev) {
+                try {
+                    var msg = JSON.parse(ev.data);
+                    if (msg.type === 'wins' && msg.feed) {
+                        renderActivityFeedItems(msg.feed);
+                    }
+                } catch (e) { /* ignore parse errors */ }
+            };
+            activityFeedEventSource.onerror = function () {
+                if (activityFeedEventSource) {
+                    activityFeedEventSource.close();
+                    activityFeedEventSource = null;
+                }
+            };
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function refreshNewsTicker() {
+        var bar = $('casino-news-ticker');
+        var track = $('casino-news-ticker-track');
+        if (!bar || !track) return;
+        var data = await api('/api/casino/news/platform?limit=6', null, 8000);
+        if (!data.success || !(data.news || []).length) {
+            bar.classList.add('hidden');
+            return;
+        }
+        var items = (data.news || []).map(function (n) {
+            var title = n.title || n.summary || 'Casino update';
+            return '<span class="casino-news-item">' + title + '</span>';
+        });
+        track.innerHTML = items.join('') + items.join('');
+        bar.classList.remove('hidden');
+    }
+
+    async function refreshHomeAchievements() {
+        var el = $('casino-home-achievements');
+        if (!el) return;
+        var data = await api('/api/casino/achievements?user_id=' + encodeURIComponent(userId));
+        if (!data.success || !(data.achievements || []).length) {
+            el.textContent = 'Complete quests and bets to unlock achievements.';
+            return;
+        }
+        var rows = (data.achievements || []).slice(0, 4).map(function (a) {
+            var pct = a.target ? Math.min(100, Math.round((a.progress / a.target) * 100)) : (a.unlocked ? 100 : 0);
+            return '<div class="casino-home-ach-item"><span>' + (a.icon || '🏅') + ' ' + (a.name || a.id) +
+                '</span><span>' + (a.unlocked ? '✓' : (a.progress || 0) + '/' + (a.target || '?')) + '</span></div>' +
+                '<div class="casino-home-ach-bar"><span style="width:' + pct + '%"></span></div>';
+        });
+        el.innerHTML = rows.join('');
+    }
+
+    async function refreshResponsibleGamingBanner() {
+        var el = $('casino-rg-banner');
+        if (!el) return;
+        var data = await api('/api/casino/responsible-gaming/status?user_id=' + encodeURIComponent(userId) +
+            '&currency=' + encodeURIComponent(activeCurrency));
+        if (!data.success || !data.enabled) {
+            el.classList.add('hidden');
+            return;
+        }
+        var parts = [];
+        if (data.session_minutes > 0) {
+            parts.push('Session ' + data.session_minutes + ' min');
+        }
+        if (data.session_loss_cap != null) {
+            parts.push('Loss ' + data.session_loss + '/' + data.session_loss_cap + ' ' + data.currency);
+        }
+        if (data.nudge) {
+            parts.push(data.nudge);
+        }
+        if (!parts.length) {
+            el.classList.add('hidden');
+            return;
+        }
+        el.innerHTML = parts.join(' · ') + ' · <a href="/profile">Responsible play</a>';
+        el.classList.remove('hidden');
+    }
+
+    async function refreshRevenueDashboard() {
+        var el = $('casino-revenue-dashboard');
+        if (!el) return;
+        var today = await api('/api/casino/revenue/report/today');
+        var recon = await api('/api/casino/revenue/reconcile');
+        if (!today.success) {
+            el.textContent = today.error || 'Revenue data unavailable';
+            return;
+        }
+        var s = today.summary || {};
+        var coins = (today.by_currency || {}).coins || {};
+        var html = [
+            '<div class="casino-revenue-stat"><span>House edge (all rails)</span><strong>' +
+                (today.house_edge_profit_total != null ? today.house_edge_profit_total : '—') + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>Big wins today</span><strong>' + (s.big_wins || 0) + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>Coins bets today</span><strong>' + (coins.bets || 0) + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>Quest rewards granted</span><strong>' + (s.reward_coins_granted || 0) + ' coins</strong></div>',
+        ];
+        if (recon.success) {
+            html.push('<div class="casino-revenue-stat ' + (recon.ok ? 'ok' : 'warn') + '"><span>Ledger reconcile</span><strong>' +
+                (recon.ok ? 'OK' : 'Drift ' + recon.drift) + '</strong></div>');
+        }
+        el.innerHTML = html.join('');
+    }
+
+    async function refreshReferralLeaderboard() {
+        var el = $('casino-referral-leaderboard');
+        if (!el) return;
+        var data = await api('/api/casino/social/referral/leaderboard?limit=8');
+        if (!data.success || !(data.leaderboard || []).length) {
+            el.textContent = 'No referral signups yet — share your link to climb the board.';
+            return;
+        }
+        el.innerHTML = (data.leaderboard || []).map(function (r) {
+            return '<li>#' + r.rank + ' ' + shortUser(r.user_id) + ' · ' + r.referrals + ' invites</li>';
+        }).join('');
     }
 
     async function playDouble() {
@@ -872,6 +2334,7 @@
         await refreshSocialBoard();
         safeRefresh('activityFeed', refreshActivityFeed);
         safeRefresh('jackpotMeter', refreshJackpotMeter);
+        safeRefresh('rgBanner', refreshResponsibleGamingBanner);
     }
 
     async function playCoinFlip() {
@@ -979,6 +2442,8 @@
 
     let slotCatalog = [];
 
+    var SLOT_FLICKER_DEFAULT = ['🍒', '7️⃣', '💎', '⭐', '🔔', '🎰', '⚡', '🌟'];
+
     function displaySymbol(sym, symbolDisplay) {
         if (symbolDisplay && symbolDisplay[sym]) return symbolDisplay[sym];
         var fallbacks = {
@@ -988,7 +2453,10 @@
             sun: '☀️', moon: '🌙', comet: '☄️', orbit: '🪐', void: '🕳️',
             sword: '⚔️', shield: '🛡️', crown: '👑', banner: '🚩', skull: '💀',
             chest: '🧰', map: '🗺️', anchor: '⚓', rum: '🍾', parrot: '🦜',
-            mega7: '7️⃣', fire: '🔥', gold: '🥇', blank: '⬜'
+            mega7: '7️⃣', fire: '🔥', gold: '🥇', blank: '⬜',
+            ankh: '☥', scarab: '🪲', eye: '👁️', pyramid: '🔺', sand: '🏜️',
+            pearl: '🔮', whale: '🐋', coral: '🪸', fish: '🐠', shell: '🐚',
+            fairy: '🧚', mushroom: '🍄', owl: '🦉', leaf: '🍃', acorn: '🌰'
         };
         return fallbacks[sym] || sym || '?';
     }
@@ -997,58 +2465,261 @@
         return String(slotId).replace(/[^a-z0-9_-]/gi, '-');
     }
 
-    function renderSlotReels(containerId, reels, symbolDisplay, winPositions) {
+    function getSlotMeta(slotId) {
+        for (var i = 0; i < slotCatalog.length; i++) {
+            if (slotCatalog[i].id === slotId) return slotCatalog[i];
+        }
+        return { id: slotId, reels: 3 };
+    }
+
+    function slotThemeStyle(slot) {
+        if (!slot) return '';
+        var parts = [];
+        if (slot.theme_color) parts.push('--slot-theme:' + slot.theme_color);
+        if (slot.accent) parts.push('--slot-accent:' + slot.accent);
+        if (slot.glow_color) parts.push('--slot-glow:' + slot.glow_color);
+        return parts.length ? ' style="' + parts.join(';') + '"' : '';
+    }
+
+    function computeNearMissPositions(reels) {
+        if (!reels || reels.length !== 3) return [];
+        if (reels[0] === reels[1] && reels[0] !== reels[2]) return [0, 1];
+        if (reels[1] === reels[2] && reels[1] !== reels[0]) return [1, 2];
+        if (reels[0] === reels[2] && reels[0] !== reels[1]) return [0, 2];
+        return [];
+    }
+
+    function scatterPositions(reels, scatterSym) {
+        if (!scatterSym || !reels) return [];
+        var pos = [];
+        reels.forEach(function (sym, idx) {
+            if (sym === scatterSym) pos.push(idx);
+        });
+        return pos;
+    }
+
+    function renderSlotReels(containerId, reels, symbolDisplay, winPositions, nearMissPositions, scatterPos) {
         const el = $(containerId);
         if (!el) return;
-        el.innerHTML = '';
         var wins = winPositions || [];
-        (reels || ['?', '?', '?']).forEach(function (sym, idx) {
+        var near = nearMissPositions || [];
+        var scat = scatterPos || [];
+        var count = (reels && reels.length) ? reels.length : 3;
+        el.classList.remove('reels-3', 'reels-4', 'reels-5');
+        el.classList.add('reels-' + Math.min(5, Math.max(3, count)));
+        el.innerHTML = '';
+        (reels || Array(count).fill('?')).forEach(function (sym, idx) {
             const reel = document.createElement('div');
             reel.className = 'casino-slot-reel';
             if (wins.indexOf(idx) >= 0) reel.classList.add('win');
+            if (near.indexOf(idx) >= 0) reel.classList.add('near-miss');
+            if (scat.indexOf(idx) >= 0) reel.classList.add('scatter-hit');
+            const track = document.createElement('div');
+            track.className = 'casino-slot-reel-track';
             const inner = document.createElement('span');
             inner.className = 'casino-slot-reel-symbol';
             inner.textContent = sym === '?' ? '❓' : displaySymbol(sym, symbolDisplay);
-            reel.appendChild(inner);
+            track.appendChild(inner);
+            reel.appendChild(track);
             el.appendChild(reel);
         });
     }
 
-    function spinPlaceholder(containerId) {
-        renderSlotReels(containerId, ['?', '?', '?'], {}, []);
+    function spinPlaceholder(containerId, reelCount) {
+        var n = reelCount || 3;
+        var blanks = [];
+        for (var i = 0; i < n; i++) blanks.push('?');
+        renderSlotReels(containerId, blanks, {}, [], [], []);
     }
 
     function delay(ms) {
         return new Promise(function (resolve) { setTimeout(resolve, ms); });
     }
 
-    async function animateSlotSpin(containerId, finalReels, symbolDisplay, winPositions) {
+    function rafDelay(ms) {
+        return new Promise(function (resolve) {
+            var start = performance.now();
+            function tick(now) {
+                if (now - start >= ms) resolve();
+                else requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        });
+    }
+
+    function isMobileSlot() {
+        try { return window.matchMedia && window.matchMedia('(max-width: 640px)').matches; } catch (e) { return false; }
+    }
+
+    function spawnSlotParticles(machineEl, kind, intensity) {
+        if (!machineEl || prefersReducedMotion()) return;
+        var layer = machineEl.querySelector('.casino-slot-fx-layer');
+        if (!layer) return;
+        var count = (intensity === 'mega' ? 28 : intensity === 'big' ? 16 : 8) * (isMobileSlot() ? 0.5 : 1);
+        count = Math.max(4, Math.round(count));
+        var coins = kind === 'coins';
+        for (var i = 0; i < count; i++) {
+            var p = document.createElement('span');
+            p.className = coins ? 'casino-slot-coin' : 'casino-slot-confetti';
+            p.textContent = coins ? '🪙' : ['✨', '⭐', '💫', '🎉'][i % 4];
+            p.style.left = (10 + Math.random() * 80) + '%';
+            p.style.animationDelay = (Math.random() * 0.35) + 's';
+            p.style.animationDuration = (0.7 + Math.random() * 0.6) + 's';
+            layer.appendChild(p);
+            setTimeout(function (node) {
+                if (node.parentNode) node.parentNode.removeChild(node);
+            }, 1600, p);
+        }
+    }
+
+    function flashWinLine(machineEl) {
+        if (!machineEl || prefersReducedMotion()) return;
+        var line = machineEl.querySelector('.casino-slot-win-line');
+        if (!line) return;
+        line.classList.add('active');
+        setTimeout(function () { line.classList.remove('active'); }, 900);
+    }
+
+    function pulseSlotCabinet(machineEl, tier) {
+        if (!machineEl) return;
+        machineEl.classList.remove('slot-win-pulse', 'slot-mega-pulse', 'slot-scatter-pulse', 'slot-near-pulse');
+        if (tier === 'mega') machineEl.classList.add('slot-mega-pulse');
+        else if (tier === 'scatter') machineEl.classList.add('slot-scatter-pulse');
+        else if (tier === 'near') machineEl.classList.add('slot-near-pulse');
+        else machineEl.classList.add('slot-win-pulse');
+        setTimeout(function () {
+            machineEl.classList.remove('slot-win-pulse', 'slot-mega-pulse', 'slot-scatter-pulse', 'slot-near-pulse');
+        }, tier === 'mega' ? 2200 : 1400);
+    }
+
+    async function animateSlotSpin(containerId, finalReels, symbolDisplay, details) {
         const el = $(containerId);
         if (!el) return;
+        details = details || {};
+        var winPositions = details.win_positions || [];
+        var nearMiss = details.near_miss ? computeNearMissPositions(finalReels) : [];
+        var scatPos = details.scatter_bonus ? scatterPositions(finalReels, details.scatter_symbol) : [];
+        var machineEl = el.closest('.casino-slot-machine');
+
+        if (prefersReducedMotion()) {
+            renderSlotReels(containerId, finalReels, symbolDisplay, winPositions, nearMiss, scatPos);
+            if (winPositions.length) flashWinLine(machineEl);
+            return;
+        }
+
         const pool = Object.values(symbolDisplay || {});
-        const flicker = pool.length ? pool : ['🍒', '7️⃣', '💎', '⭐', '🔔', '🎰'];
-        const reels = el.querySelectorAll('.casino-slot-reel');
-        if (!reels.length) {
-            renderSlotReels(containerId, ['?', '?', '?'], symbolDisplay, []);
-        }
+        const flicker = pool.length ? pool : SLOT_FLICKER_DEFAULT;
+        const reelCount = (finalReels || []).length || 3;
+        renderSlotReels(containerId, Array(reelCount).fill('?'), symbolDisplay, [], [], []);
         const cols = el.querySelectorAll('.casino-slot-reel');
-        for (var pass = 0; pass < 8; pass++) {
-            cols.forEach(function (col, idx) {
-                col.classList.add('spinning');
-                var sym = col.querySelector('.casino-slot-reel-symbol');
-                if (sym) sym.textContent = flicker[(pass + idx) % flicker.length];
+        if (!cols.length) return;
+
+        if (machineEl) machineEl.classList.add('is-spinning');
+        var baseDuration = 900 + reelCount * 80;
+        var stagger = 280;
+        var stopped = {};
+        var lastTick = 0;
+        var startTime = performance.now();
+        var spinSoundAt = 0;
+
+        await new Promise(function (resolve) {
+            function frame(now) {
+                var elapsed = now - startTime;
+                var allDone = true;
+                cols.forEach(function (col, idx) {
+                    var stopAt = baseDuration + idx * stagger;
+                    if (stopped[idx]) {
+                        return;
+                    }
+                    allDone = false;
+                    if (elapsed >= stopAt) {
+                        stopped[idx] = true;
+                        col.classList.remove('spinning');
+                        col.classList.add('stopping');
+                        var symEl = col.querySelector('.casino-slot-reel-symbol');
+                        if (symEl) {
+                            symEl.textContent = displaySymbol(finalReels[idx], symbolDisplay);
+                        }
+                        playSound('stop');
+                        setTimeout(function (c) {
+                            c.classList.remove('stopping');
+                            c.classList.add('landed');
+                            setTimeout(function (cc) { cc.classList.remove('landed'); }, 320);
+                        }, 280, col);
+                        return;
+                    }
+                    col.classList.add('spinning');
+                    var tick = Math.floor(elapsed / 55);
+                    if (tick !== lastTick && idx === 0) {
+                        lastTick = tick;
+                        if (now - spinSoundAt > 95) {
+                            playSound('spin');
+                            spinSoundAt = now;
+                        }
+                    }
+                    var symEl = col.querySelector('.casino-slot-reel-symbol');
+                    if (symEl) symEl.textContent = flicker[(tick + idx * 3) % flicker.length];
+                });
+                if (allDone) {
+                    resolve();
+                } else {
+                    requestAnimationFrame(frame);
+                }
+            }
+            requestAnimationFrame(frame);
+        });
+
+        if (machineEl) machineEl.classList.remove('is-spinning');
+        renderSlotReels(containerId, finalReels, symbolDisplay, winPositions, nearMiss, scatPos);
+
+        if (winPositions.length) {
+            flashWinLine(machineEl);
+            await rafDelay(120);
+        }
+        if (nearMiss.length) {
+            var nearCols = el.querySelectorAll('.casino-slot-reel');
+            nearCols.forEach(function (c, i) {
+                if (nearMiss.indexOf(i) >= 0) c.classList.add('near-miss-tease');
             });
-            await delay(70 + pass * 8);
+            await rafDelay(500);
+            el.querySelectorAll('.near-miss-tease').forEach(function (c) { c.classList.remove('near-miss-tease'); });
         }
-        for (var stop = 0; stop < (finalReels || []).length; stop++) {
-            cols[stop]?.classList.remove('spinning');
-            cols[stop]?.classList.add('stopping');
-            var symEl = cols[stop]?.querySelector('.casino-slot-reel-symbol');
-            if (symEl) symEl.textContent = displaySymbol(finalReels[stop], symbolDisplay);
-            await delay(280);
-            cols[stop]?.classList.remove('stopping');
+    }
+
+    function celebrateSlotOutcome(data, slotId) {
+        if (!data || !data.success) return;
+        var dom = slotDomId(slotId);
+        var machineEl = document.querySelector('.casino-slot-machine[data-slot-id="' + slotId + '"]');
+        var det = data.details || {};
+        var bet = Number(data.bet || 0);
+        var payout = Number(data.payout || 0);
+        var multiple = bet > 0 ? payout / bet : Number(det.multiplier || 0);
+
+        if (det.match === 'jackpot' || det.scatter_bonus) {
+            playSound(det.match === 'jackpot' ? 'jackpot' : 'scatter');
+            pulseSlotCabinet(machineEl, det.match === 'jackpot' ? 'mega' : 'scatter');
+            spawnSlotParticles(machineEl, 'confetti', 'big');
         }
-        renderSlotReels(containerId, finalReels, symbolDisplay, winPositions);
+        if (det.near_miss && data.outcome !== 'win') {
+            pulseSlotCabinet(machineEl, 'near');
+            playSound('tick');
+        }
+        if (data.outcome === 'win') {
+            if (multiple >= 10) {
+                spawnSlotParticles(machineEl, 'coins', 'mega');
+                pulseSlotCabinet(machineEl, 'mega');
+            } else if (multiple >= 3) {
+                spawnSlotParticles(machineEl, 'coins', 'big');
+                pulseSlotCabinet(machineEl, 'win');
+            } else if (winPositionsFromDetails(det).length) {
+                playSound('win');
+                spawnSlotParticles(machineEl, 'confetti', 'small');
+            }
+        }
+    }
+
+    function winPositionsFromDetails(det) {
+        return det.win_positions || [];
     }
 
     function volatilityClass(v) {
@@ -1059,7 +2730,9 @@
     function buildSlotMachineCard(slot) {
         var sid = slot.id;
         var dom = slotDomId(sid);
-        return '<article class="casino-slot-machine" data-slot-id="' + sid + '">' +
+        var reelN = slot.reels || 3;
+        var reelCls = 'reels-' + Math.min(5, Math.max(3, reelN));
+        return '<article class="casino-slot-machine" data-slot-id="' + sid + '" data-slot="' + sid + '"' + slotThemeStyle(slot) + '>' +
             '<div class="casino-slot-machine-head">' +
             '<span class="casino-slot-icon">' + (slot.icon || '🎰') + '</span>' +
             '<div><h3>' + (slot.label || sid) + '</h3>' +
@@ -1071,11 +2744,13 @@
             (slot.jackpot_symbol ? '<span class="casino-slot-tag jackpot">JACKPOT ' + (slot.jackpot_multiplier || '') + '×</span>' : '') +
             '</div></div></div>' +
             '<div class="casino-slot-cabinet">' +
-            '<div id="slot-reels-' + dom + '" class="casino-slot-reels"></div>' +
+            '<div class="casino-slot-win-line" aria-hidden="true"></div>' +
+            '<div id="slot-reels-' + dom + '" class="casino-slot-reels ' + reelCls + '"></div>' +
+            '<div class="casino-slot-fx-layer" aria-hidden="true"></div>' +
             '</div>' +
             '<div class="casino-controls">' +
             '<input id="slot-bet-' + dom + '" type="number" min="5" max="500" value="25" aria-label="' + (slot.label || sid) + ' bet">' +
-            '<button type="button" class="casino-slot-spin-btn" data-slot-id="' + sid + '">Spin</button>' +
+            '<button type="button" class="casino-slot-spin-btn" data-slot-id="' + sid + '"><span class="casino-slot-spin-label">Spin</span></button>' +
             '</div>' +
             '<div id="slot-result-' + dom + '" class="casino-result"></div>' +
             '</article>';
@@ -1091,12 +2766,25 @@
                 icon: g.icon || '🎰',
                 volatility: g.volatility || 'medium',
                 rtp_estimate: g.rtp_estimate,
+                reels: g.reels || 3,
                 symbol_display: g.symbol_display || {},
                 has_wild: !!(g.has_wild || (g.wild_symbols && g.wild_symbols.length)),
                 has_scatter: !!(g.has_scatter || g.scatter_symbol),
+                scatter_symbol: g.scatter_symbol,
                 jackpot_symbol: g.jackpot_symbol,
                 jackpot_multiplier: g.jackpot_multiplier,
+                theme_color: g.theme_color,
+                accent: g.accent,
+                glow_color: g.glow_color,
             };
+        });
+    }
+
+    function bindSlotSpinButtons(grid) {
+        grid.querySelectorAll('.casino-slot-spin-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                playSlot(btn.getAttribute('data-slot-id'));
+            });
         });
     }
 
@@ -1111,13 +2799,9 @@
         slotCatalog = catalog;
         grid.innerHTML = catalog.map(buildSlotMachineCard).join('');
         catalog.forEach(function (slot) {
-            spinPlaceholder('slot-reels-' + slotDomId(slot.id));
+            spinPlaceholder('slot-reels-' + slotDomId(slot.id), slot.reels || 3);
         });
-        grid.querySelectorAll('.casino-slot-spin-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                playSlot(btn.getAttribute('data-slot-id'));
-            });
-        });
+        bindSlotSpinButtons(grid);
     }
 
     async function loadSlotMachines() {
@@ -1130,13 +2814,9 @@
                 slotCatalog = data.slots;
                 grid.innerHTML = slotCatalog.map(buildSlotMachineCard).join('');
                 slotCatalog.forEach(function (slot) {
-                    spinPlaceholder('slot-reels-' + slotDomId(slot.id));
+                    spinPlaceholder('slot-reels-' + slotDomId(slot.id), slot.reels || 3);
                 });
-                grid.querySelectorAll('.casino-slot-spin-btn').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        playSlot(btn.getAttribute('data-slot-id'));
-                    });
-                });
+                bindSlotSpinButtons(grid);
                 return;
             }
             var settings = await api('/api/casino/settings', null, 8000);
@@ -1152,17 +2832,23 @@
 
     async function playSlot(slotId) {
         if (!slotId) return;
+        var meta = getSlotMeta(slotId);
         var dom = slotDomId(slotId);
         var reelsId = 'slot-reels-' + dom;
         var resultId = 'slot-result-' + dom;
         var betInput = $('slot-bet-' + dom);
         var btn = document.querySelector('.casino-slot-spin-btn[data-slot-id="' + slotId + '"]');
-        if (btn) btn.disabled = true;
-        spinPlaceholder(reelsId);
+        var machineEl = document.querySelector('.casino-slot-machine[data-slot-id="' + slotId + '"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('spinning');
+        }
+        spinPlaceholder(reelsId, meta.reels || 3);
         var reelEl = $(reelsId);
-        if (reelEl) {
+        if (reelEl && !prefersReducedMotion()) {
             reelEl.querySelectorAll('.casino-slot-reel').forEach(function (c) { c.classList.add('spinning'); });
         }
+        playSound('spin');
 
         const data = await api('/api/casino/play/slot', {
             method: 'POST',
@@ -1174,19 +2860,21 @@
         });
 
         if (data.success && data.details) {
-            await animateSlotSpin(
-                reelsId,
-                data.details.reels || [],
-                data.details.symbol_display || {},
-                data.details.win_positions || []
-            );
+            var det = data.details;
+            if (!det.scatter_symbol && meta.scatter_symbol) det.scatter_symbol = meta.scatter_symbol;
+            await animateSlotSpin(reelsId, det.reels || [], det.symbol_display || {}, det);
+            celebrateSlotOutcome(data, slotId);
         } else {
-            spinPlaceholder(reelsId);
+            spinPlaceholder(reelsId, meta.reels || 3);
         }
         setResult($(resultId), data);
         showDoubleOffer(data);
         await afterPlay();
-        if (btn) btn.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('spinning');
+        }
+        if (machineEl) machineEl.classList.remove('is-spinning');
     }
 
     async function verifyCasinoSecurity() {
@@ -1262,7 +2950,16 @@
             bar.classList.add('hidden');
             return;
         }
-        el.innerHTML = parts.join('<span class="casino-jackpot-sep">·</span>');
+        var networkLabel = '';
+        try {
+            var gst = await api('/api/casino/global/stats', null, 6000);
+            if (gst.success && gst.hub_id) {
+                networkLabel = '<span class="casino-jackpot-network">🌐 ' +
+                    (gst.network_label || 'Network') + ' · ' + (gst.totals && gst.totals.bets != null ? gst.totals.bets + ' bets' : 'live') +
+                    '</span>';
+            }
+        } catch (e) { /* optional */ }
+        el.innerHTML = parts.join('<span class="casino-jackpot-sep">·</span>') + networkLabel;
         bar.classList.remove('hidden');
     }
 
@@ -1296,6 +2993,7 @@
     }
 
     async function refreshActivityFeed() {
+        if (activityFeedEventSource) return;
         var track = $('casino-ticker-track');
         if (!track) return;
         var data = await api('/api/casino/activity-feed?limit=12', null, 8000);
@@ -1303,12 +3001,7 @@
             track.innerHTML = '<span class="casino-ticker-item">Be the first big win today…</span>';
             return;
         }
-        var items = data.feed.map(function (f) {
-            var mult = f.multiplier ? (' @ ' + Number(f.multiplier).toFixed(2) + '×') : '';
-            return '<span class="casino-ticker-item">🏆 ' + shortUser(f.user_id) + ' won ' +
-                formatFeedAmount(f.net, f.currency) + ' on ' + prettyGame(f.game) + mult + '</span>';
-        });
-        track.innerHTML = items.join('') + items.join('');
+        renderActivityFeedItems(data.feed);
     }
 
     // -- Crash --------------------------------------------------------------
@@ -1528,6 +3221,170 @@
         }
         showToast('Seed rotated — new server seed committed');
         refreshFairnessState();
+    }
+
+    // -- Crash crew (Wave 3) ------------------------------------------------
+    var crashCrew = { roomId: null, pollTimer: null, growth: 0.13863, startMs: 0, bust: null, active: false };
+
+    function stopCrashCrewPoll() {
+        if (crashCrew.pollTimer) {
+            clearInterval(crashCrew.pollTimer);
+            crashCrew.pollTimer = null;
+        }
+    }
+
+    function crashCrewMemberState(room) {
+        if (!room || !(room.members || []).length) return null;
+        for (var i = 0; i < room.members.length; i++) {
+            if (room.members[i].user_id === userId) return room.members[i];
+        }
+        return null;
+    }
+
+    function updateCrashCrewControls(room) {
+        var launchBtn = $('crash-crew-launch');
+        var cashBtn = $('crash-crew-cashout');
+        var status = $('crash-crew-status');
+        if (!room) {
+            if (launchBtn) launchBtn.disabled = true;
+            if (cashBtn) cashBtn.disabled = true;
+            crashCrew.active = false;
+            return;
+        }
+        var me = crashCrewMemberState(room);
+        var isHost = room.host === userId;
+        if (launchBtn) {
+            launchBtn.disabled = !(isHost && room.status === 'lobby' && (room.member_count || 0) >= 2);
+        }
+        if (cashBtn) {
+            cashBtn.disabled = !(room.status === 'live' && me && !me.settled && !me.cashed_out);
+        }
+        if (status) {
+            if (room.status === 'lobby') {
+                status.textContent = 'Lobby · ' + (room.member_count || 0) + '/' + (room.max_players || 6) +
+                    ' players · bet ' + (room.bet || 0) + ' ' + currencyLabel(room.currency || activeCurrency);
+            } else if (room.status === 'live') {
+                status.textContent = 'Live crew round · shared bust hidden until settle · cash out individually';
+            } else {
+                status.textContent = 'Room ' + (room.status || 'done');
+            }
+        }
+        crashCrew.active = room.status === 'live';
+        crashCrew.bust = room.bust;
+        if (room.started_at && room.status === 'live') {
+            try {
+                crashCrew.startMs = Date.parse(room.started_at);
+            } catch (e) { /* keep prior */ }
+        }
+        crashCrew.growth = (room.fairness && room.growth_per_second) ? room.growth_per_second : 0.13863;
+    }
+
+    async function refreshCrashCrewLobbies() {
+        var list = $('crash-crew-lobbies');
+        if (!list) return;
+        var data = await api('/api/casino/crash-crew/rooms?limit=8');
+        if (!data.success) {
+            list.innerHTML = '<li>' + (data.error || 'Crash crew unavailable') + '</li>';
+            return;
+        }
+        var rooms = data.rooms || [];
+        if (!rooms.length) {
+            list.innerHTML = '<li>No open lobbies — create one above.</li>';
+            return;
+        }
+        list.innerHTML = rooms.map(function (r) {
+            var tag = r.room_id === crashCrew.roomId ? ' ★' : '';
+            return '<li><button type="button" class="casino-share-site-btn crash-crew-join-btn" data-room="' +
+                r.room_id + '">Join ' + r.room_id + tag + ' · ' + (r.member_count || 0) + 'p · ' +
+                (r.bet || 0) + '</button></li>';
+        }).join('');
+        list.querySelectorAll('.crash-crew-join-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                joinCrashCrewRoom(btn.getAttribute('data-room'));
+            });
+        });
+    }
+
+    async function refreshCrashCrewRoom() {
+        if (!crashCrew.roomId) return;
+        var data = await api('/api/casino/crash-crew/room/' + encodeURIComponent(crashCrew.roomId));
+        if (!data.success || !data.room) return;
+        updateCrashCrewControls(data.room);
+        if (data.room.status === 'settled' || data.room.status === 'cancelled') {
+            stopCrashCrewPoll();
+            crashCrew.roomId = null;
+            refreshCrashCrewLobbies();
+        }
+    }
+
+    function startCrashCrewPoll() {
+        stopCrashCrewPoll();
+        crashCrew.pollTimer = setInterval(refreshCrashCrewRoom, 2000);
+    }
+
+    async function createCrashCrewRoom() {
+        var bet = parseFloat(($('crash-crew-bet') || {}).value) || 25;
+        var data = await api('/api/casino/crash-crew/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+        });
+        setResult($('crash-crew-result'), data);
+        if (data.success && data.room) {
+            crashCrew.roomId = data.room.room_id;
+            updateCrashCrewControls(data.room);
+            startCrashCrewPoll();
+            refreshCrashCrewLobbies();
+            showToast('Lobby created — invite friends to join');
+        }
+    }
+
+    async function joinCrashCrewRoom(roomId) {
+        if (!roomId) return;
+        var autoVal = parseFloat(($('crash-crew-auto') || {}).value);
+        var body = { user_id: userId, room_id: roomId };
+        if (autoVal >= 1.01) body.auto_cashout = autoVal;
+        var data = await api('/api/casino/crash-crew/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        setResult($('crash-crew-result'), data);
+        if (data.success && data.room) {
+            crashCrew.roomId = data.room.room_id;
+            updateCrashCrewControls(data.room);
+            startCrashCrewPoll();
+            showToast('Joined crew lobby');
+        }
+    }
+
+    async function launchCrashCrewRoom() {
+        if (!crashCrew.roomId) return;
+        var data = await api('/api/casino/crash-crew/launch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, room_id: crashCrew.roomId }),
+        });
+        setResult($('crash-crew-result'), data);
+        if (data.success && data.room) {
+            updateCrashCrewControls(data.room);
+            showToast('Crew round live — cash out before shared bust!');
+        }
+    }
+
+    async function cashoutCrashCrew() {
+        if (!crashCrew.roomId) return;
+        var data = await api('/api/casino/crash-crew/cashout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, room_id: crashCrew.roomId }),
+        });
+        setResult($('crash-crew-result'), data);
+        if (data.success) {
+            refreshBalance();
+            if (data.crew) updateCrashCrewControls(data.crew);
+            showToast(data.outcome === 'win' ? 'Crew cash-out win!' : 'Busted with the crew');
+        }
     }
 
     // -- Plinko -------------------------------------------------------------
@@ -2110,6 +3967,11 @@
         if (type === 'straight' || type === 'dozen' || type === 'column') {
             payload.selection = parseInt(($('roulette-selection') || {}).value || 0, 10);
         }
+        var sideType = ($('roulette-side-type') || {}).value || '';
+        var sideAmt = parseFloat(($('roulette-side-bet') || {}).value || 0);
+        if (sideType && sideAmt > 0) {
+            payload.side_bet = { type: sideType, amount: sideAmt };
+        }
         var data = await api('/api/casino/play/roulette', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2254,6 +4116,242 @@
         await afterPlay();
     }
 
+    // -- Blackjack / Baccarat / Video Poker / Duels / Progression ------------
+    var bj = { roundId: null, active: false };
+    var vp = { roundId: null, hold: [] };
+
+    function setBjControls(active) {
+        bj.active = active;
+        ['bj-hit', 'bj-stand', 'bj-double'].forEach(function (id) {
+            var el = $(id); if (el) el.disabled = !active;
+        });
+        var d = $('bj-deal'); if (d) d.disabled = active;
+    }
+
+    async function dealBlackjack() {
+        var bet = parseFloat(($('bj-bet') || {}).value || 25);
+        var data = await api('/api/casino/play/blackjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+        });
+        if (!data.success) { $('bj-result') && ($('bj-result').textContent = data.error || 'Failed'); return; }
+        if (data.bet_id) { setResult($('bj-result'), data); await afterPlay(); return; }
+        bj.roundId = data.round_id;
+        $('bj-player') && ($('bj-player').textContent = (data.player || []).join(' ') + ' (' + (data.player_value || '?') + ')');
+        $('bj-dealer') && ($('bj-dealer').textContent = 'Dealer: ' + (data.dealer_up || '?'));
+        setBjControls(true);
+        $('bj-result') && ($('bj-result').textContent = '');
+    }
+
+    async function bjAction(path) {
+        if (!bj.roundId) return;
+        var data = await api(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, round_id: bj.roundId }),
+        });
+        if (!data.success) { $('bj-result') && ($('bj-result').textContent = data.error || 'Failed'); return; }
+        if (data.player) $('bj-player') && ($('bj-player').textContent = data.player.join(' ') + (data.player_value != null ? ' (' + data.player_value + ')' : ''));
+        if (data.dealer) $('bj-dealer') && ($('bj-dealer').textContent = 'Dealer: ' + data.dealer.join(' ') + (data.dealer_value != null ? ' (' + data.dealer_value + ')' : ''));
+        if (data.bet_id || data.outcome) {
+            setResult($('bj-result'), data);
+            bj.roundId = null; setBjControls(false);
+            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            await afterPlay();
+        }
+    }
+
+    async function playBaccarat() {
+        var bet = parseFloat(($('baccarat-bet') || {}).value || 25);
+        var side = ($('baccarat-side') || {}).value || 'player';
+        var data = await api('/api/casino/play/baccarat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, side: side, currency: activeCurrency }),
+        });
+        setResult($('baccarat-result'), data);
+        if (data.success) { try { maybeCelebrate(data); } catch (e) { /* optional */ } await afterPlay(); }
+    }
+
+    function renderVpHold(hand) {
+        var el = $('vp-hold');
+        if (!el || !hand) return;
+        el.innerHTML = hand.map(function (c, i) {
+            return '<label><input type="checkbox" class="vp-hold-cb" value="' + i + '"> Hold ' + c + '</label>';
+        }).join(' ');
+    }
+
+    async function refreshVideoPokerLadder() {
+        var el = $('vp-ladder');
+        if (!el) return;
+        var data = await api('/api/casino/video-poker/ladder?user_id=' + encodeURIComponent(userId));
+        if (!data.success || !data.enabled) {
+            el.textContent = '';
+            el.classList.add('hidden');
+            return;
+        }
+        el.classList.remove('hidden');
+        var cur = data.current_tier || {};
+        var nxt = data.next_tier;
+        var rankTxt = data.daily_rank ? ('Daily rank #' + data.daily_rank) : ('XP ' + (data.xp || 0));
+        var html = '<strong>' + (cur.label || 'Base table') + '</strong> — ' + rankTxt +
+            ' · cosmetic pay table (RTP ' + Number(data.rtp_published || 99.5).toFixed(1) + '%)';
+        if (nxt && nxt.label) {
+            html += '<br><span class="casino-vp-ladder-next">Next: ' + nxt.label;
+            if (nxt.min_rank != null) html += ' (rank #' + nxt.min_rank + (nxt.max_rank ? '–' + nxt.max_rank : '') + ')';
+            else if (nxt.min_xp != null) html += ' (' + nxt.min_xp + '+ XP)';
+            html += '</span>';
+        }
+        el.innerHTML = html;
+    }
+
+    async function dealVideoPoker() {
+        var bet = parseFloat(($('vp-bet') || {}).value || 25);
+        var data = await api('/api/casino/play/video-poker', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+        });
+        if (!data.success) { setResult($('vp-result'), data); return; }
+        vp.roundId = data.round_id;
+        $('vp-hand') && ($('vp-hand').textContent = (data.hand || []).join(' '));
+        renderVpHold(data.hand);
+        var dr = $('vp-draw'); if (dr) dr.disabled = false;
+        var de = $('vp-deal'); if (de) de.disabled = true;
+        $('vp-result') && ($('vp-result').textContent = '');
+    }
+
+    async function drawVideoPoker() {
+        if (!vp.roundId) return;
+        var hold = [];
+        document.querySelectorAll('.vp-hold-cb:checked').forEach(function (cb) { hold.push(parseInt(cb.value, 10)); });
+        var data = await api('/api/casino/play/video-poker/draw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, round_id: vp.roundId, hold: hold }),
+        });
+        setResult($('vp-result'), data);
+        vp.roundId = null;
+        var dr = $('vp-draw'); if (dr) dr.disabled = true;
+        var de = $('vp-deal'); if (de) de.disabled = false;
+        if (data.success) {
+            if (data.display_hand_name && data.display_multiplier != null && $('vp-result')) {
+                $('vp-result').textContent = (data.outcome || '').toUpperCase() + ': ' +
+                    data.display_hand_name + ' @ ' + data.display_multiplier + '× (tier: ' +
+                    (data.ladder_tier || 'Base') + ') — net ' + data.net;
+            }
+            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            await afterPlay();
+        }
+    }
+
+    async function refreshDuels() {
+        var el = $('duel-open-list');
+        if (!el) return;
+        var data = await api('/api/casino/duels?status=open');
+        var plinko = await api('/api/casino/duels/plinko-battle?status=open');
+        var rows = (data.duels || []).concat(plinko.duels || []);
+        if (!rows.length) {
+            el.textContent = 'No open duels — create one!';
+            return;
+        }
+        el.innerHTML = rows.map(function (d) {
+            var acceptApi = d.game === 'plinko_battle' ? 'plinko' : 'std';
+            return '<div class="casino-duel-row">' + d.game + ' · ' + d.bet + ' ' + currencyLabel(d.currency) +
+                ' <button type="button" class="duel-accept-btn" data-id="' + d.duel_id + '" data-api="' + acceptApi + '">Accept</button></div>';
+        }).join('');
+        el.querySelectorAll('.duel-accept-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                acceptDuel(btn.getAttribute('data-id'), btn.getAttribute('data-api'));
+            });
+        });
+    }
+
+    async function createDuel() {
+        var game = ($('duel-game') || {}).value || 'coin_flip';
+        var choice = ($('duel-choice') || {}).value || 'heads';
+        if (game === 'plinko_battle') {
+            var risk = ($('plinko-risk') || {}).value || 'medium';
+            var pb = await api('/api/casino/duels/plinko-battle/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    bet: parseFloat(($('duel-bet') || {}).value || 25),
+                    risk: risk,
+                    currency: activeCurrency,
+                }),
+            });
+            setResult($('duel-result'), pb);
+            if (pb.success) await refreshDuels();
+            return;
+        }
+        if (game === 'rps') {
+            choice = prompt('Pick rock, paper, or scissors', 'rock') || 'rock';
+        } else if (game === 'dice') {
+            choice = prompt('Pick high or low', 'high') || 'high';
+        }
+        var data = await api('/api/casino/duels/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, bet: parseFloat(($('duel-bet') || {}).value || 25), game: game, choice: choice, currency: activeCurrency }),
+        });
+        setResult($('duel-result'), data);
+        if (data.success) await refreshDuels();
+    }
+
+    async function acceptDuel(duelId, apiKind) {
+        if (apiKind === 'plinko') {
+            var pb = await api('/api/casino/duels/plinko-battle/accept', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, duel_id: duelId }),
+            });
+            setResult($('duel-result'), pb);
+            if (pb.success) { await refreshDuels(); await refreshBalance(); }
+            return;
+        }
+        var gameEl = $('duel-game');
+        var game = gameEl ? gameEl.value : 'coin_flip';
+        var choice = ($('duel-choice') || {}).value || 'tails';
+        if (game === 'rps') choice = prompt('Pick rock, paper, or scissors', 'rock') || 'rock';
+        else if (game === 'dice') choice = prompt('Pick high or low (opposite of challenger)', 'low') || 'low';
+        else choice = choice === 'heads' ? 'tails' : 'heads';
+        var data = await api('/api/casino/duels/accept', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, duel_id: duelId, choice: choice }),
+        });
+        setResult($('duel-result'), data);
+        if (data.success) { await refreshDuels(); await afterPlay(); }
+    }
+
+    async function refreshProgression() {
+        var el = $('casino-progression');
+        if (!el) return;
+        var data = await api('/api/casino/progression?user_id=' + encodeURIComponent(userId));
+        if (!data.success) { el.textContent = 'Progression unavailable.'; return; }
+        var xp = data.xp || {};
+        var vip = data.vip || {};
+        el.innerHTML = '<div class="casino-prog-row">' + (vip.badge || '') + ' ' + (vip.label || 'Bronze') +
+            ' · Level ' + (xp.level || 1) + ' ' + (xp.title || '') + '</div>' +
+            '<div class="casino-prog-row">XP ' + Math.round(xp.xp || 0) +
+            (xp.next_level_xp ? ' / ' + xp.next_level_xp : '') + '</div>';
+    }
+
+    async function spinDailyWheel() {
+        var data = await api('/api/casino/daily-wheel/spin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId }),
+        });
+        if (data.success) showToast('Daily wheel: ' + (data.label || data.coins_awarded + ' coins'));
+        else showToast(data.error || 'Wheel unavailable');
+        await refreshProgression();
+        await afterPlay();
+    }
+
     // -- Tournaments --------------------------------------------------------
     function tournamentAmount(currency, value) {
         var v = Number(value || 0);
@@ -2361,6 +4459,9 @@
         bindClick('crash-launch', launchCrash);
         bindClick('crash-cashout', function () { doCrashCashout(null); });
         bindClick('crash-rotate-seed', rotateCrashSeed);
+        bindClick('crash-crew-create', createCrashCrewRoom);
+        bindClick('crash-crew-launch', launchCrashCrewRoom);
+        bindClick('crash-crew-cashout', cashoutCrashCrew);
         bindClick('plinko-drop', playPlinko);
         bindChange('plinko-risk', function () { if (!plinko.drawing) drawPlinkoBoard(null, null); });
         bindClick('wheel-spin', playWheel);
@@ -2376,6 +4477,27 @@
         bindClick('hilo-higher', function () { hiloGuess('higher'); });
         bindClick('hilo-lower', function () { hiloGuess('lower'); });
         bindClick('hilo-cashout', hiloCashout);
+        bindClick('bj-deal', dealBlackjack);
+        bindClick('bj-hit', function () { bjAction('/api/casino/play/blackjack/hit'); });
+        bindClick('bj-stand', function () { bjAction('/api/casino/play/blackjack/stand'); });
+        bindClick('bj-double', function () { bjAction('/api/casino/play/blackjack/double'); });
+        bindClick('baccarat-play', playBaccarat);
+        bindClick('vp-deal', dealVideoPoker);
+        bindClick('vp-draw', drawVideoPoker);
+        bindClick('duel-create', createDuel);
+        bindClick('mines-duel-create', createMinesDuel);
+        bindClick('keno-syndicate-create', createKenoSyndicate);
+        bindClick('casino-duel-invite-accept', acceptDuelInvite);
+        bindClick('casino-daily-wheel', spinDailyWheel);
+        bindChange('duel-game', function () {
+            var g = ($('duel-game') || {}).value;
+            var sel = $('duel-choice');
+            if (!sel) return;
+            if (g === 'rps') sel.innerHTML = '<option value="rock">Rock</option><option value="paper">Paper</option><option value="scissors">Scissors</option>';
+            else if (g === 'dice') sel.innerHTML = '<option value="high">High (4-6)</option><option value="low">Low (1-3)</option>';
+            else if (g === 'plinko_battle') sel.innerHTML = '<option value="medium">Same-seed plinko</option>';
+            else sel.innerHTML = '<option value="heads">Heads</option><option value="tails">Tails</option>';
+        });
         bindClick('casino-sound-toggle', toggleSound);
         updateSoundToggle();
         document.querySelectorAll('.casino-currency-btn').forEach(function (btn) {
@@ -2386,17 +4508,41 @@
         bindChange('rps-dist-lane', refreshDistribution);
         bindChange('rps-dist-context', refreshDistribution);
         bindChange('outcome-dist-lane', refreshOutcomeDistribution);
-        document.querySelectorAll('.casino-tab').forEach(function (tab) {
+        bindClick('casino-share-win-btn', shareCasinoWin);
+        bindClick('casino-share-win-card-btn', openBigWinClipCard);
+        bindClick('casino-share-site-btn', shareCasinoSite);
+        bindClick('casino-coupon-redeem', redeemLabCoupon);
+        bindClick('casino-share-whatsapp-btn', shareViaWhatsApp);
+        bindClick('casino-share-x-thread-btn', shareXThread);
+        bindClick('casino-copy-referral-code', copyReferralCode);
+        bindClick('casino-copy-referral-link', copyReferralLink);
+        bindChange('casino-share-wins-toggle', function () {
+            toggleShareWins($('casino-share-wins-toggle').checked);
+        });
+        document.querySelectorAll('.casino-lb-period-tabs .casino-tab').forEach(function (tab) {
             tab.addEventListener('click', function () {
-                document.querySelectorAll('.casino-tab').forEach(function (t) { t.classList.remove('active'); });
+                document.querySelectorAll('.casino-lb-period-tabs .casino-tab').forEach(function (t) { t.classList.remove('active'); });
                 tab.classList.add('active');
                 leaderboardPeriod = tab.getAttribute('data-period') || 'today';
                 refreshLeaderboard();
                 refreshSocialBoard();
             });
         });
+        document.querySelectorAll('.casino-lb-scope-tabs .casino-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.casino-lb-scope-tabs .casino-tab').forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                leaderboardScope = tab.getAttribute('data-lb-scope') || 'local';
+                refreshLeaderboard();
+            });
+        });
 
         setTimeout(markStaleLoadingPanels, 15000);
+
+        try { initMainTabNav(); } catch (e) { console.warn('[casino] tab nav failed:', e); }
+        try { applyDeepLinks(); } catch (e) { console.warn('[casino] deep links failed:', e); }
+        try { applyDuelDeepLink(); } catch (e) { console.warn('[casino] duel deep link failed:', e); }
+        try { registerCasinoReferralFromUrl(); } catch (e) { /* optional */ }
 
         try {
             await refreshBalance();
@@ -2414,21 +4560,38 @@
         safeRefresh('leaderboard', refreshLeaderboard);
         safeRefresh('personalBests', refreshPersonalBests);
         safeRefresh('hallOfFame', refreshHallOfFame);
+        safeRefresh('bigWinHof', refreshBigWinHallOfFame);
+        safeRefresh('slotOfDay', refreshSlotOfTheDay);
+        safeRefresh('seasonalBadge', refreshSeasonalBadge);
+        safeRefresh('vipLounge', refreshVipLounge);
+        safeRefresh('homeAchievements', refreshHomeAchievements);
+        safeRefresh('agentSpectator', refreshAgentSpectator);
+        safeRefresh('newsTicker', refreshNewsTicker);
+        safeRefresh('rgBanner', refreshResponsibleGamingBanner);
         safeRefresh('houseStats', refreshHouseStats);
         safeRefresh('socialBoard', refreshSocialBoard);
         safeRefresh('depositPacks', refreshDepositPacks);
+        safeRefresh('vpLadder', refreshVideoPokerLadder);
         safeRefresh('paypalReturn', handlePayPalReturn);
         safeRefresh('activityFeed', refreshActivityFeed);
         safeRefresh('jackpotMeter', refreshJackpotMeter);
         safeRefresh('tournaments', refreshTournaments);
+        safeRefresh('progression', refreshProgression);
+        safeRefresh('duels', refreshDuels);
         safeRefresh('fairness', refreshFairnessState);
+        safeRefresh('crashCrewLobbies', refreshCrashCrewLobbies);
         try { drawCrashCurve(1.0, false); } catch (e) { /* canvas optional */ }
         try { drawPlinkoBoard(null, null); } catch (e) { /* canvas optional */ }
         try { drawWheel(wheel.rotation, -1); } catch (e) { /* canvas optional */ }
         try { buildMinesGrid(); } catch (e) { /* grid optional */ }
         try { buildKenoGrid(); } catch (e) { /* grid optional */ }
         try { updateRouletteSelectionField(); } catch (e) { /* optional */ }
-        setInterval(function () { safeRefresh('activityFeed', refreshActivityFeed); }, 15000);
+        setupFairnessExportLink();
+        if (!startActivityFeedStream()) {
+            setInterval(function () { safeRefresh('activityFeed', refreshActivityFeed); }, 15000);
+        } else {
+            safeRefresh('activityFeed', refreshActivityFeed);
+        }
         setInterval(function () { safeRefresh('jackpotMeter', refreshJackpotMeter); }, 12000);
         setInterval(function () { safeRefresh('tournaments', refreshTournaments); }, 30000);
     }

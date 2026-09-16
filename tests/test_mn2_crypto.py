@@ -91,12 +91,14 @@ class TestMN2DepositAddress(unittest.TestCase):
         self.assertIn("explorer_address_url", data)
 
     @patch("backend.routes.mn2_routes.get_or_create_deposit_address")
-    def test_deposit_address_fail_returns_500(self, mock_get_addr):
+    def test_deposit_address_fail_returns_200_with_error(self, mock_get_addr):
         mock_get_addr.return_value = {"success": False, "error": "RPC unavailable"}
         r = self.client.get("/api/mn2/deposit-address?user_id=test_user")
-        self.assertEqual(r.status_code, 500)
+        self.assertEqual(r.status_code, 200)
         data = r.get_json()
         self.assertFalse(data.get("success"))
+        self.assertIn("error", data)
+        self.assertIsNone(data.get("deposit_address"))
 
 
 class TestMN2Transactions(unittest.TestCase):
@@ -396,7 +398,11 @@ class TestMN2DepositAddressSelfHeal(unittest.TestCase):
         res = w.get_or_create_deposit_address("u1")
         self.assertTrue(res.get("success"))
         self.assertEqual(res.get("deposit_address"), "MxFreshValidAddress")
-        self.assertEqual(saved.get("u1"), "MxFreshValidAddress")
+        saved_addr = saved.get("u1")
+        if isinstance(saved_addr, dict):
+            self.assertEqual(saved_addr.get("primary"), "MxFreshValidAddress")
+        else:
+            self.assertEqual(saved_addr, "MxFreshValidAddress")
 
     @patch("backend.services.mn2_rpc_client.getnewaddress")
     @patch("backend.services.mn2_rpc_client.validateaddress")

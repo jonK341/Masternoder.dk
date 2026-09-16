@@ -1,0 +1,72 @@
+# Discord announcement — MasterNoder2 v1.3.0.0 wallet release
+# Generated: 2026-06-30
+# Status: DRAFT ONLY — paste manually or POST /api/discord/post (ops-gated)
+# GitHub: https://github.com/jonK341/MasterNoder2/releases/tag/v1.3.0.0
+
+--- MESSAGE (copy below) ---
+
+🪙 **MasterNoder2 v1.3.0.0 is live — download your wallet / node**
+
+Official builds are on GitHub. Use the new **MN2 Wallets** hub for one-click downloads, checksums, and bootstrap peers.
+
+**What's new**
+• Multi-ping masternode support — one daemon can ping every alias in `masternode.conf`
+• Network bootstrap fix — wallets stuck at 0 peers? Use `addnode=host:17646` (**not** `connect=localhost`)
+• Download hub at **masternoder.dk/wallets** with verified SHA256 + peer snippets
+• Canonical peer list: `GET /api/mn2/network-peers` (P2P **17646**, RPC **9332**)
+
+**Download**
+• GitHub release → https://github.com/jonK341/MasterNoder2/releases/tag/v1.3.0.0
+• Wallet hub → https://masternoder.dk/wallets
+
+**Platforms**
+• 🖥️ **Linux daemon** (VPS / WSL / headless RPC) — `masternoder2d.tar.gz` ✅ v1.3.0.0
+• 🪟 **Qt Windows** — `MasterNoder2-qt-win.zip` (v1.2.2.0 until Qt 1.3 rebuild)
+• 🐧 **Qt Linux** — `MasterNoder2-qt-linux.tar.gz` (v1.2.2.0 until Qt 1.3 rebuild)
+
+**Quick setup**
+1. Download & extract for your platform
+2. Edit `masternoder2.conf` in your datadir (`%APPDATA%\MasterNoder2` / `~/.masternoder2`):
+   `listen=1` · `port=17646` · `rpcport=9332` · `dnsseed=1`
+3. Add bootstrap peers — example:
+```
+addnode=explorer.masternoder.dk:17646
+addnode=192.46.237.230:17646
+addnode=213.136.90.158:17646
+addnode=85.10.148.5:17646
+```
+   Full list on the wallets page or `/api/mn2/network-peers`
+4. Restart — you should see **4+ peers** within a few minutes
+
+**Verify download**
+`masternoder2d.tar.gz` SHA256:
+`b2c69017c15d7248b71d9799b910c4b04f7383953e57ae1816559eddb912237d`
+(manifest + `.sha256` file on the GitHub release)
+
+Need help? See **MN2_DAEMON_SETUP.md** on GitHub or ask here.
+
+--- END MESSAGE ---
+
+--- EMBED PAYLOAD (optional, for POST /api/discord/post) ---
+{
+  "channel": "announcements",
+  "message_id": "wallet-release-v1.3.0.0",
+  "payload": {
+    "content": "🪙 **MasterNoder2 v1.3.0.0** — wallet & daemon builds are ready for download.",
+    "embeds": [{
+      "title": "Download MN2 v1.3.0.0",
+      "description": "**Linux daemon** (v1.3.0.0) is on GitHub now.\nQt desktop builds remain on **v1.2.2.0** until the next Qt rebuild.\n\n→ [GitHub release](https://github.com/jonK341/MasterNoder2/releases/tag/v1.3.0.0)\n→ [Wallet hub](https://masternoder.dk/wallets)\n→ [Network peers API](https://masternoder.dk/api/mn2/network-peers)",
+      "fields": [
+        {"name": "What's new", "value": "Multi-ping masternode fleet support\nBootstrap peer fix (`addnode=host:17646`)\nVerified checksums + conf snippets on /wallets", "inline": false},
+        {"name": "Ports", "value": "P2P **17646** · RPC **9332**", "inline": true},
+        {"name": "SHA256 (daemon tarball)", "value": "`b2c69017…912237d`", "inline": true}
+      ],
+      "footer": {"text": "Never share seed phrases in Discord — run official MN2 software locally only"}
+    }]
+  }
+}
+
+--- BLOCKERS ---
+- Qt Windows/Linux zips are NOT attached to v1.3.0.0 GitHub release (only on v1.2.2.0).
+- /wallets hub + peer API are local/uncommitted on feat/casino-mega-expansion — deploy before linking in production Discord.
+- Auto-post skipped: DISCORD_WEBHOOK_URL not configured in this workspace.

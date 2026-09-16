@@ -168,10 +168,29 @@
   }
 
   function refresh() {
+    var upd = q('ex-updated');
+    if (upd) upd.textContent = 'Loading network stats…';
     fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(render)
       .catch(function () { q('ex-updated').textContent = 'Stats temporarily unavailable.'; });
+  }
+
+  function startExplorerStream() {
+    if (typeof EventSource === 'undefined') return false;
+    try {
+      var es = new EventSource('/api/mn2/explorer/stream?interval=30');
+      es.onmessage = function (ev) {
+        try {
+          var msg = JSON.parse(ev.data || '{}');
+          if (msg.type === 'overview' && msg.data) render(msg.data);
+        } catch (e) { /* ignore */ }
+      };
+      es.onerror = function () { es.close(); };
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   function ageStr(unixTs) {
@@ -183,12 +202,23 @@
     return Math.floor(s / 86400) + 'd';
   }
 
-  function durStr(seconds) {
-    var s = Number(seconds || 0);
-    if (s <= 0) return '—';
-    if (s < 3600) return Math.floor(s / 60) + 'm';
-    if (s < 86400) return Math.floor(s / 3600) + 'h';
-    return Math.floor(s / 86400) + 'd';
+  function durStr(seconds, status) {
+    var s = Number(seconds);
+    if (isNaN(s) || seconds == null || seconds === '') return '—';
+    if (s <= 0) {
+      var st = String(status || '').toUpperCase();
+      if (st === 'ACTIVE') return '0 · no ping';
+      return '0';
+    }
+    if (s < 3600) return Math.floor(s / 60) + 'm (' + fmtNum(s, 0) + 's)';
+    if (s < 86400) {
+      var h = Math.floor(s / 3600);
+      var m = Math.floor((s % 3600) / 60);
+      return h + 'h ' + m + 'm';
+    }
+    var d = Math.floor(s / 86400);
+    var hr = Math.floor((s % 86400) / 3600);
+    return d + 'd ' + hr + 'h';
   }
 
   function blockLink(height, hash) {
@@ -219,7 +249,7 @@
   }
 
   function loadMasternodes() {
-    fetch('/api/mn2/masternodes?limit=50', { credentials: 'same-origin' })
+    fetch('/api/mn2/masternodes?limit=50&fresh=1', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var body = q('ex-mn');
@@ -228,7 +258,12 @@
         var sum = q('mn-summary');
         if (sum) sum.textContent = '— ' + (d.enabled || 0) + ' enabled / ' + (d.total || 0) + ' total';
         var list = d.list || [];
-        if (!list.length) { body.innerHTML = '<tr><td colspan="4">No masternode data.</td></tr>'; return; }
+        if (!list.length) {
+          var err = d.rpc_error ? String(d.rpc_error) : '';
+          body.innerHTML = '<tr><td colspan="4">' +
+            (err ? ('RPC unavailable — ' + err) : 'No masternode data.') + '</td></tr>';
+          return;
+        }
         body.innerHTML = list.map(function (m) {
           var on = String(m.status || '').toUpperCase() === 'ENABLED';
           var pill = '<span class="pill ' + (on ? 'on' : 'off') + '">' + (m.status || '—') + '</span>';
@@ -237,7 +272,7 @@
             '<td>' + (m.rank != null ? m.rank : '—') + '</td>' +
             '<td>' + addr + '</td>' +
             '<td>' + pill + '</td>' +
-            '<td>' + durStr(m.activetime) + '</td>' +
+            '<td>' + durStr(m.activetime, m.status) + '</td>' +
             '</tr>';
         }).join('');
       })
@@ -340,12 +375,31 @@
         var el = q('mon-alerts');
         if (!el) return;
         var alerts = (d && d.success && d.alerts) ? d.alerts : [];
-        if (!alerts.length) { el.innerHTML = ''; return; }
-        el.innerHTML = alerts.map(function (a) {
-          var bad = a.type === 'staking_stopped';
-          var when = a.ts ? new Date(a.ts).toLocaleString() : '';
-          return '<div class="mon-alert' + (bad ? ' bad' : '') + '">⚠️ ' + (a.message || a.type) + (when ? ' <span style="opacity:0.6">(' + when + ')</span>' : '') + '</div>';
-        }).join('');
+        return fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
+          .then(function (r2) { return r2.json(); })
+          .then(function (ov) {
+            var stakingOn = ov && ov.staking_health && ov.staking_health.staking_active === true;
+            if (stakingOn) {
+              alerts = alerts.filter(function (a) { return a.type !== 'staking_stopped'; });
+              if (!alerts.some(function (a) { return a.type === 'staking_resumed'; })) {
+                alerts.unshift({
+                  type: 'staking_resumed',
+                  message: 'MN2 daemon staking is active. Realized yield accrual is running.',
+                  ts: new Date().toISOString()
+                });
+              }
+            }
+            if (!alerts.length) { el.innerHTML = ''; return; }
+            el.innerHTML = alerts.slice(0, 3).map(function (a) {
+              var bad = a.type === 'staking_stopped';
+              var good = a.type === 'staking_resumed';
+              var when = a.ts ? new Date(a.ts).toLocaleString() : '';
+              var cls = good ? ' good' : (bad ? ' bad' : '');
+              var icon = good ? '✓' : '⚠️';
+              return '<div class="mon-alert' + cls + '">' + icon + ' ' + (a.message || a.type) +
+                (when ? ' <span style="opacity:0.6">(' + when + ')</span>' : '') + '</div>';
+            }).join('');
+          });
       })
       .catch(function () {});
   }
@@ -367,7 +421,9 @@
   loadBlocks();
   loadMasternodes();
   loadMonitor();
-  setInterval(refresh, 30000);
+  if (!startExplorerStream()) {
+    setInterval(refresh, 30000);
+  }
   setInterval(loadSparklines, 300000);
   setInterval(loadBlocks, 30000);
   setInterval(loadMasternodes, 60000);
