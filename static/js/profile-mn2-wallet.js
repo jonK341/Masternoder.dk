@@ -12,6 +12,8 @@
   var _sse = null;
   var _lastBalance = null;
   var _lastStakeStatus = null;
+  var _lastDepositAddress = null;
+  var _withdrawSecurity = null;
 
   function uid() {
     return (
@@ -62,6 +64,63 @@
   function hasDepositAddress(addrEl) {
     var t = (addrEl && addrEl.textContent) ? addrEl.textContent.trim() : '';
     return t && t !== '--' && t !== '—' && t !== '…' && t !== 'Loading…';
+  }
+
+  var _MN2_ADDR_RE = /^[MJ][1-9A-HJ-NP-Za-km-z]{24,55}$/;
+
+  function looksLikeMn2Address(addr) {
+    return _MN2_ADDR_RE.test((addr || '').replace(/\s+/g, '').trim());
+  }
+
+  function humanizeWalletError(msg) {
+    var t = (msg || '').toString();
+    if (/invalid.*address|rejected|format validation/i.test(t)) {
+      return 'Could not create address — wallet node rejected the format. Ensure MN2 RPC is online, then retry.';
+    }
+    if (/unreachable|connection|refused|timeout|401|403|rpc/i.test(t)) {
+      return 'Wallet node unavailable. Start the MN2 daemon and check RPC settings, then try again.';
+    }
+    return t || 'Could not create wallet address.';
+  }
+
+  function renderWithdrawSecurityHint(sec) {
+    var el = document.getElementById('profile-mn2-withdraw-whitelist-hint');
+    if (!el || !sec) return;
+    el.style.display = sec.withdrawal_requires_whitelist ? 'block' : 'none';
+    renderWithdrawWhitelistQuick(sec);
+  }
+
+  function renderWithdrawWhitelistQuick(sec) {
+    if (sec) _withdrawSecurity = sec;
+    var quick = document.getElementById('profile-mn2-withdraw-whitelist-quick');
+    if (!quick) return;
+    var required = _withdrawSecurity && _withdrawSecurity.withdrawal_requires_whitelist;
+    quick.style.display = required ? 'block' : 'none';
+  }
+
+  function renderWithdrawBalanceHint(balData) {
+    var el = document.getElementById('profile-mn2-withdraw-balance-hint');
+    if (!el) return;
+    if (!balData || !balData.success) {
+      el.textContent = 'Withdrawable balance: loading…';
+      return;
+    }
+    var liquid = balData.liquid_mn2 != null ? Number(balData.liquid_mn2) : Number(balData.mn2_balance) || 0;
+    var held = balData.held_mn2 != null ? Number(balData.held_mn2) : 0;
+    var withdrawable =
+      balData.withdrawable_mn2 != null ? Number(balData.withdrawable_mn2) : Math.max(0, liquid - held);
+    var text = 'Withdrawable: ' + withdrawable.toFixed(8) + ' MN2';
+    if (held > 0) text += ' (' + held.toFixed(4) + ' on clearance hold)';
+    el.textContent = text;
+  }
+
+  function loadWithdrawSecurityHint() {
+    return fetchJson(base() + '/api/mn2/withdraw/security', { timeout: 8000 }).then(function (res) {
+      if (res.data && res.data.success !== false) {
+        _withdrawSecurity = res.data;
+        renderWithdrawSecurityHint(res.data);
+      }
+    });
   }
 
   function wireFiatToggle() {
@@ -180,6 +239,8 @@
         profileWithdrawBtn.title = '';
       }
     }
+    renderWithdrawBalanceHint(balData);
+    if (balData.deposit_address) _lastDepositAddress = balData.deposit_address;
   }
 
   function renderDeposit(addrData) {
@@ -191,6 +252,7 @@
     var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
     var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
     if (addrData && addrData.success && addrData.deposit_address) {
+      _lastDepositAddress = addrData.deposit_address;
       if (addrEl) addrEl.textContent = addrData.deposit_address;
       if (depositErrEl) {
         depositErrEl.style.display = 'none';
@@ -232,9 +294,10 @@
       }
     } else {
       if (addrEl) addrEl.textContent = '—';
-      var errMsg =
+      var errMsg = humanizeWalletError(
         (addrData && addrData.error) ||
-        'Deposit address unavailable. Wallet RPC may be offline — use Request address when ready.';
+          'Deposit address unavailable. Wallet RPC may be offline — use Request address when ready.'
+      );
       if (depositErrEl) {
         depositErrEl.textContent = errMsg;
         depositErrEl.style.display = 'block';
@@ -562,7 +625,9 @@
       .then(function (res) {
         renderDeposit(res.data || {});
         if (!(res.data && res.data.success) && depositErrEl) {
-          depositErrEl.textContent = (res.data && res.data.error) || 'Could not get deposit address.';
+          depositErrEl.textContent = humanizeWalletError(
+            (res.data && res.data.error) || 'Could not get deposit address.'
+          );
           depositErrEl.style.display = 'block';
         }
       })
@@ -623,10 +688,93 @@
               if (labelEl) labelEl.value = '';
               showWalletTab('deposit');
               load();
-            } else if (typeof toast !== 'undefined') toast.error(data.error || 'Could not create wallet');
+            } else if (typeof toast !== 'undefined') {
+              toast.error(humanizeWalletError(data.error || 'Could not create wallet'));
+            }
+            var depositErrEl = document.getElementById('profile-mn2-deposit-error');
+            if (depositErrEl) {
+              depositErrEl.textContent = humanizeWalletError(data.error || 'Could not create wallet');
+              depositErrEl.style.display = 'block';
+            }
           })
           .finally(function () {
             createWalletBtn.disabled = false;
+          });
+      });
+    }
+    var useDepositBtn = document.getElementById('profile-mn2-withdraw-use-deposit');
+    if (useDepositBtn && !useDepositBtn._mn2Wired) {
+      useDepositBtn._mn2Wired = true;
+      useDepositBtn.addEventListener('click', function () {
+        var addrInput = document.getElementById('profile-mn2-withdraw-address');
+        var dep = _lastDepositAddress;
+        if (!dep) {
+          var depEl = document.getElementById('profile-mn2-deposit-address');
+          dep = depEl && hasDepositAddress(depEl) ? depEl.textContent.trim() : '';
+        }
+        if (!dep) {
+          if (typeof toast !== 'undefined') toast.error('No deposit address loaded — open Deposit tab first');
+          return;
+        }
+        if (addrInput) addrInput.value = dep;
+        var inlineMsg = document.getElementById('profile-mn2-withdraw-inline-msg');
+        if (inlineMsg) {
+          inlineMsg.textContent = 'Filled with your deposit address (self-transfer test).';
+          inlineMsg.style.display = 'block';
+          inlineMsg.style.color = '#88ccff';
+        }
+      });
+    }
+    var whitelistQuickBtn = document.getElementById('profile-mn2-withdraw-whitelist-add');
+    if (whitelistQuickBtn && !whitelistQuickBtn._mn2Wired) {
+      whitelistQuickBtn._mn2Wired = true;
+      whitelistQuickBtn.addEventListener('click', function () {
+        var addrInput = document.getElementById('profile-mn2-withdraw-address');
+        var address = addrInput ? addrInput.value.replace(/\s+/g, '').trim() : '';
+        var inlineMsg = document.getElementById('profile-mn2-withdraw-inline-msg');
+        if (!address) {
+          if (typeof toast !== 'undefined') toast.error('Enter a payout address first');
+          return;
+        }
+        if (!looksLikeMn2Address(address)) {
+          var fmtErr = 'Invalid MN2 address — use the full address (J… or M…, no spaces).';
+          if (inlineMsg) {
+            inlineMsg.textContent = fmtErr;
+            inlineMsg.style.display = 'block';
+            inlineMsg.style.color = '#ffaa44';
+          }
+          return;
+        }
+        whitelistQuickBtn.disabled = true;
+        fetchJson(base() + '/api/mn2/withdraw/whitelist', {
+          method: 'POST',
+          body: { action: 'add', address: address },
+          timeout: 15000,
+        })
+          .then(function (res) {
+            var data = res.data || {};
+            if (data.success) {
+              if (typeof toast !== 'undefined') toast.success('Address added to whitelist');
+              if (inlineMsg) {
+                inlineMsg.textContent = 'Address whitelisted — you can withdraw to it now.';
+                inlineMsg.style.display = 'block';
+                inlineMsg.style.color = '#00ff88';
+              }
+              if (global.Mn2WithdrawalSecurity && global.Mn2WithdrawalSecurity.refresh) {
+                global.Mn2WithdrawalSecurity.refresh();
+              }
+            } else {
+              var err = data.error || 'Could not add to whitelist';
+              if (inlineMsg) {
+                inlineMsg.textContent = err;
+                inlineMsg.style.display = 'block';
+                inlineMsg.style.color = '#ffaa44';
+              }
+              if (typeof toast !== 'undefined') toast.error(err);
+            }
+          })
+          .finally(function () {
+            whitelistQuickBtn.disabled = false;
           });
       });
     }
@@ -637,8 +785,22 @@
           .replace(/\s+/g, '')
           .trim();
         var amount = parseFloat((document.getElementById('profile-mn2-withdraw-amount') || {}).value);
+        var inlineMsg = document.getElementById('profile-mn2-withdraw-inline-msg');
+        if (inlineMsg) {
+          inlineMsg.style.display = 'none';
+          inlineMsg.textContent = '';
+        }
         if (!address) {
           if (typeof toast !== 'undefined') toast.error('Enter MN2 address');
+          return;
+        }
+        if (!looksLikeMn2Address(address)) {
+          var fmtErr = 'Invalid MN2 address — use the full address from Deposit (J… or M…, no spaces).';
+          if (inlineMsg) {
+            inlineMsg.textContent = fmtErr;
+            inlineMsg.style.display = 'block';
+          }
+          if (typeof toast !== 'undefined') toast.error(fmtErr);
           return;
         }
         if (!(amount > 0)) {
@@ -669,8 +831,12 @@
               var err = data.error || 'Withdrawal failed';
               if (data.code === 'whitelist_required') {
                 err += ' Add it under Withdraw 2FA → whitelist, or use the Trusted tab.';
-              } else if (data.code === 'invalid_address') {
-                err = 'Invalid MN2 address — copy the full address (starts with J or M, no spaces).';
+              } else if (data.code === 'invalid_address' || /invalid.*address/i.test(err)) {
+                err = 'Invalid MN2 address — copy the full address from Deposit (starts with J or M, no spaces).';
+              }
+              if (inlineMsg) {
+                inlineMsg.textContent = err;
+                inlineMsg.style.display = 'block';
               }
               if (typeof toast !== 'undefined') toast.error(err);
             }
@@ -707,6 +873,13 @@
     if (global.Mn2WalletHubPanels && global.Mn2WalletHubPanels.onTabShown) {
       global.Mn2WalletHubPanels.onTabShown(active);
     }
+    if (active === 'withdraw') {
+      loadWithdrawSecurityHint();
+      fetchJson(base() + '/api/mn2/balance?user_id=' + encodeURIComponent(uid()), { timeout: 8000 }).then(function (res) {
+        renderWithdrawBalanceHint(res.data);
+        if (res.data && res.data.deposit_address) _lastDepositAddress = res.data.deposit_address;
+      });
+    }
   }
 
   function initWalletSubTabs() {
@@ -720,6 +893,16 @@
       var tab = btn.getAttribute('data-wallet-tab');
       showWalletTab(tab);
     });
+    var card = document.getElementById('profile-mn2-wallet-card');
+    if (card && !card._secLinksWired) {
+      card._secLinksWired = true;
+      card.addEventListener('click', function (e) {
+        var a = e.target.closest('a[href="#security"]');
+        if (!a) return;
+        e.preventDefault();
+        showWalletTab('security');
+      });
+    }
   }
 
   function refreshInstant() {
@@ -834,6 +1017,7 @@
     });
 
     connectInstantStream();
+    loadWithdrawSecurityHint();
 
     if (_pollTimer) clearInterval(_pollTimer);
     _pollTimer = setInterval(refreshInstant, POLL_MS);
