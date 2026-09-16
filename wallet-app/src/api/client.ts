@@ -56,6 +56,9 @@ export type TrophyEdition = {
   serial_key?: string;
   series?: string;
   on_chain_mint: boolean;
+  acquired_via?: string;
+  hold_until?: string;
+  proof_hash?: string;
   image_url?: string | null;
   gif_url?: string | null;
   sound_url?: string | null;

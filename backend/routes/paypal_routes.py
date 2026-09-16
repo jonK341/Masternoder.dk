@@ -2,11 +2,15 @@
 PayPal payment routes — create order, capture.
 Integrates with shop and unified points.
 Uses account resolution: session > request > user_identification.
+
+Trophy SKUs (plan 001 U2): server-priced create-order, idempotent capture, edition grant.
 """
 import urllib.parse
 from flask import Blueprint, jsonify, request
 
 paypal_bp = Blueprint("paypal", __name__)
+
+_ALLOWED_RETURN_SURFACES = frozenset({"shop", "exchange"})
 
 
 def _resolve_user_id():
@@ -18,23 +22,42 @@ def _resolve_user_id():
 def _get_base_url():
     import os
     base = (os.environ.get("BASE_URL") or "").strip().rstrip("/")
-    # Use origin only (no /vidgenerator) - return URL is built as base + /vidgenerator/shop
     if base.endswith("/vidgenerator"):
         base = base.rsplit("/vidgenerator", 1)[0]
     return base or request.url_root.rstrip("/")
 
 
+def _return_surface(data: dict) -> str:
+    surface = (data.get("return_surface") or data.get("return_to") or "shop").strip().lower()
+    if surface not in _ALLOWED_RETURN_SURFACES:
+        surface = "shop"
+    return surface
+
+
+def _build_return_urls(base: str, surface: str, item_id: str, user_id: str) -> tuple:
+    q = urllib.parse.urlencode({
+        "paypal": "success",
+        "item_id": item_id,
+        "user_id": user_id,
+    })
+    if surface == "exchange":
+        return f"{base}/exchange?{q}", f"{base}/exchange?paypal=cancel"
+    return f"{base}/shop?{q}", f"{base}/shop?paypal=cancel"
+
+
+def _trophy_purchase_name(item_name: str, item_id: str) -> str:
+    label = (item_name or item_id or "Trophy").strip()
+    return f"Licensed digital collectible trophy: {label}"
+
+
 @paypal_bp.route("/api/paypal/create-order", methods=["POST"])
 def paypal_create_order():
-    """Create PayPal order for shop item or coin pack."""
+    """Create PayPal order for shop item, trophy, or coin pack."""
     data = request.get_json() or {}
-    amount = float(data.get("amount", 0))
-    item_id = data.get("item_id", "")
+    item_id = (data.get("item_id") or "").strip()
     item_name = data.get("item_name", "Shop Item")
     user_id = data.get("user_id") or _resolve_user_id()
-
-    if amount <= 0:
-        return jsonify({"success": False, "error": "Invalid amount"}), 400
+    surface = _return_surface(data)
 
     if not user_id or str(user_id).strip().lower() == "default_user":
         return jsonify({
@@ -44,11 +67,32 @@ def paypal_create_order():
             "message": "Please create or log in to an account in Profile before buying with PayPal.",
         }), 400
 
+    from backend.services.trophy_fulfillment_service import is_trophy_item
+
+    trophy_checkout = bool(item_id and is_trophy_item(item_id))
+    if trophy_checkout:
+        from backend.services.trophy_pricing_service import get_effective_price
+
+        pricing = get_effective_price(item_id)
+        if not pricing.get("success"):
+            return jsonify({
+                "success": False,
+                "error": pricing.get("error", "trophy_not_found"),
+                "item_id": item_id,
+            }), 404
+        amount = float(pricing.get("effective_price_usd") or 0)
+        item_name = _trophy_purchase_name(pricing.get("name") or item_name, item_id)
+        if amount <= 0:
+            return jsonify({"success": False, "error": "Invalid trophy price"}), 400
+    else:
+        amount = float(data.get("amount", 0))
+        if amount <= 0:
+            return jsonify({"success": False, "error": "Invalid amount"}), 400
+
     base = _get_base_url()
     if not base:
         base = request.url_root.rstrip("/")
-    return_url = f"{base}/shop?paypal=success&item_id={urllib.parse.quote(item_id)}&user_id={urllib.parse.quote(user_id)}"
-    cancel_url = f"{base}/shop?paypal=cancel"
+    return_url, cancel_url = _build_return_urls(base, surface, item_id, user_id)
 
     try:
         from backend.services.paypal_service import create_order
@@ -59,17 +103,24 @@ def paypal_create_order():
             item_name=item_name,
             return_url=return_url,
             cancel_url=cancel_url,
-            metadata={"item_id": item_id, "user_id": user_id},
+            metadata={"item_id": item_id, "user_id": user_id, "kind": "trophy" if trophy_checkout else "shop"},
         )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
     if result.get("success"):
-        return jsonify({
+        payload = {
             "success": True,
             "order_id": result["order_id"],
             "approve_url": result["approve_url"],
-        }), 200
+            "amount_usd": amount,
+            "return_surface": surface,
+        }
+        if trophy_checkout:
+            payload["kind"] = "trophy"
+            payload["item_id"] = item_id
+            payload["on_chain_mint"] = False
+        return jsonify(payload), 200
     return jsonify({"success": False, "error": result.get("error", "Unknown error")}), 500
 
 
@@ -78,7 +129,7 @@ def paypal_capture():
     """Capture payment after user approves. Grant item and add monetization_points."""
     data = request.get_json() or {}
     order_id = data.get("order_id") or request.args.get("order_id")
-    item_id = data.get("item_id", "")
+    item_id = (data.get("item_id") or "").strip()
     item_name = data.get("item_name", "")
     user_id = data.get("user_id") or _resolve_user_id()
 
@@ -96,106 +147,141 @@ def paypal_capture():
         return jsonify({"success": False, "error": result.get("error", "Capture failed")}), 500
 
     amount = float(result.get("amount", 0) or 0)
+    capture_id = result.get("capture_id") or order_id
     coins_granted = 0
     mn2_granted = 0.0
     item_granted = None
     pack = None
     mn2_pack = None
     fulfillment_error = None
+    trophy_edition = None
+    trophy_handled = False
 
     try:
-        from backend.services.unified_points_database import unified_points_db
-        from backend.routes.shop_routes import get_coin_pack_map, get_mn2_pack_map, _get_paypal_shop_items, _get_shop_items, _apply_shop_item_effects
+        from backend.services.trophy_fulfillment_service import fulfill_trophy_paypal, is_trophy_item
 
-        pack = get_coin_pack_map().get(item_id) if item_id else None
-        mn2_pack = get_mn2_pack_map().get(item_id) if item_id else None
-        paypal_items = _get_paypal_shop_items()
-        shop_item = paypal_items.get(item_id) if item_id else None
-
-        if mn2_pack and float(mn2_pack.get("mn2_granted") or 0) > 0:
-            from backend.services.shop_mn2_fulfillment_service import fulfill_mn2_purchase
-
-            capture_id = result.get("capture_id") or order_id
-            ref = f"paypal_mn2_pack:{capture_id}:{item_id}"
-            grant = fulfill_mn2_purchase(
-                user_id,
-                item_id,
-                1,
-                source="paypal_mn2_pack",
-                reference=ref,
-                metadata={
-                    "order_id": order_id,
-                    "capture_id": capture_id,
-                    "item_id": item_id,
-                    "item_name": item_name or mn2_pack.get("name"),
-                    "amount_usd": amount,
-                },
-                item=mn2_pack,
+        if item_id and is_trophy_item(item_id):
+            trophy_handled = True
+            grant = fulfill_trophy_paypal(
+                user_id=user_id,
+                item_id=item_id,
+                item_name=item_name,
+                order_id=order_id,
+                capture_id=capture_id,
+                amount_usd=amount,
             )
-            if grant.get("success") and not grant.get("skipped"):
-                mn2_granted = float(grant.get("mn2_granted") or 0)
-            elif grant.get("skipped"):
-                fulfillment_error = "MN2 pack fulfillment skipped (no grant amount resolved)"
+            if not grant.get("success"):
+                fulfillment_error = grant.get("error") or "trophy_fulfillment_failed"
             else:
-                fulfillment_error = grant.get("error") or "MN2 pack fulfillment failed"
-        elif pack and pack.get("coins_granted"):
-            coins_granted = int(pack["coins_granted"])
-            if unified_points_db and coins_granted > 0:
+                item_granted = grant.get("item_granted") or item_id
+                trophy_edition = grant.get("edition")
+    except Exception as exc:
+        fulfillment_error = str(exc)
+        trophy_handled = True
+
+    if not trophy_handled and not fulfillment_error and not item_granted:
+        try:
+            from backend.services.unified_points_database import unified_points_db
+            from backend.routes.shop_routes import (
+                get_coin_pack_map,
+                get_mn2_pack_map,
+                _get_paypal_shop_items,
+                _get_shop_items,
+                _apply_shop_item_effects,
+            )
+
+            pack = get_coin_pack_map().get(item_id) if item_id else None
+            mn2_pack = get_mn2_pack_map().get(item_id) if item_id else None
+            paypal_items = _get_paypal_shop_items()
+            shop_item = paypal_items.get(item_id) if item_id else None
+
+            if mn2_pack and float(mn2_pack.get("mn2_granted") or 0) > 0:
+                from backend.services.shop_mn2_fulfillment_service import fulfill_mn2_purchase
+
+                ref = f"paypal_mn2_pack:{capture_id}:{item_id}"
+                grant = fulfill_mn2_purchase(
+                    user_id,
+                    item_id,
+                    1,
+                    source="paypal_mn2_pack",
+                    reference=ref,
+                    metadata={
+                        "order_id": order_id,
+                        "capture_id": capture_id,
+                        "item_id": item_id,
+                        "item_name": item_name or mn2_pack.get("name"),
+                        "amount_usd": amount,
+                    },
+                    item=mn2_pack,
+                )
+                if grant.get("success") and not grant.get("skipped"):
+                    mn2_granted = float(grant.get("mn2_granted") or 0)
+                elif grant.get("skipped"):
+                    fulfillment_error = "MN2 pack fulfillment skipped (no grant amount resolved)"
+                else:
+                    fulfillment_error = grant.get("error") or "MN2 pack fulfillment failed"
+            elif pack and pack.get("coins_granted"):
+                coins_granted = int(pack["coins_granted"])
+                if unified_points_db and coins_granted > 0:
+                    unified_points_db.add_points(
+                        user_id=user_id,
+                        point_type="coins",
+                        amount=coins_granted,
+                        source="paypal",
+                        metadata={
+                            "order_id": order_id,
+                            "capture_id": capture_id,
+                            "item_id": item_id,
+                            "item_name": item_name or pack.get("name"),
+                        },
+                    )
+            elif shop_item:
+                try:
+                    from backend.services.shop_db_service import fulfill_shop_purchase
+
+                    item_display_name = item_name or shop_item.get("name", item_id)
+                    fulfill_shop_purchase(
+                        user_id=user_id,
+                        item_id=item_id,
+                        item_name=item_display_name,
+                        quantity=1,
+                        price_type="paypal",
+                        price_paid_coins=0,
+                        price_paid_points=None,
+                    )
+                    item_granted = item_id
+                    full_item = next(
+                        (i for i in (_get_shop_items() or []) if (i.get("id") or "") == item_id),
+                        {"id": item_id, "name": item_display_name},
+                    )
+                    _apply_shop_item_effects(user_id, item_id, full_item, 1, purchase_ref=capture_id)
+                except Exception as e:
+                    fulfillment_error = str(e)
+            elif unified_points_db and amount > 0:
                 unified_points_db.add_points(
                     user_id=user_id,
-                    point_type="coins",
-                    amount=coins_granted,
+                    point_type="monetization_points",
+                    amount=amount * 100,
                     source="paypal",
                     metadata={
                         "order_id": order_id,
-                        "capture_id": result.get("capture_id"),
+                        "capture_id": capture_id,
                         "item_id": item_id,
-                        "item_name": item_name or pack.get("name"),
+                        "item_name": item_name,
                     },
                 )
-        elif shop_item:
-            # Direct PayPal purchase: add item to inventory
             try:
-                from backend.services.shop_db_service import fulfill_shop_purchase
-                item_display_name = item_name or shop_item.get("name", item_id)
-                purchase_id = fulfill_shop_purchase(
-                    user_id=user_id,
-                    item_id=item_id,
-                    item_name=item_display_name,
-                    quantity=1,
-                    price_type="paypal",
-                    price_paid_coins=0,
-                    price_paid_points=None,
-                )
-                item_granted = item_id
-                full_item = next((i for i in (_get_shop_items() or []) if (i.get("id") or "") == item_id), {"id": item_id, "name": item_display_name})
-                _apply_shop_item_effects(user_id, item_id, full_item, 1, purchase_ref=result.get("capture_id") or order_id)
-            except Exception as e:
-                fulfillment_error = str(e)
-        elif unified_points_db and amount > 0:
-            unified_points_db.add_points(
-                user_id=user_id,
-                point_type="monetization_points",
-                amount=amount * 100,
-                source="paypal",
-                metadata={
-                    "order_id": order_id,
-                    "capture_id": result.get("capture_id"),
-                    "item_id": item_id,
-                    "item_name": item_name,
-                },
-            )
-        try:
-            from backend.services.unified_points_sync import unified_points_sync_device
-            unified_points_sync_device.record_domain_sync('paypal')
+                from backend.services.unified_points_sync import unified_points_sync_device
+
+                unified_points_sync_device.record_domain_sync("paypal")
+            except Exception:
+                pass
         except Exception:
             pass
-    except Exception:
-        pass
 
-    # Notify admin of purchase (email + log)
     try:
         from backend.services.purchase_notification_service import notify_purchase
+
         notify_purchase(
             amount=amount,
             currency=result.get("currency", "USD"),
@@ -212,13 +298,18 @@ def paypal_capture():
     payload = {
         "success": True,
         "order_id": result["order_id"],
-        "capture_id": result.get("capture_id"),
+        "capture_id": capture_id,
         "amount": result.get("amount"),
         "coins_granted": coins_granted,
         "mn2_granted": mn2_granted,
     }
     if item_granted:
         payload["item_granted"] = item_granted
+    if trophy_edition:
+        payload["trophy_edition"] = trophy_edition
+        payload["edition_no"] = trophy_edition.get("edition_no")
+        payload["edition_key"] = trophy_edition.get("edition_key")
+        payload["on_chain_mint"] = False
     if fulfillment_error:
         payload.update({
             "success": False,
@@ -228,7 +319,6 @@ def paypal_capture():
             "details": fulfillment_error,
         })
 
-    # Ledger for §0 phase C (gross margin vs revenue) — append-only JSONL
     try:
         from backend.services.monetization_ledger_service import append_payment_event
 
@@ -243,13 +333,14 @@ def paypal_capture():
             provider="paypal",
             user_id=user_id,
             order_id=order_id,
-            capture_id=result.get("capture_id"),
+            capture_id=capture_id,
             amount_usd=float(amount or 0),
             currency=str(result.get("currency") or "USD"),
             item_id=item_id or "",
             item_name=ledger_name,
             coins_granted=int(coins_granted or 0),
             generation_credits_granted=gen_credits,
+            extra={"kind": "trophy"} if trophy_edition else None,
         )
     except Exception:
         pass

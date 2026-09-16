@@ -29,12 +29,58 @@ def _media_for_item(item_id: str) -> Dict[str, Optional[str]]:
     }
 
 
-def _expand_editions(inv_row: Dict[str, Any], catalog: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Expand inventory quantity into edition rows (legacy stack until edition_no ships in U2)."""
+def _expand_editions(
+    inv_row: Dict[str, Any],
+    catalog: Optional[Dict[str, Any]],
+    *,
+    user_id: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Edition rows from U2 trophy_editions store, else legacy quantity stack."""
     item_id = (inv_row.get("item_id") or "").strip()
     qty = max(0, int(inv_row.get("quantity") or 0))
     if not item_id or qty <= 0:
         return []
+
+    stored: List[Dict[str, Any]] = []
+    if user_id:
+        try:
+            from backend.services.trophy_fulfillment_service import get_trophy_editions
+
+            stored = get_trophy_editions(user_id, item_id)
+        except Exception:
+            stored = []
+
+    if stored:
+        media = _media_for_item(item_id)
+        out: List[Dict[str, Any]] = []
+        for ed in stored:
+            out.append(
+                {
+                    "edition_no": ed.get("edition_no"),
+                    "edition_key": ed.get("edition_key"),
+                    "legacy_stack": False,
+                    "item_id": item_id,
+                    "item_name": ed.get("item_name") or inv_row.get("item_name") or (catalog or {}).get("name") or item_id,
+                    "serial_key": (catalog or {}).get("serial_key"),
+                    "series": (catalog or {}).get("series"),
+                    "tags": (catalog or {}).get("tags") or [],
+                    "on_chain_mint": False,
+                    "acquired_at": ed.get("granted_at") or inv_row.get("created_at"),
+                    "hold_until": ed.get("hold_until"),
+                    "proof_hash": ed.get("proof_hash"),
+                    "acquired_via": ed.get("acquired_via"),
+                    "image_url": media.get("image_url"),
+                    "gif_url": media.get("gif_url"),
+                    "sound_url": media.get("sound_url"),
+                    "trade_actions": {
+                        "auction_list": "/shop?tab=auction",
+                        "peer_transfer": None,
+                        "shop_detail": f"/shop?tab=trophies&highlight={item_id}",
+                    },
+                }
+            )
+        return out
+
     name = inv_row.get("item_name") or (catalog or {}).get("name") or item_id
     media = _media_for_item(item_id)
     editions: List[Dict[str, Any]] = []
@@ -100,7 +146,7 @@ def build_wallet_trophies(user_id: str, *, series: Optional[str] = None) -> Dict
     for row in trophy_inv:
         iid = str(row.get("item_id") or "")
         cat = catalog_by_id.get(iid)
-        expanded = _expand_editions(row, cat)
+        expanded = _expand_editions(row, cat, user_id=uid)
         editions.extend(expanded)
         owned_items.append(
             {

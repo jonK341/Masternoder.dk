@@ -1577,20 +1577,29 @@ def _is_trophy_catalog_item(item: dict) -> bool:
 
 
 def _enrich_trophy_listing(item: dict) -> dict:
-    """Attach trophy pricing fields for shop/wallet cards (P-U1 stub: effective == base)."""
+    """Attach trophy pricing fields for shop/wallet cards (P-U1 via trophy_pricing_service)."""
     row = dict(item)
     row["kind"] = "trophy"
-    base = row.get("base_price_usd")
-    if base is None:
-        base = row.get("price_usd")
-    if base is None and isinstance(row.get("price"), (int, float)) and row["price"] > 0:
-        base = max(0.99, round(float(row["price"]) / 100, 2))
-    row["base_price_usd"] = float(base) if base is not None else None
-    row["effective_price_usd"] = row["base_price_usd"]
-    row["price_factors"] = {
-        "demand_multiplier": 1.0,
-        "popularity_factor": 1.0,
-    }
+    iid = str(row.get("id") or "")
+    try:
+        from backend.services.trophy_pricing_service import get_effective_price
+
+        pricing = get_effective_price(iid) if iid else {"success": False}
+        if pricing.get("success"):
+            row["base_price_usd"] = pricing.get("base_price_usd")
+            row["effective_price_usd"] = pricing.get("effective_price_usd")
+            row["price_factors"] = pricing.get("price_factors") or {}
+        else:
+            base = row.get("base_price_usd") or row.get("price_usd")
+            if base is None and isinstance(row.get("price"), (int, float)) and row["price"] > 0:
+                base = max(0.99, round(float(row["price"]) / 100, 2))
+            row["base_price_usd"] = float(base) if base is not None else None
+            row["effective_price_usd"] = row["base_price_usd"]
+            row["price_factors"] = {"demand_multiplier": 1.0, "popularity_factor": 1.0}
+    except Exception:
+        row["base_price_usd"] = row.get("price_usd")
+        row["effective_price_usd"] = row.get("base_price_usd")
+        row["price_factors"] = {"demand_multiplier": 1.0, "popularity_factor": 1.0}
     row["on_chain_mint"] = False
     if row.get("effective_price_usd") is not None and row["effective_price_usd"] > 0:
         row["price_usd"] = row["effective_price_usd"]

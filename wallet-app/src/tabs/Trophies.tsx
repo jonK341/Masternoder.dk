@@ -174,9 +174,14 @@ function TrophyEditionCard({ edition }: { edition: TrophyEdition }) {
           Edition #{edition.edition_no}
           {edition.serial_key ? ` · ${edition.serial_key}` : ''}
         </div>
-        {edition.legacy_stack && (
+        {edition.legacy_stack ? (
           <div class="wallet-trophy-gallery-tag">Legacy stack</div>
-        )}
+        ) : edition.acquired_via ? (
+          <div class="wallet-trophy-gallery-tag">via {edition.acquired_via}</div>
+        ) : null}
+        {edition.hold_until ? (
+          <div class="wallet-trophy-gallery-meta">Hold until {edition.hold_until.slice(0, 10)}</div>
+        ) : null}
         <div class="wallet-trophy-gallery-ctas">
           <a
             href={edition.trade_actions?.shop_detail || '/shop?tab=trophies'}
