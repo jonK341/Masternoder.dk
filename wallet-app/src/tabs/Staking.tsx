@@ -98,6 +98,9 @@ export function Staking() {
               <ul class="wallet-staking-grant-list">
                 {grants.map((g) => (
                   <li key={`${g.interval_id}-${g.block_height}`} class="wallet-staking-grant-item">
+                    {g.gif_url ? (
+                      <img src={g.gif_url} alt="" class="wallet-staking-grant-gif" loading="lazy" />
+                    ) : null}
                     <strong>Block #{g.block_height}</strong>
                     {g.license_number ? ` · ${g.license_number}` : ''}
                     {g.edition_key ? (

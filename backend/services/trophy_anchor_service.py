@@ -57,6 +57,39 @@ def get_config() -> Dict[str, Any]:
     )
 
 
+def _source_priority(source: str) -> int:
+    src = (source or "").strip().lower()
+    if src == "staking_winner":
+        return 100
+    if src in ("block_mint", "staking_reward"):
+        return 50
+    if src in ("paypal", "shop"):
+        return 25
+    return 0
+
+
+def set_anchor_job_priority(edition_key: str, priority: int) -> Dict[str, Any]:
+    """Boost pending anchor job priority (staking winners first)."""
+    ekey = (edition_key or "").strip()
+    if not ekey:
+        return {"success": False, "error": "missing_edition_key"}
+    with _LOCK:
+        doc = _read_json(_QUEUE_PATH, {"jobs": []})
+        jobs = doc.get("jobs") or []
+        updated = False
+        for job in jobs:
+            if not isinstance(job, dict):
+                continue
+            if job.get("edition_key") == ekey and job.get("status") == "pending":
+                job["priority"] = int(priority)
+                updated = True
+                break
+        if updated:
+            doc["updated_at"] = _iso()
+            _write_json(_QUEUE_PATH, doc)
+        return {"success": updated, "edition_key": ekey, "priority": int(priority)}
+
+
 def anchor_commitment(edition_key: str, proof_hash: str) -> str:
     raw = f"{ANCHOR_VERSION}|{(edition_key or '').strip()}|{(proof_hash or '').strip()}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
@@ -180,6 +213,7 @@ def queue_edition_anchor(
                 "proof_hash": phash,
                 "anchor_commitment": commitment,
                 "source": (source or "grant").strip(),
+                "priority": _source_priority(source or "grant"),
                 "status": "pending",
                 "queued_at": _iso(),
             }
@@ -285,11 +319,12 @@ def process_anchor_queue(*, limit: int = 20, job_id: Optional[str] = None) -> Di
         rdoc = _read_json(_REGISTRY_PATH, {"anchors": {}})
         anchors = rdoc.setdefault("anchors", {})
 
-        for job in jobs:
-            if job.get("status") != "pending":
-                continue
-            if job_id and job.get("job_id") != job_id:
-                continue
+        pending = [j for j in jobs if j.get("status") == "pending"]
+        if job_id:
+            pending = [j for j in pending if j.get("job_id") == job_id]
+        pending.sort(key=lambda j: int(j.get("priority") or 0), reverse=True)
+
+        for job in pending:
             if len(processed) >= max(1, int(limit or 20)):
                 break
 

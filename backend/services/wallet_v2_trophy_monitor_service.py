@@ -29,6 +29,7 @@ def build_4d_trophy_monitor(user_id: str) -> Dict[str, Any]:
         "guest": not uid or uid in ("default_user", "guest"),
         "network": {},
         "trophies": [],
+        "highlight": None,
         "block_teaser": None,
         "sound_enabled_default": False,
         "on_chain_mint": False,
@@ -48,24 +49,45 @@ def build_4d_trophy_monitor(user_id: str) -> Dict[str, Any]:
 
             trophies = build_wallet_trophies(uid)
             cards: List[Dict[str, Any]] = []
+            highlight_candidate: Optional[Dict[str, Any]] = None
             for ed in (trophies.get("editions") or [])[:24]:
                 iid = str(ed.get("item_id") or "")
                 m = media.get(iid) or {}
-                cards.append(
-                    {
-                        "item_id": iid,
-                        "item_name": ed.get("item_name") or iid,
-                        "edition_no": ed.get("edition_no"),
-                        "edition_key": ed.get("edition_key"),
-                        "series": ed.get("series"),
-                        "gif_url": ed.get("gif_url") or m.get("gif_url") or m.get("clip_url"),
-                        "image_url": ed.get("image_url") or m.get("image_url") or m.get("poster_url"),
-                        "sound_url": ed.get("sound_url") or m.get("sound_url"),
-                        "hold_until": ed.get("hold_until"),
-                    }
-                )
+                card = {
+                    "item_id": iid,
+                    "item_name": ed.get("item_name") or iid,
+                    "edition_no": ed.get("edition_no"),
+                    "edition_key": ed.get("edition_key"),
+                    "series": ed.get("series"),
+                    "gif_url": ed.get("gif_url") or ed.get("edition_gif_url") or m.get("gif_url") or m.get("clip_url"),
+                    "image_url": ed.get("image_url") or m.get("image_url") or m.get("poster_url"),
+                    "sound_url": ed.get("sound_url") or m.get("sound_url"),
+                    "hold_until": ed.get("hold_until"),
+                    "acquired_via": ed.get("acquired_via"),
+                    "battle_stats": ed.get("battle_stats"),
+                    "license_number": ed.get("license_number"),
+                    "per_edition_media": bool(ed.get("per_edition_media")),
+                    "highlight": False,
+                }
+                if ed.get("acquired_via") == "staking_winner":
+                    card["highlight"] = True
+                    if highlight_candidate is None:
+                        highlight_candidate = card
+                cards.append(card)
             out["trophies"] = cards
             out["counts"] = trophies.get("counts") or {}
+            if highlight_candidate:
+                out["highlight"] = {
+                    **highlight_candidate,
+                    "label": "Staking interval champion",
+                    "battle_url": "/wallets?tab=trophies",
+                }
+            elif cards:
+                best = max(
+                    cards,
+                    key=lambda c: int((c.get("battle_stats") or {}).get("combat_rating") or 0),
+                )
+                out["highlight"] = {**best, "label": "Top combat rating", "battle_url": "/wallets?tab=trophies"}
         except Exception:
             out["trophies"] = []
 

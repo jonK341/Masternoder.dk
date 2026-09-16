@@ -156,17 +156,21 @@ def process_interval_winners(
                 "block_height": grant_height,
                 "edition_key": result.get("edition_key"),
                 "license_number": result.get("license_number"),
+                "gif_url": result.get("gif_url"),
+                "battle_stats": result.get("battle_stats"),
                 "reward_mn2": float(winner.get("reward_mn2") or 0),
                 "granted_at": _iso(),
+                "per_edition_gif": bool((result.get("enrichment") or {}).get("gif_url")),
             }
             _append_grant(grant_row)
             grants.append(grant_row)
-            try:
-                from backend.services.mn2_staking_notifications import on_staking_trophy_grant
+            if cfg.get("notify_wallet", True):
+                try:
+                    from backend.services.mn2_staking_notifications import on_staking_trophy_grant
 
-                on_staking_trophy_grant(uid, grant_row)
-            except Exception:
-                pass
+                    on_staking_trophy_grant(uid, grant_row)
+                except Exception:
+                    pass
         else:
             errors.append({"user_id": uid, "error": result.get("error"), "height": grant_height})
 

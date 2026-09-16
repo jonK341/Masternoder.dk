@@ -405,6 +405,29 @@ def claim_block_trophy_staking_reward(
     except Exception:
         pass
 
+    enrichment: Dict[str, Any] = {}
+    try:
+        from backend.services.trophy_grant_enrichment_service import enrich_block_trophy_grant
+
+        enrichment = enrich_block_trophy_grant(
+            uid,
+            iid,
+            int(edition_no or 1),
+            edition_key or "",
+            proof_hash or "",
+            h,
+            acquired_via="staking_winner",
+            battle_stats=battle_stats,
+            license_number=lic or "",
+            trading_profile=trading,
+            interval_id=interval_id,
+            reward_mn2=reward_mn2,
+        )
+        if enrichment.get("gif_url"):
+            edition = {**edition, "gif_url": enrichment["gif_url"], "image_url": enrichment.get("image_url")}
+    except Exception:
+        pass
+
     return {
         "success": True,
         "height": h,
@@ -412,12 +435,13 @@ def claim_block_trophy_staking_reward(
         "edition_no": edition_no,
         "edition_key": edition_key,
         "edition": edition,
-        "battle_stats": battle_stats,
+        "battle_stats": enrichment.get("battle_stats") or battle_stats,
         "license_number": lic,
         "trading_profile": trading,
         "acquired_via": "staking_winner",
         "explorer_url": catalog.get("explorer_url"),
-        "gif_url": catalog.get("gif_url"),
+        "gif_url": enrichment.get("gif_url") or catalog.get("gif_url"),
+        "enrichment": enrichment,
     }
 
 
@@ -600,6 +624,27 @@ def claim_block_trophy(
     except Exception:
         pass
 
+    enrichment: Dict[str, Any] = {}
+    try:
+        from backend.services.trophy_grant_enrichment_service import enrich_block_trophy_grant
+
+        enrichment = enrich_block_trophy_grant(
+            uid,
+            iid,
+            int(edition_no or 1),
+            edition_key or "",
+            proof_hash or "",
+            h,
+            acquired_via="block_mint",
+            battle_stats=battle_stats,
+            license_number=lic or catalog.get("license_number") or "",
+            trading_profile=trading,
+        )
+        if enrichment.get("gif_url"):
+            edition = {**edition, "gif_url": enrichment["gif_url"], "image_url": enrichment.get("image_url")}
+    except Exception:
+        pass
+
     return {
         "success": True,
         "height": h,
@@ -607,10 +652,11 @@ def claim_block_trophy(
         "edition_no": edition_no,
         "edition_key": edition_key,
         "edition": edition,
-        "battle_stats": battle_stats,
-        "serial_number": (battle_stats or {}).get("serial_number"),
+        "battle_stats": enrichment.get("battle_stats") or battle_stats,
+        "serial_number": (enrichment.get("battle_stats") or battle_stats or {}).get("serial_number"),
         "license_number": lic or catalog.get("license_number"),
         "trading_profile": trading or catalog.get("trading_profile"),
         "explorer_url": catalog.get("explorer_url"),
-        "gif_url": catalog.get("gif_url"),
+        "gif_url": enrichment.get("gif_url") or catalog.get("gif_url"),
+        "enrichment": enrichment,
     }

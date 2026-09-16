@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "per_edition_gif": true,
+  "anchor_priority_staking": 100,
+  "anchor_priority_block_mint": 50,
+  "anchor_priority_default": 0,
+  "auto_auction_staking_wins": true,
+  "auto_auction_floor_usd": 4.99,
+  "discord_staking_wins": true,
+  "profile_badge_staking_champion": true,
+  "team_pool_notify": true,
+  "streak_bonus_enabled": true,
+  "streak_min_days": 3,
+  "streak_combat_bonus": 5,
+  "monitor_4d_highlight_staking": true,
+  "battle_ready_notification": true
+}

@@ -125,6 +125,20 @@ export type TrophyMonitor4dResponse = {
   success: boolean;
   guest?: boolean;
   network?: NetworkSnapshot;
+  highlight?: {
+    item_id?: string;
+    item_name?: string;
+    edition_no?: number;
+    edition_key?: string;
+    gif_url?: string | null;
+    image_url?: string | null;
+    label?: string;
+    battle_url?: string;
+    license_number?: string;
+    acquired_via?: string;
+    per_edition_media?: boolean;
+    battle_stats?: { combat_rating?: number; mood?: string };
+  } | null;
   trophies?: Array<{
     item_id: string;
     item_name?: string;
@@ -134,6 +148,11 @@ export type TrophyMonitor4dResponse = {
     image_url?: string | null;
     sound_url?: string | null;
     hold_until?: string;
+    highlight?: boolean;
+    acquired_via?: string;
+    license_number?: string;
+    per_edition_media?: boolean;
+    battle_stats?: { combat_rating?: number; mood?: string };
   }>;
   block_teaser?: {
     height?: number;
@@ -204,6 +223,9 @@ export type StakingTrophyGrant = {
   block_height: number;
   edition_key?: string;
   license_number?: string;
+  gif_url?: string;
+  battle_stats?: { combat_rating?: number; mood?: string };
+  per_edition_gif?: boolean;
   reward_mn2?: number;
   granted_at?: string;
 };

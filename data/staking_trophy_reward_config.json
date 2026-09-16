@@ -3,5 +3,10 @@
   "winners_per_interval": 1,
   "min_reward_mn2": 0.001,
   "prefer_chain_tip_block": true,
-  "notify_wallet": true
+  "notify_wallet": true,
+  "per_edition_gif": true,
+  "auto_auction": true,
+  "discord_webhook": true,
+  "team_pool_notify": true,
+  "streak_bonus": true
 }

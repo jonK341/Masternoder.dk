@@ -1159,9 +1159,45 @@ body {
 }
 
 .wallet-staking-grant-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
   padding: 10px 12px;
   border: var(--wallet-border);
   border-radius: var(--wallet-radius);
   background: var(--wallet-bg-elevated);
   font-size: 0.85rem;
+}
+
+.wallet-staking-grant-gif {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--wallet-radius);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.wallet-monitor-4d-highlight {
+  border-color: var(--wallet-accent);
+  background: var(--wallet-accent-dim);
+}
+
+.wallet-monitor-4d-highlight-body {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.wallet-monitor-4d-highlight-gif {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--wallet-radius);
+  object-fit: cover;
+  border: var(--wallet-border);
+}
+
+.wallet-monitor-4d-card--highlight {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35);
 }

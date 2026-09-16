@@ -66,6 +66,26 @@ def _palette_for_height(height: int) -> Tuple[Tuple[int, int, int], Tuple[int, i
     return SMILEY_PALETTES[idx]
 
 
+def _palette_for_edition(
+    edition_key: str,
+    block_height: int,
+    battle_stats: Optional[Dict[str, Any]] = None,
+) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+    mood = (battle_stats or {}).get("mood") or "neutral"
+    rarity = (battle_stats or {}).get("rarity") or "common"
+    seed = f"edition-palette|{edition_key}|{block_height}|{mood}|{rarity}"
+    idx = int(hashlib.sha256(seed.encode()).hexdigest(), 16) % len(SMILEY_PALETTES)
+    base = SMILEY_PALETTES[idx]
+    if rarity in ("legendary", "epic"):
+        return ((min(255, base[0][0] + 20), base[0][1], base[0][2]), base[1])
+    return base
+
+
+def _safe_edition_filename(edition_key: str) -> str:
+    safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in (edition_key or "edition"))
+    return safe[:120] or "edition"
+
+
 def _draw_smiley_frame(
     size: int,
     face: Tuple[int, int, int],
@@ -73,6 +93,8 @@ def _draw_smiley_frame(
     *,
     frame_idx: int,
     block_height: int,
+    edition_label: str = "",
+    mood: str = "neutral",
 ) -> "Any":
     from PIL import Image, ImageDraw
 
@@ -100,7 +122,13 @@ def _draw_smiley_frame(
         for ex in (cx - eye_dx, cx + eye_dx):
             draw.ellipse((ex - eye_r, eye_y - eye_r, ex + eye_r, eye_y + eye_r), fill=(40, 30, 20, 255))
 
-    mouth_modes = ("smile", "grin", "open", "smile", "flat", "grin", "smile", "beam")
+    mood_modes = {
+        "happy": ("smile", "grin", "beam", "smile"),
+        "fierce": ("grin", "open", "grin", "flat"),
+        "calm": ("flat", "smile", "flat", "smile"),
+        "lucky": ("beam", "open", "grin", "smile"),
+    }
+    mouth_modes = mood_modes.get(mood, ("smile", "grin", "open", "smile", "flat", "grin", "smile", "beam"))
     mouth = mouth_modes[frame_idx % len(mouth_modes)]
     mouth_y = cy + radius // 3
     mouth_w = radius
@@ -129,12 +157,138 @@ def _draw_smiley_frame(
             width=max(4, radius // 10),
         )
 
-    label = f"#{block_height}"
-    draw.text((12, size - 28), label, fill=(200, 230, 255, 220))
+    label = edition_label or f"#{block_height}"
+    draw.text((12, size - 28), label[:18], fill=(200, 230, 255, 220))
     badge = "AI"
     draw.rectangle((size - 44, 10, size - 10, 34), fill=accent + (200,))
     draw.text((size - 38, 12), badge, fill=(255, 255, 255, 255))
     return img
+
+
+def _edition_paths(edition_key: str) -> Dict[str, str]:
+    stem = _safe_edition_filename(edition_key)
+    img_dir = os.path.join(_BASE, "static", "img", "trophies", "editions")
+    os.makedirs(img_dir, exist_ok=True)
+    return {
+        "png": os.path.join(img_dir, f"{stem}.png"),
+        "gif": os.path.join(img_dir, f"{stem}.gif"),
+        "png_url": f"/static/img/trophies/editions/{stem}.png",
+        "gif_url": f"/static/img/trophies/editions/{stem}.gif",
+    }
+
+
+def _generate_edition_gif_pil(
+    edition_key: str,
+    block_height: int,
+    gif_path: str,
+    png_path: str,
+    *,
+    battle_stats: Optional[Dict[str, Any]] = None,
+    license_number: str = "",
+    frames: int = 8,
+) -> bool:
+    try:
+        from PIL import Image
+    except ImportError:
+        return False
+
+    face, accent = _palette_for_edition(edition_key, block_height, battle_stats)
+    mood = (battle_stats or {}).get("mood") or "neutral"
+    serial = (battle_stats or {}).get("serial_number") or ""
+    label = serial or (license_number[:14] if license_number else f"#{block_height}")
+    size = 480
+    images: List[Image.Image] = []
+    for i in range(frames):
+        frame = _draw_smiley_frame(
+            size,
+            face,
+            accent,
+            frame_idx=i,
+            block_height=block_height,
+            edition_label=label,
+            mood=mood,
+        )
+        images.append(frame.convert("P", palette=Image.ADAPTIVE))
+
+    if not images:
+        return False
+
+    images[0].save(png_path, format="PNG")
+    images[0].save(
+        gif_path,
+        save_all=True,
+        append_images=images[1:],
+        duration=120,
+        loop=0,
+        disposal=2,
+    )
+    return os.path.isfile(gif_path) and os.path.isfile(png_path)
+
+
+def ensure_edition_media(
+    edition_key: str,
+    block_height: int,
+    *,
+    battle_stats: Optional[Dict[str, Any]] = None,
+    license_number: str = "",
+    edition_no: int = 1,
+    force: bool = False,
+) -> Dict[str, Any]:
+    """Create a unique AI smiley GIF per trophy edition (not shared per block)."""
+    ekey = (edition_key or "").strip()
+    if not ekey:
+        return {"success": False, "error": "missing_edition_key"}
+
+    h = int(block_height)
+    paths = _edition_paths(ekey)
+    if not force and os.path.isfile(paths["gif"]) and os.path.isfile(paths["png"]):
+        return {
+            "success": True,
+            "edition_key": ekey,
+            "block_height": h,
+            "gif_url": paths["gif_url"],
+            "image_url": paths["png_url"],
+            "skipped": True,
+            "per_edition": True,
+            "ai_generated": True,
+        }
+
+    ok = _generate_edition_gif_pil(
+        ekey,
+        h,
+        paths["gif"],
+        paths["png"],
+        battle_stats=battle_stats,
+        license_number=license_number,
+    )
+    if not ok:
+        fallback = ensure_block_media(h, force=False)
+        if fallback.get("success"):
+            return {
+                "success": True,
+                "edition_key": ekey,
+                "block_height": h,
+                "gif_url": fallback.get("gif_url"),
+                "image_url": fallback.get("image_url"),
+                "skipped": True,
+                "per_edition": False,
+                "fallback_block_media": True,
+            }
+        return {"success": False, "error": "edition_media_generation_failed", "edition_key": ekey}
+
+    return {
+        "success": True,
+        "edition_key": ekey,
+        "edition_no": edition_no,
+        "block_height": h,
+        "gif_url": paths["gif_url"],
+        "image_url": paths["png_url"],
+        "skipped": False,
+        "per_edition": True,
+        "ai_generated": True,
+        "mood": (battle_stats or {}).get("mood"),
+        "rarity": (battle_stats or {}).get("rarity"),
+    }
 
 
 def _generate_smiley_gif_pil(height: int, gif_path: str, png_path: str, *, frames: int = 8) -> bool:

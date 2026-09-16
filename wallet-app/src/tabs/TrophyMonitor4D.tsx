@@ -29,6 +29,7 @@ export function TrophyMonitor4D() {
   const network = data?.network;
   const trophies = data?.trophies ?? [];
   const teaser = data?.block_teaser;
+  const highlight = data?.highlight;
 
   return (
     <div class="wallet-tab-panel wallet-monitor-4d">
@@ -100,11 +101,37 @@ export function TrophyMonitor4D() {
         </section>
       )}
 
+      {!loading && !error && highlight && (
+        <section class="wallet-panel wallet-monitor-4d-highlight" aria-label="Featured trophy">
+          <div class="wallet-panel-subtitle">{highlight.label || 'Featured trophy'}</div>
+          <div class="wallet-monitor-4d-highlight-body">
+            {highlight.gif_url ? (
+              <img src={highlight.gif_url} alt="" class="wallet-monitor-4d-highlight-gif" loading="lazy" />
+            ) : null}
+            <div>
+              <strong>{highlight.item_name || highlight.item_id}</strong>
+              {highlight.license_number ? (
+                <div class="wallet-panel-subtitle">{highlight.license_number}</div>
+              ) : null}
+              {highlight.battle_stats?.combat_rating != null && (
+                <div class="wallet-panel-subtitle">CR {highlight.battle_stats.combat_rating}</div>
+              )}
+              <a href={highlight.battle_url || '/wallets?tab=trophies'} class="wallet-discord-btn wallet-discord-btn-primary">
+                Battle →
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
       {!loading && !error && trophies.length > 0 && (
         <section class="wallet-panel wallet-monitor-4d-stage" aria-label="Trophy holodeck">
           <div class="wallet-monitor-4d-grid">
             {trophies.map((t) => (
-              <article key={t.edition_key || `${t.item_id}-${t.edition_no}`} class="wallet-monitor-4d-card">
+              <article
+                key={t.edition_key || `${t.item_id}-${t.edition_no}`}
+                class={`wallet-monitor-4d-card${t.highlight ? ' wallet-monitor-4d-card--highlight' : ''}`}
+              >
                 {t.gif_url ? (
                   <img src={t.gif_url} alt="" class="wallet-monitor-4d-gif" loading="lazy" />
                 ) : t.image_url ? (

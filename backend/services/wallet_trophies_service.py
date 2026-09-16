@@ -104,8 +104,9 @@ def _expand_editions(
                     "one_per_block": ed.get("one_per_block"),
                     "platform_trophy": ed.get("platform_trophy") or ed.get("platform_nft"),
                     "acquired_via": ed.get("acquired_via"),
-                    "image_url": media.get("image_url"),
-                    "gif_url": media.get("gif_url"),
+                    "image_url": ed.get("image_url") or ed.get("edition_image_url") or media.get("image_url"),
+                    "gif_url": ed.get("gif_url") or ed.get("edition_gif_url") or media.get("gif_url"),
+                    "per_edition_media": bool(ed.get("per_edition_media")),
                     "sound_url": media.get("sound_url"),
                     "trade_actions": {
                         "auction_list": "/shop?tab=auction",

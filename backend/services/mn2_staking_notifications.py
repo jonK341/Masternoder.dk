@@ -200,6 +200,70 @@ def on_staking_trophy_grant(user_id: str, grant: Dict[str, Any]) -> None:
         pass
 
 
+def on_staking_trophy_grant_battle_ready(user_id: str, grant: Dict[str, Any]) -> None:
+    """Rich battle-ready notification with per-edition AI GIF and arena link."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return
+    stats = grant.get("battle_stats") or {}
+    cr = stats.get("combat_rating")
+    mood = stats.get("mood") or "ready"
+    height = grant.get("block_height")
+    ekey = grant.get("edition_key") or ""
+    lic = grant.get("license_number") or ""
+    title = "Battle-ready staking trophy"
+    message = (
+        f"Your AI smiley trophy for block #{height} is ready"
+        + (f" · CR {cr}" if cr is not None else "")
+        + f" · mood {mood}"
+        + (f" · {lic}" if lic else "")
+        + ". Tap Trophies → Battle to enter the arena."
+    )
+    meta = dict(grant)
+    meta["battle_url"] = "/wallets?tab=trophies"
+    meta["monitor_4d_url"] = "/wallets?tab=monitor-4d"
+    try:
+        from backend.services.user_engagement import add_notification
+
+        add_notification(
+            uid,
+            title,
+            message,
+            category="staking_trophy_battle_ready",
+            metadata=meta,
+        )
+    except Exception:
+        pass
+
+
+def on_block_trophy_grant_battle_ready(user_id: str, grant: Dict[str, Any]) -> None:
+    """Battle-ready notification for paid block mint claims."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return
+    stats = grant.get("battle_stats") or {}
+    cr = stats.get("combat_rating")
+    height = grant.get("block_height")
+    title = "Your trophy GIF is ready"
+    message = (
+        f"Unique AI GIF generated for block #{height}"
+        + (f" · CR {cr}" if cr is not None else "")
+        + ". Open Trophies to battle or list on auction."
+    )
+    try:
+        from backend.services.user_engagement import add_notification
+
+        add_notification(
+            uid,
+            title,
+            message,
+            category="trophy_battle_ready",
+            metadata={**grant, "battle_url": "/wallets?tab=trophies"},
+        )
+    except Exception:
+        pass
+
+
 def send_weekly_digest(user_id: str) -> Optional[Dict[str, Any]]:
     """Build and deliver one user's weekly digest if opted in."""
     uid = (user_id or "").strip()

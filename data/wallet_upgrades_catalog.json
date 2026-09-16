@@ -1,7 +1,7 @@
 {
   "version": 1,
   "generated_at": "2026-09-16",
-  "total": 251,
+  "total": 252,
   "categories": [
     "speed",
     "network_visibility",
@@ -3024,6 +3024,18 @@
         "type": "mn2_spent",
         "value": 2275,
         "label": "Spend 2275 MN2 in wallet actions"
+      }
+    },
+    {
+      "id": "WR-UPG-252",
+      "name": "Per-edition AI GIF holodeck",
+      "effect": "Every trophy edition gets a unique AI-generated smiley GIF \u2014 mood, rarity, and serial baked into pixels; 4D monitor highlights staking wins.",
+      "category": "trophies",
+      "tier": "epic",
+      "unlock": {
+        "type": "mn2_spent",
+        "value": 2300,
+        "label": "Spend 2300 MN2 in wallet actions"
       }
     }
   ]
