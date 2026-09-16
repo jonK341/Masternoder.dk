@@ -446,6 +446,103 @@ def test_exchange_paypal_crypto_order_routes(ex_env, monkeypatch):
     assert float(wallet["assets"].get("USDC") or 0) > 0
 
 
+def test_exchange_paypal_lists_pending_mn2_and_crypto(ex_env):
+    ex_env.record_paypal_mn2_order("PAY-MN2-PEND", "buyer_mn2", {
+        "id": "mn2-starter",
+        "name": "MN2 Starter",
+        "price_usd": 4.99,
+        "mn2_granted": 10.0,
+    })
+    ex_env.record_paypal_crypto_order("PAY-CRYPTO-PEND", {
+        "success": True,
+        "symbol": "USDC",
+        "usd_amount": 25.0,
+        "asset_amount": 24.9,
+        "fee_usd": 0.1,
+        "user_id": "buyer_crypto",
+    })
+    jobs = ex_env.list_pending_paypal_payments()
+    rails = {j["rail"]: j for j in jobs}
+    assert rails["exchange_mn2"]["paypal_order_id"] == "PAY-MN2-PEND"
+    assert rails["exchange_crypto"]["paypal_order_id"] == "PAY-CRYPTO-PEND"
+    assert rails["exchange_crypto"]["user_id"] == "buyer_crypto"
+
+
+def test_exchange_paypal_mn2_default_user_uses_pending(ex_env, points_db, monkeypatch):
+    from flask import Flask
+    from backend.routes import crypto_exchange_routes as routes
+
+    pack = {
+        "id": "mn2-starter",
+        "name": "MN2 Starter",
+        "price_usd": 4.99,
+        "mn2_granted": 10.0,
+        "payment_rails": ["paypal"],
+    }
+    monkeypatch.setattr(routes, "_mn2_paypal_pack", lambda pack_id: pack if pack_id == "mn2-starter" else None)
+    monkeypatch.setattr(
+        "backend.services.paypal_service.create_order",
+        lambda **kwargs: {"success": True, "order_id": "PAY-DUMP-1", "approve_url": "https://paypal.test/checkout"},
+    )
+    monkeypatch.setattr(
+        "backend.services.paypal_service.capture_order",
+        lambda order_id: {
+            "success": True,
+            "order_id": order_id,
+            "capture_id": "CAP-DUMP-1",
+            "amount": "4.99",
+            "currency": "USD",
+        },
+    )
+    app = Flask(__name__)
+    app.register_blueprint(routes.crypto_exchange_bp)
+    client = app.test_client()
+    created = client.post(
+        "/api/exchange/paypal/create-mn2-order",
+        json={"user_id": "real_exchange_buyer", "pack_id": "mn2-starter"},
+    )
+    assert created.status_code == 200
+    captured = client.post(
+        "/api/exchange/paypal/capture-mn2-order",
+        json={"user_id": "default_user", "order_id": "PAY-DUMP-1"},
+    )
+    assert captured.status_code == 200
+    body = captured.get_json()
+    assert body["success"] is True
+    assert body["mn2_granted"] == pytest.approx(10.0)
+    bal = points_db.get_all_points("real_exchange_buyer")
+    assert float(bal["points"]["mn2_balance"]) >= 10.0
+
+
+def test_exchange_paypal_webhook_finishes_crypto(ex_env, monkeypatch):
+    ex_env.record_paypal_crypto_order("PAY-WH-CRYPTO", {
+        "success": True,
+        "symbol": "USDC",
+        "usd_amount": 25.0,
+        "asset_amount": 24.9,
+        "fee_usd": 0.1,
+        "user_id": "webhook_buyer",
+    })
+    monkeypatch.setattr(
+        "backend.services.paypal_service.finish_checkout_order",
+        lambda order_id: {
+            "success": True,
+            "order_id": order_id,
+            "capture_id": "CAP-WH-CRYPTO",
+            "amount": "25.00",
+            "currency": "USD",
+        },
+    )
+    out = ex_env.handle_webhook(
+        {"event_type": "CHECKOUT.ORDER.APPROVED", "resource": {"id": "PAY-WH-CRYPTO"}},
+        True,
+    )
+    assert out.get("success") is True
+    assert out.get("symbol") == "USDC"
+    wallet = ex_env.get_wallet("webhook_buyer")
+    assert float(wallet["assets"].get("USDC") or 0) > 0
+
+
 def test_exchange_agent_tick(ex_env, points_db, tmp_path, monkeypatch):
     from backend.services import crypto_exchange_agent_service as agents
 

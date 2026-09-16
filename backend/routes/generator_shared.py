@@ -98,7 +98,7 @@ def start_documentary_encoding(doc_id: str, config: dict):
             python = sys.executable
             cmd = [python, '-m', 'backend.run_generator_job', doc_id]
             try:
-                subprocess.Popen(
+                proc = subprocess.Popen(
                     cmd,
                     cwd=_BASE_DIR,
                     env=dict(os.environ, PYTHONPATH=_BASE_DIR + os.pathsep + os.environ.get('PYTHONPATH', '')),
@@ -107,6 +107,15 @@ def start_documentary_encoding(doc_id: str, config: dict):
                     stderr=subprocess.DEVNULL,
                     start_new_session=True,
                 )
+                try:
+                    from backend.services.video_generator_service import write_run_sidecar
+                    write_run_sidecar(
+                        doc_id,
+                        proc.pid,
+                        duration_sec=int(config.get('duration') or 180),
+                    )
+                except Exception:
+                    pass
                 return
             except Exception:
                 pass

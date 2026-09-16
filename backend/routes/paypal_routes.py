@@ -1,9 +1,12 @@
 """
-PayPal payment routes — create order, capture.
+PayPal payment routes — create order, capture, finish pending.
 Integrates with shop and unified points.
 Uses account resolution: session > request > user_identification.
 """
+import os
 import urllib.parse
+from typing import Any, Dict, Optional
+
 from flask import Blueprint, jsonify, request
 
 paypal_bp = Blueprint("paypal", __name__)
@@ -16,12 +19,33 @@ def _resolve_user_id():
 
 
 def _get_base_url():
-    import os
     base = (os.environ.get("BASE_URL") or "").strip().rstrip("/")
     # Use origin only (no /vidgenerator) - return URL is built as base + /vidgenerator/shop
     if base.endswith("/vidgenerator"):
         base = base.rsplit("/vidgenerator", 1)[0]
     return base or request.url_root.rstrip("/")
+
+
+def _ops_authorized() -> bool:
+    secret = (
+        (os.environ.get("PAYPAL_OPS_SECRET") or "").strip()
+        or (os.environ.get("COGS_ADMIN_REPORT_KEY") or "").strip()
+        or (os.environ.get("MN2_OPS_SECRET") or "").strip()
+    )
+    if not secret:
+        flag = (os.environ.get("PAYPAL_FINISH_PENDING") or "").strip().lower()
+        return flag in ("1", "true", "yes", "on")
+    token = (
+        request.headers.get("X-Ops-Token")
+        or request.headers.get("X-Cogs-Admin-Key")
+        or request.args.get("token")
+        or request.args.get("key")
+        or ""
+    ).strip()
+    body = request.get_json(silent=True) or {}
+    if not token:
+        token = str(body.get("token") or body.get("key") or "").strip()
+    return token == secret
 
 
 @paypal_bp.route("/api/paypal/create-order", methods=["POST"])
@@ -47,11 +71,11 @@ def paypal_create_order():
     base = _get_base_url()
     if not base:
         base = request.url_root.rstrip("/")
-    return_url = f"{base}/shop?paypal=success&item_id={urllib.parse.quote(item_id)}&user_id={urllib.parse.quote(user_id)}"
+    return_url = f"{base}/shop?paypal=success&item_id={urllib.parse.quote(str(item_id))}&user_id={urllib.parse.quote(str(user_id))}"
     cancel_url = f"{base}/shop?paypal=cancel"
 
     try:
-        from backend.services.paypal_service import create_order
+        from backend.services.paypal_service import create_order, remember_shop_order
 
         result = create_order(
             amount=amount,
@@ -65,6 +89,17 @@ def paypal_create_order():
         return jsonify({"success": False, "error": str(e)}), 500
 
     if result.get("success"):
+        try:
+            remember_shop_order(result.get("order_id"), {
+                "status": "pending",
+                "item_id": item_id,
+                "item_name": item_name,
+                "user_id": user_id,
+                "amount": amount,
+                "currency": data.get("currency", "USD"),
+            })
+        except Exception:
+            pass
         return jsonify({
             "success": True,
             "order_id": result["order_id"],
@@ -73,29 +108,35 @@ def paypal_create_order():
     return jsonify({"success": False, "error": result.get("error", "Unknown error")}), 500
 
 
-@paypal_bp.route("/api/paypal/capture", methods=["POST"])
-def paypal_capture():
-    """Capture payment after user approves. Grant item and add monetization_points."""
-    data = request.get_json() or {}
-    order_id = data.get("order_id") or request.args.get("order_id")
-    item_id = data.get("item_id", "")
-    item_name = data.get("item_name", "")
-    user_id = data.get("user_id") or _resolve_user_id()
+def fulfill_captured_shop_payment(
+    *,
+    order_id: str,
+    user_id: str,
+    item_id: str = "",
+    item_name: str = "",
+    capture: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Grant coins/items after a successful PayPal capture. Idempotent on order_id."""
+    from backend.services.paypal_service import (
+        get_pending_shop_order,
+        mark_shop_order_captured,
+        update_shop_order,
+    )
 
-    if not order_id:
-        return jsonify({"success": False, "error": "Missing order_id"}), 400
+    capture = dict(capture or {})
+    pending = get_pending_shop_order(order_id) or {}
+    if pending.get("fulfilled"):
+        payload = dict(pending.get("fulfillment") or {})
+        payload.setdefault("success", True)
+        payload.setdefault("already_fulfilled", True)
+        payload.setdefault("order_id", order_id)
+        return payload
 
-    try:
-        from backend.services.paypal_service import capture_order
+    item_id = str(item_id or pending.get("item_id") or "").strip()
+    item_name = str(item_name or pending.get("item_name") or "").strip()
+    user_id = str(user_id or pending.get("user_id") or "").strip()
 
-        result = capture_order(order_id)
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-    if not result.get("success"):
-        return jsonify({"success": False, "error": result.get("error", "Capture failed")}), 500
-
-    amount = float(result.get("amount", 0) or 0)
+    amount = float(capture.get("amount", 0) or pending.get("amount") or 0)
     coins_granted = 0
     mn2_granted = 0.0
     item_granted = None
@@ -103,9 +144,34 @@ def paypal_capture():
     mn2_pack = None
     fulfillment_error = None
 
+    if not user_id:
+        payload = {
+            "success": True,
+            "order_id": capture.get("order_id") or order_id,
+            "capture_id": capture.get("capture_id"),
+            "amount": capture.get("amount") if capture.get("amount") is not None else amount,
+            "coins_granted": 0,
+            "mn2_granted": 0.0,
+            "already_captured": bool(capture.get("already_captured")),
+            "fulfillment_skipped": True,
+            "reason": "missing_user_id",
+        }
+        try:
+            mark_shop_order_captured(order_id, capture.get("capture_id"))
+            update_shop_order(order_id, fulfilled=False, fulfillment=payload)
+        except Exception:
+            pass
+        return payload
+
     try:
         from backend.services.unified_points_database import unified_points_db
-        from backend.routes.shop_routes import get_coin_pack_map, get_mn2_pack_map, _get_paypal_shop_items, _get_shop_items, _apply_shop_item_effects
+        from backend.routes.shop_routes import (
+            get_coin_pack_map,
+            get_mn2_pack_map,
+            _get_paypal_shop_items,
+            _get_shop_items,
+            _apply_shop_item_effects,
+        )
 
         pack = get_coin_pack_map().get(item_id) if item_id else None
         mn2_pack = get_mn2_pack_map().get(item_id) if item_id else None
@@ -115,7 +181,7 @@ def paypal_capture():
         if mn2_pack and float(mn2_pack.get("mn2_granted") or 0) > 0:
             from backend.services.shop_mn2_fulfillment_service import fulfill_mn2_purchase
 
-            capture_id = result.get("capture_id") or order_id
+            capture_id = capture.get("capture_id") or order_id
             ref = f"paypal_mn2_pack:{capture_id}:{item_id}"
             grant = fulfill_mn2_purchase(
                 user_id,
@@ -148,17 +214,16 @@ def paypal_capture():
                     source="paypal",
                     metadata={
                         "order_id": order_id,
-                        "capture_id": result.get("capture_id"),
+                        "capture_id": capture.get("capture_id"),
                         "item_id": item_id,
                         "item_name": item_name or pack.get("name"),
                     },
                 )
         elif shop_item:
-            # Direct PayPal purchase: add item to inventory
             try:
                 from backend.services.shop_db_service import fulfill_shop_purchase
                 item_display_name = item_name or shop_item.get("name", item_id)
-                purchase_id = fulfill_shop_purchase(
+                fulfill_shop_purchase(
                     user_id=user_id,
                     item_id=item_id,
                     item_name=item_display_name,
@@ -168,8 +233,14 @@ def paypal_capture():
                     price_paid_points=None,
                 )
                 item_granted = item_id
-                full_item = next((i for i in (_get_shop_items() or []) if (i.get("id") or "") == item_id), {"id": item_id, "name": item_display_name})
-                _apply_shop_item_effects(user_id, item_id, full_item, 1, purchase_ref=result.get("capture_id") or order_id)
+                full_item = next(
+                    (i for i in (_get_shop_items() or []) if (i.get("id") or "") == item_id),
+                    {"id": item_id, "name": item_display_name},
+                )
+                _apply_shop_item_effects(
+                    user_id, item_id, full_item, 1,
+                    purchase_ref=capture.get("capture_id") or order_id,
+                )
             except Exception as e:
                 fulfillment_error = str(e)
         elif unified_points_db and amount > 0:
@@ -180,25 +251,24 @@ def paypal_capture():
                 source="paypal",
                 metadata={
                     "order_id": order_id,
-                    "capture_id": result.get("capture_id"),
+                    "capture_id": capture.get("capture_id"),
                     "item_id": item_id,
                     "item_name": item_name,
                 },
             )
         try:
             from backend.services.unified_points_sync import unified_points_sync_device
-            unified_points_sync_device.record_domain_sync('paypal')
+            unified_points_sync_device.record_domain_sync("paypal")
         except Exception:
             pass
-    except Exception:
-        pass
+    except Exception as e:
+        fulfillment_error = fulfillment_error or str(e)
 
-    # Notify admin of purchase (email + log)
     try:
         from backend.services.purchase_notification_service import notify_purchase
         notify_purchase(
             amount=amount,
-            currency=result.get("currency", "USD"),
+            currency=capture.get("currency", "USD"),
             item_id=item_id,
             item_name=item_name,
             user_id=user_id,
@@ -211,11 +281,12 @@ def paypal_capture():
 
     payload = {
         "success": True,
-        "order_id": result["order_id"],
-        "capture_id": result.get("capture_id"),
-        "amount": result.get("amount"),
+        "order_id": capture.get("order_id") or order_id,
+        "capture_id": capture.get("capture_id"),
+        "amount": capture.get("amount") if capture.get("amount") is not None else amount,
         "coins_granted": coins_granted,
         "mn2_granted": mn2_granted,
+        "already_captured": bool(capture.get("already_captured")),
     }
     if item_granted:
         payload["item_granted"] = item_granted
@@ -228,7 +299,6 @@ def paypal_capture():
             "details": fulfillment_error,
         })
 
-    # Ledger for §0 phase C (gross margin vs revenue) — append-only JSONL
     try:
         from backend.services.monetization_ledger_service import append_payment_event
 
@@ -243,9 +313,9 @@ def paypal_capture():
             provider="paypal",
             user_id=user_id,
             order_id=order_id,
-            capture_id=result.get("capture_id"),
+            capture_id=capture.get("capture_id"),
             amount_usd=float(amount or 0),
-            currency=str(result.get("currency") or "USD"),
+            currency=str(capture.get("currency") or "USD"),
             item_id=item_id or "",
             item_name=ledger_name,
             coins_granted=int(coins_granted or 0),
@@ -254,4 +324,101 @@ def paypal_capture():
     except Exception:
         pass
 
-    return jsonify(payload), 500 if fulfillment_error else 200
+    try:
+        mark_shop_order_captured(order_id, capture.get("capture_id"))
+        update_shop_order(
+            order_id,
+            fulfilled=not bool(fulfillment_error),
+            fulfillment=payload,
+            user_id=user_id,
+            item_id=item_id,
+            item_name=item_name,
+        )
+    except Exception:
+        pass
+
+    return payload
+
+
+@paypal_bp.route("/api/paypal/capture", methods=["POST"])
+def paypal_capture():
+    """Capture payment after user approves. Grant item and add monetization_points."""
+    data = request.get_json() or {}
+    order_id = data.get("order_id") or request.args.get("order_id") or request.args.get("token")
+    item_id = data.get("item_id", "")
+    item_name = data.get("item_name", "")
+    user_id = data.get("user_id") or _resolve_user_id()
+
+    if not order_id:
+        return jsonify({"success": False, "error": "Missing order_id"}), 400
+
+    try:
+        from backend.services.paypal_service import capture_order, get_pending_shop_order
+
+        pending = get_pending_shop_order(order_id) or {}
+        item_id = item_id or pending.get("item_id") or ""
+        item_name = item_name or pending.get("item_name") or ""
+        resolved = str(user_id or "").strip()
+        if not resolved or resolved.lower() == "default_user":
+            user_id = pending.get("user_id") or user_id
+        result = capture_order(order_id)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+    if not result.get("success"):
+        return jsonify({"success": False, "error": result.get("error", "Capture failed")}), 500
+
+    payload = fulfill_captured_shop_payment(
+        order_id=order_id,
+        user_id=user_id,
+        item_id=item_id,
+        item_name=item_name,
+        capture=result,
+    )
+    return jsonify(payload), 500 if payload.get("fulfillment_error") or (
+        payload.get("manual_fulfillment_required") and not payload.get("success")
+    ) else 200
+
+
+@paypal_bp.route("/api/paypal/ops/pending", methods=["GET"])
+def paypal_ops_pending():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    from backend.services.paypal_order_events import collect_pending_paypal_jobs
+
+    jobs = collect_pending_paypal_jobs()
+    return jsonify({"success": True, "pending": len(jobs), "orders": jobs}), 200
+
+
+@paypal_bp.route("/api/paypal/ops/finish-pending", methods=["POST", "GET"])
+def paypal_ops_finish_pending():
+    """Capture APPROVED PayPal checkouts so funds settle, then fulfill the matching rail."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    extra = data.get("order_ids") or request.args.getlist("order_id")
+    if isinstance(extra, str):
+        extra = [part.strip() for part in extra.split(",") if part.strip()]
+    try:
+        limit = int(data.get("limit") or request.args.get("limit") or 400)
+    except (TypeError, ValueError):
+        limit = 400
+    dry_run = bool(data.get("dry_run")) or request.args.get("dry_run") in ("1", "true", "yes")
+    from backend.services.paypal_order_events import finish_pending_paypal_orders
+
+    result = finish_pending_paypal_orders(
+        limit=limit,
+        extra_order_ids=list(extra or []),
+        dry_run=dry_run,
+    )
+    return jsonify(result), 200
+
+
+@paypal_bp.route("/vidgenerator/api/paypal/create-order", methods=["POST"])
+def paypal_create_order_vid():
+    return paypal_create_order()
+
+
+@paypal_bp.route("/vidgenerator/api/paypal/capture", methods=["POST"])
+def paypal_capture_vid():
+    return paypal_capture()

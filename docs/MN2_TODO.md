@@ -8,6 +8,7 @@ See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_T
 
 ## Done ✓
 
+- Treasury cold-wallet **sign-off gate** — `treasury_signoff_service`, `GET/POST /api/agents/treasury/sign-off`, CLI `scripts/treasury_signoff.py`; required before distribute batches ≥100k MN2 (MN2_OPS §8.6)
 - Explorer · staking · trader pool/market · Game Hub · compendium calm reader (V1–V16)
 - Camgirls Phase 1c + daemon payouts — **5 live AI models** (Nova, Luna, Sage, Ember, Iris)
 - **Discord cross-roads (code)** — market fan-out, alert funnel types, affiliate rotator, FAQ, trader tick emit

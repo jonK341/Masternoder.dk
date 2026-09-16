@@ -3,9 +3,11 @@ PayPal REST API integration for real-money payments.
 Uses Orders v2 API: create order → capture on approval.
 Add PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_MODE to .env
 """
+import json
 import os
+import threading
 import time
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     import requests
@@ -13,6 +15,9 @@ except ImportError:
     requests = None
 
 _token_cache = {"token": None, "expires": 0}
+_SHOP_ORDERS_LOCK = threading.Lock()
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_SHOP_ORDERS_PATH = os.path.join(_ROOT, "data", "paypal_shop_orders.json")
 
 
 def _get_base_url() -> str:
@@ -20,6 +25,163 @@ def _get_base_url() -> str:
     if mode == "live" or mode.startswith("live"):
         return "https://api-m.paypal.com"
     return "https://api-m.sandbox.paypal.com"
+
+
+def _approval_url(links: Optional[List[Dict[str, Any]]]) -> Optional[str]:
+    """PayPal Checkout returns rel=approve (legacy) or rel=payer-action (current)."""
+    by_rel: Dict[str, str] = {}
+    for item in links or []:
+        if not isinstance(item, dict):
+            continue
+        rel = str(item.get("rel") or "").strip().lower()
+        href = item.get("href")
+        if rel and href:
+            by_rel[rel] = str(href)
+    return by_rel.get("approve") or by_rel.get("payer-action") or by_rel.get("payer_action")
+
+
+def _issues_from_response(r) -> List[str]:
+    issues: List[str] = []
+    try:
+        data = r.json() if r is not None else {}
+    except Exception:
+        return issues
+    if not isinstance(data, dict):
+        return issues
+    for detail in data.get("details") or []:
+        if isinstance(detail, dict) and detail.get("issue"):
+            issues.append(str(detail.get("issue")))
+    return issues
+
+
+def _api_headers(token: str, request_id: Optional[str] = None) -> Dict[str, str]:
+    """Prefer: return=representation so capture/create include full capture amounts."""
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}",
+        "Prefer": "return=representation",
+    }
+    if request_id:
+        headers["PayPal-Request-Id"] = str(request_id)[:108]
+    return headers
+
+
+def _first_purchase_unit(data: Dict[str, Any]) -> Dict[str, Any]:
+    units = data.get("purchase_units") or []
+    if isinstance(units, list) and units and isinstance(units[0], dict):
+        return units[0]
+    return {}
+
+
+def _first_capture(purchase: Dict[str, Any]) -> Dict[str, Any]:
+    payments = purchase.get("payments") if isinstance(purchase.get("payments"), dict) else {}
+    captures = payments.get("captures") or []
+    if isinstance(captures, list) and captures and isinstance(captures[0], dict):
+        return captures[0]
+    return {}
+
+
+def _capture_payload_from_order(data: Dict[str, Any], order_id: str) -> Dict[str, Any]:
+    status = data.get("status")
+    purchase = _first_purchase_unit(data)
+    capture = _first_capture(purchase)
+    amount = capture.get("amount") if isinstance(capture.get("amount"), dict) else {}
+    if not amount.get("value"):
+        pu_amount = purchase.get("amount") if isinstance(purchase.get("amount"), dict) else {}
+        if pu_amount.get("value"):
+            amount = pu_amount
+    capture_status = str(capture.get("status") or "").upper()
+    order_status = str(status or "").upper()
+    completed = order_status == "COMPLETED" or capture_status == "COMPLETED"
+    if capture_status == "PENDING":
+        completed = False
+    return {
+        "success": bool(completed),
+        "order_id": order_id,
+        "status": status,
+        "capture_status": capture.get("status") or status,
+        "capture_id": capture.get("id"),
+        "amount": amount.get("value"),
+        "currency": amount.get("currency_code"),
+    }
+
+
+def _read_shop_orders() -> Dict[str, Any]:
+    if not os.path.isfile(_SHOP_ORDERS_PATH):
+        return {}
+    try:
+        with open(_SHOP_ORDERS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _write_shop_orders(data: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(_SHOP_ORDERS_PATH), exist_ok=True)
+    tmp = _SHOP_ORDERS_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp, _SHOP_ORDERS_PATH)
+
+
+def remember_shop_order(order_id: str, payload: Dict[str, Any]) -> None:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    with _SHOP_ORDERS_LOCK:
+        rows = _read_shop_orders()
+        row = dict(payload or {})
+        row["order_id"] = oid
+        row["updated_at"] = time.time()
+        rows[oid] = row
+        _write_shop_orders(rows)
+
+
+def get_pending_shop_order(order_id: str) -> Optional[Dict[str, Any]]:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return None
+    with _SHOP_ORDERS_LOCK:
+        row = _read_shop_orders().get(oid)
+    return dict(row) if isinstance(row, dict) else None
+
+
+def update_shop_order(order_id: str, **fields: Any) -> None:
+    oid = str(order_id or "").strip()
+    if not oid:
+        return
+    with _SHOP_ORDERS_LOCK:
+        rows = _read_shop_orders()
+        row = dict(rows.get(oid) or {})
+        row["order_id"] = oid
+        row.update(fields)
+        row["updated_at"] = time.time()
+        rows[oid] = row
+        _write_shop_orders(rows)
+
+
+def mark_shop_order_captured(order_id: str, capture_id: Optional[str] = None) -> None:
+    fields: Dict[str, Any] = {"status": "captured"}
+    if capture_id:
+        fields["capture_id"] = capture_id
+    update_shop_order(order_id, **fields)
+
+
+def list_pending_shop_orders() -> List[Dict[str, Any]]:
+    with _SHOP_ORDERS_LOCK:
+        rows = _read_shop_orders()
+    out: List[Dict[str, Any]] = []
+    for oid, row in rows.items():
+        if not isinstance(row, dict):
+            continue
+        status = str(row.get("status") or "").lower()
+        if status in ("captured", "fulfilled", "expired", "voided"):
+            continue
+        item = dict(row)
+        item["order_id"] = item.get("order_id") or oid
+        out.append(item)
+    return out
 
 
 def get_access_token() -> Optional[str]:
@@ -74,43 +236,94 @@ def create_order(
     return_url = return_url or f"{base_url}/shop?paypal=success"
     cancel_url = cancel_url or f"{base_url}/shop?paypal=cancel"
 
+    unit: Dict[str, Any] = {
+        "amount": {"currency_code": currency, "value": f"{float(amount):.2f}"},
+        "description": str(item_name or "Shop Item")[:127],
+    }
+    meta = dict(metadata or {})
+    custom_id = str(meta.get("custom_id") or meta.get("item_id") or "").strip()
+    if custom_id:
+        unit["custom_id"] = custom_id[:127]
+
+    experience = {
+        "return_url": return_url,
+        "cancel_url": cancel_url,
+        "brand_name": "MasterNoder",
+        "shipping_preference": "NO_SHIPPING",
+        "user_action": "PAY_NOW",
+        "landing_page": "NO_PREFERENCE",
+    }
     payload = {
         "intent": "CAPTURE",
-        "purchase_units": [
-            {
-                "amount": {"currency_code": currency, "value": f"{amount:.2f}"},
-                "description": item_name,
-                "custom_id": (metadata or {}).get("item_id", ""),
-            }
-        ],
-        "application_context": {
-            "return_url": return_url,
-            "cancel_url": cancel_url,
-            "brand_name": "MasterNoder",
-        },
+        "purchase_units": [unit],
+        "application_context": experience,
     }
 
     base = _get_base_url()
     r = requests.post(
         f"{base}/v2/checkout/orders",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        },
+        headers=_api_headers(token),
         json=payload,
-        timeout=10,
+        timeout=30,
     )
     if r.status_code not in (200, 201):
         return {"success": False, "error": r.text}
 
-    data = r.json()
-    links = {l["rel"]: l["href"] for l in data.get("links", [])}
+    try:
+        data = r.json()
+    except Exception:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    oid = data.get("id")
+    approve_url = _approval_url(data.get("links") or [])
+    if oid:
+        try:
+            remember_shop_order(str(oid), {
+                "status": str(data.get("status") or "CREATED").lower(),
+                "amount": float(amount),
+                "currency": currency,
+                "item_name": item_name,
+                "item_id": meta.get("item_id") or "",
+                "user_id": meta.get("user_id") or "",
+                "metadata": meta,
+                "approve_url": approve_url,
+            })
+        except Exception:
+            pass
     return {
         "success": True,
-        "order_id": data.get("id"),
-        "approve_url": links.get("approve"),
+        "order_id": oid,
+        "approve_url": approve_url,
         "status": data.get("status"),
     }
+
+
+def get_checkout_order(order_id: str) -> Dict:
+    """GET /v2/checkout/orders/{id} — used when capture reports already captured."""
+    if not requests:
+        return {"success": False, "error": "requests library required"}
+    oid = str(order_id or "").strip()
+    if not oid:
+        return {"success": False, "error": "missing order_id"}
+    token = get_access_token()
+    if not token:
+        return {"success": False, "error": "PayPal authentication failed"}
+    base = _get_base_url()
+    r = requests.get(
+        f"{base}/v2/checkout/orders/{oid}",
+        headers=_api_headers(token),
+        timeout=30,
+    )
+    if r.status_code != 200:
+        return {"success": False, "error": r.text, "status_code": r.status_code}
+    try:
+        data = r.json()
+    except Exception:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    return {"success": True, "order_id": data.get("id") or oid, "status": data.get("status"), "raw": data}
 
 
 def capture_order(order_id: str) -> Dict:
@@ -125,31 +338,98 @@ def capture_order(order_id: str) -> Dict:
             return {"success": False, "error": "PayPal credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)"}
         return {"success": False, "error": "PayPal authentication failed", "mode": os.environ.get("PAYPAL_MODE") or "sandbox"}
 
+    oid = str(order_id or "").strip()
+    if not oid:
+        return {"success": False, "error": "missing order_id"}
     base = _get_base_url()
     r = requests.post(
-        f"{base}/v2/checkout/orders/{order_id}/capture",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        },
+        f"{base}/v2/checkout/orders/{oid}/capture",
+        headers=_api_headers(token, request_id=f"cap-{oid}"),
         json={},
-        timeout=10,
+        timeout=30,
     )
     if r.status_code not in (200, 201):
-        return {"success": False, "error": r.text}
+        return _recover_failed_capture(oid, r)
 
-    data = r.json()
-    status = data.get("status")
-    purchase = (data.get("purchase_units") or [{}])[0]
-    capture = (purchase.get("payments", {}).get("captures") or [{}])[0]
-    return {
-        "success": status == "COMPLETED",
-        "order_id": order_id,
-        "status": status,
-        "capture_id": capture.get("id"),
-        "amount": capture.get("amount", {}).get("value"),
-        "currency": capture.get("amount", {}).get("currency_code"),
-    }
+    try:
+        data = r.json()
+    except Exception:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    return _capture_payload_from_order(data, oid)
+
+
+_AWAITING_PAYER = {"CREATED", "PAYER_ACTION_REQUIRED", "SAVED"}
+_DEAD_ORDER = {"VOIDED", "EXPIRED", "DECLINED"}
+_FINISHABLE = {"APPROVED", "COMPLETED"}
+
+
+def _recover_failed_capture(oid: str, r) -> Dict[str, Any]:
+    issues = _issues_from_response(r)
+    text = (r.text or "").upper()
+    already = (
+        "ORDER_ALREADY_CAPTURED" in issues
+        or "CAPTURE_ALREADY_EXISTS" in issues
+        or "ORDER_ALREADY_CAPTURED" in text
+        or "CAPTURE_ALREADY_EXISTS" in text
+    )
+    existing = get_checkout_order(oid)
+    raw = existing.get("raw") if existing.get("success") else None
+    paypal_status = str((raw or {}).get("status") or existing.get("status") or "").upper()
+    if already or paypal_status == "COMPLETED":
+        if isinstance(raw, dict):
+            out = _capture_payload_from_order(raw, oid)
+            if out.get("capture_id") or str(out.get("status") or "").upper() == "COMPLETED":
+                out["success"] = True
+                out["already_captured"] = True
+                return out
+        return {
+            "success": True,
+            "already_captured": True,
+            "order_id": oid,
+            "status": paypal_status or "COMPLETED",
+        }
+    if "ORDER_NOT_APPROVED" in issues or paypal_status in _AWAITING_PAYER:
+        return {
+            "success": False,
+            "error": r.text,
+            "code": "ORDER_NOT_APPROVED",
+            "paypal_status": paypal_status or "NOT_APPROVED",
+            "outcome": "awaiting_payer",
+            "order_id": oid,
+        }
+    return {"success": False, "error": r.text, "paypal_status": paypal_status or None, "order_id": oid}
+
+
+def finish_checkout_order(order_id: str) -> Dict[str, Any]:
+    """Capture an APPROVED checkout (or recover COMPLETED) so PayPal actually pays out."""
+    oid = str(order_id or "").strip()
+    if not oid:
+        return {"success": False, "error": "missing order_id"}
+    existing = get_checkout_order(oid)
+    if not existing.get("success"):
+        return {
+            "success": False,
+            "error": existing.get("error") or "lookup_failed",
+            "status_code": existing.get("status_code"),
+            "order_id": oid,
+            "outcome": "missing",
+        }
+    st = str(existing.get("status") or "").upper()
+    if st in _AWAITING_PAYER:
+        return {"success": False, "outcome": "awaiting_payer", "paypal_status": st, "order_id": oid}
+    if st in _DEAD_ORDER:
+        update_shop_order(oid, status="expired", paypal_status=st)
+        return {"success": False, "outcome": "expired", "paypal_status": st, "order_id": oid}
+    if st in _FINISHABLE:
+        cap = capture_order(oid)
+        cap["paypal_status"] = st
+        cap["outcome"] = "captured" if cap.get("success") else "capture_failed"
+        if cap.get("success"):
+            mark_shop_order_captured(oid, cap.get("capture_id"))
+        return cap
+    return {"success": False, "outcome": "skipped", "paypal_status": st, "order_id": oid}
 
 
 def create_billing_subscription(

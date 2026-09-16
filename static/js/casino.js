@@ -713,6 +713,10 @@
             return;
         }
         if (data.success && data.approve_url) {
+            try {
+                sessionStorage.setItem('casino_paypal_order', data.order_id || '');
+                sessionStorage.setItem('casino_paypal_pack', packId || '');
+            } catch (e) {}
             window.location.href = data.approve_url;
         } else {
             alert(data.error || 'Could not start PayPal checkout');
@@ -721,10 +725,22 @@
 
     async function handlePayPalReturn() {
         const params = new URLSearchParams(window.location.search);
-        if (params.get('paypal') !== 'success') return;
-        const orderId = params.get('token');
-        const packId = params.get('pack_id');
-        if (!orderId) return;
+        if (params.get('paypal') === 'cancel') {
+            try {
+                sessionStorage.removeItem('casino_paypal_order');
+                sessionStorage.removeItem('casino_paypal_pack');
+            } catch (e) {}
+            return;
+        }
+        let orderId = params.get('token') || params.get('order_id') || '';
+        let packId = params.get('pack_id') || '';
+        try {
+            orderId = orderId || sessionStorage.getItem('casino_paypal_order') || '';
+            packId = packId || sessionStorage.getItem('casino_paypal_pack') || '';
+        } catch (e) {}
+        const payerId = params.get('PayerID') || params.get('PayerId');
+        const approved = params.get('paypal') === 'success' || !!payerId;
+        if (!orderId || !approved) return;
         const data = await api('/api/casino/paypal/capture', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -733,6 +749,10 @@
         if (data.success) {
             showToast('PayPal deposit complete! USD balance: $' + Number(data.fiat_balance || 0).toFixed(2));
             setActiveCurrency('usd');
+            try {
+                sessionStorage.removeItem('casino_paypal_order');
+                sessionStorage.removeItem('casino_paypal_pack');
+            } catch (e) {}
         } else {
             alert(data.error || 'PayPal capture failed');
         }

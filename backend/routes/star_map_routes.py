@@ -431,7 +431,8 @@ def _update_starmap25_quests(user_id: str, investigations: int = 0, game_points:
         if game_points:
             update_quest_progress(user_id, "earn_game_points", int(max(1, round(game_points))))
         if trophies:
-            update_quest_progress(user_id, "weekly_trophies", trophies)
+            from backend.services.user_engagement import sync_weekly_trophies_quest
+            sync_weekly_trophies_quest(user_id)
     except Exception:
         pass
 
