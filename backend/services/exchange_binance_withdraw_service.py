@@ -269,18 +269,22 @@ def get_withdraw_address_list(coin: str = "USDT", *, dry_run: Optional[bool] = N
     return res
 
 
-def _network_withdraw_fee(network_code: str, capital_config: Optional[Dict[str, Any]] = None) -> float:
+def _coin_network_withdraw_fee(coin: str, network_code: str,
+                               capital_config: Optional[Dict[str, Any]] = None) -> float:
+    """Withdraw fee (in units of ``coin``) for a coin/network from Binance capital config."""
+    coin_u = str(coin or "USDT").upper()
     net = binance_network_code(network_code)
+    default = _DEFAULT_TRC20_FEE_USDT if (coin_u == "USDT" and net == "TRX") else 0.0
     cfg = capital_config
     if cfg is None:
         cfg = get_capital_config(skip_live_gate=True)
     if cfg.get("simulated") or not cfg.get("success"):
-        return _DEFAULT_TRC20_FEE_USDT if net == "TRX" else 0.0
+        return default
     body = cfg.get("body")
     if not isinstance(body, list):
-        return _DEFAULT_TRC20_FEE_USDT if net == "TRX" else 0.0
+        return default
     for coin_row in body:
-        if str(coin_row.get("coin") or "").upper() != "USDT":
+        if str(coin_row.get("coin") or "").upper() != coin_u:
             continue
         for net_row in coin_row.get("networkList") or []:
             if str(net_row.get("network") or "").upper() != net:
@@ -289,7 +293,11 @@ def _network_withdraw_fee(network_code: str, capital_config: Optional[Dict[str, 
                 return max(0.0, float(net_row.get("withdrawFee") or 0))
             except (TypeError, ValueError):
                 pass
-    return _DEFAULT_TRC20_FEE_USDT if net == "TRX" else 0.0
+    return default
+
+
+def _network_withdraw_fee(network_code: str, capital_config: Optional[Dict[str, Any]] = None) -> float:
+    return _coin_network_withdraw_fee("USDT", network_code, capital_config)
 
 
 def _address_whitelisted(address: str, network_code: str, rows: List[Dict[str, Any]]) -> bool:
@@ -397,10 +405,111 @@ def preflight_withdraw_usdt(amount: float, address: str, network: str, *,
     }
 
 
-def withdraw_usdt(amount: float, address: str, network: str, *,
-                  dry_run: Optional[bool] = None,
-                  withdraw_order_id: Optional[str] = None) -> Dict[str, Any]:
-    """POST /sapi/v1/capital/withdraw/apply for USDT."""
+def preflight_withdraw_asset(coin: str, amount: float, address: str, network: str, *,
+                             dry_run: Optional[bool] = None,
+                             skip_live_gate: bool = True,
+                             sales_pool_amount: Optional[float] = None) -> Dict[str, Any]:
+    """Validate Binance spot balance + whitelist for any coin before a live withdraw."""
+    coin_u = str(coin or "USDT").upper()
+    addr = (address or "").strip()
+    net = binance_network_code(network)
+    amt = round(max(0.0, float(amount or 0)), 8)
+    blockers: List[Dict[str, Any]] = []
+
+    creds = binance_credentials()
+    if not (creds.get("api_key") and creds.get("api_secret")):
+        return {
+            "ready": False,
+            "coin": coin_u,
+            "blockers": [{
+                "code": "missing_credentials",
+                "message": "Store Binance API key/secret in vault or set BINANCE_API_KEY/SECRET.",
+            }],
+            "amount": amt,
+            "network": net,
+            "address_masked": mask_address(addr),
+        }
+
+    capital = get_capital_config(dry_run=dry_run, skip_live_gate=skip_live_gate)
+    fee = round(_coin_network_withdraw_fee(coin_u, net, capital), 8)
+    required = round(amt + fee, 8)
+
+    spot = get_spot_asset_free(coin_u, dry_run=dry_run, skip_live_gate=skip_live_gate)
+    spot_free = float(spot.get("free") or 0) if (spot.get("success") or spot.get("simulated")) else 0.0
+    if spot.get("simulated"):
+        spot_free = 0.0
+
+    if not spot.get("success") and not spot.get("simulated"):
+        blockers.append({
+            "code": "spot_balance_unavailable",
+            "message": spot.get("binance_msg") or spot.get("error") or "Could not read Binance spot balance.",
+            "binance_code": spot.get("binance_code"),
+            "http_status": spot.get("http_status"),
+        })
+    elif spot_free < required:
+        msg = (
+            f"Binance spot {coin_u} free ({spot_free}) is below required {required} "
+            f"(amount {amt} + network fee ~{fee}). Deposit {coin_u} to your Binance spot wallet."
+        )
+        if sales_pool_amount is not None and float(sales_pool_amount) >= amt:
+            msg += (
+                f" Sales pool ledger holds {round(float(sales_pool_amount), 8)} {coin_u} internally — "
+                "that balance is not on Binance until you deposit real coins to the API account."
+            )
+        blocker = {
+            "code": "insufficient_spot_balance",
+            "message": msg,
+            "spot_free": spot_free,
+            "required": required,
+            "network_fee": fee,
+            "sales_pool_amount": sales_pool_amount,
+        }
+        if coin_u == "USDT":
+            blocker["sales_pool_usdt"] = sales_pool_amount
+        blockers.append(blocker)
+
+    wl = get_withdraw_address_list(coin_u, dry_run=dry_run, skip_live_gate=skip_live_gate)
+    wl_rows = wl.get("addresses") or []
+    if not wl.get("success") and not wl.get("simulated"):
+        blockers.append({
+            "code": "whitelist_unavailable",
+            "message": wl.get("binance_msg") or wl.get("error") or "Could not read Binance withdraw whitelist.",
+            "binance_code": wl.get("binance_code"),
+            "http_status": wl.get("http_status"),
+        })
+    elif not wl.get("simulated") and not _address_whitelisted(addr, net, wl_rows):
+        blockers.append({
+            "code": "address_not_whitelisted",
+            "message": (
+                f"Whitelist address {mask_address(addr)} for {coin_u} on {net} network "
+                f"(TRC20 maps to TRX) in Binance Security -> Withdrawal Address Management."
+            ),
+            "address_masked": mask_address(addr),
+            "network": net,
+            "whitelisted_count": len(wl_rows),
+        })
+
+    return {
+        "ready": len(blockers) == 0,
+        "coin": coin_u,
+        "blockers": blockers,
+        "amount": amt,
+        "network": net,
+        "address_masked": mask_address(addr),
+        "spot_free": spot_free,
+        "network_fee": fee,
+        "required_spot": required,
+        "sales_pool_amount": sales_pool_amount,
+    }
+
+
+def withdraw_asset(coin: str, amount: float, address: str, network: str, *,
+                   dry_run: Optional[bool] = None,
+                   withdraw_order_id: Optional[str] = None) -> Dict[str, Any]:
+    """POST /sapi/v1/capital/withdraw/apply for any coin."""
+    coin_u = str(coin or "").upper()
+    if not coin_u:
+        return {"success": False, "error": "missing_coin"}
     addr = (address or "").strip()
     if not addr:
         return {"success": False, "error": "missing_address"}
@@ -410,7 +519,7 @@ def withdraw_usdt(amount: float, address: str, network: str, *,
 
     net = binance_network_code(network)
     params: Dict[str, Any] = {
-        "coin": "USDT",
+        "coin": coin_u,
         "network": net,
         "address": addr,
         "amount": amt,
@@ -420,6 +529,7 @@ def withdraw_usdt(amount: float, address: str, network: str, *,
 
     res = _signed_sapi_request("POST", "/sapi/v1/capital/withdraw/apply", params, dry_run=dry_run)
     if res.get("simulated"):
+        res.setdefault("coin", coin_u)
         res.setdefault("amount", amt)
         res.setdefault("network", net)
         res.setdefault("address_masked", mask_address(addr))
@@ -430,7 +540,16 @@ def withdraw_usdt(amount: float, address: str, network: str, *,
         res["withdraw_id"] = body.get("id")
     else:
         res.setdefault("error", "binance_withdraw_failed")
+    res.setdefault("coin", coin_u)
     res.setdefault("amount", amt)
     res.setdefault("network", net)
     res.setdefault("address_masked", mask_address(addr))
     return res
+
+
+def withdraw_usdt(amount: float, address: str, network: str, *,
+                  dry_run: Optional[bool] = None,
+                  withdraw_order_id: Optional[str] = None) -> Dict[str, Any]:
+    """POST /sapi/v1/capital/withdraw/apply for USDT (thin wrapper over withdraw_asset)."""
+    return withdraw_asset("USDT", amount, address, network,
+                          dry_run=dry_run, withdraw_order_id=withdraw_order_id)
