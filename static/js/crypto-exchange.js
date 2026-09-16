@@ -7,6 +7,10 @@
   var selected = 'BTC';
   var catalog = null;
   var lastQuote = null;
+  var lastSwoopQuote = null;
+  var swoopMeta = null;
+  var walletSnapshot = null;
+  var swoopQuoteTimer = null;
   var termsVersion = '2026-06-v1';
 
   function uid() {
@@ -78,7 +82,139 @@
     if (q('cex-paypal-symbol')) q('cex-paypal-symbol').value = selected;
   }
 
+  function swoopBalance(asset) {
+    if (!walletSnapshot || !walletSnapshot.success) return 0;
+    var sym = (asset || '').toUpperCase();
+    if (sym === 'MN2') return Number(walletSnapshot.mn2_balance || 0);
+    var assets = walletSnapshot.assets || {};
+    return Number(assets[sym] || 0);
+  }
+
+  function updateSwoopBalances() {
+    var from = (q('cex-swoop-from') || {}).value || 'MN2';
+    var balEl = q('cex-swoop-from-bal');
+    if (balEl) balEl.textContent = 'Balance: ' + fmt(swoopBalance(from), 6) + ' ' + from;
+  }
+
+  function renderSwoopPreview(res) {
+    var el = q('cex-swoop-preview');
+    if (!el) return;
+    if (!res || !res.success) {
+      el.innerHTML = '<span class="cex-muted">' + ((res && res.error) || 'Enter an amount to swoop.') + '</span>';
+      return;
+    }
+    var lines = [
+      '<strong>Swoop ' + fmt(res.from_amount, 6) + ' ' + res.from_asset +
+        ' → ' + fmt(res.to_amount, 6) + ' ' + res.to_asset + '</strong>',
+      'Fee: ' + fmt(res.fee_quote, 6) + ' ' + res.quote_currency + ' (' + res.fee_bps + ' bps)',
+    ];
+    if (res.pool_backed) {
+      lines.push('<div class="cex-swoop-pool">Pool-backed · liquidity pool pays out</div>');
+      if (Number(res.pool_reserve_quote || 0) > 0) {
+        var pct = (Number(res.pool_reserve_bps || 200) / 100).toFixed(1);
+        lines.push('<div class="cex-swoop-reserve">Reserve set aside: ' +
+          fmt(res.pool_reserve_quote, 6) + ' ' + (res.pool_reserve_currency || res.to_asset) +
+          ' (' + pct + '% for later ops)</div>');
+      }
+    }
+    lines.push('<span class="cex-muted">~$' + fmt(res.usd_value, 2) + ' notional</span>');
+    el.innerHTML = lines.join('<br>');
+    var est = q('cex-swoop-to-est');
+    if (est) est.textContent = 'Estimate: ' + fmt(res.to_amount, 6) + ' ' + res.to_asset;
+  }
+
+  function scheduleSwoopQuote() {
+    if (swoopQuoteTimer) clearTimeout(swoopQuoteTimer);
+    swoopQuoteTimer = setTimeout(fetchSwoopQuote, 400);
+  }
+
+  function fetchSwoopQuote() {
+    var from = (q('cex-swoop-from') || {}).value || 'MN2';
+    var to = (q('cex-swoop-to') || {}).value || 'USDT';
+    var amount = parseFloat((q('cex-swoop-amount') || {}).value || '0');
+    lastSwoopQuote = null;
+    if (!amount || from === to) {
+      renderSwoopPreview(null);
+      return;
+    }
+    postJson('/api/exchange/swoop/quote', { from_asset: from, to_asset: to, amount: amount })
+      .then(function (res) {
+        if (res && res.success) lastSwoopQuote = res;
+        renderSwoopPreview(res);
+        if (!res || !res.success) msg(res && res.error ? res.error : 'Swoop quote failed');
+      });
+  }
+
+  function setSwoopPair(from, to, amount) {
+    if (q('cex-swoop-from')) q('cex-swoop-from').value = from;
+    if (q('cex-swoop-to')) q('cex-swoop-to').value = to;
+    if (amount != null && q('cex-swoop-amount')) q('cex-swoop-amount').value = amount;
+    document.querySelectorAll('.cex-swoop-chip').forEach(function (chip) {
+      var active = chip.getAttribute('data-from') === from && chip.getAttribute('data-to') === to;
+      chip.classList.toggle('active', active);
+    });
+    updateSwoopBalances();
+    scheduleSwoopQuote();
+  }
+
+  function flipSwoop() {
+    var from = (q('cex-swoop-from') || {}).value;
+    var to = (q('cex-swoop-to') || {}).value;
+    setSwoopPair(to, from);
+  }
+
+  function doSwoopMax() {
+    var from = (q('cex-swoop-from') || {}).value || 'MN2';
+    var bal = swoopBalance(from);
+    if (q('cex-swoop-amount')) q('cex-swoop-amount').value = bal > 0 ? String(bal) : '';
+    scheduleSwoopQuote();
+  }
+
+  function doSwoop() {
+    if (!lastSwoopQuote) {
+      fetchSwoopQuote();
+      return;
+    }
+    postJson('/api/exchange/swoop', {
+      quote_id: lastSwoopQuote.quote_id,
+      from_asset: lastSwoopQuote.from_asset,
+      to_asset: lastSwoopQuote.to_asset,
+      amount: lastSwoopQuote.from_amount,
+    }).then(function (res) {
+      if (res && res.success) {
+        msg('Swoop complete — received ' + fmt(res.to_amount, 6) + ' ' + res.to_asset);
+        lastSwoopQuote = null;
+        if (q('cex-swoop-amount')) q('cex-swoop-amount').value = '';
+        renderSwoopPreview(null);
+        refresh();
+      } else {
+        msg((res && res.error) || 'Swoop failed');
+      }
+    });
+  }
+
+  function renderSwoopMeta(data) {
+    swoopMeta = data;
+    var hint = q('cex-swoop-hint');
+    if (hint && data && data.swap_back_hint) hint.textContent = data.swap_back_hint;
+  }
+
+  function applySwoopParams() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var swoop = params.get('swoop');
+      if (!swoop) return;
+      var parts = swoop.split(',');
+      if (parts.length !== 2) return;
+      setSwoopPair(parts[0].toUpperCase(), parts[1].toUpperCase());
+      var tab = document.querySelector('.cex-tab[data-tab="swoop"]');
+      if (tab) tab.click();
+    } catch (e) {}
+  }
+
   function renderWallet(w) {
+    walletSnapshot = w;
+    updateSwoopBalances();
     var el = q('cex-wallet-balances');
     if (!el || !w || !w.success) return;
     var assets = w.assets || {};
@@ -333,6 +469,7 @@
       getJson('/api/exchange/trades?limit=10'),
       getJson('/api/exchange/binance/stable-wallets'),
       getJson('/api/exchange/mn2-pool/status'),
+      getJson('/api/exchange/swoop/assets'),
     ]).then(function (res) {
       catalog = res[0];
       if (catalog && catalog.success) {
@@ -355,6 +492,7 @@
       renderTrades(res[3]);
       renderBinanceStables(res[4]);
       renderMn2Pool(res[5]);
+      renderSwoopMeta(res[6]);
     }).catch(function () { msg('Could not load exchange data.'); });
   }
 
@@ -610,6 +748,10 @@
   function applyTradeParams() {
     try {
       var params = new URLSearchParams(window.location.search);
+      if (params.get('swoop')) {
+        applySwoopParams();
+        return;
+      }
       var asset = (params.get('asset') || '').toUpperCase();
       var quote = (params.get('quote') || '').toUpperCase();
       var side = (params.get('side') || '').toLowerCase();
@@ -617,11 +759,41 @@
       if (quote && q('cex-swap-quote')) q('cex-swap-quote').value = quote;
       if (quote && q('cex-limit-quote')) q('cex-limit-quote').value = quote;
       if (side && q('cex-swap-side')) q('cex-swap-side').value = side === 'sell' ? 'sell' : 'buy';
+      if (asset || quote) {
+        var swapTab = document.querySelector('.cex-tab[data-tab="swap"]');
+        if (swapTab) swapTab.click();
+      }
     } catch (e) {}
+  }
+
+  function initSwoop() {
+    if (!q('cex-swoop-from')) return;
+    q('cex-swoop-from').addEventListener('change', function () {
+      updateSwoopBalances();
+      scheduleSwoopQuote();
+    });
+    q('cex-swoop-to').addEventListener('change', function () {
+      scheduleSwoopQuote();
+    });
+    q('cex-swoop-amount').addEventListener('input', function () {
+      lastSwoopQuote = null;
+      scheduleSwoopQuote();
+    });
+    q('cex-swoop-flip').addEventListener('click', flipSwoop);
+    q('cex-swoop-max').addEventListener('click', doSwoopMax);
+    q('cex-swoop-btn').addEventListener('click', doSwoop);
+    document.querySelectorAll('.cex-swoop-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        setSwoopPair(chip.getAttribute('data-from'), chip.getAttribute('data-to'));
+      });
+    });
+    setSwoopPair('USDT', 'MN2');
+    applySwoopParams();
   }
 
   function init() {
     initTabs();
+    initSwoop();
     applyTradeParams();
     if (q('cex-swap-btn')) q('cex-swap-btn').addEventListener('click', doSwap);
     q('cex-swap-amount').addEventListener('change', function () { lastQuote = null; });

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
-    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260916a">
+    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260916b">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -72,14 +72,55 @@
 
             <main class="cex-panel cex-trade" id="cex-trading-desk">
                 <div class="cex-tabs">
-                    <button type="button" class="cex-tab active" data-tab="swap">Instant swap</button>
+                    <button type="button" class="cex-tab active" data-tab="swoop">MN2 Swoop</button>
+                    <button type="button" class="cex-tab" data-tab="swap">Instant swap</button>
                     <button type="button" class="cex-tab" data-tab="onramp">PayPal buy</button>
                     <button type="button" class="cex-tab" data-tab="limit">Limit order</button>
                     <button type="button" class="cex-tab" data-tab="staking">Staking</button>
                     <button type="button" class="cex-tab" data-tab="tax">Tax report</button>
                 </div>
 
-                <div id="cex-tab-swap" class="cex-tab-panel active">
+                <div id="cex-tab-swoop" class="cex-tab-panel active">
+                    <div class="cex-swoop-head">
+                        <h2 class="cex-swoop-title"><i class="fas fa-bolt"></i> MN2 Swoop</h2>
+                        <p class="cex-muted" id="cex-swoop-hint">Enchant MN2 coins — swoop between MN2, USDT and USDC in one click.</p>
+                    </div>
+                    <div class="cex-swoop-chips" id="cex-swoop-chips">
+                        <button type="button" class="cex-swoop-chip" data-from="USDT" data-to="MN2">USDT → MN2</button>
+                        <button type="button" class="cex-swoop-chip" data-from="USDC" data-to="MN2">USDC → MN2</button>
+                        <button type="button" class="cex-swoop-chip" data-from="MN2" data-to="USDT">MN2 → USDT</button>
+                        <button type="button" class="cex-swoop-chip" data-from="MN2" data-to="USDC">MN2 → USDC</button>
+                        <button type="button" class="cex-swoop-chip" data-from="USDT" data-to="USDC">USDT → USDC</button>
+                        <button type="button" class="cex-swoop-chip" data-from="USDC" data-to="USDT">USDC → USDT</button>
+                    </div>
+                    <div class="cex-swoop-card">
+                        <label class="cex-swoop-label">You pay
+                            <div class="cex-swoop-row">
+                                <select id="cex-swoop-from" class="cex-input cex-swoop-asset">
+                                    <option value="MN2">MN2</option>
+                                    <option value="USDT">USDT</option>
+                                    <option value="USDC">USDC</option>
+                                </select>
+                                <input type="number" id="cex-swoop-amount" class="cex-input" min="0" step="any" placeholder="0.0">
+                                <button type="button" id="cex-swoop-max" class="cex-btn cex-btn--ghost">Max</button>
+                            </div>
+                            <span class="cex-swoop-balance" id="cex-swoop-from-bal">Balance: —</span>
+                        </label>
+                        <button type="button" id="cex-swoop-flip" class="cex-swoop-flip" title="Flip direction" aria-label="Flip direction"><i class="fas fa-exchange-alt"></i></button>
+                        <label class="cex-swoop-label">You receive
+                            <select id="cex-swoop-to" class="cex-input cex-swoop-asset">
+                                <option value="USDT">USDT</option>
+                                <option value="USDC">USDC</option>
+                                <option value="MN2">MN2</option>
+                            </select>
+                            <span class="cex-swoop-balance" id="cex-swoop-to-est">Estimate: —</span>
+                        </label>
+                    </div>
+                    <div id="cex-swoop-preview" class="cex-quote-preview cex-swoop-preview">Enter an amount to swoop.</div>
+                    <button type="button" id="cex-swoop-btn" class="cex-btn cex-btn--primary cex-swoop-btn">Swoop now</button>
+                </div>
+
+                <div id="cex-tab-swap" class="cex-tab-panel">
                     <div class="cex-selected" id="cex-selected-asset">Select an asset</div>
                     <div class="cex-form-row">
                         <label>Side
@@ -171,9 +212,10 @@
                 <p class="cex-muted">Customer MN2 ↔ USDT/USDC swaps draw from the platform pool. A 2% reserve is set aside on each pool swap for later ops use. Pool agent runs every 3 minutes via cron.</p>
                 <div id="cex-mn2-pool" class="cex-wallet-list">Loading pool…</div>
                 <div class="cex-pool-actions">
-                    <a class="cex-mini-link" href="/exchange?asset=USDT&quote=MN2&side=sell">Swap USDT → MN2</a>
-                    <a class="cex-mini-link" href="/exchange?asset=USDC&quote=MN2&side=sell">Swap USDC → MN2</a>
-                    <a class="cex-mini-link" href="/exchange?asset=MN2&quote=USDT&side=sell">Swap MN2 → USDT</a>
+                    <a class="cex-mini-link" href="/exchange?swoop=USDT,MN2">Swoop USDT → MN2</a>
+                    <a class="cex-mini-link" href="/exchange?swoop=USDC,MN2">Swoop USDC → MN2</a>
+                    <a class="cex-mini-link" href="/exchange?swoop=MN2,USDT">Swoop MN2 → USDT</a>
+                    <a class="cex-mini-link" href="/exchange?swoop=MN2,USDC">Swoop MN2 → USDC</a>
                 </div>
                 <h3>Binance USDT / USDC</h3>
                 <p class="cex-muted">Platform stable wallets connected to Binance spot. Trade them against MN2 coins on this desk.</p>
@@ -535,7 +577,7 @@
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
     <script src="/static/js/exchange-hub.js?v=20260704a"></script>
-    <script src="/static/js/crypto-exchange.js?v=20260916a"></script>
+    <script src="/static/js/crypto-exchange.js?v=20260916b"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
 </body>
 </html>

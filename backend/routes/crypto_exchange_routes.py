@@ -1242,6 +1242,48 @@ def exchange_payout_configure_binance():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/swoop/assets", methods=["GET"])
+def exchange_swoop_assets():
+    from backend.services.exchange_swoop_service import swoop_assets
+    from backend.services.exchange_mn2_pool_service import mn2_pool_status, pool_swap_reserve_bps
+
+    pool = mn2_pool_status()
+    return jsonify({
+        "success": True,
+        "assets": swoop_assets(),
+        "pool_swap_reserve_bps": pool_swap_reserve_bps(),
+        "pool": pool if pool.get("success") else None,
+        "swap_back_hint": (pool.get("swap_back_hint") if pool.get("success") else None),
+    })
+
+
+@crypto_exchange_bp.route("/api/exchange/swoop/quote", methods=["POST"])
+def exchange_swoop_quote():
+    from backend.services.exchange_swoop_service import quote_swoop
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(quote_swoop(
+        _uid(from_body=True),
+        data.get("from_asset") or data.get("from"),
+        data.get("to_asset") or data.get("to"),
+        float(data.get("amount") or 0),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/swoop", methods=["POST"])
+def exchange_swoop_execute():
+    from backend.services.exchange_swoop_service import execute_swoop
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(execute_swoop(
+        _uid(from_body=True),
+        data.get("from_asset") or data.get("from"),
+        data.get("to_asset") or data.get("to"),
+        float(data.get("amount") or 0),
+        data.get("quote_id") or "",
+    ))
+
+
 @crypto_exchange_bp.route("/api/exchange/mn2-pool/status", methods=["GET"])
 def exchange_mn2_pool_status():
     from backend.services.exchange_mn2_pool_service import mn2_pool_status

@@ -78,6 +78,51 @@
 .cex-tab.active { border-color: #00d4ff; color: #00d4ff; background: rgba(0,212,255,0.1); }
 .cex-tab-panel { display: none; }
 .cex-tab-panel.active { display: block; }
+.cex-swoop-head { margin-bottom: 12px; }
+.cex-swoop-title { margin: 0 0 6px; font-size: 1.15rem; color: #c8f7ff; }
+.cex-swoop-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.cex-swoop-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 249, 255, 0.35);
+  background: rgba(0, 212, 255, 0.08);
+  color: #7df9ff;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.cex-swoop-chip:hover, .cex-swoop-chip.active {
+  border-color: #00d4ff;
+  background: rgba(0, 212, 255, 0.2);
+}
+.cex-swoop-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  background: rgba(0, 0, 0, 0.25);
+  margin-bottom: 12px;
+}
+.cex-swoop-label { display: block; font-size: 0.78rem; opacity: 0.9; }
+.cex-swoop-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 8px; margin-top: 4px; }
+.cex-swoop-asset { margin-top: 4px; }
+.cex-swoop-balance { display: block; margin-top: 4px; font-size: 0.72rem; opacity: 0.7; }
+.cex-swoop-flip {
+  align-self: center;
+  justify-self: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  background: rgba(0, 212, 255, 0.12);
+  color: #00d4ff;
+  cursor: pointer;
+}
+.cex-swoop-preview { border: 1px solid rgba(125, 249, 255, 0.2); }
+.cex-swoop-btn { width: 100%; }
+.cex-swoop-pool { color: #7df9ff; font-size: 0.78rem; margin-top: 6px; }
+.cex-swoop-reserve { color: #ffd700; font-size: 0.78rem; }
 .cex-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
 .cex-form-row label { font-size: 0.78rem; opacity: 0.85; }
 .cex-selected { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: #fff; }
