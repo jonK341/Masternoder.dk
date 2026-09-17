@@ -9,5 +9,10 @@ if [ -f scripts/mn2_fix_config_permissions.sh ]; then
 fi
 # shellcheck source=/dev/null
 source "${SCRIPT_DIR}/mn2_read_ops_secret.sh"
-curl -s -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" \
-  "http://127.0.0.1:5000/api/mn2/masternode/provision-pending?limit=50"
+RESP=$(curl -s -w "\n%{http_code}" -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" \
+  "http://127.0.0.1:5000/api/mn2/masternode/provision-pending?limit=50&skip_ping=0")
+CODE=$(echo "$RESP" | tail -1)
+if [ "$CODE" = "404" ] || [ "$CODE" = "000" ]; then
+  curl -s -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" \
+    "http://127.0.0.1:5000/api/mn2/staking/ops/provision-pending?limit=50&skip_ping=0"
+fi

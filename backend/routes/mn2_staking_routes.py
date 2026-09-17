@@ -22,6 +22,7 @@ def _ops_authorized() -> bool:
     token = (
         request.headers.get("X-Ops-Token")
         or request.headers.get("X-Scanner-Token")
+        or request.headers.get("X-Ops-Secret")
         or request.args.get("token")
         or ""
     ).strip()
@@ -567,5 +568,54 @@ def staking_ops_reconcile():
         result = recon.reconcile()
         # 200 when the books balance, 409 (Conflict) on hard drift so monitors can alert.
         return jsonify(result), 200 if result.get("ok") else 409
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/staking/ops/masternode-recover", methods=["POST", "GET"])
+def staking_ops_masternode_recover():
+    """Ops: restart daemon RPC if needed, rebind collateral, provision pending hosts."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services import mn2_masternode_service as mn_service
+        raw_limit = request.args.get("limit", 50)
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = 50
+        restart_daemon = request.args.get("restart_daemon", "1") not in ("0", "false", "no")
+        result = mn_service.recover_fleet(limit=limit, restart_daemon=restart_daemon)
+        return jsonify(result), 200 if result.get("success") else 500
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/staking/ops/provision-pending", methods=["POST", "GET"])
+def staking_ops_provision_pending():
+    """Ops: retry auto-provision for queued/provisioning hosts + maintain ping loop."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services import mn2_masternode_service as mn_service
+        raw_limit = request.args.get("limit", 20)
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = 20
+        skip_ping = request.args.get("skip_ping") in ("1", "true", "yes")
+        return jsonify(mn_service.process_pending_hosts(limit=limit, skip_ping=skip_ping)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_staking_bp.route("/api/mn2/staking/ops/maintain-ping", methods=["POST", "GET"])
+def staking_ops_maintain_ping():
+    """Ops: re-issue startmasternode when fleet ping stalls (multi-ping aware)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    try:
+        from backend.services import mn2_masternode_service as mn_service
+        return jsonify(mn_service.maintain_ping_loop()), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

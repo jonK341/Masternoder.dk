@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 
@@ -380,3 +381,106 @@ def test_provision_uses_createmasternodekey(monkeypatch):
     assert out.get("success") is True
     assert start_calls and start_calls[0][0] == "platformmn9"
     assert start_calls[0][1] == "93HaYBVUCYjEMeeH1Y4sBGLALQZE1Yc1K64xiqgX37tGBDQL8Xg"
+
+
+def test_provision_keeps_collateral_when_rpc_busy(monkeypatch, tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "mn2_masternode_config.json").write_text(
+        '{"max_hosted_nodes": 100, "auto_provision": true, "collateral_mn2": 5000}',
+        encoding="utf-8",
+    )
+    (data_dir / "mn2_masternode_hosts.json").write_text(
+        json.dumps({
+            "hosts": [{
+                "id": "user-shopmnpu-2f558c",
+                "label": "Hosted",
+                "status": "provisioning",
+                "collateral_txid": "deadbeef" * 8,
+                "collateral_vout": 0,
+            }],
+        }),
+        encoding="utf-8",
+    )
+
+    def _data_path(name: str) -> str:
+        return str(data_dir / name)
+
+    monkeypatch.setattr(mn, "_data_path", _data_path)
+    monkeypatch.setattr(mn, "_CONFIG_FILE", "mn2_masternode_config.json")
+    monkeypatch.setattr(mn, "_HOSTS_FILE", "mn2_masternode_hosts.json")
+    monkeypatch.setattr(mn, "network_masternodes", lambda **kw: {"list": []})
+    monkeypatch.setattr(
+        mn,
+        "list_collateral_outputs",
+        lambda: {"success": False, "error": "HTTP 500: Work queue depth exceeded", "outputs": []},
+    )
+
+    out = mn.provision_host("user-shopmnpu-2f558c")
+    assert out.get("success") is True
+    assert out.get("status") == "provisioning"
+    assert "rpc" in (out.get("message") or "").lower() or out.get("rpc_error")
+    hosts = mn.list_hosts(include_internal=True)
+    row = next(h for h in hosts if h.get("id") == "user-shopmnpu-2f558c")
+    assert row.get("collateral_txid") == "deadbeef" * 8
+    assert row.get("collateral_vout") == 0
+
+
+def test_process_pending_skips_ping_when_rpc_unhealthy(monkeypatch):
+    monkeypatch.setattr(mn, "_rpc_is_healthy", lambda: False)
+    monkeypatch.setattr(mn, "_rpc_probe_detail", lambda: {"ok": False, "error": "busy"})
+    monkeypatch.setattr(mn, "list_hosts", lambda include_internal=False: [])
+    monkeypatch.setattr(mn, "maintain_ping_loop", lambda: (_ for _ in ()).throw(AssertionError("ping should not run")))
+    out = mn.process_pending_hosts(limit=5)
+    assert out["ping_loop"]["skipped"] is True
+    assert "RPC unavailable" in out["ping_loop"]["reason"]
+
+
+def test_sort_pending_hosts_paypal_before_mn2_before_platform(monkeypatch):
+    hosts = [
+        {"id": "platform-mn-2", "status": "provisioning", "created_at": "2026-01-01T00:00:00Z"},
+        {"id": "user-mn2-aaa", "status": "provisioning", "created_at": "2026-01-02T00:00:00Z"},
+        {"id": "user-pp-bbb", "status": "provisioning", "created_at": "2026-01-03T00:00:00Z"},
+        {"id": "user-cred-ccc", "status": "queued", "created_at": "2026-01-04T00:00:00Z"},
+    ]
+    monkeypatch.setattr(
+        mn,
+        "_host_payment_method_map",
+        lambda: {
+            "user-pp-bbb": "paypal",
+            "user-mn2-aaa": "mn2",
+            "user-cred-ccc": "credits",
+        },
+    )
+    ordered = mn._sort_pending_hosts(hosts)
+    assert [h["id"] for h in ordered] == [
+        "user-pp-bbb",
+        "user-mn2-aaa",
+        "user-cred-ccc",
+        "platform-mn-2",
+    ]
+
+
+def test_process_pending_provisions_paypal_host_first(monkeypatch):
+    hosts = [
+        {"id": "platform-mn-2", "status": "provisioning"},
+        {"id": "user-mn2-aaa", "status": "provisioning"},
+        {"id": "user-pp-bbb", "status": "provisioning"},
+    ]
+    seen: list[str] = []
+
+    def _provision(host_id: str, order_id=None):
+        seen.append(host_id)
+        return {"success": True, "status": "provisioning"}
+
+    monkeypatch.setattr(mn, "_rpc_is_healthy", lambda: True)
+    monkeypatch.setattr(mn, "maintain_ping_loop", lambda: {"success": True})
+    monkeypatch.setattr(mn, "list_hosts", lambda include_internal=False: hosts)
+    monkeypatch.setattr(
+        mn,
+        "_host_payment_method_map",
+        lambda: {"user-pp-bbb": "paypal", "user-mn2-aaa": "mn2"},
+    )
+    monkeypatch.setattr(mn, "provision_host", _provision)
+    mn.process_pending_hosts(limit=2)
+    assert seen == ["user-pp-bbb", "user-mn2-aaa"]

@@ -100,8 +100,115 @@ def _host_reserves_slot(host: Dict[str, Any]) -> bool:
     return False
 
 
+def _is_transient_rpc_error(err: Any) -> bool:
+    try:
+        from backend.services.mn2_rpc_client import is_transient_rpc_error
+        return is_transient_rpc_error(err)
+    except Exception:
+        return False
+
+
+def _rpc_probe_detail() -> Dict[str, Any]:
+    """Lightweight RPC health for ops recovery."""
+    try:
+        from backend.services import mn2_rpc_client as rpc
+        r = rpc.getblockcount(timeout_sec=8)
+        if r.get("error"):
+            return {"ok": False, "error": str(r.get("error"))}
+        height = r.get("result")
+        if height is None:
+            return {"ok": False, "error": "no block height"}
+        return {"ok": True, "block_height": int(height)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def _rpc_is_healthy() -> bool:
+    return bool(_rpc_probe_detail().get("ok"))
+
+
+def _sudo_restart_masternode_daemon() -> Optional[str]:
+    """Restart daemon via passwordless sudo (when configured for www-data)."""
+    unit = str(_ops_cfg().get("daemon_unit") or "masternoder2d").strip() or "masternoder2d"
+    try:
+        subprocess.run(
+            ["sudo", "-n", "systemctl", "restart", unit],
+            check=True,
+            timeout=120,
+            capture_output=True,
+            text=True,
+        )
+        return None
+    except subprocess.CalledProcessError as exc:
+        blob = f"{exc.stderr or ''}{exc.stdout or ''}{exc}".strip()
+        return f"sudo restart failed: {blob or exc}"
+    except (OSError, subprocess.SubprocessError) as exc:
+        return str(exc)
+
+
 def _count_slots_used(hosts: List[Dict[str, Any]]) -> int:
     return sum(1 for h in hosts if isinstance(h, dict) and _host_reserves_slot(h))
+
+
+def _host_payment_method_map() -> Dict[str, str]:
+    """Map host_id -> payment_method from paid hosting orders."""
+    try:
+        from backend.services import mn2_masternode_hosting_service as hosting
+        orders = hosting._load_orders()
+    except Exception:
+        orders = {}
+    out: Dict[str, str] = {}
+    if not isinstance(orders, dict):
+        return out
+    for order in orders.values():
+        if not isinstance(order, dict):
+            continue
+        if (order.get("status") or "").lower() not in ("paid", "provisioned"):
+            continue
+        pm = (order.get("payment_method") or "").strip().lower()
+        if not pm and (order.get("paypal_capture_id") or order.get("paypal_order_id")):
+            pm = "paypal"
+        for hid in order.get("host_ids") or []:
+            if hid:
+                out[str(hid)] = pm or "unknown"
+    return out
+
+
+def _payment_priority_for_host(host: Dict[str, Any], payment_by_host: Dict[str, str]) -> int:
+    """
+    Lower = provision first. PayPal-paid customer slots before MN2-paid, then credits,
+    then unknown user hosts; internal platform fleet rows last.
+    """
+    hid = str(host.get("id") or "")
+    pm = (payment_by_host.get(hid) or "").lower()
+    notes = (host.get("notes") or "").lower()
+    if not pm:
+        if "paypal" in notes:
+            pm = "paypal"
+        elif "mn2" in notes:
+            pm = "mn2"
+    if pm == "paypal":
+        return 0
+    if pm in ("mn2", "mn2_onchain"):
+        return 1
+    if pm == "credits":
+        return 2
+    if hid.startswith("platform-mn-") or hid.startswith("platformmn"):
+        return 4
+    return 3
+
+
+def _sort_pending_hosts(hosts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Order pending hosts: PayPal first, MN2 second, then credits / other / platform fleet."""
+    payment_by_host = _host_payment_method_map()
+    return sorted(
+        hosts,
+        key=lambda h: (
+            _payment_priority_for_host(h, payment_by_host),
+            str(h.get("created_at") or h.get("updated_at") or ""),
+            str(h.get("id") or ""),
+        ),
+    )
 
 
 def purge_stale_provisioning_hosts(
@@ -1364,16 +1471,36 @@ def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, An
         if stored:
             utxo = stored
         elif host.get("collateral_txid"):
-            register_host({
-                "id": host_id,
-                "label": host.get("label") or host_id,
-                "status": "provisioning",
-                "collateral_txid": None,
-                "collateral_vout": None,
-                "collateral_address": None,
-                "owner_user_id": host.get("owner_user_id"),
-                "notes": "Stale collateral txid cleared — will rebind to wallet UTXO",
-            })
+            collateral_info = list_collateral_outputs()
+            rpc_err = collateral_info.get("error") if not collateral_info.get("success") else None
+            if rpc_err and _is_transient_rpc_error(rpc_err):
+                register_host({
+                    "id": host_id,
+                    "label": host.get("label") or host_id,
+                    "status": "provisioning",
+                    "collateral_txid": host.get("collateral_txid"),
+                    "collateral_vout": host.get("collateral_vout"),
+                    "collateral_address": host.get("collateral_address"),
+                    "owner_user_id": host.get("owner_user_id"),
+                    "notes": f"Collateral lookup deferred — RPC busy: {rpc_err}",
+                })
+                return {
+                    "success": True,
+                    "status": "provisioning",
+                    "message": "Collateral reserved — retry when daemon RPC is available.",
+                    "rpc_error": rpc_err,
+                }
+            if collateral_info.get("success"):
+                register_host({
+                    "id": host_id,
+                    "label": host.get("label") or host_id,
+                    "status": "provisioning",
+                    "collateral_txid": None,
+                    "collateral_vout": None,
+                    "collateral_address": None,
+                    "owner_user_id": host.get("owner_user_id"),
+                    "notes": "Stale collateral txid cleared — will rebind to wallet UTXO",
+                })
     if not utxo:
         utxo = _pick_collateral_utxo(used, min_conf=min_conf)
 
@@ -1490,12 +1617,61 @@ def provision_host(host_id: str, order_id: Optional[str] = None) -> Dict[str, An
     }
 
 
-def process_pending_hosts(limit: int = 20) -> Dict[str, Any]:
+def rebind_hosts_collateral_from_conf() -> Dict[str, Any]:
+    """Ops: restore registry collateral txid/vout from masternode.conf aliases."""
+    rebound: List[str] = []
+    with _LOCK:
+        hosts = list(_load_hosts_doc().get("hosts") or [])
+    for h in hosts:
+        if not isinstance(h, dict):
+            continue
+        hid = str(h.get("id") or "").strip()
+        if not hid:
+            continue
+        alias = _alias_from_host_id(hid)
+        coll = _collateral_for_alias(alias)
+        if not coll:
+            continue
+        txid, vout = coll
+        if (
+            str(h.get("collateral_txid") or "") == txid
+            and int(h.get("collateral_vout") if h.get("collateral_vout") is not None else -1) == int(vout)
+        ):
+            continue
+        entry = _entry_for_alias(alias, valid_only=True) or {}
+        register_host({
+            "id": hid,
+            "label": h.get("label") or hid,
+            "status": h.get("status") or "provisioning",
+            "collateral_txid": txid,
+            "collateral_vout": vout,
+            "broadcast_address": entry.get("ip_port") or h.get("broadcast_address"),
+            "owner_user_id": h.get("owner_user_id"),
+            "notes": "Rebound collateral from masternode.conf",
+        })
+        rebound.append(hid)
+    return {"success": True, "rebound": rebound, "rebound_count": len(rebound)}
+
+
+def process_pending_hosts(limit: int = 20, *, skip_ping: bool = False) -> Dict[str, Any]:
     """Cron/ops: retry auto-provision for paid hosts still provisioning + maintain ping loop."""
-    ping = maintain_ping_loop()
+    ping: Dict[str, Any]
+    if skip_ping:
+        ping = {"success": True, "skipped": True, "reason": "skip_ping requested"}
+    elif not _rpc_is_healthy():
+        probe = _rpc_probe_detail()
+        ping = {
+            "success": False,
+            "skipped": True,
+            "reason": "RPC unavailable — ping deferred",
+            "rpc_error": probe.get("error"),
+        }
+    else:
+        ping = maintain_ping_loop()
     pending_status = {"queued", "provisioning", "planned"}
     hosts = list_hosts(include_internal=True)
-    todo = [h for h in hosts if (h.get("status") or "").lower() in pending_status][: max(1, int(limit))]
+    pending = [h for h in hosts if (h.get("status") or "").lower() in pending_status]
+    todo = _sort_pending_hosts(pending)[: max(1, int(limit))]
     results = []
     for h in todo:
         hid = h.get("id")
@@ -1503,6 +1679,44 @@ def process_pending_hosts(limit: int = 20) -> Dict[str, Any]:
             continue
         results.append({"host_id": hid, **provision_host(str(hid))})
     return {"success": True, "processed": len(results), "results": results, "ping_loop": ping}
+
+
+def recover_fleet(*, limit: int = 50, restart_daemon: bool = True) -> Dict[str, Any]:
+    """
+    Ops recovery: restart stuck daemon RPC when needed, rebind collateral from conf,
+    then provision pending hosts without hammering the ping loop.
+    """
+    out: Dict[str, Any] = {"success": False, "steps": []}
+    out["rpc_before"] = _rpc_probe_detail()
+
+    if not out["rpc_before"].get("ok") and restart_daemon:
+        restart_err = _restart_masternode_daemon()
+        if restart_err:
+            restart_err = _sudo_restart_masternode_daemon()
+        out["steps"].append({
+            "restart_daemon": None if not restart_err else restart_err,
+            "restart_attempted": True,
+        })
+        if restart_err:
+            out["error"] = restart_err
+            out["rebind"] = rebind_hosts_collateral_from_conf()
+            return out
+        wait_err = _wait_for_rpc_ready(timeout_sec=120)
+        if wait_err:
+            out["error"] = wait_err
+            out["rebind"] = rebind_hosts_collateral_from_conf()
+            return out
+
+    out["rebind"] = rebind_hosts_collateral_from_conf()
+    out["provision"] = process_pending_hosts(limit=limit, skip_ping=True)
+    out["rpc_after"] = _rpc_probe_detail()
+    pending_left = sum(
+        1 for row in (out["provision"].get("results") or [])
+        if (row.get("status") or "").lower() in ("queued", "provisioning", "planned")
+    )
+    out["pending_remaining"] = pending_left
+    out["success"] = bool(out["rpc_after"].get("ok"))
+    return out
 
 
 def _maybe_capacity_discord_alert(slots_available: int, max_nodes: int, hosted: int) -> None:
