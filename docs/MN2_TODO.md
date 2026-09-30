@@ -27,7 +27,7 @@ Honest status only — **in repo** ≠ **verified on prod** unless noted elsewhe
 
 | Pri | Issue | GitHub | Status |
 | --- | ----- | ------ | ------ |
-| **P1** | Staking probe mismatch (`staking_active` vs daemon) | [#97](https://github.com/jonK341/Masternoder.dk/issues/97) | open |
+| **P1** | Staking probe mismatch (`staking_active` vs daemon) | [#97](https://github.com/jonK341/Masternoder.dk/issues/97) | **closed** — `staking_health()` prefers `getstakingstatus`; prod `staking_active` true |
 | **P2** | `mn2-fleet-autostart` failed since 2026-09-27 | [#98](https://github.com/jonK341/Masternoder.dk/issues/98) | **closed** — packed-version gate fixed; local ping path on prod |
 | **P2** | Hosted MNs registered but `platform_enabled=0` | [#99](https://github.com/jonK341/Masternoder.dk/issues/99) | **partial** — probe/collateral fixes in branch; full fleet ENABLED needs [#101](https://github.com/jonK341/Masternoder.dk/issues/101) |
 | **P2** | PoR paper coverage gap / gates skipped | [#100](https://github.com/jonK341/Masternoder.dk/issues/100) | **code ready** — external coverage + float gate; deploy app to prod |
