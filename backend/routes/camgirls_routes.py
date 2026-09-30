@@ -354,6 +354,32 @@ def camgirls_agent_action():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/chat", methods=["POST"])
+def performer_chat(performer_id: str):
+    """Per-performer chat path from main (alongside /api/camgirls/chat)."""
+    from backend.services.camgirls_service import chat_with_performer
+    data = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
+    uid = _resolve_user_id(from_body=True)
+    result = chat_with_performer(uid, performer_id, message)
+    if result.get("code") == "age_verification_required":
+        return jsonify(result), 403
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/goal", methods=["GET"])
+def performer_goal(performer_id: str):
+    from backend.services.camgirls_social_service import get_goal_status
+    return jsonify(get_goal_status(performer_id)), 200
+
+
+@camgirls_bp.route("/api/camgirls/status", methods=["GET"])
+def platform_status_route():
+    from backend.services.camgirls_status_service import platform_status
+    return jsonify(platform_status()), 200
+
+
 @camgirls_bp.route("/api/camgirls/livekit/status", methods=["GET"])
 def camgirls_livekit_status():
     """D2 — LiveKit voice availability (configured vs stub)."""

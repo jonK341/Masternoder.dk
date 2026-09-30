@@ -1,0 +1,12 @@
+﻿## Summary
+- Tabbed casino hub (HTML/CSS/JS) with slot polish, mobile/TWA shells, and PWA manifest assets
+- Backend expansion: `casino_service`, routes, ledger, slot/card engines, progression, shop, trophies, competition, and Kelly-style casino agents (+ optional LLM planner)
+- Social: opt-in casino social service, Discord fanout cron/API, platform news entries
+- Mobile scaffolds: Capacitor `mobile/casino-app` (Android/iOS) and `mobile/casino-twa` listing docs
+- Docs: `CASINO_EXPANSION_PLAN.md` shipped-this-session section; pytest lite-init for agent skillset imports
+
+## Test plan
+- [x] `python -m pytest tests/unit/test_casino_crash.py tests/unit/test_casino_routes.py tests/unit/test_casino_agents.py tests/unit/test_casino_discord_fanout.py tests/unit/test_casino_competition_expansion.py tests/unit/test_casino_agent_llm.py -q --basetemp=.pytest-tmp/casino-final3` (77 passed)
+- [ ] Smoke `/casino` tab navigation and a coins bet on dice/slots after deploy
+- [ ] Verify `AGENT_CASINO_SECRET` and Discord webhook env for fanout cron
+- [ ] Mobile: build Capacitor Android/iOS only when store signing is ready

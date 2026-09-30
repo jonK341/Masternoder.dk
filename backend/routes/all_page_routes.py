@@ -38,7 +38,7 @@ def serve_static(filename):
 # All pages are registered automatically from this list (create_page_route below).
 # Add any new page subdir with index.html at project root here to expose it.
 PAGES = [
-    'gallery', 'battle', 'shop', 'chat', 'debugger',
+    'gallery', 'battle', 'shop', 'debugger',
     'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
     'editor', 'monetization', 'milkyway', 'rights-law', 'victory-tech-tree',
     'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
@@ -46,10 +46,18 @@ PAGES = [
     'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
     'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
-    'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams', 'explorer', 'proof-of-reserves',
-    'market', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
-    'podcast',
+    'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams',
+    'social-monitor', 'explorer', 'proof-of-reserves',
+    'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
+    'profit',
+    'wallets', 'podcast', 'create-app', 'business-control',
 ]
+
+# Legacy page aliases that no longer have standalone index.html files.
+_PAGE_REDIRECTS = {
+    'achievements': '/trophies',
+    'chat': '/lab#discussion',
+}
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes
 _CONSOLIDATED_PROFILE_TABS = {
@@ -76,6 +84,26 @@ def _register_profile_redirects():
 
 
 _register_profile_redirects()
+
+
+def _register_page_redirects():
+    """Register retired page URLs as deliberate redirects instead of fake 200 fallbacks."""
+
+    def _make_handler(target: str, name: str):
+        def _redirect():
+            return redirect(target, code=301)
+
+        _redirect.__name__ = name
+        return _redirect
+
+    for slug, target in _PAGE_REDIRECTS.items():
+        safe = slug.replace('-', '_')
+        handler = _make_handler(target, f'redirect_{safe}_page')
+        all_page_bp.add_url_rule(f'/{slug}', view_func=handler, strict_slashes=False)
+        all_page_bp.add_url_rule(f'/{slug}/index.html', view_func=handler)
+
+
+_register_page_redirects()
 
 
 @all_page_bp.route('/', methods=['GET'])
@@ -233,6 +261,63 @@ def casino_page():
     except Exception as exc:
         return f'Error loading casino page: {exc}', 500
     return 'Casino page not found', 404
+
+
+@all_page_bp.route('/casino/manifest.webmanifest', methods=['GET'])
+def casino_manifest():
+    """PWA manifest for casino (Play TWA + installable web app)."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'casino')
+        if os.path.isfile(os.path.join(page_dir, 'manifest.webmanifest')):
+            resp = send_from_directory(
+                page_dir,
+                'manifest.webmanifest',
+                mimetype='application/manifest+json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600, stale-while-revalidate=300'
+            return resp
+    except Exception:
+        pass
+    return 'Manifest not found', 404
+
+
+@all_page_bp.route('/.well-known/assetlinks.json', methods=['GET'])
+def well_known_assetlinks():
+    """Android Digital Asset Links for TWA / App Links."""
+    try:
+        static_dir = _static_dir()
+        path = os.path.join(static_dir, '.well-known', 'assetlinks.json')
+        if os.path.isfile(path):
+            resp = send_from_directory(
+                os.path.join(static_dir, '.well-known'),
+                'assetlinks.json',
+                mimetype='application/json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            return resp
+    except Exception:
+        pass
+    return 'Not found', 404
+
+
+@all_page_bp.route('/.well-known/apple-app-site-association', methods=['GET'])
+def well_known_aasa():
+    """Apple Universal Links association file (no file extension)."""
+    try:
+        static_dir = _static_dir()
+        path = os.path.join(static_dir, '.well-known', 'apple-app-site-association')
+        if os.path.isfile(path):
+            resp = send_from_directory(
+                os.path.join(static_dir, '.well-known'),
+                'apple-app-site-association',
+                mimetype='application/json; charset=utf-8',
+            )
+            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            return resp
+    except Exception:
+        pass
+    return 'Not found', 404
 
 
 @all_page_bp.route('/debugger/flask', methods=['GET'], endpoint='debugger_flask_template')
@@ -459,6 +544,8 @@ _SITEMAP_PATHS = (
     '/',
     '/generator/',
     '/camgirls/',
+    '/exchange/',
+    '/casino/',
     '/hosting/',
     '/shop/',
     '/game/',
@@ -490,7 +577,7 @@ def sitemap_xml():
     lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for path in _SITEMAP_PATHS:
         loc = base + (path if path != '/' else '/')
-        priority = '1.0' if path == '/' else ('0.9' if path in ('/hosting/', '/generator/', '/camgirls/') else '0.7')
+        priority = '1.0' if path == '/' else ('0.9' if path in ('/hosting/', '/generator/', '/camgirls/', '/exchange/', '/casino/') else '0.7')
         lines.append('  <url>')
         lines.append(f'    <loc>{loc}</loc>')
         lines.append(f'    <changefreq>weekly</changefreq>')

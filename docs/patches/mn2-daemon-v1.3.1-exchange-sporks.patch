@@ -1,0 +1,100 @@
+diff --git a/src/spork.cpp b/src/spork.cpp
+index 38c28a9..4df986e 100755
+--- a/src/spork.cpp
++++ b/src/spork.cpp
+@@ -168,6 +168,10 @@ int64_t GetSporkValue(int nSporkID)
+         if (nSporkID == SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE) r = SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE_DEFAULT;
+         if (nSporkID == SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT) r = SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT_DEFAULT;
+         if (nSporkID == SPORK_111_ALLOW_DUPLICATE_MN_IPS) r = SPORK_111_ALLOW_DUPLICATE_MN_IPS_DEFAULT;
++        if (nSporkID == SPORK_112_EXCHANGE_LIVE_TRADING) r = SPORK_112_EXCHANGE_LIVE_TRADING_DEFAULT;
++        if (nSporkID == SPORK_113_CASINO_REAL_MONEY) r = SPORK_113_CASINO_REAL_MONEY_DEFAULT;
++        if (nSporkID == SPORK_114_PAYOUT_LIVE) r = SPORK_114_PAYOUT_LIVE_DEFAULT;
++        if (nSporkID == SPORK_115_MAINTENANCE_MODE) r = SPORK_115_MAINTENANCE_MODE_DEFAULT;
+ 
+         if (r == -1) LogPrintf("%s : Unknown Spork %d\n", __func__, nSporkID);
+     }
+@@ -652,6 +656,15 @@ bool CSporkManager::Sign(CSporkMessage& spork)
+ 
+ bool CSporkManager::UpdateSpork(int nSporkID, int64_t nValue)
+ {
++    if (IsSporkActive(SPORK_21_QUORUM_ALL_CONNECTED) && nSporkID != SPORK_21_QUORUM_ALL_CONNECTED) {
++        const size_t minPeers = 3;
++        if (vNodes.size() < minPeers) {
++            LogPrintf("CSporkManager::UpdateSpork - quorum not met (%d peers connected, need %d)\n",
++                      (int)vNodes.size(), (int)minPeers);
++            return false;
++        }
++    }
++
+     CSporkMessage msg;
+     msg.nSporkID = nSporkID;
+     msg.nValue = nValue;
+@@ -721,6 +734,10 @@ int CSporkManager::GetSporkIDByName(std::string strName)
+     if (strName == "SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE") return SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE;
+     if (strName == "SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT") return SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT;
+     if (strName == "SPORK_111_ALLOW_DUPLICATE_MN_IPS") return SPORK_111_ALLOW_DUPLICATE_MN_IPS;
++    if (strName == "SPORK_112_EXCHANGE_LIVE_TRADING") return SPORK_112_EXCHANGE_LIVE_TRADING;
++    if (strName == "SPORK_113_CASINO_REAL_MONEY") return SPORK_113_CASINO_REAL_MONEY;
++    if (strName == "SPORK_114_PAYOUT_LIVE") return SPORK_114_PAYOUT_LIVE;
++    if (strName == "SPORK_115_MAINTENANCE_MODE") return SPORK_115_MAINTENANCE_MODE;
+ 
+     return -1;
+ }
+@@ -756,6 +773,10 @@ std::string CSporkManager::GetSporkNameByID(int id)
+     if (id == SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE) return "SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE";
+     if (id == SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT) return "SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT";
+     if (id == SPORK_111_ALLOW_DUPLICATE_MN_IPS) return "SPORK_111_ALLOW_DUPLICATE_MN_IPS";
++    if (id == SPORK_112_EXCHANGE_LIVE_TRADING) return "SPORK_112_EXCHANGE_LIVE_TRADING";
++    if (id == SPORK_113_CASINO_REAL_MONEY) return "SPORK_113_CASINO_REAL_MONEY";
++    if (id == SPORK_114_PAYOUT_LIVE) return "SPORK_114_PAYOUT_LIVE";
++    if (id == SPORK_115_MAINTENANCE_MODE) return "SPORK_115_MAINTENANCE_MODE";
+ 
+     return "Unknown";
+ }
+diff --git a/src/spork.h b/src/spork.h
+index 9c0a939..47899df 100755
+--- a/src/spork.h
++++ b/src/spork.h
+@@ -26,7 +26,7 @@ using namespace boost;
+     Sporks 11,12, and 16 to be removed with 1st zerocoin release
+ */
+ #define SPORK_START 10001
+-#define SPORK_END 10111
++#define SPORK_END 10115
+ 
+ #define SPORK_2_SWIFTTX 10001
+ #define SPORK_3_SWIFTTX_BLOCK_FILTERING 10002
+@@ -57,6 +57,10 @@ using namespace boost;
+ #define SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE 10109
+ #define SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT 10110
+ #define SPORK_111_ALLOW_DUPLICATE_MN_IPS 10111
++#define SPORK_112_EXCHANGE_LIVE_TRADING 10112
++#define SPORK_113_CASINO_REAL_MONEY 10113
++#define SPORK_114_PAYOUT_LIVE 10114
++#define SPORK_115_MAINTENANCE_MODE 10115
+ 
+ #define SPORK_2_SWIFTTX_DEFAULT 978307200                             //2001-1-1
+ #define SPORK_3_SWIFTTX_BLOCK_FILTERING_DEFAULT 1424217600            //2015-2-18
+@@ -87,6 +91,10 @@ using namespace boost;
+ #define SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE_DEFAULT 1703122560   //2024-12-21 Effective now
+ #define SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT_DEFAULT 4070908800 //OFF
+ #define SPORK_111_ALLOW_DUPLICATE_MN_IPS_DEFAULT 1703122560                   //2024-12-21 Effective now
++#define SPORK_112_EXCHANGE_LIVE_TRADING_DEFAULT 4070908800                    //OFF until ops enables live exchange
++#define SPORK_113_CASINO_REAL_MONEY_DEFAULT 1703122560                        //2024-12-21 Effective now
++#define SPORK_114_PAYOUT_LIVE_DEFAULT 4070908800                              //OFF until ops enables payouts
++#define SPORK_115_MAINTENANCE_MODE_DEFAULT 4070908800                          //OFF
+ 
+ class CSporkMessage;
+ class CSporkManager;
+diff --git a/configure.ac b/configure.ac
+index 66a127b..a1b2c3d 100755
+--- a/configure.ac
++++ b/configure.ac
+@@ -3,7 +3,7 @@ AC_PREREQ([2.60])
+ define(_CLIENT_VERSION_MAJOR, 1)
+ define(_CLIENT_VERSION_MINOR, 3)
+-define(_CLIENT_VERSION_REVISION, 0)
++define(_CLIENT_VERSION_REVISION, 1)
+ define(_CLIENT_VERSION_BUILD, 0)
+ define(_CLIENT_VERSION_IS_RELEASE, true)
+ define(_COPYRIGHT_YEAR, 2025)

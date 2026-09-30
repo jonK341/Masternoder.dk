@@ -137,6 +137,14 @@ def validate_buy_in(user_id: str, amount: float, currency: str) -> Optional[str]
     gate_err = _security_gate(user_id, currency)
     if gate_err:
         return gate_err
+    if currency in ("mn2", "usd"):
+        try:
+            from backend.services.casino_responsible_gaming import check_before_bet
+            rg_err = check_before_bet(user_id, amount, currency)
+            if rg_err:
+                return rg_err
+        except Exception:
+            pass
     if _user_balance(user_id, currency) < amount:
         from backend.services import casino_service
         return f"Insufficient {casino_service._currency_label(currency)}"

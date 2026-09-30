@@ -81,8 +81,8 @@ def issue_voice_token(
 
     if require_unlock:
         try:
-            from backend.services.camgirls_service import user_has_unlock
-            if not user_has_unlock(uid, pid):
+            from backend.services.camgirls_service import _is_unlocked
+            if not _is_unlocked(uid, pid):
                 return {"success": False, "error": "unlock_required", "performer_id": pid}
         except Exception:
             return {"success": False, "error": "unlock_check_failed", "performer_id": pid}
@@ -116,7 +116,17 @@ def issue_voice_token(
         "identity": identity,
         "token": token,
         "livekit_url": cfg["url"],
+        "url": cfg["url"],
         "performer_id": pid,
         "user_id": uid,
         "ttl_sec": 3600,
     }
+
+
+def issue_room_token(user_id: str, performer_id: str) -> Dict[str, Any]:
+    """Compat alias for main callers that expect issue_room_token."""
+    out = issue_voice_token(user_id, performer_id, require_unlock=False)
+    if isinstance(out, dict) and "url" not in out and out.get("livekit_url") is not None:
+        out = dict(out)
+        out["url"] = out.get("livekit_url")
+    return out

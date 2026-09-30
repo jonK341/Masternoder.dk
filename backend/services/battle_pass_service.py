@@ -253,3 +253,52 @@ def record_battle_pass_action(user_id: str, action: str) -> Optional[Dict[str, A
         "xp": new_xp,
         "tier_level": row["tier_level"],
     }
+
+
+def record_casino_bet_volume(user_id: str, bet_coins: float) -> Optional[Dict[str, Any]]:
+    """Award battle-pass XP from casino bet volume (cosmetic tiers, coins-only rewards)."""
+    cfg = _config()
+    if not cfg:
+        return None
+    try:
+        casino_cfg = __import__("backend.services.casino_service", fromlist=["casino_service"])._load_config()
+        track = casino_cfg.get("casino_battle_pass") if isinstance(casino_cfg.get("casino_battle_pass"), dict) else {}
+    except Exception:
+        track = {}
+    if not track.get("enabled", True):
+        return None
+    try:
+        xp_per = max(1, int(track.get("xp_per_bet_coin") or 1))
+    except (TypeError, ValueError):
+        xp_per = 1
+    try:
+        xp_per_tier = max(1, int(track.get("xp_per_tier") or cfg.get("xp_per_tier") or 100))
+    except (TypeError, ValueError):
+        xp_per_tier = 100
+
+    uid = (user_id or "").strip()
+    if not uid or uid == "default_user":
+        return None
+    try:
+        bet = float(bet_coins or 0)
+    except (TypeError, ValueError):
+        return None
+    if bet <= 0:
+        return None
+    xp_gain = max(1, int(bet * xp_per))
+
+    data = _load_state()
+    users = data.setdefault("users", {})
+    row = users.setdefault(uid, {})
+    new_xp = int(row.get("xp") or 0) + xp_gain
+    row["xp"] = new_xp
+    row["tier_level"] = new_xp // xp_per_tier
+    row["casino_bet_volume"] = round(float(row.get("casino_bet_volume") or 0) + bet, 2)
+    _save_state(data)
+    return {
+        "success": True,
+        "xp_gained": xp_gain,
+        "xp": new_xp,
+        "tier_level": row["tier_level"],
+        "casino_bet_volume": row["casino_bet_volume"],
+    }

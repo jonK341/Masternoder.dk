@@ -34,3 +34,9 @@ def test_kind_inferred_from_base_when_omitted():
     cfg = {"explorer_base_url": "https://camgirls.masternoder.dk/"}
     assert explorer_kind(cfg) == "iquidus"
     assert explorer_base_url(cfg) == "https://camgirls.masternoder.dk/"
+
+
+def test_env_overrides_base_url(monkeypatch):
+    monkeypatch.setenv("MN2_EXPLORER_BASE_URL", "https://selfhosted.example/")
+    from backend.services.mn2_explorer_urls import explorer_base_url, load_explorer_config
+    assert explorer_base_url(load_explorer_config()) == "https://selfhosted.example/"

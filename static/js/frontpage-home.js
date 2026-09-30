@@ -219,6 +219,26 @@
         }
     }
 
+    const SOUND_VOL_KEY = 'mn_sound_analog_volume_v1';
+
+    function volumeToDb(linear) {
+        const v = Math.max(0.0001, Math.min(1, linear));
+        return 20 * Math.log10(v);
+    }
+
+    function analogGain(linear) {
+        return Math.pow(Math.max(0, Math.min(1, linear)), 1.35);
+    }
+
+    function updateSoundbarUI(linear) {
+        const dbEl = document.getElementById('themeSoundDb');
+        const pctEl = document.getElementById('themeSoundPct');
+        const pct = Math.round(linear * 100);
+        const analog = analogGain(linear);
+        if (dbEl) dbEl.textContent = volumeToDb(analog * 0.85).toFixed(1) + ' dB';
+        if (pctEl) pctEl.textContent = pct + '%';
+    }
+
     function wireSoundSystem() {
         const primaryToggle = document.getElementById('themeSoundToggle');
         const floatToggle = document.getElementById('themeSoundFloatToggle');
@@ -228,6 +248,13 @@
         if (!primaryToggle && !floatToggle) return;
 
         const sound = new FrontpageSoundSystem();
+        try {
+            const saved = parseInt(localStorage.getItem(SOUND_VOL_KEY), 10);
+            if (!Number.isNaN(saved) && saved >= 0 && saved <= 100 && volume) {
+                volume.value = String(saved);
+                sound.setVolume(saved / 100);
+            }
+        } catch (_) {}
 
         const render = () => {
             const mode = SOUND_MODES[sound.mode] || SOUND_MODES.focus;
@@ -240,8 +267,11 @@
                 floatToggle.textContent = sound.isActive ? `${mode.label} on` : 'Sound offline';
             }
             if (status) {
-                status.textContent = sound.isActive ? mode.status : 'Sound offline. Klik start for at aktivere.';
+                status.textContent = sound.isActive
+                    ? mode.status + ' · Soundbar analog: ' + Math.round(sound.volume * 100) + '%'
+                    : 'Sound offline. Klik start for at aktivere.';
             }
+            updateSoundbarUI(sound.volume);
             modeButtons.forEach((button) => {
                 const active = button.dataset.soundMode === sound.mode;
                 button.classList.toggle('is-active', active);
@@ -267,10 +297,25 @@
         if (primaryToggle) primaryToggle.addEventListener('click', toggle);
         if (floatToggle) floatToggle.addEventListener('click', toggle);
         if (volume) {
-            sound.setVolume(parseInt(volume.value, 10) / 100);
-            volume.addEventListener('input', () => {
-                sound.setVolume(parseInt(volume.value, 10) / 100);
-                if (sound.isActive) sound.playPing(620 + sound.volume * 420, 0.015);
+            const applyVol = () => {
+                const lin = parseInt(volume.value, 10) / 100;
+                sound.setVolume(lin);
+                try { localStorage.setItem(SOUND_VOL_KEY, String(volume.value)); } catch (_) {}
+                volume.setAttribute('aria-valuetext', volume.value + ' procent');
+                updateSoundbarUI(lin);
+                if (sound.isActive) sound.playPing(620 + lin * 420, 0.015);
+            };
+            applyVol();
+            volume.addEventListener('input', applyVol);
+        }
+
+        const pwaDl = document.getElementById('fp-download-pwa');
+        if (pwaDl) {
+            pwaDl.addEventListener('click', (ev) => {
+                if (window.__mnInstallPwa) {
+                    ev.preventDefault();
+                    window.__mnInstallPwa();
+                }
             });
         }
         modeButtons.forEach((button) => {
@@ -318,17 +363,23 @@
         { href: '/generator', label: 'Generator', icon: '🎬', tags: ['create', 'morning'] },
         { href: '/game', label: 'Game', icon: '🎮', tags: ['play', 'evening'] },
         { href: '/battle', label: 'Battle', icon: '⚔️', tags: ['compete'] },
-        { href: '/starmap25/', label: 'Star Map 25', icon: '🗺️', tags: ['explore'] },
-        { href: '/profile', label: 'Profile', icon: '👤', tags: ['account'] },
+        { href: '/wallets', label: 'Wallets', icon: '💾', tags: ['economy', 'account'] },
+        { href: '/staking-leaderboard', label: 'Staking Rank', icon: '🌱', tags: ['economy', 'progress'] },
+        { href: '/staking-teams', label: 'Staking Teams', icon: '🤝', tags: ['economy', 'progress'] },
         { href: '/shop', label: 'Shop', icon: '🛒', tags: ['economy'] },
+        { href: '/explorer', label: 'Explorer', icon: '🔎', tags: ['economy', 'explore'] },
+        { href: '/profile', label: 'Profile', icon: '👤', tags: ['account'] },
         { href: '/quests', label: 'Quests', icon: '📜', tags: ['progress'] },
         { href: '/trophies', label: 'Trophies', icon: '🏆', tags: ['collect'] },
         { href: '/agents', label: 'AI Agents', icon: '🤖', tags: ['agents'] },
+        { href: '/podcast', label: 'Podcast', icon: '🎙️', tags: ['read'] },
+        { href: '/news', label: 'News', icon: '📰', tags: ['read'] },
+        { href: '/compendium/?calm=1', label: 'Library', icon: '📖', tags: ['read'] },
         { href: '/lab', label: 'Lab', icon: '🔬', tags: ['agents'] },
         { href: '/debugger', label: 'Debugger', icon: '🔧', tags: ['dev'] },
         { href: '/gallery', label: 'Gallery', icon: '🖼️', tags: ['create'] },
-        { href: '/chat', label: 'Chat', icon: '💬', tags: ['social'] },
-        { href: '/news', label: 'News page', icon: '📰', tags: ['read'] },
+        { href: '/starmap25/', label: 'Star Map 25', icon: '🗺️', tags: ['explore'] },
+        { href: '/profit/', label: 'Profit Daemon', icon: '⚡', tags: ['economy', 'evening'] },
     ];
 
     function hourTag() {
@@ -392,26 +443,31 @@
         if (!ul) return;
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
-            const [platformRes, feedRes] = await Promise.all([
+            const [platformRes, profitRes, feedRes] = await Promise.all([
                 fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
+                fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ news: [] })),
                 fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
             ]);
+            const profit = (profitRes && profitRes.news) || [];
             const platform = (platformRes && platformRes.news) || [];
+            const profitIds = new Set(profit.map((n) => n.id));
+            const platformFiltered = platform.filter((n) => !profitIds.has(n.id));
+            const mergedPlatform = [...profit, ...platformFiltered].slice(0, 6);
             const external = (feedRes && feedRes.news) || [];
-            if (!platform.length && !external.length) {
+            if (!mergedPlatform.length && !external.length) {
                 ul.innerHTML = '<li class="fp-muted">Ingen nyheder lige nu.</li>';
                 return;
             }
             ul.textContent = '';
-            platform.forEach((n) => {
+            mergedPlatform.forEach((n) => {
                 const li = document.createElement('li');
-                li.className = 'fp-news-platform';
+                li.className = 'fp-news-platform' + ((n.channel || n.category) === 'profit' ? ' fp-news-profit' : '');
                 const a = document.createElement('a');
                 a.href = n.href || '/news/';
                 a.textContent = (n.title || 'Platform update');
                 const meta = document.createElement('span');
                 meta.className = 'fp-news-meta';
-                meta.textContent = 'MasterNoder · ' + (n.date || '').slice(0, 10);
+                meta.textContent = ((n.channel || n.category) === 'profit' ? 'Profit · ' : 'MasterNoder · ') + (n.date || '').slice(0, 10);
                 li.appendChild(a);
                 li.appendChild(meta);
                 if (n.summary) {
@@ -422,7 +478,7 @@
                 }
                 ul.appendChild(li);
             });
-            if (platform.length && external.length) {
+            if (mergedPlatform.length && external.length) {
                 const sep = document.createElement('li');
                 sep.className = 'fp-news-divider';
                 sep.textContent = 'Tech feed';

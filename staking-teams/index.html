@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>window.APP_BASE = '';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MasterNoder MN2 staking teams portal.">
+    <title>Staking Teams - MasterNoder</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260429a">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <style>
+        body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 15% 0%, rgba(0,255,136,0.16), transparent 32%), #080a12; color: #fff; }
+        .teams-page { max-width: 1120px; margin: 0 auto; padding: 42px 18px 64px; }
+        .teams-hero, .teams-card { border: 1px solid rgba(79,168,255,0.32); background: rgba(255,255,255,0.055); border-radius: 20px; }
+        .teams-hero { padding: 34px; margin-bottom: 18px; }
+        .teams-hero h1 { margin: 0 0 10px; color: #4fa8ff; font-size: clamp(2rem, 5vw, 3.4rem); }
+        .teams-muted { color: rgba(255,255,255,0.76); line-height: 1.55; }
+        .teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+        .teams-card { padding: 22px; }
+        .teams-card h2 { margin: 0 0 10px; color: #00ff88; font-size: 1.2rem; }
+        .teams-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .teams-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(79,168,255,0.48); color: #9dccff; background: rgba(79,168,255,0.12); text-decoration: none; font-weight: 800; }
+        .teams-btn.secondary { border-color: rgba(0,255,136,0.42); color: #00ff88; background: rgba(0,255,136,0.12); }
+    </style>
+</head>
+<body class="layout-standard">
+    <main class="teams-page">
+        <section class="teams-hero">
+            <p class="teams-muted">MN2 staking portal</p>
+            <h1>Staking teams</h1>
+            <p class="teams-muted">Create, join, and monitor staking teams that pool longevity for capped team multipliers.</p>
+            <div class="teams-actions">
+                <a class="teams-btn" href="/profile#profile-mn2-staking-card">Create or join on profile</a>
+                <a class="teams-btn secondary" href="/staking-leaderboard">Leaderboard</a>
+                <a class="teams-btn secondary" href="/staking-monitor">Monitor</a>
+            </div>
+        </section>
+        <section class="teams-grid" aria-label="Staking team shortcuts">
+            <article class="teams-card">
+                <h2>Team controls</h2>
+                <p class="teams-muted">Manage team membership from the profile staking card where wallet balance, terms, and staking state are already loaded.</p>
+                <a class="teams-btn" href="/profile#profile-mn2-staking-card">Manage team</a>
+            </article>
+            <article class="teams-card">
+                <h2>Leaderboard context</h2>
+                <p class="teams-muted">Compare team momentum with individual staking rank and the public reserve view.</p>
+                <a class="teams-btn secondary" href="/staking-leaderboard">Compare ranks</a>
+            </article>
+            <article class="teams-card">
+                <h2>Safety first</h2>
+                <p class="teams-muted">Rewards are variable and not guaranteed. Check proof-of-reserves and explorer health before committing more MN2.</p>
+                <a class="teams-btn secondary" href="/proof-of-reserves">Proof of reserves</a>
+            </article>
+        </section>
+    </main>
+    <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
+</body>
+</html>

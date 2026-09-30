@@ -34,13 +34,15 @@ def deploy_user() -> str:
     return (os.environ.get("DEPLOY_USER") or "root").strip()
 
 
-def _load_deploy_pass_from_dotenv() -> None:
-    """If DEPLOY_PASS is unset, set it from project .env (DEPLOY_PASS=...), if present."""
-    if (os.environ.get("DEPLOY_PASS") or "").strip():
-        return
+def _load_deploy_env_from_dotenv() -> None:
+    """Load DEPLOY_PASS and DEPLOY_KEY_PATH from project .env when unset in os.environ."""
     root = os.path.dirname(os.path.abspath(__file__))
     env_path = os.path.join(root, ".env")
     if not os.path.isfile(env_path):
+        return
+    want = ("DEPLOY_PASS", "DEPLOY_KEY_PATH", "DEPLOY_HOST", "DEPLOY_USER")
+    missing = [k for k in want if not (os.environ.get(k) or "").strip()]
+    if not missing:
         return
     try:
         with open(env_path, "r", encoding="utf-8") as f:
@@ -48,13 +50,20 @@ def _load_deploy_pass_from_dotenv() -> None:
                 line = raw.strip()
                 if not line or line.startswith("#"):
                     continue
-                if line.startswith("DEPLOY_PASS="):
-                    val = line.split("=", 1)[1].strip().strip('"').strip("'")
-                    if val:
-                        os.environ["DEPLOY_PASS"] = val
-                    return
+                for key in missing:
+                    if line.startswith(f"{key}="):
+                        val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if val:
+                            os.environ[key] = val
     except OSError:
         return
+
+
+def _load_deploy_pass_from_dotenv() -> None:
+    """If DEPLOY_PASS is unset, set it from project .env (DEPLOY_PASS=...), if present."""
+    if (os.environ.get("DEPLOY_PASS") or "").strip():
+        return
+    _load_deploy_env_from_dotenv()
 
 
 def require_deploy_pass(*, force_prompt: bool = False) -> str:
@@ -91,11 +100,35 @@ def _default_key_paths() -> list:
     if env_key:
         paths.append(os.path.expanduser(env_key))
     home = os.path.expanduser("~/.ssh")
-    for name in ("id_ed25519", "id_rsa", "id_ecdsa"):
+    for name in ("id_ed25519_deploy", "id_ed25519", "id_rsa", "id_ecdsa"):
         p = os.path.join(home, name)
         if p not in paths:
             paths.append(p)
     return [p for p in paths if os.path.isfile(p)]
+
+
+def _try_ssh_key_auth(
+    host: str,
+    user: str,
+    *,
+    timeout: int = 30,
+) -> Optional[Tuple[paramiko.SSHClient, str]]:
+    """Try SSH key files / agent only. Returns (client, auth_method) or None."""
+    _load_deploy_env_from_dotenv()
+    for key_path in _default_key_paths():
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(
+                host, username=user, key_filename=key_path, timeout=timeout,
+                look_for_keys=False, allow_agent=True,
+            )
+            return ssh, f"key:{key_path}"
+        except paramiko.AuthenticationException:
+            continue
+        except Exception:
+            continue
+    return None
 
 
 def _password_connect(
@@ -126,19 +159,9 @@ def connect_deploy_ssh(
     """
     host = deploy_host()
     user = deploy_user()
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    for key_path in _default_key_paths():
-        try:
-            ssh.connect(
-                host, username=user, key_filename=key_path, timeout=timeout,
-                look_for_keys=False, allow_agent=True,
-            )
-            return ssh, f"key:{key_path}", None
-        except paramiko.AuthenticationException:
-            continue
-        except Exception:
-            continue
+    key_auth = _try_ssh_key_auth(host, user, timeout=timeout)
+    if key_auth:
+        return key_auth[0], key_auth[1], None
     if not password:
         password = require_deploy_pass()
     try:
@@ -174,14 +197,15 @@ def print_auth_help(host: str, user: str, *, used_ask_pass: bool = False) -> Non
         print("  --ask-pass was used: the password you typed was rejected by the server.", file=sys.stderr)
         print("  (.env DEPLOY_PASS was cleared for the prompt — not a stale .env read.)", file=sys.stderr)
     else:
-        print("  DEPLOY_PASS from .env / environment was rejected.", file=sys.stderr)
+        print("  SSH keys were not accepted and DEPLOY_PASS from .env / environment was rejected.", file=sys.stderr)
     print(file=sys.stderr)
     print("  Fix:", file=sys.stderr)
-    print("  1. Get the current root password from your hosting panel.", file=sys.stderr)
+    print("  1. Prefer key auth:  python scripts/setup_deploy_ssh_key.py --ask-pass", file=sys.stderr)
     print(f"  2. Test:  ssh {user}@{host}", file=sys.stderr)
-    print('  3. Update .env:  DEPLOY_PASS="current-password"  (optional)', file=sys.stderr)
+    print('  3. Or update .env:  DEPLOY_PASS="current-password"  (optional)', file=sys.stderr)
     print("  4. Re-run with --ask-pass:", file=sys.stderr)
     print("       python scripts/deploy.py <manifest> --ask-pass", file=sys.stderr)
     print("       python scripts/apply_updates.py --ask-pass", file=sys.stderr)
+    print("       python scripts/deploy_all_and_restart_uwsgi.py --no-upload --ask-pass", file=sys.stderr)
     print("=" * 60 + "\n", file=sys.stderr)
 

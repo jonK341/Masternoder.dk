@@ -1,0 +1,128 @@
+# Casino ideas & critical considerations
+
+Creative backlog for the MasterNoder entertainment platform — **social casino / virtual coins first**, with optional MN2 and regulated fiat rails where licensed. Not a promise of real-money gambling where not applicable.
+
+---
+
+## Wave 1 status (feat/casino-mega-expansion — 2026-06-28)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Daily revenue dashboard (Activity tab) | ✅ | `/api/casino/revenue/report/today` + reconcile flag |
+| Slot of the Day (config + home badge) | ✅ | `slot_of_the_day` in `casino_config.json`, `/api/casino/slot-of-the-day` |
+| Big Win Hall of Fame (7d multipliers) | ✅ | `/api/casino/big-wins/hall-of-fame` from ledger mirror |
+| Referral leaderboard | ✅ | `/api/casino/social/referral/leaderboard` — trophies only, no RTP |
+| Casino news ticker | ✅ | `/api/casino/news/platform` → home marquee |
+| Responsible gaming reminders | ✅ | `/api/casino/responsible-gaming/status` + session banner |
+| Achievement showcase (home) | ✅ | Top 4 progress widgets from `/api/casino/achievements` |
+| Network jackpot ticker | ✅ | Jackpot bar polls `/api/casino/jackpots` + global stats |
+| Shop RTP audit | ✅ | `/api/casino/shop/rtp-audit` — all items `cosmetic_only` |
+| Ledger reconcile check | ✅ | `/api/casino/revenue/reconcile` |
+| Agent run-all rate limit | ✅ | 60s cooldown on non-`dry_run` POST |
+| Discord fanout dry_run default | ✅ | Cron + routes default `dry_run=true` until `CASINO_FANOUT_LIVE=1` |
+
+---
+
+## Wave 2 status (feat/casino-mega-expansion — 2026-06-28)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Seasonal slot skins (#1) | ✅ | `seasonal_overlays` in `casino_config.json`, `/api/casino/seasonal/slots`, home badge |
+| Referral quests v2 (#11) | ✅ | Tier rewards on first 10 referred bets, `/api/casino/social/referral/quests` |
+| Crew leaderboards (#12) | ✅ | `/api/casino/crew/leaderboard` — weekly net, `week_key`, discord guild id |
+| VIP lounge tab (#17) | ✅ | `/api/casino/vip/lounge` — XP gate, frame previews, daily wheel link |
+| Provably-fair audit export (#10) | ✅ | `/api/casino/fairness/export?user_id=&limit=100` CSV |
+| Live activity ticker v2 SSE (#18) | ✅ | `/api/casino/activity-feed/stream` + poll fallback in `casino.js` |
+| Revenue digest email (#25) | ✅ | `cron/casino_daily_revenue_report.sh` email stub via `CASINO_REVENUE_EMAIL` |
+| Crash crew mode (#2) | — | Deferred to Wave 3 (shared round complexity) |
+
+---
+
+## Wave 3 status (feat/casino-mega-expansion — 2026-06-30)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Crash crew mode (#2) | ✅ | Shared bust, individual cash-outs — `/api/casino/crash-crew/*` + lobby UI |
+| Big-win clip cards (#13) | ✅ | `GET /api/casino/share/big-win/card.svg` + Social tab button |
+| Plinko battle (#3) | ✅ | `/api/casino/duels/plinko-battle/*` — same-seed bins, higher wins pot |
+| Mines duel (#4) | ✅ | Turn-based shared board — `/api/casino/duels/mines/*` + Compete tab |
+| Battle pass casino track (#21) | ✅ | `casino_battle_pass` in config + bet-volume XP; Compete tab polls `/api/shop/battle-pass` |
+| Lab free-bet coupons (#19) | ✅ | `/api/casino/coupons/redeem` + `/api/casino/coupons/redeem-lab` |
+| Spectator mode for AI agents (#14) | ✅ | `GET /api/casino/agents/spectate` + home/compete panels; `run_casino_agent_daemon.cmd` |
+| Streak shields (#16) | ✅ | `/api/casino/streak-shield` — one weekly 50% loss refund (coins) |
+
+---
+
+## Wave 4 status (feat/casino-mega-expansion — 2026-06-30)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Keno syndicate (#5) | ✅ | `/api/casino/keno-syndicate/*` — escrow stakes, proportional win split |
+| Roulette side bets (#6) | ✅ | Config hot/cold side bets on roulette engine |
+| Blackjack tournaments (#7) | ✅ | `/api/casino/blackjack-tournaments/*` — single-elim bracket |
+| Wheel raid boss (#9) | ✅ | Community spin counter → bonus jackpot seed + Compete progress |
+| Friend challenge links (#15) | ✅ | Duel invite tokens + `?duel=TOKEN` deep link |
+| Podcast portal tie-in (#20) | ✅ | Bonus coins during live tournament + podcast strip active |
+| MN2 rake rebate progress bar (#22) | ✅ | `/api/casino/trophy-rake-rebate/progress` + rank/compete UI |
+| Global hub affiliate nodes (#24) | ✅ | `POST /api/casino/global/hub-node` + hub merge |
+
+---
+
+## Wave 5 status (feat/casino-mega-expansion — 2026-06-30)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Video poker ladder (#8) | ✅ | `video_poker_ladder` config + `/api/casino/video-poker/ladder`; cosmetic tier on draw |
+| PayPal deposit bundles (#23) | ✅ | `deposit_packs` starter bundles + `/api/casino/deposit/packs` + PayPal create alias |
+
+**All 25 feature ideas complete.**
+
+---
+
+## 25 feature ideas (feasible next waves)
+
+### Games & mechanics
+1. **Seasonal slot skins** — reskin existing 35 machines with limited-time themes (Halloween, MN2 halving) without new engine code. *(✅ `seasonal_overlays` + home badge)*
+2. **Crash crew mode** — shared multiplier pool where friends cash out on the same round with split payouts. *(✅ `/api/casino/crash-crew/*`)*
+3. **Plinko battle** — two players, same seed reveal, highest bin wins a pot. *(✅ `/api/casino/duels/plinko-battle/*`)*
+4. **Mines duel** — turn-based tile picks on a shared board; bomb ends round. *(✅ `/api/casino/duels/mines/*`)*
+5. **Keno syndicate** — group ticket: N players pick spots together, split wins by stake share. *(✅ `/api/casino/keno-syndicate/*`)*
+6. **Roulette side bets** — config-only add-ons (hot/cold numbers) on existing roulette engine. *(✅ `roulette_side_bets` config + play API)*
+7. **Blackjack tournaments** — bracketed single-elimination using existing BJ engine + ledger. *(✅ `/api/casino/blackjack-tournaments/*`)*
+8. **Video poker ladder** — daily escalating pay tables for ranked players. *(✅ `/api/casino/video-poker/ladder` + cosmetic tier on draw)*
+9. **Wheel raid boss** — community jackpot triggered when aggregate spins hit a threshold. *(✅ `wheel_raid` + `/api/casino/wheel-raid/status`)*
+10. **Provably-fair audit export** — one-click CSV of seeds/nonces for transparency-minded players. *(✅ `/api/casino/fairness/export`)*
+
+### Social & retention
+11. **Referral quests v2** — tiered rewards when referred users complete first 10 bets. *(✅ `/api/casino/social/referral/quests` + referrer coin milestones)*
+12. **Crew leaderboards** — Discord guild ID maps to a crew; aggregate weekly net for prizes. *(✅ `/api/casino/crew/leaderboard`)*
+13. **Big-win clip cards** — auto-generate share image (SVG/PNG) from `POST /api/casino/share/big-win`. *(✅ `GET /api/casino/share/big-win/card.svg`)*
+14. **Spectator mode** — watch AI agents (Kelly, Safe Grinder, Meta Oracle) with spectator lines from LLM. *(✅ `/api/casino/agents/spectate` + daemon feed)*
+15. **Friend challenges** — send duel invite link; winner takes configurable coin pot. *(✅ invite tokens + `?duel=TOKEN`)*
+16. **Streak shields** — one loss-forgiving token per week for engagement (virtual coins only). *(✅ `/api/casino/streak-shield`)*
+17. **VIP lounge tab** — unlock at XP threshold; cosmetic frames + higher daily wheel odds (house-edge neutral). *(✅ `/api/casino/vip/lounge` — same wheel odds, cosmetic gate)*
+18. **Live activity ticker v2** — WebSocket or SSE feed from `casino_ledger` instead of poll. *(✅ `/api/casino/activity-feed/stream` + poll fallback)*
+19. **Cross-promo with Lab** — complete Lab quest → casino free bet coupon. *(✅ `/api/casino/coupons/redeem`)*
+20. **Podcast portal tie-in** — bonus coins when listening during a live casino tournament window. *(✅ `podcast_tournament_bonus` + bet hook)*
+
+### Monetization & platform
+21. **Battle pass (casino track)** — parallel to shop battle pass; cosmetic badges + coin bundles. *(✅ Compete tab + `/api/shop/battle-pass`)*
+22. **MN2 rake rebate tiers** — extend trophy rake rebate with visible progress bar in rank tab. *(✅ `/api/casino/trophy-rake-rebate/progress`)*
+23. **PayPal deposit bundles** — limited-time “starter packs” in `casino_config` deposit packs. *(✅ `deposit_packs` + `/api/casino/deposit/packs`)*
+24. **Global hub affiliate nodes** — other MasterNoder sites report into `casino_global_controller` for network leaderboard. *(✅ `POST /api/casino/global/hub-node`)*
+25. **Revenue digest email** — optional weekly operator summary from `casino_revenue_report` (ops-only, no PII). *(✅ cron email stub via `CASINO_REVENUE_EMAIL`)*
+
+---
+
+## 10 critical considerations when continuing
+
+1. **Compliance & positioning** — Market as **entertainment / social casino** with virtual coins; disclose MN2/USD rails, age gates, and responsible-gaming tools. Never imply guaranteed profit. *(✅ RG status API + home banner)*
+2. **RTP & fairness** — Keep house edge and provably-fair seeds documented; run `tests/unit/test_casino_*` before every deploy; spot-check new games with `engines/*.rtp()` helpers. *(✅ shop RTP audit endpoint)*
+3. **Secret rotation** — `AGENT_CASINO_SECRET`, LLM keys, Discord webhooks, PayPal credentials: rotate on exposure; never commit `.env`.
+4. **Deploy discipline** — Casino + Discord fanout + revenue routes affect **live users**. Always deploy `casino` manifest + restart uWSGI; verify with curl bundle in [CASINO_INTEGRATIONS_CHECKLIST.md](CASINO_INTEGRATIONS_CHECKLIST.md).
+5. **Ledger reconciliation** — `casino_ledger.db` and JSONL logs must agree; investigate drift before changing payout tables. *(✅ `/api/casino/revenue/reconcile`)*
+6. **Agent bet limits** — Seed agents with conservative `max_bet` in `data/casino_agents.json`; use `dry_run` before enabling cron `run-all`. *(✅ run-all rate limit + fanout dry_run default)*
+7. **PR #43 review** — Mega-expansion PR touches broadcast, social fanout, and monetization paths — treat as **critical infrastructure**, not cosmetic UI.
+8. **Mobile association files** — `assetlinks.json` needs **64-char** Play SHA (Tuesday); Apple AASA **paused** until Developer account; PWA + `masternoder://` scheme works without Apple.
+9. **Meta Pixel privacy** — Only load `fbq` when `META_PIXEL_ID` is set server-side; respect cookie/consent requirements in target markets.
+10. **Load & ops** — uWSGI workers, logrotate, and Discord cron (`cron/discord_casino_fanout.sh`) must stay healthy; monitor `logs/casino_bets.jsonl` growth.

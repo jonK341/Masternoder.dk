@@ -1,0 +1,49 @@
+{
+  "supervisors": [
+    {
+      "id": "sup_arbitrage",
+      "name": "Arbitrage Director",
+      "role": "Executes cross-venue arbitrage bots when spreads beat fees.",
+      "controls_kind": "arbitrage_paper",
+      "enabled": true
+    },
+    {
+      "id": "sup_crosstrade",
+      "name": "Cross-Trade Director",
+      "role": "Runs internal exchange market-making / rotation bots.",
+      "controls_kind": "cross_trade",
+      "enabled": true
+    },
+    {
+      "id": "sup_risk",
+      "name": "Risk Officer",
+      "role": "Owns caps, velocity, and the global kill-switch.",
+      "controls_kind": "risk",
+      "enabled": true
+    },
+    {
+      "id": "sup_profit",
+      "name": "Profit Analyst",
+      "role": "Aggregates realized/unrealized P&L and projections.",
+      "controls_kind": "analytics",
+      "enabled": true
+    },
+    {
+      "id": "sup_extended",
+      "name": "Extended Profit Director",
+      "role": "Stablecoin peg, triangular loops, meme/defi/payments specialty farms.",
+      "controls_kind": "extended_profit",
+      "enabled": true
+    },
+    {
+      "id": "sup_treasury",
+      "name": "Treasury Manager",
+      "role": "Tracks profit accounts, wallet registry, and sweeps.",
+      "controls_kind": "treasury",
+      "enabled": true
+    }
+  ],
+  "bot_overrides": {},
+  "kill_switch": false,
+  "updated_at": "2026-06-27T20:23:37.080294Z"
+}

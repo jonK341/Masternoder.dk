@@ -48,6 +48,12 @@ def _priority_for_user(user_id: str, config: Dict[str, Any]) -> int:
     if not uid or uid == "default_user":
         return score + 20
     try:
+        from backend.services.monetization_priority_service import queue_priority_bonus
+
+        score -= queue_priority_bonus(uid)
+    except Exception:
+        pass
+    try:
         from backend.services.unified_points_database import unified_points_db
 
         pts = unified_points_db.get_all_points(uid)

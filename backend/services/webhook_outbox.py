@@ -90,6 +90,12 @@ def enqueue(
     return {"success": True, "id": row["id"], "duplicate": False}
 
 
+def _unwrap_result(result: Any) -> Dict[str, Any]:
+    if isinstance(result, tuple):
+        result = result[0] if result else {}
+    return result if isinstance(result, dict) else {"success": True, "result": result}
+
+
 def _dispatch(handler: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     h = (handler or "").strip()
     if h == "p2p_paypal":
@@ -98,7 +104,7 @@ def _dispatch(handler: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         return p2p.handle_webhook(payload.get("event") or {}, sig)
     if h == "paypal_subscription":
         from backend.services.monetization_subscription_service import process_paypal_webhook_event
-        return process_paypal_webhook_event(payload.get("event") or {})
+        return _unwrap_result(process_paypal_webhook_event(payload.get("event") or {}))
     return {"success": False, "error": f"unknown handler {h}"}
 
 

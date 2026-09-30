@@ -1,0 +1,62 @@
+{
+  "packageId": "dk.masternoder.casino",
+  "host": "masternoder.dk",
+  "name": "MasterNoder Casino Social",
+  "launcherName": "MN Casino",
+  "display": "standalone",
+  "themeColor": "#1A1035",
+  "navigationColor": "#0A0E14",
+  "backgroundColor": "#0A0E14",
+  "enableNotifications": false,
+  "startUrl": "/casino/?app=casino-twa&tab=lobby",
+  "iconUrl": "https://masternoder.dk/static/img/casino/icon-512.svg",
+  "maskableIconUrl": "https://masternoder.dk/static/img/casino/icon-512.svg",
+  "monochromeIconUrl": "https://masternoder.dk/static/img/casino/icon-192.svg",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "masternoder-casino"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Crash",
+      "shortName": "Crash",
+      "url": "/casino/?app=casino-twa&game=crash",
+      "chosenIconUrl": "https://masternoder.dk/static/img/casino/icon-192.svg"
+    },
+    {
+      "name": "Social lounge",
+      "shortName": "Social",
+      "url": "/casino/?app=casino-twa&tab=social",
+      "chosenIconUrl": "https://masternoder.dk/static/img/casino/icon-192.svg"
+    },
+    {
+      "name": "Tournaments",
+      "shortName": "Cups",
+      "url": "/casino/?app=casino-twa&tab=tournaments",
+      "chosenIconUrl": "https://masternoder.dk/static/img/casino/icon-192.svg"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://masternoder.dk/casino/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": false,
+    "locationDelegation": false
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://masternoder.dk/casino/",
+  "minSdkVersion": 21,
+  "orientation": "portrait-primary",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "appVersion": "1.0.0"
+}

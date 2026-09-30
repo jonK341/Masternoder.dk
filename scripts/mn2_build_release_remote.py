@@ -60,11 +60,13 @@ except Exception:
 
 from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 
-from mn2_release_config import BASE_TAG, COMPAT_PATCH_REL, MANIFEST_NAME, PATCH_REL, TARGET_VERSION
+from mn2_release_config import RELEASE_BRANCH, EXTRA_PATCH_REL, BASE_TAG, COMPAT_PATCH_REL, MANIFEST_NAME, PATCH_REL, TARGET_VERSION
 
 
 
 BUILD_ROOT = "/tmp/mn2-build"
+REMOTE_EXTRA_PATCH = "/tmp/mn2-daemon-extra.patch"
+COMPAT_PATCH_DIR = f"{BUILD_ROOT}/patches"
 
 BUILD_LOG = f"{BUILD_ROOT}/build.log"
 
@@ -276,27 +278,31 @@ def upload_script(ssh, local_name: str, remote_name: str) -> str:
 
 
 def upload_patch(ssh, rel_path: str, remote_path: str) -> str:
+    import base64
 
     local_path = os.path.join(ROOT, rel_path)
-
     if not os.path.isfile(local_path):
-
         raise SystemExit(f"Patch not found: {local_path}")
-
-    sftp = ssh.open_sftp()
-
-    with sftp.file(remote_path, "w") as rf:
-
-        with open(local_path, "rb") as lf:
-
-            rf.write(lf.read())
-
-    sftp.close()
-
+    try:
+        sftp = ssh.open_sftp()
+        sftp.put(local_path, remote_path)
+        sftp.close()
+        return remote_path
+    except Exception as exc:
+        print(f"SFTP upload failed ({exc}); falling back to base64 exec")
+    data = open(local_path, "rb").read()
+    b64 = base64.b64encode(data).decode("ascii")
+    cmd = (
+        f"python3 -c \"import base64, pathlib; "
+        f"pathlib.Path('{remote_path}').write_bytes(base64.b64decode('{b64}'))\""
+    )
+    _, stdout, stderr = ssh.exec_command(cmd, timeout=60)
+    err = stderr.read().decode(errors="replace").strip()
+    out = stdout.read().decode(errors="replace").strip()
+    code = stdout.channel.recv_exit_status()
+    if code != 0:
+        raise SystemExit(f"upload_patch failed for {rel_path}: {err or out}")
     return remote_path
-
-
-
 
 
 def upload_multi_ping_patch(ssh) -> str:
@@ -326,6 +332,35 @@ BUILD_LOG_ERROR_GREP = (
 
 
 
+
+
+def upload_compat_patches(ssh) -> str:
+    """Upload mn2-gcc15-*.patch for GCC 15 / system-boost fast builds."""
+    import base64
+
+    patch_dir = COMPAT_PATCH_DIR
+    local_dir = os.path.join(ROOT, "docs", "patches")
+    ssh.exec_command(f"mkdir -p {patch_dir}", timeout=30)
+    if not os.path.isdir(local_dir):
+        return patch_dir
+    for name in sorted(os.listdir(local_dir)):
+        if not name.startswith("mn2-gcc15-") or not name.endswith(".patch"):
+            continue
+        local_path = os.path.join(local_dir, name)
+        data = open(local_path, "rb").read()
+        b64 = base64.b64encode(data).decode("ascii")
+        remote_path = f"{patch_dir}/{name}"
+        cmd = (
+            f"python3 -c \"import base64, pathlib; "
+            f"pathlib.Path('{remote_path}').write_bytes(base64.b64decode('{b64}'))\""
+        )
+        _, stdout, stderr = ssh.exec_command(cmd, timeout=60)
+        err = stderr.read().decode(errors="replace").strip()
+        code = stdout.channel.recv_exit_status()
+        if code != 0:
+            raise SystemExit(f"upload_compat_patches failed for {name}: {err}")
+        print(f"Uploaded compat patch -> {remote_path}")
+    return patch_dir
 
 def print_remote_build_errors(ssh) -> None:
 
@@ -435,7 +470,7 @@ def main() -> int:
 
         default="",
 
-        help="Checkout origin branch instead of patch (e.g. release/v1.3.0.0-multi-ping)",
+        help=f"Checkout origin branch instead of patch (e.g. {RELEASE_BRANCH})",
 
     )
 
@@ -468,14 +503,22 @@ def main() -> int:
 
 
     patch_file = ""
+    extra_patch_file = ""
 
     compat_patch_file = upload_compat_patch(ssh)
+    compat_patch_dir = upload_compat_patches(ssh)
 
     print(f"Uploaded compat patch → {compat_patch_file}")
+    print(f"Compat patch dir → {compat_patch_dir}")
 
     if not args.no_patch and not args.branch:
 
         patch_file = upload_multi_ping_patch(ssh)
+        try:
+            extra_patch_file = upload_patch(ssh, EXTRA_PATCH_REL, REMOTE_EXTRA_PATCH)
+            print(f"Uploaded extra patch -> {extra_patch_file}")
+        except SystemExit as exc:
+            print(f"WARN: extra patch skip: {exc}")
 
         print(f"Uploaded patch → {patch_file}")
 
@@ -497,7 +540,7 @@ def main() -> int:
 
             f"MN2_BUILD_STAGE={args.stage} FAST_SINGLE_JOB=1 "
 
-            f"PATCH_FILE='{patch_file}' COMPAT_PATCH_FILE='{compat_patch_file}' CHECKOUT_BRANCH='{branch}'; "
+            f"PATCH_FILE='{patch_file}' EXTRA_PATCH_FILE='{extra_patch_file}' COMPAT_PATCH_FILE='{compat_patch_file}' COMPAT_PATCH_DIR='{compat_patch_dir}' CHECKOUT_BRANCH='{branch}'; "
 
             f"bash {remote_build}"
 

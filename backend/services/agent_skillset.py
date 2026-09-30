@@ -639,6 +639,37 @@ class AgentSkillset:
         self.save_skillsets()
         return {'success': True, 'agents_updated': updated, 'knowledge_skills': self.KNOWLEDGE_SKILLS}
 
+    def ensure_casino_agent_skillsets(self) -> Dict:
+        """Register casino agent models (e.g. Kelly) in the skillset registry."""
+        import json
+        import os
+        models_path = os.path.join(self.base_dir, 'data', 'casino_agent_models.json')
+        models: Dict = {}
+        if os.path.isfile(models_path):
+            try:
+                with open(models_path, 'r', encoding='utf-8') as f:
+                    raw = json.load(f)
+                models = raw.get('models') if isinstance(raw.get('models'), dict) else raw
+            except Exception:
+                models = {}
+        if not isinstance(models, dict):
+            models = {}
+        agents = self.skillsets.setdefault('agents', {})
+        updated = 0
+        for model_id, row in models.items():
+            if not isinstance(row, dict):
+                continue
+            agent = agents.setdefault(model_id, {'skills': [], 'model_id': model_id})
+            skills = agent.setdefault('skills', [])
+            for sk in row.get('skills') or ['kelly_sizing']:
+                if sk not in skills:
+                    skills.append(sk)
+                    updated += 1
+            agent['strategy'] = row.get('strategy') or agent.get('strategy')
+            agent['name'] = row.get('name') or agent.get('name') or model_id
+        self.save_skillsets()
+        return {'success': True, 'agents_updated': updated, 'casino_models': list(models.keys())}
+
     def _generate_criticism_skill_profiles(self, agent_id: str, count: int = DEFAULT_CRITICISM_SKILLS_PER_AGENT) -> List[Dict]:
         """Generate criticism skills: review, feedback, and quality assessment for code, content, and decisions."""
         normalized_agent = str(agent_id).strip().lower().replace(' ', '_')
@@ -1495,5 +1526,15 @@ class AgentSkillset:
                     })
         return results
 
-# Global instance
-agent_skillset = AgentSkillset()
+# Global instance (lite init under pytest — avoids multi-minute skillset expansion on import)
+def _agent_skillset_singleton():
+    if os.environ.get('AGENT_SKILLSET_LITE_INIT') == '1':
+        inst = AgentSkillset.__new__(AgentSkillset)
+        inst.base_dir = BASE_DIR
+        inst.skillsets = {'agents': {}}
+        inst.skillsets_file = os.path.join(inst.base_dir, 'logs', 'agent_skillsets', 'skillsets.json')
+        return inst
+    return AgentSkillset()
+
+
+agent_skillset = _agent_skillset_singleton()

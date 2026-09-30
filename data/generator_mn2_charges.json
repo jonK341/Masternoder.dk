@@ -1,0 +1,26 @@
+{
+  "unit-test-doc-999": {
+    "user_id": "unit_test_user_999",
+    "amount": 0,
+    "tier": "standard",
+    "earned": true,
+    "earn_amount": 0.005,
+    "earned_at": "2026-06-25T17:00:16.526541Z"
+  },
+  "unit-test-doc-998": {
+    "user_id": "unit_test_user_998",
+    "amount": 0,
+    "tier": "standard",
+    "earned": true,
+    "earn_amount": 0.005,
+    "earned_at": "2026-06-25T17:01:51.431142Z"
+  },
+  "unit-test-doc-997": {
+    "user_id": "unit_test_user_997",
+    "amount": 0,
+    "tier": "standard",
+    "earned": true,
+    "earn_amount": 0.005,
+    "earned_at": "2026-06-25T17:05:26.593516Z"
+  }
+}

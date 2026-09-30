@@ -84,16 +84,16 @@ def register_error_logging_middleware(app):
     
     @app.errorhandler(404)
     def handle_404_error(e):
-        """Handle 404 Not Found (only for non-API paths)"""
-        # API 404s are handled by auto-fix middleware
+        """Handle 404 Not Found."""
         if '/api/' in request.path:
-            return None  # Let auto-fix middleware handle it
-        
+            from backend.middleware.auto_fix_404_middleware import handle_404
+            return handle_404(e)
+
         error_logger.log_error(e, {
             'status_code': 404,
             'endpoint': request.path
         })
-        return None  # Let Flask handle normally
+        return e
     
     @app.errorhandler(Exception)
     def handle_generic_error(e):

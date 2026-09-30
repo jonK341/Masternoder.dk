@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "premium_base_bonus_bps": 12,
+  "edge_uplift_share": 0.6,
+  "cycles_multiplier": 1.5,
+  "fee_discount_bps": 5,
+  "premium_skills": ["volatility_breakout", "cross_pair_momentum", "funding_rate_carry", "mean_reversion_scalp", "internal_rebalance"],
+  "premium_features": [
+    {"id": "prediction_boost", "name": "Prediction Boost", "description": "Captures a share of the Profit Prediction Engine's edge uplift on every cycle."},
+    {"id": "priority_scan", "name": "Priority Scanning", "description": "Higher cycle rate — scans and acts more often than standard bots."},
+    {"id": "advanced_skills", "name": "Advanced Skills Unlocked", "description": "Access to high-edge skills: volatility breakout, cross-pair momentum, funding carry."},
+    {"id": "fee_discount", "name": "Maker/Taker Fee Discount", "description": "Reduced effective fees improve net margin per trade."},
+    {"id": "opportunity_radar", "name": "Opportunity Radar", "description": "Live ranked best symbols by predicted net edge."},
+    {"id": "compounding_autopilot", "name": "Compounding Autopilot", "description": "Reinvests realized profit to grow capital toward a target."}
+  ]
+}

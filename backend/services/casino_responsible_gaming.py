@@ -21,6 +21,24 @@ def _config() -> Dict[str, Any]:
         return {}
 
 
+def _profit_agent_override(user_id: str) -> Dict[str, Any]:
+    cfg = _config()
+    po = cfg.get("profit_agent_overrides") or {}
+    if not isinstance(po, dict):
+        return {}
+    ids = po.get("user_ids") or []
+    if str(user_id) not in [str(x) for x in ids]:
+        return {}
+    return po
+
+
+def profit_agent_daily_cap(user_id: str) -> Optional[int]:
+    """Higher daily bet cap for autonomous profit agents (config-driven)."""
+    override = _profit_agent_override(user_id)
+    cap = override.get("max_bets_per_day")
+    return int(cap) if cap is not None else None
+
+
 def _tier_for_user(user_id: str) -> Dict[str, Any]:
     tiers = _config().get("limits_by_xp") or []
     if not isinstance(tiers, list) or not tiers:
@@ -73,6 +91,7 @@ def check_before_bet(user_id: str, bet: float, currency: str) -> Optional[str]:
     tier = _tier_for_user(user_id)
     if not tier:
         return None
+    override = _profit_agent_override(user_id)
     window_h = float(cfg.get("session_window_hours") or 24)
     cooldown_m = int(tier.get("cooldown_minutes") or 0)
     cap_key = {
@@ -80,7 +99,7 @@ def check_before_bet(user_id: str, bet: float, currency: str) -> Optional[str]:
         "mn2": "max_loss_mn2",
         "usd": "max_loss_usd",
     }.get(currency, "max_loss_coins")
-    cap = tier.get(cap_key)
+    cap = override.get(cap_key) if override.get(cap_key) is not None else tier.get(cap_key)
     if cap is None:
         return None
 
@@ -152,3 +171,69 @@ def record_after_bet(user_id: str, net: float, currency: str) -> None:
         rec["cooldown_until"] = (now + timedelta(minutes=cooldown_m)).isoformat().replace("+00:00", "Z")
     sessions[key] = rec
     _save_sessions(sessions)
+
+
+def status_for_user(user_id: str, currency: str = "coins") -> Dict[str, Any]:
+    """Public RG session snapshot for UI nudges (no bet blocking side effects)."""
+    cfg = _config()
+    currency = (currency or "coins").lower()
+    tier = _tier_for_user(user_id)
+    cap_key = {
+        "coins": "max_loss_coins",
+        "mn2": "max_loss_mn2",
+        "usd": "max_loss_usd",
+    }.get(currency, "max_loss_coins")
+    cap = tier.get(cap_key) if tier else None
+    window_h = float(cfg.get("session_window_hours") or 24)
+
+    sessions = _load_sessions()
+    rec = sessions.get(_session_key(user_id, currency)) or {}
+    now = datetime.now(timezone.utc)
+    loss = float(rec.get("session_loss") or 0)
+    started = rec.get("started_at")
+    session_minutes = 0
+    if started:
+        try:
+            start = datetime.fromisoformat(str(started).replace("Z", "+00:00"))
+            elapsed = now - start
+            if elapsed <= timedelta(hours=window_h):
+                session_minutes = int(elapsed.total_seconds() // 60)
+            else:
+                loss = 0.0
+        except Exception:
+            pass
+
+    cooldown_until = rec.get("cooldown_until")
+    cooldown_active = False
+    if cooldown_until:
+        try:
+            end = datetime.fromisoformat(str(cooldown_until).replace("Z", "+00:00"))
+            cooldown_active = now < end
+        except Exception:
+            pass
+
+    pct_used = round((loss / float(cap)) * 100, 1) if cap and float(cap) > 0 else 0.0
+    nudge = None
+    if cooldown_active:
+        nudge = "Cooldown active — take a break before your next session."
+    elif pct_used >= 90:
+        nudge = "You're near your session loss limit — consider a break."
+    elif session_minutes >= 120:
+        nudge = "Long session detected — entertainment breaks help keep play fun."
+
+    return {
+        "success": True,
+        "enabled": bool(cfg.get("enabled", True)),
+        "currency": currency,
+        "session_loss": round(loss, 8 if currency == "mn2" else 2),
+        "session_loss_cap": cap,
+        "session_loss_pct_used": pct_used,
+        "session_minutes": session_minutes,
+        "session_window_hours": window_h,
+        "cooldown_active": cooldown_active,
+        "cooldown_until": cooldown_until if cooldown_active else None,
+        "tier_min_xp": tier.get("min_xp") if tier else 0,
+        "nudge": nudge,
+        "help_url": "/profile",
+        "note": "Virtual entertainment only — shop cosmetics never change RTP.",
+    }

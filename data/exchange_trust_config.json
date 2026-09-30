@@ -1,0 +1,40 @@
+{
+  "enabled": true,
+  "user_trust": {
+    "base_score": 15,
+    "level_weight": 2.5,
+    "achievement_weight": 3,
+    "profit_usd_weight": 0.02,
+    "agent_count_weight": 4,
+    "crypto_buy_weight": 5,
+    "max_score": 100
+  },
+  "agent_trust": {
+    "base_score": 20,
+    "profit_usd_weight": 0.05,
+    "tick_weight": 0.4,
+    "game_hour_weight": 2,
+    "mastery_weight": 0.35,
+    "iq_weight": 0.08,
+    "max_score": 100
+  },
+  "intelligence": {
+    "trust_iq_multiplier": 0.55,
+    "tier_bonus": {"Unverified": 0, "Bronze": 8, "Silver": 18, "Gold": 32, "Platinum": 50},
+    "trust_edge_bps_per_10": 0.6,
+    "max_trust_edge_bps": 12
+  },
+  "tiers": [
+    {"min": 0, "name": "Unverified", "icon": "⚪", "color": "#8b93a7"},
+    {"min": 20, "name": "Bronze", "icon": "🥉", "color": "#cd7f32"},
+    {"min": 40, "name": "Silver", "icon": "🥈", "color": "#c0c0c0"},
+    {"min": 60, "name": "Gold", "icon": "🥇", "color": "#ffd700"},
+    {"min": 80, "name": "Platinum", "icon": "💎", "color": "#38bdf8"}
+  ],
+  "activations": [
+    {"id": "run_bots", "name": "Run trading bots", "min_user_trust": 18, "description": "Allow manual and daemon bot ticks on your account."},
+    {"id": "super_agents", "name": "Super / Sentient agents", "min_user_trust": 50, "min_agent_trust": 25, "description": "Unlock super-skill agents and adaptive learning at full speed."},
+    {"id": "premium_auto", "name": "Premium auto-run", "min_user_trust": 40, "description": "Let premium bots auto-run when global auto-run is on."},
+    {"id": "live_payout", "name": "Live payout request", "min_user_trust": 75, "description": "Request live profit stash to Binance (still gated by owner live flags)."}
+  ]
+}

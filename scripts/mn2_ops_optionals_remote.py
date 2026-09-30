@@ -15,10 +15,8 @@ import argparse
 import os
 import sys
 
-import paramiko
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
 
 WEB = "/var/www/html"
 
@@ -236,10 +234,8 @@ def main() -> int:
         extra_lines.append(_shell_export("DISCORD_CHANNEL_ID_MARKET", args.discord_market_webhook.strip()))
 
     pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
-    print(f"== Connected {deploy_user()}@{deploy_host()} ==\n")
+    ssh, auth_method, _ = connect_deploy_ssh(pw)
+    print(f"== Connected {deploy_user()}@{deploy_host()} ({auth_method}) ==\n")
 
     if args.audit:
         print(sh(ssh, _remote_audit_script(), timeout=60))

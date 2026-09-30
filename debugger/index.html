@@ -468,6 +468,7 @@
         <div class="tabs" id="debugger-tabs">
             <div class="tab" onclick="window.showTab('mission-control'); window.loadMissionControl();" style="background: linear-gradient(135deg,rgba(0,200,100,0.4),rgba(0,150,255,0.4)); border-color: #00e676; font-weight: bold; animation: pulse-border 2s infinite;">🚀 Mission Control</div>
             <div class="tab" onclick="window.showTab('ops-4d'); window.load4dOpsHub();" style="background: rgba(0,229,255,0.22); border-color: #00e5ff; font-weight: bold;">📡 4D Monitor &amp; Ops</div>
+            <div class="tab" onclick="window.showTab('fraud-risk'); window.loadFraudRiskPanel && window.loadFraudRiskPanel();" style="background: rgba(244,67,54,0.25); border-color: #f44336; font-weight: bold;">🛡️ Fraud &amp; Risk</div>
             <div class="tab" onclick="window.showTab('master-dashboard')" style="background: rgba(255,215,0,0.3); border-color: #FFD700; font-weight: bold;">👑 Master Dashboard</div>
             <div class="tab" onclick="window.showTab('errors')">🚨 Error Dashboard</div>
             <div class="tab" onclick="window.showTab('profile')">👤 Profile & Points</div>
@@ -1035,6 +1036,30 @@
                 <p class="dim" style="margin-bottom: 8px;">Uses the same <code>profile-user-id</code> as the Profile tab. Awards and generator activity can move these bars when the backend records points.</p>
                 <button class="button" onclick="window.opsLoadUserProgress()">🔄 Refresh progress</button>
                 <div id="ops-user-progress" style="margin-top:12px;" class="dim">Click refresh to load level and XP progress…</div>
+            </div>
+        </div>
+
+        <!-- Fraud & Risk (withdrawal scoring + sybil clusters) -->
+        <div id="fraud-risk" class="tab-content">
+            <h2>🛡️ Fraud &amp; Risk Panel</h2>
+            <p class="dim" style="margin-bottom: 14px; max-width: 820px;">
+                Withdrawal anomaly log from <code>mn2_withdrawal_risk</code> and sybil cluster scores.
+                Requires <code>COGS_ADMIN_REPORT_KEY</code> (same as COGS metering stats).
+            </p>
+            <label class="dim" style="display:block;margin-bottom:6px;">Admin key</label>
+            <input type="password" id="risk-admin-key" placeholder="COGS_ADMIN_REPORT_KEY" style="padding:8px 12px;border-radius:6px;min-width:280px;background:rgba(0,0,0,0.35);color:#fff;border:2px solid rgba(255,255,255,0.25);margin-bottom:12px;">
+            <button class="button" onclick="window.loadFraudRiskPanel && window.loadFraudRiskPanel();">🔄 Refresh risk data</button>
+            <div class="ops-section" style="margin-top:18px;">
+                <h3>Summary</h3>
+                <div id="risk-summary-out" class="dim">Enter key and refresh…</div>
+            </div>
+            <div class="ops-section">
+                <h3>Recent withdrawal assessments</h3>
+                <div id="risk-withdrawals-out" class="dim">—</div>
+            </div>
+            <div class="ops-section">
+                <h3>Sybil clusters (elevated)</h3>
+                <div id="risk-sybil-out" class="dim">—</div>
             </div>
         </div>
 
@@ -6216,5 +6241,6 @@
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="debugger" defer></script>
+    <script src="/static/js/debugger-risk-panel.js?v=20260624" defer></script>
 </body>
 </html>

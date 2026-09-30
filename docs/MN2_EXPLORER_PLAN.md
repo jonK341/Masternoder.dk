@@ -192,3 +192,16 @@ Stood up a real block explorer from source at **https://camgirls.masternoder.dk/
 - **Resourcing:** host is 1.9 GB RAM; added a 2 GB swapfile (`/swapfile2`, total ~4.3 GB) before installing the DB stack. Single PM2 worker + `block_parallel_tasks` defaults keep memory in check alongside `masternoder2d` + Mongo + Flask/uwsgi.
 
 **Next: Phase E2** — flip the on-site tx/address links from Chainz `.dws` to the self-hosted `/tx/…`,`/address/…` shape via `explorer_kind`, and optionally add an iquidus stats tier in `network_overview()`. Hold the final `explorer_base_url` flip until the initial index has fully populated address pages.
+
+### E2 config — env overrides (2026-06)
+
+When a self-hosted explorer is deployed, set these in `.env` (they override `data/mn2_config.json` via `backend/services/mn2_explorer_urls.py`):
+
+| Env var | Purpose |
+|---------|---------|
+| `MN2_EXPLORER_BASE_URL` | Primary explorer for tx/address/block links |
+| `MN2_EXPLORER_FALLBACK_BASE_URL` | Chainz or backup when local is down |
+| `MN2_EXPLORER_LOCAL_API_URL` | eiquidus `/ext` API base for local stats tier |
+| `MN2_EXPLORER_KIND` | `iquidus` or `chainz` (URL shape) |
+
+Without env vars, defaults remain Chainz from `mn2_config.json`.

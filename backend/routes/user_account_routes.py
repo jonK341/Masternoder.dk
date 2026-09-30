@@ -471,7 +471,7 @@ def user_linked_providers():
     data = request.get_json() or {}
     provider = str(data.get("provider") or "").strip().lower()
     action = str(data.get("action") or "unlink").strip().lower()
-    allowed = {p.get("id") for p in configured if isinstance(p, dict) and p.get("id")} | {"github", "google"}
+    allowed = {p.get("id") for p in configured if isinstance(p, dict) and p.get("id")} | {"github", "google", "facebook", "discord"}
     if provider not in allowed:
         return jsonify({"success": False, "error": "unknown provider"}), 400
     revocation = {"success": False, "revocation_supported": False, "error": "not requested"}

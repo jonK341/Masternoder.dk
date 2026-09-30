@@ -30,6 +30,7 @@ def test_start_masternode_uses_alias_then_local(monkeypatch):
             return {"result": "ok", "error": None}
         return {"error": "skip", "result": None}
 
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: False)
     monkeypatch.setattr(rpc, "startmasternode", fake_start)
     monkeypatch.setattr(mn, "_unlock_wallet", lambda: True)
     monkeypatch.setattr(mn, "_unlock_collateral_utxos", lambda: 0)
@@ -48,6 +49,7 @@ def test_start_masternode_falls_back_to_local(monkeypatch):
             return {"result": "ok", "error": None}
         return {"error": "alias failed", "result": None}
 
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: False)
     monkeypatch.setattr(rpc, "startmasternode", fake_start)
     monkeypatch.setattr(mn, "_unlock_wallet", lambda: True)
     monkeypatch.setattr(mn, "_unlock_collateral_utxos", lambda: 0)
@@ -213,6 +215,7 @@ def test_maintain_ping_starts_local_when_unhealthy(monkeypatch):
         calls.append((alias, conf_changed, skip_privkey_sync))
         return None
 
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: False)
     monkeypatch.setattr(mn, "_ping_loop_healthy", lambda: False)
     monkeypatch.setattr(mn, "_primary_ping_alias", lambda: "platformmn2")
     monkeypatch.setattr(mn, "_primary_ping_privkey", lambda: "testpk")
@@ -256,6 +259,7 @@ def test_ping_loop_ignores_wrong_enabled_collateral(monkeypatch):
     """Watchdog must not treat other ENABLED rows as healthy when platformmn2 is ACTIVE @ 0."""
     txid = "4b41ef0ca3b797a766b3ce84453a2b29c5c1ee5c98b813a890b0eaf97d37ad48"
 
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: False)
     monkeypatch.setattr(mn, "_primary_ping_alias", lambda: "platformmn2")
     monkeypatch.setattr(mn, "_collateral_for_alias", lambda a: (txid, 1))
     monkeypatch.setattr(

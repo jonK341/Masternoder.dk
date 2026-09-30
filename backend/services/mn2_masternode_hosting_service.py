@@ -891,3 +891,20 @@ def hosting_stats() -> Dict[str, Any]:
     paid = sum(1 for o in orders.values() if isinstance(o, dict) and o.get("status") == "paid")
     pending = sum(1 for o in orders.values() if isinstance(o, dict) and o.get("status") == "pending_payment")
     return {"paid_orders": paid, "pending_orders": pending, "paypal": get_paypal_config()}
+
+
+def list_pending_paypal_payments() -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for order in _load_orders().values():
+        if not isinstance(order, dict):
+            continue
+        ppid = str(order.get("paypal_order_id") or "").strip()
+        if order.get("status") != "pending_payment" or not ppid:
+            continue
+        out.append({
+            "rail": "hosting",
+            "local_id": order.get("order_id"),
+            "paypal_order_id": ppid,
+            "user_id": order.get("user_id"),
+        })
+    return out

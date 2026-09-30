@@ -8,7 +8,8 @@ Quick reference for running and maintaining the MN2 integration on the server.
 
 - **Install and start:** See [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) for download, config, and run.
 - **Where:** Daemon runs on the **server** where the app is deployed (same host or reachable via `MN2_RPC_URL`).
-- **Ports:** Mainnet RPC `9332`; testnet RPC `19332`. Set `rpcport` in `~/.masternoder2/masternoder2.conf` to match.
+- **Ports:** Mainnet P2P `17646`, RPC `9332`; testnet P2P `27646`, RPC `19332`. Set `port` / `rpcport` in `~/.masternoder2/masternoder2.conf` to match.
+- **Wallet bootstrap:** New Qt/daemon installs need `addnode=host:17646` lines (not `connect=localhost`). Canonical list: `GET /api/mn2/network-peers` or `data/mn2_network_peers.json`. Example block in `config/masternoder2.conf.example`.
 
 **Run command (production, config under web root):**
 

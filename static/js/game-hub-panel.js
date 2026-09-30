@@ -224,11 +224,9 @@
 
                 (q.description ? '<p class="gh-quest-desc">' + esc(q.description) + '</p>' : '') +
 
-                '<div class="gh-progress"><div class="gh-progress-fill" style="width:' + pct + '%"></div></div>' +
-
                 '<div class="gh-quest-meta">' +
 
-                '<span>' + (q.progress || 0) + ' / ' + q.target + '</span>' +
+                '<span class="gh-quest-progress">' + pct + '% · ' + (q.progress || 0) + ' / ' + q.target + '</span>' +
 
                 '<span>+' + (q.reward || 0) + ' pts' + mn2 + xp + coins + '</span>' +
 
@@ -328,9 +326,7 @@
 
             '<div class="gh-streak">' +
 
-            '<div class="gh-streak-head"><span>Claim streak</span><span>' + days + ' / ' + target + ' days</span></div>' +
-
-            '<div class="gh-progress"><div class="gh-progress-fill gh-progress-fill--streak" style="width:' + pct + '%"></div></div>' +
+            '<div class="gh-streak-head"><span>Claim streak</span><span>' + days + ' / ' + target + ' days (' + pct + '%)</span></div>' +
 
             '<p class="gh-streak-note">Claim any quest daily — day ' + target + ' awards +' + fmt(streak.bonus_mn2 || 0.007, 4) + ' MN2</p>' +
 

@@ -5,6 +5,7 @@ Uses account resolution: session > request > user_identification.
 """
 from flask import Blueprint, jsonify, request, send_file
 import os
+from typing import Any, Dict
 
 shop_bp = Blueprint('shop', __name__)
 
@@ -44,16 +45,46 @@ def _apply_booster_sku(unified_points_db, user_id: str, sku_id: str, sku: dict, 
             unified_points_db.add_booster(user_id, sku_id, minutes, name=name)
 
 
-def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: int) -> None:
+def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: int, *, purchase_ref: str = None) -> None:
     """Apply boosters and game time to user when they purchase relevant shop items."""
     import re
+    try:
+        from backend.services.shop_mn2_fulfillment_service import apply_mn2_grants_for_purchase
+
+        ref = (purchase_ref or "").strip() or None
+        apply_mn2_grants_for_purchase(
+            user_id,
+            item_id,
+            item,
+            quantity,
+            source="shop_purchase",
+            reference=ref or f"shop_purchase:{item_id}:{max(1, int(quantity or 1))}",
+            extra_metadata={"item_name": (item or {}).get("name"), "purchase_ref": ref},
+        )
+    except Exception:
+        pass
     try:
         from backend.services.unified_points_database import unified_points_db
     except Exception:
         return
+    if (item or {}).get("delivery") == "exchange_shop":
+        try:
+            from backend.services.exchange_shop_service import fulfill_item
+
+            ex_id = (item or {}).get("exchange_item_id") or item_id
+            if (item or {}).get("requires_agent_id"):
+                return
+            fulfill_item(user_id, ex_id, record_purchase=True, price_mn2=float((item or {}).get("price_mn2") or 0))
+        except Exception:
+            pass
+        return
     try:
         name = (item.get("name") or item_id or "").lower()
         category = (item.get("category") or "").lower()
+        booster_skus = _booster_sku_map()
+        if item_id in booster_skus:
+            _apply_booster_sku(unified_points_db, user_id, item_id, booster_skus[item_id], quantity)
+            return
         bundle = _content_bundle_by_id(item_id)
         if bundle:
             qty = max(1, int(quantity or 1))
@@ -209,7 +240,7 @@ def get_paypal_coin_packs():
     try:
         from backend.services.monetization_config_service import get_coin_packs_with_payment_rails
 
-        packs = get_coin_packs_with_payment_rails()
+        packs = get_coin_packs_with_payment_rails(include_overage=False)
         if packs:
             return packs
     except Exception:
@@ -218,7 +249,32 @@ def get_paypal_coin_packs():
 
 
 def get_coin_pack_map():
+    try:
+        from backend.services.monetization_config_service import get_coin_packs_with_payment_rails
+
+        packs = get_coin_packs_with_payment_rails(include_overage=True)
+        if packs:
+            return {p["id"]: p for p in packs if p.get("id")}
+    except Exception:
+        pass
     return {p["id"]: p for p in get_paypal_coin_packs()}
+
+
+def get_mn2_packs():
+    """MN2 packs from monetization_config.json (buy MN2 with PayPal or shop coins)."""
+    try:
+        from backend.services.monetization_config_service import get_mn2_packs_with_payment_rails
+
+        packs = get_mn2_packs_with_payment_rails()
+        if packs:
+            return packs
+    except Exception:
+        pass
+    return []
+
+
+def get_mn2_pack_map():
+    return {p["id"]: p for p in get_mn2_packs() if p.get("id")}
 
 
 # Module-level aliases refreshed at import (tests expect PAYPAL_COIN_PACKS / COIN_PACK_MAP)
@@ -232,7 +288,7 @@ def _get_paypal_shop_items():
     result = {}
     for item in items or []:
         iid = item.get("id")
-        if not iid or iid in get_coin_pack_map():
+        if not iid or iid in get_coin_pack_map() or iid in get_mn2_pack_map():
             continue
         price = item.get("price")
         if isinstance(price, (int, float)) and price > 0:
@@ -327,8 +383,88 @@ def _digital_goods_shop_items():
             "license": good.get("license") or "",
             "coins_granted": int(good.get("coins_granted") or 0),
         }
+        if row.get("checkout_url"):
+            row["checkout_url"] = good.get("checkout_url")
         if row["id"]:
             items.append(row)
+    return items
+
+
+def _mn2_services_shop_items():
+    """MN2 platform services (masternode hosting, on-ramp, explorer deep links)."""
+    try:
+        from backend.services.monetization_config_service import get_mn2_services
+
+        services = get_mn2_services()
+    except Exception:
+        services = []
+    hosting_price = None
+    try:
+        import json
+        import os
+
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        cfg_path = os.path.join(base, "data", "mn2_masternode_config.json")
+        if os.path.isfile(cfg_path):
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                mcfg = json.load(f)
+            paypal = mcfg.get("paypal") if isinstance(mcfg.get("paypal"), dict) else {}
+            if paypal.get("price_usd_per_slot") is not None:
+                hosting_price = float(paypal.get("price_usd_per_slot"))
+    except Exception:
+        hosting_price = None
+    items = []
+    for svc in services:
+        price_coins = int(svc.get("price_coins") or 0)
+        price_usd = float(svc.get("price_usd") or 0)
+        if svc.get("service_id") == "masternode_hosting" and hosting_price is not None:
+            price_usd = hosting_price
+        delivery = (svc.get("delivery") or "external_link").lower()
+        row = {
+            "id": svc.get("id"),
+            "name": svc.get("name") or svc.get("id"),
+            "description": svc.get("description") or "",
+            "category": "mn2_services",
+            "price": price_coins,
+            "price_usd": price_usd,
+            "icon": svc.get("icon") or "🪙",
+            "rarity": "legendary" if delivery == "external_checkout" else "epic",
+            "tags": ["mn2_service", delivery, f"line_{str(svc.get('line') or 'h').lower()}", svc.get("service_id") or ""],
+            "payment_rails": svc.get("payment_rails") or [],
+            "delivery": delivery,
+            "checkout_url": svc.get("checkout_url") or "",
+            "service_id": svc.get("service_id") or "",
+            "billing_label": svc.get("billing_label") or "",
+            "checkout_mode": svc.get("checkout_mode") or "",
+            "max_slots_per_order": int(svc.get("max_slots_per_order") or 0) or None,
+        }
+        if row["id"]:
+            items.append(row)
+    return items
+
+
+def _booster_sku_catalog_items():
+    """Standalone catalog rows for configured booster SKUs (e.g. staking surges) not already seeded."""
+    items = []
+    for sku_id, sku in _booster_sku_map().items():
+        price_coins = int(sku.get("price_coins") or 0)
+        if price_coins <= 0:
+            continue
+        row = {
+            "id": sku_id,
+            "name": sku.get("name") or sku_id,
+            "description": sku.get("description") or f"Active for {int(sku.get('duration_minutes') or 60)} minutes after purchase.",
+            "category": sku.get("category") or "boosts",
+            "price": price_coins,
+            "price_usd": float(sku.get("price_usd") or 0),
+            "icon": "⚡" if sku.get("effect") == "staking_boost" else "🚀",
+            "rarity": "epic" if sku.get("effect") == "staking_boost" else "rare",
+            "tags": ["booster_sku", sku.get("effect") or "booster"],
+            "payment_rails": ["paypal", "mn2", "credits"],
+            "delivery": "booster_sku",
+            "boost_multiplier": sku.get("boost_multiplier"),
+        }
+        items.append(row)
     return items
 
 
@@ -351,11 +487,46 @@ def _content_bundle_shop_items():
             "bundle_items": bundle.get("items") or [],
             "coins_granted": int(bundle.get("coins_granted") or 0),
             "generation_credits_granted": float(bundle.get("generation_credits_granted") or 0),
+            "mn2_granted": float(bundle.get("mn2_granted") or 0),
             "attribution": bundle.get("attribution") or {},
         }
         if row["id"]:
             items.append(row)
     return items
+
+
+def _mn2_pack_shop_items():
+    """Expose MN2 packs in the shop catalog (coins or PayPal → in-wallet MN2)."""
+    items = []
+    for pack in get_mn2_packs():
+        price_coins = int(pack.get("price_coins") or 0)
+        row = {
+            "id": pack.get("id"),
+            "name": pack.get("name") or pack.get("id"),
+            "description": pack.get("description") or "",
+            "category": "mn2_crypto",
+            "price": price_coins,
+            "price_usd": float(pack.get("price_usd") or 0),
+            "icon": pack.get("icon") or "🪙",
+            "rarity": "legendary" if price_coins >= 2000 else "epic",
+            "tags": ["mn2_pack", "crypto", "mn2"],
+            "payment_rails": pack.get("payment_rails") or ["paypal", "credits"],
+            "mn2_granted": float(pack.get("mn2_granted") or 0),
+            "featured": bool(pack.get("featured")),
+        }
+        if row["id"]:
+            items.append(row)
+    return items
+
+
+def _exchange_shop_items():
+    """Expose exchange shop SKUs in the main /shop catalog."""
+    try:
+        from backend.services.exchange_shop_service import shop_items_for_catalog
+
+        return shop_items_for_catalog()
+    except Exception:
+        return []
 
 
 def _ptc_advertiser_package_shop_items():
@@ -1095,6 +1266,27 @@ def _seed_shop_items():
             item_id=f"top25-{n:02d}",
         )
 
+    # ---- Lab V2.1 hub wave (June 2026): boosters, crypto grants, trophy packs ----
+    lab_wave_v21 = [
+        ("Lab Hub Access Token", "Unlocks full Lab V2.1 tab navigation and share-card deep links.", "🔬", "lab-hub-v21-token", 85, "rare"),
+        ("Lab Research Booster 1h", "+25% lab first-research point bonuses for 1 hour.", "⚡", "lab-booster-1h", 45, "common"),
+        ("Lab Research Booster 6h", "+25% lab first-research point bonuses for 6 hours.", "⚡", "lab-booster-6h", 120, "rare"),
+        ("Lab AI Copilot Pass 24h", "AI copilot recommendations and agent refine priority for 24h.", "🤖", "lab-ai-copilot-24h", 150, "rare"),
+        ("Lab Systems Audit Kit", "One-click systems recheck badge + profile logbook stamp.", "⚙️", "lab-systems-audit-kit", 65, "common"),
+        ("Lab Idea Board Premium", "Pin extra ideas with reduced cooldown (cosmetic unlock).", "💡", "lab-idea-board-premium", 55, "common"),
+        ("Lab Trophy Booster Pack", "Bundle: Pulse Runner + Deep Scan Pioneer trophy progress boost.", "🏆", "lab-trophy-booster-pack", {"game_points": 80, "trophy_points": 20}, "epic"),
+        ("Lab Crypto Reward Pack S", "Small MN2 research grant — credited via shop MN2 flow.", "🪙", "lab-crypto-reward-s", {"mn2": 0.01}, "rare"),
+        ("Lab Crypto Reward Pack M", "Medium MN2 research grant for chapter milestones.", "🪙", "lab-crypto-reward-m", {"mn2": 0.05}, "epic"),
+        ("Lab Crypto Reward Pack L", "Large MN2 sovereign research grant.", "🪙", "lab-crypto-reward-l", {"mn2": 0.15}, "legendary"),
+        ("Chapter V Unlock Bundle", "Cosmetic bundle celebrating Chapter V research rail.", "🧠", "lab-chapter5-bundle", 220, "epic"),
+        ("Lab Co-Tech Accelerator", "Reduces perceived co-tech draft spacing (flair item).", "🧪", "lab-cotech-accelerator", 90, "rare"),
+        ("Lab Roundtable Chime", "Unlock roundtable sound palette on 4D monitor.", "🪑", "lab-roundtable-chime", 40, "common"),
+        ("Lab Explorer Deep Scan Duo", "Bundle: exploration + deep scan flair badges.", "🛰️", "lab-explore-deep-duo", 110, "rare"),
+        ("Lab Sovereign Seal", "Collectible seal for Sovereign Research Core researchers.", "👑", "lab-sovereign-seal", 350, "legendary"),
+    ]
+    for nm, desc, icon, iid, price, rarity in lab_wave_v21:
+        add(nm, desc, "lab", price, icon, rarity, tags=["lab", "lab_wave_v21", "shop_wave_jun2026"], item_id=iid)
+
     return items
 
 
@@ -1119,12 +1311,14 @@ def get_shop_config():
             get_payment_rails_catalog,
             get_public_content_bundles,
             get_public_digital_goods,
+            get_public_mn2_services,
         )
 
         monetization_shop = {
             "payment_rails_catalog": get_payment_rails_catalog(),
             "digital_goods": get_public_digital_goods(),
             "content_bundles": get_public_content_bundles(),
+            "mn2_services": get_public_mn2_services(),
         }
     except Exception:
         monetization_shop = {"payment_rails_catalog": {}, "digital_goods": [], "content_bundles": []}
@@ -1334,6 +1528,12 @@ def get_coin_packs():
     return jsonify({'success': True, 'coin_packs': get_paypal_coin_packs()}), 200
 
 
+@shop_bp.route('/api/shop/mn2-packs', methods=['GET'])
+def get_mn2_packs_route():
+    """Get MN2 packs for buying in-wallet MN2 with PayPal or shop coins."""
+    return jsonify({'success': True, 'mn2_packs': get_mn2_packs()}), 200
+
+
 @shop_bp.route('/api/shop/paypal-items', methods=['GET'])
 def get_paypal_shop_items():
     """Get shop items that can be purchased directly with PayPal (price_usd)."""
@@ -1441,13 +1641,31 @@ def _get_shop_items():
         if bundle_item.get("id") not in existing_ids:
             items.append(bundle_item)
             existing_ids.add(bundle_item.get("id"))
+    for svc_item in _mn2_services_shop_items():
+        if svc_item.get("id") not in existing_ids:
+            items.append(svc_item)
+            existing_ids.add(svc_item.get("id"))
+    for booster_item in _booster_sku_catalog_items():
+        if booster_item.get("id") not in existing_ids:
+            items.append(booster_item)
+            existing_ids.add(booster_item.get("id"))
+    for mn2_pack_item in _mn2_pack_shop_items():
+        if mn2_pack_item.get("id") not in existing_ids:
+            items.append(mn2_pack_item)
+            existing_ids.add(mn2_pack_item.get("id"))
     for package_item in _ptc_advertiser_package_shop_items():
         if package_item.get("id") not in existing_ids:
             items.append(package_item)
             existing_ids.add(package_item.get("id"))
+    for exchange_item in _exchange_shop_items():
+        if exchange_item.get("id") not in existing_ids:
+            items.append(exchange_item)
+            existing_ids.add(exchange_item.get("id"))
     # Add price_usd for items with coin price (enables direct PayPal purchase)
     for item in items or []:
-        if item.get("id") in get_coin_pack_map():
+        if item.get("id") in get_coin_pack_map() or item.get("id") in get_mn2_pack_map():
+            continue
+        if item.get("delivery") in ("external_checkout", "external_link", "free_info"):
             continue
         price = item.get("price")
         if isinstance(price, (int, float)) and price > 0:
@@ -1538,6 +1756,19 @@ def shop_v3_categories():
         return jsonify({'success': False, 'error': str(e), 'categories': [], 'total_items': 0}), 500
 
 
+@shop_bp.route('/api/shop/discord/promo/redeem', methods=['POST'])
+@shop_bp.route('/vidgenerator/api/shop/discord/promo/redeem', methods=['POST'])
+def shop_discord_promo_redeem():
+    """Redeem M8 #52 shop-wide Discord promo code."""
+    data = request.get_json(silent=True) or {}
+    user_id = (data.get("user_id") or request.args.get("user_id") or _resolve_user_id()).strip()
+    code = (data.get("code") or data.get("promo_code") or "").strip()
+    from backend.services.shop_discord_promo_service import redeem
+    result = redeem(user_id, code)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
+
+
 @shop_bp.route('/api/game/shop/purchase', methods=['POST'])
 @shop_bp.route('/api/shop-v3/purchase', methods=['POST'])
 def shop_purchase():
@@ -1559,6 +1790,16 @@ def shop_purchase():
         
         if not item:
             return jsonify({'success': False, 'error': f'Item {item_id} not found'}), 404
+
+        delivery = (item.get("delivery") or "").lower()
+        if delivery in ("external_checkout", "external_link", "free_info"):
+            checkout_url = item.get("checkout_url") or "/shop"
+            return jsonify({
+                'success': False,
+                'error': 'This item uses external checkout — open the linked page to continue.',
+                'checkout_url': checkout_url,
+                'delivery': delivery,
+            }), 400
         
         # Get item price
         item_price = item.get('price', 0)
@@ -1686,7 +1927,7 @@ def shop_purchase():
                         'error': 'Shop fulfillment failed; point deductions were refunded',
                         'details': str(ex),
                     }), 500
-                _apply_shop_item_effects(user_id, item_id, item, quantity)
+                _apply_shop_item_effects(user_id, item_id, item, quantity, purchase_ref=str(purchase_id) if purchase_id else None)
                 
                 # Record agent activity for the shop purchase
                 try:
@@ -1803,7 +2044,7 @@ def shop_purchase():
                         'error': 'Shop fulfillment failed; coins were refunded',
                         'details': str(ex),
                     }), 500
-                _apply_shop_item_effects(user_id, item_id, item, quantity)
+                _apply_shop_item_effects(user_id, item_id, item, quantity, purchase_ref=str(purchase_id) if purchase_id else None)
 
                 # Shop V9.2: award loyalty/cashback for coin spend on the whole catalog.
                 loyalty_earned = 0
@@ -1855,6 +2096,56 @@ def shop_purchase():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+def _merge_mn2_service_purchases(user_id: str, purchases: list, limit: int = 50) -> list:
+    """Append masternode hosting PayPal orders to shop purchase history."""
+    try:
+        from backend.services.mn2_masternode_hosting_service import list_user_orders
+
+        existing = {str(p.get("order_id") or "") for p in purchases if p.get("source") == "mn2_masternode_hosting"}
+        for order in list_user_orders(user_id, limit=limit):
+            oid = str(order.get("order_id") or "")
+            if not oid or oid in existing:
+                continue
+            slots = int(order.get("slots") or 1)
+            status = str(order.get("status") or "")
+            method = str(order.get("payment_method") or "paypal")
+            price_type = {
+                "paypal": "paypal_mn2_hosting",
+                "credits": "coins",
+                "mn2": "mn2",
+                "mn2_onchain": "mn2_onchain",
+            }.get(method, "paypal_mn2_hosting")
+            price_points: Dict[str, Any] = {}
+            if method == "credits":
+                price_points = {"coins": int(order.get("coins_total") or 0)}
+            elif method == "mn2":
+                price_points = {"mn2": float(order.get("mn2_total") or 0)}
+            elif method == "mn2_onchain":
+                price_points = {"mn2": float(order.get("mn2_paid_onchain") or order.get("mn2_total") or 0)}
+            else:
+                price_points = {"usd": order.get("usd_total")}
+            purchases.append({
+                "id": f"mn-host-{oid}",
+                "item_id": "svc-mn2-masternode-hosting",
+                "item_name": f"Masternode Hosting × {slots}",
+                "quantity": slots,
+                "price_type": price_type,
+                "price_paid_coins": int(order.get("coins_total") or 0) if method == "credits" else 0,
+                "price_paid_points": price_points,
+                "purchase_status": status,
+                "created_at": order.get("paid_at") or order.get("created_at"),
+                "source": "mn2_masternode_hosting",
+                "order_id": oid,
+                "host_ids": order.get("host_ids") or [],
+                "payment_method": method,
+            })
+            existing.add(oid)
+    except Exception:
+        pass
+    purchases.sort(key=lambda p: str(p.get("created_at") or ""), reverse=True)
+    return purchases[:limit]
+
+
 @shop_bp.route('/api/shop/purchases', methods=['GET'])
 def shop_purchases():
     """Get purchase history for user (requires migration)."""
@@ -1866,6 +2157,7 @@ def shop_purchases():
             purchases = get_purchases(user_id, limit=limit)
         except Exception:
             purchases = []
+        purchases = _merge_mn2_service_purchases(user_id, list(purchases or []), limit=limit)
         return jsonify({'success': True, 'user_id': user_id, 'purchases': purchases}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'purchases': []}), 500
@@ -1881,7 +2173,19 @@ def shop_inventory():
             inventory = get_inventory(user_id)
         except Exception:
             inventory = []
-        return jsonify({'success': True, 'user_id': user_id, 'inventory': inventory}), 200
+        dg_by_id = {g.get("id"): g for g in _digital_goods_config()}
+        enriched = []
+        for row in inventory or []:
+            ent = dict(row)
+            iid = ent.get("item_id")
+            good = dg_by_id.get(iid) if iid else None
+            if good and good.get("delivery") in ("download", "free_info", "inventory"):
+                path = _artifact_abs_path(good)
+                if path and os.path.isfile(path):
+                    ent["download_url"] = f"/api/shop/digital-goods/{iid}/download?user_id={user_id}"
+                    ent["digital_good"] = True
+            enriched.append(ent)
+        return jsonify({'success': True, 'user_id': user_id, 'inventory': enriched}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'inventory': []}), 500
 

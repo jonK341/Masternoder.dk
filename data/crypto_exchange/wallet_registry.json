@@ -1,0 +1,11 @@
+{
+  "wallets": {
+    "binance_withdraw_usdt": {
+      "address": "TBinanceUSDTaddr1234567890",
+      "venue": "binance",
+      "asset": "USDT",
+      "note": "payout withdraw TRC20",
+      "updated_at": "2026-07-02T15:28:49.308760Z"
+    }
+  }
+}

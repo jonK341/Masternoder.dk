@@ -34,6 +34,7 @@ VERSION="${VERSION:-v1.3.0.0}"
 BASE_TAG="${BASE_TAG:-v1.2.3.0}"
 CHECKOUT_BRANCH="${CHECKOUT_BRANCH:-}"
 PATCH_FILE="${PATCH_FILE:-}"
+EXTRA_PATCH_FILE="${EXTRA_PATCH_FILE:-}"
 REPO_URL="${REPO_URL:-https://github.com/jonK341/MasterNoder2.git}"
 BUILD_ROOT="${BUILD_ROOT:-/tmp/mn2-build}"
 SRC_DIR="${BUILD_ROOT}/MasterNoder2"
@@ -289,6 +290,13 @@ checkout_source() {
     exit 2
   fi
   PATCHED=1
+  if [[ -n "${EXTRA_PATCH_FILE}" ]] && [[ -f "${EXTRA_PATCH_FILE}" ]]; then
+    echo "=== Applying extra patch $(basename "${EXTRA_PATCH_FILE}") ==="
+    patch -p1 --forward < "${EXTRA_PATCH_FILE}" || {
+      echo "Extra patch failed" >&2
+      exit 1
+    }
+  fi
 }
 
 apply_patch_file() {
@@ -319,8 +327,9 @@ resolve_compat_patch() {
     compat="${COMPAT_PATCH_DEFAULT}"
   fi
   if [[ -z "${compat}" ]] || [[ ! -f "${compat}" ]]; then
-    echo "ERROR: compat patch not found (set COMPAT_PATCH_FILE=/path/to/mn2-daemon-build-compat-modern-host.patch)." >&2
-    exit 2
+    echo "WARN: modern-host compat patch not found (COMPAT_PATCH_FILE / docs/patches/mn2-daemon-build-compat-modern-host.patch)." >&2
+    echo "  Continuing; COMPAT_PATCH_DIR gcc15 patches may still apply." >&2
+    return 1
   fi
   printf '%s' "${compat}"
 }
@@ -347,7 +356,9 @@ verify_upnp_compat() {
 
 apply_compat_patch() {
   local compat
-  compat="$(resolve_compat_patch)"
+  if ! compat="$(resolve_compat_patch)"; then
+    return 0
+  fi
   echo "=== Apply modern-host build compat patch (${compat}) ==="
   apply_patch_file "modern-host compat patch" "${compat}"
   if [[ "${USE_DEPENDS}" == "0" ]] && ! grep -q '#include "util.h"' src/net.cpp; then
@@ -355,6 +366,27 @@ apply_compat_patch() {
     exit 2
   fi
   verify_upnp_compat
+}
+
+COMPAT_PATCH_DIR="${COMPAT_PATCH_DIR:-/tmp/mn2-patches}"
+
+apply_compat_patches() {
+  local f
+  if [[ ! -d "${COMPAT_PATCH_DIR}" ]]; then
+    return 0
+  fi
+  cd "${SRC_DIR}"
+  for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
+    [[ -f "${f}" ]] || continue
+    echo "=== Applying compat patch $(basename "${f}") ==="
+    if ! patch -p1 --forward < "${f}"; then
+      echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
+    fi
+  done
+  if ! grep -q '#include <deque>' src/httpserver.cpp 2>/dev/null; then
+    sed -i '/#include <sys\/types.h>/a #include <deque>' src/httpserver.cpp
+    echo "Applied sed fallback: #include <deque> in httpserver.cpp"
+  fi
 }
 
 ensure_compat_patch() {
@@ -380,6 +412,7 @@ stage_prepare() {
 
   checkout_source
   apply_compat_patch
+  apply_compat_patches
   GIT_SHA=$(git -C "${SRC_DIR}" rev-parse HEAD)
   GIT_SUBJECT=$(git -C "${SRC_DIR}" log -1 --format=%s)
   echo "Source: ${GIT_SHA:0:12} — ${GIT_SUBJECT}"

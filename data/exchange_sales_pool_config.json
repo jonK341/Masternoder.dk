@@ -1,0 +1,63 @@
+{
+  "enabled": true,
+  "sales_pool_user_id": "exchange_sales_pool",
+  "source_agent_ids": [
+    "exchange_agent_stable_router",
+    "exchange_agent_layer1_scout",
+    "exchange_agent_casino_liquidity"
+  ],
+  "min_transfer_by_asset": {
+    "USDC": 1,
+    "USDT": 1,
+    "BTC": 0.0003,
+    "ETH": 0.005,
+    "SOL": 0.05,
+    "ADA": 25,
+    "AVAX": 0.5,
+    "DASH": 0.02
+  },
+  "reserve_by_agent": {
+    "default": {
+      "USDC": 10,
+      "USDT": 5,
+      "BTC": 0.0002,
+      "ETH": 0.003,
+      "SOL": 0.05,
+      "DASH": 0.1
+    },
+    "exchange_agent_stable_router": {
+      "USDT": 5,
+      "USDC": 10
+    },
+    "exchange_agent_layer1_scout": {
+      "ETH": 0.003,
+      "BTC": 0.0002
+    },
+    "exchange_agent_casino_liquidity": {
+      "USDC": 50,
+      "DASH": 0.1
+    }
+  },
+  "min_pool_by_asset": {
+    "USDC": 500,
+    "USDT": 500,
+    "BTC": 0.01,
+    "ETH": 0.05
+  },
+  "tick_cooldown_seconds": 300,
+  "auto_tune": true,
+  "auto_tune_note": "When pool_gaps persist for 3+ consecutive ticks, min_transfer_by_asset is reduced by 20% per gap asset (floor in auto_tune_min_transfer_floor). Resets when gap closes.",
+  "auto_tune_ticks_threshold": 3,
+  "auto_tune_reduce_pct": 0.2,
+  "auto_tune_min_transfer_floor": {
+    "USDC": 0.5,
+    "USDT": 0.5,
+    "BTC": 0.0001,
+    "ETH": 0.001,
+    "SOL": 0.02,
+    "ADA": 10,
+    "AVAX": 0.25,
+    "DASH": 0.01
+  },
+  "note": "Master daemon sweeps excess agent wallet inventory into exchange_sales_pool for customer-facing swaps. Paper/internal only — no external venue transfers."
+}

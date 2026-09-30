@@ -1,10 +1,10 @@
-"""Off-request cron fan-out: activity_events.jsonl → Discord #casino (Gate S)."""
+"""Off-request fan-out: casino channel activity_events → Discord #casino (Gate S)."""
 from __future__ import annotations
 
 import json
 import os
 import threading
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 _LOCK = threading.Lock()
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,9 +12,10 @@ _EVENTS = os.path.join(_BASE, "logs", "activity_events.jsonl")
 _CURSOR = os.path.join(_BASE, "logs", "casino_discord_cursor.json")
 
 _CASINO_EVENT_TYPES = frozenset({
-    "casino_jackpot_win",
     "casino_big_win",
+    "casino_jackpot_win",
     "casino_tournament_end",
+    "casino_tournament_start",
     "casino_tournament_prize",
     "casino_mn2_promo",
     "casino_rg_reminder",
@@ -28,8 +29,7 @@ def _load_cursor() -> int:
         return 0
     try:
         with open(_CURSOR, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return int(data.get("line") or 0)
+            return int(json.load(f).get("line") or 0)
     except Exception:
         return 0
 
@@ -70,80 +70,113 @@ def _read_new_events() -> tuple[List[Dict[str, Any]], int]:
     return rows, line_no
 
 
+def _format_amount(amount: float, currency: str) -> str:
+    if currency == "mn2":
+        return f"{amount:.4f} MN2"
+    if currency == "usd":
+        return f"${amount:.2f}"
+    return f"{int(amount)} coins"
+
+
 def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     from backend.services.casino_social_service import rg_footer
 
-    et = row.get("type") or ""
-    payload = row.get("payload") or {}
     base_url = (os.environ.get("BASE_URL") or "https://masternoder.dk").rstrip("/")
     casino_url = f"{base_url}/casino/"
-
-    if et == "casino_jackpot_win":
-        if not payload.get("share_ok"):
-            return None
-        amount = payload.get("amount")
-        currency = (payload.get("currency") or "").upper()
-        alias = payload.get("anonymized") or "Player"
-        return {
-            "embeds": [{
-                "title": "Jackpot win highlight",
-                "description": (
-                    f"**{alias}** hit the progressive **{currency}** jackpot "
-                    f"for **{amount}**!\n\n"
-                    f"[Play at the casino]({casino_url})\n\n_{rg_footer()}_"
-                ),
-                "color": 0xFFD700,
-            }],
-        }
+    et = row.get("type") or ""
+    payload = row.get("payload") or {}
+    rg = rg_footer()
 
     if et == "casino_big_win":
         if not payload.get("share_ok"):
             return None
-        alias = payload.get("anonymized") or "Player"
+        player = payload.get("anonymized") or "Player"
+        net = float(payload.get("net") or 0)
+        currency = (payload.get("currency") or "coins").lower()
         game = payload.get("game") or "casino"
-        net = payload.get("net")
-        currency = (payload.get("currency") or "").upper()
         return {
             "embeds": [{
-                "title": "Big win highlight",
+                "title": "🎰 Casino big win",
                 "description": (
-                    f"**{alias}** won **{net} {currency}** net on **{game}**.\n\n"
-                    f"[Play at the casino]({casino_url})\n\n_{rg_footer()}_"
+                    f"**{player}** won **{_format_amount(net, currency)}** on **{game}**.\n\n"
+                    f"[Play at the casino]({casino_url})\n\n"
+                    f"_{rg}_"
                 ),
-                "color": 0x57F287,
+                "color": 0x7C3AED,
+            }],
+        }
+
+    if et == "casino_jackpot_win":
+        player = payload.get("anonymized") if payload.get("share_ok") else "A lucky player"
+        amount = float(payload.get("amount") or 0)
+        currency = (payload.get("currency") or "coins").lower()
+        reason = payload.get("reason") or "jackpot"
+        return {
+            "embeds": [{
+                "title": "💰 Progressive jackpot hit!",
+                "description": (
+                    f"**{player}** took the **{_format_amount(amount, currency)}** "
+                    f"jackpot ({reason}).\n\n"
+                    f"[Spin for the next pool]({casino_url})\n\n"
+                    f"_{rg}_"
+                ),
+                "color": 0xF59E0B,
+            }],
+        }
+
+    if et == "casino_tournament_start":
+        title = payload.get("title") or "Casino tournament"
+        currency = (payload.get("currency") or "coins").lower()
+        pool = float(payload.get("pool") or 0)
+        end_at = payload.get("end_at") or ""
+        return {
+            "embeds": [{
+                "title": "🏆 Tournament started",
+                "description": (
+                    f"**{title}** is live — **{_format_amount(pool, currency)}** prize pool.\n"
+                    f"Ends: {end_at}\n\n"
+                    f"[Join the cup]({casino_url}#tab-tournaments)\n\n"
+                    f"_{rg}_"
+                ),
+                "color": 0x5865F2,
             }],
         }
 
     if et == "casino_tournament_end":
-        title = payload.get("title") or "Tournament"
-        pool = payload.get("pool")
-        currency = (payload.get("currency") or "").upper()
+        title = payload.get("title") or "Casino tournament"
+        currency = (payload.get("currency") or "coins").lower()
+        pool = float(payload.get("pool") or 0)
+        winners = int(payload.get("winner_count") or 0)
         return {
             "embeds": [{
-                "title": f"Tournament complete — {title}",
+                "title": "🏁 Tournament finished",
                 "description": (
-                    f"Prizes from a **{pool} {currency}** pool have been awarded.\n\n"
-                    f"[Join the next tournament]({casino_url})\n\n_{rg_footer()}_"
+                    f"**{title}** — **{_format_amount(pool, currency)}** paid to "
+                    f"top **{winners}** players.\n\n"
+                    f"[Next tournament]({casino_url}#tab-tournaments)\n\n"
+                    f"_{rg}_"
                 ),
-                "color": 0x5865F2,
+                "color": 0x22C55E,
             }],
         }
 
     if et == "casino_tournament_prize":
         if not payload.get("share_ok"):
             return None
-        alias = payload.get("anonymized") or "Player"
-        rank = payload.get("rank")
-        prize = payload.get("prize")
-        currency = (payload.get("currency") or "").upper()
+        player = payload.get("anonymized") or "Player"
+        prize = float(payload.get("prize") or 0)
+        currency = (payload.get("currency") or "coins").lower()
+        rank = int(payload.get("rank") or 0)
         return {
             "embeds": [{
-                "title": "Tournament podium",
+                "title": "🥇 Tournament prize",
                 "description": (
-                    f"**{alias}** finished **#{rank}** and won **{prize} {currency}**.\n\n"
-                    f"[Compete in tournaments]({casino_url})\n\n_{rg_footer()}_"
+                    f"**{player}** placed **#{rank}** and won "
+                    f"**{_format_amount(prize, currency)}**.\n\n"
+                    f"[Casino tournaments]({casino_url}#tab-tournaments)\n\n"
+                    f"_{rg}_"
                 ),
-                "color": 0xEB459E,
+                "color": 0xEAB308,
             }],
         }
 
@@ -153,13 +186,13 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return {
             "embeds": [{
                 "title": title,
-                "description": f"{summary}\n\n[Deposit MN2 & play]({casino_url})\n\n_{rg_footer()}_",
+                "description": f"{summary}\n\n[Deposit MN2 & play]({casino_url})\n\n_{rg}_",
                 "color": 0xFEE75C,
             }],
         }
 
     if et == "casino_rg_reminder":
-        summary = payload.get("summary") or rg_footer()
+        summary = payload.get("summary") or rg
         return {
             "embeds": [{
                 "title": "Responsible gambling",
@@ -178,7 +211,7 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                     f"Use code **`{code}`** in the casino for **{reward} bonus coins**.\n\n"
                     f"[Redeem at the casino]({casino_url})\n\n"
                     "Affiliate disclosure: platform-operated promotion.\n\n"
-                    f"_{rg_footer()}_"
+                    f"_{rg}_"
                 ),
                 "color": 0x9B59B6,
             }],
@@ -197,7 +230,7 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 "description": (
                     f"_{line}_\n\n"
                     f"Game: **{game}** · Net: **{net}**\n\n"
-                    f"[Watch the leaderboard]({casino_url})\n\n_{rg_footer()}_"
+                    f"[Watch the leaderboard]({casino_url})\n\n_{rg}_"
                 ),
                 "color": 0x00CED1,
             }],
@@ -218,8 +251,9 @@ def run_fanout(*, dry_run: bool = False) -> Dict[str, Any]:
     for row in rows:
         et = row.get("type") or "event"
         ts = row.get("ts") or ""
-        bet_id = (row.get("payload") or {}).get("bet_id")
-        msg_id = f"casino-fanout:{et}:{bet_id or ts}"
+        payload = row.get("payload") or {}
+        ref = payload.get("bet_id") or payload.get("tournament_id") or ts
+        msg_id = f"casino-fanout:{et}:{ref}"
         embed = _embed_for_event(row)
         if embed is None:
             skipped.append(et)

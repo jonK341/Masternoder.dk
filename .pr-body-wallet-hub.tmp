@@ -1,0 +1,12 @@
+## Summary
+- Add `/wallets` download hub with Qt checksum fallbacks (v1.2.2.0 when v1.3.0.0 Qt assets missing) and network bootstrap snippets
+- New APIs: `wallet-hub`, `network-dashboard`, `recent-transactions`, `rental-overview`, `spork-gates`, `network-peers`
+- Lazy-load profile/shop wallet tabs; explorer and hosting pages show live network, rental, and tx data
+- Wire unused C++ sporks + ops sporks 112–115; expand seeds/peers and fix default wallet config generation
+- Deploy manifest updated for wallet/network assets
+
+## Test plan
+- [x] `python -m pytest tests/unit/test_mn2_network_peers.py tests/unit/test_mn2_spork.py tests/unit/test_mn2_spork_gates.py tests/unit/test_mn2_wallet_hub.py -v` (31 passed)
+- [ ] Deploy `mn2_staking static_pages` and verify `/wallets` + `/api/mn2/wallet-hub`
+- [ ] Paste Discord announcement from `data/discord_wallet_release_draft.txt` after deploy
+- [ ] Rebuild MasterNoder2 daemon binary for C++ auto-config peer fix

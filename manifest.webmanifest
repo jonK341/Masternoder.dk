@@ -1,0 +1,48 @@
+{
+  "name": "MasterNoder.dk",
+  "short_name": "MasterNoder",
+  "description": "AI video, game hub, battle, agents, MN2 wallet — MasterNoder platform.",
+  "start_url": "/?app=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#1A1035",
+  "background_color": "#0A0E14",
+  "lang": "da",
+  "categories": ["entertainment", "productivity"],
+  "icons": [
+    {
+      "src": "/static/img/app/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/app/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Generator",
+      "short_name": "Generator",
+      "url": "/generator?app=pwa",
+      "icons": [{"src": "/static/img/app/icon-192.svg", "sizes": "192x192"}]
+    },
+    {
+      "name": "Game hub",
+      "short_name": "Game",
+      "url": "/game?app=pwa",
+      "icons": [{"src": "/static/img/app/icon-192.svg", "sizes": "192x192"}]
+    },
+    {
+      "name": "Profile",
+      "short_name": "Profile",
+      "url": "/profile?app=pwa",
+      "icons": [{"src": "/static/img/app/icon-192.svg", "sizes": "192x192"}]
+    }
+  ],
+  "prefer_related_applications": false
+}

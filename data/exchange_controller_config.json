@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "payment_rails": ["mn2", "coins", "paypal"],
+  "usd_per_mn2_markup_pct": 5,
+  "cash_out": {
+    "enabled": true,
+    "min_usd": 1.0,
+    "destinations": ["mn2", "coins", "casino_coins"],
+    "casino_coins_per_usd": 100,
+    "mn2_per_usd": null
+  },
+  "casino_bridge": {
+    "enabled": true,
+    "rental_completion_casino_coins": 50,
+    "exchange_shop_xp_to_casino": true,
+    "note": "Shared MN2 wallet; casino bets and exchange rentals draw from the same mn2_balance."
+  }
+}

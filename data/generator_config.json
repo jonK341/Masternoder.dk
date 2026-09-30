@@ -1,8 +1,9 @@
 {
   "queue": {
-    "queue_enabled": false,
+    "queue_enabled": true,
     "max_concurrent": 1,
     "base_priority": 100,
-    "shop_booster_bonus": 50
+    "shop_booster_bonus": 50,
+    "mn2_paid_bonus": 30
   }
 }

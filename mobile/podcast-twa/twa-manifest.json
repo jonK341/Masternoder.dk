@@ -1,0 +1,62 @@
+{
+  "packageId": "dk.masternoder.podcast",
+  "host": "[REDACTED]",
+  "name": "MasterNoder Podcast",
+  "launcherName": "MN Podcast",
+  "display": "standalone",
+  "themeColor": "#1A1035",
+  "navigationColor": "#0A0E14",
+  "backgroundColor": "#0A0E14",
+  "enableNotifications": false,
+  "startUrl": "/podcast/?app=podcast-twa",
+  "iconUrl": "[REDACTED]/static/img/agents/podcast_producer_agent.svg",
+  "maskableIconUrl": "[REDACTED]/static/img/agents/podcast_producer_agent.svg",
+  "monochromeIconUrl": "[REDACTED]/static/img/agents/reporter_agent.svg",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "masternoder-podcast"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Episodes",
+      "shortName": "Episodes",
+      "url": "/podcast/?app=podcast-twa&tab=episodes",
+      "chosenIconUrl": "[REDACTED]/static/img/agents/podcast_producer_agent.svg"
+    },
+    {
+      "name": "Sound Lab",
+      "shortName": "Sound",
+      "url": "/podcast/?app=podcast-twa&tab=sound-lab",
+      "chosenIconUrl": "[REDACTED]/static/img/agents/content_generator_agent.svg"
+    },
+    {
+      "name": "Create App",
+      "shortName": "Create",
+      "url": "/create-app/?app=podcast-twa",
+      "chosenIconUrl": "[REDACTED]/static/img/agents/lab_create_agent.svg"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "[REDACTED]/podcast/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": false,
+    "locationDelegation": false
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "[REDACTED]/podcast/",
+  "minSdkVersion": 21,
+  "orientation": "portrait-primary",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "appVersion": "1.0.0"
+}

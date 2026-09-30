@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "trophies": [
+    {"id": "ct-win-streak-3", "name": "Hot Hand", "icon": "🔥", "coins": 50, "criteria": {"type": "win_streak", "count": 3}},
+    {"id": "ct-win-streak-5", "name": "On Fire", "icon": "🌋", "coins": 100, "criteria": {"type": "win_streak", "count": 5}},
+    {"id": "ct-win-streak-10", "name": "Unstoppable", "icon": "⚡", "coins": 250, "criteria": {"type": "win_streak", "count": 10}},
+    {"id": "ct-jackpot-first", "name": "Jackpot Hunter", "icon": "💰", "coins": 500, "criteria": {"type": "jackpot_hit", "count": 1}},
+    {"id": "ct-jackpot-3", "name": "Jackpot Collector", "icon": "💎", "coins": 1000, "criteria": {"type": "jackpot_hit", "count": 3}},
+    {"id": "ct-tournament-top1", "name": "Tournament Champion", "icon": "🏆", "coins": 300, "criteria": {"type": "tournament_place", "place": 1}},
+    {"id": "ct-tournament-top3", "name": "Podium Finisher", "icon": "🥉", "coins": 150, "criteria": {"type": "tournament_place", "place_max": 3}},
+    {"id": "ct-tournament-top10", "name": "Cup Contender", "icon": "🎯", "coins": 75, "criteria": {"type": "tournament_place", "place_max": 10}},
+    {"id": "ct-duel-win-1", "name": "Duelist", "icon": "⚔️", "coins": 40, "criteria": {"type": "duel_wins", "count": 1}},
+    {"id": "ct-duel-win-10", "name": "Arena Veteran", "icon": "🗡️", "coins": 200, "criteria": {"type": "duel_wins", "count": 10}},
+    {"id": "ct-duel-win-25", "name": "Gladiator", "icon": "🛡️", "coins": 500, "criteria": {"type": "duel_wins", "count": 25}},
+    {"id": "ct-duel-streak-3", "name": "Duel Streak", "icon": "🔗", "coins": 80, "criteria": {"type": "duel_streak", "count": 3}},
+    {"id": "ct-all-games", "name": "Game Explorer", "icon": "🎮", "coins": 200, "criteria": {"type": "games_tried", "count": 10}},
+    {"id": "ct-all-games-full", "name": "Casino Completionist", "icon": "🌟", "coins": 500, "criteria": {"type": "games_tried", "count": 18}},
+    {"id": "ct-high-roller", "name": "High Roller", "icon": "🎰", "coins": 150, "criteria": {"type": "lifetime_wager", "count": 50000}},
+    {"id": "ct-daily-grinder-7", "name": "Week Grinder", "icon": "📅", "coins": 100, "criteria": {"type": "daily_bets_streak", "count": 7}},
+    {"id": "ct-daily-grinder-30", "name": "Monthly Regular", "icon": "🗓️", "coins": 400, "criteria": {"type": "daily_bets_streak", "count": 30}},
+    {"id": "ct-crash-cashout-50", "name": "Crash Pilot", "icon": "🚀", "coins": 120, "criteria": {"type": "crash_cashouts", "count": 50}},
+    {"id": "ct-plinko-50", "name": "Plinko Pro", "icon": "🎯", "coins": 100, "criteria": {"type": "game_bets", "game": "plinko", "count": 50}},
+    {"id": "ct-mines-clear", "name": "Mine Sweeper", "icon": "💣", "coins": 150, "criteria": {"type": "mines_cashouts", "count": 20}},
+    {"id": "ct-social-share", "name": "Big Win Sharer", "icon": "📢", "coins": 50, "criteria": {"type": "shared_win", "count": 1}},
+    {"id": "ct-referral-plays", "name": "Friend Recruiter", "icon": "🤝", "coins": 100, "criteria": {"type": "referral_casino_play", "count": 1}},
+    {"id": "ct-shop-collector-5", "name": "Shop Collector", "icon": "🛍️", "coins": 75, "criteria": {"type": "shop_items_owned", "count": 5}},
+    {"id": "ct-achievement-hunter-10", "name": "Badge Hunter", "icon": "🏅", "coins": 150, "criteria": {"type": "achievements_unlocked", "count": 10}},
+    {"id": "ct-rival-week", "name": "Rival of the Week", "icon": "👊", "coins": 200, "criteria": {"type": "rival_of_week", "count": 1}}
+  ]
+}
