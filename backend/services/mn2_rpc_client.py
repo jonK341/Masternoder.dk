@@ -405,6 +405,28 @@ def staking_health() -> Dict[str, Any]:
         "errors": None,
     }
     _CONN = ("connection refused", "timed out", "timeout", "unreachable", "failed to establish")
+
+    def _apply_stakingstatus(r: Dict[str, Any]) -> None:
+        # PIVX / MasterNoder2: "staking status" is the authoritative minting flag.
+        active = bool(r.get("staking_status", r.get("staking status")))
+        out["staking_active"] = active
+        out["mnsync"] = r.get("mnsync")
+        out["mintable_coins"] = r.get("mintablecoins")
+        out["wallet_unlocked"] = r.get("walletunlocked")
+        out["have_connections"] = r.get("haveconnections")
+        out["walletunlocked"] = r.get("walletunlocked")
+        out["enough_coins"] = r.get("enoughcoins")
+        out["status"] = "active" if active else "inactive"
+        out["staking_status_detail"] = {
+            "validtime": r.get("validtime"),
+            "haveconnections": r.get("haveconnections"),
+            "walletunlocked": r.get("walletunlocked"),
+            "mintablecoins": r.get("mintablecoins"),
+            "enoughcoins": r.get("enoughcoins"),
+            "mnsync": r.get("mnsync"),
+            "staking status": r.get("staking status", r.get("staking_status")),
+        }
+
     si = getstakinginfo(timeout_sec=4)
     if si.get("error"):
         el = str(si["error"]).lower()
@@ -412,28 +434,7 @@ def staking_health() -> Dict[str, Any]:
             out["status"] = "unreachable"
             out["errors"] = si["error"]
             return out
-        # getstakinginfo not implemented on this build -> fall back to PIVX getstakingstatus
-        ss = getstakingstatus(timeout_sec=4)
-        if ss.get("error"):
-            sl = str(ss["error"]).lower()
-            if any(x in sl for x in _CONN):
-                out["status"] = "unreachable"
-                out["errors"] = ss["error"]
-                return out
-            out["errors"] = ss["error"]  # neither RPC available -> stays unsupported
-        else:
-            r = ss.get("result") or {}
-            if isinstance(r, dict):
-                # PIVX-style flags; some forks use "staking status" / "staking_status"
-                active = bool(r.get("staking_status", r.get("staking status")))
-                out["staking_active"] = active
-                out["mnsync"] = r.get("mnsync")
-                out["mintable_coins"] = r.get("mintablecoins")
-                out["wallet_unlocked"] = r.get("walletunlocked")
-                out["have_connections"] = r.get("haveconnections")
-                out["walletunlocked"] = r.get("walletunlocked")
-                out["enough_coins"] = r.get("enoughcoins")
-                out["status"] = "active" if active else "inactive"
+        out["errors"] = si["error"]
     else:
         r = si.get("result") or {}
         if isinstance(r, dict):
@@ -447,25 +448,19 @@ def staking_health() -> Dict[str, Any]:
             out["errors"] = r.get("errors") or out["errors"]
             out["status"] = "active" if active else "inactive"
 
-    # PIVX-style fork fallback: getstakinginfo missing -> use getstakingstatus booleans.
-    if out["status"] == "unsupported":
-        ss = getstakingstatus(timeout_sec=4)
-        if not ss.get("error") and isinstance(ss.get("result"), dict):
-            r = ss["result"]
-            active = bool(r.get("staking status", r.get("staking_status")))
-            out["staking_active"] = active
-            out["mnsync"] = r.get("mnsync")
-            out["have_connections"] = r.get("haveconnections")
-            out["walletunlocked"] = r.get("walletunlocked")
-            out["status"] = "active" if active else "inactive"
-            out["staking_status_detail"] = {
-                "validtime": r.get("validtime"),
-                "haveconnections": r.get("haveconnections"),
-                "walletunlocked": r.get("walletunlocked"),
-                "mintablecoins": r.get("mintablecoins"),
-                "enoughcoins": r.get("enoughcoins"),
-                "mnsync": r.get("mnsync"),
-            }
+    # Always prefer getstakingstatus when present — MN2 getstakinginfo can report
+    # inactive/empty while the PIVX-style status object is actively minting.
+    ss = getstakingstatus(timeout_sec=4)
+    if ss.get("error"):
+        sl = str(ss["error"]).lower()
+        if any(x in sl for x in _CONN) and out["status"] == "unsupported":
+            out["status"] = "unreachable"
+            out["errors"] = ss["error"]
+            return out
+        if out["status"] == "unsupported":
+            out["errors"] = ss.get("error") or out.get("errors")
+    elif isinstance(ss.get("result"), dict):
+        _apply_stakingstatus(ss["result"])
 
     wi = getwalletinfo(timeout_sec=4)
     if not wi.get("error"):

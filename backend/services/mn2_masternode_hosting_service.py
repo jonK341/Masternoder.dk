@@ -196,10 +196,24 @@ def get_quote(slots: int, user_id: str) -> Dict[str, Any]:
     st = mn.get_service_status()
     avail = int(st.get("slots_available") or 0)
     if avail < slots:
+        collateral_left = int(st.get("collateral_outputs_available") or 0)
+        by_cap = int(st.get("slots_by_capacity") or avail)
+        if collateral_left < slots and collateral_left <= by_cap:
+            return {
+                "success": False,
+                "error": (
+                    f"Only {collateral_left} collateral UTXO(s) available for new hosts "
+                    f"(need {slots}). Ops must create 5,000 MN2 outputs before checkout."
+                ),
+                "code": "collateral_exhausted",
+                "slots_available": avail,
+                "collateral_outputs_available": collateral_left,
+            }
         return {
             "success": False,
             "error": f"Only {avail} slot(s) available (max {pp['max_hosted_nodes']})",
             "slots_available": avail,
+            "collateral_outputs_available": collateral_left,
         }
 
     price = float(pp["price_usd_per_slot"])
