@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-09-30** (docs cleanup · revenue-tracks inventory refresh · quests / API-crypto / auction / Play Store notes)
+Last updated: **2026-09-30** (host upgrade **8 GB RAM / ~180 GB disk** · closes RAM-pressure ops item from system report)
 
 **Living docs map:** [README.md](README.md) · ops [MN2_OPS.md](MN2_OPS.md) · monetization [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · release [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · Play Store checklist [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
 
@@ -23,10 +23,22 @@ Honest status only — **in repo** ≠ **verified on prod** unless noted elsewhe
 
 **Open ops that still need SSH / binary work (do not mark done from this snapshot):** daemon multi-ping enable after v1.3 deploy, SMTP for revenue-pulse emails, Facebook casino Meta tokens (E3 paused), LiveKit camgirls e2e confirm.
 
+### Issues ranked (from MN2 system report 2026-09-30)
+
+| Pri | Issue | GitHub | Status |
+| --- | ----- | ------ | ------ |
+| **P1** | Staking probe mismatch (`staking_active` vs daemon) | [#97](https://github.com/jonK341/Masternoder.dk/issues/97) | open |
+| **P2** | `mn2-fleet-autostart` failed since 2026-09-27 | [#98](https://github.com/jonK341/Masternoder.dk/issues/98) | **closed** — packed-version gate fixed; local ping path on prod |
+| **P2** | Hosted MNs registered but `platform_enabled=0` | [#99](https://github.com/jonK341/Masternoder.dk/issues/99) | **partial** — probe/collateral fixes in branch; full fleet ENABLED needs [#101](https://github.com/jonK341/Masternoder.dk/issues/101) |
+| **P2** | PoR paper coverage gap / gates skipped | [#100](https://github.com/jonK341/Masternoder.dk/issues/100) | **code ready** — external coverage + float gate; deploy app to prod |
+| **P3** | Publish/upgrade daemon **v1.3.1.0** (prod on 1.2.3) | [#101](https://github.com/jonK341/Masternoder.dk/issues/101) | open |
+| Done | Host RAM / disk → **8 GB / ~180 GB** | — | Done ✓ |
+
 ---
 
 ## Done ✓
 
+- **Host resize (RAM + disk)** — **2026-09-30**: production VPS upgraded to **8 GB RAM** + **~180 GB** disk (was ~1.6 GB RAM / ~56 GB root at 78%). Closes the **host RAM pressure** action from the MN2 system report (API timeouts / load spike). Re-check with `python scripts/_system_health_check.py` after reboot if needed.
 - Treasury cold-wallet **sign-off gate** — `treasury_signoff_service`, `GET/POST /api/agents/treasury/sign-off`, CLI `scripts/treasury_signoff.py`; required before distribute batches ≥100k MN2 (MN2_OPS §8.6)
 - Explorer · staking · trader pool/market · Game Hub · compendium calm reader (V1–V16)
 - Camgirls Phase 1c + daemon payouts — **5 live AI models** (Nova, Luna, Sage, Ember, Iris)
@@ -159,6 +171,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 | **P1** | **Bridge high-value product** — cross-quests, fused leaderboard, Discord market pulse | **Code** | user controller | **Done 2026-06-28** — `exchange_casino_quest_service`, `exchange_casino_leaderboard_service`, 5 weekly quests, Trader+High roller board, `#market` rental/win/combined embeds. Next: cross-quest UI on casino tab, trust gate high-roller MN2 |
 | **P1** | **Daemon v1.3 deploy + enable multi-ping** — customer ENABLED + rising activetime | **SSH** | **Build + publish DONE 2026-06-24** | `python scripts/mn2_daemon_upgrade_remote.py --ask-pass --apply --verify-post` → enable `multi_ping_enabled: true` + `deploy.py mn2_staking --ask-pass` |
 | **P1** | ~~**Explorer VPS nginx verify**~~ | — | **DONE 2026-06-23** | `fix_explorer_subdomains_remote.py --ask-pass` — snippet + cam redirect + pm2 explorer restart |
+| **P1** | ~~**Host RAM / disk pressure**~~ | — | **DONE 2026-09-30** | VPS upgraded to **8 GB RAM** + **~180 GB** disk (was ~1.6 GB / 56 GB). Clears timeout risk from system report. |
 | **P2** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **Done 2026-06-28** | Plan `P-09J38836TK5737835NJAGZYA` via API bootstrap · webhook configured · shop Pro subscribe live |
 | **P2** | **Tier enforcement on server** — premium generator caps | **Server `.env`** | Pro plan live (recommended) | `python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify` |
 | **P2** | ~~**Fleet boot autostart**~~ | — | **DONE 2026-06-23** | `mn2_next_ops_remote.py --ask-pass --fleet-autostart` — unit enabled + active |
@@ -410,6 +423,7 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Exchange rental + shop + visuals** — rent/add-skills/shop on `/exchange`; 5 SKUs in main `/shop` **exchange** category; auto-renew (2026-06-28)
 - [x] **Profile security + Pro plan UI** — bind-session / purchase gates + Pro card on `/profile` (2026-06-24)
 - [x] **Multi-ping site integration (PR #30)** — helpers + probes + C++ patch doc; flag **multi_ping_enabled: false** until v1.3 on prod
+- [x] **Host RAM / disk upgrade** — **8 GB RAM** + **~180 GB** disk (2026-09-30); closes RAM-pressure item from MN2 system report
 - [ ] **Daemon v1.3 deploy + enable multi-ping (P1)** — **build + GitHub publish DONE 2026-06-24** · run `mn2_daemon_upgrade_remote.py --ask-pass --apply --verify-post` · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
 - [ ] **Shop UI browser spot-check** — optional P2 (API/automated done)
 - [x] **Deploy camgirls catalog perf fix** — live ~3.6s on `/api/camgirls/performers?lite=1` (2026-06-20)

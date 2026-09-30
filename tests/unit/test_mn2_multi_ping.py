@@ -246,3 +246,47 @@ def test_get_service_status_does_not_purge(hosts_file, monkeypatch):
     assert out["slots_available"] == 2
     assert out["daemon"]["multi_ping_capable"] is False
     assert out["daemon"]["version_tuple"] == [1, 2, 3, 0]
+
+
+def test_probe_health_pre13_local_enabled_is_healthy():
+    with mn._STATUS_CACHE_LOCK:
+        mn._STATUS_CACHE["value"] = {
+            "success": True,
+            "hosted_count": 44,
+            "platform_enabled_on_chain": 0,
+            "collateral_outputs_available": 2,
+            "slots_available": 2,
+            "network": {"enabled": 51},
+            "daemon": {
+                "mnsync": True,
+                "multi_ping_capable": False,
+                "multi_ping_enabled": False,
+                "enabled_with_activetime": 1,
+            },
+        }
+        mn._STATUS_CACHE["ts"] = 1e18
+    probe = mn.probe_health()
+    assert probe["status"] == "healthy"
+    assert "pre-1.3" in (probe.get("detail") or "")
+
+
+def test_probe_health_multiping_on_zero_platform_warns():
+    with mn._STATUS_CACHE_LOCK:
+        mn._STATUS_CACHE["value"] = {
+            "success": True,
+            "hosted_count": 44,
+            "platform_enabled_on_chain": 0,
+            "collateral_outputs_available": 2,
+            "slots_available": 2,
+            "network": {"enabled": 51},
+            "daemon": {
+                "mnsync": True,
+                "multi_ping_capable": True,
+                "multi_ping_enabled": True,
+                "enabled_with_activetime": 0,
+            },
+        }
+        mn._STATUS_CACHE["ts"] = 1e18
+    probe = mn.probe_health()
+    assert probe["status"] == "warn"
+    assert "not yet enabled" in (probe.get("detail") or "")
