@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-10-01** (services hub probe deploy · staking active · hosting healthy · trader keep-disabled)
+Last updated: **2026-10-01** (prod daemon **v1.3.1.0** shipped · multi-ping on · staking active · trader keep-disabled)
 
 **Living docs map:** [README.md](README.md) · ops [MN2_OPS.md](MN2_OPS.md) · monetization [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · release [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · Play Store checklist [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
 
@@ -21,7 +21,7 @@ Honest status only — **in repo** ≠ **verified on prod** unless noted elsewhe
 | **Create App / encoder** | Create App + Super Encoder release handoff documented; deploy is laptop/SSH, not “done by docs alone”. | [DEPLOY_CREATE_APP_RELEASE.md](DEPLOY_CREATE_APP_RELEASE.md) |
 | **Google Play vision** | Tracked as distribution / casino mobile shell. **Play Console ship is not claimed done** — follow [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) (assetlinks SHA, $25 account). Podcast/app vision remains deferred in [PLATFORM_TODO.md](PLATFORM_TODO.md) / [PODCAST.md](PODCAST.md). | E4 below · Play Store checklist |
 
-**Open ops that still need SSH / binary work (do not mark done from this snapshot):** daemon multi-ping enable after v1.3 deploy, SMTP for revenue-pulse emails, Facebook casino Meta tokens (E3 paused), LiveKit camgirls e2e confirm.
+**Open ops that still need SSH / binary work (do not mark done from this snapshot):** fleet ENABLE / `platform_enabled` after v1.3.1 (recollateralize), SMTP for revenue-pulse emails, Facebook casino Meta tokens (E3 paused), LiveKit camgirls e2e confirm.
 
 ### Issues ranked (from MN2 system report 2026-09-30)
 
@@ -31,14 +31,37 @@ Honest status only — **in repo** ≠ **verified on prod** unless noted elsewhe
 | **P2** | `mn2-fleet-autostart` failed since 2026-09-27 | [#98](https://github.com/jonK341/Masternoder.dk/issues/98) | **closed** — unit **active** on prod; residual ENABLE → [#99](https://github.com/jonK341/Masternoder.dk/issues/99)/[#101](https://github.com/jonK341/Masternoder.dk/issues/101) |
 | **P2** | Hosted MNs registered but `platform_enabled=0` | [#99](https://github.com/jonK341/Masternoder.dk/issues/99) | **probe fixed** — hosting **healthy** (pre-1.3: activetime OK, `platform_enabled=0` expected); fleet ENABLE needs [#101](https://github.com/jonK341/Masternoder.dk/issues/101) + collateral |
 | **P2** | PoR paper coverage gap / gates skipped | [#100](https://github.com/jonK341/Masternoder.dk/issues/100) | **code ready** — external coverage + float gate; deploy app to prod |
-| **P3** | Publish/upgrade daemon **v1.3.1.0** (prod on 1.2.3) | [#101](https://github.com/jonK341/Masternoder.dk/issues/101) | open — tag/release **MISSING**; next `python scripts/mn2_release_pipeline.py --ask-pass` (multi-hour build) |
+| **P3** | Publish/upgrade daemon **v1.3.1.0** | [#101](https://github.com/jonK341/Masternoder.dk/issues/101) | **daemon ship done 2026-10-01** — prod **v1.3.1.0** (1030100); GitHub [release](https://github.com/jonK341/MasterNoder2/releases/tag/v1.3.1.0) tarball sha256 `39c73421…`; `multi_ping_capable` + `ops.multi_ping_enabled` **true** on prod. **Close #101 after:** mnsync settled + fleet ENABLE / `platform_enabled` (→ [#99](https://github.com/jonK341/Masternoder.dk/issues/99) + `mn2_recollateralize_fleet_remote.py`) |
 | Ops | Trader market enablement | — | **keep disabled** — no `trader_agents` in `mn2_staking_config`; hub overall no longer forced to disabled |
 | Done | Host RAM / disk → **8 GB / ~180 GB** | — | Done ✓ |
+
+### Revenue focus (narrowed 2026-10-01)
+
+No separate **P0** label in the issue table — treat as **P0-equivalent** for $ and scale: **[#101](https://github.com/jonK341/Masternoder.dk/issues/101)** (v1.3.1 + `multi_ping_enabled`) · **[#100](https://github.com/jonK341/Masternoder.dk/issues/100)** PoR deploy · fleet ENABLE/collateral ([#99](https://github.com/jonK341/Masternoder.dk/issues/99)) · optional **live PayPal hosting smoke** ($4.99/slot).
+
+| Lever | Why |
+| ----- | --- |
+| **Primary $** | **Hosting slots** — PayPal/Explorer + **HOSTMN5** / on-ramp; ~220 free slots @ $4.99; rails live, push traffic + verify capture→provision. |
+| **Runner-up $** | **Pro** — $19.99/mo + generator tier enforcement (acquisition/upsell). |
+| **Defer for near-term $** | Exchange P1 live trading/arbitrage · trader market (keep disabled) · heavy E3/E4 until hosting/Pro funnel moves. |
+
+**This week (coordination):** (1) ~~**v1.3.1 ship**~~ **done 2026-10-01** — wait for **mnsync** then fleet recollateralize/ENABLE. (2) Deploy **#100** PoR with app deploy. (3) One **PayPal hosting** smoke + Discord/Explorer CTAs.
+
+**Revenue levers audit (2026-10-01,** [Revenue levers A1-A5 audit](92a1914b-c1bb-41ce-bf63-e2e9ab058b74)**):**
+
+| Track | Prod | Next |
+| ----- | ---- | ---- |
+| A3+B2 hosting | Rails on; ~49 slots free; HOSTMN5 in code | PayPal hosting smoke + CTAs |
+| A1+A7 Pro/tiers | `GET /api/monetization/config` → `subscription_pro_live` / `tier_enforcement_enabled` **false**; SSH audit **MISS** `PAYPAL_SUBSCRIPTION_PLAN_PRO`, `MONETIZATION_TIER_ENFORCEMENT` | `mn2_p1_monetization_remote.py --paypal-plan-pro P-… --enable-tier-enforcement --reload --verify` |
+| A2+C2 | Featured pack + upsell wired | Coin-pack smoke in shop QA |
+| A5 | Tips/unlocks live | Traffic |
+| Exchange shop SKUs | Rental catalog OK; shop catalog was empty until `data/exchange_shop_catalog.json` ships | Included in `mn2_staking` deploy manifest |
 
 ---
 
 ## Done ✓
 
+- **Daemon upgrade v1.3.1.0 + multi-ping (2026-10-01)** — remote fast build (`/tmp/mn2-build`, gcc15 compat patches); GitHub release **v1.3.1.0** republished with real tarball (3,321,615 bytes); `mn2_daemon_upgrade_remote.py --apply --verify-post` (SSH key). Prod: daemon **v1.3.1.0-61caddb-dirty** / **1030100**, `multi_ping_capable` + `multi_ping_enabled` **true**, staking **active**; services hub hosting probe **warn** (`mnsync pending`, `platform_enabled=0` until fleet ENABLE).
 - **Host resize (RAM + disk)** — **2026-09-30**: production VPS upgraded to **8 GB RAM** + **~180 GB** disk (was ~1.6 GB RAM / ~56 GB root at 78%). Closes the **host RAM pressure** action from the MN2 system report (API timeouts / load spike). Re-check with `python scripts/_system_health_check.py` after reboot if needed.
 - Treasury cold-wallet **sign-off gate** — `treasury_signoff_service`, `GET/POST /api/agents/treasury/sign-off`, CLI `scripts/treasury_signoff.py`; required before distribute batches ≥100k MN2 (MN2_OPS §8.6)
 - Explorer · staking · trader pool/market · Game Hub · compendium calm reader (V1–V16)
@@ -468,13 +491,13 @@ North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-
 
 | #   | Track                      | Status                                                                                  |
 | --- | -------------------------- | --------------------------------------------------------------------------------------- |
-| A1  | Pro subscription           | **✓ prod** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + webhook on server; repo keeps `P-PLACEHOLDER-PRO` key (env maps live plan) |
+| A1  | Pro subscription           | **Repo ✓ · prod env gap** — webhook set; **`PAYPAL_SUBSCRIPTION_PLAN_PRO` missing** on server (2026-10-01 audit) → `subscription_pro_live: false` |
 | A2  | Coin pack hero             | ✓ `featured` on 500-coin pack + BEST VALUE badge                                        |
 | A3  | Hosting funnel             | ✓ Shop revenue strip + Explorer staking CTAs                                            |
 | A4  | Staking boosters           | ✓ Linked from shop strip; promote on monitor (copy done)                                |
 | A5  | Camgirls monetization      | ✓ Deployed + catalog perf ~3.6s; spotlight fan-out 2026-06-20 |
 | A6  | Discord promo codes        | ✓ `DISCORD-STARTER`, `MARKET-BONUS` + `GENERATE10` / `HOSTMN5` + **promo rotator cron** (installed 2026-06-20) |
-| A7  | Premium generator tiers    | ✓ **Live** — `MONETIZATION_TIER_ENFORCEMENT=1` on server (2026-06-28) |
+| A7  | Premium generator tiers    | **Repo ✓ · prod env gap** — **`MONETIZATION_TIER_ENFORCEMENT` missing** on server (2026-10-01 audit); enable via `mn2_p1_monetization_remote.py` |
 | A8  | Allowance + renewal emails | ✓ Cron installed 2026-06-20 — **Ops** — SMTP (`AGENT_CRON_SECRET` set) |
 | A9  | Casino monetization        | ✓ Tracked in revenue-tracks JSON (`metric_source: casino`) + casino buy-in / ledger hooks — see [CASINO_TODO.md](CASINO_TODO.md) / [CASINO_REVENUE_REPORTS.md](CASINO_REVENUE_REPORTS.md) |
 
