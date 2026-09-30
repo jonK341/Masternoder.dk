@@ -1,7 +1,16 @@
-# Implementation TODO — Full Plan
+# Implementation TODO — Full Plan (historical)
 
-**Date:** 2026-01-27  
-**Source:** PHD Final Conclusion, user request, deployment plan.
+**Date:** 2026-01-27 (original) · **Doc note:** 2026-09-30  
+
+**Status:** Historical checklist from the PHD / early-2026 implementation pass. Prefer living docs for current work:
+
+- [README.md](README.md) — docs map  
+- [MN2_TODO.md](MN2_TODO.md) — MN2, monetization, fleet, exchange  
+- [PLATFORM_TODO.md](PLATFORM_TODO.md) — cross-site backlog  
+
+Do **not** treat unchecked items below as the active sprint list without re-verifying against the repo.
+
+**Source (historical):** PHD Final Conclusion, user request, deployment plan.
 
 ---
 
@@ -47,6 +56,7 @@
 - [x] Add goods; game/shop + shop-v3 items API with 100+ seed items
 - [x] Purchase placeholder; currency API
 - [ ] Valued Sellers Choice, link boosters, game time (extend as needed)
+- **Later (2026):** auction house / fees / V.9.2 ideas — see [SHOP_MONETIZATION_V92.md](SHOP_MONETIZATION_V92.md) and [MN2_TODO.md](MN2_TODO.md) B5/D1 (repo status there; not claimed here without re-audit).
 
 ## 8. Gallery
 
@@ -59,6 +69,7 @@
 - [ ] Unified points in generator
 - [ ] Checkpoint on/off feature
 - [ ] Hardtest free/empty space; div content if needed
+- **Later (2026):** metered generator API tiers + API crypto rewards profile helpers exist in repo — see [MN2_TODO.md](MN2_TODO.md) snapshot / C7.
 
 ## 10. Lab
 
@@ -84,6 +95,7 @@
 - [x] 19 theme-based spells (Rulebook V.2/V.3); effect clusters
 - [x] Game points → unified point system (triggers, award-game-points, add_points)
 - [ ] Clickthrough, longevity, game-time hooks (partial; extend session etc. in rulebook)
+- **Later (2026):** 90-level progression quest system in `quest_system.py` — track under [PLATFORM_TODO.md](PLATFORM_TODO.md) / [MN2_TODO.md](MN2_TODO.md), not as completed here.
 
 ## 14. Vidgenerator
 
@@ -100,4 +112,4 @@
 
 ---
 
-*Redefine and reconclude; align with PHD_FINAL_CONCLUSION.md.*
+*Historical note: originally pointed at `PHD_FINAL_CONCLUSION.md`. Current ops entry: [MN2_OPS.md](MN2_OPS.md) + [README.md](README.md).*
