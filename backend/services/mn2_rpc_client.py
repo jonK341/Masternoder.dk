@@ -408,7 +408,21 @@ def staking_health() -> Dict[str, Any]:
 
     def _apply_stakingstatus(r: Dict[str, Any]) -> None:
         # PIVX / MasterNoder2: "staking status" is the authoritative minting flag.
-        active = bool(r.get("staking_status", r.get("staking status")))
+        # Values may be bool True or the getinfo string "Staking Active".
+        raw = r.get("staking_status", r.get("staking status"))
+        if isinstance(raw, str):
+            active = "active" in raw.lower()
+        elif raw is None:
+            # Some builds only expose the boolean component flags.
+            active = all(
+                bool(r.get(k))
+                for k in ("walletunlocked", "mintablecoins", "enoughcoins", "mnsync")
+                if k in r
+            ) and bool(r.get("haveconnections", True))
+            if not any(k in r for k in ("walletunlocked", "mintablecoins", "enoughcoins")):
+                active = False
+        else:
+            active = bool(raw)
         out["staking_active"] = active
         out["mnsync"] = r.get("mnsync")
         out["mintable_coins"] = r.get("mintablecoins")
@@ -438,15 +452,19 @@ def staking_health() -> Dict[str, Any]:
     else:
         r = si.get("result") or {}
         if isinstance(r, dict):
-            enabled = r.get("enabled")
-            staking = r.get("staking")
-            active = bool(staking) if staking is not None else bool(enabled)
-            out["staking_active"] = active
-            out["staking_weight"] = r.get("weight")
-            out["net_stake_weight"] = r.get("netstakeweight") or r.get("netstakewight")
-            out["expected_time_to_reward_sec"] = r.get("expectedtime")
-            out["errors"] = r.get("errors") or out["errors"]
-            out["status"] = "active" if active else "inactive"
+            # Some MN2 builds return the PIVX getstakingstatus shape from getstakinginfo.
+            if "staking status" in r or "staking_status" in r or "mintablecoins" in r:
+                _apply_stakingstatus(r)
+            else:
+                enabled = r.get("enabled")
+                staking = r.get("staking")
+                active = bool(staking) if staking is not None else bool(enabled)
+                out["staking_active"] = active
+                out["staking_weight"] = r.get("weight")
+                out["net_stake_weight"] = r.get("netstakeweight") or r.get("netstakewight")
+                out["expected_time_to_reward_sec"] = r.get("expectedtime")
+                out["errors"] = r.get("errors") or out["errors"]
+                out["status"] = "active" if active else "inactive"
 
     # Always prefer getstakingstatus when present — MN2 getstakinginfo can report
     # inactive/empty while the PIVX-style status object is actively minting.
@@ -461,6 +479,22 @@ def staking_health() -> Dict[str, Any]:
             out["errors"] = ss.get("error") or out.get("errors")
     elif isinstance(ss.get("result"), dict):
         _apply_stakingstatus(ss["result"])
+
+    # Last resort: getinfo "staking status": "Staking Active"
+    if out.get("staking_active") is not True:
+        gi = getinfo()
+        if not gi.get("error") and isinstance(gi.get("result"), dict):
+            raw = (gi["result"] or {}).get("staking status") or (gi["result"] or {}).get("staking_status")
+            if isinstance(raw, str) and "active" in raw.lower():
+                out["staking_active"] = True
+                out["status"] = "active"
+                out["staking_status_detail"] = {
+                    **(out.get("staking_status_detail") or {}),
+                    "getinfo_staking_status": raw,
+                }
+            elif raw is True:
+                out["staking_active"] = True
+                out["status"] = "active"
 
     wi = getwalletinfo(timeout_sec=4)
     if not wi.get("error"):

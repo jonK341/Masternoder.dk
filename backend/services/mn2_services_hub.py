@@ -69,12 +69,28 @@ def _probe_staking() -> Dict[str, Any]:
             return {"status": "disabled", "enabled": False}
         from backend.services.mn2_rpc_client import staking_health
         sh = staking_health() or {}
-        active = sh.get("staking_active") is True or sh.get("status") == "active"
+        st = str(sh.get("status") or "").lower()
+        if sh.get("staking_active") is True or st == "active":
+            return {
+                "status": "active",
+                "enabled": True,
+                "mnsync": sh.get("mnsync"),
+                "pool_apr": None,
+            }
+        # Auth / RPC gaps are not the same as "daemon not staking".
+        if st in ("unreachable", "unsupported") or sh.get("staking_active") is None:
+            return {
+                "status": "unknown" if st != "unreachable" else "unreachable",
+                "enabled": True,
+                "mnsync": sh.get("mnsync"),
+                "detail": sh.get("errors") or st or "staking oracle unavailable",
+            }
         return {
-            "status": "active" if active else "inactive",
+            "status": "inactive",
             "enabled": True,
             "mnsync": sh.get("mnsync"),
             "pool_apr": None,
+            "detail": sh.get("errors"),
         }
     except Exception as exc:
         return {"status": "unknown", "error": str(exc)}
