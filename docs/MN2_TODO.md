@@ -1,8 +1,27 @@
 # MN2 TODO
 
-Last updated: **2026-06-28** (exchange rental + shop linked to main catalog, auto-renew · v1.3.0.0 built + published · profile security + Pro UI on branch)
+Last updated: **2026-09-30** (docs cleanup · revenue-tracks inventory refresh · quests / API-crypto / auction / Play Store notes)
 
-See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
+**Living docs map:** [README.md](README.md) · ops [MN2_OPS.md](MN2_OPS.md) · monetization [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · release [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · Play Store checklist [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
+
+Also: [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md) · platform backlog [PLATFORM_TODO.md](PLATFORM_TODO.md)
+
+---
+
+## Snapshot (2026-09) — recent surfaces
+
+Honest status only — **in repo** ≠ **verified on prod** unless noted elsewhere in this file.
+
+| Area | State | Pointers |
+| ---- | ----- | -------- |
+| **Monetization revenue tracks** | Machine config + service in repo: `data/monetization_revenue_tracks.json` (34 tracks A–E), `monetization_revenue_tracks_service`, streams/recap APIs. Tier tables below remain the narrative checklist; JSON is the machine inventory. | § Monetization machine · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) |
+| **Shop / auction** | Auction house + fee rails in repo (`shop_auction_service`, `/api/shop/auction/*`, B5 fee). Marketplace escrow / featured listing hooks described in [SHOP_MONETIZATION_V92.md](SHOP_MONETIZATION_V92.md). | Tier B5 / D1 below |
+| **Quests — 90 levels** | Progression templates in `quest_system.py` (`TOTAL_LEVELS = 90`, 9 chapters × 10). Routes in `quest_page.py` (`/api/quests/progression/*`). Treat as **repo capability** until blueprint registration + UI deploy are confirmed on the branch you ship. | `backend/services/quest_system.py` · `backend/routes/quest_page.py` |
+| **API / crypto profile** | Generator API crypto rewards profile helper + daily caps (`generator_api_crypto_service.get_api_crypto_profile`); unit tests present. A+ board surfaces generator API tiers / crypto rewards info. Metered generator API tiers: `/api/generator/api/tiers` (C7). | C7 · `system_a_plus_board_service` |
+| **Create App / encoder** | Create App + Super Encoder release handoff documented; deploy is laptop/SSH, not “done by docs alone”. | [DEPLOY_CREATE_APP_RELEASE.md](DEPLOY_CREATE_APP_RELEASE.md) |
+| **Google Play vision** | Tracked as distribution / casino mobile shell. **Play Console ship is not claimed done** — follow [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) (assetlinks SHA, $25 account). Podcast/app vision remains deferred in [PLATFORM_TODO.md](PLATFORM_TODO.md) / [PODCAST.md](PODCAST.md). | E4 below · Play Store checklist |
+
+**Open ops that still need SSH / binary work (do not mark done from this snapshot):** daemon multi-ping enable after v1.3 deploy, SMTP for revenue-pulse emails, Facebook casino Meta tokens (E3 paused), LiveKit camgirls e2e confirm.
 
 ---
 
@@ -427,6 +446,8 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 
 North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-north-star).
 
+**Machine inventory:** `data/monetization_revenue_tracks.json` + `monetization_revenue_tracks_service` (34 tracks). JSON `status` values (`shipped` / `live`) are inventory labels for the revenue machine — **not** a claim that every marketplace (e.g. Google Play Console) is fully shipped. Narrative checklists below remain authoritative for product/ops detail; keep both in mind when changing tracks.
+
 ### Tier A — shipped in repo (deploy to activate)
 
 
@@ -440,6 +461,7 @@ North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-
 | A6  | Discord promo codes        | ✓ `DISCORD-STARTER`, `MARKET-BONUS` + `GENERATE10` / `HOSTMN5` + **promo rotator cron** (installed 2026-06-20) |
 | A7  | Premium generator tiers    | ✓ **Live** — `MONETIZATION_TIER_ENFORCEMENT=1` on server (2026-06-28) |
 | A8  | Allowance + renewal emails | ✓ Cron installed 2026-06-20 — **Ops** — SMTP (`AGENT_CRON_SECRET` set) |
+| A9  | Casino monetization        | ✓ Tracked in revenue-tracks JSON (`metric_source: casino`) + casino buy-in / ledger hooks — see [CASINO_TODO.md](CASINO_TODO.md) / [CASINO_REVENUE_REPORTS.md](CASINO_REVENUE_REPORTS.md) |
 
 
 ### Tier B — product bundles (2–5 days each)
