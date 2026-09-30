@@ -1,6 +1,6 @@
 # MN2 TODO
 
-Last updated: **2026-09-30** (host upgrade **8 GB RAM / ~180 GB disk** · closes RAM-pressure ops item from system report)
+Last updated: **2026-10-01** (services hub probe deploy · staking active · hosting healthy · trader keep-disabled)
 
 **Living docs map:** [README.md](README.md) · ops [MN2_OPS.md](MN2_OPS.md) · monetization [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · release [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · Play Store checklist [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
 
@@ -27,11 +27,12 @@ Honest status only — **in repo** ≠ **verified on prod** unless noted elsewhe
 
 | Pri | Issue | GitHub | Status |
 | --- | ----- | ------ | ------ |
-| **P1** | Staking probe mismatch (`staking_active` vs daemon) | [#97](https://github.com/jonK341/Masternoder.dk/issues/97) | **closed** — `staking_health()` prefers `getstakingstatus`; prod `staking_active` true |
-| **P2** | `mn2-fleet-autostart` failed since 2026-09-27 | [#98](https://github.com/jonK341/Masternoder.dk/issues/98) | **closed** — packed-version gate fixed; local ping path on prod |
-| **P2** | Hosted MNs registered but `platform_enabled=0` | [#99](https://github.com/jonK341/Masternoder.dk/issues/99) | **partial** — probe/collateral fixes in branch; full fleet ENABLED needs [#101](https://github.com/jonK341/Masternoder.dk/issues/101) |
+| **P1** | Staking probe mismatch (`staking_active` vs daemon) | [#97](https://github.com/jonK341/Masternoder.dk/issues/97) | **closed** — prod `/api/mn2/services` staking **active** (2026-10-01) |
+| **P2** | `mn2-fleet-autostart` failed since 2026-09-27 | [#98](https://github.com/jonK341/Masternoder.dk/issues/98) | **closed** — unit **active** on prod; residual ENABLE → [#99](https://github.com/jonK341/Masternoder.dk/issues/99)/[#101](https://github.com/jonK341/Masternoder.dk/issues/101) |
+| **P2** | Hosted MNs registered but `platform_enabled=0` | [#99](https://github.com/jonK341/Masternoder.dk/issues/99) | **probe fixed** — hosting **healthy** (pre-1.3: activetime OK, `platform_enabled=0` expected); fleet ENABLE needs [#101](https://github.com/jonK341/Masternoder.dk/issues/101) + collateral |
 | **P2** | PoR paper coverage gap / gates skipped | [#100](https://github.com/jonK341/Masternoder.dk/issues/100) | **code ready** — external coverage + float gate; deploy app to prod |
-| **P3** | Publish/upgrade daemon **v1.3.1.0** (prod on 1.2.3) | [#101](https://github.com/jonK341/Masternoder.dk/issues/101) | open |
+| **P3** | Publish/upgrade daemon **v1.3.1.0** (prod on 1.2.3) | [#101](https://github.com/jonK341/Masternoder.dk/issues/101) | open — tag/release **MISSING**; next `python scripts/mn2_release_pipeline.py --ask-pass` (multi-hour build) |
+| Ops | Trader market enablement | — | **keep disabled** — no `trader_agents` in `mn2_staking_config`; hub overall no longer forced to disabled |
 | Done | Host RAM / disk → **8 GB / ~180 GB** | — | Done ✓ |
 
 ---
