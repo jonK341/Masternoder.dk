@@ -120,9 +120,17 @@ def encode_audio_file(
     profile: str = "standard",
     *,
     apply_filters: bool = True,
+    user_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     prof = profile if profile in VALID_AUDIO_PROFILES else "standard"
-    cfg = AUDIO_ENCODE_PROFILES[prof]
+    cfg = dict(AUDIO_ENCODE_PROFILES[prof])
+    if user_id and cfg.get("filter_chain"):
+        try:
+            from backend.services.encoder_v2_service import apply_v2_audio_filter_chain
+
+            cfg["filter_chain"] = apply_v2_audio_filter_chain(cfg["filter_chain"], user_id)
+        except Exception:
+            pass
     if not os.path.isfile(input_path):
         return {"success": False, "error": "input_not_found", "input_path": input_path}
 
@@ -143,30 +151,60 @@ def encode_audio_file(
         cmd.extend(["-movflags", "+faststart"])
     cmd.append(output_path)
 
+    max_attempts = 2
+    if user_id:
+        try:
+            from backend.services.encoder_v2_service import aggregate_tuning
+            max_attempts = max(2, int(aggregate_tuning(str(user_id)).get("encode_max_attempts") or 2))
+        except Exception:
+            pass
+
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-        if proc.returncode != 0 or not os.path.isfile(output_path):
-            # Fallback: simpler chain without optional filters (stereotools/deesser)
-            simple = cfg.get("filter_chain", "").split(",")
-            simple = [f for f in simple if "stereotools" not in f and "deesser" not in f]
-            fallback_chain = ",".join(simple) if simple else "loudnorm=I=-16:TP=-1.5:LRA=11"
-            cmd2 = [ff, "-y", "-i", input_path, "-af", fallback_chain,
-                    "-acodec", codec, "-b:a", cfg["bitrate"],
-                    "-ar", str(cfg["sample_rate"]), "-ac", str(cfg.get("channels", 2)), output_path]
-            proc2 = subprocess.run(cmd2, capture_output=True, text=True, timeout=600)
-            if proc2.returncode != 0 or not os.path.isfile(output_path):
+        if proc.returncode == 0 and os.path.isfile(output_path):
+            return {
+                "success": True,
+                "output_path": output_path,
+                "profile": prof,
+                "codec": codec,
+                "format": fmt,
+                "size_bytes": os.path.getsize(output_path),
+            }
+
+        attempts: List[List[str]] = []
+        simple = cfg.get("filter_chain", "").split(",")
+        simple = [f for f in simple if "stereotools" not in f and "deesser" not in f]
+        fallback_chain = ",".join(simple) if simple else "loudnorm=I=-16:TP=-1.5:LRA=11"
+        attempts.append([ff, "-y", "-i", input_path, "-af", fallback_chain,
+                         "-acodec", codec, "-b:a", cfg["bitrate"],
+                         "-ar", str(cfg["sample_rate"]), "-ac", str(cfg.get("channels", 2)), output_path])
+        if max_attempts >= 3:
+            attempts.append([ff, "-y", "-i", input_path, "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+                             "-acodec", codec, "-b:a", cfg["bitrate"],
+                             "-ar", str(cfg["sample_rate"]), "-ac", str(cfg.get("channels", 2)), output_path])
+        if max_attempts >= 4:
+            attempts.append([ff, "-y", "-i", input_path,
+                             "-acodec", codec, "-b:a", cfg["bitrate"],
+                             "-ar", str(cfg["sample_rate"]), "-ac", str(cfg.get("channels", 2)), output_path])
+
+        last_stderr = proc.stderr or ""
+        for cmd_try in attempts:
+            proc2 = subprocess.run(cmd_try, capture_output=True, text=True, timeout=600)
+            last_stderr = proc2.stderr or last_stderr
+            if proc2.returncode == 0 and os.path.isfile(output_path):
                 return {
-                    "success": False,
-                    "error": "encode_failed",
-                    "stderr": (proc.stderr or proc2.stderr or "")[-500:],
+                    "success": True,
+                    "output_path": output_path,
+                    "profile": prof,
+                    "codec": codec,
+                    "format": fmt,
+                    "size_bytes": os.path.getsize(output_path),
                 }
         return {
-            "success": True,
-            "output_path": output_path,
-            "profile": prof,
-            "codec": codec,
-            "format": fmt,
-            "size_bytes": os.path.getsize(output_path),
+            "success": False,
+            "error": "encode_failed",
+            "stderr": last_stderr[-500:],
+            "encode_attempts": max_attempts,
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -178,6 +216,7 @@ def generate_episode_audio(
     profile: str = "standard",
     dest_dir: Optional[str] = None,
     episode_id: Optional[str] = None,
+    user_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     text = (script or "").strip()
     if not text:
@@ -210,7 +249,7 @@ def generate_episode_audio(
         except Exception:
             pass
 
-    enc = encode_audio_file(raw_path, final_path, prof)
+    enc = encode_audio_file(raw_path, final_path, prof, user_id=user_id)
     if not enc.get("success"):
         return enc
 

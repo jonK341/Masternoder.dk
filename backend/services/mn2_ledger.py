@@ -11,6 +11,7 @@ from typing import Dict, Any, List
 
 _LEDGER_LOCK = threading.Lock()
 _LEDGER_FILENAME = "mn2_ledger.json"
+_SUMMARY_CACHE: Dict[str, Any] = {"mtime": None, "rows": []}
 
 
 def _data_dir() -> str:
@@ -66,6 +67,122 @@ def append_entry(
         "metadata": metadata or {},
     })
     _save_entries(entries)
+
+
+def _apply_entry_to_summary_row(row: Dict[str, Any], entry: Dict[str, Any]) -> None:
+    from backend.services.ledger_buy_potential_service import BUY_SPEND_TYPES, FUNDING_INFLOW_TYPES
+
+    row["entry_count"] += 1
+    ca = str(entry.get("created_at") or "")
+    if ca > str(row.get("last_activity") or ""):
+        row["last_activity"] = ca
+    t = str(entry.get("type") or "").strip()
+    row["entry_types"].add(t)
+    try:
+        amt = float(entry.get("amount") or 0)
+    except (TypeError, ValueError):
+        amt = 0.0
+    if t in ("deposit", "staking_reward", "onramp_purchase", "aggregator_mn2_earn", "encoder_payment"):
+        row["ledger_in_mn2"] += amt
+    elif t in ("withdrawal", "shop_payment", "onramp_clawback", "encoder_payment"):
+        if t == "encoder_payment" and amt > 0:
+            row["ledger_out_mn2"] += amt
+        elif t != "encoder_payment":
+            row["ledger_out_mn2"] += abs(amt)
+    if t in BUY_SPEND_TYPES and amt > 0:
+        row["buy_spend_mn2"] += amt
+        row["buy_count"] += 1
+        row["has_bought"] = True
+        row["buy_channels"].add(t)
+        if ca > str(row.get("last_buy_at") or ""):
+            row["last_buy_at"] = ca
+    if t in FUNDING_INFLOW_TYPES and amt > 0:
+        row["has_funding"] = True
+
+
+def _new_summary_row(user_id: str) -> Dict[str, Any]:
+    return {
+        "user_id": user_id,
+        "entry_count": 0,
+        "last_activity": "",
+        "last_buy_at": "",
+        "ledger_in_mn2": 0.0,
+        "ledger_out_mn2": 0.0,
+        "buy_spend_mn2": 0.0,
+        "buy_count": 0,
+        "has_bought": False,
+        "has_funding": False,
+        "buy_channels": set(),
+        "entry_types": set(),
+    }
+
+
+def _finalize_summary_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    from backend.services.ledger_buy_potential_service import enrich_ledger_summary
+
+    base = {
+        "user_id": row["user_id"],
+        "entry_count": row["entry_count"],
+        "last_activity": row["last_activity"],
+        "last_buy_at": row.get("last_buy_at") or "",
+        "ledger_in_mn2": round(float(row["ledger_in_mn2"] or 0), 8),
+        "ledger_out_mn2": round(float(row["ledger_out_mn2"] or 0), 8),
+        "ledger_net_mn2": round(float(row["ledger_in_mn2"] or 0) - float(row["ledger_out_mn2"] or 0), 8),
+        "buy_spend_mn2": round(float(row.get("buy_spend_mn2") or 0), 8),
+        "buy_count": int(row.get("buy_count") or 0),
+        "has_bought": bool(row.get("has_bought")),
+        "has_funding": bool(row.get("has_funding")),
+        "buy_channels": sorted(row.get("buy_channels") or []),
+        "entry_types": sorted(row["entry_types"]),
+    }
+    return enrich_ledger_summary(base)
+
+
+def _summarize_entries_for_user(user_id: str, entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    row = _new_summary_row(str(user_id))
+    for entry in entries:
+        _apply_entry_to_summary_row(row, entry)
+    return _finalize_summary_row(row)
+
+
+def _build_ledger_user_summaries() -> List[Dict[str, Any]]:
+    """Build distinct ledger customer summaries (uncached)."""
+    by_user: Dict[str, Dict[str, Any]] = {}
+    for e in _load_entries():
+        uid = str(e.get("user_id") or "").strip()
+        if not uid or uid.lower() in ("", "default_user", "anon", "anonymous"):
+            continue
+        row = by_user.setdefault(uid, _new_summary_row(uid))
+        _apply_entry_to_summary_row(row, e)
+
+    rows = [_finalize_summary_row(row) for row in by_user.values()]
+    rows.sort(key=lambda r: str(r.get("last_activity") or ""), reverse=True)
+    return rows
+
+
+def list_ledger_user_summaries(*, limit: int = 5000) -> List[Dict[str, Any]]:
+    """Distinct ledger customers with activity summary, newest activity first."""
+    path = _ledger_path()
+    mtime = os.path.getmtime(path) if os.path.exists(path) else None
+    with _LEDGER_LOCK:
+        if _SUMMARY_CACHE.get("mtime") == mtime and _SUMMARY_CACHE.get("rows") is not None:
+            rows = list(_SUMMARY_CACHE["rows"])
+        else:
+            rows = _build_ledger_user_summaries()
+            _SUMMARY_CACHE["mtime"] = mtime
+            _SUMMARY_CACHE["rows"] = rows
+    lim = max(1, min(int(limit or 5000), 20000))
+    return rows[:lim]
+
+
+def count_ledger_users() -> int:
+    """Fast count of distinct ledger users (reads persisted index when available)."""
+    try:
+        from backend.services.ledger_customer_aggregator_service import ledger_customer_index_meta
+
+        return int(ledger_customer_index_meta().get("total") or 0)
+    except Exception:
+        return 0
 
 
 def get_entries_by_user(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:

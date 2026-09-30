@@ -122,8 +122,13 @@
     /**
      * Create navigation toolbar HTML
      */
+    /** Portal-void nav (brand + Portaler grid) is the default. Set MN_NAV_PORTAL_VOID = false for legacy tab strip. */
+    function usePortalVoidNav() {
+        return typeof window === 'undefined' || window.MN_NAV_PORTAL_VOID !== false;
+    }
+
     function createToolbarHTML() {
-        const portalVoid = typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID;
+        const portalVoid = usePortalVoidNav();
 
         const linksHTML = NAV_CONFIG.links.map(link => _renderLinkAnchor(link, '')).join('');
 
@@ -313,7 +318,7 @@
      * Setup mobile menu toggle
      */
     function setupMobileMenu() {
-        const portalVoid = typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID;
+        const portalVoid = usePortalVoidNav();
         const toggle = document.getElementById('navToolbarToggle');
         const mobileMenu = document.getElementById('navToolbarMobile');
         const portalPanel = document.getElementById('navPortalPanel');
