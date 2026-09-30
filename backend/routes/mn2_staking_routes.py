@@ -86,13 +86,17 @@ def staking_reserves_overview():
 def staking_config():
     try:
         cfg = staking.get_config()
+        apr_info = staking.public_apr_status()
         public = {
             "success": True,
             "enabled": cfg.get("enabled"),
             "min_stake": cfg.get("min_stake"),
             "max_stake_per_user": cfg.get("max_stake_per_user"),
             "instant_unstake": cfg.get("instant_unstake"),
-            "apr_percent": staking.dynamic_apr(),
+            "apr_percent": apr_info.get("apr_percent"),
+            "estimated_apr_percent": apr_info.get("estimated_apr_percent"),
+            "apr_status": apr_info.get("apr_status"),
+            "staking_active": apr_info.get("staking_active"),
             "longevity_tiers": cfg.get("longevity_tiers"),
             "accrual_interval_minutes": cfg.get("accrual_interval_minutes"),
             "terms_version": cfg.get("terms_version"),

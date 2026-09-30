@@ -394,14 +394,24 @@ def mn2_health():
     except Exception as exc:
         out['components']['masternode_hosting'] = {'status': 'unknown', 'error': str(exc)}
 
+    # Avoid building the full services catalog on the health path — it re-probes
+    # PoR/RPC and was a major contributor to worker starvation. Peek cache only.
     try:
         from backend.services import mn2_services_hub
-        catalog = mn2_services_hub.get_services_catalog(use_cache=True)
-        out['components']['mn2_services'] = {
-            'status': (catalog.get('summary') or {}).get('overall') or 'unknown',
-            'summary': catalog.get('summary'),
-            'service_count': len(catalog.get('services') or []),
-        }
+        peek = getattr(mn2_services_hub, "peek_catalog_cache", None)
+        catalog = peek() if callable(peek) else None
+        if catalog:
+            out['components']['mn2_services'] = {
+                'status': (catalog.get('summary') or {}).get('overall') or 'unknown',
+                'summary': catalog.get('summary'),
+                'service_count': len(catalog.get('services') or []),
+                'cached': True,
+            }
+        else:
+            out['components']['mn2_services'] = {
+                'status': 'unknown',
+                'detail': 'catalog cache cold',
+            }
     except Exception as exc:
         out['components']['mn2_services'] = {'status': 'unknown', 'error': str(exc)}
 
