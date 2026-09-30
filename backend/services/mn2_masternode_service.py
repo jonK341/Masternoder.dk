@@ -25,6 +25,9 @@ _LOCK = threading.RLock()
 _COLLATERAL_MN2 = 5000.0
 _CONFIG_FILE = "mn2_masternode_config.json"
 _HOSTS_FILE = "mn2_masternode_hosts.json"
+_STATUS_CACHE_LOCK = threading.Lock()
+_STATUS_CACHE: Dict[str, Any] = {"value": None, "ts": 0.0}
+_STATUS_CACHE_TTL = 20.0
 
 
 def _base() -> str:
@@ -239,30 +242,66 @@ def network_masternodes(limit: int = 50, *, fresh: bool = False) -> Dict[str, An
 
 
 def _match_on_chain(host: Dict[str, Any], chain_rows: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Match registry host → listmasternodes row.
+
+    Prefer collateral txid (+vout when present). Do not treat payee ``addr`` as
+    collateral_address — on MN2 ``addr`` is the payout address, not the UTXO owner.
+    """
     txid = (host.get("collateral_txid") or "").strip()
+    host_vout = host.get("collateral_vout")
     if txid:
         for mn in chain_rows:
             if not isinstance(mn, dict):
                 continue
-            m_tx = str(mn.get("txhash") or mn.get("proTxHash") or "")
-            if m_tx and m_tx == txid:
-                return mn
-    coll_addr = (host.get("collateral_address") or "").strip()
-    if coll_addr:
+            m_tx = str(mn.get("txhash") or mn.get("proTxHash") or "").strip()
+            if not m_tx or m_tx != txid:
+                continue
+            m_vout = mn.get("outidx")
+            if m_vout is None:
+                m_vout = mn.get("vout")
+            if m_vout is None:
+                m_vout = mn.get("outputIndex")
+            if host_vout is not None and m_vout is not None:
+                try:
+                    if int(host_vout) != int(m_vout):
+                        continue
+                except (TypeError, ValueError):
+                    continue
+            return mn
+        return None
+
+    # Payee-only match when registry already stores the on-chain payee.
+    payee = (host.get("payee_address") or host.get("on_chain_payee") or "").strip()
+    if payee:
         for mn in chain_rows:
             if not isinstance(mn, dict):
                 continue
-            if str(mn.get("addr") or "") == coll_addr:
+            if str(mn.get("addr") or "").strip() == payee:
                 return mn
+
+    # IP:port broadcast only when chain row also uses IP:port in addr (rare on MN2).
     addr = (host.get("broadcast_address") or host.get("masternode_address") or "").strip()
-    if not addr:
+    if not addr or ":" not in addr:
         return None
-    host_ip = addr.split(":")[0] if ":" in addr else addr
+    host_ip = addr.split(":", 1)[0]
+    if not host_ip or host_ip[0].isalpha():
+        return None
     for mn in chain_rows:
-        mn_addr = str(mn.get("addr") or "")
-        if mn_addr == addr or mn_addr.startswith(host_ip):
+        if not isinstance(mn, dict):
+            continue
+        mn_addr = str(mn.get("addr") or "").strip()
+        if mn_addr == addr or (mn_addr.startswith(host_ip + ":") and ":" in mn_addr):
             return mn
     return None
+
+
+def _public_host_row(host: Dict[str, Any]) -> Dict[str, Any]:
+    """Strip secrets while keeping fields needed for public explorer UI."""
+    row = dict(host)
+    row.pop("masternode_privkey", None)
+    row.pop("notes", None)
+    # Keep collateral_txid for sync transparency; never expose privkey.
+    return row
 
 
 def register_host(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -590,8 +629,33 @@ def _read_masternoder2_privkey() -> Optional[str]:
     return keys[-1]
 
 
-def _parse_daemon_version_tuple(version: str) -> tuple:
-    """Parse ``1.3.0.0-abc`` → ``(1, 3, 0, 0)`` for comparisons."""
+def _parse_daemon_version_tuple(version: Any) -> tuple:
+    """Parse product version for comparisons.
+
+    Accepts dotted strings (``1.3.0.0-abc``) and Bitcoin-style ints
+    (``1020300`` → 1.2.3.0, ``1030000`` → 1.3.0.0). Plain protocol ints
+    under 1_000_000 (e.g. masternode ``version`` 70916) are not product
+    versions and return ``(0, 0, 0, 0)``.
+    """
+    if version is None:
+        return (0, 0, 0, 0)
+    if isinstance(version, bool):
+        return (0, 0, 0, 0)
+    if isinstance(version, (int, float)) or (
+        isinstance(version, str) and version.strip().isdigit()
+    ):
+        try:
+            v = int(float(version))
+        except (TypeError, ValueError):
+            return (0, 0, 0, 0)
+        if v >= 1_000_000:
+            major = v // 1_000_000
+            minor = (v // 10_000) % 100
+            patch = (v // 100) % 100
+            build = v % 100
+            return (major, minor, patch, build)
+        return (0, 0, 0, 0)
+
     head = str(version or "").split("-", 1)[0].strip()
     parts: List[int] = []
     for piece in head.split("."):
@@ -615,7 +679,7 @@ def daemon_supports_multi_ping() -> bool:
         ver = (r.get("result") or {}).get("version")
         if ver is None:
             return False
-        return _parse_daemon_version_tuple(str(ver)) >= (1, 3, 0, 0)
+        return _parse_daemon_version_tuple(ver) >= (1, 3, 0, 0)
     except Exception:
         return False
 
@@ -623,8 +687,12 @@ def daemon_supports_multi_ping() -> bool:
 def multi_ping_enabled() -> bool:
     """
     Fleet multi-ping: ping every masternode.conf alias from one daemon (v1.3+).
-    ``ops.multi_ping_enabled`` overrides auto-detect; default False until binary deployed.
+
+    Never returns True on a pre-1.3 binary — ``ops.multi_ping_enabled`` only
+    enables the feature when the daemon is actually capable.
     """
+    if not daemon_supports_multi_ping():
+        return False
     ops = _ops_cfg()
     flag = ops.get("multi_ping_enabled")
     if flag is True:
@@ -636,7 +704,7 @@ def multi_ping_enabled() -> bool:
         return True
     if env in ("0", "false", "no"):
         return False
-    return daemon_supports_multi_ping()
+    return True
 
 
 def _register_fleet_ping_targets() -> Optional[str]:
@@ -1555,15 +1623,26 @@ def _maybe_capacity_discord_alert(slots_available: int, max_nodes: int, hosted: 
 
 
 def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
-    """Public + ops snapshot for hosting service."""
+    """Public + ops snapshot for hosting service.
+
+    Read-only: never purge or mutate registry from this path (mutations belong
+    on ops endpoints / cron). Results are cached briefly so explorer/shop
+    polls cannot stack RPC calls on the web workers.
+    """
+    now = time.time()
+    if not fresh:
+        with _STATUS_CACHE_LOCK:
+            cached = _STATUS_CACHE.get("value")
+            if cached is not None and (now - float(_STATUS_CACHE.get("ts") or 0)) < _STATUS_CACHE_TTL:
+                return cached
+
     cfg = get_config()
     enabled = bool(cfg.get("enabled", True))
     collateral = float(cfg.get("collateral_mn2") or _COLLATERAL_MN2)
     max_nodes = int(cfg.get("max_hosted_nodes") or 3)
-    stale_hours = float(cfg.get("stale_provisioning_hours") or 6)
-    purge_stale_provisioning_hosts(max_age_hours=stale_hours, dry_run=False)
     registry_hosts = list(_load_hosts_doc().get("hosts") or [])
-    hosts = list_hosts(include_internal=False)
+    # Internal rows keep collateral_txid so on-chain matching works.
+    hosts = list_hosts(include_internal=True)
     net = network_masternodes(limit=100, fresh=fresh)
     chain_list = net.get("list") if isinstance(net.get("list"), list) else []
 
@@ -1574,11 +1653,15 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         st = (on_chain or {}).get("status") or h.get("status") or "unknown"
         if str(st).upper() == "ENABLED":
             enabled_platform += 1
+        public = _public_host_row(h)
+        payee = str((on_chain or {}).get("addr") or "").strip() or None
         synced_hosts.append({
-            **h,
+            **public,
             "on_chain_status": (on_chain or {}).get("status"),
             "on_chain_rank": (on_chain or {}).get("rank"),
             "on_chain_activetime": (on_chain or {}).get("activetime"),
+            "on_chain_payee": payee,
+            "on_chain_lastpaid": (on_chain or {}).get("lastpaid"),
             "synced": on_chain is not None,
         })
 
@@ -1606,6 +1689,9 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         and (h.get("status") or "").lower() == "provisioning"
         and not h.get("collateral_txid")
     )
+    slots_by_cap = max(0, max_nodes - slots_used)
+    # New provisions need a free 5k UTXO; do not oversell past wallet inventory.
+    slots_available = min(slots_by_cap, max(0, avail_outputs)) if enabled else 0
     out = {
         "success": True,
         "enabled": enabled,
@@ -1616,7 +1702,8 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         "hosted_count": slots_used,
         "registry_count": len(registry_hosts),
         "stale_provisioning_count": stale_provisioning,
-        "slots_available": max(0, max_nodes - slots_used),
+        "slots_available": slots_available,
+        "slots_by_capacity": slots_by_cap,
         "platform_enabled_on_chain": enabled_platform,
         "collateral_outputs_available": avail_outputs,
         "hosting_fee_percent": float(cfg.get("hosting_fee_percent") or 0),
@@ -1630,12 +1717,14 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
             "mnsync": mnsync,
             "staking_active": staking_active,
             "version": daemon_version,
+            "version_tuple": list(_parse_daemon_version_tuple(daemon_version)) if daemon_version is not None else None,
             "multi_ping_capable": daemon_supports_multi_ping(),
             "multi_ping_enabled": multi_ping_enabled(),
             "enabled_with_activetime": _count_enabled_with_activetime(chain_list),
         },
         "hosts": synced_hosts,
         "ops": cfg.get("ops") if isinstance(cfg.get("ops"), dict) else {},
+        "generated_at": _iso(),
     }
     try:
         from backend.services import mn2_masternode_hosting_service as hosting
@@ -1651,16 +1740,45 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         )
     except Exception:
         pass
+    with _STATUS_CACHE_LOCK:
+        _STATUS_CACHE["value"] = out
+        _STATUS_CACHE["ts"] = time.time()
     return out
 
 
+def peek_service_status_cache() -> Optional[Dict[str, Any]]:
+    """Return last service snapshot without triggering RPC (health probes)."""
+    with _STATUS_CACHE_LOCK:
+        cached = _STATUS_CACHE.get("value")
+        return dict(cached) if isinstance(cached, dict) else None
+
+
 def probe_health() -> Dict[str, Any]:
-    """Lightweight health for mn2_services_hub."""
+    """Lightweight health for mn2_services_hub /api/mn2/health.
+
+    Prefer the short-lived service-status cache. Never call a full fresh
+    get_service_status from health paths — that stacks listmasternodes +
+    listunspent onto every probe and can starve web workers.
+    """
     cfg = get_config()
     if not cfg.get("enabled", True):
         return {"status": "disabled", "enabled": False}
+
+    st = peek_service_status_cache()
+    if st is None:
+        # File-only fallback — no RPC on the health path.
+        registry_hosts = list(_load_hosts_doc().get("hosts") or [])
+        slots_used = _count_slots_used(registry_hosts)
+        max_nodes = int(cfg.get("max_hosted_nodes") or 3)
+        return {
+            "status": "unknown",
+            "enabled": True,
+            "hosted_count": slots_used,
+            "slots_available": max(0, max_nodes - slots_used),
+            "detail": "service status cache cold",
+        }
+
     try:
-        st = get_service_status()
         if not st.get("success"):
             return {"status": "degraded", "enabled": True, "error": st.get("error")}
         net_enabled = int(st.get("network", {}).get("enabled") or 0)
@@ -1675,7 +1793,7 @@ def probe_health() -> Dict[str, Any]:
                 "platform_enabled": platform,
                 "detail": "mnsync pending",
             }
-        if platform == 0 and st.get("hosted_count", 0) > 0:
+        if platform == 0 and int(st.get("hosted_count") or 0) > 0:
             return {
                 "status": "warn",
                 "enabled": True,
@@ -1684,13 +1802,24 @@ def probe_health() -> Dict[str, Any]:
                 "platform_enabled": platform,
                 "detail": "registered hosts not yet enabled on-chain",
             }
+        avail_outputs = int(st.get("collateral_outputs_available") or 0)
+        if avail_outputs <= 0 and int(st.get("hosted_count") or 0) > 0:
+            return {
+                "status": "warn",
+                "enabled": True,
+                "hosted_count": st.get("hosted_count"),
+                "slots_available": st.get("slots_available"),
+                "collateral_outputs_available": avail_outputs,
+                "detail": "no free collateral UTXOs for new hosts",
+            }
         return {
-            "status": "healthy" if net_enabled > 0 or st.get("hosted_count", 0) == 0 else "warn",
+            "status": "healthy" if net_enabled > 0 or int(st.get("hosted_count") or 0) == 0 else "warn",
             "enabled": True,
             "hosted_count": st.get("hosted_count"),
             "slots_available": st.get("slots_available"),
             "network_enabled": net_enabled,
             "platform_enabled": platform,
+            "collateral_outputs_available": avail_outputs,
         }
     except Exception as exc:
         return {"status": "degraded", "enabled": True, "error": str(exc)}
