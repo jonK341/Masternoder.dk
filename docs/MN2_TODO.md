@@ -166,7 +166,7 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 | **P2** | **LiveKit voice (Camgirls Phase 3)** — server reports `mode=live` (optionals 2026-06-20); confirm camgirls token flow | SSH | LiveKit cloud creds | `mn2_ops_optionals_remote.py --ask-pass --livekit-url … --reload --verify` |
 | **P2** | **Sync local `DEPLOY_PASS`** — non-interactive SSH on legacy remote scripts | Win | **partial** | **Done:** `deploy.py`, `apply_updates.py`, `mn2_ops_optionals_remote.py` via `DEPLOY_KEY_PATH`. **Open:** `mn2_p1_monetization_remote.py`, `mn2_next_ops_remote.py`, fleet/daemon remotes still password-only |
 | **P2** | **Shop UI browser spot-check** (optional) — render + PayPal checkout in browser | **Browser** | deploy done | API **10/10** + coins purchase **PASS** — manual confirm slot meter / revenue strip / BEST VALUE badge if desired |
-| **P2** | **Camgirls Phase 4 nginx** — only if moving UI to `camgirls.masternoder.dk/app/` | SSH | product decision | [CAMGIRLS_PHASE4_NGINX.md](CAMGIRLS_PHASE4_NGINX.md) |
+| **P2** | **Camgirls Phase 4 nginx** — only if moving UI to `camgirls.masternoder.dk/app/` | SSH | product decision | Ops note only (former `CAMGIRLS_PHASE4_NGINX.md` missing); see [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md) / camgirls deploy scripts |
 
 **Completed this sprint (2026-06-21/23):** fleet RPC **9332** + config **775** perms + alias fix · **~30** hosted · shop **10/10** + coins purchase PASS · `max_hosted_nodes=250` · **deploy DONE** (PR **#29** `--ask-pass` + `apply_updates` on prod) · **provisioning backlog cleared** · **PR #30** site multi-ping merged — **PR stack #21–#27 merged** · **explorer masternodes tab live**.
 
