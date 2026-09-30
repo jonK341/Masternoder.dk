@@ -1,8 +1,27 @@
 # MN2 TODO
 
-Last updated: **2026-06-28** (exchange rental + shop linked to main catalog, auto-renew)
+Last updated: **2026-09-30** (docs cleanup · revenue-tracks inventory refresh · quests / API-crypto / auction / Play Store notes)
 
-See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · [CAMGIRLS_PHASE1C.md](CAMGIRLS_PHASE1C.md)
+**Living docs map:** [README.md](README.md) · ops [MN2_OPS.md](MN2_OPS.md) · monetization [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) · release [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · Play Store checklist [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)
+
+Also: [DISCORD_WEBHOOK_SETUP.md](DISCORD_WEBHOOK_SETUP.md) · [DISCORD_INTERACTIONS.md](DISCORD_INTERACTIONS.md) · [EXCHANGE_RENTAL_AND_SHOP.md](EXCHANGE_RENTAL_AND_SHOP.md) · platform backlog [PLATFORM_TODO.md](PLATFORM_TODO.md)
+
+---
+
+## Snapshot (2026-09) — recent surfaces
+
+Honest status only — **in repo** ≠ **verified on prod** unless noted elsewhere in this file.
+
+| Area | State | Pointers |
+| ---- | ----- | -------- |
+| **Monetization revenue tracks** | Machine config + service in repo: `data/monetization_revenue_tracks.json` (34 tracks A–E), `monetization_revenue_tracks_service`, streams/recap APIs. Tier tables below remain the narrative checklist; JSON is the machine inventory. | § Monetization machine · [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) |
+| **Shop / auction** | Auction house + fee rails in repo (`shop_auction_service`, `/api/shop/auction/*`, B5 fee). Marketplace escrow / featured listing hooks described in [SHOP_MONETIZATION_V92.md](SHOP_MONETIZATION_V92.md). | Tier B5 / D1 below |
+| **Quests — 90 levels** | Progression templates in `quest_system.py` (`TOTAL_LEVELS = 90`, 9 chapters × 10). Routes in `quest_page.py` (`/api/quests/progression/*`). Treat as **repo capability** until blueprint registration + UI deploy are confirmed on the branch you ship. | `backend/services/quest_system.py` · `backend/routes/quest_page.py` |
+| **API / crypto profile** | Generator API crypto rewards profile helper + daily caps (`generator_api_crypto_service.get_api_crypto_profile`); unit tests present. A+ board surfaces generator API tiers / crypto rewards info. Metered generator API tiers: `/api/generator/api/tiers` (C7). | C7 · `system_a_plus_board_service` |
+| **Create App / encoder** | Create App + Super Encoder release handoff documented; deploy is laptop/SSH, not “done by docs alone”. | [DEPLOY_CREATE_APP_RELEASE.md](DEPLOY_CREATE_APP_RELEASE.md) |
+| **Google Play vision** | Tracked as distribution / casino mobile shell. **Play Console ship is not claimed done** — follow [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) (assetlinks SHA, $25 account). Podcast/app vision remains deferred in [PLATFORM_TODO.md](PLATFORM_TODO.md) / [PODCAST.md](PODCAST.md). | E4 below · Play Store checklist |
+
+**Open ops that still need SSH / binary work (do not mark done from this snapshot):** daemon multi-ping enable after v1.3 deploy, SMTP for revenue-pulse emails, Facebook casino Meta tokens (E3 paused), LiveKit camgirls e2e confirm.
 
 ---
 
@@ -50,6 +69,9 @@ See [MN2_RELEASE_BUILD.md](MN2_RELEASE_BUILD.md) · [MN2_TRADER_MARKET.md](MN2_T
 - **PR #30 multi-ping site integration (2026-06-23)** — fleet helpers + probes + docs/patches/mn2-daemon-v1.3.0-multi-ping.patch; **ops.multi_ping_enabled: false** until v1.3 binary built/deployed ([MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)).
 - **Explorer masternodes tab deployed** — `mn2-crypto-hub.js` + `GET /api/mn2/masternodes?fresh=1`; `/explorer?tab=masternodes` slot meter, fleet grid, PayPal checkout.
 - **Explorer static fixes deployed** — `static_pages` manifest (`mn2_explorer_data.py`, hub JS). Explorer VPS nginx (`fix_explorer_subdomains_remote.py` — eiquidus `getlasttxsajax` + `cam.masternoder.dk` redirect) — **DONE 2026-06-23** (`--ask-pass`; nginx reload + pm2 explorer restart OK).
+- **Fleet boot autostart (M5)** — `mn2_next_ops_remote.py --ask-pass --fleet-autostart` (2026-06-23): `/usr/local/bin/mn2-fleet-autostart` + `mn2-fleet-autostart.service` **enabled/active**; on-chain **5 ENABLED** + local ping OK after reboot.
+- **Ops cron watchdogs (2026-06-24)** — `mn2_install_watchdogs_remote.py --ask-pass`: `masternoder-mn2-watchdogs` + provision cron installed; maintain-ping OK; restore-staking + 2× market ticks OK.
+- **Profile security + Pro plan UI (2026-06-24)** — bind-session password gate, purchase verification gate, step-up verify token, Pro tier/usage card on `/profile`.
 - **E-tier distribution streams (2026-06-24)** — `monetization_streams_service` + v1 APIs (`/api/monetization/streams/v1/hub`, `top-25`, `recap`, `activity-queue`, `ping`); legacy aliases; `monetization/index.html`; prod **200** verified; `register_blueprints.py` LITE_APP + full `monetization_bp`/`cogs_bp`; `mn2_staking` deploy manifest includes streams JSON + services + `uwsgi_common.ini` (`lazy-apps=true`).
 - **Ops SSH key from `.env` (2026-06-24)** — `deploy_ssh_env.connect_deploy_ssh` loads `DEPLOY_KEY_PATH` from `.env`; `mn2_ops_optionals_remote.py` uses shared connector — audit **OK** without `--ask-pass`.
 - **AI assist trio (2026-06-24, code + prod APIs)** — `support_faq_service` + `/api/support/faq` + `/api/discord/support/faq` + `faq-widget.js` on generator/shop/hosting; `copy_assist_service` (Pro-gated) + `/api/assist/copy` + shop/generator widgets; `mn2_risk_ops_service` + `/api/admin/risk/*` + Debugger **Fraud & Risk** tab · prod verify: FAQ **200**, copy kinds **200** (admin risk **503** until uwsgi sees `COGS_ADMIN_REPORT_KEY` — key present in server `.env` per optionals audit).
@@ -135,20 +157,20 @@ Run top-down. **Owner:** `SSH` = server via `--ask-pass` · `Win` = Windows depl
 | **P1** | **Exchange leveling + adaptive learning + super skills** — trader XP/achievements, agent game time/levels, profit-based skill proficiency, Sentient Apex bot | **Code** | exchange marketplace | **Started 2026-06-27** — `exchange_leveling_service`, `exchange_agent_learning_service`, 6 research-backed super skills (Avellaneda-Stoikov MM, z-score stat arb, AI sentiment, latency momentum, ML forecaster, Kelly sizing), live trading monitor, `/api/exchange/leveling/*`, `/api/exchange/monitor/live`. Next: wire leveling into command center strip |
 | **P1** | **Trust system + Live Watch + activations** — user/agent trust tiers, composite IQ, manual activation gates, owner review console | **Code** | exchange leveling | **Started 2026-06-27** — `exchange_trust_service` (0–100 score, Unverified→Platinum, activation gates, trust edge bonus), `exchange_live_watch_service` (user + owner review), `/api/exchange/trust/*`, `/api/exchange/live-watch/*`, trust card + Live Watch on exchange page, Business Control **Live Watch** tab. Docs: `docs/EXCHANGE_TRUST_AND_LIVE_WATCH.md`. Next: email/Discord trust alerts, auto-activate at Gold tier option |
 | **P1** | **Bridge high-value product** — cross-quests, fused leaderboard, Discord market pulse | **Code** | user controller | **Done 2026-06-28** — `exchange_casino_quest_service`, `exchange_casino_leaderboard_service`, 5 weekly quests, Trader+High roller board, `#market` rental/win/combined embeds. Next: cross-quest UI on casino tab, trust gate high-roller MN2 |
-| **P1** | **Daemon v1.3 build/deploy + enable multi-ping** — customer ENABLED + rising ctivetime | **MasterNoder2 C++** + SSH | **Site PR #30 merged** | Build v1.3.0.0 → mn2_daemon_upgrade_remote.py --ask-pass --apply → QA probes → set multi_ping_enabled: true + deploy.py mn2_staking --ask-pass|
+| **P1** | **Daemon v1.3 deploy + enable multi-ping** — customer ENABLED + rising activetime | **SSH** | **Build + publish DONE 2026-06-24** | `python scripts/mn2_daemon_upgrade_remote.py --ask-pass --apply --verify-post` → enable `multi_ping_enabled: true` + `deploy.py mn2_staking --ask-pass` |
 | **P1** | ~~**Explorer VPS nginx verify**~~ | — | **DONE 2026-06-23** | `fix_explorer_subdomains_remote.py --ask-pass` — snippet + cam redirect + pm2 explorer restart |
 | **P2** | **Live Pro subscription** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + `PAYPAL_WEBHOOK_ID` on server | **Done 2026-06-28** | Plan `P-09J38836TK5737835NJAGZYA` via API bootstrap · webhook configured · shop Pro subscribe live |
 | **P2** | **Tier enforcement on server** — premium generator caps | **Server `.env`** | Pro plan live (recommended) | `python scripts/mn2_p1_monetization_remote.py --ask-pass --enable-tier-enforcement --reload --verify` |
-| **P2** | **Fleet boot autostart** — `mn2-fleet-autostart.service` on reboot | SSH | local-first deployed | § **0. Masternode fleet** M5 — `cp scripts/mn2_fleet_autostart.sh …` · enable systemd unit |
+| **P2** | ~~**Fleet boot autostart**~~ | — | **DONE 2026-06-23** | `mn2_next_ops_remote.py --ask-pass --fleet-autostart` — unit enabled + active |
 | **P2** | **SMTP + admin email** — weekly revenue pulse + margin report emails | **Server `.env`** | none | `NOTIFY_ADMIN_EMAIL` + `NOTIFY_SMTP_*` via optionals flags or edit server `.env` |
 | **P2** | **LiveKit voice (Camgirls Phase 3)** — server reports `mode=live` (optionals 2026-06-20); confirm camgirls token flow | SSH | LiveKit cloud creds | `mn2_ops_optionals_remote.py --ask-pass --livekit-url … --reload --verify` |
 | **P2** | **Sync local `DEPLOY_PASS`** — non-interactive SSH on legacy remote scripts | Win | **partial** | **Done:** `deploy.py`, `apply_updates.py`, `mn2_ops_optionals_remote.py` via `DEPLOY_KEY_PATH`. **Open:** `mn2_p1_monetization_remote.py`, `mn2_next_ops_remote.py`, fleet/daemon remotes still password-only |
 | **P2** | **Shop UI browser spot-check** (optional) — render + PayPal checkout in browser | **Browser** | deploy done | API **10/10** + coins purchase **PASS** — manual confirm slot meter / revenue strip / BEST VALUE badge if desired |
-| **P2** | **Camgirls Phase 4 nginx** — only if moving UI to `camgirls.masternoder.dk/app/` | SSH | product decision | [CAMGIRLS_PHASE4_NGINX.md](CAMGIRLS_PHASE4_NGINX.md) |
+| **P2** | **Camgirls Phase 4 nginx** — only if moving UI to `camgirls.masternoder.dk/app/` | SSH | product decision | Ops note only (former `CAMGIRLS_PHASE4_NGINX.md` missing); see [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md) / camgirls deploy scripts |
 
 **Completed this sprint (2026-06-21/23):** fleet RPC **9332** + config **775** perms + alias fix · **~30** hosted · shop **10/10** + coins purchase PASS · `max_hosted_nodes=250` · **deploy DONE** (PR **#29** `--ask-pass` + `apply_updates` on prod) · **provisioning backlog cleared** · **PR #30** site multi-ping merged — **PR stack #21–#27 merged** · **explorer masternodes tab live**.
 
-**Watch (background — not blocking queue):** `/api/mn2/health` may still show **degraded** (`daemon_staking` inactive) after daemon restarts — re-run when convenient: `python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking`. Only **`platformmn2`** gets ENABLED `activetime` until multi-ping ships (see P1). **2** hosts may still show **provisioning** while collateral/start completes — not stale (`stale_provisioning_count=0`).
+**Watch (background):** Cron watchdogs (`masternoder-mn2-watchdogs`) every **15 min** — config perms, staking unlock, ping stall. Re-run `python scripts/mn2_install_watchdogs_remote.py --ask-pass` after deploy. Manual restore: `python scripts/mn2_restore_staking_and_market_remote.py --ask-pass`.
 
 ### `mn2_next_ops_remote.py` scope
 
@@ -179,10 +201,11 @@ One SSH session: install **masternode provision**, **Discord market fan-out**, *
 | # | Task | Owner | Action |
 | - | ---- | ----- | ------ |
 | 1 | **Fleet boot autostart (M5)** | **Done 2026-06-28** | `mn2-fleet-autostart.service` enabled · `/usr/local/bin/mn2-fleet-autostart` installed |
-| 2 | **PayPal Pro live plan + webhook** | **Done 2026-06-28** | Plan live · webhook configured · re-apply after `.env` uploads |
+| 2 | **PayPal Pro live plan + webhook** | **Done 2026-06-28** | Plan live · webhook configured · re-apply after `.env` uploads · **profile Pro card + security shipped 2026-06-24** |
 | 3 | **Deploy live Pro ids** | **Done 2026-06-28** | `PAYPAL_SUBSCRIPTION_PLAN_PRO` on server |
 | 4 | **Tier enforcement** | **Done 2026-06-28** | `MONETIZATION_TIER_ENFORCEMENT=1` |
-| 5 | **Restore staking** *(parallel / background)* | SSH | `python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking` — not blocking items 1–4 |
+| 5 | **Daemon v1.3 + multi-ping (P1)** | **C++ build + SSH** | `mn2_build_release_remote.py` → `--apply` → enable `multi_ping_enabled` |
+| 6 | **Restore staking** *(parallel / background)* | SSH | `python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking` — not blocking items 1–4 |
 
 #### PayPal Pro setup (queue #2)
 
@@ -330,7 +353,7 @@ python scripts/apply_updates.py --ask-pass
 | Generator tiers | **PASS** | `GET /api/generator/api/tiers` → **3** tiers |
 | Mobile IAP | **PASS** | `GET /api/mobile/iap/catalog` → **3** products |
 | Marketplace escrow | **PASS** | `GET /api/shop/marketplace/escrow` → `success: true` |
-| MN2 health | **WARN** | May show **degraded** (`daemon_staking` inactive) — background `--restore-staking` |
+| MN2 health | **OK** | **healthy** post-reboot 2026-06-23 (`--restore-staking`); re-run after daemon restart |
 | Masternode service | **OK** | **30** hosted · **28** active · **0** stale provisioning (2026-06-23); on-chain **6** / **5** ENABLED; cap **250** slots |
 | Camgirls verify | **4/4** | page + performers + agents + agent-tools OK (prior run) |
 
@@ -378,21 +401,23 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Clear ~15 provisioning hosts** — **cleared 2026-06-23** (**30** hosted · **0** stale provisioning)
 - [x] **Explorer VPS nginx verify** — `fix_explorer_subdomains_remote.py --ask-pass` (2026-06-23; nginx test OK, pm2 explorer restarted)
 - [x] **Profile hub (PR #31)** — tab bar, wallet fix, security layers, avatar · `static_pages` deploy (2026-06-23)
+- [x] **Fleet boot autostart (M5)** — `mn2-fleet-autostart.service` enabled on prod (2026-06-28) · 8 ENABLED on chain with activetime
 - [x] **E-tier streams hub** — prod **200** on v1 hub/ping/top-25 (2026-06-24)
 - [x] **AI FAQ bot (site + Discord)** — `ai_assist_routes` + widgets · prod `/api/support/faq` + `/api/discord/support/faq` **200**
 - [x] **Pro copy assist (repo + widgets)** — generator + shop · prod `/api/assist/copy/kinds` **200** · Pro gate needs live plan + `MONETIZATION_TIER_ENFORCEMENT=1` to monetize
 - [x] **Fraud & risk panel (repo + debugger tab)** — `/api/admin/risk/*` · use Debugger tab + `COGS_ADMIN_REPORT_KEY` (returns **503** if key not loaded in uwsgi — reload after `.env` change)
 - [x] **Exchange user controller + casino bridge** — multi-rail checkout, cash-out, casino wallet strip (2026-06-28)
 - [x] **Exchange rental + shop + visuals** — rent/add-skills/shop on `/exchange`; 5 SKUs in main `/shop` **exchange** category; auto-renew (2026-06-28)
-- [x] **Fleet boot autostart (M5)** — `mn2-fleet-autostart.service` enabled on prod (2026-06-28) · 8 ENABLED on chain with activetime
+- [x] **Profile security + Pro plan UI** — bind-session / purchase gates + Pro card on `/profile` (2026-06-24)
 - [x] **Multi-ping site integration (PR #30)** — helpers + probes + C++ patch doc; flag **multi_ping_enabled: false** until v1.3 on prod
-- [ ] **Daemon v1.3 deploy + enable multi-ping (customer ENABLED)** — P1 · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
+- [ ] **Daemon v1.3 deploy + enable multi-ping (P1)** — **build + GitHub publish DONE 2026-06-24** · run `mn2_daemon_upgrade_remote.py --ask-pass --apply --verify-post` · [MN2_DAEMON_MULTI_PING_UPGRADE.md](MN2_DAEMON_MULTI_PING_UPGRADE.md)
 - [ ] **Shop UI browser spot-check** — optional P2 (API/automated done)
 - [x] **Deploy camgirls catalog perf fix** — live ~3.6s on `/api/camgirls/performers?lite=1` (2026-06-20)
 - [x] **Re-run Discord spotlight fan-out** — `#market` webhook fixed; spotlight re-posted 2026-06-20
 - [x] **v1.2.3.0 release assets** — GitHub tarball + manifest published 2026-06-20
 - [x] **Daemon upgrade v1.2.3.0** — applied + `--verify-post` PASS 2026-06-20
-- [ ] **Restore staking (background)** — health may show **degraded** after daemon restarts; `python scripts/mn2_next_ops_remote.py --ask-pass --restore-staking` when convenient (not blocking)
+- [x] **Ops cron watchdogs** — installed 2026-06-24 (`/etc/cron.d/masternoder-mn2-watchdogs` + provision cron)
+- [x] **Restore staking (2026-06-24)** — wallet unlocked, staking=true, trader market 2× rounds OK · may need re-run after daemon restarts (`mn2_next_ops_remote.py --ask-pass --restore-staking`)
 - [ ] **Wire SSH key on legacy remotes** — `mn2_p1_monetization_remote.py`, `mn2_next_ops_remote.py`, `mn2_daemon_upgrade_remote.py`, fleet ops remotes still use password-only `ssh.connect` (use `--ask-pass` or migrate to `connect_deploy_ssh`)
 - [x] **Live Pro subscription (P2)** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` on server (2026-06-28) · plan live on prod · shop subscribe enabled
 - [x] **Tier enforcement (P2)** — `MONETIZATION_TIER_ENFORCEMENT=1` on server (2026-06-28) · copy assist **403 pro_required** for non-Pro
@@ -421,12 +446,14 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 
 North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-north-star).
 
+**Machine inventory:** `data/monetization_revenue_tracks.json` + `monetization_revenue_tracks_service` (34 tracks). JSON `status` values (`shipped` / `live`) are inventory labels for the revenue machine — **not** a claim that every marketplace (e.g. Google Play Console) is fully shipped. Narrative checklists below remain authoritative for product/ops detail; keep both in mind when changing tracks.
+
 ### Tier A — shipped in repo (deploy to activate)
 
 
 | #   | Track                      | Status                                                                                  |
 | --- | -------------------------- | --------------------------------------------------------------------------------------- |
-| A1  | Pro subscription           | **Ops** — repo + server still use `P-PLACEHOLDER-PRO`; [MONETIZATION_PAYPAL.md §3](MONETIZATION_PAYPAL.md#3-subscriptions-recurring) (plan + webhook) + `PAYPAL_WEBHOOK_ID` on server |
+| A1  | Pro subscription           | **✓ prod** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` + webhook on server; repo keeps `P-PLACEHOLDER-PRO` key (env maps live plan) |
 | A2  | Coin pack hero             | ✓ `featured` on 500-coin pack + BEST VALUE badge                                        |
 | A3  | Hosting funnel             | ✓ Shop revenue strip + Explorer staking CTAs                                            |
 | A4  | Staking boosters           | ✓ Linked from shop strip; promote on monitor (copy done)                                |
@@ -434,6 +461,7 @@ North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-
 | A6  | Discord promo codes        | ✓ `DISCORD-STARTER`, `MARKET-BONUS` + `GENERATE10` / `HOSTMN5` + **promo rotator cron** (installed 2026-06-20) |
 | A7  | Premium generator tiers    | ✓ **Live** — `MONETIZATION_TIER_ENFORCEMENT=1` on server (2026-06-28) |
 | A8  | Allowance + renewal emails | ✓ Cron installed 2026-06-20 — **Ops** — SMTP (`AGENT_CRON_SECRET` set) |
+| A9  | Casino monetization        | ✓ Tracked in revenue-tracks JSON (`metric_source: casino`) + casino buy-in / ledger hooks — see [CASINO_TODO.md](CASINO_TODO.md) / [CASINO_REVENUE_REPORTS.md](CASINO_REVENUE_REPORTS.md) |
 
 
 ### Tier B — product bundles (2–5 days each)
@@ -446,7 +474,7 @@ North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-
 | B3  | Battle pass season      | ✓ Quests + XP hooks (shop, generator, hosting, casino bets) |
 | B4  | Digital goods expansion | ✓ Compendium ch. IV, cinematic sound pack, creator avatar frame in catalog |
 | B5  | Auction house fee       | ✓ 5% enforced (`shop_auction_service`) + `GET /api/shop/tier-b/auction-fee` |
-| B6  | Casino MN2 buy-in packs | ✓ `casino_mn2_*` packs + casino UI + purchase API           |
+| B6  | Casino MN2 buy-in packs | ✓ `mn2_buyin_packs` in `casino_config.json` + `GET/POST /api/casino/mn2/buyin*` |
 | B7  | Copy-trading premium    | ✓ Monthly SKU — coins/PayPal + shop Deals card              |
 | B8  | B2B studio SCR          | ✓ Agency outreach + self-serve deposit (`scr_checkout_service`) |
 
@@ -462,7 +490,7 @@ North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-
 | C4  | SEO landing pages                 | ✓ `/hosting/` landing + meta on generator/camgirls + `sitemap.xml` / `robots.txt`          |
 | C5  | Compendium paid chapters          | ✓ Free 1–3 · SKUs `compendium-chapters-4-12` / `compendium-premium-full` · Discord 3/10/25 |
 | C6  | VIP Discord for hosting customers | ✓ M8 #51 auto-role on paid hosting + link sync (`discord_hosting_vip_service`) |
-| C7  | Metered generator API             | ✓ Starter/Pro/Enterprise SKUs · quota on `/api/generator/create` · `GET /api/generator/api/*` |
+| C7  | Metered generator API             | ✓ `GET /api/generator/api/tiers` (3 tiers) · keys at `/api/monetization/generator-api-keys` |
 | C8  | Phase C margin report             | ✓ Tue 10:00 UTC — `monetization_margin_report_service` + scr_blend email |
 
 
@@ -471,8 +499,8 @@ North star: [MONETIZATION_PAYPAL.md §0](MONETIZATION_PAYPAL.md#0-single-metric-
 
 | #   | Track                     | Status |
 | --- | ------------------------- | ------ |
-| D1  | Player marketplace escrow | ✓ Bid coin escrow + release on outbid/cancel · `GET /api/shop/marketplace/escrow` |
-| D2  | LiveKit camgirls voice    | ✓ `camgirls_livekit_service` · stub/live token · `POST /api/camgirls/livekit/token` |
+| D1  | Player marketplace escrow | ✓ `GET /api/shop/marketplace/escrow` · bid escrow in `shop_auction_service` |
+| D2  | LiveKit camgirls voice    | ✓ `camgirls_livekit_service` + `GET /api/camgirls/livekit/status` · `POST /api/camgirls/livekit/token` |
 | D3  | Mobile IAP                | ✓ Stub receipt fulfill · `GET /api/mobile/iap/catalog` · `POST /api/mobile/iap/fulfill` |
 
 

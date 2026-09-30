@@ -1,93 +1,27 @@
-# 📚 Complete Documentation Index
+# Guides index (legacy)
 
-**Version:** 3.0.0  
-**Last Updated:** 2025-01-XX
+**Superseded as the docs entry point by [README.md](README.md)** (2026-09-30).
 
----
+This file remains so old links keep working. Prefer the living map and TODOs:
 
-## 🎯 Quick Start Guides
+1. [README.md](README.md) — documentation map  
+2. [MN2_TODO.md](MN2_TODO.md) — MN2 / monetization / fleet  
+3. [PLATFORM_TODO.md](PLATFORM_TODO.md) — platform backlog  
+4. [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md) — PayPal / COGS  
+5. [MN2_OPS.md](MN2_OPS.md) — production ops  
 
-### For Beginners
-1. **[Getting Started Tutorial](./TUTORIAL_GETTING_STARTED.md)** - 15-minute beginner tutorial
-2. **[User Guide](./GUIDE_INTELLIGENT_POINT_SYSTEM.md)** - Complete system overview
-3. **[Problem Solving Guide](./PROBLEM_SOLVING_TODOS.md)** - Troubleshooting help
+## Still-useful guides
 
-### For Advanced Users
-1. **[178 Systems Walkthrough](./WALKTHROUGH_178_SYSTEMS.md)** - Complete system reference
-2. **[Skills & Abilities Guide](./SKILLS_ABILITIES_GUIDE.md)** - Skills tracking
-3. **[API Documentation](./API_DOCUMENTATION.md)** - Technical reference
+- [GUIDE_INTELLIGENT_POINT_SYSTEM.md](GUIDE_INTELLIGENT_POINT_SYSTEM.md) — points overview  
+- [WALKTHROUGH_178_SYSTEMS.md](WALKTHROUGH_178_SYSTEMS.md) — large system walkthrough  
+- [SKILLS_ABILITIES_GUIDE.md](SKILLS_ABILITIES_GUIDE.md) — skills  
+- [API_DOCUMENTATION.md](API_DOCUMENTATION.md) — API reference (dated; verify against routes)  
+- [PROBLEM_SOLVING_TODOS.md](PROBLEM_SOLVING_TODOS.md) — troubleshooting checklists  
+- [REFERENCE_JOB_COGS.md](REFERENCE_JOB_COGS.md) — unit economics  
+- [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) — Google Play checklist  
 
----
+## Revenue & unit economics
 
-## 📖 Documentation Structure
-
-### User Guides
-- **Getting Started** - Learn the basics
-- **User Guide** - Complete system overview
-- **Walkthrough** - All 178 systems explained
-- **Tutorials** - Step-by-step guides
-
-### Technical Guides
-- **API Documentation** - API endpoints
-- **Middleware Guide** - Technical architecture
-- **Integration Guide** - System integration
-
-### Revenue & unit economics
-- **[Monetization (PayPal)](./MONETIZATION_PAYPAL.md)** — packs, tiers, subscriptions, B2B, marketplace (phased), checklist  
-- **[Reference job & COGS](./REFERENCE_JOB_COGS.md)** — pricing anchor and `metering.jsonl`
-- **[Monetization investigation closeout](./MONETIZATION_INVESTIGATION_CLOSEOUT.md)** — conclusion, ref table, button notes, deploy list
-
-### Problem Solving
-- **Troubleshooting** - Common problems and solutions
-- **Problem TODOs** - Maintenance checklists
-- **FAQ** - Frequently asked questions
-
----
-
-## 🎓 Learning Path
-
-### Day 1: Basics
-1. Read [Getting Started Tutorial](./TUTORIAL_GETTING_STARTED.md)
-2. Complete first activities
-3. Understand point display
-
-### Day 2: Understanding
-1. Read [User Guide](./GUIDE_INTELLIGENT_POINT_SYSTEM.md)
-2. Explore all pages
-3. Try different activities
-
-### Day 3: Mastery
-1. Read [178 Systems Walkthrough](./WALKTHROUGH_178_SYSTEMS.md)
-2. Focus on favorite categories
-3. Develop strategies
-
-### Week 2: Advanced
-1. Master skills and abilities
-2. Use multipliers effectively
-3. Optimize point earning
-
----
-
-## 🔍 Finding What You Need
-
-### I Want to...
-- **Learn the basics** → [Getting Started Tutorial](./TUTORIAL_GETTING_STARTED.md)
-- **Understand the system** → [User Guide](./GUIDE_INTELLIGENT_POINT_SYSTEM.md)
-- **See all systems** → [178 Systems Walkthrough](./WALKTHROUGH_178_SYSTEMS.md)
-- **Fix a problem** → [Problem Solving Guide](./PROBLEM_SOLVING_TODOS.md)
-- **Learn skills** → [Skills & Abilities Guide](./SKILLS_ABILITIES_GUIDE.md)
-- **Use API** → [API Documentation](./API_DOCUMENTATION.md)
-- **Price products / PayPal strategy** → [Monetization (PayPal)](./MONETIZATION_PAYPAL.md) and [Reference job & COGS](./REFERENCE_JOB_COGS.md)
-
----
-
-## 📝 Documentation Updates
-
-**Last Updated:** 2025-01-XX  
-**Version:** 3.0.0  
-**Next Update:** As needed
-
----
-
-**Need Help?** Start with the [Getting Started Tutorial](./TUTORIAL_GETTING_STARTED.md) or [Problem Solving Guide](./PROBLEM_SOLVING_TODOS.md).
-
+- [MONETIZATION_PAYPAL.md](MONETIZATION_PAYPAL.md)  
+- [MONETIZATION_INVESTIGATION_CLOSEOUT.md](MONETIZATION_INVESTIGATION_CLOSEOUT.md)  
+- [SHOP_MONETIZATION_V92.md](SHOP_MONETIZATION_V92.md)  

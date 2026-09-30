@@ -1,6 +1,6 @@
 # Second uWSGI instance (port 5001)
 
-**Policy (what to keep / retire / 5002):** see **`docs/BACKEND_PORTS_DECISION.md`**.
+**Policy:** keep **5000** (primary) + **5001** (second worker). Do not add a third uWSGI port unless nginx upstream requires it. See also [UWSGI_EXIT1_TROUBLESHOOTING.md](UWSGI_EXIT1_TROUBLESHOOTING.md) and [MN2_TODO.md](MN2_TODO.md) § uWSGI.
 
 ## Why it failed before
 

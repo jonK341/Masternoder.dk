@@ -17,6 +17,10 @@ _CASINO_EVENT_TYPES = frozenset({
     "casino_tournament_end",
     "casino_tournament_start",
     "casino_tournament_prize",
+    "casino_mn2_promo",
+    "casino_rg_reminder",
+    "casino_discord_promo_created",
+    "casino_agent_play",
 })
 
 
@@ -173,6 +177,62 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                     f"_{rg}_"
                 ),
                 "color": 0xEAB308,
+            }],
+        }
+
+    if et == "casino_mn2_promo":
+        title = payload.get("title") or "MN2 casino promo"
+        summary = payload.get("summary") or ""
+        return {
+            "embeds": [{
+                "title": title,
+                "description": f"{summary}\n\n[Deposit MN2 & play]({casino_url})\n\n_{rg}_",
+                "color": 0xFEE75C,
+            }],
+        }
+
+    if et == "casino_rg_reminder":
+        summary = payload.get("summary") or rg
+        return {
+            "embeds": [{
+                "title": "Responsible gambling",
+                "description": f"{summary}\n\n[Set limits in profile]({base_url}/profile/)",
+                "color": 0xED4245,
+            }],
+        }
+
+    if et == "casino_discord_promo_created":
+        code = payload.get("code")
+        reward = payload.get("reward_coins")
+        return {
+            "embeds": [{
+                "title": "Discord-exclusive promo",
+                "description": (
+                    f"Use code **`{code}`** in the casino for **{reward} bonus coins**.\n\n"
+                    f"[Redeem at the casino]({casino_url})\n\n"
+                    "Affiliate disclosure: platform-operated promotion.\n\n"
+                    f"_{rg}_"
+                ),
+                "color": 0x9B59B6,
+            }],
+        }
+
+    if et == "casino_agent_play":
+        agent_id = payload.get("agent_id") or "agent"
+        line = payload.get("spectator_line") or payload.get("reasoning") or "Agent placed a bet."
+        game = payload.get("game") or "casino"
+        net = payload.get("net")
+        used_ai = payload.get("used_ai")
+        tag = "🤖 AI" if used_ai else "🎲 Bot"
+        return {
+            "embeds": [{
+                "title": f"{tag} arena — {agent_id}",
+                "description": (
+                    f"_{line}_\n\n"
+                    f"Game: **{game}** · Net: **{net}**\n\n"
+                    f"[Watch the leaderboard]({casino_url})\n\n_{rg}_"
+                ),
+                "color": 0x00CED1,
             }],
         }
 

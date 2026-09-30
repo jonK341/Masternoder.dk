@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request
 
 from backend.services.account_resolution_service import resolve_user_id
 from backend.services.account_security_service import (
+    check_bind_session_action,
     check_real_money_action,
     get_security_status,
     issue_verification_token,
@@ -51,6 +52,24 @@ def security_verify():
         result = issue_verification_token(user_id, password)
         status = 200 if result.get("success") else 401
         return jsonify(result), status
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@account_security_bp.route("/api/user/security/check-bind", methods=["POST"])
+def security_check_bind():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get("user_id") or _resolve_user()).strip()
+        err = check_bind_session_action(user_id, password=data.get("password") or "")
+        if err:
+            return jsonify({
+                "success": False,
+                "allowed": False,
+                "error": err,
+                "requires_password": "password" in err.lower(),
+            }), 403
+        return jsonify({"success": True, "allowed": True}), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

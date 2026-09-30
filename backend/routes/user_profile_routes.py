@@ -221,6 +221,7 @@ def bind_session():
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id required'}), 400
 
+        # Gate on login password OR bind-session setting (main), using shared verify path.
         needs_password = login_requires_password(user_id) or bind_session_requires_password(user_id)
         if needs_password:
             if not password:

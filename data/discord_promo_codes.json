@@ -1,0 +1,26 @@
+{
+  "codes": [
+    {
+      "code": "DISCORD-STARTER",
+      "scope": "shop",
+      "reward_coins": 100,
+      "reward_mn2": 0,
+      "max_redemptions": 500,
+      "redeemed_by": [],
+      "expires_at": "2027-12-31T23:59:59Z",
+      "created_at": "2026-06-17T00:00:00Z",
+      "notes": "Discord / welcome funnel — redeem in shop promo box"
+    },
+    {
+      "code": "MARKET-BONUS",
+      "scope": "shop",
+      "reward_coins": 75,
+      "reward_mn2": 0.25,
+      "max_redemptions": 300,
+      "redeemed_by": [],
+      "expires_at": "2027-06-30T23:59:59Z",
+      "created_at": "2026-06-17T00:00:00Z",
+      "notes": "Trader market / Discord #market fan-out"
+    }
+  ]
+}

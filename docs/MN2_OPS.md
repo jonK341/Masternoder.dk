@@ -199,7 +199,7 @@ Until sign-off is recorded, `distribute_agent_funding()` returns `treasury_signo
 
 Outbound webhooks only — **Gate S:** no custody on Discord; users link accounts and claim rewards on-site.
 
-**Canonical doc:** [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) · Trader market events: [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md)
+**Canonical docs:** [DISCORD_WEBHOOK_SETUP.md](DISCORD_WEBHOOK_SETUP.md) · [DISCORD_INTERACTIONS.md](DISCORD_INTERACTIONS.md) · trader/exchange: [EXCHANGE_RENTAL_AND_SHOP.md](EXCHANGE_RENTAL_AND_SHOP.md) · [MN2_STAKING_PLAN.md](MN2_STAKING_PLAN.md)
 
 ### 10.1 Environment
 
@@ -414,11 +414,12 @@ python scripts/mn2_masternode_fleet_ops_remote.py --ask-pass --fix-privkey
 ## 9. References
 
 - [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) — Install and run the daemon.
-- [DISCORD_CROSSROADS.md](DISCORD_CROSSROADS.md) — Discord integration map and cross-road backlog.
-- [MN2_TRADER_MARKET.md](MN2_TRADER_MARKET.md) — Internal order book + trader agents.
+- [DISCORD_WEBHOOK_SETUP.md](DISCORD_WEBHOOK_SETUP.md) · [DISCORD_INTERACTIONS.md](DISCORD_INTERACTIONS.md) — Discord webhooks and interactions.
+- [EXCHANGE_RENTAL_AND_SHOP.md](EXCHANGE_RENTAL_AND_SHOP.md) · [MN2_STAKING_PLAN.md](MN2_STAKING_PLAN.md) — Exchange rental/shop and staking/trader context.
 - [EXPLORER_REINSTALL_CHECKLIST.md](EXPLORER_REINSTALL_CHECKLIST.md) — Reinstall **iquidus** explorer for **camgirls.masternoder.dk** (Mongo, `settings.json`, PM2, nginx).
 - [MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md](MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md) — Full integration plan and phases.
 - [MN2_SHOP_AND_ADDRESSES.md](MN2_SHOP_AND_ADDRESSES.md) — Shop revenue address and config.
+- [README.md](README.md) — Living documentation map.
 
 ## Waterfall merge order (split PRs #19–#29)
 

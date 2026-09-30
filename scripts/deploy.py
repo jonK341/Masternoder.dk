@@ -20,8 +20,8 @@ Usage:
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
 
-SSH password: set DEPLOY_PASS, or use --ask-pass to prompt (ignores .env), or run from an
-interactive terminal to be prompted twice when DEPLOY_PASS is unset.
+SSH password: set DEPLOY_PASS, or use --ask-pass to prompt fresh (ignores .env and
+environment), or run from an interactive terminal to be prompted once when DEPLOY_PASS is unset.
 """
 import os
 import sys
@@ -581,7 +581,12 @@ MANIFESTS = {
         "cron/mn2_accrue_rewards.sh",
         "cron/masternoder-mn2-accrue.cron.d",
         "cron/mn2_masternode_provision.sh",
+        "cron/mn2_ops_watchdog.sh",
         "cron/masternoder-mn2-masternode-provision.cron.d",
+        "cron/masternoder-mn2-watchdogs.cron.d",
+        "scripts/mn2_staking_watchdog.py",
+        "scripts/mn2_restore_staking_and_market_remote.py",
+        "scripts/mn2_install_watchdogs_remote.py",
         "scripts/mn2_patch_rpc_retries.sh",
     ],
     # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
@@ -620,11 +625,13 @@ MANIFESTS = {
         "backend/services/discord_service.py",
         "backend/services/discord_m8_streams.py",
         "backend/services/casino_discord_fanout.py",
+        "backend/services/casino_service.py",
         "backend/services/market_discord_fanout.py",
         "backend/services/game_discord_fanout.py",
         "backend/services/compendium_milestone_service.py",
         "backend/services/compendium_access_service.py",
         "backend/services/generator_api_key_service.py",
+        "backend/services/battle_pass_service.py",
         "backend/services/camgirls_livekit_service.py",
         "backend/services/mobile_iap_service.py",
         "backend/services/shop_auction_service.py",
@@ -654,6 +661,7 @@ MANIFESTS = {
         "backend/routes/generator_routes.py",
         "backend/routes/camgirls_routes.py",
         "backend/routes/monetization_expansion_routes.py",
+        "backend/routes/casino_routes.py",
         "backend/routes/monetization_routes.py",
         "backend/routes/ai_assist_routes.py",
         "backend/routes/cogs_routes.py",
@@ -684,6 +692,7 @@ MANIFESTS = {
         "data/mn2_staking_terms.json",
         "data/mn2_masternode_config.json",
         "data/monetization_config.json",
+        "data/casino_config.json",
         "data/monetization_streams.json",
         "data/monetization_revenue_tracks.json",
         "monetization/index.html",
@@ -707,6 +716,11 @@ MANIFESTS = {
         "scripts/mn2_unlock_collateral.sh",
         "scripts/mn2_repair_masternode_conf.sh",
         "scripts/mn2_fleet_autostart.sh",
+        "scripts/mn2_staking_watchdog.py",
+        "scripts/mn2_restore_staking_and_market_remote.py",
+        "scripts/mn2_install_watchdogs_remote.py",
+        "cron/mn2_ops_watchdog.sh",
+        "cron/masternoder-mn2-watchdogs.cron.d",
         "scripts/mn2_masternode_fleet_ops_remote.py",
         "scripts/mn2_check_activetime_public.py",
         "scripts/mn2_test_ping_live.py",
@@ -1377,7 +1391,7 @@ def main():
     if not args:
         print("Usage: python scripts/deploy.py <manifest> [manifest ...] [--ask-pass] [--upload-only] [--list-files]")
         print("       python scripts/deploy.py --files path1 path2 [--ask-pass] [--upload-only] [--list-files]")
-        print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env)")
+        print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env and environment)")
         print("  --upload-only  SFTP files to the server only (no cache clear, no systemd/cron hooks, no service restart).")
         print("  --list-files   Print the merged file list and exit (no SSH).")
         print("Manifests:", ", ".join(MANIFESTS))

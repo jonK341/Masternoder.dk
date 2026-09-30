@@ -76,6 +76,14 @@ def fulfill_battle_pass_paypal_purchase(user_id: str) -> Dict[str, Any]:
 
 
 def purchase_battle_pass_premium(user_id: str, *, source: str = "shop") -> Dict[str, Any]:
+    """Coin (or shop) purchase — PayPal must go through PayPal capture fulfillment."""
+    src = (source or "shop").strip().lower()
+    if src == "paypal":
+        return {
+            "success": False,
+            "error": "PayPal battle pass must be purchased through checkout",
+            "code": "PAYPAL_CHECKOUT_REQUIRED",
+        }
     cfg = _config()
     if not cfg:
         return {"success": False, "error": "battle_pass_not_configured"}
@@ -89,13 +97,10 @@ def purchase_battle_pass_premium(user_id: str, *, source: str = "shop") -> Dict[
     if isinstance(row, dict) and row.get("premium_owned"):
         return {"success": True, "already_owned": True}
 
-    src = (source or "shop").strip().lower()
-    if src == "paypal":
-        return _grant_battle_pass_premium(uid, source="paypal", price_paid=0)
-
     base_price = int(cfg.get("price_coins") or 0)
     if base_price <= 0:
         return {"success": False, "error": "battle_pass_not_for_sale_coins"}
+    price_paid = 0
     try:
         from backend.services.shop_monetization_service import (
             _accrue_loyalty_for_spend,
