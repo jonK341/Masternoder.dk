@@ -38,12 +38,17 @@ def _summarize(services: List[Dict[str, Any]]) -> Dict[str, Any]:
         st = str(s.get("status") or "unknown").lower()
         counts[st] = counts.get(st, 0) + 1
     overall = "healthy"
-    for st in ("degraded", "warn", "inactive", "disabled"):
+    # Do not let intentional feature-off (disabled) dominate overall — e.g. trader
+    # market off should not make the whole MN2 catalog look broken.
+    for st in ("degraded", "warn", "inactive"):
         if counts.get(st):
             overall = st if _status_rank(st) > _status_rank(overall) else overall
+    healthy_n = counts.get("healthy", 0) + counts.get("active", 0) + counts.get("enabled", 0)
+    if overall == "healthy" and healthy_n == 0 and counts.get("disabled"):
+        overall = "disabled"
     return {
         "total": len(services),
-        "healthy": counts.get("healthy", 0) + counts.get("active", 0) + counts.get("enabled", 0),
+        "healthy": healthy_n,
         "warn": counts.get("warn", 0),
         "degraded": counts.get("degraded", 0),
         "disabled": counts.get("disabled", 0),
