@@ -38,7 +38,9 @@ WEB = {WEB!r}
 CONF = WEB + "/config/masternode.conf"
 HOSTS_FILE = WEB + "/data/mn2_masternode_hosts.json"
 CONFIG_FILE = WEB + "/data/mn2_masternode_config.json"
+PENDING_FILE = WEB + "/data/mn2_recollateralize_pending.json"
 CLI = ["/opt/masternoder2d/masternoder2-cli", "-datadir=/var/www/html/config"]
+LIST_UNSPENT_OK = True
 DRY_RUN = {str(dry_run)}
 LIMIT = {int(limit)}
 WAIT_MINUTES = {int(wait_minutes)}
@@ -60,8 +62,8 @@ def load_env(path=WEB + "/.env"):
         out[k.strip()] = v.strip().strip('"').strip("'")
     return out
 
-def cli(*args):
-    p = subprocess.run(CLI + list(args), capture_output=True, text=True, timeout=180)
+def cli(*args, timeout_sec=300):
+    p = subprocess.run(CLI + list(args), capture_output=True, text=True, timeout=int(timeout_sec))
     if p.returncode != 0:
         raise RuntimeError((p.stderr or p.stdout or "cli failed").strip())
     out = (p.stdout or "").strip()
@@ -75,6 +77,9 @@ def cli(*args):
         return out
 
 env = load_env()
+for _ek, _ev in env.items():
+    if _ek.startswith("MN2_") and _ev and not (os.environ.get(_ek) or "").strip():
+        os.environ[_ek] = _ev
 pw = (env.get("MN2_WALLET_PASSPHRASE") or "").strip()
 cfg = {{}}
 try:
@@ -141,8 +146,49 @@ def utxo_alive(txid, vout):
         "amount": float(detail.get("value") or 0),
     }}
 
-def list_10k():
-    rows = cli("listunspent", "1", "9999999") or []
+def load_pending_created():
+    if not os.path.isfile(PENDING_FILE):
+        return []
+    try:
+        doc = json.load(open(PENDING_FILE, encoding="utf-8"))
+    except Exception:
+        return []
+    rows = doc.get("created") if isinstance(doc, dict) else []
+    return [r for r in rows if isinstance(r, dict) and r.get("txid")]
+
+def save_pending_created(created):
+    doc = {{
+        "created": created,
+        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }}
+    with open(PENDING_FILE, "w", encoding="utf-8") as f:
+        json.dump(doc, f, indent=2)
+        f.write("\\n")
+    try:
+        import pwd
+        os.chown(PENDING_FILE, pwd.getpwnam("www-data").pw_uid, pwd.getpwnam("www-data").pw_gid)
+    except Exception:
+        pass
+
+def clear_pending_created():
+    if os.path.isfile(PENDING_FILE):
+        try:
+            os.remove(PENDING_FILE)
+        except Exception:
+            pass
+
+def list_10k(*, minconf: int = 0):
+    global LIST_UNSPENT_OK
+    if not LIST_UNSPENT_OK:
+        return []
+    try:
+        rows = cli("listunspent", str(int(minconf)), "9999999") or []
+    except RuntimeError as e:
+        if "Method not found" in str(e) or "disabled" in str(e).lower():
+            LIST_UNSPENT_OK = False
+            print("WARN listunspent disabled — using gettxout/pending only")
+            return []
+        raise
     out = []
     for u in rows:
         if not isinstance(u, dict):
@@ -158,23 +204,42 @@ def list_10k():
         }})
     return out
 
-def lock_all_10k():
-    utxos = list_10k()
-    if not utxos:
+def lock_keep_collateral():
+    locks = []
+    for row in keep:
+        locks.append({{"txid": row["utxo"]["txid"], "vout": row["utxo"]["vout"]}})
+    if not locks:
         return 0
-    locks = [{{"txid": u["txid"], "vout": u["vout"]}} for u in utxos]
     try:
         cli("lockunspent", "false", json.dumps(locks))
     except Exception as e:
-        print("lock_err", e)
+        print("lock_keep_err", e)
     return len(locks)
 
 def unlock_all_locked():
-    locked = cli("listlockunspent") or []
+    try:
+        locked = cli("listlockunspent") or []
+    except Exception as e:
+        print("listlockunspent_err", e)
+        return 0
     if isinstance(locked, list) and locked:
-        cli("lockunspent", "true", json.dumps(locked))
+        try:
+            cli("lockunspent", "true", json.dumps(locked))
+        except Exception as e:
+            print("unlock_locked_err", e)
         return len(locked)
     return 0
+
+def resolve_utxo(txid, vout_hint=None):
+    if vout_hint is not None:
+        alive = utxo_alive(txid, int(vout_hint))
+        if alive:
+            return alive
+    for vout in range(0, 8):
+        alive = utxo_alive(txid, vout)
+        if alive:
+            return alive
+    return None
 
 def alias_for_host(host_id: str) -> str:
     alias = re.sub(r"[^a-zA-Z0-9]", "", (host_id or "").strip())[:16]
@@ -216,47 +281,91 @@ if balance < required:
     print("FAIL insufficient balance", file=sys.stderr)
     sys.exit(1)
 
+conf_ref_keys = {{(row["txid"], row["vout"]) for row in conf}}
+for row in keep:
+    conf_ref_keys.add((row["utxo"]["txid"], row["utxo"]["vout"]))
+
+def orphan_5k():
+    out = []
+    seen = set()
+    for u in list_10k():
+        key = (u["txid"], u["vout"])
+        if key in conf_ref_keys or key in seen:
+            continue
+        seen.add(key)
+        out.append(u)
+    for c in load_pending_created():
+        hit = resolve_utxo(c["txid"], c.get("vout_hint"))
+        if not hit:
+            continue
+        key = (hit["txid"], hit["vout"])
+        if key in conf_ref_keys or key in seen:
+            continue
+        seen.add(key)
+        out.append(hit)
+    out.sort(key=lambda u: -int(u.get("confirmations") or 0))
+    return out
+
+orphans = orphan_5k()
+print("orphan_5k_utxos", len(orphans))
+
 if DRY_RUN:
-    print("DRY_RUN — would fund", len(need), "new collaterals and rewrite conf")
+    reuse_n = min(len(orphans), len(need))
+    print("DRY_RUN — would reuse", reuse_n, "fund", len(need) - reuse_n, "rewrite conf")
     sys.exit(0)
 
-if not FUND:
-    print("FAIL --no-fund set but funding required", file=sys.stderr)
+fund_n = max(0, len(need) - len(orphans))
+print("plan_reuse", min(len(orphans), len(need)), "plan_fund", fund_n)
+if fund_n > 0 and not FUND:
+    print("FAIL --no-fund set but new funding required", file=sys.stderr)
     sys.exit(1)
 
-unlock(spend=True, timeout=max(600, WAIT_MINUTES * 60))
-locked_n = lock_all_10k()
-print("locked_existing_10k", locked_n)
+print("unlock_wallet_locks", unlock_all_locked())
+if fund_n > 0:
+    unlock(spend=True, timeout=max(600, WAIT_MINUTES * 60))
+    locked_n = lock_keep_collateral()
+    print("locked_keep_collateral", locked_n)
+else:
+    print("skip_fund_unlock reuse_only")
 
 created = []
 for i, row in enumerate(need):
+    if orphans:
+        u = orphans.pop(0)
+        conf_ref_keys.add((u["txid"], u["vout"]))
+        created.append({{
+            "alias": row["alias"],
+            "address": u.get("address"),
+            "txid": u["txid"],
+            "vout_hint": u["vout"],
+            "privkey": row["privkey"],
+            "ip_port": row.get("ip_port") or IP_PORT,
+            "source": "reuse",
+        }})
+        print(f"reuse {{i+1}}/{{len(need)}} alias={{row['alias']}} txid={{u['txid']}} vout={{u['vout']}} conf={{u['confirmations']}}")
+        continue
     addr = cli("getnewaddress")
-    txid = cli("sendtoaddress", str(addr), str(COLLATERAL))
-    created.append({{"alias": row["alias"], "address": addr, "txid": txid, "privkey": row["privkey"], "ip_port": row.get("ip_port") or IP_PORT}})
+    txid = cli("sendtoaddress", str(addr), str(COLLATERAL), timeout_sec=600)
+    created.append({{
+        "alias": row["alias"],
+        "address": addr,
+        "txid": txid,
+        "privkey": row["privkey"],
+        "ip_port": row.get("ip_port") or IP_PORT,
+        "source": "fund",
+    }})
     print(f"funded {{i+1}}/{{len(need)}} alias={{row['alias']}} txid={{txid}}")
     time.sleep(1.5)
 
-# Wait for confirmations on created outs (vout usually 0 for self-send; scan listunspent)
+save_pending_created(created)
+
+# Wait for confirmations via gettxout (works even when outputs are lockunspent-hidden)
 deadline = time.time() + WAIT_MINUTES * 60
 ready = {{}}
 while time.time() < deadline:
-    tenk = {{(u["txid"], u["vout"]): u for u in list_10k()}}
     ready = {{}}
     for c in created:
-        # Prefer vout 0, else any matching txid
-        hit = None
-        for vout in range(0, 8):
-            key = (c["txid"], vout)
-            if key in tenk and tenk[key]["confirmations"] >= MIN_CONF:
-                hit = tenk[key]
-                break
-        if hit is None:
-            # unconfirmed still ok to track
-            for vout in range(0, 8):
-                key = (c["txid"], vout)
-                if key in tenk:
-                    hit = tenk[key]
-                    break
+        hit = resolve_utxo(c["txid"], c.get("vout_hint"))
         if hit and hit["confirmations"] >= MIN_CONF:
             ready[c["alias"]] = hit
     print(f"wait confirmed {{len(ready)}}/{{len(created)}} (min_conf={{MIN_CONF}})")
@@ -333,10 +442,27 @@ except Exception:
 hosts = [h for h in (doc.get("hosts") or []) if isinstance(h, dict)]
 sync_rows = [r for r in new_rows if r["alias"] in ({{x["alias"] for x in keep}} | replaced_aliases)]
 by_alias = {{r["alias"]: r for r in sync_rows}}
+# Host ids are often UUIDs; match conf alias via label/notes/id slug too.
+def host_conf_alias(h):
+    hid = str(h.get("id") or "")
+    candidates = [
+        alias_for_host(hid),
+        str(h.get("label") or "").strip(),
+        str(h.get("masternode_alias") or "").strip(),
+    ]
+    for c in candidates:
+        if c and c in by_alias:
+            return c
+    blob = " ".join([hid, str(h.get("label") or ""), str(h.get("notes") or "")]).lower()
+    for alias in by_alias:
+        if alias.lower() in blob:
+            return alias
+    return None
+
 updated = 0
 for h in hosts:
-    alias = alias_for_host(str(h.get("id") or ""))
-    row = by_alias.get(alias)
+    alias = host_conf_alias(h)
+    row = by_alias.get(alias) if alias else None
     if not row:
         continue
     h["collateral_txid"] = row["txid"]
@@ -381,13 +507,26 @@ for r in new_rows:
     if r["alias"] not in start_aliases:
         continue
     started_n += 1
-    err = mn._start_masternode(r["alias"], r["privkey"])
+    err = None
+    try:
+        cli("startmasternode", "alias", "false", r["alias"])
+    except Exception as e:
+        err = str(e)
+    if not err:
+        try:
+            err = mn._start_masternode(r["alias"], r["privkey"])
+        except Exception as e:
+            err = str(e)
     print("start", r["alias"], "OK" if not err else err)
     if not err:
         started_ok += 1
 
 print("getmasternodecount", json.dumps(cli("getmasternodecount")))
-print("refresh_collateral", mn.refresh_collateral_liveness(limit=500))
+try:
+    print("refresh_collateral", mn.refresh_collateral_liveness(limit=500))
+except Exception as e:
+    print("refresh_collateral_err", e)
+clear_pending_created()
 print("DONE started_ok", started_ok, "of", started_n, "conf_rows", len(new_rows))
 PY
 """
@@ -405,13 +544,19 @@ def main() -> int:
     pw = require_deploy_pass(force_prompt=args.ask_pass)
     ssh, method, _ = connect_deploy_ssh(pw)
     print("auth", method)
+    try:
+        ssh.get_transport().set_keepalive(30)
+    except Exception:
+        pass
     remote = build_remote(
         dry_run=args.dry_run,
         limit=args.limit,
         wait_minutes=args.wait_minutes,
         fund=not args.no_fund,
     )
-    _, stdout, stderr = ssh.exec_command(remote, timeout=max(900, args.wait_minutes * 60 + 300))
+    replace_n = args.limit if args.limit > 0 else 50
+    ssh_timeout = max(1200, args.wait_minutes * 60 + 600 + replace_n * 30)
+    _, stdout, stderr = ssh.exec_command(remote, timeout=ssh_timeout)
     out = stdout.read().decode(errors="replace")
     err = stderr.read().decode(errors="replace")
     if out.strip():

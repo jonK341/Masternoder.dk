@@ -287,8 +287,13 @@ def refresh_collateral_liveness(*, limit: int = 500) -> Dict[str, Any]:
                 continue
             checked += 1
             detail = rpc.gettxout(txid, vout)
-            res = detail.get("result") if isinstance(detail, dict) else None
-            if detail.get("error") or res is None:
+            if not isinstance(detail, dict):
+                continue
+            if detail.get("error"):
+                # Transient RPC failure — do not mark collateral missing.
+                continue
+            res = detail.get("result")
+            if res is None:
                 missing += 1
                 prev = (h.get("status") or "").lower()
                 if prev != "collateral_missing":
