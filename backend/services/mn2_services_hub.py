@@ -175,13 +175,16 @@ def _probe_proof_of_reserves() -> Dict[str, Any]:
             age = time.time() - float(por_svc._CACHE.get("por_ts") or 0)
         if not isinstance(snap, dict):
             return {"status": "unknown", "detail": "por cache cold"}
-        ratio = snap.get("coverage_ratio")
+        ratio = snap.get("external_coverage_ratio")
+        if ratio is None:
+            ratio = snap.get("coverage_ratio")
         if ratio is None:
             return {"status": "unknown", "stale": age > por_svc._POR_TTL}
         ok = float(ratio) >= 1.0
         return {
             "status": "healthy" if ok else "warn",
-            "coverage_ratio": ratio,
+            "coverage_ratio": snap.get("coverage_ratio"),
+            "external_coverage_ratio": snap.get("external_coverage_ratio"),
             "stale": age > por_svc._POR_TTL,
         }
     except Exception as exc:

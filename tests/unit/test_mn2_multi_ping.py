@@ -118,3 +118,135 @@ def test_maintain_ping_multi_ping_registers_fleet(monkeypatch):
     assert out.get("success") is True
     assert calls["all"] == 1
     assert calls["start"] == 1
+
+
+def test_match_on_chain_prefers_txid_not_payee_confusion():
+    host = {
+        "collateral_txid": "abc123",
+        "collateral_vout": 1,
+        "collateral_address": "JCollateralOwnerXXXX",
+        "broadcast_address": "140.82.39.124:17646",
+    }
+    chain = [
+        {
+            "txhash": "abc123",
+            "outidx": 1,
+            "addr": "JPayeeAddressYYYY",
+            "status": "ENABLED",
+            "activetime": 100,
+        },
+        {
+            "txhash": "other",
+            "addr": "JCollateralOwnerXXXX",
+            "status": "ENABLED",
+        },
+    ]
+    matched = mn._match_on_chain(host, chain)
+    assert matched is not None
+    assert matched["addr"] == "JPayeeAddressYYYY"
+
+
+def test_match_on_chain_does_not_match_collateral_to_payee_addr():
+    host = {
+        "collateral_address": "JPayeeAddressYYYY",
+        "broadcast_address": "140.82.39.124:17646",
+    }
+    chain = [{"txhash": "x", "addr": "JPayeeAddressYYYY", "status": "ENABLED"}]
+    assert mn._match_on_chain(host, chain) is None
+
+
+def test_get_service_status_does_not_purge(hosts_file, monkeypatch):
+    called = {"purge": 0}
+
+    def boom(*args, **kwargs):
+        called["purge"] += 1
+        raise AssertionError("purge must not run on public status")
+
+    monkeypatch.setattr(mn, "purge_stale_provisioning_hosts", boom)
+    monkeypatch.setattr(
+        mn,
+        "network_masternodes",
+        lambda limit=100, fresh=False: {"list": [], "total": 0, "enabled": 0},
+    )
+    monkeypatch.setattr(mn, "list_collateral_outputs", lambda: {"success": True, "count": 2, "outputs": []})
+    monkeypatch.setattr(mn, "daemon_supports_multi_ping", lambda: False)
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: False)
+
+    monkeypatch.setattr(
+        "backend.services.mn2_rpc_client.staking_health",
+        lambda: {"staking_active": False, "mnsync": True, "status": "inactive"},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_rpc_client.getinfo",
+        lambda: {"result": {"version": 1020300}, "error": None},
+    )
+
+    _write_hosts(
+        hosts_file,
+        [
+            {
+                "id": "h1",
+                "label": "A",
+                "status": "active",
+                "collateral_txid": "tx1",
+                "collateral_vout": 0,
+                "broadcast_address": "140.82.39.124:17646",
+            }
+        ],
+    )
+    with mn._STATUS_CACHE_LOCK:
+        mn._STATUS_CACHE["value"] = None
+        mn._STATUS_CACHE["ts"] = 0.0
+
+    out = mn.get_service_status(fresh=True)
+    assert out["success"] is True
+    assert called["purge"] == 0
+    assert out["collateral_outputs_available"] == 2
+    # min(capacity residual 49, collateral 2) → 2
+    assert out["slots_available"] == 2
+    assert out["daemon"]["multi_ping_capable"] is False
+    assert out["daemon"]["version_tuple"] == [1, 2, 3, 0]
+
+
+def test_probe_health_pre13_local_enabled_is_healthy():
+    with mn._STATUS_CACHE_LOCK:
+        mn._STATUS_CACHE["value"] = {
+            "success": True,
+            "hosted_count": 44,
+            "platform_enabled_on_chain": 0,
+            "collateral_outputs_available": 2,
+            "slots_available": 2,
+            "network": {"enabled": 51},
+            "daemon": {
+                "mnsync": True,
+                "multi_ping_capable": False,
+                "multi_ping_enabled": False,
+                "enabled_with_activetime": 1,
+            },
+        }
+        mn._STATUS_CACHE["ts"] = 1e18
+    probe = mn.probe_health()
+    assert probe["status"] == "healthy"
+    assert "pre-1.3" in (probe.get("detail") or "")
+
+
+def test_probe_health_multiping_on_zero_platform_warns():
+    with mn._STATUS_CACHE_LOCK:
+        mn._STATUS_CACHE["value"] = {
+            "success": True,
+            "hosted_count": 44,
+            "platform_enabled_on_chain": 0,
+            "collateral_outputs_available": 2,
+            "slots_available": 2,
+            "network": {"enabled": 51},
+            "daemon": {
+                "mnsync": True,
+                "multi_ping_capable": True,
+                "multi_ping_enabled": True,
+                "enabled_with_activetime": 0,
+            },
+        }
+        mn._STATUS_CACHE["ts"] = 1e18
+    probe = mn.probe_health()
+    assert probe["status"] == "warn"
+    assert "not yet enabled" in (probe.get("detail") or "")

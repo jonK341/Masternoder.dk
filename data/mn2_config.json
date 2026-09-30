@@ -22,7 +22,9 @@
   "float_gate": {
     "enabled": true,
     "min_hours_coverage": 24,
-    "large_withdrawal_mn2": 50000
+    "large_withdrawal_mn2": 50000,
+    "require_external_coverage": true,
+    "min_external_coverage_ratio": 1.0
   },
   "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
   "coins_per_mn2": 100,
