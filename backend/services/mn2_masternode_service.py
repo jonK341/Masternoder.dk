@@ -96,7 +96,7 @@ def _parse_iso_ts(value: Optional[str]) -> Optional[datetime]:
 def _host_reserves_slot(host: Dict[str, Any]) -> bool:
     """Hosts that consume checkout capacity (excludes stuck empty provisioning rows)."""
     st = (host.get("status") or "").lower()
-    if st in ("active", "queued", "planned"):
+    if st in ("active", "queued", "planned", "collateral_missing"):
         return True
     if st == "provisioning":
         return bool(host.get("collateral_txid"))
@@ -287,8 +287,13 @@ def refresh_collateral_liveness(*, limit: int = 500) -> Dict[str, Any]:
                 continue
             checked += 1
             detail = rpc.gettxout(txid, vout)
-            res = detail.get("result") if isinstance(detail, dict) else None
-            if detail.get("error") or res is None:
+            if not isinstance(detail, dict):
+                continue
+            if detail.get("error"):
+                # Transient RPC failure — do not mark collateral missing.
+                continue
+            res = detail.get("result")
+            if res is None:
                 missing += 1
                 prev = (h.get("status") or "").lower()
                 if prev != "collateral_missing":
@@ -1877,9 +1882,9 @@ def peek_service_status_cache() -> Optional[Dict[str, Any]]:
 def probe_health() -> Dict[str, Any]:
     """Lightweight health for mn2_services_hub /api/mn2/health.
 
-    Prefer the short-lived service-status cache. Never call a full fresh
-    get_service_status from health paths — that stacks listmasternodes +
-    listunspent onto every probe and can starve web workers.
+    Prefer the short-lived service-status cache. If cold, build once via
+    ``get_service_status(fresh=False)`` so /api/mn2/services does not stick
+    on ``cache cold`` / false platform_enabled warnings across workers.
     """
     cfg = get_config()
     if not cfg.get("enabled", True):
@@ -1887,6 +1892,11 @@ def probe_health() -> Dict[str, Any]:
 
     st = peek_service_status_cache()
     if st is None:
+        try:
+            st = get_service_status(fresh=False)
+        except Exception:
+            st = None
+    if not isinstance(st, dict):
         # File-only fallback — no RPC on the health path.
         registry_hosts = list(_load_hosts_doc().get("hosts") or [])
         slots_used = _count_slots_used(registry_hosts)
@@ -1895,6 +1905,7 @@ def probe_health() -> Dict[str, Any]:
             "status": "unknown",
             "enabled": True,
             "hosted_count": slots_used,
+            "registry_count": len(registry_hosts),
             "slots_available": max(0, max_nodes - slots_used),
             "detail": "service status cache cold",
         }
@@ -1906,6 +1917,7 @@ def probe_health() -> Dict[str, Any]:
         platform = int(st.get("platform_enabled_on_chain") or 0)
         daemon = st.get("daemon") or {}
         hosted = int(st.get("hosted_count") or 0)
+        registry = int(st.get("registry_count") or hosted)
         multi_capable = bool(daemon.get("multi_ping_capable"))
         multi_on = bool(daemon.get("multi_ping_enabled"))
         local_enabled = int(daemon.get("enabled_with_activetime") or 0)
@@ -1914,6 +1926,7 @@ def probe_health() -> Dict[str, Any]:
                 "status": "warn",
                 "enabled": True,
                 "hosted_count": hosted,
+                "registry_count": registry,
                 "network_enabled": net_enabled,
                 "platform_enabled": platform,
                 "detail": "mnsync pending",
@@ -1928,6 +1941,7 @@ def probe_health() -> Dict[str, Any]:
                         "status": "healthy",
                         "enabled": True,
                         "hosted_count": hosted,
+                        "registry_count": registry,
                         "network_enabled": net_enabled,
                         "platform_enabled": platform,
                         "enabled_with_activetime": local_enabled,
@@ -1937,6 +1951,7 @@ def probe_health() -> Dict[str, Any]:
                     "status": "warn",
                     "enabled": True,
                     "hosted_count": hosted,
+                    "registry_count": registry,
                     "network_enabled": net_enabled,
                     "platform_enabled": platform,
                     "enabled_with_activetime": local_enabled,
@@ -1947,6 +1962,7 @@ def probe_health() -> Dict[str, Any]:
                     "status": "warn",
                     "enabled": True,
                     "hosted_count": hosted,
+                    "registry_count": registry,
                     "network_enabled": net_enabled,
                     "platform_enabled": platform,
                     "detail": "registered hosts not yet enabled on-chain",
@@ -1955,6 +1971,7 @@ def probe_health() -> Dict[str, Any]:
                 "status": "warn",
                 "enabled": True,
                 "hosted_count": hosted,
+                "registry_count": registry,
                 "network_enabled": net_enabled,
                 "platform_enabled": platform,
                 "detail": "multi-ping capable but ops.multi_ping_enabled is off",
@@ -1965,6 +1982,7 @@ def probe_health() -> Dict[str, Any]:
                 "status": "warn",
                 "enabled": True,
                 "hosted_count": hosted,
+                "registry_count": registry,
                 "slots_available": st.get("slots_available"),
                 "collateral_outputs_available": avail_outputs,
                 "detail": "no free collateral UTXOs for new hosts",
@@ -1973,6 +1991,7 @@ def probe_health() -> Dict[str, Any]:
             "status": "healthy" if net_enabled > 0 or hosted == 0 else "warn",
             "enabled": True,
             "hosted_count": hosted,
+            "registry_count": registry,
             "slots_available": st.get("slots_available"),
             "network_enabled": net_enabled,
             "platform_enabled": platform,
