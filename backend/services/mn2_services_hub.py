@@ -69,12 +69,28 @@ def _probe_staking() -> Dict[str, Any]:
             return {"status": "disabled", "enabled": False}
         from backend.services.mn2_rpc_client import staking_health
         sh = staking_health() or {}
-        active = sh.get("staking_active") is True or sh.get("status") == "active"
+        st = str(sh.get("status") or "").lower()
+        if sh.get("staking_active") is True or st == "active":
+            return {
+                "status": "active",
+                "enabled": True,
+                "mnsync": sh.get("mnsync"),
+                "pool_apr": None,
+            }
+        # Auth / RPC gaps are not the same as "daemon not staking".
+        if st in ("unreachable", "unsupported") or sh.get("staking_active") is None:
+            return {
+                "status": "unknown" if st != "unreachable" else "unreachable",
+                "enabled": True,
+                "mnsync": sh.get("mnsync"),
+                "detail": sh.get("errors") or st or "staking oracle unavailable",
+            }
         return {
-            "status": "active" if active else "inactive",
+            "status": "inactive",
             "enabled": True,
             "mnsync": sh.get("mnsync"),
             "pool_apr": None,
+            "detail": sh.get("errors"),
         }
     except Exception as exc:
         return {"status": "unknown", "error": str(exc)}
@@ -152,13 +168,22 @@ def _probe_masternode_hosting() -> Dict[str, Any]:
 
 def _probe_proof_of_reserves() -> Dict[str, Any]:
     try:
-        from backend.services.mn2_proof_of_reserves_service import proof_of_reserves
-        snap = proof_of_reserves()
-        ratio = snap.get("coverage_ratio") if isinstance(snap, dict) else None
+        from backend.services import mn2_proof_of_reserves_service as por_svc
+        # Prefer in-memory cache; never force a rebuild from the catalog probe.
+        with por_svc._CACHE_LOCK:
+            snap = por_svc._CACHE.get("por")
+            age = time.time() - float(por_svc._CACHE.get("por_ts") or 0)
+        if not isinstance(snap, dict):
+            return {"status": "unknown", "detail": "por cache cold"}
+        ratio = snap.get("coverage_ratio")
         if ratio is None:
-            return {"status": "unknown"}
+            return {"status": "unknown", "stale": age > por_svc._POR_TTL}
         ok = float(ratio) >= 1.0
-        return {"status": "healthy" if ok else "warn", "coverage_ratio": ratio}
+        return {
+            "status": "healthy" if ok else "warn",
+            "coverage_ratio": ratio,
+            "stale": age > por_svc._POR_TTL,
+        }
     except Exception as exc:
         return {"status": "unknown", "error": str(exc)}
 
@@ -278,6 +303,15 @@ def get_services_catalog(use_cache: bool = True) -> Dict[str, Any]:
     if use_cache:
         return _cached("catalog", _CACHE_TTL, build)
     return build()
+
+
+def peek_catalog_cache() -> Optional[Dict[str, Any]]:
+    """Return last catalog without running probes (health paths)."""
+    with _LOCK:
+        ent = _CACHE.get("catalog")
+        if ent and isinstance(ent.get("value"), dict):
+            return dict(ent["value"])
+    return None
 
 
 def get_service_by_id(service_id: str) -> Optional[Dict[str, Any]]:

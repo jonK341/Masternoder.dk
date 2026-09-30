@@ -23,9 +23,21 @@ _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 _POINTS_DIR = os.path.join(_BASE_DIR, "logs", "unified_points")
 
 _CACHE_LOCK = threading.Lock()
-_CACHE: Dict[str, Any] = {"por": None, "por_ts": 0.0, "yield": None, "yield_ts": 0.0}
+_CACHE: Dict[str, Any] = {
+    "por": None,
+    "por_ts": 0.0,
+    "yield": None,
+    "yield_ts": 0.0,
+    "overview": None,
+    "overview_ts": 0.0,
+}
 _POR_TTL = 60.0      # seconds — RPC-backed, keep fresh-ish but cheap
 _YIELD_TTL = 30.0
+_POR_STALE_MAX = 900.0  # serve last-good up to 15m if rebuild fails / is slow
+_OVERVIEW_TTL = 45.0
+_OVERVIEW_STALE_MAX = 900.0
+_BUILDING_POR = False
+_BUILDING_OVERVIEW = False
 
 
 def _now_iso() -> str:
@@ -148,11 +160,58 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
     """
     Assets (on-chain custodial balance + stabilization reserve) vs liabilities
     (Σ user liquid + pooled staked), coverage ratio, and the reconcile verdict.
-    """
-    with _CACHE_LOCK:
-        if not force and _CACHE["por"] and (time.time() - _CACHE["por_ts"]) < _POR_TTL:
-            return _CACHE["por"]
 
+    Public path is cache-first: fresh within TTL, otherwise last-good for up to
+    ``_POR_STALE_MAX`` seconds so concurrent explorer polls cannot stack RPC +
+    full-file liability scans on the web workers.
+    """
+    global _BUILDING_POR
+    now = time.time()
+    with _CACHE_LOCK:
+        cached = _CACHE.get("por")
+        age = now - float(_CACHE.get("por_ts") or 0)
+        if not force and cached is not None and age < _POR_TTL:
+            return cached
+        if not force and cached is not None and (_BUILDING_POR or age < _POR_STALE_MAX):
+            stale = dict(cached)
+            stale["stale"] = True
+            stale["cache_age_sec"] = round(age, 1)
+            if _BUILDING_POR:
+                return stale
+        if _BUILDING_POR and not force:
+            if cached is not None:
+                stale = dict(cached)
+                stale["stale"] = True
+                return stale
+            return {
+                "success": False,
+                "error": "proof_of_reserves_building",
+                "code": "building",
+            }
+        _BUILDING_POR = True
+
+    try:
+        out = _build_proof_of_reserves()
+        with _CACHE_LOCK:
+            _CACHE["por"] = out
+            _CACHE["por_ts"] = time.time()
+        return out
+    except Exception as exc:
+        with _CACHE_LOCK:
+            cached = _CACHE.get("por")
+            age = time.time() - float(_CACHE.get("por_ts") or 0)
+        if cached is not None and age < _POR_STALE_MAX:
+            stale = dict(cached)
+            stale["stale"] = True
+            stale["rebuild_error"] = str(exc)
+            return stale
+        return {"success": False, "error": str(exc)}
+    finally:
+        with _CACHE_LOCK:
+            _BUILDING_POR = False
+
+
+def _build_proof_of_reserves() -> Dict[str, Any]:
     liquid, staked, holders = _sum_user_liabilities()
     liabilities_total = round(liquid + staked, 8)
 
@@ -171,7 +230,7 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
         coverage_ratio = None  # nothing owed
         surplus = assets_total
 
-    # Reconcile verdict gates the "healthy" claim.
+    # Reconcile is best-effort on the public path — never fail the whole PoR.
     reconcile = {"ok": None, "failed_checks": [], "error": None}
     try:
         from backend.services.mn2_staking_reconcile_service import reconcile as _recon
@@ -198,8 +257,9 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
     except Exception as e:
         conservation["error"] = str(e)
 
-    out = {
+    return {
         "success": True,
+        "stale": False,
         "generated_at": _now_iso(),
         "assets": {
             "onchain": onchain,
@@ -226,10 +286,6 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
             "reconcile means all user MN2 is fully backed."
         ),
     }
-    with _CACHE_LOCK:
-        _CACHE["por"] = out
-        _CACHE["por_ts"] = time.time()
-    return out
 
 
 def _reward_rows_by_day(limit_days: int = 30) -> List[Dict[str, Any]]:
@@ -318,50 +374,92 @@ def yield_report(force: bool = False) -> Dict[str, Any]:
 
 def reserves_overview(force: bool = False) -> Dict[str, Any]:
     """Public aggregator: PoR + yield + exchange treasury + fee treasury + network ops."""
-    por = proof_of_reserves(force=force)
-    yield_r = yield_report(force=force)
+    global _BUILDING_OVERVIEW
+    now = time.time()
+    with _CACHE_LOCK:
+        cached = _CACHE.get("overview")
+        age = now - float(_CACHE.get("overview_ts") or 0)
+        if not force and cached is not None and age < _OVERVIEW_TTL:
+            return cached
+        if not force and cached is not None and (_BUILDING_OVERVIEW or age < _OVERVIEW_STALE_MAX):
+            stale = dict(cached)
+            stale["stale"] = True
+            stale["cache_age_sec"] = round(age, 1)
+            if _BUILDING_OVERVIEW:
+                return stale
+        if _BUILDING_OVERVIEW and not force:
+            if cached is not None:
+                stale = dict(cached)
+                stale["stale"] = True
+                return stale
+            return {"success": False, "error": "reserves_overview_building", "code": "building"}
+        _BUILDING_OVERVIEW = True
 
-    exchange_treasury: Dict[str, Any] = {}
     try:
-        from backend.services.exchange_treasury_service import treasury_status
-        exchange_treasury = treasury_status()
-    except Exception as exc:
-        exchange_treasury = {"success": False, "error": str(exc)}
+        por = proof_of_reserves(force=force)
+        yield_r = yield_report(force=force)
 
-    fee_treasury: Dict[str, Any] = {}
-    try:
-        from backend.services import crypto_exchange_service as ex
-        tre = ex._read_json(ex._TREASURY_PATH, {"total_fees_mn2": 0, "updated_at": None})
-        mn2_usd = ex._mn2_usd()
-        fee_treasury = {
+        exchange_treasury: Dict[str, Any] = {}
+        try:
+            from backend.services.exchange_treasury_service import treasury_status
+            exchange_treasury = treasury_status()
+        except Exception as exc:
+            exchange_treasury = {"success": False, "error": str(exc)}
+
+        fee_treasury: Dict[str, Any] = {}
+        try:
+            from backend.services import crypto_exchange_service as ex
+            tre = ex._read_json(ex._TREASURY_PATH, {"total_fees_mn2": 0, "updated_at": None})
+            mn2_usd = ex._mn2_usd()
+            fee_treasury = {
+                "success": True,
+                "total_fees_mn2": round(float(tre.get("total_fees_mn2") or 0), 8),
+                "updated_at": tre.get("updated_at"),
+                "total_fees_usd_est": round(float(tre.get("total_fees_mn2") or 0) * mn2_usd, 2),
+            }
+        except Exception as exc:
+            fee_treasury = {"success": False, "error": str(exc)}
+
+        network_ops: Dict[str, Any] = {}
+        try:
+            from backend.services.mn2_rpc_client import staking_health
+            from backend.services import mn2_staking_service as _stk
+            sh = staking_health() or {}
+            network_ops = {
+                "staking_health": sh,
+                "pool": {
+                    "total_staked_mn2": _stk.total_staked(),
+                    "dynamic_apr_percent": _stk.dynamic_apr(),
+                    "apr_status": _stk.public_apr_status(sh),
+                },
+            }
+        except Exception as exc:
+            network_ops = {"error": str(exc)}
+
+        out = {
             "success": True,
-            "total_fees_mn2": round(float(tre.get("total_fees_mn2") or 0), 8),
-            "updated_at": tre.get("updated_at"),
-            "total_fees_usd_est": round(float(tre.get("total_fees_mn2") or 0) * mn2_usd, 2),
+            "stale": False,
+            "generated_at": _now_iso(),
+            "proof_of_reserves": por,
+            "yield_report": yield_r,
+            "exchange_treasury": exchange_treasury,
+            "fee_treasury": fee_treasury,
+            "network_ops": network_ops,
         }
+        with _CACHE_LOCK:
+            _CACHE["overview"] = out
+            _CACHE["overview_ts"] = time.time()
+        return out
     except Exception as exc:
-        fee_treasury = {"success": False, "error": str(exc)}
-
-    network_ops: Dict[str, Any] = {}
-    try:
-        from backend.services.mn2_rpc_client import staking_health
-        from backend.services import mn2_staking_service as _stk
-        network_ops = {
-            "staking_health": staking_health(),
-            "pool": {
-                "total_staked_mn2": _stk.total_staked(),
-                "dynamic_apr_percent": _stk.dynamic_apr(),
-            },
-        }
-    except Exception as exc:
-        network_ops = {"error": str(exc)}
-
-    return {
-        "success": True,
-        "generated_at": _now_iso(),
-        "proof_of_reserves": por,
-        "yield_report": yield_r,
-        "exchange_treasury": exchange_treasury,
-        "fee_treasury": fee_treasury,
-        "network_ops": network_ops,
-    }
+        with _CACHE_LOCK:
+            cached = _CACHE.get("overview")
+            age = time.time() - float(_CACHE.get("overview_ts") or 0)
+        if cached is not None and age < _OVERVIEW_STALE_MAX:
+            stale = dict(cached)
+            stale["stale"] = True
+            stale["rebuild_error"] = str(exc)
+            return stale
+        return {"success": False, "error": str(exc)}
+    finally:
+        with _CACHE_LOCK:
+            _BUILDING_OVERVIEW = False
