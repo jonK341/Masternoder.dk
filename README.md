@@ -189,15 +189,9 @@ scripts\restart_flask.bat
 
 ## 📚 Documentation
 
-All documentation is in the `docs/` directory:
+Start with **[docs/README.md](docs/README.md)** (living map). Day-to-day backlogs: [docs/MN2_TODO.md](docs/MN2_TODO.md), [docs/PLATFORM_TODO.md](docs/PLATFORM_TODO.md), [docs/MN2_OPS.md](docs/MN2_OPS.md), [docs/MONETIZATION_PAYPAL.md](docs/MONETIZATION_PAYPAL.md).
 
-- `MASTER_PLAN.md` - Complete project master plan
-- `MASTER_PLAN_PHASE8.md` - Phase 8 enhancement details
-- `PROJECT_STRUCTURE.md` - Project structure guide
-- `FINAL_STATUS.md` - Current status and test results
-- `SYNTHESE.md` - Complete project synthesis
-- `SERVER_FLASK_STATUS.md` - Server status report
-- `LIVE_SITE_VERIFICATION.md` - Live site verification
+Historical root status notes such as `FINAL_STATUS.md` are outdated snapshots; prefer the docs map above.
 
 ---
 
