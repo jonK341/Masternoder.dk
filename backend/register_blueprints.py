@@ -207,6 +207,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_p2p: {e}")
     try:
+        from backend.routes.nft_routes import nft_bp
+        if "nft" not in app.blueprints:
+            app.register_blueprint(nft_bp)
+            n += 1
+            print("  [OK] Registered nft blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP nft: {e}")
+    try:
         from backend.routes.ptc_ads_routes import ptc_ads_bp
         app.register_blueprint(ptc_ads_bp)
         n += 1
