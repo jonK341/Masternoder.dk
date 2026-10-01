@@ -1694,3 +1694,38 @@ def probe_health() -> Dict[str, Any]:
         }
     except Exception as exc:
         return {"status": "degraded", "enabled": True, "error": str(exc)}
+
+
+def rented_masternodes_snapshot() -> Dict[str, Any]:
+    """Snapshot of rented/paid masternode hosts for agent cron and ops dashboards."""
+    status = get_service_status(fresh=False)
+    hosts = status.get("hosts") or []
+    rented = [
+        h for h in hosts
+        if (h.get("order_id") or h.get("user_id")) and (h.get("status") or "").lower() not in ("removed", "cancelled")
+    ]
+    return {
+        "success": True,
+        "rented_count": len(rented),
+        "platform_enabled_on_chain": status.get("platform_enabled_on_chain"),
+        "slots_available": status.get("slots_available"),
+        "hosted_count": status.get("hosted_count"),
+        "hosts": rented[:50],
+        "network": status.get("network"),
+        "daemon": status.get("daemon"),
+    }
+
+
+def bring_rented_masternodes_online(*, limit: int = 50) -> Dict[str, Any]:
+    """Restore paid-order hosts, provision pending slots, and maintain the ping loop."""
+    snapshot = rented_masternodes_snapshot()
+    pending = process_pending_hosts(limit=limit)
+    status = get_service_status(fresh=True)
+    return {
+        "success": True,
+        "snapshot": snapshot,
+        "provision": pending,
+        "platform_enabled_on_chain": status.get("platform_enabled_on_chain"),
+        "hosted_count": status.get("hosted_count"),
+        "slots_available": status.get("slots_available"),
+    }

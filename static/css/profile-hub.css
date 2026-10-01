@@ -75,6 +75,8 @@
     border: 4px solid #00ff88;
     object-fit: cover;
     background: linear-gradient(135deg, #00ff88, #00d4ff);
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 .profile-avatar-picker {
@@ -112,6 +114,8 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 .profile-avatar-url-row {

@@ -1,0 +1,190 @@
+/* MN2 super-wallet hub (/wallets) */
+.mn2-wallet-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 72px;
+}
+.mn2-wallet-hero h1 {
+  margin: 0 0 8px;
+  font-size: 1.85rem;
+  color: #00ff88;
+}
+.mn2-wallet-muted {
+  opacity: 0.82;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.mn2-wallet-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.mn2-wallet-links a {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  background: rgba(0, 212, 255, 0.08);
+  color: #00d4ff;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.mn2-wallet-card {
+  margin-top: 22px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 2px solid rgba(0, 212, 255, 0.35);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.06), rgba(0, 255, 136, 0.04));
+}
+.profile-wallet-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 16px;
+}
+.profile-wallet-subnav .tab-btn {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.profile-wallet-subnav .tab-btn.active {
+  border-color: #00ff88;
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+  font-weight: 600;
+}
+.mn2-5d-chart,
+.mn2-system-monitor {
+  margin-top: 8px;
+  font-size: 0.78rem;
+}
+.mn2-monitor-chip {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.mn2-monitor-chip span {
+  display: block;
+  font-size: 0.68rem;
+  opacity: 0.72;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.wh-hold-banner {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 12px 0;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 170, 68, 0.45);
+  background: rgba(255, 170, 68, 0.1);
+  color: #ffaa44;
+}
+.wh-hold-banner.ok {
+  border-color: rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.08);
+  color: #00ff88;
+}
+.wh-por-compact {
+  margin: 14px 0;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+}
+.wh-por-compact .wh-por-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.wh-por-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.wh-por-tile {
+  flex: 1 1 120px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid rgba(0, 255, 136, 0.18);
+}
+.wh-por-tile .label {
+  font-size: 0.68rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+.wh-por-tile .value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.wh-swap-card,
+.wh-hosting-wrap .mn-checkout-card {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  background: rgba(0, 0, 0, 0.22);
+}
+.wh-swap-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  margin-top: 8px;
+}
+.wh-swap-row label {
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wh-swap-row input,
+.wh-swap-row select {
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+.wh-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #00ff88;
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.wh-btn--ghost {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+}
+.wh-msg {
+  font-size: 0.82rem;
+  color: #00ff88;
+  min-height: 1.2em;
+  margin-top: 8px;
+}
+#profile-mn2-staking-card,
+#profile-trader-staking-card {
+  margin-top: 0;
+  padding: 14px;
+  border-radius: 12px;
+}
+#mn2-internal-market {
+  margin-top: 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  background: rgba(0, 0, 0, 0.2);
+}

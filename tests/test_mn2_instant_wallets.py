@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""Tests for instant MN2 rewards, multi-wallet, profile monitor, and settlement."""
+import os
+import sys
+import json
+import unittest
+from unittest.mock import patch, MagicMock
+
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE not in sys.path:
+    sys.path.insert(0, BASE)
+os.chdir(BASE)
+
+
+class TestMN2WalletService(unittest.TestCase):
+    def test_validate_payout_address_local_when_rpc_omits_isvalid(self):
+        from backend.services import mn2_wallet_service as ws
+
+        with patch("backend.services.mn2_rpc_client.validateaddress") as mock_va:
+            mock_va.return_value = {"result": {"address": "Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ"}}
+            res = ws.validate_payout_address("Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ")
+        self.assertTrue(res.get("valid"))
+
+    def test_generate_valid_address_accepts_when_ismine_false(self):
+        from backend.services import mn2_wallet_service as ws
+
+        with patch("backend.services.mn2_rpc_client.getnewaddress") as mock_new:
+            with patch("backend.services.mn2_rpc_client.validateaddress") as mock_va:
+                mock_new.return_value = {"result": "Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ"}
+                mock_va.return_value = {"result": {"isvalid": True, "ismine": False}}
+                res = ws._generate_valid_address()
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("deposit_address"), "Jaay5jjS7hMJFTXavZiq9RVWx9rjufupJQ")
+
+    def test_validate_payout_address_rejects_malformed(self):
+        from backend.services import mn2_wallet_service as ws
+
+        with patch("backend.services.mn2_rpc_client.validateaddress") as mock_va:
+            mock_va.return_value = {"result": {"isvalid": False}}
+            res = ws.validate_payout_address("not-a-real-address")
+        self.assertFalse(res.get("valid"))
+
+    def test_create_additional_wallet(self):
+        import tempfile
+        from backend.services import mn2_wallet_service as ws
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_user_addresses.json")
+            with patch.object(ws, "_addresses_path", return_value=path):
+                with patch.object(ws, "_data_dir", return_value=tmp):
+                    with patch.object(ws, "_generate_valid_address", return_value={"success": True, "deposit_address": "MxTest123"}):
+                        res = ws.create_additional_wallet("user_a", label="savings")
+            self.assertTrue(res.get("success"))
+            self.assertEqual(res.get("deposit_address"), "MxTest123")
+            self.assertEqual(res.get("label"), "savings")
+
+
+class TestMN2LedgerRewards(unittest.TestCase):
+    def test_reward_types_count_as_inflow(self):
+        from backend.services.mn2_ledger import get_wallet_activity_days
+        import tempfile
+        from backend.services import mn2_ledger as led
+
+        entries = [
+            {
+                "user_id": "u1",
+                "type": "battle_crypto_claim",
+                "amount": 0.25,
+                "created_at": "2026-09-15T12:00:00Z",
+                "metadata": {},
+            }
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "mn2_ledger.json")
+            with open(path, "w") as f:
+                json.dump({"entries": entries}, f)
+            with patch.object(led, "_ledger_path", return_value=path):
+                buckets = get_wallet_activity_days("u1", days=5)
+        self.assertTrue(any(b.get("deposits_mn2", 0) > 0 for b in buckets))
+
+
+class TestCreditMn2Instant(unittest.TestCase):
+    @patch("backend.services.activity_events_service.emit")
+    @patch("backend.services.mn2_ledger.append_entry")
+    @patch("backend.services.mn2_earn_auth.require_earn_user", return_value=(True, "u1"))
+    @patch("backend.services.mn2_chain_rewards_service.chain_payouts_enabled", return_value=False)
+    def test_credit_mn2_instant(self, _chain, _earn, mock_append, _emit):
+        from backend.services.game_mn2_rewards import credit_mn2
+
+        mock_db = MagicMock()
+        mock_db.add_points.return_value = {"success": True}
+        with patch.dict("sys.modules", {"backend.services.unified_points_database": MagicMock(unified_points_db=mock_db)}):
+            with patch("backend.services.unified_points_database.unified_points_db", mock_db, create=True):
+                res = credit_mn2("u1", 0.01, source="test_reward", reference="ref-1")
+        self.assertTrue(res.get("success"))
+        self.assertTrue(res.get("instant"))
+        mock_append.assert_called_once()
+
+
+class TestSettlementService(unittest.TestCase):
+    def test_settlement_dry_run_structure(self):
+        from backend.services.agent_mn2_settlement_service import run_mn2_ecosystem_settlement
+
+        with patch("backend.services.agent_mn2_settlement_service._test_daemon", return_value={"healthy": True, "health": {"block_height": 1}}):
+            with patch("backend.services.agent_mn2_settlement_service._settle_battle_crypto", return_value={"claims": 0, "users": 0, "errors": []}):
+                with patch("backend.services.agent_mn2_settlement_service._scan_chain_payout_queue", return_value={"payouts": 0, "skipped": 0, "errors": []}):
+                    with patch("backend.services.mn2_deposit_scanner.run_scanner", return_value={"success": True, "credits_applied": 0}):
+                        with patch("backend.services.mn2_masternode_service.rented_masternodes_snapshot", return_value={"success": True, "rented_count": 0}):
+                            res = run_mn2_ecosystem_settlement(systems=["all"], dry_run=True)
+        self.assertTrue(res.get("success"))
+        self.assertIn("battle", res.get("results", {}))
+
+    def test_settle_reconcile_uses_ok_field(self):
+        from backend.services.agent_mn2_settlement_service import _settle_reconcile
+
+        with patch(
+            "backend.services.mn2_staking_reconcile_service.reconcile",
+            return_value={"success": True, "ok": False, "failed_checks": ["staked_matches_ledger"]},
+        ):
+            res = _settle_reconcile()
+        self.assertFalse(res.get("ok"))
+
+    def test_daemon_probe_never_raises(self):
+        from backend.services.mn2_daemon_health_service import probe_daemon
+
+        with patch(
+            "backend.services.mn2_rpc_client.health_check",
+            return_value={"status": "healthy", "block_height": 12345},
+        ):
+            res = probe_daemon(extended=False)
+        self.assertTrue(res.get("healthy"))
+
+
+class TestAgentCronPresets(unittest.TestCase):
+    def test_mn2_fast_preset(self):
+        from backend.services.agent_cron_service import expand_preset
+
+        self.assertEqual(expand_preset("mn2_fast"), ["mn2_ecosystem_settlement_fast"])
+        self.assertEqual(expand_preset("mn2_transactions"), ["mn2_ecosystem_settlement"])
+
+
+class TestWalletHtmlParity(unittest.TestCase):
+    """Shared profile-mn2-wallet.js elements must exist on /wallets and /profile wallet sections."""
+
+    CRITICAL_IDS = [
+        "profile-mn2-wallet-card",
+        "profile-wallet-subnav",
+        "profile-mn2-deposit-error",
+        "profile-mn2-deposit-hint",
+        "profile-mn2-deposit-address",
+        "profile-mn2-request-addr",
+        "profile-mn2-create-wallet",
+        "profile-mn2-new-wallet-label",
+        "profile-mn2-wallets-list",
+        "profile-mn2-withdraw-address",
+        "profile-mn2-withdraw-amount",
+        "profile-mn2-withdraw-totp",
+        "profile-mn2-withdraw-whitelist-hint",
+        "profile-mn2-withdraw-inline-msg",
+        "profile-mn2-withdraw-balance-hint",
+        "profile-mn2-withdraw-use-deposit",
+        "profile-mn2-withdraw-whitelist-quick",
+        "profile-mn2-withdraw-whitelist-add",
+        "mn2-withdraw-security",
+        "mn2-gift-send",
+        "mn2-addrbook-add",
+    ]
+
+    SCRIPT_MARKERS = {
+        "wallets/index.html": (
+            "profile-mn2-wallet.js",
+            "mn2-wallet-extras.js",
+            "mn2-withdrawal-security.js",
+        ),
+        "profile/index.html": (
+            "profile-mn2-wallet.js",
+            "mn2-wallet-extras.js",
+            "mn2-withdrawal-security.js",
+        ),
+    }
+
+    def _read(self, rel_path):
+        path = os.path.join(BASE, rel_path)
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+
+    def test_wallet_pages_share_critical_element_ids(self):
+        for rel in ("wallets/index.html", "profile/index.html"):
+            html = self._read(rel)
+            for el_id in self.CRITICAL_IDS:
+                self.assertIn('id="' + el_id + '"', html, msg=f"{rel} missing #{el_id}")
+
+    def test_wallet_pages_include_shared_scripts(self):
+        for rel, markers in self.SCRIPT_MARKERS.items():
+            html = self._read(rel)
+            for marker in markers:
+                self.assertIn(marker, html, msg=f"{rel} missing script {marker}")
+
+
+if __name__ == "__main__":
+    unittest.main()
