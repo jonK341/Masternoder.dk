@@ -206,26 +206,9 @@ def _fetch_binance_usdc_bases() -> Set[str]:
 
     bases: Set[str] = set()
     try:
-        import requests
-        from backend.services.exchange_http_util import force_ipv4_outbound_if_configured
+        from backend.services.exchange_binance_spot_catalog_service import binance_usdc_bases
 
-        force_ipv4_outbound_if_configured()
-        resp = requests.get(
-            "https://api.binance.com/api/v3/exchangeInfo",
-            timeout=8,
-            headers={"User-Agent": "masternoder-pair-search/1.0"},
-        )
-        if resp.status_code == 200:
-            for sym in (resp.json() or {}).get("symbols") or []:
-                if not isinstance(sym, dict):
-                    continue
-                if sym.get("status") != "TRADING":
-                    continue
-                if str(sym.get("quoteAsset") or "").upper() != "USDC":
-                    continue
-                base = str(sym.get("baseAsset") or "").upper()
-                if base and base not in ("USDC", "USDT", "BUSD"):
-                    bases.add(base)
+        bases = binance_usdc_bases()
     except Exception:
         pass
 

@@ -126,6 +126,23 @@ def run_winnable_pairs_tick(
 
     hits = list(search.get("hits") or [])
     winnable = _filter_winnable(hits, min_bps=min_bps, min_score=min_score)
+    try:
+        from backend.services.exchange_signal_stack_service import load_config as ss_cfg, rank_search_hits
+
+        sc = ss_cfg()
+        if sc.get("boost_winnable_with_skills", True) and winnable:
+            skills = list(sc.get("default_skills") or [])
+            ss = sc.get("skill_set")
+            if ss:
+                from backend.services.exchange_bot_skills_service import resolve_skill_set
+
+                skills = list(resolve_skill_set(str(ss)).get("skills") or skills)
+            acct = arb.read_account(agent_id)
+            ranked = rank_search_hits(winnable, skill_ids=skills, agent=acct, min_composite=0)
+            winnable = ranked
+    except Exception:
+        pass
+
     near_winnable = [
         h for h in hits
         if isinstance(h, dict)
@@ -134,6 +151,7 @@ def run_winnable_pairs_tick(
     ]
 
     from backend.services.exchange_live_execution_service import book_agent_profit, execute_spatial_arbitrage
+    from backend.services.exchange_profit_path_service import record_execution, record_scan
 
     _ensure_agent_account(agent_id)
     executions: List[Dict[str, Any]] = []
@@ -182,7 +200,27 @@ def run_winnable_pairs_tick(
         if best_opp is None or float(trade_opp.get("net_bps") or 0) > float(best_opp.get("net_bps") or 0):
             best_opp = trade_opp
 
+        tick_mode = "live" if arb.live_enabled() else "paper"
+        path_id = record_scan(
+            agent_id=agent_id,
+            strategy="winnable_pairs",
+            best=trade_opp,
+            threshold_bps=min_bps,
+            mode=tick_mode,
+            decision="attempt",
+            notional_usd=float(trade_opp.get("notional_usd") or notional),
+            venues=venues,
+        )
         exec_res = execute_spatial_arbitrage(trade_opp, agent_id=agent_id)
+        record_execution(
+            path_id=path_id,
+            agent_id=agent_id,
+            opp=trade_opp,
+            exec_res=exec_res,
+            strategy="winnable_pairs",
+            threshold_bps=min_bps,
+            venues=venues,
+        )
         book_agent_profit(agent_id, trade_opp, exec_res)
         ok = bool(exec_res.get("success"))
         if ok:
@@ -193,6 +231,8 @@ def run_winnable_pairs_tick(
             "success": ok,
             "mode": exec_res.get("mode"),
             "net_bps": trade_opp.get("net_bps"),
+            "composite_score": hit.get("composite_score"),
+            "profit_path_id": path_id,
             "error": exec_res.get("error"),
         })
 
