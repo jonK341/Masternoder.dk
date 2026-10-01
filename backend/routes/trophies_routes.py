@@ -327,7 +327,17 @@ def trophy_definitions_api():
     """Single source of truth for trophy definitions (from data/trophy_definitions.json)."""
     try:
         data = load_trophy_definitions_file()
-        trophies = data.get('trophies', [])
+        trophies = list(data.get('trophies', []) or [])
+        try:
+            from backend.services import nft_exchange_service as nft_svc
+
+            nft_defs = nft_svc.trophy_definitions()
+            known = {str(t.get("id")) for t in trophies if t.get("id")}
+            for row in nft_defs:
+                if row.get("id") and str(row["id"]) not in known:
+                    trophies.append(row)
+        except Exception:
+            pass
         return jsonify({
             'success': True,
             'version': data.get('version', '0'),
@@ -379,6 +389,22 @@ def list_trophies_api():
                         definitions[str(tid)] = {'id': tid, **d}
             except ImportError:
                 pass
+        try:
+            from backend.services import nft_exchange_service as nft_svc
+
+            for row in nft_svc.trophy_definitions():
+                tid = str(row.get("id") or "")
+                if tid and tid not in definitions:
+                    definitions[tid] = row
+            nft_unlocks = nft_svc.trophy_unlocks_for_user(user_id)
+            known = {str(t.get("id") or t.get("trophy_id")) for t in trophies if isinstance(t, dict)}
+            for unlock in nft_unlocks:
+                tid = str(unlock.get("trophy_id") or unlock.get("id") or "")
+                if tid and tid not in known:
+                    trophies.append(unlock)
+                    known.add(tid)
+        except Exception:
+            pass
         return jsonify({
             'success': True,
             'trophies': trophies,

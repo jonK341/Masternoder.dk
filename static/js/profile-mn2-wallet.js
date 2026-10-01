@@ -356,6 +356,59 @@
     });
   }
 
+  function renderNftWallet(data) {
+    var root = document.getElementById('profile-mn2-nft-wallet');
+    var emblemEl = document.getElementById('profile-mn2-nft-emblems');
+    var strip = document.getElementById('profile-nft-emblems-strip');
+    if (!data || !data.success) {
+      if (root) root.textContent = 'NFT wallet unavailable.';
+      return;
+    }
+    var editions = data.editions || [];
+    if (root) {
+      if (!editions.length) {
+        root.innerHTML = 'No editions yet. <a href="/market" style="color:#c08cff;">Buy on market</a>.';
+      } else {
+        root.innerHTML = editions.map(function (e) {
+          return '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+            '<strong>' + e.edition_id + '</strong> · ' + (e.emblem_icon || '💎') +
+            ' <button type="button" class="btn-primary" style="padding:4px 8px;margin-left:8px;" data-equip-nft="' + e.edition_id + '">Use avatar</button></div>';
+        }).join('');
+        root.querySelectorAll('[data-equip-nft]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var eid = btn.getAttribute('data-equip-nft');
+            fetchJson(base() + '/api/nft/equip-avatar', {
+              method: 'POST',
+              body: { user_id: uid(), edition_id: eid },
+            }).then(function (res) {
+              if (res.data && res.data.success) {
+                if (typeof toast !== 'undefined') toast.success('Avatar updated from ' + eid);
+                if (res.data.avatar_url && global.profileManager && global.backendConnector) {
+                  var newPrefs = Object.assign({}, global.profileManager.currentPreferences || {}, {
+                    avatar_url: res.data.avatar_url,
+                  });
+                  global.backendConnector.updateUserProfile({ preferences: newPrefs }).then(function () {
+                    global.profileManager.loadProfile();
+                  });
+                } else if (global.profileManager) {
+                  global.profileManager.initAvatarTab();
+                }
+              }
+            });
+          });
+        });
+      }
+    }
+    fetchJson(base() + '/api/nft/emblems?user_id=' + encodeURIComponent(uid())).then(function (res) {
+      var emblems = (res.data && res.data.emblems) || [];
+      var html = emblems.length
+        ? 'Emblems: ' + emblems.map(function (e) { return (e.icon || '💎') + ' ' + e.name; }).join(' · ')
+        : '';
+      if (emblemEl) emblemEl.textContent = html;
+      if (strip) strip.innerHTML = html ? ('💎 NFT emblems — ' + html) : '';
+    });
+  }
+
   function load() {
     var user = uid();
     var q = encodeURIComponent(user);
@@ -385,6 +438,9 @@
     });
     fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
       renderActivity(res.data);
+    });
+    fetchJson(base() + '/api/nft/wallet?user_id=' + q).then(function (res) {
+      renderNftWallet(res.data);
     });
   }
 

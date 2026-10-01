@@ -152,6 +152,7 @@ def fulfill_captured_shop_payment(
     coins_granted = 0
     mn2_granted = 0.0
     item_granted = None
+    nft_edition = None
     pack = None
     mn2_pack = None
     fulfillment_error = None
@@ -194,8 +195,16 @@ def fulfill_captured_shop_payment(
             fulfill_battle_pass_paypal_purchase,
             is_battle_pass_paypal_item,
         )
+        from backend.services.nft_exchange_service import grant_paypal_mint, is_nft_sku
 
-        if is_battle_pass_paypal_item(item_id):
+        if is_nft_sku(item_id):
+            minted = grant_paypal_mint(user_id, item_id, order_id, amount)
+            if minted.get("success"):
+                item_granted = item_id
+                nft_edition = minted.get("edition")
+            else:
+                fulfillment_error = minted.get("error") or "nft_mint_failed"
+        elif is_battle_pass_paypal_item(item_id):
             bp_out = fulfill_battle_pass_paypal_purchase(user_id)
             if bp_out.get("success"):
                 item_granted = item_id
@@ -313,6 +322,8 @@ def fulfill_captured_shop_payment(
     }
     if item_granted:
         payload["item_granted"] = item_granted
+    if nft_edition:
+        payload["edition"] = nft_edition
     if fulfillment_error:
         payload.update({
             "success": False,

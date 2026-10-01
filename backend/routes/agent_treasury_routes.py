@@ -116,3 +116,17 @@ def treasury_distribute():
 def get_balance_safe(agent_id: str) -> float:
     from backend.services.agent_wallet_service import get_balance
     return get_balance(agent_id)
+
+
+@agent_treasury_bp.route("/api/agents/nft-wallets", methods=["GET"])
+def agents_nft_wallets():
+    from backend.services import nft_exchange_service as nft_svc
+
+    return jsonify(nft_svc.list_agent_nft_wallets()), 200
+
+
+@agent_treasury_bp.route("/api/agents/<agent_id>/nft-wallet", methods=["GET"])
+def agent_nft_wallet(agent_id: str):
+    from backend.services import nft_exchange_service as nft_svc
+
+    return jsonify(nft_svc.agent_nft_wallet(agent_id)), 200

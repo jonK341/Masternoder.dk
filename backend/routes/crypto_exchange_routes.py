@@ -525,6 +525,14 @@ def exchange_calculator_cross_trade():
     ))
 
 
+@crypto_exchange_bp.route("/api/exchange/nft/market", methods=["GET"])
+def exchange_nft_market():
+    from backend.services import nft_exchange_service as nft_svc
+
+    limit = int(request.args.get("limit") or 30)
+    return jsonify(nft_svc.exchange_market_payload(limit=limit))
+
+
 @crypto_exchange_bp.route("/api/exchange/marketplace/catalog", methods=["GET"])
 def exchange_marketplace_catalog():
     from backend.services.agent_marketplace_service import get_catalog

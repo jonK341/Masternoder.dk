@@ -13,7 +13,9 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
-    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20261001c">
+    <link rel="stylesheet" href="/static/css/shop.css?v=20261001">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -23,23 +25,25 @@
     <style>
         .profile-page {
             min-height: 100vh;
-            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+            background: transparent;
         }
 
         .profile-container {
-            max-width: 1400px;
+            max-width: 1180px;
             margin: 0 auto;
         }
 
         .profile-header {
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 30px;
-            border: 2px solid rgba(0, 255, 136, 0.3);
+            background: linear-gradient(145deg, rgba(22, 22, 34, 0.92), rgba(12, 14, 24, 0.94));
+            border-radius: 22px;
+            padding: 28px 32px;
+            margin-bottom: 22px;
+            border: 1px solid rgba(0, 255, 136, 0.22);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
             display: flex;
             align-items: center;
-            gap: 30px;
+            gap: 28px;
+            flex-wrap: wrap;
         }
 
         .avatar-section {
@@ -76,9 +80,14 @@
         }
 
         .display-name {
-            font-size: 2.5em;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
             margin: 0 0 10px 0;
-            color: #00ff88;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            background: linear-gradient(120deg, #00ff88, #00d4ff, #c4a7ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
 
         .profile-badges {
@@ -148,18 +157,22 @@
         }
 
         .section-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(145deg, rgba(22, 22, 34, 0.92), rgba(12, 14, 24, 0.94));
+            border-radius: 22px;
+            padding: 24px 26px;
+            border: 1px solid rgba(0, 255, 136, 0.18);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
         }
 
         .section-title {
-            font-size: 1.5em;
-            color: #00ff88;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(0, 255, 136, 0.2);
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #9dffd4;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.22);
         }
 
         .skills-grid {
@@ -739,11 +752,69 @@
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
-<body class="layout-standard">
+<body class="layout-standard mn-no-hypnotic profile-frontpage-match">
+    <div class="frontpage-bg" aria-hidden="true"></div>
     <div class="profile-page">
-        <div class="profile-container">
+        <main class="profile-container profile-shell fp-main profile-fp-main">
+            <header class="fp-hero profile-fp-hero" aria-labelledby="profile-hero-title">
+                <div class="fp-hero-core profile-fp-core" aria-hidden="true">
+                    <div class="fp-core-ring fp-core-ring-a"></div>
+                    <div class="fp-core-ring fp-core-ring-b"></div>
+                    <div class="fp-core-pulse" id="profile-core-level">—</div>
+                    <div class="fp-core-node fp-core-node-a">ID</div>
+                    <div class="fp-core-node fp-core-node-b">MN2</div>
+                    <div class="fp-core-node fp-core-node-c">XP</div>
+                </div>
+                <div class="fp-hero-copy">
+                    <p class="fp-kicker"><span>Profile hub</span><span id="profile-hero-user-pill">Loading…</span></p>
+                    <h1 id="profile-hero-title">Your control room</h1>
+                    <p class="fp-tagline">Account · wallet · shop · agents · progress</p>
+                    <p class="fp-hero-text">Same visual language as the start page — big numbers first, one tap to the task you need. Your ID works everywhere on MasterNoder.</p>
+                    <div class="fp-hero-actions" aria-label="Profile actions">
+                        <button type="button" class="fp-primary-action" id="profile-hero-refresh">Refresh data</button>
+                        <a class="fp-secondary-action" href="/shop#shop-profile">Shop profile</a>
+                        <a class="fp-secondary-action" href="/">Start page</a>
+                    </div>
+                </div>
+            </header>
+
+            <section class="fp-stats profile-glance-stats" id="profile-glance-stats" aria-label="Profile at a glance">
+                <div class="fp-stat fp-stat-mn2"><div class="v" id="profile-glance-level">—</div><div class="l">Level</div></div>
+                <div class="fp-stat"><div class="v" id="profile-glance-xp">—</div><div class="l">XP</div></div>
+                <div class="fp-stat"><div class="v" id="profile-glance-coins">—</div><div class="l">Coins</div></div>
+                <div class="fp-stat fp-stat-mn2" id="profile-glance-mn2-stat"><div class="v" id="profile-glance-mn2">—</div><div class="l">MN2</div></div>
+                <div class="fp-stat"><div class="v" id="profile-glance-battle">—</div><div class="l">Battle</div></div>
+                <div class="fp-stat"><div class="v" id="profile-glance-game">—</div><div class="l">Game</div></div>
+            </section>
+
+            <section class="fp-game-hub fp-section-compact profile-hub-tabs-wrap" aria-label="Profile sections">
+                <div class="fp-game-hub-head">
+                    <p class="fp-kicker"><span>Sections</span><span id="profile-hub-status">Pick one focus</span></p>
+                    <h2 class="profile-hub-tabs-title">Where do you want to go?</h2>
+                </div>
+                <nav class="gh-tabs gh-tabs--compact" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
+                    <button type="button" class="gh-tab is-active" data-hub-scroll="overview" role="tab" aria-selected="true"><span class="gh-tab-icon" aria-hidden="true">📊</span><span class="gh-tab-label">Overview</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="avatar" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">👤</span><span class="gh-tab-label">Avatar</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="account" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🔐</span><span class="gh-tab-label">Account</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="wallet" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">💠</span><span class="gh-tab-label">Wallet</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="shop" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🛒</span><span class="gh-tab-label">Shop</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="points" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">💎</span><span class="gh-tab-label">Points</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="agents" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🤖</span><span class="gh-tab-label">Agents</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="security" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🛡️</span><span class="gh-tab-label">Security</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="skills" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">⚡</span><span class="gh-tab-label">Skills</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="trophies" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🏆</span><span class="gh-tab-label">Trophies</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="leaderboard" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🥇</span><span class="gh-tab-label">Rank</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="activity" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">📡</span><span class="gh-tab-label">Activity</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="lab" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🔬</span><span class="gh-tab-label">Lab</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="battle" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">⚔️</span><span class="gh-tab-label">Battle</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="progress" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">📈</span><span class="gh-tab-label">Progress</span></button>
+                    <button type="button" class="gh-tab" data-hub-scroll="settings" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">⚙️</span><span class="gh-tab-label">Settings</span></button>
+                </nav>
+            </section>
+            <div id="profile-route-note" class="profile-route-note">One section per tab — green pill = you are here.</div>
+
             <!-- Account & Login first so it works even when profile is loading -->
-            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="overview account" style="margin-bottom: 20px;">
+            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="account" style="margin-bottom: 20px;">
                 <h2 class="section-title">Account &amp; Login</h2>
                 <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 12px;">Create an account or sign in. Your user ID is stored in this browser until you clear it.</p>
                 <div class="account-row">
@@ -860,11 +931,12 @@
             </div>
 
             <!-- Sync status (points, users, profiles, rulebooks, agents) -->
-            <div id="sync-status-widget" data-profile-route="overview account" aria-live="polite"><span class="loading-inline">Loading sync status...</span></div>
+            <div id="sync-status-widget" data-profile-route="overview" aria-live="polite"><span class="loading-inline">Loading sync status...</span></div>
 
-            <!-- Connect: Profile · Generator · Agents · Gallery · Aggregator · Themes -->
-            <p style="text-align:center;margin:16px 0;font-size:0.9rem;opacity:0.9;">
-                <a href="/profile" style="color:#00ff88;text-decoration:none;">Profile</a> · <a href="/user" style="color:#00ff88;text-decoration:none;">User account</a> · <a href="/generator" style="color:#00ff88;text-decoration:none;">Generator</a> · <a href="/agents" style="color:#00ff88;text-decoration:none;">Agents</a> · <a href="/gallery" style="color:#00d4ff;text-decoration:none;">Gallery</a> · <a href="/profile?tab=activity" style="color:#00d4ff;text-decoration:none;">Activity hub</a> · <a href="/theme_premium" style="color:#00d4ff;text-decoration:none;">Themes</a>
+            <p class="profile-connect-links" data-profile-route="overview">
+                <a href="/user">User account</a> · <a href="/generator">Generator</a> · <a href="/agents">Agents</a> ·
+                <a href="/gallery" class="profile-link-alt">Gallery</a> · <a href="/profile?tab=activity" class="profile-link-alt">Activity hub</a> ·
+                <a href="/theme_premium" class="profile-link-alt">Themes</a>
             </p>
 
             <!-- Single loading state: one request loads everything -->
@@ -878,25 +950,6 @@
             <!-- Profile Header -->
             <div class="profile-header" id="profile-header"></div>
 
-            <nav class="profile-hub-nav page-tabs" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
-                <button type="button" class="tab-btn active" data-hub-scroll="overview" role="tab" aria-selected="true">Overview</button>
-                <button type="button" class="tab-btn" data-hub-scroll="avatar" role="tab" aria-selected="false">Avatar</button>
-                <button type="button" class="tab-btn" data-hub-scroll="account" role="tab" aria-selected="false">Account</button>
-                <button type="button" class="tab-btn" data-hub-scroll="skills" role="tab" aria-selected="false">Skills</button>
-                <button type="button" class="tab-btn" data-hub-scroll="trophies" role="tab" aria-selected="false">Trophies</button>
-                <button type="button" class="tab-btn" data-hub-scroll="points" role="tab" aria-selected="false">Points</button>
-                <button type="button" class="tab-btn" data-hub-scroll="leaderboard" role="tab" aria-selected="false">Leaderboard</button>
-                <button type="button" class="tab-btn" data-hub-scroll="shop" role="tab" aria-selected="false">Shop</button>
-                <button type="button" class="tab-btn" data-hub-scroll="wallet" role="tab" aria-selected="false">Wallet</button>
-                <button type="button" class="tab-btn" data-hub-scroll="security" role="tab" aria-selected="false">Security</button>
-                <button type="button" class="tab-btn" data-hub-scroll="settings" role="tab" aria-selected="false">Settings</button>
-                <button type="button" class="tab-btn" data-hub-scroll="agents" role="tab" aria-selected="false">Agents</button>
-                <button type="button" class="tab-btn" data-hub-scroll="activity" role="tab" aria-selected="false">Activity</button>
-                <button type="button" class="tab-btn" data-hub-scroll="lab" role="tab" aria-selected="false">Lab</button>
-                <button type="button" class="tab-btn" data-hub-scroll="battle" role="tab" aria-selected="false">Battle</button>
-                <button type="button" class="tab-btn" data-hub-scroll="progress" role="tab" aria-selected="false">Progress</button>
-            </nav>
-            <div id="profile-route-note" class="profile-route-note">One section per tab — use the bar above to switch.</div>
             <div class="section-card" id="profile-section-avatar" data-profile-route="avatar overview">
                 <h2 class="section-title">Avatar</h2>
                 <p style="font-size:0.9rem;opacity:0.85;margin-bottom:12px;">Choose a preset or paste an image URL. Same pattern as agent avatars on the platform.</p>
@@ -920,6 +973,12 @@
             <div class="section-card" id="profile-hub-overview" data-profile-route="overview">
                 <h2 class="section-title">Unified overview</h2>
                 <p style="font-size:0.9rem;opacity:0.85;margin-bottom:8px;">Points, shop, and rankings for this profile ID (same data as Shop and Game).</p>
+                <div class="fp-agent-grid profile-overview-shortcuts" aria-label="Quick navigation">
+                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="account"><span>🔐</span>Account</button>
+                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="wallet"><span>💠</span>Wallet</button>
+                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="shop"><span>🛒</span>Shop</button>
+                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="security"><span>🛡️</span>Security</button>
+                </div>
                 <div id="profile-hub-summary">Loading…</div>
                 <div id="profile-completeness-card" class="profile-completeness-card">Loading profile setup checklist…</div>
             </div>
@@ -959,6 +1018,7 @@
                             <h3 style="font-size:1rem; color:#FFD700; margin:0 0 10px;">📌 Showcase</h3>
                             <div id="profile-showcase-grid" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
                         </div>
+                        <div id="profile-nft-emblems-strip" style="margin-bottom:12px;font-size:0.88rem;opacity:0.9;"></div>
                         <div id="profile-trophies-content"></div>
                     </div>
                     <!-- Points system: connected Game, Shop, Star Map 25, Points -->
@@ -997,14 +1057,14 @@
 
                     <!-- Shop v4 inventory (same API as /shop; merges local shadow backup from Shop) -->
                     <div class="section-card" id="profile-section-shop" data-profile-route="shop">
-                        <h2 class="section-title">🛒 Shop inventory (v4)</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Items you buy with coins, unified points, or MN2 in <a href="/shop">Shop v4</a> are listed here via <code>/api/shop/inventory</code> (same data as the Shop inventory tab).</p>
+                        <h2 class="section-title">🛒 Shop inventory</h2>
+                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Same account as the <a href="/shop#shop-profile">shop profile manager</a> and <code>/api/shop/inventory</code>.</p>
                         <div id="profile-shop-v9-inventory">Loading…</div>
-                        <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-account">Open inventory tab in Shop</a></p>
+                        <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-profile">Manage account in Shop</a> · <a href="/shop#shop-account">Stall, inventory, orders</a></p>
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
-                    <div class="section-card" id="profile-mn2-wallet-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
+                    <div class="section-card profile-mn2-wallet-card" id="mn2-wallet" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
                         <h2 class="section-title" style="color: #00d4ff;">MN2 Wallet</h2>
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>MN2-only showcase</strong> — no other coin balances shown here.</p>
                         <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
@@ -1018,6 +1078,7 @@
                             <button type="button" class="tab-btn" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
                             <button type="button" class="tab-btn" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
                             <button type="button" class="tab-btn" data-wallet-tab="security" role="tab" aria-selected="false">Withdraw 2FA</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="nft" role="tab" aria-selected="false">NFT wallet</button>
                             <button type="button" class="tab-btn" data-wallet-tab="settings" role="tab" aria-selected="false">Wallet settings</button>
                         </nav>
                         <div data-wallet-panel="overview" style="margin-bottom: 14px;">
@@ -1127,6 +1188,12 @@
                                 <code id="mn2-2fa-secret" style="font-size:0.75rem;opacity:0.7;"></code>
                                 <div id="mn2-whitelist-list" style="margin-top:10px;font-size:0.82rem;"></div>
                             </div>
+                        </div>
+                        <div data-wallet-panel="nft" style="display:none; margin-bottom:14px;">
+                            <strong style="color:#c08cff;">NFT wallet (v2)</strong>
+                            <p style="font-size:0.88rem;opacity:0.85;">Numbered editions live on <a href="/market" style="color:#c08cff;">/market</a> and <a href="/exchange?tab=marketplace" style="color:#00d4ff;">Exchange</a>. Equip an owned edition as your profile avatar.</p>
+                            <div id="profile-mn2-nft-wallet" style="font-size:0.88rem;">Loading NFT wallet…</div>
+                            <div id="profile-mn2-nft-emblems" style="margin-top:10px;font-size:0.85rem;"></div>
                         </div>
                         <div data-wallet-panel="settings" style="display:none; margin-bottom:14px;">
                             <p style="font-size:0.85rem;opacity:0.85;">Wallet display and export settings. Fiat toggle is on the Overview tab.</p>
@@ -1643,7 +1710,7 @@
                 </div>
             </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- Edit Profile Modal -->
@@ -1776,6 +1843,9 @@
                         this.loadCryptoWalletAgentsCatalog();
                         this.loadShopInventoryV9();
                         this.loadAccountPrivacyControls();
+                        if (typeof window.refreshProfileHubSummary === 'function') {
+                            window.refreshProfileHubSummary(this.userId, { animate: true });
+                        }
                         var params = new URLSearchParams(window.location.search);
                         if (params.get('refresh') === '1' && typeof this.refreshProfilePoints === 'function') {
                             await this.refreshProfilePoints();
@@ -1924,8 +1994,11 @@
                 }
 
                 this.renderCommunicationPsychology(data.communication_psychology || {});
-                this.initAccountControl();
+                this.loadUserIdentity();
+                this.loadDiscordLink();
                 this.syncAccountDisplayFromProfile(profile);
+                var accountInput = document.getElementById('account-user-id');
+                if (accountInput && this.userId) accountInput.value = this.userId;
                 const detailedStatsEl = document.getElementById('detailed-stats');
                 if (detailedStatsEl) this.loadPointsStats(detailedStatsEl).catch(function() {});
             }
@@ -2689,6 +2762,18 @@
                         btn.classList.toggle('selected', btn.getAttribute('data-avatar-url') === url);
                     });
                 }
+                function wireGrid(urls) {
+                    grid.innerHTML = urls.map(function(url) {
+                        return '<button type="button" class="profile-avatar-option" data-avatar-url="' + profileEscapeHtml(url) + '" title="Use this avatar">' +
+                            '<img src="' + profileEscapeHtml(url) + '" alt="" loading="lazy"></button>';
+                    }).join('');
+                    grid.querySelectorAll('.profile-avatar-option').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            selectUrl(btn.getAttribute('data-avatar-url'));
+                        });
+                    });
+                    if (current) selectUrl(current);
+                }
                 if (grid._wired) {
                     if (current) selectUrl(current);
                     return;
@@ -2696,16 +2781,15 @@
                 grid._wired = true;
                 if (urlInput) urlInput.value = current;
                 if (preview && current) preview.src = current;
-                grid.innerHTML = ProfileManager.avatarPresets.map(function(url) {
-                    return '<button type="button" class="profile-avatar-option" data-avatar-url="' + profileEscapeHtml(url) + '" title="Use this avatar">' +
-                        '<img src="' + profileEscapeHtml(url) + '" alt="" loading="lazy"></button>';
-                }).join('');
-                grid.querySelectorAll('.profile-avatar-option').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        selectUrl(btn.getAttribute('data-avatar-url'));
-                    });
-                });
-                if (current) selectUrl(current);
+                var baseUrls = ProfileManager.avatarPresets.slice();
+                var browserUid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                fetch(window.location.origin + '/api/nft/avatar-presets?user_id=' + encodeURIComponent(browserUid))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var nftUrls = (data && data.presets || []).map(function(p) { return p.avatar_url; }).filter(Boolean);
+                        wireGrid(baseUrls.concat(nftUrls));
+                    })
+                    .catch(function() { wireGrid(baseUrls); });
                 if (urlInput) {
                     urlInput.addEventListener('input', function() {
                         var u = profileSafeUrl(urlInput.value.trim(), '');
@@ -2954,6 +3038,10 @@
                         input.value = 'default_user';
                         this.userId = 'default_user';
                         await this.loadUserIdentity();
+                        await this.loadProfile();
+                        if (typeof window.refreshProfileHubSummary === 'function') {
+                            window.refreshProfileHubSummary('default_user', { animate: true });
+                        }
                     });
                 }
 
@@ -3442,19 +3530,19 @@
                     let rows = (d.success && d.inventory) ? d.inventory : [];
                     rows = this._mergeShopShadowInventory(rows, uid);
                     if (!rows.length) {
-                        el.innerHTML = '<p style="opacity:0.85;">No shop items yet. Buy in <a href="/shop">Shop</a> (V.9 — coins, unified points, or MN2).</p>';
+                        el.innerHTML = '<p class="shop-empty">No shop items yet. <a href="/shop">Open Shop</a> or set up your account in the <a href="/shop#shop-profile">profile tab</a>.</p>';
                         return;
                     }
-                    el.innerHTML = '<div style="display:grid;gap:10px;">' + rows.map(function(i) {
+                    el.innerHTML = '<div class="shop-table-wrap"><table class="shop-table"><thead><tr><th>Item</th><th>Qty</th><th>Ask (coins)</th><th>List</th></tr></thead><tbody>' + rows.map(function(i) {
                         var itemId = String(i.item_id || '').replace(/"/g, '&quot;').replace(/</g, '');
                         var itemName = String(i.item_name || i.item_id || '').replace(/</g, '&lt;');
-                        return '<div style="display:grid;grid-template-columns:1fr auto minmax(120px,180px) auto;gap:8px;align-items:center;padding:10px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;background:rgba(255,255,255,0.04);">' +
-                            '<div><strong>' + itemName + '</strong><div style="font-size:0.78rem;opacity:0.7;">' + itemId + '</div></div>' +
-                            '<div>× ' + (i.quantity || 1) + '</div>' +
-                            '<input type="number" min="1" step="1" value="' + Math.max(1, Math.ceil(Number(i.quantity || 1) * 35)) + '" data-profile-auction-price="' + itemId + '" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.25);color:#fff;" aria-label="Listing price in coins">' +
-                            '<button type="button" data-profile-auction-sell="' + itemId + '" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,215,0,0.45);background:rgba(255,215,0,0.16);color:#FFD700;cursor:pointer;">Sell 1</button>' +
-                        '</div>';
-                    }).join('') + '</div><p style="margin-top:10px;font-size:0.85rem;opacity:0.78;">Profile sell controls list one item at a time in the Shop v5 Auction House.</p>';
+                        return '<tr>' +
+                            '<td><strong>' + itemName + '</strong><div class="shop-cell-sub">' + itemId + '</div></td>' +
+                            '<td>' + (i.quantity || 1) + '</td>' +
+                            '<td><input class="shop-field" type="number" min="1" step="1" value="' + Math.max(1, Math.ceil(Number(i.quantity || 1) * 35)) + '" data-profile-auction-price="' + itemId + '" aria-label="Listing price in coins"></td>' +
+                            '<td><button type="button" class="btn-purchase" data-profile-auction-sell="' + itemId + '">Sell 1</button></td>' +
+                        '</tr>';
+                    }).join('') + '</tbody></table></div><p class="shop-find-tip" style="margin-top:10px;">Listings appear in the Shop auction and My Stall.</p>';
                     el.querySelectorAll('[data-profile-auction-sell]').forEach((btn) => {
                         btn.addEventListener('click', async () => {
                             const itemId = btn.getAttribute('data-profile-auction-sell') || '';
@@ -4025,134 +4113,6 @@
             }
         }
 
-        function applyFocusedProfileRoute(route) {
-            var activeRoute = route || 'overview';
-            document.body.classList.add('profile-route-focused');
-            document.querySelectorAll('[data-profile-route]').forEach(function(el) {
-                var routes = (el.getAttribute('data-profile-route') || '').split(/\s+/).filter(Boolean);
-                el.hidden = routes.indexOf(activeRoute) === -1;
-            });
-            var note = document.getElementById('profile-route-note');
-            if (note) {
-                var labels = {
-                    overview: 'Overview', avatar: 'Avatar', account: 'Account', skills: 'Skills',
-                    trophies: 'Trophies', points: 'Points', leaderboard: 'Leaderboard', shop: 'Shop',
-                    wallet: 'Wallet', security: 'Security', settings: 'Settings',
-                    agents: 'Agents', activity: 'Activity', lab: 'Lab', battle: 'Battle', progress: 'Progress'
-                };
-                note.textContent = 'Viewing: ' + (labels[activeRoute] || activeRoute) + '. Switch tabs above to browse other sections.';
-            }
-            document.querySelectorAll('#profile-hub-nav [data-hub-scroll]').forEach(function(x) {
-                var on = x.getAttribute('data-hub-scroll') === activeRoute;
-                x.classList.toggle('active', on);
-                x.setAttribute('aria-selected', on ? 'true' : 'false');
-            });
-            if (activeRoute === 'wallet' && window.ProfileMn2Wallet && typeof window.ProfileMn2Wallet.load === 'function') {
-                window.ProfileMn2Wallet.load();
-            }
-            if (activeRoute === 'security') {
-                if (window.profileManager) {
-                    if (typeof window.profileManager.loadPasswordProtection === 'function') window.profileManager.loadPasswordProtection();
-                    if (typeof window.profileManager.loadAccountSecurity === 'function') window.profileManager.loadAccountSecurity();
-                }
-                if (window.Mn2WithdrawalSecurity && typeof window.Mn2WithdrawalSecurity.refresh === 'function') {
-                    window.Mn2WithdrawalSecurity.refresh();
-                }
-            }
-        }
-
-        function initProfileHub() {
-            var uid = localStorage.getItem('game_user_id') || 'default_user';
-            var scrollMap = {
-                overview: 'profile-hub-overview',
-                avatar: 'profile-section-avatar',
-                account: 'profile-section-account',
-                skills: 'profile-section-skills',
-                trophies: 'profile-trophies-card',
-                points: 'profile-section-points',
-                leaderboard: 'profile-section-leaderboard',
-                shop: 'profile-section-shop',
-                wallet: 'profile-mn2-wallet-card',
-                settings: 'account-privacy-card',
-                security: 'profile-section-security-layer',
-                agents: 'my-agents-card',
-                activity: 'profile-section-activity',
-                lab: 'profile-section-lab-logbook',
-                battle: 'quick-battle-profile-card',
-                progress: 'profile-section-achievements'
-            };
-            var nav = document.getElementById('profile-hub-nav');
-            if (nav) {
-                nav.addEventListener('click', function(ev) {
-                    var b = ev.target.closest('[data-hub-scroll]');
-                    if (!b) return;
-                    var key = b.getAttribute('data-hub-scroll');
-                    applyFocusedProfileRoute(key);
-                    try {
-                        var url = new URL(window.location.href);
-                        if (key === 'overview') url.searchParams.delete('tab');
-                        else url.searchParams.set('tab', key);
-                        window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-                    } catch (e) {}
-                    var id = scrollMap[key] || 'profile-hub-overview';
-                    var el = document.getElementById(id);
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-            }
-            fetch('/api/user/profile/' + encodeURIComponent(uid) + '/aggregated')
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    var pts = (data.unified_points && data.unified_points.points) ? data.unified_points.points : {};
-                    var sum = document.getElementById('profile-hub-summary');
-                    if (sum) {
-                        var keys = ['xp_total', 'level', 'coins', 'battle_points', 'game_points', 'trophy_points'];
-                        sum.innerHTML = '<div class="profile-hub-summary-grid">' + keys.map(function(k) {
-                            var v = pts[k] != null ? pts[k] : '0';
-                            return '<div class="profile-hub-metric"><div class="v">' + profileEscapeHtml(v) + '</div><div class="k">' + profileEscapeHtml(k.replace(/_/g, ' ')) + '</div></div>';
-                        }).join('') + '</div>';
-                        var shop = data.shop_summary || {};
-                        var inv = (shop.inventory && shop.inventory.length) ? shop.inventory.length : 0;
-                        var pur = (shop.purchases && shop.purchases.length) ? shop.purchases.length : 0;
-                        sum.innerHTML += '<p style="margin-top:14px;opacity:0.9;font-size:0.9rem;">Shop: <strong>' + inv + '</strong> inventory rows · <strong>' + pur + '</strong> recent purchases (server-backed when migrated).</p>';
-                    }
-                    var lb = document.getElementById('profile-hub-leaderboard-snippet');
-                    if (lb && data.leaderboard_snippet && data.leaderboard_snippet.length) {
-                        lb.innerHTML = '<ol style="margin:0;padding-left:20px;">' + data.leaderboard_snippet.map(function(row, i) {
-                            return '<li>' + (i + 1) + '. <code style="font-size:0.85em;">' + profileEscapeHtml(row.user_id || 'user') + '</code> — ' + profileEscapeHtml(row.xp_total || 0) + ' XP</li>';
-                        }).join('') + '</ol>';
-                    } else if (lb) {
-                        lb.innerHTML = '<p style="opacity:0.8;">No leaderboard data yet.</p>';
-                    }
-                })
-                .catch(function() {
-                    var sum = document.getElementById('profile-hub-summary');
-                    if (sum) sum.textContent = 'Could not load unified overview.';
-                });
-            var tab = new URLSearchParams(window.location.search).get('tab');
-            if (tab) {
-                var btnKey = {
-                    account: 'account', user: 'account', avatar: 'avatar', skills: 'skills',
-                    trophies: 'trophies', progress: 'progress', points: 'points',
-                    leaderboard: 'leaderboard', activity: 'activity', shop: 'shop',
-                    inventory: 'shop', wallet: 'wallet', security: 'security', settings: 'settings',
-                    agents: 'agents', lab: 'lab', battle: 'battle'
-                };
-                var ds = btnKey[tab] || (scrollMap[tab] ? tab : 'overview');
-                setTimeout(function() {
-                    var btn = document.querySelector('#profile-hub-nav [data-hub-scroll="' + ds + '"]');
-                    if (btn) btn.click();
-                    else applyFocusedProfileRoute(ds);
-                }, 400);
-            } else {
-                applyFocusedProfileRoute('overview');
-            }
-        }
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initProfileHub);
-        } else {
-            initProfileHub();
-        }
-
         // Initialize on page load - ensure backendConnector is ready
         if (typeof window !== 'undefined') {
             function initProfileManager() {
@@ -4208,6 +4168,7 @@
             }
         }
     </script>
+    <script src="/static/js/profile-hub.js?v=20261001c"></script>
 
     <script>
         // Simple cache version tracking (no forced reloads)
@@ -4246,7 +4207,7 @@
     </script>
 
     <!-- Intelligence Widget -->
-    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+    <section id="intelligence-section" class="intelligence-section" data-profile-route="overview" style="margin-top:24px;padding:20px;">
         <h2 style="color:#00ff88;margin-bottom:8px;"><i class="fas fa-brain"></i> Intelligence</h2>
         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:12px;">Research, news, and trending. Configure sources via backend <code style="font-size:0.8em;">/api/aggregators/intelligence/sources</code>. Adjust limits in <code style="font-size:0.8em;">intelligence-widget.js</code> (research_limit, news_limit, trending_limit).</p>
         <div id="intelligence-content">
