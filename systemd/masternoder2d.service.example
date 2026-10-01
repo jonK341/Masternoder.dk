@@ -13,9 +13,14 @@ After=network.target
 Type=simple
 # Run as user that owns the wallet/datadir if you prefer (chown /var/www/html/config first).
 User=root
+Environment=MN2_DATADIR=/var/www/html/config
+# Clear stale .lock after crash/restart loop (no-op if a live daemon holds the datadir).
+ExecStartPre=/var/www/html/scripts/mn2_clear_daemon_lock.sh
 ExecStart=/opt/masternoder2d/masternoder2d -datadir=/var/www/html/config
 Restart=on-failure
-RestartSec=10
+RestartSec=30
+TimeoutStopSec=120
+KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target
