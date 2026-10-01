@@ -7,6 +7,7 @@ BASE_TAG = "v1.2.3.0"
 RELEASE_BRANCH = "release/v1.3.1.0-exchange-sporks"
 PATCH_REL = "docs/patches/mn2-daemon-v1.3.0-multi-ping.patch"
 EXTRA_PATCH_REL = "docs/patches/mn2-daemon-v1.3.1-exchange-sporks.patch"
+COMPAT_PATCH_REL = "docs/patches/mn2-daemon-build-compat-modern-host.patch"
 # Populated from RELEASE_MANIFEST.json after build; fallback for tag-only releases.
 MAIN_COMMIT = "61caddbfd3c8f4465012d1033206501fb6690b14"
 RELEASE_BASE = f"https://github.com/{REPO}/releases/download/{TARGET_VERSION}"
