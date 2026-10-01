@@ -8,7 +8,7 @@ import os
 all_page_bp = Blueprint('all_pages', __name__)
 
 # Version for cache busting - bump on deploy
-CONTENT_VERSION = "20260428a"
+CONTENT_VERSION = "20260729c"
 
 
 def _base_path():
@@ -28,7 +28,12 @@ def serve_static(filename):
     if not os.path.isdir(static_dir):
         return abort(404)
     try:
-        return send_from_directory(static_dir, filename)
+        resp = send_from_directory(static_dir, filename)
+        norm = filename.replace("\\", "/")
+        if norm in ("css/business-control.css", "js/business-control.js"):
+            resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            resp.headers["Pragma"] = "no-cache"
+        return resp
     except Exception:
         return abort(404)
 
@@ -187,7 +192,11 @@ def create_page_route(page_name):
                         'index.html',
                         mimetype='text/html; charset=utf-8',
                     )
-                resp.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
+                if _page_name == 'business-control':
+                    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                    resp.headers['Pragma'] = 'no-cache'
+                else:
+                    resp.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
                 resp.headers['ETag'] = CONTENT_VERSION
                 resp.headers['X-Content-Version'] = CONTENT_VERSION
                 return resp
