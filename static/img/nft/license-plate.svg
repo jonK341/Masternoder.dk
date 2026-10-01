@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="MN2 License Plate NFT">
+  <rect width="128" height="128" rx="16" fill="#1a1030"/>
+  <rect x="12" y="40" width="104" height="48" rx="8" fill="#c08cff" stroke="#fff" stroke-width="3"/>
+  <text x="64" y="72" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#1a1030">MN2</text>
+</svg>

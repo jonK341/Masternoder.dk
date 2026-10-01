@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260114110612">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
-    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20261001b">
+    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20261001c">
     <link rel="stylesheet" href="/static/css/shop.css?v=20261001">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
@@ -778,11 +778,11 @@
                 </div>
             </header>
 
-            <section class="fp-stats profile-glance-stats" id="profile-glance-stats" aria-label="Profile at a glance" data-profile-route="overview">
+            <section class="fp-stats profile-glance-stats" id="profile-glance-stats" aria-label="Profile at a glance">
                 <div class="fp-stat fp-stat-mn2"><div class="v" id="profile-glance-level">—</div><div class="l">Level</div></div>
                 <div class="fp-stat"><div class="v" id="profile-glance-xp">—</div><div class="l">XP</div></div>
                 <div class="fp-stat"><div class="v" id="profile-glance-coins">—</div><div class="l">Coins</div></div>
-                <div class="fp-stat"><div class="v" id="profile-glance-mn2">—</div><div class="l">MN2</div></div>
+                <div class="fp-stat fp-stat-mn2" id="profile-glance-mn2-stat"><div class="v" id="profile-glance-mn2">—</div><div class="l">MN2</div></div>
                 <div class="fp-stat"><div class="v" id="profile-glance-battle">—</div><div class="l">Battle</div></div>
                 <div class="fp-stat"><div class="v" id="profile-glance-game">—</div><div class="l">Game</div></div>
             </section>
@@ -1018,6 +1018,7 @@
                             <h3 style="font-size:1rem; color:#FFD700; margin:0 0 10px;">📌 Showcase</h3>
                             <div id="profile-showcase-grid" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
                         </div>
+                        <div id="profile-nft-emblems-strip" style="margin-bottom:12px;font-size:0.88rem;opacity:0.9;"></div>
                         <div id="profile-trophies-content"></div>
                     </div>
                     <!-- Points system: connected Game, Shop, Star Map 25, Points -->
@@ -1077,6 +1078,7 @@
                             <button type="button" class="tab-btn" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
                             <button type="button" class="tab-btn" data-wallet-tab="transactions" role="tab" aria-selected="false">Transactions</button>
                             <button type="button" class="tab-btn" data-wallet-tab="security" role="tab" aria-selected="false">Withdraw 2FA</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="nft" role="tab" aria-selected="false">NFT wallet</button>
                             <button type="button" class="tab-btn" data-wallet-tab="settings" role="tab" aria-selected="false">Wallet settings</button>
                         </nav>
                         <div data-wallet-panel="overview" style="margin-bottom: 14px;">
@@ -1186,6 +1188,12 @@
                                 <code id="mn2-2fa-secret" style="font-size:0.75rem;opacity:0.7;"></code>
                                 <div id="mn2-whitelist-list" style="margin-top:10px;font-size:0.82rem;"></div>
                             </div>
+                        </div>
+                        <div data-wallet-panel="nft" style="display:none; margin-bottom:14px;">
+                            <strong style="color:#c08cff;">NFT wallet (v2)</strong>
+                            <p style="font-size:0.88rem;opacity:0.85;">Numbered editions live on <a href="/market" style="color:#c08cff;">/market</a> and <a href="/exchange?tab=marketplace" style="color:#00d4ff;">Exchange</a>. Equip an owned edition as your profile avatar.</p>
+                            <div id="profile-mn2-nft-wallet" style="font-size:0.88rem;">Loading NFT wallet…</div>
+                            <div id="profile-mn2-nft-emblems" style="margin-top:10px;font-size:0.85rem;"></div>
                         </div>
                         <div data-wallet-panel="settings" style="display:none; margin-bottom:14px;">
                             <p style="font-size:0.85rem;opacity:0.85;">Wallet display and export settings. Fiat toggle is on the Overview tab.</p>
@@ -1836,7 +1844,7 @@
                         this.loadShopInventoryV9();
                         this.loadAccountPrivacyControls();
                         if (typeof window.refreshProfileHubSummary === 'function') {
-                            window.refreshProfileHubSummary(this.userId);
+                            window.refreshProfileHubSummary(this.userId, { animate: true });
                         }
                         var params = new URLSearchParams(window.location.search);
                         if (params.get('refresh') === '1' && typeof this.refreshProfilePoints === 'function') {
@@ -2754,6 +2762,18 @@
                         btn.classList.toggle('selected', btn.getAttribute('data-avatar-url') === url);
                     });
                 }
+                function wireGrid(urls) {
+                    grid.innerHTML = urls.map(function(url) {
+                        return '<button type="button" class="profile-avatar-option" data-avatar-url="' + profileEscapeHtml(url) + '" title="Use this avatar">' +
+                            '<img src="' + profileEscapeHtml(url) + '" alt="" loading="lazy"></button>';
+                    }).join('');
+                    grid.querySelectorAll('.profile-avatar-option').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            selectUrl(btn.getAttribute('data-avatar-url'));
+                        });
+                    });
+                    if (current) selectUrl(current);
+                }
                 if (grid._wired) {
                     if (current) selectUrl(current);
                     return;
@@ -2761,16 +2781,15 @@
                 grid._wired = true;
                 if (urlInput) urlInput.value = current;
                 if (preview && current) preview.src = current;
-                grid.innerHTML = ProfileManager.avatarPresets.map(function(url) {
-                    return '<button type="button" class="profile-avatar-option" data-avatar-url="' + profileEscapeHtml(url) + '" title="Use this avatar">' +
-                        '<img src="' + profileEscapeHtml(url) + '" alt="" loading="lazy"></button>';
-                }).join('');
-                grid.querySelectorAll('.profile-avatar-option').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        selectUrl(btn.getAttribute('data-avatar-url'));
-                    });
-                });
-                if (current) selectUrl(current);
+                var baseUrls = ProfileManager.avatarPresets.slice();
+                var browserUid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                fetch(window.location.origin + '/api/nft/avatar-presets?user_id=' + encodeURIComponent(browserUid))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var nftUrls = (data && data.presets || []).map(function(p) { return p.avatar_url; }).filter(Boolean);
+                        wireGrid(baseUrls.concat(nftUrls));
+                    })
+                    .catch(function() { wireGrid(baseUrls); });
                 if (urlInput) {
                     urlInput.addEventListener('input', function() {
                         var u = profileSafeUrl(urlInput.value.trim(), '');
@@ -3021,7 +3040,7 @@
                         await this.loadUserIdentity();
                         await this.loadProfile();
                         if (typeof window.refreshProfileHubSummary === 'function') {
-                            window.refreshProfileHubSummary('default_user');
+                            window.refreshProfileHubSummary('default_user', { animate: true });
                         }
                     });
                 }
@@ -4149,7 +4168,7 @@
             }
         }
     </script>
-    <script src="/static/js/profile-hub.js?v=20261001b"></script>
+    <script src="/static/js/profile-hub.js?v=20261001c"></script>
 
     <script>
         // Simple cache version tracking (no forced reloads)

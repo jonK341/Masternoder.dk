@@ -17,15 +17,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
-    <link rel="stylesheet" href="/static/css/shop.css?v=20261001">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/shop.css?v=20261001c">
 
     <link rel="stylesheet" href="/static/css/image-support.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/template-effects.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css" media="print" onload="this.media='all'">
 </head>
-<body class="layout-standard">
-    <div class="bg-animated"></div>
-    <div class="particles" id="particles"></div>
+<body class="layout-standard mn-no-hypnotic shop-frontpage-match">
+    <div class="frontpage-bg" aria-hidden="true"></div>
+    <div class="bg-animated" aria-hidden="true"></div>
+    <div class="particles" id="particles" aria-hidden="true"></div>
     
     <!-- Navigation -->
     <nav class="page-nav">
@@ -47,13 +49,38 @@
         </div>
     </nav>
     
-    <div class="container shop-page shop-storefront">
-        <header class="shop-header">
-            <p class="shop-kicker">MasterNoder store</p>
-            <h1><span class="shop-title-gradient">Shop</span> <span class="shop-version-badge" id="shop-version-badge">v9.2.0</span></h1>
-            <p class="subtitle">One account for coins, PayPal, and MN2. The same profile you edit on the Profile page.</p>
-            <p id="shop-service-status" class="shop-status" aria-live="polite">Loading catalog…</p>
+    <div class="container shop-page shop-storefront fp-main shop-fp-main">
+        <header class="fp-hero shop-fp-hero" aria-labelledby="shop-hero-title">
+            <div class="fp-hero-core shop-fp-core" aria-hidden="true">
+                <div class="fp-core-ring fp-core-ring-a"></div>
+                <div class="fp-core-ring fp-core-ring-b"></div>
+                <div class="fp-core-pulse" id="shop-core-badge">🛒</div>
+                <div class="fp-core-node fp-core-node-a">$</div>
+                <div class="fp-core-node fp-core-node-b">MN2</div>
+                <div class="fp-core-node fp-core-node-c">XP</div>
+            </div>
+            <div class="fp-hero-copy">
+                <p class="fp-kicker"><span>MasterNoder store</span><span id="shop-hero-user-pill">Guest</span></p>
+                <h1 id="shop-hero-title">Shop <span class="shop-version-badge" id="shop-version-badge">v9.2.0</span></h1>
+                <p class="fp-tagline">Coins · PayPal · MN2 · catalog · stall</p>
+                <p class="fp-hero-text">Same account as Profile — earn in-game, buy with coins, top up with PayPal, or pay catalog lines from your MN2 wallet.</p>
+                <div class="fp-hero-actions">
+                    <button type="button" class="fp-primary-action" id="shop-hero-refresh">Refresh shop</button>
+                    <a class="fp-secondary-action" href="/profile?tab=shop">Your inventory</a>
+                    <a class="fp-secondary-action" href="/">Start page</a>
+                </div>
+                <p id="shop-service-status" class="shop-status shop-hero-status" aria-live="polite">Loading catalog…</p>
+            </div>
         </header>
+
+        <section class="fp-stats shop-glance-stats" id="shop-glance-stats" aria-label="Shop balances">
+            <div class="fp-stat"><div class="v" id="shop-glance-coins">—</div><div class="l">Coins</div></div>
+            <div class="fp-stat fp-stat-mn2" id="shop-glance-mn2-stat"><div class="v" id="shop-glance-mn2">—</div><div class="l">MN2</div></div>
+            <div class="fp-stat"><div class="v" id="shop-glance-catalog">—</div><div class="l">Catalog</div></div>
+            <div class="fp-stat"><div class="v" id="shop-glance-inventory">—</div><div class="l">Owned</div></div>
+            <div class="fp-stat"><div class="v" id="shop-glance-xp">—</div><div class="l">XP</div></div>
+            <div class="fp-stat"><div class="v" id="shop-glance-level">—</div><div class="l">Level</div></div>
+        </section>
 
         <div class="shop-account-bar">
             <div class="shop-account-id">
@@ -68,7 +95,24 @@
                 <span class="shop-version-badge" id="shop-config-version">v9.2.0</span>
             </div>
         </div>
-        <div id="shop-payment-strip"<div id="shop-payment-strip" class="shop-payment-strip" aria-live="polite">Loading payment rails (MN2 node + PayPal)…</div>
+        <div id="shop-payment-strip" class="shop-payment-strip" aria-live="polite">Loading payment rails (MN2 node + PayPal)…</div>
+
+        <section class="fp-game-hub shop-tabs-wrap" aria-label="Shop sections">
+            <div class="fp-game-hub-head">
+                <p class="fp-kicker"><span>Sections</span><span id="shop-tab-status">Catalog</span></p>
+                <h2 class="shop-tabs-heading">What do you need?</h2>
+            </div>
+        <div class="shop-tabs gh-tabs gh-tabs--compact" role="tablist" aria-label="Shop sections">
+            <button type="button" class="shop-tab-btn gh-tab is-active" data-tab="catalog" role="tab" aria-selected="true"><span class="gh-tab-icon" aria-hidden="true">🛍️</span><span class="gh-tab-label">Catalog</span></button>
+            <button type="button" class="shop-tab-btn gh-tab" data-tab="profile" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">👤</span><span class="gh-tab-label">Profile</span></button>
+            <button type="button" class="shop-tab-btn gh-tab" data-tab="auction" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🏛️</span><span class="gh-tab-label">Auction</span></button>
+            <button type="button" class="shop-tab-btn gh-tab" data-tab="coins" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">💳</span><span class="gh-tab-label">PayPal</span></button>
+            <button type="button" class="shop-tab-btn gh-tab" data-tab="mn2" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">💠</span><span class="gh-tab-label">MN2</span></button>
+            <button type="button" class="shop-tab-btn gh-tab" data-tab="boosters" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">⚡</span><span class="gh-tab-label">Boosters</span></button>
+            <button type="button" class="shop-tab-btn gh-tab" data-tab="deals" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">⭐</span><span class="gh-tab-label">Deals</span></button>
+            <button type="button" class="shop-tab-btn gh-tab" data-tab="account" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">📦</span><span class="gh-tab-label">Stall</span></button>
+        </div>
+        </section>
 
         <section class="shop-vision-bar" aria-labelledby="shop-vision-heading">
             <h2 id="shop-vision-heading">How paying works</h2>
@@ -111,17 +155,6 @@
             </div>
         </div>
         </details>
-
-        <div class="shop-tabs" role="tablist" aria-label="Shop sections">
-            <button type="button" class="shop-tab-btn active" data-tab="catalog" role="tab" aria-selected="true">Catalog</button>
-            <button type="button" class="shop-tab-btn" data-tab="profile" role="tab" aria-selected="false">Profile</button>
-            <button type="button" class="shop-tab-btn" data-tab="auction" role="tab" aria-selected="false">Auction House</button>
-            <button type="button" class="shop-tab-btn" data-tab="coins" role="tab" aria-selected="false">PayPal &amp; coins</button>
-            <button type="button" class="shop-tab-btn" data-tab="mn2" role="tab" aria-selected="false">MN2 wallet</button>
-            <button type="button" class="shop-tab-btn" data-tab="boosters" role="tab" aria-selected="false">Boosters &amp; events</button>
-            <button type="button" class="shop-tab-btn" data-tab="deals" role="tab" aria-selected="false">⭐ Deals &amp; VIP</button>
-            <button type="button" class="shop-tab-btn" data-tab="account" role="tab" aria-selected="false">My Stall &amp; inventory</button>
-        </div>
 
         <div id="shop-panel-catalog" class="shop-panel active" role="tabpanel" data-panel="catalog">
         <div class="currency-display" id="currency-display">
@@ -297,6 +330,17 @@
                     <div class="skeleton-loader" style="height: 180px;"></div>
                     <div class="skeleton-loader" style="height: 180px;"></div>
                     <div class="skeleton-loader" style="height: 180px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="card" id="shop-nft-editions-section" style="margin-bottom: var(--spacing-xl); border: 2px solid rgba(192,140,255,0.45); background: linear-gradient(135deg, rgba(170,0,255,0.08), rgba(0,212,255,0.06));">
+            <div style="padding: var(--spacing-lg);">
+                <h2 style="color: #c08cff; margin-bottom: var(--spacing-sm);">💎 NFT editions (PayPal)</h2>
+                <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md); max-width: 52rem;">
+                    Three numbered collectibles — same SKUs as the <a href="/market" style="color:#c08cff;">MN2 market</a>. PayPal mints your serial; resell for coins on the market (5% fee).
+                </p>
+                <div id="shop-nft-editions-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--spacing-md);">
+                    <p style="color: var(--text-secondary); margin: 0;">Loading editions…</p>
                 </div>
             </div>
         </div>
@@ -646,6 +690,7 @@
         <script src="/static/js/error-manager.js" defer></script>
     <script src="/static/js/toast-notifications.js" defer></script>
     <script src="/static/js/shop-profile-manager.js?v=20261001"></script>
+    <script src="/static/js/shop-hub.js?v=20261001c"></script>
     <script>
         const BASE_URL = window.location.origin;
         const userId = localStorage.getItem('game_user_id') || 'default_user';
@@ -867,12 +912,20 @@
             });
         }
 
+        const SHOP_TAB_LABELS = {
+            catalog: 'Catalog', profile: 'Profile', auction: 'Auction', coins: 'PayPal & coins',
+            mn2: 'MN2 wallet', boosters: 'Boosters', deals: 'Deals & VIP', account: 'My Stall'
+        };
+
         function showShopTab(name) {
             document.querySelectorAll('.shop-tab-btn').forEach(btn => {
                 const on = btn.dataset.tab === name;
                 btn.classList.toggle('active', on);
+                btn.classList.toggle('is-active', on);
                 btn.setAttribute('aria-selected', on ? 'true' : 'false');
             });
+            const tabStatus = document.getElementById('shop-tab-status');
+            if (tabStatus) tabStatus.textContent = SHOP_TAB_LABELS[name] || name;
             document.querySelectorAll('.shop-panel').forEach(panel => {
                 const t = panel.dataset.panel;
                 panel.classList.toggle('active', t === name);
@@ -1141,11 +1194,22 @@
                     const display = document.getElementById('currency-display');
                     const usdSuffix = mn2UsdPrice != null && mn2UsdPrice > 0 ? ` &nbsp; <span style="font-size:0.85em; opacity:0.9;">(≈ $${(mn2Balance * mn2UsdPrice).toFixed(2)} USD)</span>` : '';
                     display.innerHTML = `🪙 ${data.currency || 0} Coins &nbsp; · &nbsp; <span style="color: var(--secondary);">MN2 <span id="mn2-balance-display">${mn2Balance.toFixed(8)}</span></span>${usdSuffix}`;
+                    if (typeof window.refreshShopGlance === 'function') {
+                        const invQty = userInventory.reduce((s, e) => s + (e.quantity || 1), 0);
+                        window.refreshShopGlance({
+                            coins: userCoins,
+                            mn2: mn2Balance,
+                            inventory: invQty,
+                            catalog: allShopItems.length || undefined,
+                            animate: true
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error loading currency:', error);
             }
         }
+        window.loadCurrency = loadCurrency;
         
         async function loadShopItems() {
             try {
@@ -1226,6 +1290,16 @@
                     ss.textContent = 'Catalog: ' + allItems.length + ' items · API OK';
                     ss.style.color = 'var(--primary)';
                 }
+                if (typeof window.refreshShopGlance === 'function') {
+                    const invQty = userInventory.reduce((s, e) => s + (e.quantity || 1), 0);
+                    window.refreshShopGlance({
+                        catalog: allItems.length,
+                        inventory: invQty,
+                        coins: userCoins,
+                        mn2: mn2Balance,
+                        animate: true
+                    });
+                }
             } catch (error) {
                 console.error('Error loading shop items:', error);
                 const ss = document.getElementById('shop-service-status');
@@ -1244,6 +1318,7 @@
                 }
             }
         }
+        window.loadShopItems = loadShopItems;
 
         function renderShopGrid(filteredItems) {
             const grid = document.getElementById('shop-items');
@@ -2095,6 +2170,35 @@
             }
         }
 
+        async function loadNftEditions() {
+            const container = document.getElementById('shop-nft-editions-container');
+            if (!container) return;
+            try {
+                const response = await fetch(`${BASE_URL}/api/shop/paypal-items`);
+                const data = await response.json();
+                const rows = (data && data.nft_editions) || [];
+                if (!rows.length) {
+                    container.innerHTML = '<p style="color:var(--text-secondary);margin:0;">No NFT editions configured.</p>';
+                    return;
+                }
+                container.innerHTML = rows.map(function (sku) {
+                    const soldOut = (sku.remaining || 0) <= 0;
+                    const price = Number(sku.price_usd || 0).toFixed(2);
+                    return '<div class="shop-item" style="padding:var(--spacing-md);border:1px solid rgba(192,140,255,0.35);border-radius:var(--radius-lg);background:rgba(0,0,0,0.2);">' +
+                        '<div style="font-size:0.75rem;text-transform:uppercase;opacity:0.7;">' + (sku.rarity || '') + ' · ' + (sku.remaining || 0) + ' left</div>' +
+                        '<h3 style="margin:8px 0;color:#c08cff;">' + (sku.name || sku.sku) + '</h3>' +
+                        '<p style="font-size:0.88rem;color:var(--text-secondary);margin:0 0 12px;">' + (sku.description || '') + '</p>' +
+                        '<button type="button" class="btn-purchase btn-paypal-item" data-item-id="' + sku.sku + '" ' +
+                        (soldOut ? 'disabled ' : '') +
+                        'onclick="buyItemWithPayPal(\'' + sku.sku + '\', ' + price + ', \'' + String(sku.name || sku.sku).replace(/'/g, '') + '\')">' +
+                        (soldOut ? 'Sold out' : '<i class="fab fa-paypal"></i> Pay $' + price) +
+                        '</button></div>';
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<p style="color:var(--text-secondary);margin:0;">Could not load NFT editions.</p>';
+            }
+        }
+
         async function loadCoinPacks() {
             try {
                 const response = await fetch(`${BASE_URL}/api/shop/coin-packs`);
@@ -2329,6 +2433,13 @@
                     document.getElementById('unified-progression').textContent = (points.PROGRESSION?.progression_points || 0).toLocaleString();
                     var gameEl = document.getElementById('unified-game');
                     if (gameEl) gameEl.textContent = (points.Game?.total ?? points.GAME?.game_points ?? points.GAME?.total ?? 0).toLocaleString();
+                    if (typeof window.refreshShopGlance === 'function') {
+                        window.refreshShopGlance({
+                            xp: points.CORE?.xp_total || 0,
+                            level: points.CORE?.level || 1,
+                            animate: true
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error loading unified points:', error);
@@ -2582,6 +2693,9 @@
                         const itemGranted = data.item_granted;
                         if (coins) {
                             if (typeof toast !== 'undefined') toast.success(`Purchased ${coins} coins!`);
+                        } else if (data.edition && data.edition.edition_id) {
+                            if (typeof toast !== 'undefined') toast.success('Minted ' + data.edition.edition_id + ' — see Profile or /market.');
+                            loadNftEditions();
                         } else if (itemGranted) {
                             if (typeof toast !== 'undefined') toast.success('Item purchased! Check your inventory.');
                             loadInventory();
@@ -3192,6 +3306,7 @@
             loadCurrency();
             loadUnifiedPoints();
             loadCoinPacks();
+            loadNftEditions();
             loadSubscriptionPlans();
             loadScrDepositSkus();
             loadUsageAllowance();

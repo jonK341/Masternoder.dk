@@ -7,7 +7,8 @@
     {"id": "battle_legend", "name": "Path of the Legend", "icon": "⚔️", "bonus": 5000, "description": "Rise from first battle to battle legend.", "members": ["first_battle", "first_victory", "battle_veteran", "battle_champion", "battle_legend"]},
     {"id": "point_climber", "name": "Point Climber", "icon": "📈", "bonus": 3000, "description": "Climb every total-points milestone.", "members": ["points_milestone_1k", "points_milestone_10k", "points_milestone_100k"]},
     {"id": "social_circle", "name": "Social Circle", "icon": "👥", "bonus": 1500, "description": "Grow your community.", "members": ["first_friend", "social_butterfly", "community_leader"]},
-    {"id": "content_creator", "name": "Content Creator", "icon": "🎨", "bonus": 2000, "description": "Create across images and audio.", "members": ["first_image", "image_master", "first_audio", "audio_master"]}
+    {"id": "content_creator", "name": "Content Creator", "icon": "🎨", "bonus": 2000, "description": "Create across images and audio.", "members": ["first_image", "image_master", "first_audio", "audio_master"]},
+    {"id": "nft_collector", "name": "NFT Collector", "icon": "💎", "bonus": 3000, "description": "Own numbered MN2 market editions.", "members": ["nft_edition_license_plate", "nft_edition_block_smile", "nft_edition_vault_holo"]}
   ],
   "trophies": [
     {"id": "first_video", "name": "First Video", "description": "Generate your first video", "icon": "🎬", "category": "generation", "reward": 100, "requirement": "Generate 1 video", "rarity": "common", "progress_metric": "videos", "progress_target": 1, "set": "video_mastery"},
@@ -82,6 +83,10 @@
 
     {"id": "summer_creator_2026", "name": "Summer Creator 2026", "description": "Generate 20 videos during summer 2026", "icon": "🏖️", "category": "seasonal", "reward": 1500, "requirement": "20 videos in summer 2026", "rarity": "rare", "progress_metric": "videos", "progress_target": 20, "season": "summer_2026", "available_from": "2026-06-01", "available_until": "2026-08-31"},
     {"id": "harvest_grinder_2026", "name": "Harvest Grinder 2026", "description": "Earn 25,000 generation points during autumn 2026", "icon": "🍂", "category": "seasonal", "reward": 2500, "requirement": "25,000 gen points in autumn 2026", "rarity": "epic", "progress_metric": "generation_points", "progress_target": 25000, "season": "autumn_2026", "available_from": "2026-09-01", "available_until": "2026-11-30"},
-    {"id": "winter_champion_2026", "name": "Winter Champion 2026", "description": "Win 25 battles during winter 2026", "icon": "❄️", "category": "seasonal", "reward": 2000, "requirement": "25 victories in winter 2026", "rarity": "epic", "progress_metric": "victories", "progress_target": 25, "season": "winter_2026", "available_from": "2026-12-01", "available_until": "2027-02-28"}
+    {"id": "winter_champion_2026", "name": "Winter Champion 2026", "description": "Win 25 battles during winter 2026", "icon": "❄️", "category": "seasonal", "reward": 2000, "requirement": "25 victories in winter 2026", "rarity": "epic", "progress_metric": "victories", "progress_target": 25, "season": "winter_2026", "available_from": "2026-12-01", "available_until": "2027-02-28"},
+
+    {"id": "nft_edition_license_plate", "name": "MN2 License Plate", "description": "Own the MN2 License Plate NFT edition", "icon": "🪪", "category": "nft", "reward": 150, "requirement": "Mint or buy nft-license-plate", "rarity": "common", "progress_metric": null, "progress_target": null, "set": "nft_collector"},
+    {"id": "nft_edition_block_smile", "name": "Block Smile", "description": "Own the Block Smile NFT edition", "icon": "😊", "category": "nft", "reward": 250, "requirement": "Mint or buy nft-block-smile", "rarity": "rare", "progress_metric": null, "progress_target": null, "set": "nft_collector"},
+    {"id": "nft_edition_vault_holo", "name": "Vault Holo", "description": "Own the Vault Holo NFT edition", "icon": "💎", "category": "nft", "reward": 500, "requirement": "Mint or buy nft-vault-holo", "rarity": "epic", "progress_metric": null, "progress_target": null, "set": "nft_collector"}
   ]
 }

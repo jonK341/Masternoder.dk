@@ -43,9 +43,18 @@ def list_wallets() -> List[Dict[str, Any]]:
     out = []
     for agent_id, row in (agents or {}).items():
         if isinstance(row, dict):
-            out.append({"agent_id": agent_id, **row})
+            entry = {"agent_id": agent_id, **row}
         else:
-            out.append({"agent_id": agent_id, "mn2_balance": float(row or 0)})
+            entry = {"agent_id": agent_id, "mn2_balance": float(row or 0)}
+        try:
+            from backend.services import nft_exchange_service as nft_svc
+
+            nft_wallet = nft_svc.agent_nft_wallet(agent_id)
+            entry["nft_edition_count"] = nft_wallet.get("edition_count") or 0
+            entry["nft_wallet_schema_version"] = nft_wallet.get("wallet_schema_version")
+        except Exception:
+            entry["nft_edition_count"] = 0
+        out.append(entry)
     return out
 
 
