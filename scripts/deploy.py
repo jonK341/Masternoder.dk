@@ -557,6 +557,8 @@ MANIFESTS = {
         "backend/services/agent_skillset.py",
         "backend/routes/missing_endpoints_routes.py",
         "profile/index.html",
+        "static/css/profile-hub.css",
+        "static/js/profile-hub.js",
         "generator/index.html",
         "theme_premium/index.html",
         "agents/index.html",

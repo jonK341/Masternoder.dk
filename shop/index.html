@@ -17,482 +17,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
-    <style>
-        .shop-page {
-            min-height: 100vh;
-            position: relative;
-            z-index: 2;
-        }
+    <link rel="stylesheet" href="/static/css/shop.css?v=20261001">
 
-        .shop-header {
-            text-align: center;
-            margin-bottom: var(--spacing-xl);
-            padding: var(--spacing-lg);
-        }
-
-        .shop-header h1 {
-            font-size: var(--font-size-5xl);
-            margin-bottom: var(--spacing-sm);
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            line-height: 1.15;
-            color: var(--text-primary);
-        }
-
-        /* Gradient only on the title words — avoids transparent fill on badge / emoji glitches */
-        .shop-title-gradient {
-            color: transparent;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .shop-header h1 .shop-version-badge {
-            -webkit-text-fill-color: var(--primary);
-            flex-shrink: 0;
-        }
-
-        #shop-v9-api-test-table table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        #shop-v9-api-test-table th,
-        #shop-v9-api-test-table td {
-            padding: 6px 8px;
-            border-bottom: 1px solid var(--border-primary);
-            vertical-align: top;
-        }
-        #shop-v9-api-test-table thead th {
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
-
-        .currency-display {
-            text-align: center;
-            font-size: var(--font-size-2xl);
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .shop-categories {
-            display: flex;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-
-        .category-btn {
-            padding: var(--spacing-sm) var(--spacing-lg);
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--radius-md);
-            color: var(--text-secondary);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-base);
-        }
-
-        .category-btn:hover {
-            background: var(--bg-card-hover);
-            border-color: var(--border-secondary);
-            color: var(--text-primary);
-        }
-
-        .category-btn.active {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: #000;
-            border-color: var(--primary);
-        }
-
-        .shop-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: var(--spacing-md);
-        }
-
-        .shop-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-md);
-            text-align: center;
-            transition: all var(--transition-base);
-        }
-
-        .shop-item:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary);
-            box-shadow: var(--shadow-glow);
-        }
-
-        .item-icon {
-            font-size: 3em;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .item-name {
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .item-price {
-            font-size: var(--font-size-xl);
-            font-weight: 700;
-            color: var(--primary);
-            margin: var(--spacing-sm) 0;
-        }
-
-        .btn-purchase {
-            padding: var(--spacing-sm) var(--spacing-lg);
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border: none;
-            border-radius: var(--radius-md);
-            color: #000;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: all var(--transition-base);
-        }
-
-        .btn-purchase:hover {
-            transform: scale(1.05);
-            box-shadow: var(--shadow-glow);
-        }
-
-        .btn-purchase:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Navigation */
-        .page-nav {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            background: rgba(10, 10, 10, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-primary);
-            padding: var(--spacing-sm) 0;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 var(--spacing-md);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--spacing-sm);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-        }
-
-        .nav-link {
-            padding: var(--spacing-xs) var(--spacing-md);
-            color: var(--text-secondary);
-            text-decoration: none;
-            border-radius: var(--radius-md);
-            transition: all var(--transition-base);
-            font-size: var(--font-size-sm);
-            font-weight: 500;
-        }
-
-        .nav-link:hover {
-            background: var(--bg-card);
-            color: var(--text-primary);
-        }
-
-        .nav-link.active {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: #000;
-        }
-
-        .nav-home {
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .shop-fallback {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--text-secondary);
-        }
-
-        /* Shop V.9: tabs + category select */
-        .shop-account-bar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-md);
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--radius-lg);
-        }
-        .shop-account-bar a { color: var(--secondary); font-weight: 600; }
-        .shop-version-badge {
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(0, 255, 136, 0.15);
-            border: 1px solid var(--primary);
-            color: var(--primary);
-        }
-        .shop-payment-strip {
-            font-size: 0.85rem;
-            padding: 10px 14px;
-            margin-bottom: var(--spacing-md);
-            border-radius: var(--radius-md);
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px solid var(--border-primary);
-            color: var(--text-secondary);
-        }
-        .shop-payment-strip .ok { color: var(--primary); font-weight: 600; }
-        .shop-payment-strip .warn { color: #ffaa00; font-weight: 600; }
-        .shop-vision-bar {
-            margin-bottom: var(--spacing-md);
-            padding: 14px 16px;
-            border-radius: var(--radius-lg);
-            border: 1px solid rgba(0, 255, 136, 0.35);
-            background: linear-gradient(145deg, rgba(0, 255, 136, 0.06), rgba(0, 212, 255, 0.05));
-        }
-        .shop-vision-bar h2 {
-            margin: 0 0 6px;
-            font-size: 1rem;
-            color: var(--text-primary);
-            font-weight: 700;
-        }
-        .shop-vision-bar .lead {
-            margin: 0 0 12px;
-            font-size: 0.88rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            max-width: 52rem;
-        }
-        .shop-vision-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
-            gap: 10px;
-        }
-        .shop-vision-pill {
-            padding: 11px 12px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-primary);
-            background: rgba(0, 0, 0, 0.22);
-            font-size: 0.8rem;
-            line-height: 1.45;
-            color: var(--text-secondary);
-        }
-        .shop-vision-pill strong {
-            display: block;
-            margin-bottom: 4px;
-            font-size: 0.84rem;
-            color: var(--primary);
-        }
-        .shop-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: var(--spacing-lg);
-            border-bottom: 1px solid var(--border-primary);
-            padding-bottom: var(--spacing-sm);
-        }
-        .shop-tab-btn {
-            padding: 10px 16px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-primary);
-            background: var(--bg-card);
-            color: var(--text-secondary);
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all var(--transition-base);
-        }
-        .shop-tab-btn:hover { border-color: var(--secondary); color: var(--text-primary); }
-        .shop-tab-btn.active {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: #000;
-            border-color: var(--primary);
-        }
-        .shop-panel { display: none; animation: shopFade 0.2s ease; }
-        .shop-panel.active { display: block; }
-        @keyframes shopFade { from { opacity: 0.6; } to { opacity: 1; } }
-        .auction-hero {
-            display: grid;
-            grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.8fr);
-            gap: var(--spacing-lg);
-            align-items: stretch;
-            margin-bottom: var(--spacing-lg);
-        }
-        .auction-board {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-            gap: var(--spacing-md);
-        }
-        .auction-card {
-            position: relative;
-            padding: var(--spacing-md);
-            border-radius: var(--radius-lg);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            background: linear-gradient(180deg, rgba(0, 212, 255, 0.08), rgba(0, 0, 0, 0.22));
-        }
-        .auction-card .auction-price {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin: 8px 0;
-        }
-        .stall-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 70px 110px auto;
-            gap: 8px;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-primary);
-        }
-        @media (max-width: 760px) {
-            .auction-hero { grid-template-columns: 1fr; }
-            .stall-row { grid-template-columns: 1fr; }
-        }
-        .shop-category-select-wrap {
-            flex: 1;
-            min-width: 200px;
-            max-width: 420px;
-        }
-        .shop-category-select {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-primary);
-            background: var(--bg-card);
-            color: var(--text-primary);
-            font-size: 1rem;
-        }
-        .shop-quick-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-        }
-        .shop-chip {
-            padding: 8px 14px;
-            border-radius: 999px;
-            border: 1px solid var(--border-primary);
-            background: rgba(0, 0, 0, 0.2);
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .shop-chip:hover, .shop-chip.active {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        /* Many tabs (e.g. Boosters): keep usable on narrow screens */
-        @media (max-width: 640px) {
-            .shop-tabs {
-                gap: 6px;
-            }
-            .shop-tab-btn {
-                padding: 8px 10px;
-                font-size: 0.8rem;
-            }
-            .shop-header h1 {
-                font-size: clamp(1.35rem, 5vw, var(--font-size-5xl));
-            }
-        }
-        .shop-upsell-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 12000;
-            background: rgba(0, 0, 0, 0.72);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-        .shop-upsell-backdrop.open { display: flex; }
-        .shop-upsell-modal {
-            width: min(480px, 100%);
-            background: linear-gradient(160deg, rgba(18, 22, 34, 0.98), rgba(10, 12, 20, 0.98));
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 14px;
-            padding: 22px 20px 18px;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-        }
-        .shop-upsell-modal h3 {
-            margin: 0 0 6px;
-            font-size: 1.15rem;
-        }
-        .shop-upsell-modal p.lead {
-            margin: 0 0 14px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            line-height: 1.45;
-        }
-        .shop-upsell-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-        .shop-upsell-card {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .shop-upsell-card strong {
-            display: block;
-            font-size: 0.92rem;
-            margin-bottom: 2px;
-        }
-        .shop-upsell-card span {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .shop-upsell-card a {
-            white-space: nowrap;
-            font-size: 0.78rem;
-            padding: 7px 12px;
-            border-radius: 8px;
-            text-decoration: none;
-            background: var(--primary);
-            color: #fff;
-        }
-        .shop-upsell-actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-        .shop-upsell-dismiss {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: var(--text-secondary);
-            border-radius: 8px;
-            padding: 8px 14px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-    </style>
     <link rel="stylesheet" href="/static/css/image-support.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/template-effects.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css" media="print" onload="this.media='all'">
@@ -521,39 +47,44 @@
         </div>
     </nav>
     
-    <div class="container shop-page">
+    <div class="container shop-page shop-storefront">
         <header class="shop-header">
-            <h1><span class="shop-title-gradient">🛍️ Game Shop</span> <span class="shop-version-badge" id="shop-version-badge">v9.2.0</span></h1>
-            <p class="subtitle">Themes, boosters, cosmetics — <strong style="color: var(--text-primary); font-weight: 600;">one catalog</strong>, your choice of <strong style="color: var(--secondary); font-weight: 600;">coins, unified points, PayPal packs, or MN2</strong></p>
-            <p id="shop-service-status" style="text-align:center;font-size:0.9rem;color:var(--text-secondary);margin-top:8px;" aria-live="polite">Loading catalog…</p>
+            <p class="shop-kicker">MasterNoder store</p>
+            <h1><span class="shop-title-gradient">Shop</span> <span class="shop-version-badge" id="shop-version-badge">v9.2.0</span></h1>
+            <p class="subtitle">One account for coins, PayPal, and MN2. The same profile you edit on the Profile page.</p>
+            <p id="shop-service-status" class="shop-status" aria-live="polite">Loading catalog…</p>
         </header>
 
         <div class="shop-account-bar">
-            <div>
-                <span style="color:var(--text-secondary);font-size:0.9rem;">Signed in as</span>
-                <strong id="shop-profile-user-id" style="color:var(--text-primary);margin-left:8px;">—</strong>
-                <span id="shop-profile-guest-hint" style="display:none;margin-left:10px;font-size:0.85rem;color:#ffaa00;">Create an account in Profile to use PayPal checkout.</span>
+            <div class="shop-account-id">
+                <span class="shop-kicker">Account</span>
+                <strong id="shop-profile-display-name">Guest checkout</strong>
+                <span id="shop-profile-user-id">—</span>
+                <span id="shop-profile-guest-hint" hidden>Create an account before PayPal checkout, gifting, or selling.</span>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-                <a href="/profile">Profile &amp; wallet settings</a>
+            <div class="shop-account-actions">
+                <button type="button" class="btn-purchase" data-shop-go="profile">Set up profile</button>
+                <a class="shop-text-link" href="/profile">Full profile</a>
                 <span class="shop-version-badge" id="shop-config-version">v9.2.0</span>
             </div>
         </div>
-        <div id="shop-payment-strip" class="shop-payment-strip" aria-live="polite">Loading payment rails (MN2 node + PayPal)…</div>
-
-        <div class="shop-lab-rulebook-strip" style="margin:14px 0;padding:12px 16px;background:rgba(127,219,255,0.08);border:1px solid rgba(127,219,255,0.28);border-radius:var(--radius-lg);font-size:0.88rem;color:var(--text-secondary);line-height:1.5;">
-            <strong style="color:var(--text-primary);">Lab &amp; rulebooks</strong> — Same <code>game_user_id</code> as this shop: <a href="/lab" style="color:var(--secondary);font-weight:600;">open Lab</a> for research, exploration pulse, and co-tech drafts. Canonical rules: <code style="font-size:0.82rem;">docs/RULEBOOK_CANON.md</code> (§ Lab); Shop rulebook data <code style="font-size:0.82rem;">data/rulebook_v9_shop.json</code> includes <code>lab_research</code> routing. Operator handbook: <code style="font-size:0.82rem;">docs/LAB.md</code> (APIs + profile keys + deploy list).
-        </div>
+        <div id="shop-payment-strip"<div id="shop-payment-strip" class="shop-payment-strip" aria-live="polite">Loading payment rails (MN2 node + PayPal)…</div>
 
         <section class="shop-vision-bar" aria-labelledby="shop-vision-heading">
             <h2 id="shop-vision-heading">How paying works</h2>
-            <p class="lead">Everything in the catalog is priced in <strong style="color: var(--text-primary);">play-earned currency</strong> or <strong style="color: var(--text-primary);">optional top-ups</strong>. Pick the path that fits you — the game systems underneath stay the same.</p>
+            <p class="lead">Spend what you earn in the game, or add coins with PayPal. MN2 is optional: host a masternode, deposit, then pay from that balance.</p>
             <div class="shop-vision-row">
                 <div class="shop-vision-pill"><strong>Play &amp; points</strong>Earn coins and unified points in-game, then spend them here on themes, boosters, and upgrades.</div>
-                <div class="shop-vision-pill"><strong>PayPal</strong>Fiat on-ramp: coin packs and Pro subscription on the <em>PayPal &amp; coins</em> tab — instant credits after checkout.</div>
-                <div class="shop-vision-pill"><strong>MN2</strong>Optional native token: deposit for an in-wallet balance, pay from balance in the catalog, or use <em>Pay on-chain</em> for a one-time address and exact amount. <em>MN2 Services</em> category links to masternode hosting ($4.99 PayPal), on-ramp, staking, and market.</div>
+                <div class="shop-vision-pill"><strong>PayPal</strong>Fiat on-ramp: coin packs and Pro on the PayPal tab. Credits land on the profile you create here.</div>
+                <div class="shop-vision-pill"><strong>MN2</strong>Host a masternode for $4.99 a slot, deposit MN2, and pay catalog prices from that balance or on-chain.</div>
             </div>
         </section>
+
+        <details class="shop-ops">
+            <summary>Operator notes and API checks</summary>
+        <div class="shop-lab-rulebook-strip">
+            <strong>Lab &amp; rulebooks</strong> — Same <code>game_user_id</code> as this shop: <a href="/lab">open Lab</a> for research and co-tech. See <code>docs/RULEBOOK_CANON.md</code> and <code>data/rulebook_v9_shop.json</code>.
+        </div>
 
         <div id="shop-product-line-card" class="shop-product-line-card" style="margin: 12px 0; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: var(--radius-lg);">
             <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;">
@@ -576,12 +107,14 @@
                     <button type="button" id="shop-v9-run-api-tests" class="btn-purchase" style="padding:6px 14px;font-size:0.85rem;">Run checks</button>
                     <span id="shop-v9-api-test-summary" style="font-size:0.8rem;color:var(--text-secondary);"></span>
                 </div>
-                <div id="shop-v9-api-test-table" style="margin-top:8px;font-size:0.8rem;max-height:240px;overflow:auto;"></div>
+                <div id="shop-v9-api-test-table" class="shop-table-slot"></div>
             </div>
         </div>
+        </details>
 
         <div class="shop-tabs" role="tablist" aria-label="Shop sections">
             <button type="button" class="shop-tab-btn active" data-tab="catalog" role="tab" aria-selected="true">Catalog</button>
+            <button type="button" class="shop-tab-btn" data-tab="profile" role="tab" aria-selected="false">Profile</button>
             <button type="button" class="shop-tab-btn" data-tab="auction" role="tab" aria-selected="false">Auction House</button>
             <button type="button" class="shop-tab-btn" data-tab="coins" role="tab" aria-selected="false">PayPal &amp; coins</button>
             <button type="button" class="shop-tab-btn" data-tab="mn2" role="tab" aria-selected="false">MN2 wallet</button>
@@ -595,12 +128,12 @@
             <div class="skeleton-loader" style="height: 40px; width: 200px; margin: 0 auto;"></div>
         </div>
 
-        <div class="shop-revenue-strip card" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:var(--spacing-md);padding:14px 16px;border:1px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.06),rgba(0,212,255,0.06));">
-            <a href="/shop?tab=mn2" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;">🏛️ Host MN2 node · $4.99/slot</a>
-            <a href="/shop?tab=coins" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;background:linear-gradient(135deg,#0070ba,#1546a0);">💰 Buy coins (PayPal)</a>
-            <a href="/shop?category=boosts" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;">⚡ Staking boosters</a>
-            <a href="/camgirls/" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;">🎭 Live performers</a>
-            <a href="/explorer?tab=masternodes" class="btn-purchase" style="width:auto;padding:8px 14px;font-size:0.85rem;text-decoration:none;background:rgba(255,255,255,0.08);">Explorer hosting →</a>
+        <div class="shop-revenue-strip">
+            <a href="/shop?tab=mn2" class="btn-purchase">Host a masternode · $4.99/slot</a>
+            <a href="/shop?tab=coins" class="btn-purchase shop-btn-paypal">Buy coins with PayPal</a>
+            <button type="button" class="btn-purchase" data-shop-go="boosts">Staking boosters</button>
+            <a href="/camgirls/" class="btn-purchase">Live performers</a>
+            <a href="/explorer?tab=masternodes" class="shop-text-link">Explorer hosting</a>
         </div>
         
         <p style="text-align:center;margin-bottom:8px;"><a href="/agent_support" style="color:var(--primary);font-size:0.95rem;">View agent skills &amp; support →</a></p>
@@ -636,11 +169,12 @@
                 </label>
                 <div class="shop-quick-chips" id="shop-quick-chips" aria-label="Quick filters"></div>
             </div>
-            <p style="margin:10px 0 0;font-size:0.8rem;color:var(--text-secondary);">Tip: <strong>Inventory &amp; orders</strong> for history · <strong>PayPal &amp; coins</strong> for packs and Pro · <strong>MN2 wallet</strong> for crypto deposit, withdraw, and how balance maps to catalog prices.</p>
+            <p class="shop-find-tip">Search the catalog, or open <a href="/agent_support">agent skills</a>. Inventory and orders are on My Stall. PayPal packs and Pro are on PayPal &amp; coins.</p>
         </div>
         
-        <!-- Unified Points Display -->
-        <div id="unified-points-display" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; padding: 20px; background: rgba(0,255,136,0.1); border-radius: 12px; border: 2px solid var(--primary);">
+        <details class="shop-fold" id="shop-points-fold">
+            <summary>Point balances</summary>
+        <div id="unified-points-display" class="shop-points-grid">
             <div style="text-align: center;">
                 <div style="font-size: 1.2rem; color: var(--primary); font-weight: 700;">XP</div>
                 <div id="unified-xp" style="font-size: 1.5rem; color: var(--secondary); font-weight: 900;">0</div>
@@ -670,38 +204,36 @@
                 <div id="unified-game" style="font-size: 1.5rem; color: var(--secondary); font-weight: 900;">0</div>
             </div>
         </div>
-        
-        <!-- Major Update Banner -->
-        <div class="card" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 212, 255, 0.2)); border: 2px solid var(--primary); margin-bottom: var(--spacing-xl);">
-            <div style="padding: var(--spacing-lg); text-align: center;">
-                <h2 style="color: var(--primary); margin-bottom: var(--spacing-sm);">🚀 SHOP V9.2 — NEW WAYS TO WIN &amp; SAVE</h2>
-                <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
-                    New: <strong style="color: var(--text-primary);">VIP Pass</strong>, <strong style="color: var(--text-primary);">Mystery Boxes</strong>, a daily <strong style="color: var(--text-primary);">Spin Wheel</strong>, rotating <strong style="color: var(--text-primary);">Flash Sales</strong>, coin <strong style="color: var(--text-primary);">gifting</strong>, and <strong style="color: var(--text-primary);">loyalty cashback</strong>. Open the <a href="#shop-deals" onclick="if(window.showShopTab)showShopTab('deals')" style="color:var(--secondary);font-weight:700;">⭐ Deals &amp; VIP</a> tab. Pay with coins, PayPal, or MN2 — your choice.
-                </p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); margin-top: var(--spacing-lg);">
-                    <div style="padding: var(--spacing-md); background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md);">
-                        <div style="font-size: 2em; margin-bottom: var(--spacing-xs);">🔬</div>
-                        <div style="font-weight: 600; color: var(--primary);">Tech Tree Items</div>
-                        <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-top: var(--spacing-xs);">Unlock advanced technologies</div>
-                    </div>
-                    <div style="padding: var(--spacing-md); background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md);">
-                        <div style="font-size: 2em; margin-bottom: var(--spacing-xs);">⚔️</div>
-                        <div style="font-weight: 600; color: var(--primary);">Battle Upgrades</div>
-                        <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-top: var(--spacing-xs);">Enhance your battle power</div>
-                    </div>
-                    <div style="padding: var(--spacing-md); background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md);">
-                        <div style="font-size: 2em; margin-bottom: var(--spacing-xs);">💎</div>
-                        <div style="font-weight: 600; color: var(--primary);">Premium Content</div>
-                        <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-top: var(--spacing-xs);">Exclusive premium items</div>
-                    </div>
-                    <div style="padding: var(--spacing-md); background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md);">
-                        <div style="font-size: 2em; margin-bottom: var(--spacing-xs);">⭐</div>
-                        <div style="font-weight: 600; color: var(--primary);">System Upgrades</div>
-                        <div style="font-size: var(--font-size-sm); color: var(--text-secondary); margin-top: var(--spacing-xs);">Upgrade your systems</div>
-                    </div>
+        </details>
+
+        <section class="shop-start" aria-labelledby="shop-start-heading">
+            <div class="shop-start-copy">
+                <p class="shop-kicker">New customer</p>
+                <h2 id="shop-start-heading">Three steps, then spend</h2>
+                <ol>
+                    <li>Create a profile so PayPal and MN2 land on your account.</li>
+                    <li>Buy coins or host a masternode at $4.99 per slot.</li>
+                    <li>Pick one of the ten offers. Promo code WELCOME10 applies on PayPal.</li>
+                </ol>
+                <div class="shop-start-actions">
+                    <button type="button" class="btn-purchase" data-shop-go="profile">Create profile</button>
+                    <button type="button" class="btn-purchase shop-btn-paypal" data-shop-go="coins">PayPal coins</button>
+                    <button type="button" class="btn-purchase" data-shop-go="mn2">Host a node</button>
                 </div>
             </div>
-        </div>
+            <div class="shop-idea-grid" aria-label="Ten ways to spend">
+                <button type="button" class="shop-idea" data-shop-go="coins"><span class="shop-idea-kicker">1 · Fiat</span><strong>Whale coin packs</strong><span>Larger PayPal packs for people who generate often.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="deals" data-shop-focus="vip-card"><span class="shop-idea-kicker">2 · Membership</span><strong>VIP pass</strong><span>30 days of daily coins, a discount, and extra spins.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="deals" data-shop-focus="mystery-boxes-card"><span class="shop-idea-kicker">3 · Repeat</span><strong>Mystery boxes</strong><span>Published odds. Pay coins, see the reward immediately.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="deals" data-shop-focus="spin-card"><span class="shop-idea-kicker">4 · Daily</span><strong>Spin the wheel</strong><span>One free spin each day. Extra spins are paid.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="deals" data-shop-focus="flash-sales-card"><span class="shop-idea-kicker">5 · Urgency</span><strong>Flash sales</strong><span>Rotating discounts on catalog items.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="deals" data-shop-focus="gift-card"><span class="shop-idea-kicker">6 · Social</span><strong>Gift coins</strong><span>Send coins to another profile id.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="deals" data-shop-focus="loyalty-card"><span class="shop-idea-kicker">7 · Return</span><strong>Loyalty cashback</strong><span>Redeem points for coins or boosters.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="auction" data-shop-focus="shop-feature-frame"><span class="shop-idea-kicker">8 · Market</span><strong>Feature a listing</strong><span>200 coins for 48 hours at the top of the market.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="purchase:bundle-whale-mega"><span class="shop-idea-kicker">9 · Bundle</span><strong>Mega bundle</strong><span>Coins, booster, and cosmetic in one checkout.</span></button>
+                <button type="button" class="shop-idea" data-shop-go="boosts"><span class="shop-idea-kicker">10 · MN2</span><strong>Staking boosters</strong><span>x3 staking surge from the catalog.</span></button>
+            </div>
+        </section>
 
         <div class="shop-grid" id="shop-items">
             <div class="shop-item skeleton-loader" style="height: 250px;"></div>
@@ -730,6 +262,21 @@
                     <input type="text" id="auction-search-input" placeholder="Search listings…" style="width:100%;padding:10px 14px;border-radius:var(--radius-md);border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
                 </label>
                 <button type="button" id="auction-refresh-btn" class="btn-purchase" style="width:auto;">Refresh market</button>
+            </div>
+            <div class="shop-frame" id="shop-feature-frame">
+                <header class="shop-frame-head">
+                    <h3>Feature a listing</h3>
+                    <p>Pay 200 coins to pin one of your stall listings for 48 hours. Copy the listing id from My Stall.</p>
+                </header>
+                <form id="shop-feature-form" class="shop-feature-form">
+                    <label>Listing id
+                        <input id="shop-feature-listing-id" class="shop-field" type="text" placeholder="Listing id" autocomplete="off">
+                    </label>
+                    <div class="shop-profile-actions">
+                        <button type="submit" class="btn-purchase">Feature for 200 coins</button>
+                        <span id="shop-feature-status" class="shop-pm-status" role="status"></span>
+                    </div>
+                </form>
             </div>
             <div id="auction-listings" class="auction-board">
                 <div class="auction-card">Loading auction listings…</div>
@@ -931,7 +478,7 @@
             </div>
 
             <!-- Spin the wheel -->
-            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+            <div class="card" id="spin-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">🎡 Spin the Wheel</h3>
                 <div id="spin-status" style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:10px;">Loading…</div>
                 <div style="display:flex; flex-wrap:wrap; gap:10px;">
@@ -942,7 +489,7 @@
             </div>
 
             <!-- Mystery boxes -->
-            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+            <div class="card" id="mystery-boxes-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">📦 Mystery Boxes</h3>
                 <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-secondary);">Each box has published odds. VIP members get a discount.</p>
                 <div id="mystery-boxes-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;">Loading…</div>
@@ -950,14 +497,14 @@
             </div>
 
             <!-- Flash sales -->
-            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+            <div class="card" id="flash-sales-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">⚡ Flash Sales</h3>
                 <div id="flash-sales-meta" style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:10px;"></div>
                 <div id="flash-sales-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;">Loading…</div>
             </div>
 
             <!-- Gifting -->
-            <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
+            <div class="card" id="gift-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border:1px solid var(--border-primary);">
                 <h3 style="margin:0 0 8px; color:var(--primary);">🎁 Gift coins</h3>
                 <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-secondary);">Send coins to another profile by their <code>game_user_id</code>.</p>
                 <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
@@ -982,6 +529,45 @@
                 <div id="top25-result" style="margin-top:10px; font-weight:600;"></div>
             </div>
         </div><!-- end shop-panel-deals -->
+
+        <div id="shop-panel-profile" class="shop-panel" role="tabpanel" data-panel="profile">
+            <section class="shop-profile-layout" aria-labelledby="shop-pm-heading">
+                <div class="shop-frame">
+                    <header class="shop-frame-head">
+                        <p class="shop-kicker">Same account as Profile</p>
+                        <h2 id="shop-pm-heading">Profile manager</h2>
+                        <p>This form uses the same <code>game_user_id</code> as coins, PayPal, MN2, and inventory. Avatar and privacy stay on <a href="/profile">Profile</a>.</p>
+                    </header>
+                    <form id="shop-profile-form" class="shop-profile-form">
+                        <label>Account id
+                            <input id="shop-pm-user-id" class="shop-field" type="text" autocomplete="username" required>
+                        </label>
+                        <label>Display name
+                            <input id="shop-pm-display-name" class="shop-field" type="text" maxlength="40" autocomplete="nickname">
+                        </label>
+                        <label>Bio
+                            <textarea id="shop-pm-bio" class="shop-field" rows="3" maxlength="280"></textarea>
+                        </label>
+                        <div class="shop-profile-actions">
+                            <button type="button" id="shop-pm-create" class="btn-purchase">Create account</button>
+                            <button type="button" id="shop-pm-login" class="btn-purchase">Log in</button>
+                            <button type="button" id="shop-pm-use" class="btn-purchase">Use this id</button>
+                            <button type="submit" id="shop-pm-save" class="btn-purchase">Save profile</button>
+                            <button type="button" id="shop-pm-logout" class="shop-btn-quiet">Log out</button>
+                        </div>
+                        <p id="shop-pm-status" class="shop-pm-status" role="status"></p>
+                    </form>
+                </div>
+                <div class="shop-frame">
+                    <header class="shop-frame-head">
+                        <h2>Shop link</h2>
+                        <p>Balances and recent orders for this account.</p>
+                    </header>
+                    <div id="shop-pm-ledger">Loading account…</div>
+                </div>
+            </section>
+        </div>
+
 
         <!-- My Inventory (Phase 4 migration) -->
         <div id="shop-panel-account" class="shop-panel" role="tabpanel" data-panel="account">
@@ -1059,6 +645,7 @@
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js" defer></script>
     <script src="/static/js/toast-notifications.js" defer></script>
+    <script src="/static/js/shop-profile-manager.js?v=20261001"></script>
     <script>
         const BASE_URL = window.location.origin;
         const userId = localStorage.getItem('game_user_id') || 'default_user';
@@ -1299,6 +886,7 @@
             document.querySelectorAll('.shop-tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     showShopTab(btn.dataset.tab);
+                    if (btn.dataset.tab === 'profile' && window.ShopProfileManager) window.ShopProfileManager.open();
                     if (btn.dataset.tab === 'auction') loadAuctionListings();
                     if (btn.dataset.tab === 'account') { loadMyAuctionState(); loadDigitalDownloads(); }
                     if (btn.dataset.tab === 'deals') loadDealsPanel();
@@ -1309,6 +897,7 @@
             if (h.startsWith('shop-')) {
                 showShopTab(h.slice(5));
                 if (h.slice(5) === 'deals') loadDealsPanel();
+                if (h.slice(5) === 'profile' && window.ShopProfileManager) window.ShopProfileManager.open();
             }
         }
         window.showShopTab = showShopTab;
@@ -1437,7 +1026,7 @@
             const idEl = document.getElementById('shop-profile-user-id');
             const hint = document.getElementById('shop-profile-guest-hint');
             if (idEl) idEl.textContent = userId || '—';
-            if (hint) hint.style.display = (!userId || userId === 'default_user') ? 'inline' : 'none';
+            if (hint) hint.hidden = !(!userId || userId === 'default_user');
         }
 
         function shopEscape(value) {
@@ -2127,19 +1716,18 @@
                 const countEl = document.getElementById('inventory-count');
                 if (countEl) countEl.textContent = userInventory.length + ' item' + (userInventory.length !== 1 ? 's' : '');
                 if (el) {
-                    if (userInventory.length === 0) el.innerHTML = '<p style="margin:0;">No items in inventory yet. Purchase items from the shop above.</p>';
-                    else el.innerHTML = userInventory.map(i => {
+                    if (userInventory.length === 0) el.innerHTML = '<p class="shop-empty">No items yet. Buy from the catalog, then list one here.</p>';
+                    else el.innerHTML = '<div class="shop-table-wrap"><table class="shop-table"><thead><tr><th>Item</th><th>Qty</th><th>Ask (coins)</th><th>List</th></tr></thead><tbody>' + userInventory.map(i => {
                         const dl = i.download_url
-                            ? `<a href="${shopEscape(i.download_url)}" class="btn-purchase" style="width:auto;padding:6px 10px;font-size:0.8rem;margin-top:4px;text-decoration:none;display:inline-block;" download>⬇ Download</a>`
+                            ? `<a href="${shopEscape(i.download_url)}" class="btn-purchase" download>Download</a>`
                             : '';
-                        return `
-                        <div class="stall-row">
-                            <div><strong>${shopEscape(i.item_name || i.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(i.item_id)}</div>${dl}</div>
-                            <div>× ${Number(i.quantity || 1)}</div>
-                            <input type="number" min="1" step="1" value="${Math.max(1, Math.ceil(Number(i.quantity || 1) * 35))}" data-auction-price="${shopEscape(i.item_id)}" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.25);color:var(--text-primary);" aria-label="Listing price in coins">
-                            <button type="button" class="btn-purchase btn-list-auction" data-item-id="${shopEscape(i.item_id)}" data-quantity="1" style="width:auto;padding:8px 12px;">Sell 1</button>
-                        </div>`;
-                    }).join('');
+                        return `<tr>
+                            <td><strong>${shopEscape(i.item_name || i.item_id)}</strong><div class="shop-cell-sub">${shopEscape(i.item_id)}</div>${dl}</td>
+                            <td>${Number(i.quantity || 1)}</td>
+                            <td><input class="shop-field" type="number" min="1" step="1" value="${Math.max(1, Math.ceil(Number(i.quantity || 1) * 35))}" data-auction-price="${shopEscape(i.item_id)}" aria-label="Listing price in coins"></td>
+                            <td><button type="button" class="btn-purchase btn-list-auction" data-item-id="${shopEscape(i.item_id)}" data-quantity="1">Sell 1</button></td>
+                        </tr>`;
+                    }).join('') + '</tbody></table></div>';
                     el.querySelectorAll('.btn-list-auction').forEach(btn => {
                         btn.addEventListener('click', () => createAuctionListing(btn.dataset.itemId, parseInt(btn.dataset.quantity, 10) || 1));
                     });
@@ -2161,13 +1749,12 @@
                 const rows = (d.digital_goods || []).filter(g => g.owned && g.download_url);
                 if (countEl) countEl.textContent = rows.length + ' file' + (rows.length === 1 ? '' : 's');
                 if (!rows.length) {
-                    el.innerHTML = '<p style="margin:0;">No downloadable digital goods yet. Theme packs and prompt packs appear here after purchase.</p>';
+                    el.innerHTML = '<p class="shop-empty">No downloadable files yet. Theme packs and prompt packs appear here after purchase.</p>';
                     return;
                 }
-                el.innerHTML = '<ul style="margin:0;padding-left:1.2rem;">' + rows.map(g =>
-                    `<li style="margin-bottom:8px;"><strong>${shopEscape(g.name || g.id)}</strong><br>
-                    <a href="${shopEscape(g.download_url)}" class="btn-purchase" style="display:inline-block;margin-top:4px;padding:6px 12px;font-size:0.85rem;text-decoration:none;" download>Download</a></li>`
-                ).join('') + '</ul>';
+                el.innerHTML = '<div class="shop-table-wrap"><table class="shop-table"><thead><tr><th>File</th><th></th></tr></thead><tbody>' + rows.map(g =>
+                    `<tr><td><strong>${shopEscape(g.name || g.id)}</strong></td><td><a href="${shopEscape(g.download_url)}" class="btn-purchase" download>Download</a></td></tr>`
+                ).join('') + '</tbody></table></div>';
             } catch (_) {
                 el.innerHTML = '<p style="margin:0;">Could not load digital downloads.</p>';
             }
@@ -2191,8 +1778,8 @@
                 const countEl = document.getElementById('purchases-count');
                 if (countEl) countEl.textContent = userPurchases.length + ' purchase' + (userPurchases.length !== 1 ? 's' : '');
                 if (el) {
-                    if (userPurchases.length === 0) el.innerHTML = '<p style="margin:0;">No purchases yet.</p>';
-                    else el.innerHTML = '<ul style="margin:0; padding-left: 1.2rem;">' + userPurchases.map(p => {
+                    if (userPurchases.length === 0) el.innerHTML = '<p class="shop-empty">No purchases yet.</p>';
+                    else el.innerHTML = '<div class="shop-table-wrap"><table class="shop-table"><thead><tr><th>Item</th><th>Qty</th><th>Paid</th><th>When</th></tr></thead><tbody>' + userPurchases.map(p => {
                         const date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
                         let price = '';
                         if (p.price_type === 'coins') price = (p.price_paid_coins || 0) + ' coins';
@@ -2204,8 +1791,8 @@
                             const mn2Paid = (p.price_paid_points && typeof p.price_paid_points === 'object' && p.price_paid_points.mn2 != null) ? p.price_paid_points.mn2 : (p.price_paid_points || '');
                             price = (typeof mn2Paid === 'number' ? mn2Paid.toFixed(4) : mn2Paid) + ' MN2' + (p.price_type === 'mn2_onchain' ? ' (on-chain)' : '');
                         } else if (p.price_paid_points) price = 'points';
-                        return `<li><strong>${p.item_name || p.item_id}</strong> × ${p.quantity || 1} ${price ? ' — ' + price : ''} ${date ? ' (' + date + ')' : ''}</li>`;
-                    }).join('') + '</ul>';
+                        return `<tr><td>${shopEscape(p.item_name || p.item_id)}</td><td>${Number(p.quantity || 1)}</td><td>${shopEscape(price || '—')}</td><td>${shopEscape(date || '—')}</td></tr>`;
+                    }).join('') + '</tbody></table></div>';
                 }
             } catch (e) {
                 userPurchases = [];
@@ -2285,15 +1872,15 @@
             const active = selling.filter(l => l.status === 'active');
             const sections = [];
             if (active.length) {
-                sections.push('<h4 style="margin:0 0 8px;color:var(--secondary);">Active listings</h4>' + active.map(l => `
-                    <div class="stall-row">
-                        <div><strong>${shopEscape(l.item_name || l.item_id)}</strong><div style="font-size:0.78rem;color:var(--text-secondary);">${shopEscape(l.listing_id)}</div></div>
-                        <div>× ${Number(l.quantity || 1)}</div>
-                        <div>${Number(l.price_coins || 0).toLocaleString()} 🪙</div>
-                        <button type="button" class="btn-purchase btn-cancel-auction" data-listing-id="${shopEscape(l.listing_id)}" style="width:auto;padding:8px 12px;background:rgba(255,170,0,0.18);border:1px solid rgba(255,170,0,0.45);">Cancel</button>
-                        ${(l.bids || []).filter(b => b.status === 'active').slice(-3).map(b => `<button type="button" class="btn-purchase btn-accept-auction-bid" data-listing-id="${shopEscape(l.listing_id)}" data-bid-id="${shopEscape(b.bid_id)}" style="width:auto;padding:8px 12px;background:rgba(0,255,136,0.18);">Accept ${Number(b.bid_coins || 0).toLocaleString()} 🪙</button>`).join('')}
-                    </div>
-                `).join(''));
+                sections.push('<div class="shop-table-wrap"><table class="shop-table"><thead><tr><th>Listing</th><th>Qty</th><th>Price</th><th>Actions</th></tr></thead><tbody>' + active.map(l => {
+                    const bids = (l.bids || []).filter(b => b.status === 'active').slice(-3).map(b => `<button type="button" class="btn-purchase btn-accept-auction-bid" data-listing-id="${shopEscape(l.listing_id)}" data-bid-id="${shopEscape(b.bid_id)}">Accept ${Number(b.bid_coins || 0).toLocaleString()}</button>`).join('');
+                    return `<tr>
+                        <td><strong>${shopEscape(l.item_name || l.item_id)}</strong><div class="shop-cell-sub">${shopEscape(l.listing_id)}</div></td>
+                        <td>${Number(l.quantity || 1)}</td>
+                        <td>${Number(l.price_coins || 0).toLocaleString()} coins</td>
+                        <td><div class="shop-actions-cell"><button type="button" class="btn-purchase btn-cancel-auction" data-listing-id="${shopEscape(l.listing_id)}">Cancel</button>${bids}</div></td>
+                    </tr>`;
+                }).join('') + '</tbody></table></div>');
             }
             sections.push(`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px;">
                 <div class="auction-card"><div style="color:var(--text-secondary);font-size:0.8rem;">Active</div><strong>${active.length}</strong></div>
@@ -3593,10 +3180,10 @@
                     const okN = rows.filter(function(x) { return x.ok; }).length;
                     if (summary) summary.textContent = okN + '/' + rows.length + ' OK' + (okN < rows.length ? ' — inspect failing rows' : '');
                     if (table) {
-                        table.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><thead><tr><th align="left">Endpoint</th><th>OK</th><th>ms</th><th align="left">Note</th></tr></thead><tbody>' +
+                        table.innerHTML = '<div class="shop-table-wrap"><table class="shop-table"><thead><tr><th>Endpoint</th><th>OK</th><th>ms</th><th>Note</th></tr></thead><tbody>' +
                             rows.map(function(r) {
-                                return '<tr><td>' + String(r.label).replace(/</g, '') + '</td><td>' + (r.ok ? '✓' : '✗') + '</td><td>' + r.ms + '</td><td style="word-break:break-all;">' + String(r.detail).replace(/</g, '') + '</td></tr>';
-                            }).join('') + '</tbody></table>';
+                                return '<tr class="' + (r.ok ? 'shop-row-ok' : 'shop-row-bad') + '"><td>' + String(r.label).replace(/</g, '') + '</td><td>' + (r.ok ? 'Yes' : 'No') + '</td><td>' + r.ms + '</td><td>' + String(r.detail).replace(/</g, '') + '</td></tr>';
+                            }).join('') + '</tbody></table></div>';
                     }
                 } catch (e) {
                     if (table) table.innerHTML = '<p style="color:#ff6666;">' + String(e.message || e).replace(/</g, '') + '</p>';
