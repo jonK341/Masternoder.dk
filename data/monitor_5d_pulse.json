@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "ts": "2026-07-29T05:35:20.202233Z",
+      "title": "Test unified pulse",
+      "summary": "unit test",
+      "sigma": 0.55,
+      "context": "aggregator",
+      "href": "/business-control/",
+      "source": "test"
+    }
+  ],
+  "updated_at": "2026-07-29T05:35:20.202348Z"
+}
