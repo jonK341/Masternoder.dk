@@ -53,7 +53,7 @@ def deploy():
         print()
         print("📋 Checking startup logs...")
         print("-" * 80)
-        stdin, stdout, stderr = ssh.exec_command("sleep 3 && journalctl -u uwsgi-vidgenerator.service -n 100 --no-pager | grep -i 'activity\|battle\|debug\|registered\|error' | tail -30")
+        stdin, stdout, stderr = ssh.exec_command(r"sleep 3 && journalctl -u uwsgi-vidgenerator.service -n 100 --no-pager | grep -i 'activity\|battle\|debug\|registered\|error' | tail -30")
         logs = stdout.read().decode('utf-8', errors='ignore')
         print(logs)
         

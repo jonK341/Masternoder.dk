@@ -61,7 +61,7 @@ def test_server_api():
         
         # Check logs for blueprint registration
         print("Checking server logs for blueprint registration...")
-        cmd = "journalctl -u python-proxy.service --no-pager -n 100 | grep -i 'backend\|blueprint\|gallery\|generator\|game' | tail -20"
+        cmd = r"journalctl -u python-proxy.service --no-pager -n 100 | grep -i 'backend\|blueprint\|gallery\|generator\|game' | tail -20"
         stdin, stdout, stderr = ssh_client.exec_command(cmd)
         logs = stdout.read().decode()
         
