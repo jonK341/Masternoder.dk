@@ -2,16 +2,46 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from backend.services import mn2_masternode_service as mn
 from backend.services import mn2_rpc_client as rpc
 
 
+@pytest.fixture
+def hosts_file(tmp_path, monkeypatch):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    hosts_path = data_dir / "mn2_masternode_hosts.json"
+    cfg_path = data_dir / "mn2_masternode_config.json"
+    cfg_path.write_text(
+        json.dumps({"max_hosted_nodes": 50, "stale_provisioning_hours": 6, "enabled": True}),
+        encoding="utf-8",
+    )
+
+    def _data_path(name: str) -> str:
+        return str(data_dir / name)
+
+    monkeypatch.setattr(mn, "_data_path", _data_path)
+    return hosts_path
+
+
+def _write_hosts(path, hosts):
+    path.write_text(json.dumps({"hosts": hosts}), encoding="utf-8")
+
+
 def test_parse_daemon_version_tuple():
     assert mn._parse_daemon_version_tuple("1.3.0.0-abc") == (1, 3, 0, 0)
     assert mn._parse_daemon_version_tuple("1.2.3.0") == (1, 2, 3, 0)
     assert mn._parse_daemon_version_tuple("bad") == (0, 0, 0, 0)
+    # Bitcoin-style packed ints from getinfo (v1.2.3.0 / v1.3.0.0)
+    assert mn._parse_daemon_version_tuple(1020300) == (1, 2, 3, 0)
+    assert mn._parse_daemon_version_tuple("1020300") == (1, 2, 3, 0)
+    assert mn._parse_daemon_version_tuple(1030000) == (1, 3, 0, 0)
+    # Protocol ints on masternode rows are not product versions
+    assert mn._parse_daemon_version_tuple(70916) == (0, 0, 0, 0)
 
 
 def test_daemon_supports_multi_ping_true(monkeypatch):
@@ -19,14 +49,24 @@ def test_daemon_supports_multi_ping_true(monkeypatch):
     assert mn.daemon_supports_multi_ping() is True
 
 
+def test_daemon_supports_multi_ping_packed_int(monkeypatch):
+    monkeypatch.setattr(rpc, "getinfo", lambda: {"result": {"version": 1030000}, "error": None})
+    assert mn.daemon_supports_multi_ping() is True
+    monkeypatch.setattr(rpc, "getinfo", lambda: {"result": {"version": 1020300}, "error": None})
+    assert mn.daemon_supports_multi_ping() is False
+
+
 def test_daemon_supports_multi_ping_false(monkeypatch):
     monkeypatch.setattr(rpc, "getinfo", lambda: {"result": {"version": "1.2.3.0-61caddb"}, "error": None})
     assert mn.daemon_supports_multi_ping() is False
 
 
-def test_multi_ping_enabled_respects_ops_flag(monkeypatch):
+def test_multi_ping_enabled_requires_daemon_support(monkeypatch):
     monkeypatch.setattr(mn, "_ops_cfg", lambda: {"multi_ping_enabled": True})
     monkeypatch.setattr(mn, "daemon_supports_multi_ping", lambda: False)
+    assert mn.multi_ping_enabled() is False
+
+    monkeypatch.setattr(mn, "daemon_supports_multi_ping", lambda: True)
     assert mn.multi_ping_enabled() is True
 
     monkeypatch.setattr(mn, "_ops_cfg", lambda: {"multi_ping_enabled": False})
