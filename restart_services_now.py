@@ -50,7 +50,7 @@ print(f"Battle Intelligence: {response2}")
 # Check uWSGI logs for errors
 print()
 print("📋 Checking uWSGI logs...")
-stdin, stdout, stderr = ssh.exec_command("tail -20 /var/www/html/vidgenerator/uwsgi.log | grep -i 'error\|no python\|application' | tail -5")
+stdin, stdout, stderr = ssh.exec_command(r"tail -20 /var/www/html/vidgenerator/uwsgi.log | grep -i 'error\|no python\|application' | tail -5")
 logs = stdout.read().decode('utf-8', errors='ignore')
 if logs:
     print(f"Recent errors: {logs}")

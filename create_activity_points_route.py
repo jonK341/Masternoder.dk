@@ -151,7 +151,7 @@ if '200' in status:
 else:
     print("[WARN] Page still returns error")
     # Check logs
-    stdin, stdout, stderr = ssh.exec_command("tail -20 /var/www/html/vidgenerator/uwsgi.log | grep -i 'activity_points_page\|error' | tail -5")
+    stdin, stdout, stderr = ssh.exec_command(r"tail -20 /var/www/html/vidgenerator/uwsgi.log | grep -i 'activity_points_page\|error' | tail -5")
     logs = stdout.read().decode('utf-8', errors='ignore')
     if logs:
         print(f"Logs: {logs}")
