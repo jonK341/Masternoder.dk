@@ -11,6 +11,8 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 | Generator Roadmap | `docs/plans/generator_page_roadmap.plan.md` | Generator criticals + MN2 pay/earn foundation |
 | Game & Battle | `docs/plans/game_and_battle_review.plan.md` | Battle correctness + game crypto foundation |
 | Orchestrator | `docs/plans/master_build_orchestrator.plan.md` | Stage sequencing + gates |
+| Sync + DB health (today) | `docs/plans/sync_migration_database_health_today.plan.md` | DB health 200 → sync migration |
+| Gate A execution (today) | `docs/plans/gate_a_execution_today.plan.md` | Prod Gate A close: MN2 daemon + SSH verify |
 
 ## Build stages
 
@@ -58,16 +60,18 @@ Single index for the Masternoder.dk MN2 ecosystem build program.
 
 **Compliance:** No custody on Discord; rewards on-site with auth; gambling promos geo-blocked; affiliate disclosure in embed footer.
 
-## Stage 0 Gate A (verified)
+## Stage 0 Gate A (verified — prod 2026-07-20)
 
 | Check | Status |
 |-------|--------|
-| `GET /api/health` | Pass |
-| `GET /api/mn2/health` | Pass (degraded OK if daemon offline) |
-| `GET /api/themes/user` | Pass |
+| `GET /api/health` | Pass (prod 200) |
+| `GET /api/health/database` | Pass (prod 200, `missing_tables: []`) |
+| `GET /api/mn2/health` | Pass (`mn2_rpc` healthy, block ~950915) |
+| `GET /api/themes/user` | Pass (prod 200) |
 | Battle URL tests | Pass (`test_02_battle.py`) |
 | Unified points idempotency | Pass (`test_gate_a_orchestrator.py`) |
 | Casino MN2 rail | Pass (`casino_service.py`) |
+| Sync DB-backed | Pass (`sync_state` sync_count 92784, 4 tables on prod) |
 
 ## Shared backbone files
 
