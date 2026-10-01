@@ -194,6 +194,15 @@ def get_quote(slots: int, user_id: str) -> Dict[str, Any]:
 
     from backend.services import mn2_masternode_service as mn
     st = mn.get_service_status()
+    if st.get("checkout_open") is False:
+        return {
+            "success": False,
+            "error": "Masternode hosting checkout is temporarily closed (no free collateral UTXOs).",
+            "code": "checkout_closed",
+            "slots_available": int(st.get("slots_available") or 0),
+            "collateral_outputs_available": int(st.get("collateral_outputs_available") or 0),
+            "collateral_missing_count": int(st.get("collateral_missing_count") or 0),
+        }
     avail = int(st.get("slots_available") or 0)
     if avail < slots:
         collateral_left = int(st.get("collateral_outputs_available") or 0)

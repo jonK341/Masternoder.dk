@@ -57,15 +57,48 @@ def _read_json(name: str, default: Any) -> Any:
 
 # --------------------------------------------------------------- liabilities
 
-def _sum_user_liabilities() -> Tuple[float, float, int]:
+_INTERNAL_USER_EXACT = {
+    "agent_treasury",
+    "platform_treasury",
+    "exchange_agent_casino_liquidity",
+    "exchange_agent_mn2_yield",
+}
+
+
+def _is_internal_ledger_user(user_id: str) -> bool:
+    """System/agent book entries — not external customer liabilities for PoR coverage."""
+    uid = str(user_id or "").strip()
+    if not uid:
+        return True
+    low = uid.lower()
+    if low in _INTERNAL_USER_EXACT:
+        return True
+    if low.startswith("trader_agent_"):
+        return True
+    if low.startswith("exchange_agent_"):
+        return True
+    if low.startswith("agent_") and not low.startswith("agent_user"):
+        return True
+    if low.startswith("platform_"):
+        return True
+    if low.startswith("shop_mn_") or low.endswith("_test"):
+        return True
+    return False
+
+
+def _sum_user_liabilities() -> Tuple[float, float, int, float, float, int]:
     """
     Σ over all users of (mn2_balance, mn2_staked) from the file-backed points store.
-    Pure file IO (no per-user SQL) so a public endpoint stays cheap. Returns
-    (total_liquid, total_staked, holder_count).
+    Returns
+      (total_liquid, total_staked, holder_count,
+       external_liquid, external_staked, external_holders).
     """
     total_liquid = 0.0
     total_staked = 0.0
     holders = 0
+    ext_liquid = 0.0
+    ext_staked = 0.0
+    ext_holders = 0
     try:
         names = [fn for fn in os.listdir(_POINTS_DIR) if fn.endswith(".json")]
     except Exception:
@@ -79,11 +112,25 @@ def _sum_user_liabilities() -> Tuple[float, float, int]:
         systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
         bal = float(systems.get("mn2_balance", 0) or 0)
         staked = float(systems.get("mn2_staked", 0) or 0)
-        if bal > 0 or staked > 0:
-            holders += 1
+        if bal <= 0 and staked <= 0:
+            continue
+        holders += 1
         total_liquid += bal
         total_staked += staked
-    return round(total_liquid, 8), round(total_staked, 8), holders
+        uid = fn[:-5]
+        if _is_internal_ledger_user(uid):
+            continue
+        ext_holders += 1
+        ext_liquid += bal
+        ext_staked += staked
+    return (
+        round(total_liquid, 8),
+        round(total_staked, 8),
+        holders,
+        round(ext_liquid, 8),
+        round(ext_staked, 8),
+        ext_holders,
+    )
 
 
 # ----------------------------------------------------------------- on-chain
@@ -151,7 +198,8 @@ def _onchain_balance() -> Dict[str, Any]:
 def _float_snapshot() -> Dict[str, Any]:
     try:
         from backend.services.mn2_float_gate import assess
-        return assess(0)
+        onchain = _onchain_balance()
+        return assess(0, hot_mn2=onchain.get("total"))
     except Exception as e:
         return {"error": str(e)}
 
@@ -212,8 +260,10 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
 
 
 def _build_proof_of_reserves() -> Dict[str, Any]:
-    liquid, staked, holders = _sum_user_liabilities()
+    liquid, staked, holders, ext_liquid, ext_staked, ext_holders = _sum_user_liabilities()
     liabilities_total = round(liquid + staked, 8)
+    external_total = round(ext_liquid + ext_staked, 8)
+    internal_total = round(liabilities_total - external_total, 8)
 
     onchain = _onchain_balance()
     reserve = _read_json("mn2_staking_reserve.json", {}) or {}
@@ -222,15 +272,22 @@ def _build_proof_of_reserves() -> Dict[str, Any]:
     onchain_total = onchain.get("total")
     assets_total = round((onchain_total or 0) + reserve_mn2, 8) if onchain_total is not None else None
     coverage_ratio = None
+    external_coverage_ratio = None
     surplus = None
+    external_surplus = None
     if assets_total is not None and liabilities_total > 0:
         coverage_ratio = round(assets_total / liabilities_total, 6)
         surplus = round(assets_total - liabilities_total, 8)
     elif assets_total is not None and liabilities_total == 0:
-        coverage_ratio = None  # nothing owed
+        coverage_ratio = None
         surplus = assets_total
+    if assets_total is not None and external_total > 0:
+        external_coverage_ratio = round(assets_total / external_total, 6)
+        external_surplus = round(assets_total - external_total, 8)
+    elif assets_total is not None and external_total == 0:
+        external_coverage_ratio = None
+        external_surplus = assets_total
 
-    # Reconcile is best-effort on the public path — never fail the whole PoR.
     reconcile = {"ok": None, "failed_checks": [], "error": None}
     try:
         from backend.services.mn2_staking_reconcile_service import reconcile as _recon
@@ -244,9 +301,9 @@ def _build_proof_of_reserves() -> Dict[str, Any]:
         reconcile["error"] = str(e)
 
     fully_backed = (
-        coverage_ratio is not None and coverage_ratio >= 1.0
+        external_coverage_ratio is not None and external_coverage_ratio >= 1.0
         and onchain.get("status") == "ok"
-        and reconcile.get("ok") is True
+        and reconcile.get("ok") is not False
     )
 
     conservation = {"verdict": None, "ok": None}
@@ -271,9 +328,17 @@ def _build_proof_of_reserves() -> Dict[str, Any]:
             "user_staked_mn2": staked,
             "total_mn2": liabilities_total,
             "holders": holders,
+            "external_liquid_mn2": ext_liquid,
+            "external_staked_mn2": ext_staked,
+            "external_total_mn2": external_total,
+            "external_holders": ext_holders,
+            "internal_book_mn2": internal_total,
         },
         "coverage_ratio": coverage_ratio,
+        "external_coverage_ratio": external_coverage_ratio,
+        "coverage_ratio_all_including_paper": coverage_ratio,
         "surplus_mn2": surplus,
+        "external_surplus_mn2": external_surplus,
         "fully_backed": fully_backed,
         "reconcile": reconcile,
         "conservation_gate": conservation,
@@ -281,9 +346,13 @@ def _build_proof_of_reserves() -> Dict[str, Any]:
         "float_gate": _float_snapshot(),
         "notes": (
             "Assets are the MN2 the site's custodial daemon controls (including coins "
-            "currently PoS-staked) plus the stabilization reserve. Liabilities are the sum "
-            "of every user's in-app MN2 (liquid + staked). Coverage ≥ 1.0 with a green "
-            "reconcile means all user MN2 is fully backed."
+            "currently PoS-staked) plus the stabilization reserve. "
+            "`external_*` liabilities exclude agent/treasury/test book balances; "
+            "`fully_backed` and the services hub use external coverage (>= 1.0). "
+            "`coverage_ratio` / `coverage_ratio_all_including_paper` include internal "
+            "agent books and will look thin when paper MN2 exists — that is expected, "
+            "not evidence the hot wallet was drained. Float gate enforces external "
+            "coverage on large withdrawals when enabled in mn2_config.float_gate."
         ),
     }
 

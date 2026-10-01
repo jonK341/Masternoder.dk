@@ -183,6 +183,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_staking: {e}")
     try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if "mn2_masternode" not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            n += 1
+            print("  [OK] Registered mn2_masternode blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_masternode: {e}")
+    try:
         from backend.routes.agent_staking_routes import agent_staking_bp
         if 'agent_staking' not in app.blueprints:
             app.register_blueprint(agent_staking_bp)
@@ -305,6 +313,15 @@ def register_lite_blueprints(app):
         print("  [OK] Registered shop blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP shop: {e}")
+
+    try:
+        from backend.routes.shop_monetization_routes import shop_monetization_bp
+        if 'shop_monetization' not in app.blueprints:
+            app.register_blueprint(shop_monetization_bp)
+            n += 1
+            print("  [OK] Registered shop_monetization blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP shop_monetization: {e}")
     try:
         from backend.routes.social_auth_routes import social_auth_bp
         app.register_blueprint(social_auth_bp)
@@ -996,6 +1013,16 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import mn2_staking: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering mn2_staking: {e}")
+    try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if "mn2_masternode" not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_masternode: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_masternode: {e}")
     try:
         from backend.routes.agent_staking_routes import agent_staking_bp
         if 'agent_staking' not in app.blueprints:

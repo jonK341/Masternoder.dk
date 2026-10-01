@@ -90,21 +90,39 @@ for r in rows:
 }
 
 daemon_supports_multi_ping() {
+  # Match backend _parse_daemon_version_tuple: packed ints like 1020300 → 1.2.3.0
+  # (NOT 1020300.0.0.0). Wrong parse falsely enables startmasternode-all on 1.2.x.
   "$CLI" $D getinfo 2>/dev/null | python3 -c "
-import json,sys
+import json, sys
+
 def parse(v):
-    parts=[]
-    for p in str(v or '0').split('-')[0].split('.'):
-        try: parts.append(int(p))
-        except: break
-    while len(parts)<4: parts.append(0)
+    if v is None or isinstance(v, bool):
+        return (0, 0, 0, 0)
+    if isinstance(v, (int, float)) or (isinstance(v, str) and str(v).strip().isdigit()):
+        try:
+            n = int(float(v))
+        except (TypeError, ValueError):
+            return (0, 0, 0, 0)
+        if n >= 1_000_000:
+            return (n // 1_000_000, (n // 10_000) % 100, (n // 100) % 100, n % 100)
+        return (0, 0, 0, 0)
+    head = str(v or '').split('-', 1)[0].strip()
+    parts = []
+    for p in head.split('.'):
+        try:
+            parts.append(int(p))
+        except (TypeError, ValueError):
+            break
+    while len(parts) < 4:
+        parts.append(0)
     return tuple(parts[:4])
+
 try:
-    d=json.load(sys.stdin)
+    d = json.load(sys.stdin)
 except Exception:
     sys.exit(1)
-ver=parse(d.get('version'))
-sys.exit(0 if ver>=(1,3,0,0) else 1)
+ver = parse((d or {}).get('version'))
+sys.exit(0 if ver >= (1, 3, 0, 0) else 1)
 " 2>/dev/null
 }
 
@@ -132,12 +150,16 @@ main() {
   wait_mnsync
   unlock_conf_collateral
   if daemon_supports_multi_ping; then
+    log "daemon >= 1.3.0 — multi-ping fleet path"
     start_multi_ping_fleet
   else
+    log "daemon < 1.3.0 — alias broadcast + single local ping"
     start_aliases
     start_local_ping
   fi
   log "done — check: $CLI $D listmasternodes"
+  # Always exit 0 so oneshot RemainAfterExit stays active after partial alias errors.
+  return 0
 }
 
 main "$@"
