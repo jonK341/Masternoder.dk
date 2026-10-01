@@ -6,61 +6,211 @@
     <title>Crypto Exchange — MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260626">
-    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20260702a">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20261001a">
+    <link rel="stylesheet" href="/static/css/exchange-frontpage.css?v=20261001b">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <div class="cex-page">
-        <header class="cex-header">
-            <div class="cex-hero-wrap">
-                <img src="/static/img/exchange/hero-exchange.svg" alt="" class="cex-hero-img" width="1200" height="320" />
-                <div class="cex-hero-text">
-                    <h1><i class="fas fa-chart-line"></i> MasterNoder Exchange</h1>
-                    <p class="cex-sub">25 cryptocurrencies · instant swap · limit orders · staking rewards · tax records</p>
+<body class="layout-standard mn-no-hypnotic cex-frontpage-match">
+    <div class="frontpage-bg" aria-hidden="true"></div>
+    <div class="cex-page cex-fp-main fp-main">
+        <header class="fp-hero cex-fp-hero" aria-labelledby="cex-hero-title">
+            <div class="fp-hero-core cex-fp-core" aria-hidden="true">
+                <div class="fp-core-ring fp-core-ring-a"></div>
+                <div class="fp-core-ring fp-core-ring-b"></div>
+                <div class="fp-core-pulse">📈</div>
+                <div class="fp-core-node fp-core-node-a">BTC</div>
+                <div class="fp-core-node fp-core-node-b">MN2</div>
+                <div class="fp-core-node fp-core-node-c">API</div>
+            </div>
+            <div class="fp-hero-copy">
+                <p class="fp-kicker"><span>MasterNoder finance</span><span id="cex-hero-user-pill">Guest trader</span></p>
+                <h1 id="cex-hero-title"><i class="fas fa-chart-line"></i> Exchange</h1>
+                <p class="fp-tagline">25 cryptocurrencies · swap · PayPal · bots · treasury</p>
+                <p class="fp-hero-text">Same wallet as Shop and Casino — trade, stake, rent agents, and track profit-path research from one hub.</p>
+                <div class="fp-hero-actions">
+                    <button type="button" class="fp-primary-action" id="cex-hero-refresh">Refresh markets</button>
+                    <button type="button" class="fp-secondary-action" id="cex-onboard-start">Site tour</button>
+                    <a class="fp-secondary-action" href="/wallets">Wallets</a>
+                    <a class="fp-secondary-action" href="/profit/">Profit monitor</a>
                 </div>
+                <p id="cex-hero-status" class="cex-hero-status" aria-live="polite">Loading exchange status…</p>
             </div>
-            <div class="cex-visual-row" aria-hidden="true">
-                <img src="/static/img/exchange/visual-agents.svg" alt="Trading agents" width="280" height="160" />
-                <img src="/static/img/exchange/visual-arbitrage.svg" alt="Cross-venue arbitrage" width="280" height="160" />
-                <img src="/static/img/exchange/visual-profit.svg" alt="Profit tracking" width="280" height="160" />
-            </div>
-            <div class="cex-legal" id="cex-legal-notice">Loading compliance notice…</div>
-            <nav class="cex-shortcuts" aria-label="Exchange shortcuts">
-                <a href="/exchange?tab=onramp" class="cex-mini-link">PayPal buy</a>
-                <a href="/exchange?tab=limit" class="cex-mini-link">Limit order</a>
-                <a href="/exchange?tab=tax" class="cex-mini-link">Tax report</a>
-                <a href="#cex-control-center" class="cex-mini-link" data-cex-goto="marketplace">Agent control</a>
-                <a href="#cex-daemon-control" class="cex-mini-link" data-cex-goto="bots">Daemon control</a>
-                <a href="#cex-rental-hub" class="cex-mini-link" data-cex-goto="marketplace">Rent bots</a>
-                <a href="#cex-exchange-shop" class="cex-mini-link" data-cex-goto="marketplace">Exchange shop</a>
-                <a href="#cex-profit-oracle" class="cex-mini-link" data-cex-goto="overview">Profit Oracle</a>
-                <a href="#cex-gateway-layer" class="cex-mini-link" data-cex-goto="overview">Gateway layer</a>
-                <a href="#cex-agent-cross-trading" class="cex-mini-link" data-cex-goto="bots">Bot daemon</a>
-                <a href="#cex-agent-marketplace" class="cex-mini-link" data-cex-goto="marketplace">Agent marketplace</a>
-            </nav>
         </header>
 
-        <nav class="cex-hub-nav" id="cex-hub-nav" aria-label="Exchange sections" role="tablist">
-            <button type="button" class="cex-hub-tab active" data-cex-tab="trade" role="tab" aria-selected="true">Trade</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="overview" role="tab" aria-selected="false">Overview</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="bots" role="tab" aria-selected="false">Bots</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="liquidity" role="tab" aria-selected="false">Sales pool</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="treasury" role="tab" aria-selected="false">Treasury</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="marketplace" role="tab" aria-selected="false">Marketplace</button>
-            <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
+        <section class="fp-stats cex-glance-stats" id="cex-glance-stats" aria-label="Exchange at a glance">
+            <div class="fp-stat"><div class="v" id="cex-glance-markets">25</div><div class="l">Markets</div></div>
+            <div class="fp-stat fp-stat-mn2" id="cex-glance-mn2-stat"><div class="v" id="cex-glance-mn2">—</div><div class="l">MN2</div></div>
+            <div class="fp-stat"><div class="v" id="cex-glance-coins">—</div><div class="l">Coins</div></div>
+            <div class="fp-stat"><div class="v" id="cex-glance-level">—</div><div class="l">Level</div></div>
+            <div class="fp-stat"><div class="v" id="cex-glance-balances">—</div><div class="l">Exchange assets</div></div>
+            <div class="fp-stat"><div class="v" id="cex-glance-tier">—</div><div class="l">Fee tier</div></div>
+            <div class="fp-stat"><div class="v" id="cex-glance-agents">—</div><div class="l">Agents</div></div>
+            <div class="fp-stat"><div class="v" id="cex-glance-kill">—</div><div class="l">Kill switch</div></div>
+        </section>
+
+        <section class="cex-frame cex-frame--bold cex-account-bridge" id="cex-account-bridge" aria-labelledby="cex-account-heading">
+            <header class="cex-frame-head">
+                <h2 id="cex-account-heading"><strong>Linked account &amp; wallets</strong></h2>
+                <p>Same profile as Shop — platform MN2 for fees and bots, custodial book for crypto swaps.</p>
+            </header>
+            <div class="cex-account-bridge-grid">
+                <article class="cex-account-card">
+                    <span class="cex-account-kicker">Profile</span>
+                    <strong id="cex-account-display">—</strong>
+                    <span id="cex-account-user-id" class="cex-account-meta">—</span>
+                    <span class="cex-account-meta">Level <strong id="cex-account-level">—</strong></span>
+                    <a class="cex-account-link" href="/profile">Open profile</a>
+                </article>
+                <article class="cex-account-card">
+                    <span class="cex-account-kicker">Platform MN2</span>
+                    <strong id="cex-account-mn2">—</strong>
+                    <span id="cex-account-mn2-usd" class="cex-account-meta">—</span>
+                    <a class="cex-account-link" href="/profile#profile-mn2-wallet-card">Deposit / withdraw</a>
+                    <a class="cex-account-link cex-account-link--ghost" href="/wallets">Wallet portal</a>
+                </article>
+                <article class="cex-account-card">
+                    <span class="cex-account-kicker">Exchange wallet</span>
+                    <strong id="cex-account-exchange-assets">—</strong>
+                    <span class="cex-account-meta">Custodial swap &amp; stake balances</span>
+                    <a class="cex-account-link" href="#cex-exchange-wallet-panel" data-cex-goto="trade">Trade desk wallet</a>
+                </article>
+                <article class="cex-account-card">
+                    <span class="cex-account-kicker">Shop coins</span>
+                    <strong id="cex-account-coins">—</strong>
+                    <span class="cex-account-meta">Pay agents &amp; marketplace with coins</span>
+                    <a class="cex-account-link" href="/shop">Shop · top up</a>
+                </article>
+            </div>
+            <p id="cex-account-sync-status" class="cex-account-sync" aria-live="polite">Connecting profile, MN2, and exchange wallet…</p>
+        </section>
+
+        <section class="cex-hotshots" aria-labelledby="cex-hotshots-title">
+            <h2 id="cex-hotshots-title" class="cex-hotshots-title"><strong>Hot spots</strong></h2>
+            <p class="cex-map-lead">Bold frames for the flows traders hit first — jump straight in.</p>
+            <div class="cex-hotshots-grid">
+                <article class="cex-frame cex-frame--bold cex-hotshot">
+                    <header class="cex-frame-head">
+                        <h3><strong>Trading agents</strong></h3>
+                        <p>Buy, rent, and run skill-set bots</p>
+                    </header>
+                    <img src="/static/img/exchange/visual-agents.svg" alt="" class="cex-hotshot-img" width="280" height="160" />
+                    <div class="cex-frame-body">
+                        <ul><li>Agent marketplace &amp; rentals</li><li>Pay with MN2, coins, or PayPal</li></ul>
+                        <button type="button" class="cex-hotshot-cta" data-cex-goto="marketplace" data-cex-hash="#cex-agent-marketplace">Open agents →</button>
+                    </div>
+                </article>
+                <article class="cex-frame cex-frame--bold cex-hotshot">
+                    <header class="cex-frame-head">
+                        <h3><strong>Cross-venue arbitrage</strong></h3>
+                        <p>Profit path &amp; venue gaps</p>
+                    </header>
+                    <img src="/static/img/exchange/visual-arbitrage.svg" alt="" class="cex-hotshot-img" width="280" height="160" />
+                    <div class="cex-frame-body">
+                        <ul><li>Live price gaps across venues</li><li>Paper mode by default</li></ul>
+                        <button type="button" class="cex-hotshot-cta" data-cex-goto="bots" data-cex-hash="#cex-agent-cross-trading">Open arb desk →</button>
+                    </div>
+                </article>
+                <article class="cex-frame cex-frame--bold cex-hotshot">
+                    <header class="cex-frame-head">
+                        <h3><strong>Profit tracking</strong></h3>
+                        <p>Oracle, treasury &amp; monitor</p>
+                    </header>
+                    <img src="/static/img/exchange/visual-profit.svg" alt="" class="cex-hotshot-img" width="280" height="160" />
+                    <div class="cex-frame-body">
+                        <ul><li>Profit Oracle &amp; blockers</li><li>Full monitor on /profit</li></ul>
+                        <button type="button" class="cex-hotshot-cta" data-cex-goto="overview" data-cex-hash="#cex-profit-oracle">Open profit lane →</button>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="cex-map-strip" aria-labelledby="cex-map-heading">
+            <h2 id="cex-map-heading">Exchange map</h2>
+            <p class="cex-map-lead">Framed overview of every hub tab — click a card to jump in, or run the guided tour for a walkthrough.</p>
+            <div class="cex-map-grid">
+                <button type="button" class="cex-frame cex-map-card" data-cex-goto="trade">
+                    <div class="cex-frame-head"><h3>📊 Trade</h3><p>Markets, swap, PayPal, limits</p></div>
+                    <div class="cex-frame-body"><ul><li>25-asset catalog with live quotes</li><li>Custodial wallet sidebar</li></ul><span class="cex-frame-go">Open trade desk →</span></div>
+                </button>
+                <button type="button" class="cex-frame cex-map-card" data-cex-goto="overview" data-cex-hash="#cex-profit-oracle">
+                    <div class="cex-frame-head"><h3>🛡️ Overview</h3><p>Health, blockers, oracle</p></div>
+                    <div class="cex-frame-body"><ul><li>Exchange kill switch &amp; fees</li><li>Profit-path critical checklist</li></ul><span class="cex-frame-go">Open overview →</span></div>
+                </button>
+                <button type="button" class="cex-frame cex-map-card" data-cex-goto="bots" data-cex-hash="#cex-agent-cross-trading">
+                    <div class="cex-frame-head"><h3>🤖 Bots</h3><p>Daemons &amp; profit research</p></div>
+                    <div class="cex-frame-body"><ul><li>Profit path scans &amp; suggestions</li><li>Cross-venue bot control</li></ul><span class="cex-frame-go">Open bots →</span></div>
+                </button>
+                <button type="button" class="cex-frame cex-map-card" data-cex-goto="marketplace" data-cex-hash="#cex-exchange-shop">
+                    <div class="cex-frame-head"><h3>🛒 Marketplace</h3><p>Agents, NFTs, shop</p></div>
+                    <div class="cex-frame-body"><ul><li>Rent or buy trading agents</li><li>MN2 boosts &amp; skill packs</li></ul><span class="cex-frame-go">Open marketplace →</span></div>
+                </button>
+                <button type="button" class="cex-frame cex-map-card" data-cex-goto="liquidity">
+                    <div class="cex-frame-head"><h3>💧 Sales pool</h3><p>Shared liquidity sweep</p></div>
+                    <div class="cex-frame-body">Pooled asset balances and ledger transfers.</div>
+                </button>
+                <button type="button" class="cex-frame cex-map-card" data-cex-goto="treasury">
+                    <div class="cex-frame-head"><h3>🏦 Treasury</h3><p>Platform reserves</p></div>
+                    <div class="cex-frame-body">Stashed USD, paper vs live splits, treasury MN2.</div>
+                </button>
+                <button type="button" class="cex-frame cex-map-card" data-cex-goto="venues">
+                    <div class="cex-frame-head"><h3>🔌 Venues</h3><p>External exchange APIs</p></div>
+                    <div class="cex-frame-body">Credential and live-readiness per venue.</div>
+                </button>
+            </div>
+        </section>
+
+        <div class="cex-legal" id="cex-legal-notice">Loading compliance notice…</div>
+
+        <nav class="cex-shortcuts-bar" aria-label="Exchange shortcuts">
+            <a href="/exchange?tab=onramp" class="cex-mini-link">PayPal buy</a>
+            <a href="/exchange?tab=limit" class="cex-mini-link">Limit order</a>
+            <a href="/exchange?tab=tax" class="cex-mini-link">Tax report</a>
+            <a href="#cex-control-center" class="cex-mini-link" data-cex-goto="marketplace">Agent control</a>
+            <a href="#cex-daemon-control" class="cex-mini-link" data-cex-goto="bots">Daemon control</a>
+            <a href="#cex-rental-hub" class="cex-mini-link" data-cex-goto="marketplace">Rent bots</a>
+            <a href="#cex-exchange-shop" class="cex-mini-link" data-cex-goto="marketplace">Exchange shop</a>
         </nav>
-        <p class="cex-route-note" id="cex-route-note">Viewing: Trade. Data loads when you open each tab.</p>
+
+        <section class="fp-game-hub cex-hub-wrap" aria-label="Exchange sections">
+            <div class="cex-hub-wrap-head">
+                <p class="fp-kicker" style="margin:0"><span>Sections</span><span id="cex-hub-tab-label">Trade</span></p>
+                <h2>Hub navigation</h2>
+            </div>
+            <nav class="cex-hub-nav" id="cex-hub-nav" aria-label="Exchange sections" role="tablist">
+                <button type="button" class="cex-hub-tab active" data-cex-tab="trade" role="tab" aria-selected="true">Trade</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="overview" role="tab" aria-selected="false">Overview</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="bots" role="tab" aria-selected="false">Bots</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="liquidity" role="tab" aria-selected="false">Sales pool</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="treasury" role="tab" aria-selected="false">Treasury</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="marketplace" role="tab" aria-selected="false">Marketplace</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
+            </nav>
+            <p class="cex-route-note" id="cex-route-note">Viewing: Trade. Data loads when you open each tab.</p>
+        </section>
 
         <div class="cex-tab-shell active" data-cex-tab="trade" id="cex-shell-trade">
         <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
+        <div class="cex-trade-frame">
+        <section class="cex-frame cex-frame--bold cex-mn2-linked-strip">
         <section class="mn2-page-strip" data-mn2-auto data-balance-id="cex-mn2-balance" data-rate-id="cex-mn2-rate">
             <h2>Platform wallet (MN2)</h2>
+            <p>Spend the same MN2 as Shop and Casino — swap quotes, bot rentals, and exchange shop boosts debit this balance.</p>
             <div class="mn2-page-metrics">
                 <div class="mn2-page-metric"><span>MN2 balance</span><strong id="cex-mn2-balance">—</strong></div>
                 <div class="mn2-page-metric"><span>USD / MN2</span><strong id="cex-mn2-rate">—</strong></div>
                 <div class="mn2-page-metric"><span>Fee tier</span><strong id="cex-fee-tier">—</strong></div>
+                <div class="mn2-page-metric"><span>Profile</span><strong id="cex-mn2-profile-link"><a href="/profile" class="cex-mini-link">Account</a></strong></div>
             </div>
+            <div class="mn2-page-actions">
+                <a href="/profile#profile-mn2-wallet-card">Profile wallet</a>
+                <a href="/wallets" class="secondary">Wallet portal</a>
+                <a href="/shop#shop-mn2" class="secondary">Shop MN2</a>
+                <a href="/explorer" class="secondary">Explorer</a>
+            </div>
+        </section>
         </section>
 
         <div class="cex-grid">
@@ -153,8 +303,9 @@
                 <p id="cex-msg" class="cex-msg"></p>
             </main>
 
-            <aside class="cex-panel cex-wallet">
-                <h2>Exchange wallet</h2>
+            <aside class="cex-panel cex-wallet cex-frame cex-frame--bold" id="cex-exchange-wallet-panel">
+                <h2><strong>Exchange wallet</strong></h2>
+                <p class="cex-muted" style="margin:0 0 10px">Custodial crypto book (separate from chain MN2). <a href="/profile#profile-mn2-wallet-card" class="cex-mini-link">Platform MN2</a> · <a href="/wallets" class="cex-mini-link">Wallets</a></p>
                 <div id="cex-wallet-balances" class="cex-wallet-list">—</div>
 
                 <div class="cex-bonus-card" id="cex-bonus-card">
@@ -167,6 +318,7 @@
                 <h3>Recent trades</h3>
                 <div id="cex-recent-trades" class="cex-trades">—</div>
             </aside>
+        </div>
         </div>
         </div>
 
@@ -515,12 +667,43 @@
         </div>
     </div>
 
+    <div class="cex-onboard" id="cex-onboard" hidden aria-hidden="true">
+        <div class="cex-onboard-backdrop" id="cex-onboard-backdrop"></div>
+        <div class="cex-onboard-dialog" role="dialog" aria-modal="true" aria-labelledby="cex-onboard-title">
+            <div class="cex-onboard-header">
+                <div>
+                    <div class="cex-onboard-step-label" id="cex-onboard-step-num">Step 1 of 7</div>
+                    <h2 id="cex-onboard-title">Welcome</h2>
+                </div>
+                <button type="button" class="cex-onboard-close" id="cex-onboard-close" aria-label="Close tour">×</button>
+            </div>
+            <div class="cex-onboard-preview" aria-hidden="false">
+                <div class="cex-onboard-preview-head" id="cex-onboard-frame-title">Frame preview</div>
+                <div class="cex-onboard-preview-body" id="cex-onboard-frame-body">—</div>
+            </div>
+            <div class="cex-onboard-body">
+                <p id="cex-onboard-body-text">Tour copy loads here.</p>
+            </div>
+            <div class="cex-onboard-footer">
+                <div class="cex-onboard-progress" aria-hidden="true"><span id="cex-onboard-progress-bar"></span></div>
+                <div class="cex-onboard-actions">
+                    <button type="button" id="cex-onboard-skip">Skip</button>
+                    <button type="button" id="cex-onboard-back">Back</button>
+                    <button type="button" class="cex-onboard-jump" id="cex-onboard-jump">Open section</button>
+                    <button type="button" class="cex-onboard-next" id="cex-onboard-next">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/js/error-manager.js"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
     <script src="/static/js/exchange-hub.js?v=20260704a"></script>
-    <script src="/static/js/crypto-exchange.js?v=20260702a"></script>
+    <script src="/static/js/exchange-onboard.js?v=20261001b"></script>
+    <script src="/static/js/exchange-account-bridge.js?v=20261001b"></script>
+    <script src="/static/js/crypto-exchange.js?v=20261001b"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
     <script src="/static/js/cex-nft-market.js?v=20261001a"></script>
 </body>
