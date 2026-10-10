@@ -75,7 +75,16 @@ def test_coin_flip_deducts_and_pays(tmp_path, monkeypatch):
     assert data["success"] is True
     assert data["outcome"] == "win"
     assert data["payout"] == 19
-    assert mock_points.add_points.call_count == 2
+    phases = [
+        (c.kwargs.get("metadata") or {}).get("phase")
+        for c in mock_points.add_points.call_args_list
+    ]
+    assert phases.count("stake") == 1
+    assert phases.count("payout") == 1
+    stake = next(c for c in mock_points.add_points.call_args_list if (c.kwargs.get("metadata") or {}).get("phase") == "stake")
+    payout_call = next(c for c in mock_points.add_points.call_args_list if (c.kwargs.get("metadata") or {}).get("phase") == "payout")
+    assert stake.kwargs["amount"] == -10
+    assert payout_call.kwargs["amount"] == 19
 
 
 def test_insufficient_coins_rejected(tmp_path, monkeypatch):
