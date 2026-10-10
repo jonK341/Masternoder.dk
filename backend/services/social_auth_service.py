@@ -15,7 +15,8 @@ import requests
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _STATE_TTL_SEC = 600
-_state_store: Dict[str, Dict] = {}
+_STATE_PATH = os.path.join(_BASE, "data", "oauth_state.json")
+ALLOWED_OAUTH_PROVIDERS = frozenset({"google", "github", "facebook", "discord"})
 _ALLOWED_RETURN_HOSTS = {
     "masternoder.dk",
     "www.masternoder.dk",
@@ -50,10 +51,19 @@ def _provider_defs() -> Dict[str, Dict]:
             "client_secret": os.getenv("FACEBOOK_CLIENT_SECRET"),
             "auth_url": "https://www.facebook.com/v20.0/dialog/oauth",
             "token_url": "https://graph.facebook.com/v20.0/oauth/access_token",
-            "user_url": "https://graph.facebook.com/me?fields=id,name,email,picture",
+            "user_url": "https://graph.facebook.com/v20.0/me",
             "scope": "email,public_profile",
             "redirect_uri": f"{base}/api/auth/facebook/callback",
             "revoke_url": "https://graph.facebook.com/me/permissions",
+        },
+        "discord": {
+            "client_id": os.getenv("DISCORD_CLIENT_ID") or os.getenv("DISCORD_OAUTH_CLIENT_ID"),
+            "client_secret": os.getenv("DISCORD_CLIENT_SECRET") or os.getenv("DISCORD_OAUTH_CLIENT_SECRET"),
+            "auth_url": "https://discord.com/api/oauth2/authorize",
+            "token_url": "https://discord.com/api/oauth2/token",
+            "user_url": "https://discord.com/api/users/@me",
+            "scope": "identify email",
+            "redirect_uri": f"{base}/api/auth/discord/callback",
         },
         "microsoft": {
             "tenant": os.getenv("MICROSOFT_TENANT_ID", "common"),
@@ -88,36 +98,73 @@ def _provider_defs() -> Dict[str, Dict]:
     }
 
 
+def _is_real_credential(value: Optional[str]) -> bool:
+    v = (value or "").strip()
+    if not v or len(v) < 8:
+        return False
+    lower = v.lower()
+    if lower in ("...", "changeme", "replace_me", "your-app-id", "your-app-secret", "xxx", "todo"):
+        return False
+    if lower.startswith("your-") or v.endswith("..."):
+        return False
+    return True
+
+
+def _credentials_ok(cfg: Dict) -> bool:
+    return _is_real_credential(cfg.get("client_id")) and _is_real_credential(cfg.get("client_secret"))
+
+
 def list_providers() -> Dict:
     defs = _provider_defs()
     out = []
-    for key, cfg in defs.items():
+    for key in sorted(ALLOWED_OAUTH_PROVIDERS):
+        cfg = defs.get(key) or {}
+        ok = _credentials_ok(cfg)
         out.append({
             "id": key,
-            "enabled": bool(cfg.get("client_id")),
-            "configured": bool(cfg.get("client_id") and cfg.get("client_secret")),
+            "enabled": ok,
+            "configured": ok,
             "redirect_uri": cfg.get("redirect_uri"),
         })
     return {"success": True, "providers": out}
 
 
-def _purge_states():
+def _load_state_store() -> Dict[str, Dict]:
+    data = _load_json(_STATE_PATH)
+    return data if isinstance(data, dict) else {}
+
+
+def _save_state_store(data: Dict[str, Dict]) -> None:
+    _save_json(_STATE_PATH, data)
+
+
+def _purge_states_in(store: Dict[str, Dict]) -> None:
     t = _now()
-    stale = [k for k, v in _state_store.items() if v.get("expires_at", 0) <= t]
+    stale = [k for k, v in store.items() if (v or {}).get("expires_at", 0) <= t]
     for k in stale:
-        _state_store.pop(k, None)
+        store.pop(k, None)
+
+
+def _purge_states():
+    data = _load_state_store()
+    _purge_states_in(data)
+    _save_state_store(data)
 
 
 def _store_state(state: str, payload: Dict):
-    _purge_states()
+    data = _load_state_store()
+    _purge_states_in(data)
     payload = dict(payload)
     payload["expires_at"] = _now() + _STATE_TTL_SEC
-    _state_store[state] = payload
+    data[state] = payload
+    _save_state_store(data)
 
 
 def _consume_state(state: str) -> Optional[Dict]:
-    _purge_states()
-    payload = _state_store.pop(state, None)
+    data = _load_state_store()
+    _purge_states_in(data)
+    payload = data.pop(state, None)
+    _save_state_store(data)
     if not payload:
         return None
     if payload.get("expires_at", 0) < _now():
@@ -137,8 +184,8 @@ def build_start_url(provider: str, user_id_hint: Optional[str] = None, return_ur
     cfg = defs.get(provider)
     if not cfg:
         return {"success": False, "error": f"Unknown provider: {provider}"}
-    if not cfg.get("client_id"):
-        return {"success": False, "error": f"{provider} not configured"}
+    if not _credentials_ok(cfg):
+        return {"success": False, "error": f"{provider} not configured — set client id and secret in .env"}
 
     safe_return_url = validate_return_url(return_url)
     if return_url and not safe_return_url:
@@ -166,7 +213,7 @@ def build_start_url(provider: str, user_id_hint: Optional[str] = None, return_ur
         params["scope"] = cfg["scope"]
     if provider in ("google", "microsoft", "apple"):
         params["nonce"] = nonce
-    if provider in ("google", "microsoft", "github"):
+    if provider in ("google", "microsoft", "github", "discord"):
         params["code_challenge"] = code_challenge
         params["code_challenge_method"] = "S256"
     if provider == "google":
@@ -188,10 +235,13 @@ def _exchange_token(provider: str, code: str, state_payload: Dict) -> Dict:
         "redirect_uri": cfg["redirect_uri"],
         "grant_type": "authorization_code",
     }
-    if provider in ("google", "microsoft", "github"):
+    if provider in ("google", "microsoft", "github", "discord"):
         data["code_verifier"] = state_payload.get("code_verifier")
     headers = {"Accept": "application/json"}
-    r = requests.post(token_url, data=data, headers=headers, timeout=20)
+    if provider == "facebook":
+        r = requests.get(token_url, params=data, headers=headers, timeout=20)
+    else:
+        r = requests.post(token_url, data=data, headers=headers, timeout=20)
     if r.status_code >= 400:
         return {"success": False, "error": f"Token exchange failed ({r.status_code})", "details": r.text[:500]}
     try:
@@ -208,8 +258,15 @@ def _fetch_profile(provider: str, access_token: str) -> Dict:
     headers = {"Authorization": f"Bearer {access_token}"}
     if provider == "github":
         headers["Accept"] = "application/vnd.github+json"
-    if provider in ("google", "facebook", "microsoft", "github"):
-        r = requests.get(cfg["user_url"], headers=headers, timeout=20)
+    if provider in ("google", "facebook", "microsoft", "github", "discord"):
+        if provider == "facebook":
+            r = requests.get(
+                cfg["user_url"],
+                params={"fields": "id,name,email,picture", "access_token": access_token},
+                timeout=20,
+            )
+        else:
+            r = requests.get(cfg["user_url"], headers=headers, timeout=20)
         if r.status_code >= 400:
             return {"success": False, "error": f"Profile fetch failed ({r.status_code})", "details": r.text[:500]}
         profile = r.json()
@@ -222,6 +279,12 @@ def _fetch_profile(provider: str, access_token: str) -> Dict:
                     profile["email"] = primary.get("email")
         if provider == "microsoft":
             profile.setdefault("email", profile.get("mail") or profile.get("userPrincipalName"))
+        if provider == "discord":
+            profile.setdefault("name", profile.get("global_name") or profile.get("username"))
+            if profile.get("avatar") and profile.get("id"):
+                profile["picture"] = (
+                    f"https://cdn.discordapp.com/avatars/{profile['id']}/{profile['avatar']}.png"
+                )
         return {"success": True, "profile": profile}
     return {"success": False, "error": f"{provider} profile fetch not implemented"}
 
@@ -369,7 +432,23 @@ def _normalize_social_profile(provider: str, profile: Dict) -> Dict:
     return {"provider_user_id": pid, "email": email, "name": str(name)[:80], "avatar": avatar}
 
 
-def _ensure_user_from_social(provider: str, norm: Dict, token: Optional[Dict] = None) -> Dict:
+def _append_linked_provider(prefs_obj: Dict, provider: str) -> Dict:
+    linked = prefs_obj.get("linked_providers")
+    if not isinstance(linked, list):
+        linked = []
+    if provider not in linked:
+        linked.append(provider)
+    prefs_obj["linked_providers"] = linked
+    return prefs_obj
+
+
+def _ensure_user_from_social(
+    provider: str,
+    norm: Dict,
+    token: Optional[Dict] = None,
+    *,
+    user_id_hint: Optional[str] = None,
+) -> Dict:
     from backend.services.user_onboarding import user_onboarding
 
     provider_user_id = norm.get("provider_user_id")
@@ -379,6 +458,11 @@ def _ensure_user_from_social(provider: str, norm: Dict, token: Optional[Dict] = 
     user_id = _find_user_by_social(provider, provider_user_id)
     if not user_id and norm.get("email"):
         user_id = _find_user_by_email(norm["email"])
+
+    hint = (user_id_hint or "").strip()
+    if not user_id and hint and hint != "default_user":
+        if user_onboarding.get_user_profile(hint):
+            user_id = hint
 
     if not user_id:
         if norm.get("email"):
@@ -400,6 +484,14 @@ def _ensure_user_from_social(provider: str, norm: Dict, token: Optional[Dict] = 
         _upsert_email_mapping(norm["email"], user_id)
     _store_oauth_token(user_id, provider, token or {}, provider_user_id)
 
+    if provider == "discord" and provider_user_id:
+        try:
+            from backend.services.discord_link_service import link_user
+
+            link_user(user_id, str(provider_user_id))
+        except Exception:
+            pass
+
     update_data = {"username": norm.get("name")}
     profile = user_onboarding.get_user_profile(user_id) or {}
     prefs = profile.get("preferences")
@@ -414,8 +506,22 @@ def _ensure_user_from_social(provider: str, norm: Dict, token: Optional[Dict] = 
         "avatar": norm.get("avatar"),
         "linked_at": int(time.time()),
     }
+    prefs_obj = _append_linked_provider(prefs_obj, provider)
     update_data["preferences"] = prefs_obj
     user_onboarding.update_user_profile(user_id, update_data)
+
+    try:
+        from backend.services.user_db_service import ensure_user_account
+
+        ensure_user_account(
+            user_id,
+            username=norm.get("name") or user_id,
+            email=norm.get("email"),
+            auth_provider=provider,
+        )
+    except Exception:
+        pass
+
     return {"success": True, "user_id": user_id}
 
 
@@ -436,7 +542,12 @@ def handle_callback(provider: str, code: str, state: str) -> Dict:
     if not profile_res.get("success"):
         return profile_res
     normalized = _normalize_social_profile(provider, profile_res["profile"])
-    user_res = _ensure_user_from_social(provider, normalized, token_res.get("token"))
+    user_res = _ensure_user_from_social(
+        provider,
+        normalized,
+        token_res.get("token"),
+        user_id_hint=state_payload.get("user_id_hint"),
+    )
     if not user_res.get("success"):
         return user_res
     return {

@@ -1,69 +1,86 @@
-"""
-Camgirls PayPal on-ramp — unlock / tip / gift (#4).
-
-MN2 remains primary; PayPal for users without MN2 balance.
-"""
+"""PayPal checkout for camgirls unlock, tips, and gifts."""
 from __future__ import annotations
 
 import json
 import os
-import urllib.parse
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
-_BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-_PENDING = os.path.join(_BASE, "logs", "camgirls", "paypal_pending.json")
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_ORDERS_PATH = os.path.join(_ROOT, "data", "camgirls_paypal_orders.json")
+
+
+def _iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _read_orders() -> Dict[str, Any]:
+    if not os.path.isfile(_ORDERS_PATH):
+        return {"pending": {}, "captured": {}}
+    try:
+        with open(_ORDERS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            data.setdefault("pending", {})
+            data.setdefault("captured", {})
+            return data
+    except Exception:
+        pass
+    return {"pending": {}, "captured": {}}
+
+
+def _write_orders(data: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(_ORDERS_PATH), exist_ok=True)
+    with open(_ORDERS_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
 
 
 def _mn2_usd() -> float:
-    raw = (os.environ.get("MN2_USD_PRICE") or os.environ.get("MN2_USD_PRICE_USD") or "0.001").strip()
     try:
-        v = float(raw)
-        return v if v > 0 else 0.001
-    except (TypeError, ValueError):
-        return 0.001
-
-
-def _usd_from_mn2(mn2: float) -> float:
-    return max(0.99, round(float(mn2) * _mn2_usd(), 2))
-
-
-def _base_url() -> str:
-    from flask import request
-
-    base = (os.environ.get("BASE_URL") or "").strip().rstrip("/")
-    if base.endswith("/vidgenerator"):
-        base = base.rsplit("/vidgenerator", 1)[0]
-    return base or request.url_root.rstrip("/")
-
-
-def _save_pending(order_id: str, row: Dict[str, Any]) -> None:
-    try:
-        os.makedirs(os.path.dirname(_PENDING), exist_ok=True)
-        data = {}
-        if os.path.isfile(_PENDING):
-            with open(_PENDING, "r", encoding="utf-8") as f:
-                data = json.load(f) or {}
-        if not isinstance(data, dict):
-            data = {}
-        data[order_id] = row
-        with open(_PENDING, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        from backend.services.crypto_exchange_service import _mn2_usd as rate
+        return max(float(rate()), 0.01)
     except Exception:
-        pass
+        return 0.05
 
 
-def _pop_pending(order_id: str) -> Optional[Dict[str, Any]]:
-    try:
-        if not os.path.isfile(_PENDING):
-            return None
-        with open(_PENDING, "r", encoding="utf-8") as f:
-            data = json.load(f) or {}
-        row = data.pop(order_id, None)
-        with open(_PENDING, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-        return row if isinstance(row, dict) else None
-    except Exception:
-        return None
+def _mn2_to_usd(amount_mn2: float) -> float:
+    return round(max(float(amount_mn2), 0) * _mn2_usd(), 2)
+
+
+def _resolve_mn2_amount(action: str, performer_id: str, *, amount_mn2: Optional[float] = None, gift_id: Optional[str] = None) -> Dict[str, Any]:
+    from backend.services.camgirls_service import _get_performer
+    from backend.services.camgirls_studio_service import studio_catalog
+
+    p = _get_performer(performer_id)
+    if not p:
+        return {"success": False, "error": "performer_not_found"}
+    action = (action or "unlock").strip().lower()
+    if action == "unlock":
+        mn2 = float(p.get("unlock_price_mn2") or 10)
+    elif action == "tip":
+        mn2 = float(amount_mn2 or p.get("tip_min_mn2") or 5)
+        if mn2 < float(p.get("tip_min_mn2") or 5):
+            return {"success": False, "error": "below_minimum"}
+    elif action == "gift":
+        cat = studio_catalog()
+        gifts = (cat.get("gifts") or {}) if cat.get("success") else {}
+        gift = gifts.get(gift_id or "")
+        if not gift:
+            return {"success": False, "error": "gift_not_found"}
+        mn2 = float(gift.get("price_mn2") or 5)
+    else:
+        return {"success": False, "error": "invalid_action"}
+    usd = _mn2_to_usd(mn2)
+    if usd < 0.5:
+        usd = 0.5
+    return {
+        "success": True,
+        "action": action,
+        "performer_id": performer_id,
+        "amount_mn2": mn2,
+        "amount_usd": usd,
+        "gift_id": gift_id,
+    }
 
 
 def quote_action(
@@ -73,36 +90,17 @@ def quote_action(
     amount_mn2: Optional[float] = None,
     gift_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    from backend.services.camgirls_service import get_performer
-
-    row = get_performer(performer_id)
-    if not row:
-        return {"success": False, "error": "performer_not_found"}
-    act = (action or "").strip().lower()
-    usd = None
-    if act == "unlock":
-        mn2 = float(row.get("unlock_price_usd") or 0) or float(row.get("unlock_price_mn2") or 0)
-        usd = float(row["unlock_price_usd"]) if row.get("unlock_price_usd") else _usd_from_mn2(mn2)
-    elif act in ("tip", "gift"):
-        if act == "gift" and gift_id:
-            from backend.services.camgirls_studio_service import studio_catalog
-
-            gifts = (studio_catalog().get("gifts") or {})
-            g = gifts.get(gift_id) if isinstance(gifts, dict) else None
-            if not g:
-                return {"success": False, "error": "gift_not_found"}
-            usd = _usd_from_mn2(float(g.get("mn2") or amount_mn2 or 0))
-        else:
-            amt = float(amount_mn2 or row.get("tip_min_mn2") or 1)
-            usd = _usd_from_mn2(amt)
-    else:
-        return {"success": False, "error": "invalid_action"}
+    out = _resolve_mn2_amount(action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id)
+    if not out.get("success"):
+        return out
     return {
         "success": True,
-        "action": act,
+        "action": out["action"],
         "performer_id": performer_id,
-        "price_usd": usd,
-        "display_name": row.get("display_name"),
+        "amount_mn2": out["amount_mn2"],
+        "amount_usd": out["amount_usd"],
+        "mn2_usd_rate": _mn2_usd(),
+        "gift_id": gift_id,
     }
 
 
@@ -114,68 +112,103 @@ def create_paypal_order(
     amount_mn2: Optional[float] = None,
     gift_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    uid = (user_id or "").strip()
-    if not uid or uid == "default_user":
-        return {"success": False, "error": "account_required", "code": "ACCOUNT_REQUIRED"}
-    q = quote_action(action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id)
-    if not q.get("success"):
-        return q
-    item_id = f"camgirls-{q['action']}-{performer_id}"
-    if gift_id:
-        item_id += f"-{gift_id}"
-    base = _base_url()
-    return_url = f"{base}/camgirls/?paypal=success&order_pending=1&user_id={urllib.parse.quote(uid)}"
-    cancel_url = f"{base}/camgirls/?paypal=cancel"
-    try:
-        from backend.services.paypal_service import create_order
+    from backend.services.camgirls_service import _is_age_verified
 
-        result = create_order(
-            amount=float(q["price_usd"]),
-            currency="USD",
-            item_name=f"Camgirls {q['action']} — {q.get('display_name') or performer_id}",
-            return_url=return_url,
-            cancel_url=cancel_url,
-            metadata={"item_id": item_id, "user_id": uid, "product": "camgirls"},
-        )
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-    if not result.get("success"):
-        return result
-    oid = result.get("order_id")
-    _save_pending(
-        oid,
-        {
-            "user_id": uid,
-            "action": q["action"],
+    user_id = (user_id or "").strip() or "default_user"
+    if not _is_age_verified(user_id):
+        return {"success": False, "code": "age_verification_required", "error": "18+ required"}
+    quote = _resolve_mn2_amount(action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id)
+    if not quote.get("success"):
+        return quote
+
+    base_url = (os.environ.get("BASE_URL") or "https://masternoder.dk").rstrip("/")
+    item_name = f"camgirls_{quote['action']}_{performer_id}"
+    if quote.get("gift_id"):
+        item_name += f"_{quote['gift_id']}"
+
+    from backend.services.paypal_service import create_order as pp_create
+
+    result = pp_create(
+        quote["amount_usd"],
+        currency="USD",
+        item_name=item_name,
+        return_url=f"{base_url}/camgirls/?paypal=success",
+        cancel_url=f"{base_url}/camgirls/?paypal=cancel",
+        metadata={
+            "product": "camgirls",
+            "action": quote["action"],
             "performer_id": performer_id,
+            "amount_mn2": quote["amount_mn2"],
             "gift_id": gift_id,
-            "amount_mn2": amount_mn2,
-            "price_usd": q["price_usd"],
-            "item_id": item_id,
         },
     )
+    if not result.get("success"):
+        return result
+
+    order_id = result.get("order_id") or ""
+    rows = _read_orders()
+    rows.setdefault("pending", {})[order_id] = {
+        "order_id": order_id,
+        "user_id": user_id,
+        "action": quote["action"],
+        "performer_id": performer_id,
+        "amount_mn2": quote["amount_mn2"],
+        "amount_usd": quote["amount_usd"],
+        "gift_id": gift_id,
+        "approve_url": result.get("approve_url") or "",
+        "created_at": _iso(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=20)).isoformat().replace("+00:00", "Z"),
+    }
+    _write_orders(rows)
     return {
         "success": True,
-        "order_id": oid,
+        "order_id": order_id,
         "approve_url": result.get("approve_url"),
-        "price_usd": q["price_usd"],
-        "item_id": item_id,
+        "amount_usd": quote["amount_usd"],
+        "amount_mn2": quote["amount_mn2"],
     }
 
 
-def fulfill_capture(order_id: str, *, user_id: Optional[str] = None) -> Dict[str, Any]:
+def _fulfill_action(user_id: str, pending: Dict[str, Any], order_id: str) -> Dict[str, Any]:
+    from backend.services.camgirls_service import fulfill_external_payment
+
+    return fulfill_external_payment(
+        user_id,
+        pending.get("performer_id") or "",
+        pending.get("action") or "unlock",
+        float(pending.get("amount_mn2") or 0),
+        payment_ref=order_id,
+        gift_id=pending.get("gift_id"),
+    )
+
+
+def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
+    order_id = (order_id or "").strip()
+    if not order_id:
+        return {"success": False, "error": "order_id required"}
+
+    rows = _read_orders()
+    if order_id in rows.get("captured", {}):
+        return {"success": True, "already_fulfilled": True, **rows["captured"][order_id]}
+
+    pending = (rows.get("pending") or {}).get(order_id)
+    if not pending:
+        return {"success": False, "error": "order_not_found"}
+
+    uid = (user_id or pending.get("user_id") or "").strip()
+    if pending.get("user_id") != uid:
+        return {"success": False, "error": "user_mismatch"}
+
     from backend.services.paypal_service import capture_order
 
-    pending = _pop_pending(order_id)
-    if not pending:
-        return {"success": False, "error": "unknown_order"}
-    cap = capture_order(order_id)
-    if not cap.get("success"):
-        _save_pending(order_id, pending)
-        return cap
-    uid = (user_id or pending.get("user_id") or "").strip()
-    act = pending.get("action")
-    pid = pending.get("performer_id")
+    capture = capture_order(order_id)
+    if not capture.get("success"):
+        return {"success": False, "error": capture.get("error", "capture_failed")}
+
+    result = _fulfill_action(uid, pending, order_id)
+    if not result.get("success"):
+        return result
+
     try:
         from backend.services.monetization_ledger_service import append_payment_event
 
@@ -183,30 +216,23 @@ def fulfill_capture(order_id: str, *, user_id: Optional[str] = None) -> Dict[str
             provider="paypal",
             user_id=uid,
             order_id=order_id,
-            capture_id=cap.get("capture_id"),
-            amount_usd=float(cap.get("amount") or pending.get("price_usd") or 0),
-            currency=str(cap.get("currency") or "USD"),
-            item_id=pending.get("item_id") or "",
-            item_name=f"camgirls_{act}",
-            extra={"performer_id": pid, "product": "camgirls"},
+            capture_id=capture.get("capture_id"),
+            amount_usd=float(pending.get("amount_usd") or 0),
+            currency="USD",
+            item_id=f"camgirls_{pending.get('action')}",
+            item_name=f"Camgirls {pending.get('action')} — {pending.get('performer_id')}",
+            extra={"product": "camgirls", "performer_id": pending.get("performer_id"), "amount_mn2": pending.get("amount_mn2")},
         )
     except Exception:
         pass
 
-    if act == "unlock":
-        from backend.services.camgirls_service import grant_unlock_after_payment
-
-        return grant_unlock_after_payment(uid, pid, payment_ref=order_id, provider="paypal")
-    if act == "tip":
-        from backend.services.camgirls_service import tip_performer_after_payment
-
-        return tip_performer_after_payment(
-            uid, pid, float(pending.get("amount_mn2") or 1), payment_ref=order_id, provider="paypal"
-        )
-    if act == "gift":
-        from backend.services.camgirls_studio_service import gift_after_payment
-
-        return gift_after_payment(
-            uid, pid, gift_id=pending.get("gift_id"), payment_ref=order_id, provider="paypal"
-        )
-    return {"success": False, "error": "unhandled_action"}
+    cap = {
+        "order_id": order_id,
+        "fulfilled_at": _iso(),
+        "result": result,
+        "pending": pending,
+    }
+    rows.setdefault("captured", {})[order_id] = cap
+    rows.get("pending", {}).pop(order_id, None)
+    _write_orders(rows)
+    return {"success": True, **cap}

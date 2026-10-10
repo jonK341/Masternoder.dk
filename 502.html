@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MasterNoder – Starting up</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f0f12;
+      color: #e0e0e0;
+      padding: 1rem;
+    }
+    .box { text-align: center; max-width: 360px; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    p { color: #9ca3af; margin: 0 0 1rem; line-height: 1.5; }
+    .dot { animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 50% { opacity: 0.3; } }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .links { margin-top: 1rem; }
+    .links a { margin: 0 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>MasterNoder<span class="dot">.</span></h1>
+    <p>Site is starting up. Retrying this page in <span id="count">5</span>s.</p>
+    <div class="links">
+      <a href="#" id="retry">Retry now</a>
+      <a href="/">Go to home</a>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var count = 5;
+      var el = document.getElementById('count');
+      var t = setInterval(function() {
+        count--;
+        if (el) el.textContent = count;
+        if (count <= 0) {
+          clearInterval(t);
+          location.reload();
+        }
+      }, 1000);
+      document.getElementById('retry').onclick = function() {
+        clearInterval(t);
+        location.reload();
+        return false;
+      };
+    })();
+  </script>
+</body>
+</html>

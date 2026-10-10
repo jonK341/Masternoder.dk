@@ -19,9 +19,9 @@ This will:
 1. Clear Python cache (`__pycache__`, `.pyc`) on the server  
 2. Purge nginx cache (if any)  
 3. Restart app services in the correct order:
-   - uwsgi-vidgenerator (primary app on :5000)
-   - uwsgi-vidgenerator-5001 (optional second app worker)
-   - python-proxy (if enabled for compatibility)
+   - python-proxy (Flask :5000)
+   - uwsgi-vidgenerator (stop, then start)
+   - uwsgi (main)
 4. Reload nginx  
 5. Ensure no-cache headers for generator, trophies, and service worker  
 
@@ -48,10 +48,8 @@ This script:
 - Clears Python cache  
 - Purges nginx cache  
 - Ensures uWSGI/python-proxy PYTHONPATH  
-- Restarts uwsgi-vidgenerator → uwsgi-vidgenerator-5001 → python-proxy → reload nginx  
+- Restarts python-proxy → uwsgi-vidgenerator → uwsgi → reload nginx  
 - Runs a quick route check  
-
-Do not start the legacy `uwsgi` wrapper for this app. It can bind the same port as `uwsgi-vidgenerator` and serve stale/no-app workers.
 
 Again, **no reboot**.
 

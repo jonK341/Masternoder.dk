@@ -182,10 +182,16 @@ def run_scanner() -> Dict[str, Any]:
 
         from backend.services.mn2_wallet_service import get_address_to_user_map
         from backend.services.mn2_rpc_client import listtransactions
-        from backend.services.mn2_ledger import append_entry, is_txid_processed
+        from backend.services.mn2_ledger import append_entry, is_txid_processed, is_treasury_deposit_recorded
         from backend.services.unified_points_database import unified_points_db
 
         address_to_user = get_address_to_user_map()
+        treasury_addr = ""
+        try:
+            from backend.services.agent_wallet_service import get_treasury
+            treasury_addr = (get_treasury().get("address") or "").strip()
+        except Exception:
+            pass
         try:
             from backend.services.mn2_order_payment_service import (
                 get_address_to_order_map,
@@ -203,7 +209,7 @@ def run_scanner() -> Dict[str, Any]:
             _log_run(start, time.time(), 0, 0, 0, None)
             return result
 
-        r = listtransactions(count=500, skip=0)
+        r = listtransactions(count=1000, skip=0)
         if r.get("error"):
             result["success"] = False
             result["error"] = r["error"]
@@ -226,10 +232,13 @@ def run_scanner() -> Dict[str, Any]:
             txid = (tx.get("txid") or "").strip()
             if not txid:
                 continue
-            if is_txid_processed(txid):
-                continue
             address = (tx.get("address") or "").strip()
             if not address:
+                continue
+            if address == treasury_addr and treasury_addr:
+                if is_treasury_deposit_recorded(txid):
+                    continue
+            elif is_txid_processed(txid):
                 continue
             confirmations = int(tx.get("confirmations") or 0)
             try:
@@ -265,6 +274,37 @@ def run_scanner() -> Dict[str, Any]:
                 continue
 
             user_id = address_to_user[address]
+            if user_id == "@agent_treasury":
+                try:
+                    from backend.services.activity_events_service import emit
+                    emit("agent_treasury_deposit", channel="agents", payload={"amount": amount, "txid": txid, "address": address})
+                    from backend.services.admin_audit_service import log_action
+                    log_action("treasury_onchain_deposit", actor="scanner", payload={"amount": amount, "txid": txid})
+                except Exception:
+                    pass
+                unified_points_db.add_points(
+                    "agent_treasury",
+                    "mn2_balance",
+                    amount,
+                    source="mn2_treasury_deposit",
+                    metadata={
+                        "reference": f"treasury-deposit:{txid}",
+                        "txid": txid,
+                        "address": address,
+                        "confirmations": confirmations,
+                    },
+                )
+                append_entry(
+                    user_id="agent_treasury",
+                    entry_type="treasury_deposit",
+                    amount=amount,
+                    txid=txid,
+                    address=address,
+                    metadata={"confirmations": confirmations},
+                )
+                credits += 1
+                continue
+
             unified_points_db.add_points(
                 user_id,
                 "mn2_balance",

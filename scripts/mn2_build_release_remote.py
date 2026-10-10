@@ -1,0 +1,345 @@
+#!/usr/bin/env python3
+"""Build MasterNoder2 on the production Linux server and pull tarball locally.
+
+Applies the local v1.3 release patches when the target tag is absent upstream.
+
+Usage:
+  python scripts/mn2_build_release_remote.py --ask-pass
+  python scripts/mn2_build_release_remote.py --ask-pass --publish --draft
+  python scripts/mn2_build_release_remote.py --ask-pass --fast   # system libs (quicker, less portable)
+  python scripts/mn2_build_release_remote.py --ask-pass --auto-fast --publish --draft
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
+
+try:
+    import dotenv
+
+    dotenv.load_dotenv(os.path.join(ROOT, ".env"))
+except Exception:
+    pass
+
+import paramiko
+from deploy_ssh_env import connect_deploy_ssh, deploy_host, deploy_user, require_deploy_pass
+from mn2_release_config import BASE_TAG, EXTRA_PATCH_REL, MANIFEST_NAME, PATCH_REL, RELEASE_BRANCH, TARGET_VERSION
+
+BUILD_ROOT = "/var/mn2-build"
+LOCAL_DIST = os.path.join(ROOT, "dist")
+REMOTE_DIST = f"{BUILD_ROOT}/dist"
+REMOTE_TAR = f"{REMOTE_DIST}/masternoder2d.tar.gz"
+REMOTE_MANIFEST = f"{REMOTE_DIST}/{MANIFEST_NAME}"
+REMOTE_PATCH = "/tmp/mn2-daemon-v1.3.0-multi-ping.patch"
+REMOTE_EXTRA_PATCH = "/tmp/mn2-daemon-v1.3.1-exchange-sporks.patch"
+COMPAT_PATCH_DIR = f"{BUILD_ROOT}/patches"
+
+BOOST_DEPENDS_RE = re.compile(
+    r"Failed to build Boost\.Build engine|boost.*stamp_configured|funcs\.mk:.*boost",
+    re.IGNORECASE,
+)
+UNSUPPORTED_SSL_RE = re.compile(
+    r"unsupported SSL version|Detected unsupported SSL",
+    re.IGNORECASE,
+)
+
+
+def is_boost_depends_failure(output: str) -> bool:
+    return bool(BOOST_DEPENDS_RE.search(output))
+
+
+def is_unsupported_ssl_failure(output: str) -> bool:
+    return bool(UNSUPPORTED_SSL_RE.search(output))
+
+
+def fast_retry_hint() -> str:
+    return (
+        "Tip: depends boost failed — retry with system libs:\n"
+        "  python scripts/mn2_build_release_remote.py --ask-pass --fast --publish --draft"
+    )
+
+
+def depends_retry_hint() -> str:
+    return (
+        "Tip: OpenSSL 3 system libs need depends build (portable, bundled OpenSSL):\n"
+        "  python scripts/mn2_build_release_remote.py --ask-pass --publish --draft"
+    )
+
+
+def fast_ssl_hint() -> str:
+    return (
+        "Tip: --fast uses --with-unsupported-ssl for OpenSSL 3 hosts. "
+        "Pull latest build script and retry, or use depends (preferred):\n"
+        "  python scripts/mn2_build_release_remote.py --ask-pass --publish --draft"
+    )
+
+
+def upload_script(ssh, local_name: str, remote_name: str) -> str:
+    local_path = os.path.join(ROOT, "scripts", local_name)
+    with open(local_path, "r", encoding="utf-8") as f:
+        body = f.read()
+    sftp = ssh.open_sftp()
+    remote_path = f"/tmp/{remote_name}"
+    with sftp.file(remote_path, "w") as rf:
+        rf.write(body)
+    sftp.chmod(remote_path, 0o755)
+    sftp.close()
+    return remote_path
+
+
+def upload_patch(ssh, rel_path: str, remote_path: str) -> str:
+    import base64
+
+    local_path = os.path.join(ROOT, rel_path)
+    if not os.path.isfile(local_path):
+        raise SystemExit(f"Patch not found: {local_path}")
+    data = open(local_path, "rb").read()
+    b64 = base64.b64encode(data).decode("ascii")
+    cmd = (
+        f"python3 -c \"import base64, pathlib; "
+        f"pathlib.Path('{remote_path}').write_bytes(base64.b64decode('{b64}'))\""
+    )
+    _, stdout, stderr = ssh.exec_command(cmd, timeout=60)
+    err = stderr.read().decode(errors="replace").strip()
+    out = stdout.read().decode(errors="replace").strip()
+    code = stdout.channel.recv_exit_status()
+    if code != 0:
+        raise SystemExit(f"upload_patch failed for {rel_path}: {err or out}")
+    return remote_path
+
+
+def upload_compat_patches(ssh) -> str:
+    """Upload mn2-gcc15-*.patch for GCC 15 / system-boost fast builds."""
+    import base64
+
+    patch_dir = COMPAT_PATCH_DIR
+    local_dir = os.path.join(ROOT, "docs", "patches")
+    ssh.exec_command(f"mkdir -p {patch_dir}", timeout=30)
+    for name in sorted(os.listdir(local_dir)):
+        if not name.startswith("mn2-gcc15-") or not name.endswith(".patch"):
+            continue
+        local_path = os.path.join(local_dir, name)
+        data = open(local_path, "rb").read()
+        b64 = base64.b64encode(data).decode("ascii")
+        remote_path = f"{patch_dir}/{name}"
+        cmd = (
+            f"python3 -c \"import base64, pathlib; "
+            f"pathlib.Path('{remote_path}').write_bytes(base64.b64decode('{b64}'))\""
+        )
+        _, stdout, stderr = ssh.exec_command(cmd, timeout=60)
+        err = stderr.read().decode(errors="replace").strip()
+        code = stdout.channel.recv_exit_status()
+        if code != 0:
+            raise SystemExit(f"upload_compat_patches failed for {name}: {err}")
+        print(f"Uploaded compat patch -> {remote_path}")
+    return patch_dir
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=f"Remote MN2 {TARGET_VERSION} Linux build")
+    parser.add_argument("--ask-pass", action="store_true")
+    parser.add_argument("--publish", action="store_true", help="Run mn2_publish_release.py after download")
+    parser.add_argument("--draft", action="store_true", help="With --publish: create draft release")
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="System libs build (USE_DEPENDS=0; uses --with-unsupported-ssl on OpenSSL 3)",
+    )
+    parser.add_argument(
+        "--auto-fast",
+        action="store_true",
+        help="If depends boost fails, retry once with --fast (system libs)",
+    )
+    parser.add_argument("--skip-deps", action="store_true", help="Do not apt-install build dependencies")
+    parser.add_argument("--jobs", type=int, default=2, help="make -j")
+    parser.add_argument(
+        "--branch",
+        default="",
+        help=f"Checkout origin branch instead of patch (e.g. {RELEASE_BRANCH})",
+    )
+    parser.add_argument("--no-patch", action="store_true", help="Do not upload patch (tag/branch must exist)")
+    args = parser.parse_args()
+    if args.auto_fast:
+        args.fast = False
+
+    pw = None
+    if args.ask_pass:
+        pw = require_deploy_pass(force_prompt=True)
+    ssh, auth_method, _ = connect_deploy_ssh(password=pw)
+    print(f"Connected to {deploy_user()}@{deploy_host()} via {auth_method}")
+
+    remote_build = upload_script(ssh, "mn2_build_release.sh", "mn2_build_release.sh")
+    upload_script(ssh, "mn2_build_smoke.sh", "mn2_build_smoke.sh")
+    compat_patch_dir = upload_compat_patches(ssh)
+
+    # Free CPU/SSH slots from abandoned builds (e.g. after client disconnect).
+    cleanup_cmd = (
+        f"pkill -f 'bash {remote_build}' 2>/dev/null || true; "
+        f"sleep 2; "
+        f"pkill -9 -f 'make -j.*masternoder2d' 2>/dev/null || true"
+    )
+    ssh.exec_command(cleanup_cmd, timeout=30)
+
+    patch_file = ""
+    extra_patch_file = ""
+    if not args.no_patch and not args.branch:
+        patch_file = upload_patch(ssh, PATCH_REL, REMOTE_PATCH)
+        print(f"Uploaded patch -> {patch_file}")
+        extra_patch_file = upload_patch(ssh, EXTRA_PATCH_REL, REMOTE_EXTRA_PATCH)
+        print(f"Uploaded extra patch -> {extra_patch_file}")
+
+    def run_remote_build(use_fast: bool) -> tuple[int, str, str]:
+        use_dep = "0" if use_fast else "1"
+        install_deps = "0" if args.skip_deps else "1"
+        branch = args.branch.replace("'", "")
+        build_log = f"{BUILD_ROOT}/build.log"
+        build_script = f"{BUILD_ROOT}/run_build.sh"
+        inner = (
+            f"export BUILD_ROOT={BUILD_ROOT} JOBS={args.jobs} USE_DEPENDS={use_dep} "
+            f"INSTALL_BUILD_DEPS={install_deps} VERSION={TARGET_VERSION} BASE_TAG={BASE_TAG}\n"
+            f"export PATCH_FILE='{patch_file}' EXTRA_PATCH_FILE='{extra_patch_file}'\n"
+            f"export COMPAT_PATCH_DIR='{compat_patch_dir}' CHECKOUT_BRANCH='{branch}'\n"
+            f"bash {remote_build}\n"
+        )
+        import base64
+
+        b64 = base64.b64encode(inner.encode("utf-8")).decode("ascii")
+        launcher = (
+            f"mkdir -p {BUILD_ROOT} && "
+            f"python3 -c \"import base64, pathlib; "
+            f"pathlib.Path('{build_script}').write_bytes(base64.b64decode('{b64}'))\" && "
+            f"chmod +x {build_script} && "
+            f"nohup bash {build_script} > {build_log} 2>&1 & echo $! > {BUILD_ROOT}/build.pid && "
+            f"cat {BUILD_ROOT}/build.pid"
+        )
+        print(
+            f"=== Remote build {TARGET_VERSION} "
+            f"(USE_DEPENDS={use_dep}, INSTALL_BUILD_DEPS={install_deps}, JOBS={args.jobs}) "
+            f"— detached; log {build_log} — may take 30–90 min ===\n"
+        )
+        _, stdout, stderr = ssh.exec_command(launcher, timeout=120)
+        stdout.channel.recv_exit_status()
+        pid = stdout.read().decode(errors="replace").strip().splitlines()[-1] if stdout else ""
+        err = stderr.read().decode(errors="replace")
+        if err.strip():
+            print(err, file=sys.stderr)
+
+        import time
+
+        poll_interval = 45
+        deadline = time.time() + 10800
+        last_tail = ""
+        while time.time() < deadline:
+            poll_cmd = (
+                f"if [ -f {BUILD_ROOT}/build.pid ] && kill -0 $(cat {BUILD_ROOT}/build.pid) 2>/dev/null; "
+                f"then echo RUNNING; tail -n 3 {build_log} 2>/dev/null; "
+                f"else echo DONE; cat {build_log} 2>/dev/null; fi"
+            )
+            _, pout, _ = ssh.exec_command(poll_cmd, timeout=120)
+            pout.channel.recv_exit_status()
+            chunk = pout.read().decode(errors="replace")
+            if chunk.startswith("DONE"):
+                out = chunk[4:].lstrip("\n")
+                _, vout, _ = ssh.exec_command(
+                    f"test -f {REMOTE_TAR} && echo OK || echo MISSING", timeout=30
+                )
+                vout.channel.recv_exit_status()
+                exit_code = 0 if vout.read().decode().strip() == "OK" else 1
+                try:
+                    print(out[-120000:])
+                except UnicodeEncodeError:
+                    print(out[-120000:].encode("ascii", errors="replace").decode("ascii"))
+                return exit_code, out, err
+            tail = "\n".join(chunk.splitlines()[1:]) if "\n" in chunk else ""
+            if tail and tail != last_tail:
+                print(f"  ... {tail.splitlines()[-1][:120]}")
+                last_tail = tail
+            time.sleep(poll_interval)
+
+        return 124, "", "build poll timeout"
+
+    exit_code, out, err = run_remote_build(args.fast)
+    combined = f"{out}\n{err}"
+    if (
+        exit_code != 0
+        and args.auto_fast
+        and not args.fast
+        and is_boost_depends_failure(combined)
+        and not is_unsupported_ssl_failure(combined)
+    ):
+        print("\n=== depends boost failed — auto-retry with system libs (--fast) ===\n", file=sys.stderr)
+        exit_code, out, err = run_remote_build(True)
+        combined = f"{out}\n{err}"
+
+    if exit_code != 0:
+        print(f"\nBuild failed (exit {exit_code})", file=sys.stderr)
+        if args.fast and is_unsupported_ssl_failure(combined):
+            print(fast_ssl_hint(), file=sys.stderr)
+        elif args.fast:
+            print("Tip: re-run without --fast for depends build (portable static binary).", file=sys.stderr)
+        elif is_unsupported_ssl_failure(combined):
+            print(depends_retry_hint(), file=sys.stderr)
+        elif is_boost_depends_failure(combined):
+            print(fast_retry_hint(), file=sys.stderr)
+        ssh.close()
+        return exit_code
+
+    os.makedirs(LOCAL_DIST, exist_ok=True)
+    local_tar = os.path.join(LOCAL_DIST, "masternoder2d.tar.gz")
+    local_manifest = os.path.join(LOCAL_DIST, MANIFEST_NAME)
+    sftp = ssh.open_sftp()
+    try:
+        sftp.get(REMOTE_TAR, local_tar)
+        try:
+            sftp.get(REMOTE_TAR + ".sha256", local_tar + ".sha256")
+        except OSError:
+            pass
+        try:
+            sftp.get(REMOTE_MANIFEST, local_manifest)
+        except OSError:
+            pass
+    finally:
+        sftp.close()
+    ssh.close()
+
+    size = os.path.getsize(local_tar)
+    print(f"\nDownloaded {local_tar} ({size:,} bytes)")
+    if os.path.isfile(local_manifest):
+        print(f"Downloaded {local_manifest}")
+
+    if args.publish:
+        import subprocess
+
+        pub_cmd = [
+            sys.executable,
+            os.path.join(ROOT, "scripts", "mn2_publish_release.py"),
+            "--tarball",
+            local_tar,
+            "--skip-tag",
+        ]
+        if os.path.isfile(local_manifest):
+            pub_cmd.extend(["--manifest", local_manifest])
+        if args.draft:
+            pub_cmd.append("--draft")
+        pub = subprocess.run(pub_cmd, cwd=ROOT)
+        if pub.returncode == 0:
+            print("\nRun: python scripts/mn2_release_status.py --tarball dist/masternoder2d.tar.gz")
+            print("Then: python scripts/mn2_daemon_upgrade_remote.py --ask-pass --apply")
+        return pub.returncode
+
+    print("Publish (draft recommended first):")
+    print(
+        f"  python scripts/mn2_publish_release.py --tarball {local_tar} "
+        f"--manifest {local_manifest} --skip-tag --draft"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

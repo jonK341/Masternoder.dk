@@ -1,0 +1,55 @@
+/**
+ * Fantasy Theme
+ * Auto-generated theme CSS
+ */
+
+.theme-fantasy {
+    --theme-primary: #8b4513;
+    --theme-secondary: #daa520;
+    --theme-background: #1a0f0a;
+    --theme-accent: #ff6347;
+}
+
+.theme-fantasy .generator-container {
+    background: #1a0f0a;
+    color: #8b4513;
+}
+
+.theme-fantasy .module-card {
+    border-color: #8b4513;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.theme-fantasy .module-card:hover {
+    border-color: #ff6347;
+    box-shadow: 0 0 20px #ff634740;
+}
+
+.theme-fantasy .btn-primary {
+    background: linear-gradient(135deg, #8b4513, #daa520);
+    border-color: #8b4513;
+}
+
+.theme-fantasy .btn-primary:hover {
+    background: linear-gradient(135deg, #daa520, #ff6347);
+    box-shadow: 0 0 15px #8b451360;
+}
+
+.theme-fantasy h1, .theme-fantasy h2, .theme-fantasy h3 {
+    color: #8b4513;
+    text-shadow: 0 0 10px #8b451380;
+}
+
+.theme-fantasy .progress-bar .progress-fill {
+    background: linear-gradient(90deg, #8b4513, #daa520);
+}
+
+.theme-fantasy .status-display {
+    border-color: #8b4513;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.theme-fantasy .phase-frame.active {
+    border-color: #8b4513;
+    box-shadow: 0 0 20px #8b451340;
+}

@@ -4,7 +4,7 @@
  */
 class PointAnalyticsDashboard {
     constructor() {
-        this.userId = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+        this.userId = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         this.currentAnalytics = null;
         this.refreshInterval = null;
     }
@@ -13,7 +13,7 @@ class PointAnalyticsDashboard {
      * Initialize the analytics dashboard
      */
     async init(userId = null) {
-        this.userId = userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+        this.userId = userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         await this.loadComprehensiveAnalytics();
         this.startAutoRefresh();
     }

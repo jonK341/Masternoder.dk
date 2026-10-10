@@ -69,21 +69,32 @@ def award_trophy(user_id: str, trophy_id: str, reward: Optional[float] = None) -
         return False
     try:
         db = _get_db()
+        existing = db.session.execute(
+            text("SELECT 1 FROM user_trophy_unlocks WHERE user_id = :user_id AND trophy_id = :trophy_id"),
+            {'user_id': user_id, 'trophy_id': trophy_id},
+        ).fetchone()
+        newly_unlocked = existing is None
         db.session.execute(
             text("INSERT OR IGNORE INTO user_trophy_unlocks (user_id, trophy_id) VALUES (:user_id, :trophy_id)"),
             {'user_id': user_id, 'trophy_id': trophy_id}
         )
         db.session.commit()
-        amount = float(reward) if reward is not None else 100.0
-        try:
-            from backend.services.unified_points_database import unified_points_db
-            if unified_points_db:
-                unified_points_db.add_points(
-                    user_id, 'trophy_points', amount,
-                    source='trophy', metadata={'trophy_id': trophy_id}
-                )
-        except Exception:
-            pass
+        if newly_unlocked:
+            amount = float(reward) if reward is not None else 100.0
+            try:
+                from backend.services.unified_points_database import unified_points_db
+                if unified_points_db:
+                    unified_points_db.add_points(
+                        user_id, 'trophy_points', amount,
+                        source='trophy', metadata={'trophy_id': trophy_id}
+                    )
+            except Exception:
+                pass
+            try:
+                from backend.services.user_engagement import on_trophy_unlocked
+                on_trophy_unlocked(user_id)
+            except Exception:
+                pass
         try:
             from backend.services.unified_points_sync import unified_points_sync_device
             unified_points_sync_device.record_domain_sync('trophies')

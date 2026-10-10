@@ -1,0 +1,13 @@
+--- a/src/validationinterface.cpp
++++ b/src/validationinterface.cpp
+@@ -6,6 +6,9 @@
+ 
+ #include "validationinterface.h"
+ 
++#include <boost/bind.hpp>
++
++using namespace boost::placeholders;
++
+ static CMainSignals g_signals;
+ 
+ CMainSignals& GetMainSignals()

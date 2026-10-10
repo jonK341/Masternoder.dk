@@ -1,0 +1,1474 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>window._pageLoadStart = performance.now();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta name="description" content="Statistics & Analytics - View achievements, milestones, XP, and generation statistics">
+    <title>Statistics & Analytics - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/theme-toggle.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <style>
+        /* Stats-specific styles */
+        .stats-page {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+            padding-top: 40px;
+            padding-bottom: 60px;
+        }
+
+        .stats-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+        }
+
+        .stats-header h1 {
+            font-size: var(--font-size-5xl);
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-header .subtitle {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .section-header h2 {
+            font-size: var(--font-size-2xl);
+            color: var(--primary);
+            margin-bottom: 0;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            border-color: #00ff88;
+            box-shadow: 
+                0 16px 64px rgba(0, 255, 136, 0.3),
+                0 0 40px rgba(0, 255, 136, 0.2);
+            background: linear-gradient(135deg, rgba(50, 50, 65, 1), rgba(40, 40, 55, 1));
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-icon {
+            font-size: 3em;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #00ff88;
+            margin-bottom: 12px;
+            line-height: 1.1;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: var(--font-size-base);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            line-height: var(--line-height-normal);
+        }
+
+        /* Achievement/Milestone Cards */
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .achievement-card {
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .achievement-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .achievement-card:hover {
+            transform: translateY(-6px);
+            border-color: #00ff88;
+            box-shadow: 
+                0 12px 32px rgba(0, 255, 136, 0.4),
+                0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .achievement-card:hover::before {
+            opacity: 1;
+        }
+
+        .achievement-card.earned {
+            border-color: var(--primary);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .achievement-icon {
+            font-size: 3em;
+            flex-shrink: 0;
+        }
+
+        .achievement-content {
+            flex: 1;
+        }
+
+        .achievement-name {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+            line-height: var(--line-height-tight);
+        }
+
+        .achievement-description {
+            font-size: var(--font-size-base);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            line-height: var(--line-height-normal);
+        }
+
+        .achievement-points {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--primary);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+        }
+
+        /* Category Cards */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .category-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+            transition: all var(--transition-base);
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .category-name {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: var(--spacing-md);
+            line-height: var(--line-height-tight);
+        }
+
+        .category-description {
+            font-size: var(--font-size-base);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            line-height: var(--line-height-normal);
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(255, 0, 255, 0.1);
+            color: var(--accent);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+        }
+
+        /* XP Breakdown */
+        .xp-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .xp-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            text-align: center;
+        }
+
+        .xp-item-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-tertiary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .xp-item-value {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Trophy Section */
+        .trophy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .trophy-category {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+        }
+
+        .trophy-category h3 {
+            color: var(--primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .trophies-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .trophy-item {
+            padding: var(--spacing-sm);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        /* Calendar */
+        .calendar-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: var(--spacing-xs);
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .calendar-day:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+        }
+
+        .calendar-day-header {
+            font-weight: 600;
+            color: var(--text-tertiary);
+            background: transparent;
+            cursor: default;
+        }
+
+        .calendar-legend {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: var(--font-size-sm);
+            color: var(--text-tertiary);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: var(--radius-sm);
+        }
+
+        .legend-color.completed {
+            background: var(--primary);
+        }
+
+        .legend-color.planned {
+            background: var(--secondary);
+        }
+
+        .legend-color.milestone {
+            background: var(--accent);
+        }
+
+        /* Week Selector */
+        .week-selector {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .btn-week {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .btn-week:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-header h1 {
+                font-size: var(--font-size-3xl);
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-sm);
+            }
+            
+            .achievement-grid,
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Navigation */
+        .page-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-primary);
+            padding: var(--spacing-sm) 0;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: var(--spacing-xs) var(--spacing-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-base);
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+        }
+
+        .nav-home {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .btn-action:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-action.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+            border-color: var(--primary);
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/sync-status-widget.css">
+</head>
+<body>
+
+    <!-- Top 50 Monetization Frame -->
+    <div id="top50-monetization-frame-container" style="position: fixed; top: 100px; right: 20px; z-index: 9999; max-width: 350px;">
+        <div id="top50-monetization-frame"></div>
+    </div>
+
+    <div class="bg-animated"></div>
+    <div class="particles" id="particles"></div>
+    
+    <!-- Navigation -->
+    <nav class="page-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-link nav-home">🏠 Home</a>
+            <div class="nav-links">
+                <a href="/game" class="nav-link">Game</a>
+            <a href="/points" class="nav-item" title="Points & Rewards">💎</a>
+                <a href="/battle" class="nav-link">Battle</a>
+                <a href="/social" class="nav-link">Social</a>
+                <a href="/shop" class="nav-link">Shop</a>
+                <a href="/stats" class="nav-link active">Stats</a>
+                <a href="/gallery" class="nav-link">Gallery</a>
+                <a href="/generator" class="nav-link">Generator</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Game Frame Wrapper -->
+    <div class="game-frame-wrapper">
+        <div class="game-frame-top"></div>
+        <div class="game-frame-left"></div>
+        <div class="game-frame-right"></div>
+        <div class="game-frame-bottom"></div>
+        
+        <div class="container stats-page">
+            <header class="stats-header">
+                <h1>📊 Statistics & Analytics</h1>
+                <p class="subtitle">Achievements • Milestones • Stats Points • Categories</p>
+            </header>
+
+            <!-- Sync status (points, users, profiles, rulebooks, agents) -->
+            <div id="sync-status-widget" aria-live="polite"></div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button class="btn-action primary" onclick="location.reload()">🔄 Refresh</button>
+            <button class="btn-action" onclick="window.print()">🖨️ Print</button>
+            <button class="btn-action" onclick="exportStats()">📥 Export</button>
+        </div>
+        
+        <!-- Stats Points Overview -->
+        <section class="stats-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Stats Points Overview</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value" id="stats-points-total">0</div>
+                        <div class="stat-label">Total Stats Points</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-value" id="achievements-earned-count">0</div>
+                        <div class="stat-label">Achievements Earned</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-value" id="milestones-reached-count">0</div>
+                        <div class="stat-label">Milestones Reached</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Points Analytics (DB) -->
+        <section class="stats-section" id="points-analytics-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-chart-line"></i> Points Analytics</h2>
+                </div>
+                <div id="points-analytics-content">
+                    <div class="stats-grid" id="points-analytics-summary">
+                        <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value" id="pa-transactions">—</div><div class="stat-label">Transactions (30d)</div></div>
+                        <div class="stat-card"><div class="stat-icon">⬆️</div><div class="stat-value" id="pa-credits">—</div><div class="stat-label">Total Credits</div></div>
+                        <div class="stat-card"><div class="stat-icon">⬇️</div><div class="stat-value" id="pa-debits">—</div><div class="stat-label">Total Debits</div></div>
+                        <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-value" id="pa-net">—</div><div class="stat-label">Net Change</div></div>
+                    </div>
+                    <p id="points-analytics-empty" class="xp-item-label" style="text-align: center; margin-top: 1rem; display: none;">No point transactions yet. Analytics appear when the points migration is run.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Achievements Section -->
+        <section class="stats-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Achievements</h2>
+                </div>
+                <div class="achievement-grid" id="achievements-list">
+                    <!-- Achievements will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Milestones Section -->
+        <section class="stats-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Milestones</h2>
+                </div>
+                <div class="achievement-grid" id="milestones-list-new">
+                    <!-- Milestones will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section class="stats-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Categories</h2>
+                </div>
+                <div class="category-grid" id="categories-list">
+                    <!-- Categories will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- User Profile Section -->
+        <section class="stats-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-user-circle"></i> User Profile</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-value" id="user-level">1</div>
+                        <div class="stat-label">Level</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value" id="user-xp">0</div>
+                        <div class="stat-label">Total XP</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏅</div>
+                        <div class="stat-value" id="user-high-score">0</div>
+                        <div class="stat-label">High Score</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- XP Points & High Scores Section -->
+        <section class="stats-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-star"></i> XP Points & High Scores</h2>
+                </div>
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3 style="color: var(--primary); margin-bottom: var(--spacing-md);">Experience Points</h3>
+                        <div class="stat-value" style="font-size: 3em; text-align: center; margin: 20px 0;" id="total-xp">0</div>
+                        <div class="xp-breakdown">
+                            <div class="xp-item">
+                                <div class="xp-item-label">From Generations</div>
+                                <div class="xp-item-value" id="xp-generations">0</div>
+                            </div>
+                            <div class="xp-item">
+                                <div class="xp-item-label">From Trophies</div>
+                                <div class="xp-item-value" id="xp-trophies">0</div>
+                            </div>
+                            <div class="xp-item">
+                                <div class="xp-item-label">From Milestones</div>
+                                <div class="xp-item-value" id="xp-milestones">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 style="color: var(--primary); margin-bottom: var(--spacing-md);">High Scores</h3>
+                        <div class="xp-breakdown">
+                            <div class="xp-item">
+                                <div class="xp-item-label">Best Quality</div>
+                                <div class="xp-item-value" id="highscore-quality">0.0</div>
+                            </div>
+                            <div class="xp-item">
+                                <div class="xp-item-label">Longest Video</div>
+                                <div class="xp-item-value" id="highscore-duration">0s</div>
+                            </div>
+                            <div class="xp-item">
+                                <div class="xp-item-label">Most Clips</div>
+                                <div class="xp-item-value" id="highscore-clips">0</div>
+                            </div>
+                            <div class="xp-item">
+                                <div class="xp-item-label">Fastest Generation</div>
+                                <div class="xp-item-value" id="highscore-speed">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Generation Statistics Section -->
+        <section class="stats-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-chart-bar"></i> Generation Statistics</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎬</div>
+                        <div class="stat-value" id="total-documentaries">--</div>
+                        <div class="stat-label">Total Documentaries</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-value" id="total-duration">--</div>
+                        <div class="stat-label">Total Duration</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value" id="avg-quality">--</div>
+                        <div class="stat-label">Average Quality</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-value" id="total-trophies">--</div>
+                        <div class="stat-label">Trophies Earned</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+            const count = 50;
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // API integration
+        const BASE_URL_STATS = window.location.origin;
+        const userIdStats = localStorage.getItem('game_user_id') || 'default_user';
+        localStorage.setItem('game_user_id', userIdStats);
+
+        // Create skeleton screens for achievements
+        function createAchievementSkeletons(count = 6) {
+            const grid = document.getElementById('achievements-list');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const skeleton = document.createElement('div');
+                skeleton.className = 'achievement-card skeleton-loader';
+                skeleton.style.height = '120px';
+                grid.appendChild(skeleton);
+            }
+        }
+
+        // Load Achievements
+        async function loadAchievementsForStats() {
+            const grid = document.getElementById('achievements-list');
+            if (grid) createAchievementSkeletons(6);
+            
+            try {
+                const response = await fetch(`${BASE_URL_STATS}/api/game/achievements?user_id=${userIdStats}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (grid) {
+                        grid.innerHTML = '';
+                        data.achievements.forEach(ach => {
+                            const card = document.createElement('div');
+                            card.className = `achievement-card ${ach.earned ? 'earned' : ''}`;
+                            card.innerHTML = `
+                                <div class="achievement-icon">${ach.earned ? '🏆' : '🔒'}</div>
+                                <div class="achievement-content">
+                                    <div class="achievement-name">${ach.name}</div>
+                                    <div class="achievement-description">${ach.description}</div>
+                                    <span class="achievement-points">+${ach.points} points</span>
+                                </div>
+                            `;
+                            grid.appendChild(card);
+                        });
+                    }
+                    const earnedCount = data.achievements.filter(a => a.earned).length;
+                    const countEl = document.getElementById('achievements-earned-count');
+                    if (countEl) countEl.textContent = earnedCount;
+                }
+            } catch (error) {
+                console.error('Error loading achievements:', error);
+                if (grid) grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load achievements</p>';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load achievements');
+                }
+            }
+        }
+
+        // Load Points Analytics (from /api/points/analytics when DB migration run)
+        async function loadPointsAnalytics() {
+            const summary = document.getElementById('points-analytics-summary');
+            const emptyEl = document.getElementById('points-analytics-empty');
+            if (!summary) return;
+            try {
+                const res = await fetch(`${BASE_URL_STATS}/api/points/analytics?user_id=${encodeURIComponent(userIdStats)}&days=30`);
+                const data = await res.json();
+                if (data.success && data.summary) {
+                    const s = data.summary;
+                    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                    set('pa-transactions', s.transaction_count ?? '—');
+                    set('pa-credits', s.total_credits ?? '—');
+                    set('pa-debits', s.total_debits ?? '—');
+                    set('pa-net', s.net ?? '—');
+                    if (emptyEl) emptyEl.style.display = 'none';
+                } else {
+                    if (emptyEl) emptyEl.style.display = 'block';
+                }
+            } catch (e) {
+                if (emptyEl) { emptyEl.textContent = 'Could not load points analytics.'; emptyEl.style.display = 'block'; }
+            }
+        }
+
+        // Load Milestones
+        async function loadMilestonesForStats() {
+            const grid = document.getElementById('milestones-list-new');
+            if (grid) createAchievementSkeletons(6);
+            
+            try {
+                const response = await fetch(`${BASE_URL_STATS}/api/game/milestones?user_id=${userIdStats}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (grid) {
+                        grid.innerHTML = '';
+                        data.milestones.forEach(mile => {
+                            const card = document.createElement('div');
+                            card.className = `achievement-card ${mile.reached ? 'earned' : ''}`;
+                            card.innerHTML = `
+                                <div class="achievement-icon">${mile.reached ? '🎯' : '📍'}</div>
+                                <div class="achievement-content">
+                                    <div class="achievement-name">${mile.name}</div>
+                                    <div class="achievement-description">${mile.description}</div>
+                                    <span class="achievement-points">+${mile.points} points</span>
+                                </div>
+                            `;
+                            grid.appendChild(card);
+                        });
+                    }
+                    const reachedCount = data.milestones.filter(m => m.reached).length;
+                    const countEl = document.getElementById('milestones-reached-count');
+                    if (countEl) countEl.textContent = reachedCount;
+                }
+            } catch (error) {
+                console.error('Error loading milestones:', error);
+                if (grid) grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load milestones</p>';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load milestones');
+                }
+            }
+        }
+
+        // Load Stats Points
+        async function loadStatsPointsForStats() {
+            try {
+                const response = await fetch(`${BASE_URL_STATS}/api/game/stats-points?user_id=${userIdStats}`);
+                const data = await response.json();
+                if (data.success) {
+                    const totalEl = document.getElementById('stats-points-total');
+                    if (totalEl) totalEl.textContent = data.total_stats_points || 0;
+                }
+            } catch (error) {
+                console.error('Error loading stats points:', error);
+            }
+        }
+
+        // Create skeleton screens for categories
+        function createCategorySkeletons(count = 6) {
+            const grid = document.getElementById('categories-list');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const skeleton = document.createElement('div');
+                skeleton.className = 'category-card skeleton-loader';
+                skeleton.style.height = '100px';
+                grid.appendChild(skeleton);
+            }
+        }
+
+        // Load Categories
+        async function loadCategoriesForStats() {
+            const grid = document.getElementById('categories-list');
+            if (grid) createCategorySkeletons(6);
+            
+            try {
+                const response = await fetch(`${BASE_URL_STATS}/api/categories/list`);
+                const data = await response.json();
+                if (data.success) {
+                    if (grid) {
+                        grid.innerHTML = '';
+                        data.categories.forEach(cat => {
+                            const card = document.createElement('div');
+                            card.className = 'category-card';
+                            card.innerHTML = `
+                                <div class="category-name">${cat.name_da || cat.name}</div>
+                                <div class="category-description">${cat.description_da || cat.description}</div>
+                                ${cat.is_sensitive ? '<span class="category-tag">Sensitive</span>' : ''}
+                            `;
+                            grid.appendChild(card);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                if (grid) grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load categories</p>';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load categories');
+                }
+            }
+        }
+
+        // Load User Profile
+        async function loadUserProfile() {
+            // Show loading state
+            const levelEl = document.getElementById('user-level');
+            const xpEl = document.getElementById('user-xp');
+            const highScoreEl = document.getElementById('user-high-score');
+            
+            if (levelEl) levelEl.textContent = '...';
+            if (xpEl) xpEl.textContent = '...';
+            if (highScoreEl) highScoreEl.textContent = '...';
+            
+            try {
+                const response = await fetch(`${BASE_URL_STATS}/api/stats/profile`);
+                const data = await response.json();
+                if (data.success) {
+                    if (levelEl) levelEl.textContent = data.level || 1;
+                    if (xpEl) xpEl.textContent = data.xp || 0;
+                    if (highScoreEl) highScoreEl.textContent = data.highScores?.total || 0;
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+                if (levelEl) levelEl.textContent = '--';
+                if (xpEl) xpEl.textContent = '--';
+                if (highScoreEl) highScoreEl.textContent = '--';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load user profile');
+                }
+            }
+        }
+
+        // Load XP Scores
+        async function loadXPScores() {
+            try {
+                const response = await fetch(`${BASE_URL_STATS}/api/stats/xp-scores`);
+                const data = await response.json();
+                if (data.success) {
+                    const totalXpEl = document.getElementById('total-xp');
+                    const xpGenEl = document.getElementById('xp-generations');
+                    const xpTrophyEl = document.getElementById('xp-trophies');
+                    const xpMileEl = document.getElementById('xp-milestones');
+                    
+                    if (totalXpEl) totalXpEl.textContent = data.xp?.total || 0;
+                    if (xpGenEl) xpGenEl.textContent = data.xp?.fromGenerations || 0;
+                    if (xpTrophyEl) xpTrophyEl.textContent = data.xp?.fromTrophies || 0;
+                    if (xpMileEl) xpMileEl.textContent = data.xp?.fromMilestones || 0;
+                    
+                    // High scores
+                    const qualityEl = document.getElementById('highscore-quality');
+                    const durationEl = document.getElementById('highscore-duration');
+                    const clipsEl = document.getElementById('highscore-clips');
+                    const speedEl = document.getElementById('highscore-speed');
+                    
+                    if (qualityEl) qualityEl.textContent = (data.highScores?.bestQuality || 0).toFixed(1);
+                    if (durationEl) durationEl.textContent = formatDuration(data.highScores?.longestVideo || 0);
+                    if (clipsEl) clipsEl.textContent = data.highScores?.mostClips || 0;
+                    if (speedEl) speedEl.textContent = data.highScores?.fastestGeneration || '--';
+                }
+            } catch (error) {
+                console.error('Error loading XP scores:', error);
+            }
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+
+        // Load Statistics
+        async function loadStatistics() {
+            // Show loading state for stat cards
+            const totalDocsEl = document.getElementById('total-documentaries');
+            const totalDurEl = document.getElementById('total-duration');
+            const avgQualEl = document.getElementById('avg-quality');
+            const totalTrophiesEl = document.getElementById('total-trophies');
+            
+            if (totalDocsEl) totalDocsEl.textContent = '...';
+            if (totalDurEl) totalDurEl.textContent = '...';
+            if (avgQualEl) avgQualEl.textContent = '...';
+            if (totalTrophiesEl) totalTrophiesEl.textContent = '...';
+            
+            try {
+                const response = await fetch(`${BASE_URL_STATS}/api/statistics`);
+                const data = await response.json();
+                if (data.success && data.statistics) {
+                    const stats = data.statistics;
+                    
+                    // Update stats points
+                    const pointsEl = document.getElementById('stats-points-total');
+                    if (pointsEl && stats.stats_points !== undefined) pointsEl.textContent = stats.stats_points;
+                    
+                    const achEl = document.getElementById('achievements-earned-count');
+                    if (achEl && stats.achievements_earned !== undefined) achEl.textContent = stats.achievements_earned;
+                    
+                    const mileEl = document.getElementById('milestones-reached-count');
+                    if (mileEl && stats.milestones_reached !== undefined) mileEl.textContent = stats.milestones_reached;
+                    
+                    // Generation statistics
+                    if (totalDocsEl) totalDocsEl.textContent = stats.total_documentaries || 0;
+                    if (totalDurEl) totalDurEl.textContent = formatDuration(stats.total_duration || 0);
+                    if (avgQualEl) avgQualEl.textContent = (stats.avg_quality || 0).toFixed(1);
+                    if (totalTrophiesEl) totalTrophiesEl.textContent = stats.total_trophies || 0;
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                if (totalDocsEl) totalDocsEl.textContent = '--';
+                if (totalDurEl) totalDurEl.textContent = '--';
+                if (avgQualEl) avgQualEl.textContent = '--';
+                if (totalTrophiesEl) totalTrophiesEl.textContent = '--';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load statistics');
+                }
+            }
+        }
+
+        // Export stats function
+        function exportStats() {
+            const stats = {
+                timestamp: new Date().toISOString(),
+                statsPoints: document.getElementById('stats-points-total')?.textContent || '0',
+                achievements: document.getElementById('achievements-earned-count')?.textContent || '0',
+                milestones: document.getElementById('milestones-reached-count')?.textContent || '0',
+                level: document.getElementById('user-level')?.textContent || '1',
+                xp: document.getElementById('user-xp')?.textContent || '0'
+            };
+            
+            const dataStr = JSON.stringify(stats, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `stats-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            if (typeof toast !== 'undefined') {
+                toast.success('Stats exported successfully!');
+            }
+        }
+
+        // P2: Try aggregated endpoint first (1 request vs 8)
+        async function loadFromAggregated() {
+            try {
+                const res = await fetch(`${BASE_URL_STATS}/api/stats/aggregated?user_id=${encodeURIComponent(userIdStats)}&days=30`);
+                const data = await res.json();
+                if (data.success) {
+                    applyAggregatedData(data);
+                    return true;
+                }
+            } catch (e) { console.warn('[Stats] Aggregated load failed, using individual:', e); }
+            return false;
+        }
+        function applyAggregatedData(data) {
+            if (data.achievements && data.achievements.length >= 0) {
+                const grid = document.getElementById('achievements-list');
+                if (grid) {
+                    grid.innerHTML = '';
+                    (data.achievements || []).forEach(ach => {
+                        const card = document.createElement('div');
+                        card.className = `achievement-card ${ach.earned ? 'earned' : ''}`;
+                        card.innerHTML = `<div class="achievement-icon">${ach.earned ? '🏆' : '🔒'}</div><div class="achievement-content"><div class="achievement-name">${ach.name || ''}</div><div class="achievement-description">${ach.description || ''}</div><span class="achievement-points">+${ach.points || 0} points</span></div>`;
+                        grid.appendChild(card);
+                    });
+                }
+                const countEl = document.getElementById('achievements-earned-count');
+                if (countEl) countEl.textContent = (data.achievements || []).filter(a => a.earned).length;
+            }
+            if (data.milestones && data.milestones.length >= 0) {
+                const grid = document.getElementById('milestones-list-new');
+                if (grid) {
+                    grid.innerHTML = '';
+                    (data.milestones || []).forEach(m => {
+                        const card = document.createElement('div');
+                        card.className = `achievement-card ${m.reached ? 'earned' : ''}`;
+                        card.innerHTML = `<div class="achievement-icon">${m.reached ? '🎯' : '📍'}</div><div class="achievement-content"><div class="achievement-name">${m.name || ''}</div><div class="achievement-description">${m.description || ''}</div><span class="achievement-points">+${m.points || 0} points</span></div>`;
+                        grid.appendChild(card);
+                    });
+                }
+                const countEl = document.getElementById('milestones-reached-count');
+                if (countEl) countEl.textContent = (data.milestones || []).filter(m => m.reached).length;
+            }
+            if (data.categories && data.categories.length > 0) {
+                const grid = document.getElementById('categories-list');
+                if (grid) {
+                    grid.innerHTML = '';
+                    data.categories.forEach(cat => {
+                        const card = document.createElement('div');
+                        card.className = 'category-card';
+                        card.innerHTML = `<div class="category-name">${cat.name_da || cat.name}</div><div class="category-description">${cat.description || ''}</div>`;
+                        grid.appendChild(card);
+                    });
+                }
+            }
+            if (data.statistics) {
+                const s = data.statistics;
+                const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                set('total-documentaries', s.total_videos ?? '--');
+                set('total-duration', '--');
+                set('avg-quality', '--');
+                set('total-trophies', s.achievements ?? '--');
+            }
+            if (data.stats_points && data.stats_points.total_stats_points !== undefined) {
+                const totalEl = document.getElementById('stats-points-total');
+                if (totalEl) totalEl.textContent = data.stats_points.total_stats_points;
+            }
+            if (data.points_analytics && data.points_analytics.summary) {
+                const s = data.points_analytics.summary;
+                const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                set('pa-transactions', s.transaction_count ?? '—');
+                set('pa-credits', s.total_credits ?? '—');
+                set('pa-debits', s.total_debits ?? '—');
+                set('pa-net', s.net ?? '—');
+                const emptyEl = document.getElementById('points-analytics-empty');
+                if (emptyEl) emptyEl.style.display = 'none';
+            }
+            if (data.profile) {
+                const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                set('profile-display-name', data.profile.display_name || data.profile.user_id || '');
+                set('profile-level', data.profile.level ?? '--');
+                set('profile-xp', data.profile.xp_total ?? '--');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            createParticles();
+            
+            // P2: Try aggregated first
+            const usedAggregated = await loadFromAggregated();
+            if (!usedAggregated) {
+                if (window.unifiedPointCounters) {
+                    unifiedPointCounters.updateAllCounters();
+                    unifiedPointCounters.startAutoUpdate(30000);
+                } else {
+                    loadStatsPointsForStats();
+                }
+                loadAchievementsForStats();
+                loadMilestonesForStats();
+                loadCategoriesForStats();
+                loadUserProfile();
+                loadXPScores();
+                loadStatistics();
+                loadPointsAnalytics();
+            } else if (window.unifiedPointCounters) {
+                unifiedPointCounters.updateAllCounters();
+                unifiedPointCounters.startAutoUpdate(30000);
+            }
+            
+            // Refresh every 30 seconds
+            setInterval(() => {
+                if (window.unifiedPointCounters) {
+                    unifiedPointCounters.updateAllCounters();
+                } else {
+                    loadStatsPointsForStats();
+                }
+                loadAchievementsForStats();
+                loadMilestonesForStats();
+                loadCategoriesForStats();
+                loadUserProfile();
+                loadXPScores();
+                loadStatistics();
+                loadPointsAnalytics();
+            }, 30000);
+        });
+    </script>
+        <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
+        <script src="/static/js/error-manager.js"></script>
+    <!-- P4: defer non-critical scripts -->
+    <script src="/static/js/toast-notifications.js" defer></script>
+    <script src="/static/js/theme-toggle.js" defer></script>
+    
+    <!-- Referral and Click Tracking -->
+    <script src="/static/js/referral-tracker.js"></script>
+    <script src="/static/js/hardcore-ai-metal.js"></script>
+    <script>
+        // Display click stats and points connection
+        async function loadClickStatsAndPoints() {
+            if (window.referralTracker) {
+                const stats = await window.referralTracker.getClickStats();
+                const referralStats = await window.referralTracker.getReferralStats();
+                
+                if (stats) {
+                    // Add click stats section
+                    const statsContainer = document.querySelector('.container');
+                    if (statsContainer) {
+                        const clickStatsDiv = document.createElement('div');
+                        clickStatsDiv.className = 'stats-section';
+                        clickStatsDiv.innerHTML = `
+                            <div class="section-header">
+                                <h2>🖱️ Click & Referral Stats</h2>
+                            </div>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-icon">🖱️</div>
+                                    <div class="stat-value">${stats.total_clicks || 0}</div>
+                                    <div class="stat-label">Total Clicks</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">🔗</div>
+                                    <div class="stat-value">${stats.referral_clicks || 0}</div>
+                                    <div class="stat-label">Referral Clicks</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">⭐</div>
+                                    <div class="stat-value">${stats.points_from_clicks || 0}</div>
+                                    <div class="stat-label">Points from Clicks</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">💎</div>
+                                    <div class="stat-value">${referralStats?.referral_points || 0}</div>
+                                    <div class="stat-label">Referral Points</div>
+                                </div>
+                            </div>
+                            ${referralStats ? `
+                                <div style="margin-top: var(--spacing-lg); padding: var(--spacing-md); background: rgba(0, 255, 136, 0.1); border-radius: 15px; border: 1px solid rgba(0, 255, 136, 0.3);">
+                                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-sm);">Your Referral Link:</p>
+                                    <input type="text" value="${referralStats.referral_url}" readonly style="width: 100%; padding: var(--spacing-sm); background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: var(--text-primary);">
+                                    <button onclick="copyReferralLink()" style="margin-top: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-lg); background: var(--primary); color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                        Copy Link
+                                    </button>
+                                </div>
+                            ` : ''}
+                        `;
+                        statsContainer.appendChild(clickStatsDiv);
+                    }
+                    
+                    // Connect points to existing stats
+                    updatePointsConnection(stats.points_from_clicks || 0, referralStats?.referral_points || 0);
+                }
+            }
+        }
+        
+        function updatePointsConnection(clickPoints, referralPoints) {
+            // Find total points display and update it
+            const totalPointsElements = document.querySelectorAll('.stat-value, .stat-label');
+            totalPointsElements.forEach(el => {
+                if (el.textContent.includes('Points') || el.textContent.includes('points')) {
+                    const parent = el.closest('.stat-card');
+                    if (parent) {
+                        const valueEl = parent.querySelector('.stat-value');
+                        if (valueEl && !valueEl.textContent.includes('Click')) {
+                            const currentValue = parseInt(valueEl.textContent) || 0;
+                            valueEl.textContent = currentValue + clickPoints + referralPoints;
+                        }
+                    }
+                }
+            });
+        }
+        
+        function copyReferralLink() {
+            const input = document.querySelector('input[readonly]');
+            if (input) {
+                input.select();
+                document.execCommand('copy');
+                if (typeof toast !== 'undefined') {
+                    toast.success('Referral link copied!');
+                }
+            }
+        }
+        
+        // Load click stats when page loads
+        window.addEventListener('load', () => {
+            setTimeout(loadClickStatsAndPoints, 1000);
+        });
+    </script>
+        </div>
+    </div>
+    
+    
+    <script src="/static/js/progression-display.js"></script>
+    <script src="/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/backend-connector.js?v=20260114120000"></script>
+    <script src="/static/js/page-data-loaders.js?v=20260114120000"></script>
+    <script>
+        // Stats Page Data Loader
+        document.addEventListener('DOMContentLoaded', async function() {
+            const loader = new pageDataLoaders.stats();
+            const data = await loader.loadAll();
+            
+            // Update stats display
+            if (data.stats && data.stats.success) {
+                console.log('Stats loaded:', data.stats);
+            }
+            
+            if (data.level && data.level.success) {
+                console.log('Level loaded:', data.level);
+            }
+            
+            if (data.xpHistory && data.xpHistory.success) {
+                console.log('XP History loaded:', data.xpHistory);
+            }
+        });
+    </script>
+    <script src="/static/js/stats-achievements-tracker.js"></script>
+    <script>
+        // Initialize unified point counters
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.unifiedPointCounters) {
+                unifiedPointCounters.updateAllCounters();
+                unifiedPointCounters.startAutoUpdate(30000);
+            }
+        });
+    </script>
+<script src="/static/js/universal-auto-save-status.js"></script>
+<script src="/static/js/top50-monetization-frame.js"></script>
+<script src="/static/js/connect-all-point-counters.js"></script>
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+    <script src="/static/js/sync-status-widget.js" defer></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>

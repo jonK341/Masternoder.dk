@@ -9,8 +9,8 @@
   if (!panel) return;
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    try { return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''); }
+    catch (e) { return (window.MnUserId ? window.MnUserId.read() : ''); }
   }
   function q(id) { return document.getElementById(id); }
   function fmt(n, d) { return Number(n || 0).toFixed(d == null ? 4 : d); }
@@ -91,8 +91,13 @@
     q('mn2-onramp-quote-result').textContent = 'Confirming payment…';
     post('/api/mn2/onramp/capture', { order_id: orderId }).then(function (res) {
       if (res && res.success) {
-        q('mn2-onramp-quote-result').textContent =
+        q('mn2-onramp-quote-result').innerHTML =
           'Purchased ' + fmt(res.mn2_amount, 6) + ' MN2 (held until ' + (res.hold_until || 'clearance') + ').';
+        if (res.tier_b_hosting && res.tier_b_hosting.next_href) {
+          var promo = res.tier_b_hosting.promo_code || 'HOSTMN5';
+          q('mn2-onramp-quote-result').innerHTML +=
+            ' <a href="' + res.tier_b_hosting.next_href + '" style="color:#4fa8ff;font-weight:600;">Step 2: reserve hosting (' + promo + ') →</a>';
+        }
         refreshHeld();
         if (window.MN2Staking && window.MN2Staking.refresh) window.MN2Staking.refresh();
       } else {

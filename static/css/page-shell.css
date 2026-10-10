@@ -1,0 +1,279 @@
+/**
+ * Page Shell — shared layout shell for index.html pages
+ *
+ * Layer between modern-design-system.css + navigation-toolbar.css and page-specific CSS.
+ * Extracts repeated inline patterns: page containers, hero headers, tab bars, stat bars,
+ * section panels, and tab panel visibility.
+ *
+ * Does NOT duplicate page-layout-metrics.css (nav offset / layout-standard) or
+ * modern-design-system.css (cards, buttons, typography base).
+ *
+ * Import order:
+ *   modern-design-system.css → navigation-toolbar.css → page-shell.css → feature modules → page CSS
+ */
+@layer page-shell {
+
+:root {
+    --shell-max-width: 1200px;
+    --shell-max-width-wide: 1400px;
+    --shell-side-padding: clamp(12px, 3vw, 24px);
+    --shell-bottom-padding: clamp(32px, 5vw, 64px);
+}
+
+/* ── Page container / layout shell ─────────────────────────────────────────── */
+
+.page-container,
+.page-shell,
+.page-main-wrap {
+    max-width: var(--shell-max-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding: var(--shell-side-padding) var(--shell-side-padding) var(--shell-bottom-padding);
+    position: relative;
+    z-index: 2;
+}
+
+.page-shell-wide,
+.page-container-wide {
+    max-width: var(--shell-max-width-wide);
+}
+
+.page-main {
+    position: relative;
+    z-index: 2;
+}
+
+/* ── Page hero / header ────────────────────────────────────────────────────── */
+
+.page-header,
+.page-hero {
+    text-align: center;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.page-header h1,
+.page-hero h1,
+.page-container > h1:first-of-type {
+    font-size: var(--font-size-3xl, 2.25rem);
+    font-weight: 700;
+    margin: 0 0 var(--spacing-xs, 0.5rem);
+    background: linear-gradient(135deg, var(--primary, #00ff88), var(--secondary, #00d4ff));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-header p,
+.page-hero p {
+    color: var(--text-secondary, rgba(255, 255, 255, 0.85));
+    margin: 0;
+}
+
+/* ── Subtitle / lede ───────────────────────────────────────────────────────── */
+
+.page-subtitle,
+.subtitle {
+    opacity: 0.65;
+    margin: 0 0 var(--spacing-lg, 1.5rem);
+    font-size: 0.95em;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.85));
+}
+
+/* ── Tab bar ───────────────────────────────────────────────────────────────── */
+
+.tabs,
+.page-tabs,
+.tabs-container {
+    display: flex;
+    gap: var(--spacing-xs, 0.5rem);
+    margin-bottom: var(--spacing-md, 1.5rem);
+    flex-wrap: wrap;
+}
+
+.tabs-center,
+.tabs-container {
+    justify-content: center;
+}
+
+.tab-btn,
+.tab-button,
+.page-tab {
+    padding: 8px 18px;
+    border-radius: var(--radius-sm, 0.5rem);
+    border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.15));
+    background: transparent;
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.85));
+    cursor: pointer;
+    font-size: 0.9em;
+    font-family: inherit;
+    transition: all var(--transition-fast, 0.15s ease);
+}
+
+.tab-btn:hover,
+.tab-button:hover,
+.page-tab:hover {
+    border-color: var(--primary, #00ff88);
+    color: var(--text-primary, #fff);
+}
+
+.tab-btn.active,
+.tab-button.active,
+.page-tab.active {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: var(--primary, #00ff88);
+    color: var(--primary, #00ff88);
+}
+
+/* ── Tab panels (show/hide) ────────────────────────────────────────────────── */
+
+.tab-content,
+.tab-panel,
+.page-panel {
+    display: none;
+}
+
+.tab-content.active,
+.tab-panel.active,
+.page-panel.active {
+    display: block;
+}
+
+/* ── Summary / stats bar ───────────────────────────────────────────────────── */
+
+.summary-bar,
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.summary-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg, 1rem);
+    padding: 18px;
+    text-align: center;
+}
+
+.summary-card .val {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary, #00ff88);
+}
+
+.summary-card .lbl {
+    font-size: 0.8em;
+    opacity: 0.6;
+    margin-top: 4px;
+}
+
+/* ── Section panel ─────────────────────────────────────────────────────────── */
+
+.report-section,
+.page-section {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg, 1rem);
+    padding: 22px;
+    margin-bottom: 20px;
+}
+
+.report-section h3,
+.page-section h3 {
+    margin: 0 0 14px;
+    font-size: 1.1em;
+}
+
+/* ── Auto-fill card grid ───────────────────────────────────────────────────── */
+
+.page-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.page-grid-tight {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+/* ── Muted text ────────────────────────────────────────────────────────────── */
+
+.muted,
+.text-muted {
+    color: var(--text-muted, rgba(255, 255, 255, 0.7));
+}
+
+/* ── Text loading placeholder (not spinner) ────────────────────────────────── */
+
+.page-loading,
+.page-container .loading,
+.tab-content .loading,
+.page-shell .loading {
+    display: block;
+    width: auto;
+    height: auto;
+    border: none;
+    animation: none;
+    text-align: center;
+    padding: 40px 20px;
+    opacity: 0.5;
+}
+
+/* ── Monitor / dashboard shell (social-monitor, similar pages) ─────────────── */
+
+.monitor-shell {
+    width: min(var(--shell-max-width-wide), calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0 var(--shell-bottom-padding);
+    position: relative;
+    z-index: 2;
+}
+
+.monitor-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+    .monitor-top {
+        display: block;
+    }
+
+    .monitor-top .actions {
+        margin-top: 16px;
+    }
+}
+
+@media (max-width: 600px) {
+    .page-header h1,
+    .page-hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .summary-bar,
+    .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+} /* end @layer page-shell */

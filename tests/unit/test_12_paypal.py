@@ -7,9 +7,18 @@ import os
 import sys
 from unittest.mock import patch, MagicMock
 
+import pytest
+
 from tests.unit.test_utils import ensure_project_root
 
 ensure_project_root()
+
+
+@pytest.fixture(autouse=True)
+def _isolate_paypal_shop_orders(tmp_path, monkeypatch):
+    from backend.services import paypal_service as svc
+
+    monkeypatch.setattr(svc, "_SHOP_ORDERS_PATH", str(tmp_path / "paypal_shop_orders.json"))
 
 
 # --- PayPal service (no real API) ---
@@ -174,6 +183,8 @@ def test_paypal_create_order_with_custom_urls_and_currency():
             assert payload["purchase_units"][0]["custom_id"] == "coin-pack-m"
             assert payload["application_context"]["return_url"] == "https://example.com/return"
             assert payload["application_context"]["cancel_url"] == "https://example.com/cancel"
+            assert payload["application_context"]["shipping_preference"] == "NO_SHIPPING"
+            assert payload["application_context"]["user_action"] == "PAY_NOW"
 
 
 def test_paypal_capture_order_api_failure():
@@ -543,3 +554,251 @@ def test_coin_pack_map_structure():
     assert COIN_PACK_MAP["coin-pack-s"]["coins_granted"] == 100
     assert COIN_PACK_MAP["coin-pack-m"]["coins_granted"] == 500
     assert COIN_PACK_MAP["coin-pack-l"]["coins_granted"] == 2000
+
+
+def test_paypal_create_order_omits_empty_custom_id():
+    """Empty custom_id is omitted — PayPal rejects blank custom_id on some apps."""
+    from backend.services import paypal_service as svc
+
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {
+        "id": "ORD-EMPTY",
+        "status": "CREATED",
+        "links": [{"rel": "approve", "href": "https://paypal.com/checkout/ORD-EMPTY"}],
+    }
+
+    with patch.object(svc, "get_access_token", return_value="mock_token"):
+        with patch.object(svc, "requests") as req:
+            req.post.return_value = mock_response
+            result = svc.create_order(amount=1.0, item_name="Test")
+            assert result.get("success") is True
+            payload = req.post.call_args[1]["json"]
+            assert "custom_id" not in payload["purchase_units"][0]
+            ctx = payload["application_context"]
+            assert ctx["shipping_preference"] == "NO_SHIPPING"
+            assert ctx["user_action"] == "PAY_NOW"
+
+
+def test_paypal_create_order_uses_payer_action_link():
+    """Newer Checkout responses use rel=payer-action instead of approve."""
+    from backend.services import paypal_service as svc
+
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {
+        "id": "ORD-PA",
+        "status": "PAYER_ACTION_REQUIRED",
+        "links": [
+            {"rel": "payer-action", "href": "https://www.paypal.com/checkoutnow?token=ORD-PA"},
+        ],
+    }
+
+    with patch.object(svc, "get_access_token", return_value="mock_token"):
+        with patch.object(svc, "requests") as req:
+            req.post.return_value = mock_response
+            result = svc.create_order(amount=4.99, item_name="Hosting")
+            assert result.get("success") is True
+            assert result.get("order_id") == "ORD-PA"
+            assert result.get("approve_url") == "https://www.paypal.com/checkoutnow?token=ORD-PA"
+
+
+def test_paypal_capture_order_already_captured_is_success():
+    """Re-capture after PayPal already captured must succeed (browser + webhook race)."""
+    from backend.services import paypal_service as svc
+
+    capture_resp = MagicMock()
+    capture_resp.status_code = 422
+    capture_resp.text = '{"name":"UNPROCESSABLE_ENTITY","details":[{"issue":"ORDER_ALREADY_CAPTURED"}]}'
+    capture_resp.json.return_value = {
+        "name": "UNPROCESSABLE_ENTITY",
+        "details": [{"issue": "ORDER_ALREADY_CAPTURED"}],
+    }
+
+    get_resp = MagicMock()
+    get_resp.status_code = 200
+    get_resp.json.return_value = {
+        "id": "ORDER-DUP",
+        "status": "COMPLETED",
+        "purchase_units": [{
+            "payments": {
+                "captures": [{
+                    "id": "CAP-DUP",
+                    "amount": {"value": "4.99", "currency_code": "USD"},
+                }],
+            },
+        }],
+    }
+
+    with patch.object(svc, "get_access_token", return_value="mock_token"):
+        with patch.object(svc, "requests") as req:
+            req.post.return_value = capture_resp
+            req.get.return_value = get_resp
+            result = svc.capture_order("ORDER-DUP")
+            assert result.get("success") is True
+            assert result.get("capture_id") == "CAP-DUP"
+            assert result.get("amount") == "4.99"
+            assert result.get("already_captured") is True
+
+
+def test_paypal_create_order_route_persists_pending_for_capture(tmp_path, monkeypatch):
+    """Create-order stores item/user so capture can fulfill if return URL drops query params."""
+    from backend.services import paypal_service as svc
+
+    monkeypatch.setattr(svc, "_SHOP_ORDERS_PATH", str(tmp_path / "paypal_shop_orders.json"))
+
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {
+        "id": "ORDER-STORE",
+        "status": "CREATED",
+        "links": [{"rel": "approve", "href": "https://sandbox.paypal.com/checkout/ORDER-STORE"}],
+    }
+
+    app = _get_app()
+    with patch.object(svc, "get_access_token", return_value="mock_token"):
+        with patch.object(svc, "requests") as req:
+            req.post.return_value = mock_response
+            with app.test_client() as c:
+                r = c.post("/api/paypal/create-order", json={
+                    "amount": 2.99,
+                    "item_id": "coin-pack-s",
+                    "item_name": "100 Coins",
+                    "user_id": "store_user",
+                })
+                assert r.status_code == 200
+    pending = svc.get_pending_shop_order("ORDER-STORE")
+    assert pending is not None
+    assert pending.get("item_id") == "coin-pack-s"
+    assert pending.get("user_id") == "store_user"
+
+
+def test_paypal_capture_uses_prefer_representation_and_request_id():
+    from backend.services import paypal_service as svc
+
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {
+        "status": "COMPLETED",
+        "purchase_units": [{
+            "payments": {
+                "captures": [{
+                    "id": "CAP-PREF",
+                    "status": "COMPLETED",
+                    "amount": {"value": "1.00", "currency_code": "USD"},
+                }],
+            },
+        }],
+    }
+
+    with patch.object(svc, "get_access_token", return_value="mock_token"):
+        with patch.object(svc, "requests") as req:
+            req.post.return_value = mock_response
+            result = svc.capture_order("ORDER-PREF")
+            assert result.get("success") is True
+            headers = req.post.call_args[1]["headers"]
+            assert headers.get("Prefer") == "return=representation"
+            assert headers.get("PayPal-Request-Id") == "cap-ORDER-PREF"
+
+
+def test_paypal_finish_checkout_captures_approved():
+    from backend.services import paypal_service as svc
+
+    get_resp = MagicMock()
+    get_resp.status_code = 200
+    get_resp.json.return_value = {"id": "ORD-APP", "status": "APPROVED"}
+
+    cap_resp = MagicMock()
+    cap_resp.status_code = 201
+    cap_resp.json.return_value = {
+        "status": "COMPLETED",
+        "purchase_units": [{
+            "payments": {
+                "captures": [{
+                    "id": "CAP-APP",
+                    "status": "COMPLETED",
+                    "amount": {"value": "3.00", "currency_code": "USD"},
+                }],
+            },
+        }],
+    }
+
+    with patch.object(svc, "get_access_token", return_value="mock_token"):
+        with patch.object(svc, "requests") as req:
+            req.get.return_value = get_resp
+            req.post.return_value = cap_resp
+            result = svc.finish_checkout_order("ORD-APP")
+            assert result.get("success") is True
+            assert result.get("capture_id") == "CAP-APP"
+            assert result.get("outcome") == "captured"
+
+
+def test_paypal_finish_checkout_skips_unapproved():
+    from backend.services import paypal_service as svc
+
+    get_resp = MagicMock()
+    get_resp.status_code = 200
+    get_resp.json.return_value = {"id": "ORD-WAIT", "status": "PAYER_ACTION_REQUIRED"}
+
+    with patch.object(svc, "get_access_token", return_value="mock_token"):
+        with patch.object(svc, "requests") as req:
+            req.get.return_value = get_resp
+            result = svc.finish_checkout_order("ORD-WAIT")
+            assert result.get("success") is False
+            assert result.get("outcome") == "awaiting_payer"
+            req.post.assert_not_called()
+
+
+def test_paypal_capture_route_uses_stored_pending_item(tmp_path, monkeypatch):
+    from backend.services import paypal_service as svc
+
+    monkeypatch.setattr(svc, "_SHOP_ORDERS_PATH", str(tmp_path / "paypal_shop_orders.json"))
+    svc.remember_shop_order("ORD-PEND", {
+        "status": "pending",
+        "item_id": "coin-pack-s",
+        "item_name": "100 Coins",
+        "user_id": "pending_user",
+    })
+
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {
+        "status": "COMPLETED",
+        "purchase_units": [{
+            "payments": {"captures": [{"id": "CAP-PEND", "amount": {"value": "0.99", "currency_code": "USD"}}]},
+        }],
+    }
+
+    app = _get_app()
+    with patch.object(svc, "get_access_token", return_value="mock_token"):
+        with patch.object(svc, "requests") as req:
+            req.post.return_value = mock_response
+            with patch("backend.services.unified_points_database.unified_points_db", MagicMock()):
+                with patch("backend.services.purchase_notification_service.notify_purchase"):
+                    with app.test_client() as c:
+                        r = c.post("/api/paypal/capture", json={"order_id": "ORD-PEND"})
+                        assert r.status_code == 200
+                        data = r.get_json()
+                        assert data.get("success") is True
+                        assert data.get("coins_granted") == 100
+
+
+def test_finish_pending_paypal_orders_dry_run(monkeypatch):
+    from backend.services import paypal_order_events as events
+
+    monkeypatch.setattr(
+        events,
+        "collect_pending_paypal_jobs",
+        lambda extra=None: [{
+            "rail": "shop",
+            "local_id": "PP-1",
+            "paypal_order_id": "PP-1",
+            "user_id": "u1",
+            "item_id": "coin-pack-s",
+        }],
+    )
+    out = events.finish_pending_paypal_orders(limit=10, dry_run=True)
+    assert out.get("success") is True
+    assert out.get("dry_run") is True
+    assert out["counts"]["pending_found"] == 1
+    assert out["results"][0]["outcome"] == "dry_run"

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MN2 Private Control</title>
+<style>
+  :root{--bg:#0b0f17;--card:#131a26;--line:#233044;--txt:#e6edf6;--mut:#8a97a8;--pos:#31d0aa;--neg:#f2607d;--acc:#5b9cff;--warn:#f0b357}
+  [data-theme="light"]{--bg:#f4f6fb;--card:#fff;--line:#dfe5ee;--txt:#16202e;--mut:#5b6675;--acc:#2f6bff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 -apple-system,Segoe UI,Roboto,sans-serif}
+  header{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+  h1{font-size:15px;margin:0;font-weight:700}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--mut);display:inline-block}
+  .dot.ok{background:var(--pos)}.dot.bad{background:var(--neg)}
+  .badge{padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700}
+  .badge.paper{background:#1e2a3d;color:var(--acc)}.badge.live{background:#3a1622;color:var(--neg)}
+  .kpis{display:flex;gap:16px;margin-left:auto;align-items:center}
+  .kpi{text-align:right}.kpi .l{color:var(--mut);font-size:11px}.kpi .v{font-size:16px;font-weight:700}
+  .pos{color:var(--pos)}.neg{color:var(--neg)}
+  select,input{background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:13px}
+  nav{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;position:sticky;top:45px;background:var(--bg);z-index:4}
+  .tab{padding:7px 13px;border-radius:8px;cursor:pointer;color:var(--mut);font-weight:600}
+  .tab.active{background:#1a2536;color:var(--txt)}[data-theme="light"] .tab.active{background:#e7edf8}
+  .tab b{opacity:.5;font-size:11px}
+  main{padding:16px 18px;max-width:1200px;margin:0 auto}
+  .pane{display:none}.pane.active{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+  .card h2{font-size:13px;margin:0 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+  .card h2 .ts{margin-left:auto;font-size:10px;text-transform:none;letter-spacing:0}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;cursor:pointer;user-select:none}td.r,th.r{text-align:right}
+  .pill{padding:2px 8px;border-radius:6px;font-size:11px;background:#1e2a3d;color:var(--acc)}
+  .pill.no{background:#2a2233;color:var(--mut)}.pill.halt,.pill.neg{background:#3a1622;color:var(--neg)}
+  .pill.strong{background:#12332a;color:var(--pos)}.pill.consider{background:#33301a;color:var(--warn)}.pill.skip{background:#2a2233;color:var(--mut)}
+  button{background:var(--acc);color:#06101f;border:0;border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer}
+  button.ghost{background:#1a2536;color:var(--txt)}[data-theme="light"] button.ghost{background:#e7edf8}
+  button.danger{background:#f2607d;color:#1a0710}
+  .muted{color:var(--mut)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .ai{background:#101a2b;border-left:3px solid var(--acc);padding:10px 12px;border-radius:8px;margin-bottom:12px}[data-theme="light"] .ai{background:#eef3ff}
+  .big{font-size:22px;font-weight:800}
+  .bar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;min-width:120px}
+  .bar > i{display:block;height:100%;background:var(--pos)}
+  .fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+  .fields label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)}
+  a{color:var(--acc)}
+  .alertbell{position:relative;cursor:pointer}
+  .alertbell .cnt{position:absolute;top:-6px;right:-8px;background:var(--neg);color:#fff;border-radius:999px;font-size:10px;padding:0 5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>MN2 Private Control</h1>
+  <span id="hdot" class="dot" title="site health"></span>
+  <span id="mode" class="badge paper">paper</span>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Balance</div><div class="v" id="k_bal">—</div></div>
+    <div class="kpi"><div class="l">Realized</div><div class="v" id="k_pnl">—</div></div>
+    <div class="kpi"><div class="l">Proj/day</div><div class="v" id="k_proj">—</div></div>
+    <div class="kpi"><div class="l">Goal</div><div class="bar" title="realized vs goal"><i id="goalbar" style="width:0%"></i></div></div>
+    <span class="alertbell" id="bell" title="alerts">🔔<span class="cnt" id="bellcnt" style="display:none">0</span></span>
+    <select id="refsel" title="auto-refresh"><option value="3000">3s</option><option value="5000" selected>5s</option><option value="10000">10s</option><option value="0">pause</option></select>
+    <button class="ghost" id="themebtn" title="theme">◐</button>
+    <a href="/logout" class="pill no" style="text-decoration:none">Lock</a>
+  </div>
+</header>
+<nav id="nav">
+  <div class="tab active" data-tab="overview">Overview <b>1</b></div>
+  <div class="tab" data-tab="trading">Trading <b>2</b></div>
+  <div class="tab" data-tab="monitor">Profit Monitor (AI) <b>3</b></div>
+  <div class="tab" data-tab="controls">Controls <b>4</b></div>
+  <div class="tab" data-tab="shop">Shop <b>5</b></div>
+  <div class="tab" data-tab="accounting">Accounting <b>6</b></div>
+  <div class="tab" data-tab="security">Security <b>7</b></div>
+</nav>
+<main>
+  <div class="pane active" id="p_overview">
+    <div class="card"><h2>Equity / PnL <span class="ts" id="ts_spark"></span>
+      <button class="ghost" style="margin-left:auto" onclick="exp('history')">Export CSV</button></h2>
+      <canvas id="spark" height="70" style="width:100%"></canvas></div>
+    <div class="grid2">
+      <div class="card"><h2>Account balances <span class="ts" id="ts_bal"></span></h2><div id="ov_bal" class="muted">Loading…</div></div>
+      <div class="card"><h2>Grid positions &amp; PnL <button class="ghost" style="margin-left:auto" onclick="exp('positions')">CSV</button></h2><div id="ov_pos" class="muted">Loading…</div></div>
+    </div>
+    <div class="card"><h2>Cross-trade signals</h2><div id="ov_sig" class="muted">Loading…</div></div>
+  </div>
+
+  <div class="pane" id="p_trading">
+    <div class="card"><div class="row"><h2 style="margin:0">Bot control</h2>
+      <span id="tr_en" class="pill no">disabled</span>
+      <button id="tr_toggle" class="ghost">Enable</button>
+      <button id="tr_tick">Run tick (paper)</button>
+      <button id="tr_kill" class="danger">Kill</button>
+      <span class="muted" id="tr_msg"></span></div></div>
+    <div class="card"><h2>AI recommendations</h2>
+      <div class="row" style="margin-bottom:8px"><input id="tr_search" placeholder="filter symbol…" style="flex:1"/>
+        <label class="muted">min bps <input id="tr_minbps" type="number" value="0" style="width:70px"/></label></div>
+      <div id="tr_recs" class="muted">Loading…</div></div>
+    <div class="card"><h2>Grid config &amp; presets</h2>
+      <div class="row" style="margin-bottom:8px">
+        <button class="ghost" onclick="preset('conservative')">Conservative</button>
+        <button class="ghost" onclick="preset('balanced')">Balanced</button>
+        <button class="ghost" onclick="preset('aggressive')">Aggressive</button></div>
+      <div class="fields">
+        <label>Levels<input id="cf_levels" type="number"/></label>
+        <label>Step %<input id="cf_step" type="number" step="0.001"/></label>
+        <label>Order size $<input id="cf_size" type="number"/></label>
+        <label>Max inventory $<input id="cf_maxinv" type="number"/></label>
+        <label>Hard loss cap $<input id="cf_loss" type="number"/></label>
+        <label>Assets (csv)<input id="cf_assets"/></label>
+        <label title="When on, the grid seeds SELL orders against coin you already hold (e.g. DOGE) even before it has bought any. Turn off to stop selling your existing coin." style="grid-column:1/-1;flex-direction:row;align-items:center;gap:8px;color:var(--txt);font-size:13px"><input id="cf_sellexist" type="checkbox" style="width:auto;flex:none"/> Sell existing coin — trade the base coin you already hold (e.g. DOGE)</label>
+      </div>
+      <button id="cf_save">Save config</button><span class="muted" id="cf_msg" style="margin-left:8px"></span></div>
+    <div class="card"><h2>Go-live preflight <span class="muted" style="font-size:12px">(check before flipping live)</span></h2>
+      <div class="row" style="margin-bottom:8px">
+        <button id="pf_run" class="ghost">Run preflight</button>
+        <span id="pf_verdict" class="pill">not run</span>
+        <span class="muted" id="pf_msg" style="margin-left:8px"></span></div>
+      <div id="pf_body" class="muted">Verifies live gates, per-venue reachability, funded legs, and fee-positive config — and lists exactly what's missing before you flip live.</div></div>
+    <div class="card"><h2>Profit-ranked pairs</h2>
+      <div class="muted" style="margin-bottom:8px;font-size:12px">Ranks candidate pairs by measured edge (ledger history + live arb), net of fees. "Add profitable" writes the winners into the multi-venue grid config.</div>
+      <div class="row" style="margin-bottom:8px">
+        <button id="pr_scan" class="ghost">Scan &amp; rank</button>
+        <button id="pr_add">Add profitable pairs</button>
+        <span class="muted" id="pr_msg" style="margin-left:8px"></span></div>
+      <div id="pr_body" class="muted">Click "Scan &amp; rank" to find the pairs that actually make the difference.</div></div>
+    <div class="card"><h2>Venue performance <span class="muted" style="font-size:12px">(which venue is paying)</span></h2>
+      <div class="row" style="margin-bottom:8px">
+        <label class="muted">window
+          <select id="vp_hours"><option value="24">24h</option><option value="168">7d</option><option value="1">1h</option></select></label>
+        <button id="vp_refresh" class="ghost">Refresh</button>
+        <span class="muted" id="vp_msg" style="margin-left:8px"></span></div>
+      <div id="vp_body" class="muted">Real fills + realized PnL per venue, from the grid ledger. Shift size toward the winners.</div></div>
+    <div class="card"><h2>Exchange specialization <span class="muted" style="font-size:12px">(one tuned market-maker per exchange)</span></h2>
+      <div class="muted" style="margin-bottom:8px;font-size:12px">Cross-trading is off, so each exchange runs its own profile: liquid venues dense (profit from oscillation), thin venues wide + spread-gated. Every grid step is fee-positive.</div>
+      <div id="sp_body" class="muted">Loading…</div></div>
+    <div class="card"><h2>Cross-venue price differences</h2>
+      <div class="muted" style="margin-bottom:8px;font-size:12px">Searches the same pair's price across Binance / NonKYC / XeggeX and shows the buy-low/sell-high gap (net of both venues' fees). "Add cross-venue pairs" lists the profitable ones on each exchange for the grid.</div>
+      <div class="row" style="margin-bottom:8px">
+        <label class="muted">min net bps <input id="cx_min" type="number" value="5" style="width:70px"/></label>
+        <button id="cx_scan" class="ghost">Search differences</button>
+        <button id="cx_add">Add cross-venue pairs</button>
+        <span class="muted" id="cx_msg" style="margin-left:8px"></span></div>
+      <div id="cx_body" class="muted">Click "Search differences" to find cross-exchange price gaps.</div>
+      <div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px">
+        <div class="row" style="align-items:center">
+          <b>Auto-trader</b>
+          <span class="pill" id="ct_state">off</span>
+          <span class="pill" id="ct_mode">paper</span>
+          <button id="ct_toggle" class="ghost">Enable auto-execute</button>
+          <button id="ct_check" class="ghost">Check executable</button>
+          <button id="ct_run">Run now (paper)</button>
+          <span class="muted" id="ct_msg" style="margin-left:8px"></span></div>
+        <div class="muted" style="font-size:12px;margin:6px 0">Searches continuously and fires the cross-trade the instant an edge clears the threshold. Real orders need both live gates; every fire is written to the audit trail below.</div>
+        <div id="ct_preview"></div>
+        <div id="ct_body" class="muted">No cross-trade executions yet.</div></div></div>
+  </div>
+
+  <div class="pane" id="p_monitor">
+    <div class="card"><h2>AI profit summary — where your profit is</h2><div id="mo_ai" class="ai muted">Loading…</div>
+      <div class="row"><div><div class="l muted">Realized</div><div class="big" id="mo_real">—</div></div>
+        <div style="margin-left:24px"><div class="l muted">Projected / day</div><div class="big" id="mo_proj">—</div></div>
+        <div style="margin-left:24px"><div class="l muted">Projected / month</div><div class="big" id="mo_month">—</div></div>
+        <div style="margin-left:24px"><div class="l muted">Profit goal ($)</div><input id="goal" type="number" value="100" style="width:90px"/></div></div></div>
+    <div class="card"><h2>Profit sources (trade + signal → profit)</h2><div id="mo_src" class="muted">Loading…</div></div>
+  </div>
+
+  <div class="pane" id="p_controls">
+    <div class="card"><h2>Pre-trade analyst — last check before auto-trading</h2>
+      <div id="an_verdict" class="ai muted">Loading…</div>
+      <div id="an_checks"></div></div>
+    <div class="card"><h2>Site daemon &amp; bots</h2><div class="row" style="margin-bottom:8px">
+      <button data-act="run_all_bots">Run all bots</button>
+      <button class="ghost" data-act="daemon_tick">Daemon tick</button>
+      <button class="danger" data-act="kill_switch" data-on="true">Kill switch ON</button></div>
+      <div id="co_board" class="muted">Loading…</div></div>
+    <div class="card"><h2>Agents (Live Watch)</h2><div id="co_agents" class="muted">Loading…</div></div>
+    <div class="card"><h2>Recent alerts <button class="ghost" style="margin-left:auto" onclick="exp('alerts')">Export CSV</button></h2><div id="co_alerts" class="muted">Loading…</div></div>
+  </div>
+
+  <div class="pane" id="p_shop"><div class="card"><h2>Shop flow control</h2><div id="sh_body" class="muted">Loading…</div></div></div>
+  <div class="pane" id="p_accounting"><div class="card"><h2>User accounting</h2><div id="ac_body" class="muted">Loading…</div></div></div>
+  <div class="pane" id="p_security"><div class="card"><h2>Security &amp; live gates</h2><div id="se_body" class="muted">Loading…</div></div></div>
+</main>
+
+<script>
+function money(n){var v=Number(n||0);return (v<0?'-$':'$')+Math.abs(v).toFixed(2);}
+function cls(n){return Number(n||0)>=0?'pos':'neg';}
+function el(id){return document.getElementById(id);}
+function now(){return new Date().toLocaleTimeString();}
+function getJSON(u){return fetch(u).then(function(r){if(r.status===401){location.href='/login';return {};}return r.json();});}
+function postJSON(u,b){return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}).then(function(r){return r.json();});}
+function exp(what){window.open('/api/export/'+what+'.csv','_blank');}
+
+/* theme */
+(function(){var t=localStorage.getItem('mn2theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+el('themebtn').onclick=function(){var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',t);localStorage.setItem('mn2theme',t);drawSpark(lastHist);};
+
+/* tabs + shortcuts */
+var loaders={};
+function activate(tab){document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab);});
+  document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('active',p.id==='p_'+tab);});if(loaders[tab])loaders[tab]();}
+document.getElementById('nav').addEventListener('click',function(e){var t=e.target.closest('.tab');if(t)activate(t.dataset.tab);});
+var order=['overview','trading','monitor','controls','shop','accounting','security'];
+document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT')return;var i=parseInt(e.key,10);if(i>=1&&i<=7)activate(order[i-1]);});
+
+/* sortable tables */
+function makeSortable(table){table.querySelectorAll('th[data-k]').forEach(function(th){th.onclick=function(){
+  var k=th.dataset.k,num=th.dataset.num==='1';var tb=table.querySelector('tbody');var rows=[].slice.call(tb.rows);
+  var dir=th._d=-(th._d||1);rows.sort(function(a,b){var x=a.cells[th.cellIndex].textContent,y=b.cells[th.cellIndex].textContent;
+    if(num){x=parseFloat(x.replace(/[^0-9.\-]/g,''))||0;y=parseFloat(y.replace(/[^0-9.\-]/g,''))||0;}return x>y?dir:x<y?-dir:0;});
+  rows.forEach(function(r){tb.appendChild(r);});};});}
+
+/* sparkline */
+var lastHist=[];
+function drawSpark(hist){lastHist=hist||[];var c=el('spark');if(!c)return;var w=c.clientWidth||600,h=70;c.width=w;c.height=h;var ctx=c.getContext('2d');ctx.clearRect(0,0,w,h);
+  var cs=getComputedStyle(document.documentElement);
+  var pts=(hist||[]).map(function(r){return Number(r.total_usd||0);});if(pts.length<2){ctx.fillStyle=cs.getPropertyValue('--mut');ctx.font='12px sans-serif';ctx.fillText('collecting history…',8,40);return;}
+  var mn=Math.min.apply(null,pts),mx=Math.max.apply(null,pts),rng=(mx-mn)||1;
+  var up=pts[pts.length-1]>=pts[0];ctx.strokeStyle=cs.getPropertyValue(up?'--pos':'--neg');ctx.lineWidth=2;ctx.beginPath();
+  pts.forEach(function(p,i){var x=i/(pts.length-1)*(w-8)+4,y=h-6-((p-mn)/rng)*(h-16);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+  ctx.fillStyle=cs.getPropertyValue('--mut');ctx.font='10px sans-serif';ctx.fillText('max '+money(mx),6,12);ctx.fillText('min '+money(mn),6,h-4);
+  ctx.fillStyle=cs.getPropertyValue(up?'--pos':'--neg');ctx.font='11px sans-serif';ctx.fillText(money(pts[pts.length-1]),w-70,12);}
+
+function balTable(b){if(!b||!b.success)return '<span class="muted">Unavailable.</span>';var h='';
+  if(b.warming)h+='<div class="muted" style="margin-bottom:6px">⏳ warming up — balances load shortly…</div>';
+  Object.keys(b.venues||{}).forEach(function(v){var row=b.venues[v];h+='<div style="margin-bottom:10px"><div class="row"><b>'+v+'</b><span class="muted" style="margin-left:auto">'+money(row.usd_total)+'</span></div>';
+    if(row.error)h+='<div class="neg" style="font-size:12px">'+row.error+'</div>';else{h+='<table><thead><tr><th data-k=s>Asset</th><th data-k=a data-num=1 class=r>Amount</th><th data-k=u data-num=1 class=r>USD</th></tr></thead><tbody>';
+      (row.assets||[]).slice(0,8).forEach(function(a){h+='<tr><td>'+a.symbol+'</td><td class=r>'+Number(a.amount).toFixed(6)+'</td><td class=r>'+money(a.usd_value)+'</td></tr>';});
+      if(!(row.assets||[]).length)h+='<tr><td colspan=3 class="'+(row.read_ok===false?'neg':'muted')+'">'+(row.note||'no balances')+(row.http_status?(' (HTTP '+row.http_status+')'):'')+'</td></tr>';h+='</tbody></table>';}h+='</div>';});
+  return h+'<div class="row"><span class="muted">Total</span><b style="margin-left:auto">'+money(b.total_usd)+'</b></div>';}
+function posTable(g){var st=(g&&g.state)||{};var keys=Object.keys(st);if(!keys.length)return '<span class="muted">No positions. Configured: '+((g&&g.assets_configured)||[]).join(', ')+'</span>';
+  var h='<table><thead><tr><th data-k=m>Market</th><th data-k=i data-num=1 class=r>Inv</th><th data-k=v data-num=1 class=r>Avg</th><th data-k=p data-num=1 class=r>Realized</th><th class=r>Ord</th><th>State</th></tr></thead><tbody>';
+  keys.forEach(function(k){var s=st[k];var stt=s.halted?'<span class="pill halt">halt: '+(s.halt_reason||'')+'</span>':'<span class="pill">active</span>';
+    h+='<tr><td>'+k+'</td><td class=r>'+Number(s.inventory_base||0).toFixed(4)+'</td><td class=r>'+money(s.avg_cost_usd)+'</td><td class="r '+cls(s.realized_pnl_usd)+'">'+money(s.realized_pnl_usd)+'</td><td class=r>'+(s.open_orders||0)+'</td><td>'+stt+'</td></tr>';});
+  return h+'</tbody></table>';}
+function sigTable(sg){var list=(sg&&sg.signals)||[];if(!list.length)return '<span class="muted">No signals'+(sg&&sg.error?(' ('+sg.error+')'):'')+'.</span>';
+  var h='<table><thead><tr><th data-k=t>Type</th><th data-k=s>Symbol</th><th>Route</th><th data-k=b data-num=1 class=r>bps</th><th>Actionable</th></tr></thead><tbody>';
+  list.slice(0,25).forEach(function(s){var route=s.type==='arbitrage'?((s.buy_venue||'?')+'→'+(s.sell_venue||'?')):(s.venue||'');var m=s.type==='arbitrage'?Number(s.net_bps||0).toFixed(1):Number(s.spread_bps||0).toFixed(1);
+    h+='<tr><td>'+s.type+'</td><td>'+(s.symbol||'')+'</td><td class=muted>'+route+'</td><td class=r>'+m+'</td><td>'+(s.actionable?'<span class="pill">yes</span>':'<span class="pill no">info</span>')+'</td></tr>';});
+  return h+'</tbody></table>';}
+
+var enabled=false;
+loaders.overview=function(){getJSON('/api/overview').then(function(d){
+  var m=el('mode');m.textContent=d.mode;m.className='badge '+(d.mode==='LIVE'?'live':'paper');
+  el('k_bal').textContent=money((d.balances||{}).total_usd);
+  var p=(d.profit||{}).realized_pnl_usd||0;el('k_pnl').textContent=money(p);el('k_pnl').className='v '+cls(p);
+  el('k_proj').textContent=money(d.projected_daily_usd);
+  var goal=Number(el('goal').value||100);el('goalbar').style.width=Math.max(0,Math.min(100,(p/goal)*100))+'%';
+  enabled=!!(d.grid||{}).enabled;el('tr_en').textContent=enabled?'enabled':'disabled';el('tr_en').className='pill '+(enabled?'':'no');el('tr_toggle').textContent=enabled?'Disable':'Enable';
+  el('ov_bal').innerHTML=balTable(d.balances);el('ov_pos').innerHTML=posTable(d.grid);el('ov_sig').innerHTML=sigTable(d.signals);
+  el('ts_bal').textContent=now();document.querySelectorAll('#p_overview table').forEach(makeSortable);
+});
+  getJSON('/api/history?limit=200').then(function(h){drawSpark((h&&h.history)||[]);var st=(h&&h.stats)||{};
+    el('ts_spark').innerHTML=(st.points?('Δ <b class="'+cls(st.change)+'">'+money(st.change)+'</b> · peak '+money(st.peak)+' · maxDD '+money(st.max_drawdown)+' · '):'')+now();});
+  getJSON('/api/health').then(function(h){el('hdot').className='dot '+(h.site_reachable===false?'bad':(h.site_reachable?'ok':''));});
+  refreshAlerts();
+};
+loaders.trading=function(){getJSON('/api/trading').then(function(d){window._recs=d.recommendations||[];renderRecs();
+  var c=(d.grid_config)||{};el('cf_levels').value=c.grid_levels;el('cf_step').value=c.grid_step_pct;el('cf_size').value=c.order_size_usd;el('cf_maxinv').value=c.max_inventory_usd;el('cf_loss').value=c.hard_loss_cap_usd;el('cf_assets').value=(c.assets||[]).join(',');el('cf_sellexist').checked=!!c.allow_sell_existing_inventory;});if(window.loadCrossTrade)loadCrossTrade();if(window.loadVenuePerf)loadVenuePerf();if(window.loadSpecialization)loadSpecialization();};
+function renderRecs(){var recs=window._recs||[];var q=(el('tr_search').value||'').toUpperCase();var mn=Number(el('tr_minbps').value||0);
+  recs=recs.filter(function(r){return (!q||r.symbol.indexOf(q)>=0)&&r.edge_bps>=mn;});
+  if(!recs.length){el('tr_recs').innerHTML='<span class="muted">No matching recommendations.</span>';return;}
+  var h='<table><thead><tr><th data-k=s>Symbol</th><th>Type</th><th>Route</th><th data-k=e data-num=1 class=r>Edge bps</th><th data-k=p data-num=1 class=r>Proj/day</th><th>Rec</th><th>Reason</th></tr></thead><tbody>';
+  recs.forEach(function(r){h+='<tr><td><b>'+r.symbol+'</b></td><td>'+r.type+'</td><td class=muted>'+r.route+'</td><td class=r>'+r.edge_bps+'</td><td class=r>'+money(r.projected_daily_usd)+'</td><td><span class="pill '+r.recommendation+'">'+r.recommendation+'</span></td><td class=muted>'+r.reason+'</td></tr>';});
+  el('tr_recs').innerHTML=h+'</tbody></table>';makeSortable(el('tr_recs').querySelector('table'));}
+try{el('tr_search').value=localStorage.getItem('mn2search')||'';el('tr_minbps').value=localStorage.getItem('mn2minbps')||'0';}catch(e){}
+el('tr_search').oninput=function(){try{localStorage.setItem('mn2search',el('tr_search').value);}catch(e){}renderRecs();};
+el('tr_minbps').oninput=function(){try{localStorage.setItem('mn2minbps',el('tr_minbps').value);}catch(e){}renderRecs();};
+loaders.monitor=function(){getJSON('/api/profit-monitor').then(function(d){var pm=d.profit_map||{};el('mo_ai').textContent=(d.ai||{}).summary||'—';el('mo_ai').classList.remove('muted');
+  el('mo_real').textContent=money(pm.realized_pnl_usd);el('mo_real').className='big '+cls(pm.realized_pnl_usd);el('mo_proj').textContent=money(pm.projected_daily_usd);el('mo_month').textContent=money(pm.projected_monthly_usd);
+  var src=pm.sources||[];var h=src.length?'<table><thead><tr><th>Source</th><th>Route</th><th class=r>Proj/day</th><th>Rec</th></tr></thead><tbody>':'';
+  src.forEach(function(s){h+='<tr><td>'+s.source+'</td><td class=muted>'+(s.route||'')+'</td><td class=r>'+money(s.projected_daily_usd)+'</td><td><span class="pill '+s.recommendation+'">'+s.recommendation+'</span></td></tr>';});
+  el('mo_src').innerHTML=src.length?(h+'</tbody></table>'):'<span class="muted">No actionable profit sources right now.</span>';});};
+loaders.controls=function(){
+  getJSON('/api/analyst').then(function(a){
+    if(!a||!a.success){el('an_verdict').textContent='Analyst unavailable.';return;}
+    var v=a.ready?'<span class="pill strong">READY to auto-trade</span>':'<span class="pill halt">BLOCKED ('+a.blocker_count+')</span>';
+    el('an_verdict').innerHTML='<div style="margin-bottom:6px">'+v+' &nbsp; <b>Next:</b> '+a.next_step+'</div><div class="muted" style="font-size:12px">'+a.note+'</div>';
+    var rows=(a.checks||[]).map(function(c){var p=c.ok?'<span class="pill strong">pass</span>':(c.severity==='info'?'<span class="pill">info</span>':'<span class="pill neg">fix</span>');
+      return '<tr><td>'+c.name+'</td><td>'+p+'</td><td class="muted">'+c.detail+'</td></tr>';}).join('');
+    var acts=(a.actions||[]).slice(0,6).map(function(x){return '<li>'+x.action+'</li>';}).join('');
+    el('an_checks').innerHTML='<table><tbody>'+rows+'</tbody></table>'+(acts?('<div style="margin-top:8px"><b>What to do:</b><ul style="margin:6px 0 0 18px">'+acts+'</ul></div>'):'');
+  }).catch(function(){el('an_verdict').textContent='Analyst error.';});
+  getJSON('/api/controls').then(function(d){var b=d.control_board||{};
+  el('co_board').innerHTML=b.available===false?('<span class="muted">Site unreachable: '+(b.error||'')+'</span>'):('<div class="muted">'+JSON.stringify((b.totals)||b.data||{}).slice(0,300)+'</div>');
+  var a=d.agents||{};el('co_agents').innerHTML=a.available===false?('<span class="muted">Site unreachable: '+(a.error||'')+'</span>'):('<div class="muted">'+JSON.stringify((a.totals)||{}).slice(0,300)+'</div>');});refreshAlerts();};
+document.querySelectorAll('#p_controls button[data-act]').forEach(function(b){b.onclick=function(){
+  if(/kill|run_all/.test(b.dataset.act)&&!confirm('Confirm site action: '+b.dataset.act.replace(/_/g,' ')+'?'))return;
+  var body={action:b.dataset.act};if(b.dataset.on)body.on=b.dataset.on==='true';
+  b.disabled=true;b.style.opacity='0.6';
+  postJSON('/api/controls/action',body).then(function(){loaders.controls();b.disabled=false;b.style.opacity='';});
+};});
+loaders.shop=function(){getJSON('/api/shop').then(function(d){
+  function blk(title,o){var un=o&&o.available===false;return '<div style="margin-bottom:10px"><b>'+title+'</b> '+(un?'<span class="pill no">unreachable</span>':'<span class="pill">ok</span>')+
+    '<pre class="muted" style="white-space:pre-wrap;font-size:12px;margin:4px 0">'+JSON.stringify(un?{error:o.error}:o,null,1).slice(0,500)+'</pre></div>';}
+  el('sh_body').innerHTML='<div class="muted" style="margin-bottom:8px">'+(d.note||'')+'</div>'+blk('Analytics',d.analytics)+blk('Payment health',d.payment_health)+blk('Integration health',d.integration_health);
+});};
+loaders.accounting=function(){getJSON('/api/accounting').then(function(d){el('ac_body').innerHTML='<div>Grid realized: <b>'+money((d.grid_realized||{}).realized_pnl_usd)+'</b></div><pre class="muted" style="white-space:pre-wrap;font-size:12px">payout: '+JSON.stringify(d.payout||{}).slice(0,300)+'\ntreasury: '+JSON.stringify(d.treasury||{}).slice(0,300)+'</pre>';});};
+loaders.security=function(){getJSON('/api/security').then(function(d){var g=d.live_gates||{};var h='<table><tbody>';
+  h+='<tr><td>App passcode lock</td><td><span class="pill strong">on</span></td></tr>';
+  h+='<tr><td>Passcode is default</td><td>'+(d.passcode_is_default?'<span class="pill neg">yes — change it</span>':'<span class="pill strong">no</span>')+'</td></tr>';
+  h+='<tr><td>Config loaded from</td><td class="muted" style="font-size:11px">'+(d.config_loaded_from||'?')+'</td></tr>';
+  h+='<tr><td>Site admin key set</td><td>'+(d.site_admin_key_set?'<span class="pill strong">yes</span>':'<span class="pill no">no</span>')+'</td></tr>';
+  Object.keys(g).forEach(function(k){h+='<tr><td>'+k+'</td><td>'+(g[k]?'<span class="pill neg">LIVE</span>':'<span class="pill no">off</span>')+'</td></tr>';});
+  h+='</tbody></table><div class="muted" style="margin-top:8px">'+(d.recommendations||[]).map(function(r){return '• '+r;}).join('<br>')+'</div>';el('se_body').innerHTML=h;});};
+
+/* alerts + browser notifications */
+var lastAlertTs='';
+function refreshAlerts(){getJSON('/api/alerts?limit=30').then(function(d){var a=(d&&d.alerts)||[];el('bellcnt').style.display=a.length?'inline':'none';el('bellcnt').textContent=a.length;
+  var co=el('co_alerts');if(co)co.innerHTML=a.length?a.map(function(x){return '<div class="muted" style="border-top:1px solid var(--line);padding:4px 0"><b>'+x.kind+'</b> '+x.message+' <span style="float:right">'+(x.ts||'').slice(11,19)+'</span></div>';}).join(''):'<span class="muted">No alerts.</span>';
+  if(a.length&&a[0].ts!==lastAlertTs){if(lastAlertTs&&window.Notification&&Notification.permission==='granted')new Notification('MN2: '+a[0].kind,{body:a[0].message});lastAlertTs=a[0].ts;}});}
+if(window.Notification&&Notification.permission==='default')Notification.requestPermission();
+
+/* actions */
+function busy(btn,on){if(!btn)return;btn.disabled=on;btn.style.opacity=on?'0.6':'';}
+el('tr_toggle').onclick=function(){busy(el('tr_toggle'),true);postJSON('/api/controls/action',{action:'grid_enable',enabled:!enabled}).then(function(){loaders.overview();busy(el('tr_toggle'),false);});};
+el('tr_tick').onclick=function(){busy(el('tr_tick'),true);el('tr_msg').textContent='running…';postJSON('/api/controls/action',{action:'grid_tick'}).then(function(x){el('tr_msg').textContent='tick: realized '+money((x||{}).realized_pnl_usd);loaders.overview();busy(el('tr_tick'),false);});};
+el('tr_kill').onclick=function(){if(!confirm('Kill switch: disable the grid bot?'))return;busy(el('tr_kill'),true);postJSON('/api/controls/action',{action:'grid_kill'}).then(function(){loaders.overview();busy(el('tr_kill'),false);});};
+el('cf_save').onclick=function(){postJSON('/api/config/save',{grid_levels:+el('cf_levels').value,grid_step_pct:+el('cf_step').value,order_size_usd:+el('cf_size').value,max_inventory_usd:+el('cf_maxinv').value,hard_loss_cap_usd:+el('cf_loss').value,allow_sell_existing_inventory:el('cf_sellexist').checked,assets:(el('cf_assets').value||'').split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean)}).then(function(){el('cf_msg').textContent='saved';});};
+window.preset=function(n){postJSON('/api/config/preset',{preset:n}).then(function(){loaders.trading();el('cf_msg').textContent='applied '+n;});};
+function renderVenuePerf(d){if(!d||!d.success){el('vp_body').innerHTML='<span class="muted">Unavailable.</span>';return;}
+  var vs=d.venues||[];if(!vs.length){el('vp_body').innerHTML='<span class="muted">No fills recorded in this window yet. Once the grid fills, per-venue results appear here.</span>';return;}
+  var h='<table><thead><tr><th data-k=s>Venue</th><th data-num=1 class=r>Fills/day</th><th data-num=1 class=r>Fills</th><th data-num=1 class=r>Realized/day</th><th data-k=p data-num=1 class=r>Realized</th><th data-num=1 class=r>Per fill</th><th>Last fill</th></tr></thead><tbody>';
+  vs.forEach(function(v){var win=(v.venue===d.focus_suggestion);h+='<tr'+(win?' style="font-weight:600"':'')+'><td>'+(win?'★ ':'')+v.venue+'</td><td class=r>'+v.fills_per_day+'</td><td class=r>'+v.fills+'</td><td class=r>'+money(v.realized_per_day_usd)+'</td><td class=r class="'+cls(v.realized_usd)+'">'+money(v.realized_usd)+'</td><td class=r>'+money(v.realized_per_fill_usd)+'</td><td class=muted>'+((v.last_fill_ts||'').slice(11,19))+'</td></tr>';});
+  h+='</tbody></table><div class="muted" style="margin-top:6px;font-size:12px">'+(d.note||'')+'</div>';
+  el('vp_body').innerHTML=h;makeSortable(el('vp_body').querySelector('table'));}
+function loadVenuePerf(){var hrs=Number(el('vp_hours').value||24);el('vp_msg').textContent='loading…';getJSON('/api/grid/venue-performance?hours='+hrs).then(function(d){el('vp_msg').textContent=d.focus_suggestion?('focus: '+d.focus_suggestion):'';renderVenuePerf(d);});}
+el('vp_refresh').onclick=loadVenuePerf;el('vp_hours').onchange=loadVenuePerf;
+function loadSpecialization(){getJSON('/api/grid/status').then(function(d){
+  var ev=(d.effective_by_venue)||{};var profs=(d.venue_profiles_available)||[];var vs=Object.keys(ev);
+  var paused=(d.paused_venues)||{};
+  if(!vs.length){el('sp_body').innerHTML='<span class="muted">No venues configured.</span>';return;}
+  var cb=(d.circuit_breaker)||{};
+  var h='<div class="muted" style="font-size:12px;margin-bottom:6px">Circuit breaker: '+(cb.enabled?('<span class="pill strong">on</span> auto-pause a venue if realized ≤ -$'+cb.loss_threshold_usd+' over '+cb.window_hours+'h; auto-resume after '+cb.cooldown_hours+'h'):'<span class="pill no">off</span>')+'</div>';
+  h+='<table><thead><tr><th>Exchange</th><th>Profile</th><th class=r>Step</th><th class=r>Levels</th><th class=r>Size $</th><th class=r>Min spread</th><th>Gate</th><th>State</th><th></th></tr></thead><tbody>';
+  vs.forEach(function(v){var e=ev[v];var pz=paused[v];var sel='<select data-venue="'+v+'" class="sp_sel">';profs.forEach(function(p){sel+='<option value="'+p+'"'+(e.profile===p?' selected':'')+'>'+p+'</option>';});sel+='</select>';
+    var stateCell=pz?('<span class="pill neg" title="'+(pz.reason||'')+(pz.realized_usd!=null?(' '+money(pz.realized_usd)):'')+'">paused'+(pz.manual?' (manual)':'')+'</span>'):'<span class="pill strong">active</span>';
+    var btn=pz?('<button class="ghost sp_resume" data-venue="'+v+'">Resume</button>'):('<button class="ghost sp_pause" data-venue="'+v+'">Pause</button>');
+    h+='<tr><td><b>'+v+'</b></td><td>'+sel+'</td><td class=r>'+(e.grid_step_pct*1e4).toFixed(0)+'bps</td><td class=r>'+e.grid_levels+'</td><td class=r>'+e.order_size_usd+'</td><td class=r>'+e.min_spread_bps+'bps</td><td>'+(e.require_spread_over_fee?'<span class="pill">on</span>':'<span class="pill no">off</span>')+'</td><td>'+stateCell+'</td><td>'+btn+'</td></tr>';});
+  el('sp_body').innerHTML=h+'</tbody></table><span class="muted" id="sp_msg" style="font-size:12px"></span>';
+  document.querySelectorAll('.sp_sel').forEach(function(s){s.onchange=function(){var v=s.dataset.venue,p=s.value;postJSON('/api/controls/action',{action:'grid_set_venue_profile',venue:v,profile:p}).then(function(r){if(el('sp_msg'))el('sp_msg').textContent=r.success?(v+' -> '+p):'failed';loadSpecialization();});};});
+  document.querySelectorAll('.sp_pause').forEach(function(b){b.onclick=function(){postJSON('/api/controls/action',{action:'grid_pause_venue',venue:b.dataset.venue}).then(loadSpecialization);};});
+  document.querySelectorAll('.sp_resume').forEach(function(b){b.onclick=function(){postJSON('/api/controls/action',{action:'grid_resume_venue',venue:b.dataset.venue}).then(loadSpecialization);};});
+});}
+function loadPreflight(){busy(el('pf_run'),true);el('pf_msg').textContent='checking…';getJSON('/api/grid/preflight').then(function(d){
+  var v=el('pf_verdict');v.textContent=d.verdict||'?';v.className='pill '+(d.ready_to_flip_live?(d.grid_live?'neg':'strong'):'halt');
+  var ch=(d.checks||[]);
+  var h='<table><tbody>';
+  ch.forEach(function(c){var p=c.status==='pass'?'<span class="pill strong">pass</span>':(c.status==='info'?'<span class="pill">info</span>':(c.status==='warn'?'<span class="pill">warn</span>':'<span class="pill neg">fix</span>'));
+    h+='<tr><td>'+c.name+'</td><td>'+p+'</td><td class="muted">'+(c.detail||'')+'</td></tr>';});
+  h+='</tbody></table>';
+  var acts=(d.actions||[]);if(acts.length)h+='<div style="margin-top:8px"><b>What to do:</b><ul style="margin:6px 0 0 18px">'+acts.map(function(a){return '<li>'+a+'</li>';}).join('')+'</ul></div>';
+  el('pf_body').innerHTML=h;el('pf_msg').textContent=(d.blockers&&d.blockers.length)?(d.blockers.length+' blocker(s)'):'';busy(el('pf_run'),false);});}
+el('pf_run').onclick=loadPreflight;
+function renderRanked(pairs){if(!pairs||!pairs.length){el('pr_body').innerHTML='<span class="muted">No pairs clear the profit threshold yet (need measured edge net of fees). More show up as the ledger/live scan fills in.</span>';return;}
+  var h='<table><thead><tr><th data-k=s>Symbol</th><th data-k=e data-num=1 class=r>Edge bps</th><th data-num=1 class=r>Net bps</th><th data-num=1 class=r>Hit %</th><th data-num=1 class=r>Fills</th><th data-k=p data-num=1 class=r>Score</th><th>Venues</th><th>Source</th></tr></thead><tbody>';
+  pairs.forEach(function(r){h+='<tr><td><b>'+r.symbol+'</b></td><td class=r>'+r.edge_bps+'</td><td class=r>'+r.net_edge_bps+'</td><td class=r>'+r.hit_rate_pct+'</td><td class=r>'+r.fill_count+'</td><td class=r><b>'+r.score+'</b></td><td class=muted>'+(r.venues||[]).join(', ')+'</td><td class=muted>'+r.source+'</td></tr>';});
+  el('pr_body').innerHTML=h+'</tbody></table>';makeSortable(el('pr_body').querySelector('table'));}
+el('pr_scan').onclick=function(){busy(el('pr_scan'),true);el('pr_msg').textContent='scanning…';getJSON('/api/grid/rank').then(function(d){el('pr_msg').textContent=(d.count||0)+' profitable';renderRanked(d.pairs);busy(el('pr_scan'),false);});};
+el('pr_add').onclick=function(){if(!confirm('Add profit-ranked pairs to the multi-venue grid config?'))return;busy(el('pr_add'),true);postJSON('/api/controls/action',{action:'grid_autoselect'}).then(function(d){el('pr_msg').textContent=d.applied?('added — '+(d.targets_total||'?')+' targets'):'nothing to add';renderRanked(d.selected);loaders.trading();busy(el('pr_add'),false);});};
+function renderCross(diffs){if(!diffs||!diffs.length){el('cx_body').innerHTML='<span class="muted">No cross-venue differences above the threshold right now (needs live reachability to all venues). Lower "min net bps" or try when markets move.</span>';return;}
+  var h='<table><thead><tr><th data-k=s>Symbol</th><th>Route</th><th data-num=1 class=r>Gross bps</th><th data-num=1 class=r>Fees bps</th><th data-k=e data-num=1 class=r>Net bps</th><th data-num=1 class=r>~$/100</th><th>Lists on</th></tr></thead><tbody>';
+  diffs.forEach(function(d){h+='<tr><td><b>'+d.symbol+'</b></td><td class=muted>'+d.route+'</td><td class=r>'+d.gross_bps+'</td><td class=r>'+d.fee_bps+'</td><td class=r><b>'+d.net_bps+'</b></td><td class=r>'+money(d.est_profit_usd)+'</td><td class=muted>'+(d.venues||[]).join(', ')+'</td></tr>';});
+  el('cx_body').innerHTML=h+'</tbody></table>';makeSortable(el('cx_body').querySelector('table'));}
+el('cx_scan').onclick=function(){busy(el('cx_scan'),true);el('cx_msg').textContent='searching…';getJSON('/api/grid/cross-diff?min_bps='+(Number(el('cx_min').value)||0)).then(function(d){el('cx_msg').textContent=d.success?((d.count||0)+' differences'):('error: '+(d.error||''));renderCross(d.differences);busy(el('cx_scan'),false);});};
+el('cx_add').onclick=function(){if(!confirm('Add cross-venue difference pairs to the grid config?'))return;busy(el('cx_add'),true);postJSON('/api/controls/action',{action:'grid_add_cross',min_bps:(Number(el('cx_min').value)||5)}).then(function(d){el('cx_msg').textContent=d.applied?('added — '+(d.targets_total||'?')+' targets'):'nothing to add';renderCross(d.differences);loaders.trading();busy(el('cx_add'),false);});};
+var ctEnabled=false;
+function renderCrossTrade(d){if(!d||!d.success)return;ctEnabled=!!d.enabled;
+  el('ct_state').textContent=d.enabled?'on':'off';el('ct_state').className='pill '+(d.enabled?'strong':'no');
+  el('ct_mode').textContent=d.live?'LIVE':'paper';el('ct_mode').className='pill '+(d.live?'neg':'');
+  el('ct_toggle').textContent=d.enabled?'Disable auto-execute':'Enable auto-execute';
+  var ev=(d.recent||[]).filter(function(e){return e.event==='execute';});
+  if(!ev.length){el('ct_body').innerHTML='<span class="muted">No cross-trade executions yet. Realized: '+money(d.realized_pnl_usd)+' over '+(d.executed_fills||0)+' fills.</span>';return;}
+  var h='<div class="muted" style="margin-bottom:4px">Realized <b class="'+cls(d.realized_pnl_usd)+'">'+money(d.realized_pnl_usd)+'</b> · '+(d.executed_fills||0)+' fills · audit trail:</div><table><thead><tr><th>Time</th><th>Symbol</th><th>Route</th><th class=r>Net bps</th><th>Mode</th><th class=r>~P&L</th><th>OK</th></tr></thead><tbody>';
+  ev.forEach(function(e){h+='<tr><td class=muted>'+(e.ts||'').slice(11,19)+'</td><td><b>'+e.symbol+'</b></td><td class=muted>'+(e.route||'')+'</td><td class=r>'+e.net_bps+'</td><td>'+(e.mode==='live'?'<span class="pill neg">live</span>':'<span class="pill">paper</span>')+'</td><td class=r>'+money(e.est_profit_usd)+'</td><td>'+(e.success?'✓':'✗')+'</td></tr>';});
+  el('ct_body').innerHTML=h+'</tbody></table>';}
+function loadCrossTrade(){getJSON('/api/grid/cross-trade').then(renderCrossTrade);}
+el('ct_toggle').onclick=function(){busy(el('ct_toggle'),true);postJSON('/api/controls/action',{action:'cross_trade_enable',enabled:!ctEnabled}).then(function(){loadCrossTrade();busy(el('ct_toggle'),false);});};
+el('ct_run').onclick=function(){busy(el('ct_run'),true);el('ct_msg').textContent='searching + executing…';postJSON('/api/controls/action',{action:'cross_trade_run'}).then(function(r){el('ct_msg').textContent=(r.executed&&r.executed.length)?(r.executed.length+' fired'):((r.candidates||0)+' candidates, none cleared '+ (r.min_net_bps||'')+'bps');loadCrossTrade();busy(el('ct_run'),false);});};
+el('ct_check').onclick=function(){busy(el('ct_check'),true);el('ct_msg').textContent='checking funding…';getJSON('/api/grid/cross-trade/preview').then(function(d){
+  var cs=(d.candidates||[]);el('ct_msg').textContent=(d.executable_now||0)+' executable now / '+(d.count||0)+' gaps';
+  if(!cs.length){el('ct_body').innerHTML='<span class="muted">No cross-venue gaps right now.</span>';busy(el('ct_check'),false);return;}
+  var h='<div class="muted" style="margin:6px 0 4px">Executability (both legs must be pre-funded — no atomic cross-exchange trade exists):</div><table><thead><tr><th>Symbol</th><th>Route</th><th class=r>Net bps</th><th>Buy funded</th><th>Sell funded</th><th>Verdict</th></tr></thead><tbody>';
+  cs.forEach(function(c){h+='<tr><td><b>'+c.symbol+'</b></td><td class=muted>'+(c.route||'')+'</td><td class=r>'+c.net_bps+'</td><td>'+(c.buy_funded?'<span class="pill strong">yes</span>':'<span class="pill no">no</span>')+'</td><td>'+(c.sell_funded?'<span class="pill strong">yes</span>':'<span class="pill no">no</span>')+'</td><td>'+(c.executable_now?'<span class="pill strong">execute now (hedged)</span>':'<span class="pill neg">needs funding/transfer</span>')+'</td></tr>';});
+  el('ct_preview').innerHTML=h+'</tbody></table>';makeSortable(el('ct_preview').querySelector('table'));busy(el('ct_check'),false);});};
+el('goal').onchange=loaders.overview;
+
+/* auto-refresh */
+var timer=null;
+function setRefresh(){if(timer)clearInterval(timer);var ms=Number(el('refsel').value||5000);if(ms>0)timer=setInterval(function(){var a=document.querySelector('.tab.active');if(a&&loaders[a.dataset.tab])loaders[a.dataset.tab]();},ms);}
+try{var sr=localStorage.getItem('mn2ref');if(sr!==null)el('refsel').value=sr;}catch(e){}
+el('refsel').onchange=function(){try{localStorage.setItem('mn2ref',el('refsel').value);}catch(e){}setRefresh();};
+loaders.overview();setRefresh();
+</script>
+</body>
+</html>

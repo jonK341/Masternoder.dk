@@ -18,7 +18,16 @@ try:
 except Exception:
     pass
 
-# Load environment variables before create_app so DATABASE_URL etc. are set
+# Verify src directory exists before importing
+_src_path = os.path.join(BASE_DIR, "src")
+if not os.path.exists(_src_path):
+    raise ImportError(
+        f"src directory not found at {_src_path}. BASE_DIR={BASE_DIR}, sys.path={sys.path[:3]}"
+    )
+
+from src.app import create_app
+
+# Load environment variables
 try:
     from dotenv import load_dotenv
     env_path = os.path.join(BASE_DIR, ".env")
@@ -30,15 +39,6 @@ except ImportError:
     pass
 except Exception:
     pass
-
-# Verify src directory exists before importing
-_src_path = os.path.join(BASE_DIR, "src")
-if not os.path.exists(_src_path):
-    raise ImportError(
-        f"src directory not found at {_src_path}. BASE_DIR={BASE_DIR}, sys.path={sys.path[:3]}"
-    )
-
-from src.app import create_app
 
 app = create_app()
 is_production = os.getenv("FLASK_ENV") == "production" or os.getenv("PRODUCTION") == "true"
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         print("=" * 60)
 
         with app.test_client() as client:
-            r = client.get("/api/health")
+            r = client.get("/health")
             print(f"[OK] Health: {r.status_code}")
 
         print("Press Ctrl+C to stop.")

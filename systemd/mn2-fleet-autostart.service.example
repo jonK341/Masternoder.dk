@@ -1,0 +1,19 @@
+# Start platform / hosted masternodes after the daemon RPC is ready.
+# cp systemd/mn2-fleet-autostart.service.example /etc/systemd/system/mn2-fleet-autostart.service
+# cp scripts/mn2_fleet_autostart.sh /usr/local/bin/mn2-fleet-autostart && chmod +x
+# systemctl daemon-reload && systemctl enable --now mn2-fleet-autostart.service
+
+[Unit]
+Description=MN2 fleet broadcast + local masternode ping after masternoder2d
+After=masternoder2d.service
+Requires=masternoder2d.service
+PartOf=masternoder2d.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/mn2-fleet-autostart
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

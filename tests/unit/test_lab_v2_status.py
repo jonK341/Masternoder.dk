@@ -26,7 +26,7 @@ def test_lab_v2_status_default_user_is_read_only_and_successful(monkeypatch):
     assert r.status_code == 200
     data = r.get_json()
     assert data.get("success") is True
-    assert data.get("version") == "2.0-first-slice"
+    assert data.get("version") == "2.1-hub-upgrade"
     assert data.get("rulebook", {}).get("id") == "lab_v2"
     assert data.get("tech", {}).get("read_only_first_slice") is True
     assert data.get("progression", {}).get("tier") == "Novice"

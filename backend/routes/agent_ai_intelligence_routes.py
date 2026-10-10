@@ -42,35 +42,6 @@ def make_decision():
             'error': str(e)
         }), 500
 
-@agent_ai_intelligence_bp.route('/api/agent/ai-intelligence/llm-insight', methods=['POST'])
-def llm_insight():
-    """
-    LLM-backed tactical insight for an agent (defaults to free-tier provider routing).
-    Body: agent_id (required), topic (required), context (optional dict),
-    task_type (optional: speed|code|reason|context|free|default).
-    """
-    try:
-        data = request.get_json() or {}
-        agent_id = data.get('agent_id')
-        topic = (data.get('topic') or '').strip()
-        context = data.get('context') if isinstance(data.get('context'), dict) else {}
-        task_type = data.get('task_type')
-
-        if not agent_id:
-            return jsonify({'success': False, 'error': 'agent_id required'}), 400
-        if not topic:
-            return jsonify({'success': False, 'error': 'topic required'}), 400
-
-        result = agent_ai_intelligence.llm_insight(
-            agent_id=agent_id,
-            topic=topic,
-            context=context,
-            task_type=task_type,
-        )
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 # ========== LEARNING ENDPOINTS ==========
 
 @agent_ai_intelligence_bp.route('/api/agent/ai-intelligence/learn', methods=['POST'])

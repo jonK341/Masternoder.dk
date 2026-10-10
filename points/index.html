@@ -1,0 +1,265 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-agent-skill-sets="enriched">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Points & Rewards - MasterNoder.dk</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/points-page.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navigation-toolbar">
+        <div class="nav-container">
+            <a href="/" class="nav-item" title="Home">🏠</a>
+            <a href="/generator" class="nav-item" title="Generator">🎬</a>
+            <a href="/gallery" class="nav-item" title="Gallery">🖼️</a>
+            <a href="/game" class="nav-item" title="Game">🎮</a>
+            <a href="/points" class="nav-item active" title="Points & Rewards">💎</a>
+            <a href="/stats" class="nav-item" title="Stats">📊</a>
+            <a href="/profile" class="nav-item" title="Profile">👤</a>
+        </div>
+    </nav>
+
+    <div class="points-page-container">
+        <!-- Header -->
+        <header class="points-header">
+            <h1>💎 Points & Rewards</h1>
+            <p class="subtitle">Track your progress, earn rewards, and unlock achievements</p>
+        </header>
+
+        <!-- Quick Stats Bar -->
+        <div class="quick-stats-bar">
+            <div class="quick-stat">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-info">
+                    <div class="stat-label">Total XP</div>
+                    <div class="stat-value" id="quick-stat-xp">0</div>
+                </div>
+            </div>
+            <div class="quick-stat">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-info">
+                    <div class="stat-label">Level</div>
+                    <div class="stat-value" id="quick-stat-level">1</div>
+                </div>
+            </div>
+            <div class="quick-stat">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-info">
+                    <div class="stat-label">Rewards Available</div>
+                    <div class="stat-value" id="quick-stat-rewards">0</div>
+                </div>
+            </div>
+            <div class="quick-stat">
+                <div class="stat-icon">💎</div>
+                <div class="stat-info">
+                    <div class="stat-label">Total Points</div>
+                    <div class="stat-value" id="quick-stat-total">0</div>
+                </div>
+            </div>
+            <div class="quick-stat">
+                <div class="stat-icon">🎮</div>
+                <div class="stat-info">
+                    <div class="stat-label">Game Points</div>
+                    <div class="stat-value" id="game-points">0</div>
+                </div>
+            </div>
+        </div>
+        <p style="text-align:center;margin-top:8px;opacity:0.85;">Points are synced with your profile. <a href="/profile" style="color:#00ff88;">View full profile</a> · <a href="/game" style="color:#00ff88;">Hunter Game</a> · <a href="/trophies#stories" style="color:#00ff88;">Hunters Stories</a> · <a href="/starmap25" style="color:#00ff88;">Star Map 25</a></p>
+
+        <!-- Tabs -->
+        <div class="points-tabs">
+            <button class="tab-button active" data-tab="counters">Point Counters</button>
+            <button class="tab-button" data-tab="rewards">Rewards</button>
+            <button class="tab-button" data-tab="counting">Counting & Tracking</button>
+            <button class="tab-button" data-tab="history">History</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content-container">
+            <!-- Point Counters Tab -->
+            <div class="tab-content active" id="tab-counters">
+                <div class="section-header">
+                    <h2>📊 Point Counters</h2>
+                    <p>Click any counter to see available rewards and track your progress</p>
+                </div>
+
+                <!-- Category Filters -->
+                <div class="category-filters">
+                    <button class="filter-btn active" data-category="all">All</button>
+                    <button class="filter-btn" data-category="core">Core Points</button>
+                    <button class="filter-btn" data-category="battle">Battle Points</button>
+                    <button class="filter-btn" data-category="social">Social Points</button>
+                    <button class="filter-btn" data-category="special">Special Points</button>
+                </div>
+
+                <!-- Point Counters Grid -->
+                <div class="point-counters-grid" id="point-counters-grid">
+                    <!-- Counters will be loaded here -->
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                    <div class="skeleton-loader" style="height: 200px;"></div>
+                </div>
+            </div>
+
+            <!-- Rewards Tab -->
+            <div class="tab-content" id="tab-rewards">
+                <div class="section-header">
+                    <h2>🎁 Rewards</h2>
+                    <p>Claim rewards based on your points and level</p>
+                </div>
+
+                <!-- Rewards Filter -->
+                <div class="rewards-filter">
+                    <button class="filter-btn active" data-filter="available">Available</button>
+                    <button class="filter-btn" data-filter="claimed">Claimed</button>
+                    <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+                </div>
+
+                <!-- Rewards Grid -->
+                <div class="rewards-grid" id="rewards-grid">
+                    <!-- Rewards will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Counting & Tracking Tab -->
+            <div class="tab-content" id="tab-counting">
+                <div class="section-header">
+                    <h2>📈 Counting & Tracking</h2>
+                    <p>See how your points are earned and track your progress</p>
+                </div>
+
+                <!-- Time Period Selector -->
+                <div class="time-period-selector">
+                    <button class="period-btn active" data-period="today">Today</button>
+                    <button class="period-btn" data-period="week">This Week</button>
+                    <button class="period-btn" data-period="month">This Month</button>
+                    <button class="period-btn" data-period="all">All Time</button>
+                </div>
+
+                <!-- Point Source Breakdown -->
+                <div class="counting-section">
+                    <h3>Point Source Breakdown</h3>
+                    <div class="breakdown-chart" id="breakdown-chart">
+                        <!-- Chart will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Counting Timeline -->
+                <div class="counting-section">
+                    <h3>Recent Point Activity</h3>
+                    <div class="counting-timeline" id="counting-timeline">
+                        <!-- Timeline entries will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="tab-content" id="tab-history">
+                <div class="section-header">
+                    <h2>📜 Point History</h2>
+                    <p>Complete history of all your point earnings</p>
+                </div>
+
+                <!-- History List -->
+                <div class="history-list" id="history-list">
+                    <!-- History entries will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reward Detail Modal -->
+    <div class="modal" id="reward-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close" id="modal-close">&times;</span>
+            <div id="reward-modal-content">
+                <!-- Reward details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Point Counter Detail Modal -->
+    <div class="modal" id="counter-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close" id="counter-modal-close">&times;</span>
+            <div id="counter-modal-content">
+                <!-- Counter details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+    <script src="/static/js/points-page.js"></script>
+<script src="/static/js/navigation-toolbar.js?v=20260115"></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>

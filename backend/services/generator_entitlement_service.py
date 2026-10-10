@@ -59,11 +59,18 @@ def check_and_reserve(user_id: str, duration_sec: int, short_clip: bool = False)
     required = _estimate_credits(duration_sec, short_clip)
     available = _user_generation_credits(uid)
     if available < required:
+        try:
+            from backend.services.monetization_overage_service import build_entitlement_upsell
+
+            upsell = build_entitlement_upsell(uid, required_credits=required, available_credits=round(available, 2))
+        except Exception:
+            upsell = {"reason": "insufficient_generation_credits", "shop_url": "/shop?category=buy_coins"}
         return {
             "success": False,
             "code": "insufficient_generation_credits",
             "required_credits": required,
             "available_credits": round(available, 2),
+            "upsell": upsell,
         }
     rid = "gr_" + uuid.uuid4().hex[:16]
     row = {

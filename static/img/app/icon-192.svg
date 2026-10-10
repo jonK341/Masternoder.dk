@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="MasterNoder">
+  <defs>
+    <linearGradient id="mn-g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#1A1035"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="36" fill="url(#mn-g)"/>
+  <circle cx="96" cy="96" r="56" fill="#0A0E14" stroke="#39FF14" stroke-width="6"/>
+  <text x="96" y="112" text-anchor="middle" font-family="system-ui,sans-serif" font-size="52" font-weight="700" fill="#39FF14">MN</text>
+</svg>

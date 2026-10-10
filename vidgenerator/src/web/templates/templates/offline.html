@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - MasterNoder2 Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #050505 0%, #0a0a1a 100%);
+            color: #00ff88;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animated background */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(0, 200, 255, 0.1) 0%, transparent 50%);
+            animation: pulse 4s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        .offline-card {
+            max-width: 520px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(0, 255, 136, 0.2),
+                inset 0 0 30px rgba(0, 255, 136, 0.05);
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        h1 {
+            margin-bottom: 1rem;
+            font-size: 2rem;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+        }
+        
+        p {
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.8;
+            font-size: 1.05rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4d4d;
+            margin-right: 0.5rem;
+            animation: blink 1.5s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.6);
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .actions {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .actions button {
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .actions button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .actions button:hover::before {
+            left: 100%;
+        }
+        
+        .actions button:hover {
+            background: rgba(0, 255, 136, 0.25);
+            border-color: rgba(0, 255, 136, 0.8);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 255, 136, 0.4);
+        }
+        
+        .actions button:active {
+            transform: translateY(-1px);
+        }
+        
+        .connection-status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-card">
+        <div class="offline-icon">📡</div>
+        <h1>Offline Mode</h1>
+        <p><span class="status-indicator"></span>Ingen internetforbindelse</p>
+        <p>Du kan stadig arbejde i grænsefladen, og vi synkroniserer dine handlinger automatisk, når forbindelsen er tilbage.</p>
+        <div class="connection-status">
+            <strong>Status:</strong> Offline - Service Worker aktiv
+        </div>
+        <div class="actions">
+            <button onclick="window.location.reload()">↻ Prøv igen</button>
+            <button onclick="window.history.back()">← Tilbage</button>
+        </div>
+    </div>
+    <script>
+        // Check connection status
+        function updateConnectionStatus() {
+            const statusEl = document.querySelector('.connection-status');
+            if (navigator.onLine) {
+                statusEl.innerHTML = '<strong>Status:</strong> Online - Omdirigerer...';
+                statusEl.style.background = 'rgba(0, 255, 136, 0.1)';
+                statusEl.style.borderColor = 'rgba(0, 255, 136, 0.3)';
+                setTimeout(() => window.location.reload(), 1000);
+            }
+        }
+        
+        window.addEventListener('online', updateConnectionStatus);
+        setInterval(updateConnectionStatus, 2000);
+    </script>
+    <script src="/vidgenerator/static/js/error-manager.js"></script>
+</body>
+</html>
+

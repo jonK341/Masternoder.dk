@@ -99,6 +99,11 @@ def main() -> int:
     )
     p.add_argument("--attempt-purchase", action="store_true", help="POST purchase for --item-id if balance allows")
     p.add_argument("--item-id", default="", help="Item id for --attempt-purchase")
+    p.add_argument(
+        "--promo-check",
+        action="store_true",
+        help="With --full-line: POST promo validate + apply (checkout + discord paths)",
+    )
     args = p.parse_args()
 
     try:
@@ -122,7 +127,33 @@ def main() -> int:
             mark = "OK " if row["ok"] else "FAIL"
             print(f"  [{mark}] {row['label']}  {row['ms']}ms  {row['detail']}", flush=True)
         print(f"Summary: {ok_n}/{len(rows)} passed", flush=True)
-        return 0 if all_ok else 1
+        promo_ok = True
+        if args.promo_check:
+            print("Promo apply smoke:", flush=True)
+            for label, code, expect_mode in (
+                ("validate GENERATE10", "GENERATE10", None),
+                ("apply GENERATE10", "GENERATE10", "checkout_discount"),
+            ):
+                t0 = time.perf_counter()
+                try:
+                    r = s.post(
+                        base + ("/api/shop/promo/validate" if label.startswith("validate") else "/api/shop/promo/apply"),
+                        json={"code": code, "user_id": uid, "amount_usd": 9.99},
+                        headers={"Content-Type": "application/json"},
+                        timeout=to,
+                    )
+                    ms = int((time.perf_counter() - t0) * 1000)
+                    ok = r.status_code == 200 and isinstance(r.json(), dict) and r.json().get("success")
+                    body = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
+                    if expect_mode and body.get("mode") != expect_mode:
+                        ok = False
+                    if not ok:
+                        promo_ok = False
+                    print(f"  [{'OK ' if ok else 'FAIL'}] {label}  {ms}ms  HTTP {r.status_code}", flush=True)
+                except Exception as e:
+                    promo_ok = False
+                    print(f"  [FAIL] {label}  0ms  {e}", flush=True)
+        return 0 if all_ok and promo_ok else 1
 
     def get_json(path: str, **kw):
         r = s.get(base + path, timeout=to, **kw)

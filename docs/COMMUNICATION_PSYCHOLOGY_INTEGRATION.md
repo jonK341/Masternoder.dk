@@ -48,7 +48,7 @@ The **25 communication psychology theories** are integrated across the vidgenera
 
 ## Compendium (Rulebook V2.1)
 
-- **10 wiki pages:** `compendium/page-1.html` … `page-10.html` (served at `/compendium/page-1.html` … `/compendium/page-10.html`) — 25 theories distributed across 10 pages. Access via **Trophies → Compendium V2.1** tab or directly `/compendium/`.
+- **10 wiki pages:** `vidgenerator/compendium/page-1.html` … `page-10.html` — 25 theories distributed across 10 pages. Access via **Trophies → Compendium V2.1** tab or directly `/vidgenerator/compendium/`.
 - **Unified points:** Viewing a compendium page (via `compendium-view-tracker.js`) POSTs to `/api/compendium/view` and awards **compendium_points** (15 per page). Point type is in unified system and trigger `compendium_view`.
 - **APIs:** `GET /api/compendium/pages` — list of 10 pages; `POST /api/compendium/view` — body `{ "user_id", "page_number" }` awards points.
 

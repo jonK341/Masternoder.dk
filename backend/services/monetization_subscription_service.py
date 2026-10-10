@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 
 from backend.services.monetization_config_service import get_subscription_plan, reload_monetization_config
 
@@ -78,6 +78,42 @@ def save_subscription_binding(
 
 def get_binding(subscription_id: str) -> Optional[Dict[str, Any]]:
     return _load_bindings().get((subscription_id or "").strip())
+
+
+def list_bindings_for_user(user_id: str) -> List[Dict[str, Any]]:
+    """All I-… bindings for a user (newest updated_at first)."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return []
+    data = _load_bindings()
+    out: List[Dict[str, Any]] = []
+    for sid, row in data.items():
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("user_id") or "").strip() != uid:
+            continue
+        out.append({
+            "subscription_id": sid,
+            "plan_id": row.get("plan_id"),
+            "updated_at": row.get("updated_at"),
+        })
+    out.sort(key=lambda x: str(x.get("updated_at") or ""), reverse=True)
+    return out
+
+
+def list_all_bound_user_ids() -> List[str]:
+    """Distinct user ids with an active subscription binding."""
+    data = _load_bindings()
+    seen: set = set()
+    out: List[str] = []
+    for row in data.values():
+        if not isinstance(row, dict):
+            continue
+        uid = str(row.get("user_id") or "").strip()
+        if uid and uid.lower() != "default_user" and uid not in seen:
+            seen.add(uid)
+            out.append(uid)
+    return out
 
 
 def _event_already_processed(event_id: str) -> bool:
