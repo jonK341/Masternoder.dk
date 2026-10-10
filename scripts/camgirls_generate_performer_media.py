@@ -19,7 +19,7 @@ from backend.services.camgirls_media_render import (  # noqa: E402
 )
 from backend.services.camgirls_media_service import (  # noqa: E402
     _MEDIA_ROOT,
-    _PERFORMER_MEDIA_META,
+    get_performer_media_meta,
     resell_pack_for_performer,
 )
 
@@ -191,8 +191,8 @@ def main() -> int:
     made = 0
     for p in performers:
         pid = str(p.get("id") or "")
-        meta = _PERFORMER_MEDIA_META.get(pid)
-        if not meta:
+        meta = get_performer_media_meta(pid)
+        if not meta or not meta.get("slug"):
             continue
         slug = meta["slug"]
         name = str(p.get("display_name") or slug)

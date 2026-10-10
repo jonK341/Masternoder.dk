@@ -35,7 +35,7 @@
       "id": "phase5_scale",
       "priority": "P3",
       "title": "250-scale roster ops",
-      "detail": "Batch onboard script + payout rails template for next performer waves."
+      "detail": "Shipped: scripts/camgirls_batch_onboard.py, data/camgirls_performers_wave.template.json, media meta overlay (data/camgirls_performer_media_meta.json), docs/CAMGIRLS_SCALE_250.md. Next: run wave 2 file + prod payout/media after review."
     }
   ]
 }

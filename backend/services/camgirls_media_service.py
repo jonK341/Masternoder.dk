@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _MEDIA_ROOT = os.path.join(_ROOT, "static", "camgirls", "media")
 
 # Slug + brand colors per performer (generated assets live under static/camgirls/media/<slug>/)
+_MEDIA_META_OVERLAY_FILE = os.path.join(_ROOT, "data", "camgirls_performer_media_meta.json")
+
 _PERFORMER_MEDIA_META: Dict[str, Dict[str, Any]] = {
     "performer_nova": {"slug": "nova", "initials": "NS", "c1": "#a855f7", "c2": "#4c1d95"},
     "performer_luna": {"slug": "luna", "initials": "LE", "c1": "#6366f1", "c2": "#312e81"},
@@ -28,8 +31,74 @@ _PERFORMER_MEDIA_META: Dict[str, Dict[str, Any]] = {
 }
 
 
+def _load_media_meta_overlay() -> Dict[str, Dict[str, Any]]:
+    if not os.path.isfile(_MEDIA_META_OVERLAY_FILE):
+        return {}
+    try:
+        with open(_MEDIA_META_OVERLAY_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f) or {}
+    except Exception:
+        return {}
+    bucket = data.get("performers") if isinstance(data, dict) else None
+    if isinstance(bucket, dict):
+        return {str(k): v for k, v in bucket.items() if isinstance(v, dict)}
+    return {}
+
+
+def all_performer_media_meta() -> Dict[str, Dict[str, Any]]:
+    merged = dict(_PERFORMER_MEDIA_META)
+    merged.update(_load_media_meta_overlay())
+    return merged
+
+
+def get_performer_media_meta(performer_id: str) -> Dict[str, Any]:
+    overlay = _load_media_meta_overlay()
+    if performer_id in overlay:
+        return overlay[performer_id]
+    return _PERFORMER_MEDIA_META.get(performer_id) or {}
+
+
+def upsert_performer_media_meta(
+    entries: Dict[str, Dict[str, Any]],
+    *,
+    dry_run: bool = False,
+) -> List[str]:
+    """Merge media meta entries into data/camgirls_performer_media_meta.json."""
+    updated: List[str] = []
+    if not entries:
+        return updated
+    overlay = _load_media_meta_overlay()
+    performers = dict(overlay)
+    for pid, meta in entries.items():
+        if not pid or not isinstance(meta, dict):
+            continue
+        clean = {
+            k: meta[k]
+            for k in ("slug", "initials", "c1", "c2")
+            if meta.get(k)
+        }
+        if not clean.get("slug"):
+            continue
+        performers[pid] = {**performers.get(pid, {}), **clean}
+        updated.append(pid)
+    if dry_run or not updated:
+        return updated
+    os.makedirs(os.path.dirname(_MEDIA_META_OVERLAY_FILE), exist_ok=True)
+    with open(_MEDIA_META_OVERLAY_FILE, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "performers": performers,
+                "updated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            },
+            f,
+            indent=2,
+        )
+        f.write("\n")
+    return updated
+
+
 def _slug_for(performer_id: str) -> str:
-    meta = _PERFORMER_MEDIA_META.get(performer_id) or {}
+    meta = get_performer_media_meta(performer_id)
     if meta.get("slug"):
         return str(meta["slug"])
     return performer_id.replace("performer_", "", 1) or "demo"
@@ -94,7 +163,7 @@ def card_avatar_url(performer_id: str, fallback_avatar: str = "") -> str:
 def resell_pack_for_performer(performer_id: str, display_name: str = "") -> Dict[str, Any]:
     paths = media_paths_for_performer(performer_id)
     slug = _slug_for(performer_id)
-    meta = _PERFORMER_MEDIA_META.get(performer_id) or {}
+    meta = get_performer_media_meta(performer_id)
     assets = {
         "icon": paths["icon_url"],
         "logo": paths["logo_url"],
