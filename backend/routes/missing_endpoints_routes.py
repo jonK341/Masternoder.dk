@@ -3592,6 +3592,7 @@ def video_generation_solve_problems():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@missing_endpoints_bp.route('/api/themes/list', methods=['GET'])
 def themes_list():
     """Get list of available themes with metadata — unlock levels, colors, descriptions."""
     try:
@@ -3626,6 +3627,7 @@ def themes_list():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@missing_endpoints_bp.route('/api/themes/user', methods=['GET'])
 def themes_user():
     """Get themes unlocked for the current user (theme-timeline.js). Returns list of theme_id for user."""
     try:

@@ -648,7 +648,7 @@ def getinfo() -> Dict[str, Any]:
     return _call("getinfo")
 
 
-def health_check() -> Dict[str, Any]:
+def health_check(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """
     Lightweight health check: call getblockcount and return status, block_height, latency_ms.
     For use in /api/health/system. Does not raise; returns dict with status and optional error.
@@ -668,10 +668,16 @@ def health_check() -> Dict[str, Any]:
         "error": None,
         "credentials": {"user_set": user_set, "password_set": password_set},
     }
-    try:
-        hc_to = float((os.environ.get("MN2_RPC_HEALTH_TIMEOUT") or "5").strip() or 5)
-    except (TypeError, ValueError):
-        hc_to = 5.0
+    if timeout_sec is not None:
+        try:
+            hc_to = float(timeout_sec)
+        except (TypeError, ValueError):
+            hc_to = 3.0
+    else:
+        try:
+            hc_to = float((os.environ.get("MN2_RPC_HEALTH_TIMEOUT") or "5").strip() or 5)
+        except (TypeError, ValueError):
+            hc_to = 5.0
     hc_to = max(1.0, min(hc_to, 25.0))
     r = getblockcount(timeout_sec=hc_to)
     out["latency_ms"] = round((time.perf_counter() - t0) * 1000, 2)
