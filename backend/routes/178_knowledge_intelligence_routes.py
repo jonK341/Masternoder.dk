@@ -2,7 +2,11 @@
 178 Systems Knowledge & Intelligence Routes
 """
 from flask import Blueprint, request, jsonify
-from backend.services.178_systems_knowledge_intelligence import systems_178_knowledge_intelligence
+import importlib
+
+# Module name starts with a digit, so it cannot be imported with a from-statement.
+_ki_module = importlib.import_module('backend.services.178_systems_knowledge_intelligence')
+systems_178_knowledge_intelligence = getattr(_ki_module, 'systems_178_knowledge_intelligence')
 from src.utils.error_handler import ErrorHandler
 from src.utils.rate_limiter import rate_limit
 import uuid

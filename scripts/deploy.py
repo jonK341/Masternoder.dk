@@ -376,21 +376,42 @@ MANIFESTS = {
         "backend/routes/all_page_routes.py",
         "backend/routes/click_game_routes.py",
         "backend/routes/create_app_routes.py",
+        "backend/routes/discord_routes.py",
+        "backend/routes/customer_aggregator_routes.py",
         "backend/routes/lab_routes.py",
+        "backend/services/mn2_order_payment_service.py",
+        "backend/services/generator_mn2_service.py",
         "backend/services/agent_leaderboard_rewards_service.py",
         "backend/services/click_mn2_rewards_service.py",
         "backend/services/create_app_finish_checks.py",
         "backend/services/create_app_service.py",
         "backend/services/create_app_encode_service.py",
+        "backend/services/video_generator_service.py",
+        "backend/services/podcast_encode_service.py",
+        "backend/services/podcast_service.py",
+        "backend/services/generator_encode_service.py",
         "backend/services/super_encoder_service.py",
         "backend/services/encoder_v2_service.py",
         "backend/services/encoder_upgrade_service.py",
         "backend/services/encoder_order_service.py",
         "backend/services/discord_customer_ingest_service.py",
+        "backend/services/encoder_customer_fulfillment_service.py",
+        "backend/services/encoder_micro_rewards_service.py",
+        "backend/services/ops_secret_service.py",
+        "backend/services/ledger_customer_control_service.py",
+        "backend/services/ledger_customer_aggregator_service.py",
+        "backend/services/ledger_buy_potential_service.py",
+        "backend/services/mn2_ledger.py",
+        "backend/services/customer_aggregator_service.py",
+        "customers/index.html",
         "data/encoder_orders.json",
         "data/discord_customer_index.json",
+        "data/encoder_customer_fulfillment.json",
+        "data/ledger_customer_controls.json",
+        "data/ledger_customer_index.json",
         "data/encoder_v2_catalog.json",
         "data/encoder_v2_progress.json",
+        "data/encoder_v2_ops_metrics.json",
         "scripts/build_encoder_v2_catalog.py",
         "data/agent_leaderboard_rewards.json",
         "data/create_apps.json",
@@ -583,6 +604,8 @@ MANIFESTS = {
         "systemd/masternoder2d.service.example",
         "scripts/run_masternoder2d.sh",
         "scripts/run_masternoder2d.ps1",
+        "scripts/mn2_clear_daemon_lock.sh",
+        "scripts/mn2_repair_daemon.sh",
         "cron/mn2_scan_deposits.sh",
         "cron/masternoder-mn2-scan.cron.d",
         "cron/mn2_accrue_rewards.sh",
@@ -629,6 +652,7 @@ MANIFESTS = {
         "backend/services/mn2_masternode_service.py",
         "backend/services/mn2_masternode_hosting_service.py",
         "backend/services/mn2_services_hub.py",
+        "backend/services/mn2_proof_of_reserves_service.py",
         "backend/services/discord_service.py",
         "backend/services/discord_m8_streams.py",
         "backend/services/casino_discord_fanout.py",
@@ -1086,14 +1110,24 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
             print("[2aa] Create App writable data permissions...")
             for rel in (
                 "data/encoder_v2_progress.json",
+                "data/encoder_v2_ops_metrics.json",
                 "data/encoder_orders.json",
                 "data/discord_customer_index.json",
+                "data/encoder_customer_fulfillment.json",
+                "data/ledger_customer_controls.json",
+                "data/ledger_customer_index.json",
             ):
                 ssh.exec_command(
                     f"chown www-data:www-data {REMOTE_BASE}/{rel} "
                     f"&& chmod 664 {REMOTE_BASE}/{rel} 2>/dev/null || true",
                     timeout=10,
                 )
+            ssh.exec_command(
+                f"mkdir -p {REMOTE_BASE}/logs/unified_points "
+                f"&& chown -R www-data:www-data {REMOTE_BASE}/logs/unified_points "
+                f"&& chmod 775 {REMOTE_BASE}/logs/unified_points 2>/dev/null || true",
+                timeout=15,
+            )
             print("  [OK] encoder/discord writable data -> www-data")
             print()
 

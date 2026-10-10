@@ -201,6 +201,10 @@ def main() -> int:
     if args.apply:
         manifest_url = MANIFEST_URL if manifest_ok else ""
         print(f"=== upgrade {TARGET_VERSION} (stop -> backup wallet -> fetch -> verify -> install -> start) ===")
+        if manifest_ok:
+            print(f"Manifest: {MANIFEST_URL}")
+        else:
+            print("WARN: manifest not reachable — skipping tarball/binary sha256 verify on server")
         script = f"""
 set -e
 MANIFEST_URL='{manifest_url}'

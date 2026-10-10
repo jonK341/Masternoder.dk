@@ -622,8 +622,6 @@ class ShopV3Ultimate:
                 'icon': '✨',
                 'unified_points_only': True
             },
-                'icon': '🧬'
-            },
             'predictive_analytics_engine': {
                 'id': 'predictive_analytics_engine',
                 'name': 'Predictive Analytics Engine',
