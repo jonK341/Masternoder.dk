@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple, List
 
 from backend.services.monetization_config_service import get_subscription_plan, reload_monetization_config
-from backend.services.paypal_order_events import dispatch_order_webhook, is_order_event
+from backend.services import paypal_order_events
 
 
 def _log_dir() -> str:
@@ -382,9 +382,9 @@ def process_paypal_webhook_event(body: Dict[str, Any]) -> Tuple[Dict[str, Any], 
         _mark_event_processed(event_id, {"event_type": event_type, **out})
         return {"success": True, "handled": "payment_sale_completed", "event_id": event_id, **out}, 200
 
-    if is_order_event(event_type):
+    if paypal_order_events.is_order_event(event_type):
         try:
-            dispatched = dispatch_order_webhook(body, True)
+            dispatched = paypal_order_events.dispatch_order_webhook(body, True)
         except Exception as exc:
             return {"success": False, "error": str(exc), "event_type": event_type}, 500
         _mark_event_processed(event_id, {"event_type": event_type, "handled": "order_event"})
