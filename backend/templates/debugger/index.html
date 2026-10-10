@@ -375,8 +375,15 @@
     <link rel="stylesheet" href="/static/css/page-layout-metrics-debugger.css?v=20260219">
     <script src="/static/js/debugging_master_client.js?v=20260419"></script>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/debugger-terminal.css?v=20261010a">
 </head>
-<body>
+<body class="mn-debugger-terminal">
+    <div class="mn-term-window">
+        <div class="mn-term-titlebar">
+            <span class="mn-term-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="mn-term-title">jon@masternoder: ~/debugger</span>
+        </div>
+        <div class="mn-term-body">
     <div class="container" data-page="debugger" elementtiming="debugger-shell">
         <h1>🔧 Production Debugger</h1>
         <div id="debugger-tech-stack" class="status ok" style="margin-bottom:16px;font-size:0.9rem;">
@@ -5932,5 +5939,8 @@
 
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
+    </div>
+    </div>
 </body>
+
 </html>
