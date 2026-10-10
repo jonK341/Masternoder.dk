@@ -126,6 +126,21 @@ def test_chat_requires_unlock_then_debits(monkeypatch):
         t.tearDown()
 
 
+def test_get_performer_detail():
+    t = CamgirlsTestBase()
+    t.setUp()
+    try:
+        from backend.services.camgirls_service import get_performer_detail
+
+        ok = get_performer_detail("p1", user_id="u1")
+        assert ok.get("success") is True
+        assert (ok.get("performer") or {}).get("id") == "p1"
+        missing = get_performer_detail("missing", user_id="u1")
+        assert missing.get("success") is False
+    finally:
+        t.tearDown()
+
+
 def test_deactivate_demo_performers():
     t = CamgirlsTestBase()
     t.setUp()

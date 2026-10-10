@@ -258,13 +258,13 @@
 
           btn.addEventListener('click', function () {
 
-            fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/tip', {
+            fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/gift', {
 
               method: 'POST',
 
               headers: { 'Content-Type': 'application/json' },
 
-              body: JSON.stringify({ user_id: uid(), amount: g.price_mn2 || 5 }),
+              body: JSON.stringify({ user_id: uid(), gift_id: key }),
 
             })
 
@@ -278,11 +278,35 @@
 
                 if (d.success) append('Gift sent: ' + (g.label || key), 'cg-chat-bot');
 
+                else append(d.error || 'Gift failed', 'cg-chat-bot');
+
               });
 
           });
 
           host.appendChild(btn);
+
+          var ppGift = document.createElement('button');
+
+          ppGift.type = 'button';
+
+          ppGift.className = 'cg-studio-btn';
+
+          ppGift.title = 'Pay with PayPal';
+
+          ppGift.textContent = 'PP ' + (g.label || key);
+
+          ppGift.addEventListener('click', function () {
+
+            if (window.CamgirlsPaypal && window.CamgirlsPaypal.checkout) {
+
+              window.CamgirlsPaypal.checkout('gift', performerId, { gift_id: key });
+
+            }
+
+          });
+
+          host.appendChild(ppGift);
 
         });
 
@@ -304,13 +328,13 @@
 
           btn.addEventListener('click', function () {
 
-            fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/tip', {
+            fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/dance', {
 
               method: 'POST',
 
               headers: { 'Content-Type': 'application/json' },
 
-              body: JSON.stringify({ user_id: uid(), amount: d.price_mn2 || 8 }),
+              body: JSON.stringify({ user_id: uid(), dance_id: key }),
 
             })
 

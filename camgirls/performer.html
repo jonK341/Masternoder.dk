@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{BIO}}">
+    <link rel="canonical" href="https://masternoder.dk/camgirls/p/{{PERFORMER_ID}}/">
+    <meta property="og:type" content="profile">
+    <meta property="og:title" content="{{DISPLAY_NAME}} — Camgirls Studio">
+    <meta property="og:description" content="{{BIO}}">
+    <meta property="og:image" content="https://masternoder.dk{{AVATAR_URL}}">
+    <title>{{DISPLAY_NAME}} — Camgirls Studio</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <style>
+        .cg-page { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+        .cg-back { margin-bottom: 16px; font-size: 0.9rem; }
+        .cg-hero { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
+        .cg-hero img { width: 96px; height: 96px; border-radius: 16px; object-fit: cover; }
+    </style>
+</head>
+<body>
+    <div class="cg-page">
+        <p class="cg-back"><a href="/camgirls/">← All performers</a></p>
+        <div class="cg-hero">
+            <img src="{{AVATAR_URL}}" alt="{{DISPLAY_NAME}}">
+            <div>
+                <h1 style="margin:0 0 8px;">{{DISPLAY_NAME}}</h1>
+                <p style="opacity:0.8;margin:0;">{{BIO}}</p>
+            </div>
+        </div>
+        <div id="cg-status-strip" class="cg-info-bar" style="display:none;"></div>
+        <div id="cg-msg"></div>
+        <div id="cg-grid" class="cg-grid"></div>
+    </div>
+    <script>window.CG_SINGLE_PERFORMER = "{{PERFORMER_ID}}";</script>
+    <script src="/static/js/user-id.js?v=20261010b"></script>
+    <script src="/static/js/camgirls-studio.js?v=20261010e"></script>
+    <script src="/static/js/camgirls.js?v=20261010f"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
+</body>
+</html>

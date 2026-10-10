@@ -83,6 +83,15 @@ def _debit_mn2(user_id: str, amount: float, source: str, meta: Optional[dict] = 
 
 def list_performers_catalog(user_id: str = "default_user", lite: bool = False) -> Dict[str, Any]:
     performers = []
+    tech_ctx = None
+    if not lite:
+        try:
+            from backend.services.camgirls_status_service import paypal_configured, studio_tech_for_performer
+            from backend.services.camgirls_livekit_service import public_status as livekit_status
+
+            tech_ctx = (livekit_status(), paypal_configured())
+        except Exception:
+            tech_ctx = None
     for p in _load_performers_raw():
         row = {
             "id": p.get("id"),
@@ -95,11 +104,40 @@ def list_performers_catalog(user_id: str = "default_user", lite: bool = False) -
             "unlocked": _is_unlocked(user_id, str(p.get("id"))),
             "age_verified": _is_age_verified(user_id),
         }
+        try:
+            from backend.services.camgirls_social_service import is_fan_club_member
+
+            row["fan_club"] = is_fan_club_member(user_id, str(p.get("id")))
+        except Exception:
+            row["fan_club"] = False
         if not lite:
             row["chat_price_mn2"] = p.get("chat_price_mn2", 2)
             row["goal_mn2"] = p.get("goal_mn2", 100)
+            row["ai_enabled"] = bool(p.get("ai_enabled", True))
+            if tech_ctx:
+                livekit, paypal_on = tech_ctx
+                row["tech"] = studio_tech_for_performer(p, livekit=livekit, paypal_on=paypal_on)
+            else:
+                row["tech"] = {"ai_enabled": row["ai_enabled"], "online": True}
         performers.append(row)
     return {"success": True, "performers": performers, "count": len(performers)}
+
+
+def list_active_performer_ids() -> List[str]:
+    return [str(p.get("id")) for p in _load_performers_raw() if p.get("id")]
+
+
+def get_performer_detail(performer_id: str, user_id: str = "default_user") -> Dict[str, Any]:
+    pid = (performer_id or "").strip()
+    if not pid:
+        return {"success": False, "error": "performer_id_required"}
+    catalog = list_performers_catalog(user_id=user_id, lite=False)
+    for row in catalog.get("performers") or []:
+        if str(row.get("id")) == pid:
+            return {"success": True, "performer": row}
+    if not _get_performer(pid):
+        return {"success": False, "error": "performer_not_found"}
+    return {"success": False, "error": "performer_not_found"}
 
 
 def record_age_verification(user_id: str, birth_year: int) -> Dict[str, Any]:
@@ -133,7 +171,14 @@ def unlock_performer(user_id: str, performer_id: str) -> Dict[str, Any]:
     return {"success": True, "amount_mn2": price, "performer_id": performer_id}
 
 
-def tip_performer(user_id: str, performer_id: str, amount: float) -> Dict[str, Any]:
+def tip_performer(
+    user_id: str,
+    performer_id: str,
+    amount: float,
+    *,
+    gift_id: Optional[str] = None,
+    dance_id: Optional[str] = None,
+) -> Dict[str, Any]:
     if not _is_age_verified(user_id):
         return {"success": False, "code": "age_verification_required"}
     p = _get_performer(performer_id)
@@ -142,13 +187,31 @@ def tip_performer(user_id: str, performer_id: str, amount: float) -> Dict[str, A
     amt = float(amount)
     if amt < float(p.get("tip_min_mn2") or 5):
         return {"success": False, "error": "below_minimum"}
-    debit = _debit_mn2(user_id, amt, "camgirls_tip", {"performer_id": performer_id})
+    meta = {"performer_id": performer_id}
+    if gift_id:
+        meta["gift_id"] = gift_id
+    if dance_id:
+        meta["dance_id"] = dance_id
+    debit = _debit_mn2(user_id, amt, "camgirls_tip", meta)
     if debit.get("error"):
         return debit
     from backend.services.camgirls_payout_service import get_payout_address
     payout = get_payout_address(performer_id)
-    _append_jsonl(_TIPS_FILE, {"user_id": user_id, "performer_id": performer_id, "amount_mn2": amt, "created_at": _iso()})
+    row = {"user_id": user_id, "performer_id": performer_id, "amount_mn2": amt, "created_at": _iso()}
+    if gift_id:
+        row["gift_id"] = gift_id
+    if dance_id:
+        row["dance_id"] = dance_id
+    _append_jsonl(_TIPS_FILE, row)
     return {"success": True, "amount_mn2": amt, "payout_address": payout.get("address")}
+
+
+def get_performer(performer_id: str) -> Optional[Dict[str, Any]]:
+    return _get_performer(performer_id)
+
+
+def user_has_unlock(user_id: str, performer_id: str) -> bool:
+    return _is_unlocked(user_id, performer_id)
 
 
 def chat_with_performer(user_id: str, performer_id: str, message: str) -> Dict[str, Any]:
@@ -230,8 +293,9 @@ def fulfill_external_payment(
     *,
     payment_ref: str = "",
     gift_id: Optional[str] = None,
+    minutes: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Grant unlock/tip/gift after PayPal capture (no MN2 debit)."""
+    """Grant unlock/tip/gift/fan club/private after PayPal capture (no MN2 debit)."""
     if not _is_age_verified(user_id):
         return {"success": False, "code": "age_verification_required"}
     p = _get_performer(performer_id)
@@ -260,5 +324,21 @@ def fulfill_external_payment(
             "created_at": _iso(),
         })
         return {"success": True, "action": action, "amount_mn2": amt, **meta}
+    if action == "fan_club":
+        from backend.services.camgirls_social_service import grant_fan_club
+
+        out = grant_fan_club(user_id, performer_id)
+        if out.get("success"):
+            out["payment_method"] = "paypal"
+            out["payment_ref"] = payment_ref
+        return out
+    if action in ("private_show", "private"):
+        from backend.services.camgirls_social_service import grant_private_show
+
+        out = grant_private_show(user_id, performer_id, int(minutes or 5))
+        if out.get("success"):
+            out["payment_method"] = "paypal"
+            out["payment_ref"] = payment_ref
+        return out
     return {"success": False, "error": "invalid_action"}
 

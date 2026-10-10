@@ -39,6 +39,86 @@
       "task_kind": "creative",
       "casino_skill_set": ["fan_club_goal", "gift_recommendation", "cross_sell_casino_exchange"],
       "description": "Fan-club and studio gift concierge that connects performer goals, casino events, and exchange balances."
+    },
+    {
+      "agent_id": "camgirl_agent_aurora",
+      "performer_id": "performer_aurora",
+      "display_name": "Aurora Frost Agent",
+      "task_kind": "creative",
+      "casino_skill_set": ["welcome_host", "winter_promo", "exchange_onramp_nudge"],
+      "description": "Cool-headed host for seasonal promos and wallet top-ups."
+    },
+    {
+      "agent_id": "camgirl_agent_jade",
+      "performer_id": "performer_jade",
+      "display_name": "Jade Lotus Agent",
+      "task_kind": "default",
+      "casino_skill_set": ["mindful_breaks", "gift_recommendation", "social_invite"],
+      "description": "Calm concierge for gifts, breaks, and social retention."
+    },
+    {
+      "agent_id": "camgirl_agent_velvet",
+      "performer_id": "performer_velvet",
+      "display_name": "Velvet Noir Agent",
+      "task_kind": "creative",
+      "casino_skill_set": ["vip_host", "private_show_upsell", "fan_club_goal"],
+      "description": "After-dark VIP host focused on fan club and private sessions."
+    },
+    {
+      "agent_id": "camgirl_agent_skylar",
+      "performer_id": "performer_skylar",
+      "display_name": "Skylar Chase Agent",
+      "task_kind": "speed",
+      "casino_skill_set": ["tournament_hype", "odds_explainer", "big_win_reactivation"],
+      "description": "Upbeat contest host for tournaments and comeback offers."
+    },
+    {
+      "agent_id": "camgirl_agent_rio",
+      "performer_id": "performer_rio",
+      "display_name": "Rio Sands Agent",
+      "task_kind": "free",
+      "casino_skill_set": ["welcome_host", "cross_sell_casino_exchange", "social_invite"],
+      "description": "Festival-style host bridging casino events and exchange balances."
+    },
+    {
+      "agent_id": "camgirl_agent_mist",
+      "performer_id": "performer_mist",
+      "display_name": "Mist Serene Agent",
+      "task_kind": "free",
+      "casino_skill_set": ["responsible_play_soft_nudge", "mindful_breaks", "risk_sentinel"],
+      "description": "Soft-voice guide for responsible play and calm sessions."
+    },
+    {
+      "agent_id": "camgirl_agent_honey",
+      "performer_id": "performer_honey",
+      "display_name": "Honey Gold Agent",
+      "task_kind": "default",
+      "casino_skill_set": ["gift_recommendation", "fan_club_goal", "welcome_host"],
+      "description": "Warm upsell host for gifts, goals, and first-time unlocks."
+    },
+    {
+      "agent_id": "camgirl_agent_storm",
+      "performer_id": "performer_storm",
+      "display_name": "Storm Vega Agent",
+      "task_kind": "speed",
+      "casino_skill_set": ["vip_host", "tournament_hype", "leaderboard_push"],
+      "description": "High-energy host for leaderboards and competitive events."
+    },
+    {
+      "agent_id": "camgirl_agent_pixie",
+      "performer_id": "performer_pixie",
+      "display_name": "Pixie Glitch Agent",
+      "task_kind": "creative",
+      "casino_skill_set": ["meme_engagement", "wheel_hype", "social_invite"],
+      "description": "Chaotic engagement host for wheels, memes, and viral loops."
+    },
+    {
+      "agent_id": "camgirl_agent_venus",
+      "performer_id": "performer_venus",
+      "display_name": "Venus Orbit Agent",
+      "task_kind": "default",
+      "casino_skill_set": ["private_show_upsell", "tax_record_explainer", "exchange_onramp_nudge"],
+      "description": "Sci-fi concierge for private shows, records, and on-ramps."
     }
   ]
 }

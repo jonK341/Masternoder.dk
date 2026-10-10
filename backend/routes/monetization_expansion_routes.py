@@ -236,9 +236,13 @@ def camgirls_paypal_quote():
         amount_mn2 = float(request.args.get("amount_mn2")) if request.args.get("amount_mn2") else None
     except (TypeError, ValueError):
         amount_mn2 = None
+    try:
+        minutes = int(request.args.get("minutes")) if request.args.get("minutes") else None
+    except (TypeError, ValueError):
+        minutes = None
     from backend.services.camgirls_paypal_service import quote_action
 
-    out = quote_action(action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id)
+    out = quote_action(action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id, minutes=minutes)
     return jsonify(out), 200 if out.get("success") else 400
 
 
@@ -254,6 +258,7 @@ def camgirls_paypal_create():
         (data.get("performer_id") or "").strip(),
         amount_mn2=data.get("amount_mn2"),
         gift_id=data.get("gift_id"),
+        minutes=data.get("minutes"),
     )
     return jsonify(out), 200 if out.get("success") else 400
 

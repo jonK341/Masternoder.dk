@@ -402,3 +402,39 @@ def camgirls_livekit_token():
         return jsonify(out), code
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@camgirls_bp.route("/camgirls/p/<performer_id>", methods=["GET"])
+@camgirls_bp.route("/camgirls/p/<performer_id>/", methods=["GET"])
+def performer_landing_page(performer_id: str):
+    """Per-performer SEO landing with server-injected meta."""
+    import html as html_module
+
+    from flask import redirect
+
+    from backend.services.camgirls_service import get_performer
+
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    row = get_performer((performer_id or "").strip())
+    if not row:
+        return redirect("/camgirls/", code=302)
+    page_path = os.path.join(base, "camgirls", "performer.html")
+    if not os.path.isfile(page_path):
+        return redirect("/camgirls/?performer=" + html_module.escape(performer_id), code=302)
+    with open(page_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    pid = html_module.escape(str(row.get("id") or performer_id))
+    name = html_module.escape(str(row.get("display_name") or performer_id))
+    bio = html_module.escape(str(row.get("bio") or row.get("tagline") or ""))
+    avatar = html_module.escape(str(row.get("avatar_url") or "/static/camgirls/avatar-demo.svg"))
+    for key, val in (
+        ("PERFORMER_ID", pid),
+        ("DISPLAY_NAME", name),
+        ("BIO", bio),
+        ("AVATAR_URL", avatar),
+    ):
+        content = content.replace("{{" + key + "}}", val)
+    return content, 200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
+    }
