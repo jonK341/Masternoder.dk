@@ -195,8 +195,13 @@ def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
     if not pending:
         return {"success": False, "error": "order_not_found"}
 
-    uid = (user_id or pending.get("user_id") or "").strip()
-    if pending.get("user_id") != uid:
+    pending_uid = str(pending.get("user_id") or "").strip()
+    caller = (user_id or "").strip()
+    if not caller or caller.lower() == "default_user":
+        uid = pending_uid
+    else:
+        uid = caller
+    if pending_uid and pending_uid != uid:
         return {"success": False, "error": "user_mismatch"}
 
     from backend.services.paypal_service import capture_order

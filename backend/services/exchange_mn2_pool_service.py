@@ -12,11 +12,24 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from backend.services import crypto_exchange_service as ex
 
-_CFG_PATH = os.path.join(ex._BASE, "data", "exchange_mn2_pool_config.json")
-_STATE_PATH = os.path.join(ex._DATA_DIR, "mn2_pool_state.json")
-_LEDGER_PATH = os.path.join(ex._DATA_DIR, "mn2_pool_ledger.jsonl")
-_RESERVE_PATH = os.path.join(ex._DATA_DIR, "mn2_pool_reserve.json")
-_RESERVE_LEDGER_PATH = os.path.join(ex._DATA_DIR, "mn2_pool_reserve_ledger.jsonl")
+def _cfg_path() -> str:
+    return os.path.join(ex._BASE, "data", "exchange_mn2_pool_config.json")
+
+
+def _state_path() -> str:
+    return os.path.join(ex._DATA_DIR, "mn2_pool_state.json")
+
+
+def _ledger_path() -> str:
+    return os.path.join(ex._DATA_DIR, "mn2_pool_ledger.jsonl")
+
+
+def _reserve_path() -> str:
+    return os.path.join(ex._DATA_DIR, "mn2_pool_reserve.json")
+
+
+def _reserve_ledger_path() -> str:
+    return os.path.join(ex._DATA_DIR, "mn2_pool_reserve_ledger.jsonl")
 _POOL_ASSETS = frozenset({"MN2", "USDT", "USDC"})
 
 
@@ -25,7 +38,7 @@ def _iso() -> str:
 
 
 def load_config() -> Dict[str, Any]:
-    cfg = ex._read_json(_CFG_PATH, {})
+    cfg = ex._read_json(_cfg_path(), {})
     return cfg if isinstance(cfg, dict) else {}
 
 
@@ -68,11 +81,11 @@ def is_pool_swap(symbol: str, quote: str) -> bool:
 
 
 def _read_state() -> Dict[str, Any]:
-    return ex._read_json(_STATE_PATH, {"last_tick_at": None, "paper_seeded": False, "tick_count": 0})
+    return ex._read_json(_state_path(), {"last_tick_at": None, "paper_seeded": False, "tick_count": 0})
 
 
 def _write_state(state: Dict[str, Any]) -> None:
-    ex._write_json(_STATE_PATH, state)
+    ex._write_json(_state_path(), state)
 
 
 def _pool_mn2_balance(uid: str) -> float:
@@ -116,7 +129,7 @@ def _credit_reserve(uid: str, symbol: str, amount: float, meta: Dict[str, Any]) 
 
 
 def _read_reserve_totals() -> Dict[str, Any]:
-    row = ex._read_json(_RESERVE_PATH, {"assets": {}, "swap_count": 0, "updated_at": None})
+    row = ex._read_json(_reserve_path(), {"assets": {}, "swap_count": 0, "updated_at": None})
     assets = row.get("assets") if isinstance(row.get("assets"), dict) else {}
     return {
         "assets": {str(k).upper(): round(float(v or 0), 12) for k, v in assets.items()},
@@ -192,7 +205,7 @@ def stash_swap_reserve(quote_payload: Dict[str, Any], trade_ref: str) -> Dict[st
         "swap_count": int(totals.get("swap_count") or 0) + 1,
         "updated_at": _iso(),
     }
-    ex._write_json(_RESERVE_PATH, totals_row)
+    ex._write_json(_reserve_path(), totals_row)
     ledger_row = {
         "ts": _iso(),
         "trade_ref": trade_ref,
@@ -205,7 +218,7 @@ def stash_swap_reserve(quote_payload: Dict[str, Any], trade_ref: str) -> Dict[st
         "side": quote_payload.get("side"),
         "quote": quote_payload.get("quote_currency"),
     }
-    ex._append_jsonl(_RESERVE_LEDGER_PATH, ledger_row)
+    ex._append_jsonl(_reserve_ledger_path(), ledger_row)
     ex._audit("mn2_pool_reserve_stash", user_id=reserve_uid, asset=reserve_asset, amount=reserve_quote, trade_ref=trade_ref)
     return {"success": True, "stashed": ledger_row, "reserve_balances": reserve_balances()}
 
@@ -282,14 +295,14 @@ def apply_pool_leg(symbol: str, side: str, quote: str, quote_payload: Dict[str, 
         row = {"ts": _iso(), "pool_user_id": uid, "side": side, "symbol": sym, "quote": q,
                "pool_receive": {sym: amt}, "pool_pay": {q: received}}
 
-    ex._append_jsonl(_LEDGER_PATH, row)
+    ex._append_jsonl(_ledger_path(), row)
     ex._audit("mn2_pool_leg", user_id=uid, symbol=sym, side=side, quote=q, amount=amt)
     return {"success": True, "pool_leg": row, "pool_balances": pool_balances()}
 
 
 def ensure_paper_seed() -> Dict[str, Any]:
     cfg = load_config()
-    if not cfg.get("paper_seed_on_empty"):
+    if cfg.get("paper_seed_on_empty") is False:
         return {"success": True, "skipped": True, "reason": "paper_seed_disabled"}
     state = _read_state()
     if state.get("paper_seeded"):
@@ -297,9 +310,9 @@ def ensure_paper_seed() -> Dict[str, Any]:
 
     uid = pool_user_id()
     balances = pool_balances()
-    seed = cfg.get("paper_seed") or {}
-    if not isinstance(seed, dict):
-        return {"success": True, "skipped": True, "reason": "no_seed_config"}
+    seed = cfg.get("paper_seed") if isinstance(cfg.get("paper_seed"), dict) else None
+    if not seed:
+        seed = {"MN2": 100000.0, "USDT": 100000.0, "USDC": 100000.0}
     if any(float(balances.get(sym) or 0) > 0 for sym in _POOL_ASSETS):
         state["paper_seeded"] = True
         _write_state(state)

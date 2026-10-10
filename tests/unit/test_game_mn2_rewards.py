@@ -1,6 +1,8 @@
 """Dedicated tests for game_mn2_rewards service."""
 import pytest
 
+import backend.services.mn2_micro_tx_service as mtx
+
 
 @pytest.fixture
 def points_db(tmp_path, monkeypatch):
@@ -14,6 +16,13 @@ def points_db(tmp_path, monkeypatch):
     monkeypatch.setattr(upd, "_unified_points_db_context", _noop_ctx)
     db = upd.UnifiedPointsDatabase(base_dir=str(tmp_path))
     monkeypatch.setattr(upd, "unified_points_db", db)
+    log_dir = tmp_path / "micro_tx"
+    log_dir.mkdir()
+    monkeypatch.setattr(mtx, "_LOG_DIR", str(log_dir))
+    monkeypatch.setattr(mtx, "_LEDGER_PATH", str(log_dir / "ledger.jsonl"))
+    monkeypatch.setattr(mtx, "_IDEM_PATH", str(log_dir / "idempotency.json"))
+    monkeypatch.setattr(mtx, "_DAILY_PATH", str(log_dir / "daily_totals.json"))
+    monkeypatch.setattr(mtx, "_STATS_PATH", str(log_dir / "platform_stats.json"))
     monkeypatch.setattr("backend.services.mn2_ledger.append_entry", lambda *a, **k: {"success": True})
     monkeypatch.setattr("backend.services.activity_events_service.emit", lambda *a, **k: {"success": True})
     return db
