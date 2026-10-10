@@ -79,6 +79,9 @@
   }
 
   function renderWallet(w) {
+    if (window.CexAccountBridge && window.CexAccountBridge.onExchangeWallet) {
+      window.CexAccountBridge.onExchangeWallet(w);
+    }
     var el = q('cex-wallet-balances');
     if (!el || !w || !w.success) return;
     var assets = w.assets || {};

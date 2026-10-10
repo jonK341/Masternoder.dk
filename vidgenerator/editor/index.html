@@ -1,0 +1,747 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <title>Video Editor - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .editor-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .editor-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(40, 40, 55, 0.8);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .editor-header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .editor-main {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        .video-preview-section {
+            background: rgba(40, 40, 55, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .video-player-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .video-player-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .editor-controls {
+            background: rgba(40, 40, 55, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+        }
+
+        .control-section h3 {
+            margin-bottom: 15px;
+            color: #00ff88;
+            font-size: 1.1em;
+        }
+
+        .timeline-container {
+            margin-top: 20px;
+        }
+
+        .timeline {
+            position: relative;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            cursor: pointer;
+        }
+
+        .timeline-track {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%);
+        }
+
+        .timeline-handle {
+            position: absolute;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: #00ff88;
+            cursor: ew-resize;
+            z-index: 10;
+        }
+
+        .timeline-handle.start {
+            left: 0;
+        }
+
+        .timeline-handle.end {
+            right: 0;
+        }
+
+        .timeline-handle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            border: 2px solid #000;
+        }
+
+        .timeline-selection {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: rgba(0, 255, 136, 0.2);
+            border-left: 2px solid #00ff88;
+            border-right: 2px solid #00ff88;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9em;
+        }
+
+        .form-group input[type="range"] {
+            padding: 0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .subtitle-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .subtitle-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.8em;
+            width: auto;
+            margin: 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .error {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid rgba(255, 68, 68, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #ff4444;
+        }
+
+        .success {
+            background: rgba(68, 255, 68, 0.2);
+            border: 1px solid rgba(68, 255, 68, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #44ff44;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css">
+    <link rel="stylesheet" href="/static/css/template-effects.css">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+</head>
+<body>
+    <nav class="page-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">MasterNoder</a>
+            <div class="nav-links">
+                <a href="/gallery/">Gallery</a>
+                <a href="/generator/">Generator</a>
+                <a href="/battle/">Battle</a>
+                        <a href="/points" class="nav-item" title="Points & Rewards">💎</a>
+        </div>
+        </div>
+    </nav>
+
+    <div class="editor-container">
+        <div class="editor-header">
+            <h1><i class="fas fa-edit"></i> Video Editor</h1>
+            <p id="video-title">Loading video...</p>
+        </div>
+
+        <div id="error-message" class="error" style="display: none;"></div>
+        <div id="success-message" class="success" style="display: none;"></div>
+
+        <div class="editor-main">
+            <!-- Video Preview Section -->
+            <div class="video-preview-section">
+                <div class="video-player-container">
+                    <video id="video-player" controls></video>
+                </div>
+
+                <!-- Timeline for Trimming -->
+                <div class="timeline-container">
+                    <h3 style="margin-bottom: 10px;">Timeline (Drag to Trim)</h3>
+                    <div class="timeline" id="timeline">
+                        <div class="timeline-track"></div>
+                        <div class="timeline-selection" id="timeline-selection"></div>
+                        <div class="timeline-handle start" id="handle-start"></div>
+                        <div class="timeline-handle end" id="handle-end"></div>
+                    </div>
+                    <div class="time-display">
+                        <span>Start: <span id="time-start">0:00</span></span>
+                        <span>End: <span id="time-end">0:00</span></span>
+                        <span>Duration: <span id="time-duration">0:00</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Controls -->
+            <div class="editor-controls">
+                <!-- Trim Section -->
+                <div class="control-section">
+                    <h3><i class="fas fa-cut"></i> Trim Video</h3>
+                    <div class="form-group">
+                        <label>Start Time (seconds)</label>
+                        <input type="number" id="trim-start" value="0" min="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>End Time (seconds)</label>
+                        <input type="number" id="trim-end" value="0" min="0" step="0.1">
+                    </div>
+                    <button class="btn" id="btn-trim" onclick="trimVideo()">
+                        <i class="fas fa-cut"></i> Trim Video
+                    </button>
+                </div>
+
+                <!-- Enhance Section -->
+                <div class="control-section">
+                    <h3><i class="fas fa-magic"></i> Enhance Quality</h3>
+                    <div class="form-group">
+                        <label>Enhancement Type</label>
+                        <select id="enhance-type">
+                            <option value="upscale">Upscale (720p → 1080p)</option>
+                            <option value="color_correction">Color Correction</option>
+                            <option value="sharpen">Sharpen</option>
+                            <option value="denoise">Denoise</option>
+                        </select>
+                    </div>
+                    <div id="color-controls" style="display: none;">
+                        <div class="form-group">
+                            <label>Brightness: <span id="brightness-value">0</span></label>
+                            <input type="range" id="brightness" min="-1" max="1" step="0.1" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Contrast: <span id="contrast-value">1.0</span></label>
+                            <input type="range" id="contrast" min="0" max="3" step="0.1" value="1.0">
+                        </div>
+                        <div class="form-group">
+                            <label>Saturation: <span id="saturation-value">1.0</span></label>
+                            <input type="range" id="saturation" min="0" max="3" step="0.1" value="1.0">
+                        </div>
+                    </div>
+                    <button class="btn" id="btn-enhance" onclick="enhanceVideo()">
+                        <i class="fas fa-magic"></i> Enhance Video
+                    </button>
+                </div>
+
+                <!-- Subtitle Section -->
+                <div class="control-section">
+                    <h3><i class="fas fa-closed-captioning"></i> Add Subtitles</h3>
+                    <div id="subtitles-list"></div>
+                    <button class="btn btn-small" onclick="addSubtitle()" style="margin-top: 10px;">
+                        <i class="fas fa-plus"></i> Add Subtitle
+                    </button>
+                    <button class="btn" id="btn-subtitle" onclick="applySubtitles()" style="margin-top: 10px;">
+                        <i class="fas fa-closed-captioning"></i> Apply Subtitles
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/toast-notifications.js"></script>
+    <script>
+        const BASE_URL = window.location.origin;
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoId = urlParams.get('video_id');
+        const userId = localStorage.getItem('game_user_id') || 'default_user';
+
+        let currentVideo = null;
+        let videoDuration = 0;
+        let subtitles = [];
+        let isDragging = false;
+        let dragHandle = null;
+
+        // Load video
+        async function loadVideo() {
+            if (!videoId) {
+                showError('No video ID provided');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/video-editor/preview/${videoId}`);
+                const data = await response.json();
+
+                if (data.success && data.video) {
+                    currentVideo = data.video;
+                    document.getElementById('video-title').textContent = currentVideo.title || 'Untitled Video';
+                    
+                    const videoPlayer = document.getElementById('video-player');
+                    videoPlayer.src = `${BASE_URL}/api/documentary/video/${videoId}`;
+                    
+                    videoPlayer.addEventListener('loadedmetadata', () => {
+                        videoDuration = videoPlayer.duration;
+                        document.getElementById('trim-end').value = videoDuration.toFixed(1);
+                        updateTimeline();
+                    });
+                } else {
+                    showError('Failed to load video');
+                }
+            } catch (error) {
+                console.error('Error loading video:', error);
+                showError('Error loading video: ' + error.message);
+            }
+        }
+
+        // Timeline functions
+        function updateTimeline() {
+            const start = parseFloat(document.getElementById('trim-start').value) || 0;
+            const end = parseFloat(document.getElementById('trim-end').value) || videoDuration;
+            const duration = end - start;
+
+            const timeline = document.getElementById('timeline');
+            const selection = document.getElementById('timeline-selection');
+            const handleStart = document.getElementById('handle-start');
+            const handleEnd = document.getElementById('handle-end');
+
+            const startPercent = (start / videoDuration) * 100;
+            const endPercent = (end / videoDuration) * 100;
+            const widthPercent = endPercent - startPercent;
+
+            selection.style.left = startPercent + '%';
+            selection.style.width = widthPercent + '%';
+            handleStart.style.left = startPercent + '%';
+            handleEnd.style.left = endPercent + '%';
+
+            document.getElementById('time-start').textContent = formatTime(start);
+            document.getElementById('time-end').textContent = formatTime(end);
+            document.getElementById('time-duration').textContent = formatTime(duration);
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Trim video
+        async function trimVideo() {
+            const start = parseFloat(document.getElementById('trim-start').value);
+            const end = parseFloat(document.getElementById('trim-end').value);
+
+            if (end <= start) {
+                showError('End time must be greater than start time');
+                return;
+            }
+
+            try {
+                document.getElementById('btn-trim').disabled = true;
+                document.getElementById('btn-trim').textContent = 'Trimming...';
+
+                const response = await fetch(`${BASE_URL}/api/video-editor/trim`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        video_id: videoId,
+                        start_time: start,
+                        end_time: end,
+                        user_id: userId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess(`Video trimmed! New video ID: ${data.video_id}`);
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Video trimmed successfully!');
+                    }
+                } else {
+                    showError(data.error || 'Failed to trim video');
+                }
+            } catch (error) {
+                console.error('Error trimming video:', error);
+                showError('Error trimming video: ' + error.message);
+            } finally {
+                document.getElementById('btn-trim').disabled = false;
+                document.getElementById('btn-trim').innerHTML = '<i class="fas fa-cut"></i> Trim Video';
+            }
+        }
+
+        // Enhance video
+        async function enhanceVideo() {
+            const type = document.getElementById('enhance-type').value;
+            const options = {};
+
+            if (type === 'color_correction') {
+                options.brightness = parseFloat(document.getElementById('brightness').value);
+                options.contrast = parseFloat(document.getElementById('contrast').value);
+                options.saturation = parseFloat(document.getElementById('saturation').value);
+            } else if (type === 'upscale') {
+                options.target_resolution = '1920x1080';
+            }
+
+            try {
+                document.getElementById('btn-enhance').disabled = true;
+                document.getElementById('btn-enhance').textContent = 'Enhancing...';
+
+                const response = await fetch(`${BASE_URL}/api/video-editor/enhance`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        video_id: videoId,
+                        type: type,
+                        user_id: userId,
+                        ...options
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess(`Video enhanced! New video ID: ${data.video_id}`);
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Video enhanced successfully!');
+                    }
+                } else {
+                    showError(data.error || 'Failed to enhance video');
+                }
+            } catch (error) {
+                console.error('Error enhancing video:', error);
+                showError('Error enhancing video: ' + error.message);
+            } finally {
+                document.getElementById('btn-enhance').disabled = false;
+                document.getElementById('btn-enhance').innerHTML = '<i class="fas fa-magic"></i> Enhance Video';
+            }
+        }
+
+        // Subtitle functions
+        function addSubtitle() {
+            const subtitle = {
+                id: Date.now(),
+                text: '',
+                start_time: 0,
+                end_time: 5,
+                x: '(w-text_w)/2',
+                y: 'h-th-10',
+                font_size: 24,
+                color: 'white'
+            };
+            subtitles.push(subtitle);
+            renderSubtitles();
+        }
+
+        function renderSubtitles() {
+            const container = document.getElementById('subtitles-list');
+            container.innerHTML = subtitles.map((sub, index) => `
+                <div class="subtitle-item">
+                    <div class="subtitle-item-header">
+                        <strong>Subtitle ${index + 1}</strong>
+                        <button class="btn btn-small" onclick="removeSubtitle(${sub.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>Text</label>
+                        <input type="text" value="${sub.text}" onchange="updateSubtitle(${sub.id}, 'text', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="number" value="${sub.start_time}" step="0.1" onchange="updateSubtitle(${sub.id}, 'start_time', parseFloat(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label>End Time</label>
+                        <input type="number" value="${sub.end_time}" step="0.1" onchange="updateSubtitle(${sub.id}, 'end_time', parseFloat(this.value))">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateSubtitle(id, field, value) {
+            const sub = subtitles.find(s => s.id === id);
+            if (sub) {
+                sub[field] = value;
+            }
+        }
+
+        function removeSubtitle(id) {
+            subtitles = subtitles.filter(s => s.id !== id);
+            renderSubtitles();
+        }
+
+        async function applySubtitles() {
+            if (subtitles.length === 0) {
+                showError('Please add at least one subtitle');
+                return;
+            }
+
+            try {
+                document.getElementById('btn-subtitle').disabled = true;
+                document.getElementById('btn-subtitle').textContent = 'Applying...';
+
+                const response = await fetch(`${BASE_URL}/api/video-editor/subtitle`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        video_id: videoId,
+                        subtitles: subtitles,
+                        user_id: userId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess(`Subtitles added! New video ID: ${data.video_id}`);
+                    if (typeof toast !== 'undefined') {
+                        toast.success('Subtitles added successfully!');
+                    }
+                } else {
+                    showError(data.error || 'Failed to add subtitles');
+                }
+            } catch (error) {
+                console.error('Error adding subtitles:', error);
+                showError('Error adding subtitles: ' + error.message);
+            } finally {
+                document.getElementById('btn-subtitle').disabled = false;
+                document.getElementById('btn-subtitle').innerHTML = '<i class="fas fa-closed-captioning"></i> Apply Subtitles';
+            }
+        }
+
+        // UI helpers
+        function showError(message) {
+            const el = document.getElementById('error-message');
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            const el = document.getElementById('success-message');
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        // Event listeners
+        document.getElementById('trim-start').addEventListener('input', updateTimeline);
+        document.getElementById('trim-end').addEventListener('input', updateTimeline);
+        document.getElementById('enhance-type').addEventListener('change', (e) => {
+            document.getElementById('color-controls').style.display = 
+                e.target.value === 'color_correction' ? 'block' : 'none';
+        });
+        document.getElementById('brightness').addEventListener('input', (e) => {
+            document.getElementById('brightness-value').textContent = e.target.value;
+        });
+        document.getElementById('contrast').addEventListener('input', (e) => {
+            document.getElementById('contrast-value').textContent = e.target.value;
+        });
+        document.getElementById('saturation').addEventListener('input', (e) => {
+            document.getElementById('saturation-value').textContent = e.target.value;
+        });
+
+        // Initialize
+        loadVideo();
+    </script>
+    <script src="/static/js/navigation-toolbar.js?v=20260115"></script>
+    
+    
+    <script src="/static/js/image-support.js"></script>
+    <script src="/static/js/template-effects.js"></script>
+    <script src="/static/js/template-services.js"></script>
+    <script src="/static/js/agent-skill-sets.js"></script>
+    <script src="/static/js/template-engine-core.js"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js"></script>
+    <script src="/static/js/comprehensive-api-integration.js"></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>
+

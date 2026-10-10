@@ -1,0 +1,41 @@
+{
+  "name": "MasterNoder Super Encoder",
+  "short_name": "Super Encoder",
+  "description": "Create music, songs & videos. Rate with MN2 crypto.",
+  "start_url": "/creator/?app=creator-pwa",
+  "scope": "/creator/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1A1035",
+  "background_color": "#0A0E14",
+  "lang": "da",
+  "icons": [
+    {
+      "src": "/static/img/app/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/img/app/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Super Encode",
+      "url": "/creator/?app=creator-pwa#encode"
+    },
+    {
+      "name": "My Tracks",
+      "url": "/creator/?app=creator-pwa#tracks"
+    },
+    {
+      "name": "masternoder.dk",
+      "url": "/?app=pwa"
+    }
+  ],
+  "prefer_related_applications": false
+}

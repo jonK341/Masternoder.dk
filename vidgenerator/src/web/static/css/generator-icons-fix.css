@@ -1,0 +1,115 @@
+/**
+ * Generator Icons Size Fix
+ * Makes icons smaller to fit better in UI
+ */
+
+/* Top Menu Icons - Smaller */
+.top-menu-item i,
+.top-menu-item .fas,
+.top-menu-item .fab,
+.top-menu-item .far {
+    font-size: 0.75rem !important; /* Reduced from default */
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+.top-menu-action i,
+.top-menu-action .fas,
+.top-menu-action .fab {
+    font-size: 0.8rem !important; /* Smaller action icons */
+}
+
+/* Navigation Links - Smaller Icons */
+.nav-link i,
+.nav-link .fas,
+.nav-link .fab,
+.nav-link .far {
+    font-size: 0.8rem !important;
+    margin-right: 0.3rem;
+}
+
+/* Button Icons - Smaller */
+.btn i,
+.btn .fas,
+.btn .fab,
+.btn .far {
+    font-size: 0.85rem !important; /* Reduced from 0.95rem */
+}
+
+/* Sidebar Icons - Smaller */
+.sidebar-btn i,
+.sidebar-section h4 i,
+.sidebar-section .fas,
+.sidebar-section .fab {
+    font-size: 0.8rem !important;
+}
+
+/* Header Stats Icons - Smaller */
+.header-stats .stat-item i,
+.header-stats .stat-item .fas {
+    font-size: 1rem !important; /* Reduced from larger size */
+}
+
+/* Frame Title Icons - Smaller */
+.generator-frame-title i,
+.generator-frame-title .fas {
+    font-size: 0.9rem !important;
+}
+
+/* All Font Awesome Icons - General Reduction */
+.fas, .far, .fab, .fal {
+    font-size: 0.85rem !important; /* Base size for all icons */
+}
+
+/* Specific Icon Size Overrides */
+.fa-video,
+.fa-images,
+.fa-chart-bar,
+.fa-chart-line,
+.fa-comments,
+.fa-palette,
+.fa-cog,
+.fa-home,
+.fa-photo-video {
+    font-size: 0.75rem !important;
+}
+
+/* Top Menu Items - Reduce padding to fit more */
+.top-menu-item {
+    padding: 0.5rem 1rem !important; /* Reduced from 0.75rem 1.5rem */
+    font-size: 0.85rem !important; /* Reduced from 0.9rem */
+    gap: 0.35rem !important; /* Reduced gap between icon and text */
+}
+
+/* Navigation Links - Compact */
+.nav-link {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.85rem !important;
+    gap: 0.3rem !important;
+}
+
+/* Top Menu Actions - Smaller */
+.top-menu-action {
+    padding: 0.5rem !important; /* Reduced from 0.75rem */
+    font-size: 0.8rem !important;
+}
+
+/* Responsive - Even smaller on mobile */
+@media (max-width: 768px) {
+    .top-menu-item i,
+    .nav-link i,
+    .btn i {
+        font-size: 0.7rem !important;
+    }
+    
+    .top-menu-item {
+        padding: 0.4rem 0.75rem !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .nav-link {
+        padding: 0.4rem 0.5rem !important;
+        font-size: 0.8rem !important;
+    }
+}
+

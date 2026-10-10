@@ -1,0 +1,135 @@
+// Phase 1: Core Foundation - Embed Player with Data Collection
+
+(function() {
+    'use strict';
+
+    const video = document.getElementById('clip-player');
+    if (!video) return;
+
+    const clipId = video.getAttribute('data-clip-id');
+    if (!clipId) return;
+
+    let sessionId = null;
+    let viewerSessionId = null;
+    let watchStartTime = null;
+    let pausedTime = 0;
+    let totalWatchTime = 0;
+    let lastPosition = 0;
+
+    // Generate session ID
+    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+    // Get device/browser info
+    const deviceType = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+    const browser = navigator.userAgent.split(' ').pop();
+
+    // Create viewer session
+    async function createSession() {
+        try {
+            const response = await fetch('/api/embed/session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    clip_id: clipId,
+                    device_type: deviceType,
+                    browser: browser,
+                    location: null, // Could be determined via IP geolocation in Phase 2
+                    referrer: document.referrer || window.location.href
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                viewerSessionId = result.viewer_session_id;
+            }
+        } catch (error) {
+            console.error('Error creating session:', error);
+        }
+    }
+
+    // Track interaction
+    async function trackInteraction(type, position, metadata = {}) {
+        try {
+            await fetch('/api/embed/track', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    interaction_type: type,
+                    timestamp: new Date().toISOString(),
+                    clip_position: position,
+                    clip_id: clipId,
+                    metadata: metadata
+                })
+            });
+        } catch (error) {
+            console.error('Error tracking interaction:', error);
+        }
+    }
+
+    // Set video source
+    video.src = `/api/clip/${clipId}/video`;
+
+    // Create session on load
+    createSession();
+
+    // Event listeners for tracking
+    video.addEventListener('play', function() {
+        watchStartTime = Date.now();
+        trackInteraction('play', video.currentTime);
+    });
+
+    video.addEventListener('pause', function() {
+        if (watchStartTime) {
+            totalWatchTime += (Date.now() - watchStartTime) / 1000;
+            watchStartTime = null;
+        }
+        trackInteraction('pause', video.currentTime);
+    });
+
+    video.addEventListener('seeked', function() {
+        trackInteraction('seek', video.currentTime, {
+            from_position: lastPosition,
+            to_position: video.currentTime
+        });
+        lastPosition = video.currentTime;
+    });
+
+    video.addEventListener('timeupdate', function() {
+        lastPosition = video.currentTime;
+        
+        // Track completion
+        if (video.currentTime >= video.duration * 0.95 && !video.ended) {
+            trackInteraction('complete', video.currentTime);
+        }
+    });
+
+    video.addEventListener('ended', function() {
+        if (watchStartTime) {
+            totalWatchTime += (Date.now() - watchStartTime) / 1000;
+            watchStartTime = null;
+        }
+        trackInteraction('complete', video.duration, {
+            total_watch_time: totalWatchTime,
+            completion_rate: 1.0
+        });
+    });
+
+    // Track when user leaves (beforeunload)
+    window.addEventListener('beforeunload', function() {
+        if (watchStartTime) {
+            totalWatchTime += (Date.now() - watchStartTime) / 1000;
+        }
+        trackInteraction('leave', lastPosition, {
+            total_watch_time: totalWatchTime,
+            completion_rate: video.duration > 0 ? lastPosition / video.duration : 0
+        });
+    });
+
+})();
+
