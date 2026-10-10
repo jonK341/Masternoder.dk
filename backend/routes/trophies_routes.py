@@ -4,6 +4,8 @@ Routes for trophy display and management
 Supports both /trophies (plural) and /trophie (singular) for compatibility
 All endpoints resolve user_id via session > query > identification.
 """
+from datetime import date
+
 from flask import Blueprint, jsonify, request
 import os
 import json
@@ -159,18 +161,17 @@ def compute_user_metrics(user_id: str) -> dict:
     return metrics
 
 
-def _seasonal_available(defn: dict, today: 'date' = None) -> bool:
+def _seasonal_available(defn: dict, today: date | None = None) -> bool:
     """True if a seasonal trophy is currently within its availability window.
 
     Non-seasonal trophies (no available_from/until) are always available.
     """
-    from datetime import date as _date
     fmt = '%Y-%m-%d'
     start = defn.get('available_from')
     end = defn.get('available_until')
     if not start and not end:
         return True
-    today = today or _date.today()
+    today = today or date.today()
     try:
         from datetime import datetime
         if start and today < datetime.strptime(start, fmt).date():

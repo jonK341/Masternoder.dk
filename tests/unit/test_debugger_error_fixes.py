@@ -91,12 +91,16 @@ def test_social_user_route_rejects_promise_string():
     assert response.get_json()["code"] == "user_unauthenticated"
 
 
-def test_handler_status_is_real():
+def test_handler_status_is_real(monkeypatch):
     from backend.routes.error_handler_status_routes import error_handler_status_bp
 
+    monkeypatch.setenv("DEBUGGER_ADMIN_KEY", "test-admin-key")
     app = Flask(__name__)
     app.register_blueprint(error_handler_status_bp)
-    response = app.test_client().get("/api/errors/handler-status")
+    client = app.test_client()
+    locked = client.get("/api/errors/handler-status")
+    assert locked.status_code == 401
+    response = client.get("/api/errors/handler-status", headers={"X-Admin-Key": "test-admin-key"})
     assert response.status_code == 200
     body = response.get_json()
     assert body["success"] is True

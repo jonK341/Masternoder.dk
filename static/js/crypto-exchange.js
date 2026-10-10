@@ -27,9 +27,19 @@
 
   function getJson(path) {
     if (window.ExchangeHub && window.ExchangeHub.fetchJson) {
-      return window.ExchangeHub.fetchJson(path, { timeout: 8000 });
+      return window.ExchangeHub.fetchJson(path, { timeout: 8000 }).catch(function () {
+        return { success: false, pending: true };
+      });
     }
-    return fetch(path, { credentials: 'same-origin' }).then(function (r) { return r.json(); });
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 8000);
+    return fetch(path, { credentials: 'same-origin', signal: ctrl.signal }).then(function (r) {
+      clearTimeout(timer);
+      return r.json();
+    }).catch(function () {
+      clearTimeout(timer);
+      return { success: false, pending: true };
+    });
   }
 
   function postJson(path, body) {

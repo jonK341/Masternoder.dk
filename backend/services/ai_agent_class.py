@@ -28,8 +28,8 @@ class AIAgent:
     def __init__(self, agent_id: str, base_dir: Optional[str] = None):
         self.agent_id = agent_id
         self.base_dir = base_dir or BASE_DIR
-        self.ai = agent_ai_intelligence
-        self.points_db = unified_points_db
+        self.ai = get_agent_ai_intelligence()
+        self.points_db = get_unified_points_db()
         self.skills_file = os.path.join(self.base_dir, 'logs', 'ai_agents', f'{agent_id}_skills.json')
         self.limits_file = os.path.join(self.base_dir, 'logs', 'ai_agents', f'{agent_id}_limits.json')
         self.load_agent_data()

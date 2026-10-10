@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 import os
 import json
 from datetime import datetime, timedelta
+from backend.services.admin_gate import protect_blueprint
 
 debugger_agent_analytics_bp = Blueprint('debugger_agent_analytics', __name__)
 
@@ -162,3 +163,5 @@ def get_agent_handling():
             'success': False,
             'error': str(e)
         }), 500
+
+protect_blueprint(debugger_agent_analytics_bp)

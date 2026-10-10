@@ -11,6 +11,8 @@ import uuid
 
 from flask import Blueprint, jsonify, request
 
+from backend.services.user_id_policy import rejection_for
+
 cogs_bp = Blueprint("cogs", __name__)
 
 
@@ -96,6 +98,10 @@ def monetization_usage_allowance():
     Query: user_id (required), period_days (optional, default 30).
     """
     user_id = (request.args.get("user_id") or "").strip()
+    rejected = rejection_for(user_id)
+    if rejected:
+        body, status = rejected
+        return jsonify(body), status
     period_raw = (request.args.get("period_days") or "30").strip()
     try:
         period_days = max(1, int(float(period_raw)))

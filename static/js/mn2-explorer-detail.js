@@ -106,6 +106,8 @@
   function discordEmbedLink(ref) {
     return '/api/mn2/explorer/discord-embed?block=' + encodeURIComponent(ref);
   }
+
+  function setPageMeta(opts) {
     opts = opts || {};
     if (opts.title) document.title = opts.title;
     function upsert(attr, key, val) {

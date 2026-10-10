@@ -10,6 +10,9 @@ from datetime import datetime, date, timedelta
 from typing import Dict, Optional
 from sqlalchemy import text
 
+from backend.services.game_level_crypto_service import claim_level_reward, level_rewards_status
+from backend.services.bounded_cache import cached_get
+
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -947,6 +950,7 @@ def _derive_game_battle_persona(level_info: Optional[Dict], battle_stats: Dict, 
 
 
 @hunters_game_bp.route('/api/game/hunters/battle-bridge-snapshot', methods=['GET'])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def battle_bridge_snapshot():
     """Unified snapshot for Game + Battle pages: hunter row, battle row, points slice, derived persona."""
     user_id = _resolve_uid()
@@ -1241,6 +1245,7 @@ def nexus_levels_public():
 
 
 @hunters_game_bp.route("/api/game/hunters/nexus-state", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def nexus_state():
     """Claimed levels + streak, faction, co-op, daily challenge, copilot, trophy echo, shop flags."""
     try:
@@ -1442,3 +1447,22 @@ def nexus_claim():
         ), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@hunters_game_bp.route("/api/game/crypto/level-rewards", methods=["GET"])
+def game_crypto_level_rewards():
+    """Hunter level MN2 milestone table for the rewards tab."""
+    payload = level_rewards_status(_resolve_uid())
+    payload["success"] = True
+    return jsonify(payload), 200
+
+
+@hunters_game_bp.route("/api/game/crypto/level-rewards/claim", methods=["POST"])
+def game_crypto_level_rewards_claim():
+    data = request.get_json(silent=True) or {}
+    try:
+        level = int(data.get("level") or request.args.get("level") or 0)
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "level required"}), 400
+    body, status = claim_level_reward(_resolve_uid(), level)
+    return jsonify(body), status

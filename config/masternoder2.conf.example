@@ -4,7 +4,7 @@
 
 server=1
 rpcuser=mn2rpc
-rpcpassword=Kp9mN2xL7vQw4jRc8sFb3hYt6nWz1aDg5
+rpcpassword=CHANGE_ME_STRONG_PASSWORD
 rpcport=9332
 rpcallowip=127.0.0.1
 rpcbind=127.0.0.1

@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src.db.models import db
 from src.db.models_error_logging import ErrorLog, ErrorSummary
+from backend.services.admin_gate import protect_blueprint
 
 error_logging_bp = Blueprint('error_logging', __name__)
 
@@ -480,3 +481,5 @@ def resolve_error_group(error_group):
             'error': 'Failed to resolve error group',
             'message': str(e)
         }), 500
+
+protect_blueprint(error_logging_bp, skip_paths={"/api/errors/log"})

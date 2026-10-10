@@ -90,7 +90,10 @@
 
         try {
 
-            const r = await fetch('/api/game-hub/overview' + qs);
+            const ctrl = new AbortController();
+            const timer = setTimeout(function () { ctrl.abort(); }, 8000);
+            const r = await fetch('/api/game-hub/overview' + qs, { signal: ctrl.signal });
+            clearTimeout(timer);
 
             if (!r.ok) {
 

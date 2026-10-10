@@ -15,6 +15,16 @@ except ImportError:
     Base = declarative_base()
 
 
+def _short_identifier(value):
+    """Keep error reads from returning full user or session ids."""
+    text = "" if value is None else str(value)
+    if not text:
+        return None
+    if len(text) <= 4:
+        return "****"
+    return "…" + text[-4:]
+
+
 class ErrorLog(Base):
     """Stores all application errors (frontend and backend)"""
     __tablename__ = 'error_logs'
@@ -74,7 +84,7 @@ class ErrorLog(Base):
     )
     
     def to_dict(self):
-        """Convert error log to dictionary"""
+        """Convert error log to dictionary. User and session ids are shortened."""
         return {
             'id': self.id,
             'error_type': self.error_type,
@@ -85,8 +95,8 @@ class ErrorLog(Base):
             'error_source': self.error_source,
             'error_line': self.error_line,
             'error_column': self.error_column,
-            'user_id': self.user_id,
-            'session_id': self.session_id,
+            'user_id': _short_identifier(self.user_id),
+            'session_id': _short_identifier(self.session_id),
             'page_url': self.page_url,
             'user_agent': self.user_agent,
             'request_method': self.request_method,

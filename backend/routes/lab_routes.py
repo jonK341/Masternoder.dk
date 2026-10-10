@@ -6,7 +6,9 @@ import os
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
+
+from backend.services.lab_systems_checks import run_lab_systems_checks
 from sqlalchemy import text
 
 try:
@@ -1497,3 +1499,131 @@ def lab_technologies_status_post(tech_id: str):
     if not _hp_write(user_id, prof):
         return jsonify({"success": False, "error": "could not save profile"}), 500
     return jsonify({"success": True, "user_id": user_id, "technology": item, "storage": "db"}), 200
+
+
+_IDEA_COOLDOWN_SEC = 30
+
+
+def _idea_board_path() -> str:
+    return os.path.join(_BASE_DIR, "logs", "lab_idea_board.json")
+
+
+def _load_ideas() -> list:
+    try:
+        with open(_idea_board_path(), "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        return data if isinstance(data, list) else []
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+def _save_ideas(ideas: list) -> None:
+    path = _idea_board_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(ideas, handle)
+
+
+def _pin_cooldown_remaining(ideas: list, user_id: str) -> int:
+    stamps = []
+    for idea in ideas:
+        if isinstance(idea, dict) and idea.get("user_id") == user_id and idea.get("created_at"):
+            stamps.append(idea["created_at"])
+    if not stamps:
+        return 0
+    try:
+        latest = datetime.fromisoformat(stamps[-1].replace("Z", "+00:00"))
+        if latest.tzinfo is None:
+            latest = latest.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return 0
+    elapsed = (datetime.now(timezone.utc) - latest).total_seconds()
+    return max(0, int(_IDEA_COOLDOWN_SEC - elapsed))
+
+
+@lab_bp.route("/api/lab/news", methods=["GET"])
+def lab_news():
+    """Lab channel items for the hub news tab."""
+    data = _load_data_json("lab_news.json") or {}
+    items = data.get("items") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        items = []
+    try:
+        limit = max(1, min(50, int(request.args.get("limit") or 12)))
+    except (TypeError, ValueError):
+        limit = 12
+    return jsonify({
+        "success": True,
+        "channel": (data.get("channel") if isinstance(data, dict) else None) or "lab",
+        "news": items[:limit],
+    }), 200
+
+
+@lab_bp.route("/api/lab/systems-check", methods=["GET"])
+def lab_systems_check():
+    """In-process lab API line checks used by the systems tab."""
+    user_id = (request.args.get("user_id") or "test_user").strip() or "test_user"
+    report = run_lab_systems_checks(current_app, user_id)
+    report["success"] = True
+    return jsonify(report), 200
+
+
+@lab_bp.route("/api/lab/idea-board", methods=["GET"])
+def lab_idea_board_get():
+    """Pinned ideas. Empty when the lab database handle is unavailable."""
+    if db is None:
+        return jsonify({"success": True, "ideas": [], "pin_cooldown_remaining_sec": 0}), 200
+    user_id = (request.args.get("user_id") or "").strip()
+    ideas = [row for row in _load_ideas() if not user_id or row.get("user_id") == user_id]
+    return jsonify({
+        "success": True,
+        "ideas": ideas,
+        "pin_cooldown_remaining_sec": _pin_cooldown_remaining(ideas, user_id),
+    }), 200
+
+
+@lab_bp.route("/api/lab/idea-board", methods=["POST"])
+def lab_idea_board_post():
+    if db is None:
+        return jsonify({"success": False, "error": "database not available"}), 503
+    body = request.get_json(silent=True) or {}
+    user_id = (body.get("user_id") or request.args.get("user_id") or "").strip()
+    title = (body.get("title") or "").strip()
+    text = (body.get("body") or "").strip()
+    track = (body.get("track") or "general").strip() or "general"
+    if len(title) < 2 or len(text) < 4:
+        return jsonify({"success": False, "error": "Title (2+) and body (4+) required."}), 400
+    ideas = _load_ideas()
+    wait = _pin_cooldown_remaining(ideas, user_id)
+    if wait:
+        return jsonify({"success": False, "error": "pin_cooldown", "pin_cooldown_remaining_sec": wait}), 429
+    idea = {
+        "id": uuid.uuid4().hex[:12],
+        "user_id": user_id,
+        "title": title[:160],
+        "body": text[:2000],
+        "track": track[:40],
+        "status": "pinned",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    ideas.append(idea)
+    _save_ideas(ideas)
+    return jsonify({"success": True, "idea": idea}), 200
+
+
+@lab_bp.route("/api/lab/idea-board/<idea_id>/status", methods=["POST"])
+def lab_idea_board_status(idea_id: str):
+    if db is None:
+        return jsonify({"success": False, "error": "database not available"}), 503
+    body = request.get_json(silent=True) or {}
+    status = (body.get("status") or "").strip().lower()
+    allowed = {"pinned", "in_progress", "shipped", "archived"}
+    if status not in allowed:
+        return jsonify({"success": False, "error": "invalid status", "allowed": sorted(allowed)}), 400
+    ideas = _load_ideas()
+    for idea in ideas:
+        if isinstance(idea, dict) and idea.get("id") == idea_id:
+            idea["status"] = status
+            _save_ideas(ideas)
+            return jsonify({"success": True, "idea": idea}), 200
+    return jsonify({"success": False, "error": "idea not found"}), 404

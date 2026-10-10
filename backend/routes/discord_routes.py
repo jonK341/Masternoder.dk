@@ -5,6 +5,8 @@ import json
 import os
 from flask import Blueprint, jsonify, redirect, request
 
+from backend.services.user_id_policy import rejection_for
+
 discord_bp = Blueprint("discord", __name__)
 _INTERACTION_PING = 1
 
@@ -150,8 +152,10 @@ def discord_casino_fanout():
 @discord_bp.route("/api/discord/link/status", methods=["GET"])
 def discord_link_status():
     user_id = (request.args.get("user_id") or "").strip()
-    if not user_id:
-        return jsonify({"success": False, "error": "user_id required"}), 400
+    rejected = rejection_for(user_id)
+    if rejected:
+        body, status = rejected
+        return jsonify(body), status
     from backend.services.discord_link_service import link_status
 
     return jsonify(link_status(user_id)), 200

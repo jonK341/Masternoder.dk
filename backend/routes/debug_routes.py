@@ -10,6 +10,7 @@ import json
 import importlib
 import inspect
 from datetime import datetime
+from backend.services.admin_gate import protect_blueprint
 
 debug_bp = Blueprint('debug', __name__)
 
@@ -878,3 +879,5 @@ def debug_hard_test_generator():
             'failed': 0,
             'results': [],
         }), 500
+
+protect_blueprint(debug_bp)

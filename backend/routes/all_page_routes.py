@@ -57,6 +57,7 @@ PAGES = [
 _PAGE_REDIRECTS = {
     'achievements': '/trophies',
     'chat': '/lab#discussion',
+    'staking': '/staking-monitor',
 }
 
 # Pages removed from PAGES: redirect HTML routes not covered by dashboard_page_routes

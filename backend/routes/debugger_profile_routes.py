@@ -5,6 +5,7 @@ Profile and unified points integration for debugger site
 from flask import Blueprint, request, jsonify
 from typing import Dict, Optional
 import os
+from backend.services.admin_gate import protect_blueprint
 
 debugger_profile_bp = Blueprint('debugger_profile', __name__)
 
@@ -186,3 +187,5 @@ def get_agent_points():
             'success': False,
             'error': str(e)
         }), 500
+
+protect_blueprint(debugger_profile_bp)

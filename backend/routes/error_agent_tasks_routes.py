@@ -8,6 +8,7 @@ from typing import Dict, List
 import os
 import glob
 import re
+from backend.services.admin_gate import protect_blueprint
 
 error_agent_tasks_bp = Blueprint('error_agent_tasks', __name__)
 
@@ -422,3 +423,5 @@ def get_task_stats():
             'success': False,
             'error': str(e)
         }), 500
+
+protect_blueprint(error_agent_tasks_bp, methods={"GET"})

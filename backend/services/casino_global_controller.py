@@ -15,6 +15,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from backend.services import casino_service
+
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _HUB_PATH = os.path.join(_ROOT, "data", "casino_hub_config.json")
 _CASINO_CONFIG_PATH = os.path.join(_ROOT, "data", "casino_config.json")
@@ -173,7 +175,7 @@ def _merge_peer_leaderboards(
             continue
         if (node.get("period") or "today") != period:
             continue
-        if _cs()._normalize_currency(node.get("currency") or "coins") != currency:
+        if casino_service._normalize_currency(node.get("currency") or "coins") != currency:
             continue
         for row in node.get("leaderboard") or []:
             if not isinstance(row, dict) or not row.get("user_id"):

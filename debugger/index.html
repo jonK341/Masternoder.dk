@@ -8,6 +8,60 @@
     <meta http-equiv="Expires" content="0">
     <meta name="cache-version" content="20260219a">
     <title>Production Debugger - masternoder.dk</title>
+    <script>
+    (function () {
+        var STORAGE = 'mn2_debugger_admin_key';
+        function storedKey() {
+            try { return sessionStorage.getItem(STORAGE) || ''; } catch (e) { return ''; }
+        }
+        window.mn2SetDebuggerAdminKey = function (value) {
+            try { sessionStorage.setItem(STORAGE, value || ''); } catch (e) {}
+        };
+        var orig = window.fetch;
+        window.fetch = function (input, init) {
+            var url = typeof input === 'string' ? input : (input && input.url) || '';
+            var needsAdmin = /\/api\/(debug|debugger|debugging|errors)(\/|$|\?)/.test(url)
+                || /\/api\/(horoscope|teleport)(\?|$)/.test(url)
+                || /\/api\/make\/coffee(\?|$)/.test(url);
+            if (!needsAdmin) return orig.call(this, input, init);
+            init = Object.assign({}, init || {});
+            var headers = new Headers(init.headers || {});
+            var key = storedKey();
+            if (key && !headers.has('X-Admin-Key')) headers.set('X-Admin-Key', key);
+            init.headers = headers;
+            if (!init.credentials) init.credentials = 'same-origin';
+            return orig.call(this, input, init);
+        };
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.getElementById('mn2-debugger-admin-bar')) return;
+            var bar = document.createElement('form');
+            bar.id = 'mn2-debugger-admin-bar';
+            bar.style.cssText = 'margin:0 0 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
+            bar.innerHTML = '<label for="mn2-debugger-admin-key">Admin key</label>'
+                + '<input id="mn2-debugger-admin-key" type="password" autocomplete="off" style="padding:6px 8px;border-radius:6px;min-width:220px;">'
+                + '<button type="submit">Unlock debugger APIs</button>'
+                + '<span id="mn2-debugger-admin-state"></span>';
+            var input = bar.querySelector('input');
+            input.value = storedKey();
+            var host = document.querySelector('.container') || document.body;
+            host.insertBefore(bar, host.firstChild);
+            bar.addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                var key = (input.value || '').trim();
+                window.mn2SetDebuggerAdminKey(key);
+                var state = document.getElementById('mn2-debugger-admin-state');
+                fetch('/api/debugger/unlock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Admin-Key': key },
+                    body: JSON.stringify({ admin_key: key })
+                }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+                  .then(function (res) {
+                      if (state) state.textContent = res.ok ? 'Admin session on' : ((res.d && res.d.error) || 'Unlock failed');
+                  }).catch(function () { if (state) state.textContent = 'Unlock failed'; });
+            });
+        });
+    })();
+    </script>
     <style>
         * {
             margin: 0;
@@ -4350,7 +4404,10 @@
             for (const check of checks) {
                 const start = performance.now();
                 try {
-                    const response = await fetch(check.url, { headers: { 'Accept': 'application/json' } });
+                    const healthCtrl = new AbortController();
+                    const healthTimer = setTimeout(function () { healthCtrl.abort(); }, 8000);
+                    const response = await fetch(check.url, { headers: { 'Accept': 'application/json' }, signal: healthCtrl.signal });
+                    clearTimeout(healthTimer);
                     let data = {};
                     try {
                         data = await response.json();

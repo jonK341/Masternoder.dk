@@ -7,6 +7,8 @@ import os
 
 from flask import Blueprint, jsonify, request
 
+from backend.services.admin_gate import admin_authorized, configured_admin_secrets
+
 ai_assist_bp = Blueprint("ai_assist", __name__)
 
 
@@ -23,11 +25,14 @@ def _resolve_uid() -> str:
 
 
 def _admin_key_ok():
-    expected = (os.environ.get("COGS_ADMIN_REPORT_KEY") or "").strip()
+    """503 when no admin secret is configured. That is why /api/admin/risk/* returns 503.
+
+    Any of COGS_ADMIN_REPORT_KEY, EXCHANGE_ADMIN_KEY, or DEBUGGER_ADMIN_KEY enables the panel.
+    """
+    expected = configured_admin_secrets()
     if not expected:
-        return False, expected
-    supplied = (request.headers.get("X-Cogs-Admin-Key") or request.args.get("key") or "").strip()
-    return supplied == expected, expected
+        return False, ""
+    return admin_authorized(), "configured"
 
 
 @ai_assist_bp.route("/api/support/faq/topics", methods=["GET"])

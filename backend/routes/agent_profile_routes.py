@@ -3,9 +3,11 @@ Agent Profile Routes
 Provides endpoints for user agent progress, activity feed, and skill management.
 Connected to agent_db_service (DB-backed with file fallback).
 """
+import json
 import os
 
 from flask import Blueprint, jsonify, request, session
+from backend.services.bounded_cache import cached_get
 
 agent_profile_bp = Blueprint('agent_profile', __name__)
 
@@ -31,6 +33,7 @@ def _resolve():
 
 
 @agent_profile_bp.route('/api/agents/my-agents', methods=['GET'])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def get_my_agents():
     """Return all agents assigned to the current user with progress (level, XP, skills, last action)."""
     user_id = _resolve()
@@ -270,3 +273,33 @@ def user_skills_maintenance_inactive():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@agent_profile_bp.route('/api/agents/rewards/info', methods=['GET'])
+def agents_rewards_info():
+    """Earn-rate table the social MN2 panel reads (actions_mn2 / actions_coins)."""
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base, 'data', 'monetization_config.json')
+    actions = {}
+    cap = 0.5
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            cfg = json.load(handle)
+        block = cfg.get('agent_ai_rewards') if isinstance(cfg, dict) else {}
+        actions = (block or {}).get('actions') or {}
+        cap = (block or {}).get('daily_cap_mn2', cap)
+    except (OSError, json.JSONDecodeError, TypeError):
+        actions = {}
+    actions_mn2 = {}
+    actions_coins = {}
+    for key, row in actions.items():
+        if not isinstance(row, dict):
+            continue
+        actions_mn2[key] = row.get('mn2', 0)
+        actions_coins[key] = row.get('coins', 0)
+    return jsonify({
+        'success': True,
+        'daily_cap_mn2': cap,
+        'actions_mn2': actions_mn2,
+        'actions_coins': actions_coins,
+    }), 200

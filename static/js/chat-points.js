@@ -37,7 +37,7 @@ class ChatPointsManager {
     }
     
     async awardPointsForMessage(messageText) {
-        """Award points when user sends a message"""
+        // Award points when user sends a message
         if (!messageText || messageText.trim().length === 0) {
             return;
         }

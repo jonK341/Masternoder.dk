@@ -9,7 +9,7 @@ edge — RTP = 36/37 ≈ 0.973 — which `rtp()` verifies. Side-effect free.
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
 POCKETS = 37  # 0..36, single zero (European)
 

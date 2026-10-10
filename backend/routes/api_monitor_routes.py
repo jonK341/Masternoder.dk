@@ -274,23 +274,61 @@ def monitor_page():
     ), 200, {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store, max-age=0"}
 
 
+_MONITOR_STATUS_CACHE = {"ts": 0.0, "body": None}
+_MONITOR_SAMPLE = ("/api/health", "/api/version", "/api/health/system")
+
+
+def _probe_inprocess(path: str) -> dict:
+    """Probe through the app test client so status cannot deadlock on itself over HTTP."""
+    start = time.perf_counter()
+    try:
+        resp = current_app.test_client().get(path)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        return {
+            "ok": 200 <= resp.status_code < 400,
+            "status_code": resp.status_code,
+            "time_ms": round(elapsed_ms, 1),
+            "error": None,
+            "body_preview": None,
+        }
+    except Exception as exc:
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        return {
+            "ok": False,
+            "status_code": None,
+            "time_ms": round(elapsed_ms, 1),
+            "error": str(exc)[:200],
+            "body_preview": None,
+        }
+
+
 @api_monitor_bp.route("/api/monitor/status", methods=["GET"])
 def monitor_status_json():
-    """Return JSON status of all probe-able endpoints (server-side)."""
-    base = request.url_root.rstrip("/")
+    """Bounded health sample. The HTML monitor probes the full list in the browser."""
+    now = time.monotonic()
+    cached = _MONITOR_STATUS_CACHE["body"]
+    if cached and now - _MONITOR_STATUS_CACHE["ts"] < 20:
+        body = dict(cached)
+        body["cached"] = True
+        return jsonify(body)
     endpoints = _get_api_endpoints()
-    to_probe = [e["path"] for e in endpoints if e.get("probe")]
     results = []
-    for path in to_probe:
-        r = _probe(base + path)
-        results.append({"path": path, "url": base + path, **r})
-    ok = sum(1 for r in results if r.get("ok"))
-    return jsonify({
+    for path in _MONITOR_SAMPLE:
+        results.append({"path": path, "url": path, **_probe_inprocess(path)})
+    ok = sum(1 for row in results if row.get("ok"))
+    body = {
         "success": True,
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "base": base,
+        "base": request.url_root.rstrip("/"),
         "ok": ok,
         "fail": len(results) - ok,
         "total": len(results),
+        "registered": len(endpoints),
+        "sampled": True,
+        "cached": False,
+        "note": "Server status probes a short health sample in-process. Full route probes stay in the monitor page.",
         "endpoints": results,
-    })
+    }
+    _MONITOR_STATUS_CACHE["ts"] = time.monotonic()
+    _MONITOR_STATUS_CACHE["body"] = body
+    return jsonify(body)

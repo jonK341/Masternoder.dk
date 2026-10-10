@@ -7,6 +7,7 @@ import os
 import re
 from pathlib import Path
 from collections import defaultdict
+from backend.services.admin_gate import protect_blueprint
 
 error_handler_status_bp = Blueprint('error_handler_status', __name__)
 
@@ -145,3 +146,5 @@ def analyze_error_handlers_route():
         return jsonify(result), 200
     else:
         return jsonify(result), 500
+
+protect_blueprint(error_handler_status_bp)

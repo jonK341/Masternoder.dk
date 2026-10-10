@@ -6,6 +6,7 @@ When FLASK_DEBUG=1 or request has debug=1, 500 responses include a "detail" fiel
 import os
 import traceback
 from flask import request, jsonify
+from werkzeug.exceptions import HTTPException
 
 def _include_error_detail():
     """True if we should include exception detail in API 500 responses (debug only)."""
@@ -14,6 +15,20 @@ def _include_error_detail():
     if request and request.args.get("debug", "").strip() in ("1", "true"):
         return True
     return False
+
+def api_http_exception(error):
+    """Preserve Werkzeug HTTP errors (405 Method Not Allowed, and the rest)."""
+    code = int(getattr(error, "code", None) or 500)
+    path = request.path if request else ""
+    if "/api/" in path:
+        return jsonify({
+            "success": False,
+            "error": getattr(error, "name", "HTTP Error"),
+            "message": getattr(error, "description", None) or str(error),
+            "path": path,
+        }), code
+    return error
+
 
 def register_json_error_handlers(app):
     """Register JSON error handlers for all error codes"""
@@ -72,6 +87,8 @@ def register_json_error_handlers(app):
     @app.errorhandler(Exception)
     def handle_exception(error):
         """Handle all unhandled exceptions"""
+        if isinstance(error, HTTPException):
+            return api_http_exception(error)
         if request.path.startswith('/api/'):
             try:
                 import logging

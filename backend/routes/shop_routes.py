@@ -6,6 +6,7 @@ Uses account resolution: session > request > user_identification.
 from flask import Blueprint, jsonify, request, send_file
 import os
 from typing import Any, Dict
+from backend.services.bounded_cache import cached_get
 
 shop_bp = Blueprint('shop', __name__)
 
@@ -1629,6 +1630,7 @@ def download_digital_good(item_id):
 
 
 @shop_bp.route('/api/game/shop/items', methods=['GET'])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def game_shop_items():
     """Get shop items (optionally filtered by category)."""
     try:

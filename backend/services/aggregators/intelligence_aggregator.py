@@ -27,9 +27,14 @@ def _load_sources_config() -> Dict[str, Any]:
         return {"sources": [], "request_timeout_seconds": 15}
 
 
+_ATOM_NS = "http://www.w3.org/2005/Atom"
+
+
 def _ns(tag: str) -> str:
     """arXiv API uses Atom namespace."""
-    return f"{http://www.w3.org/2005/Atom}{tag}" if "}" not in tag else tag
+    if "}" in tag:
+        return tag
+    return "{" + _ATOM_NS + "}" + tag
 
 
 class IntelligenceAggregator:

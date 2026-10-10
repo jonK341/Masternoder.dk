@@ -8,6 +8,9 @@ from datetime import datetime
 from flask import request, jsonify
 from typing import Optional
 import json
+from werkzeug.exceptions import HTTPException
+
+from backend.middleware.json_error_handler import api_http_exception
 
 
 class ErrorLogger:
@@ -98,6 +101,8 @@ def register_error_logging_middleware(app):
     @app.errorhandler(Exception)
     def handle_generic_error(e):
         """Handle any unhandled exception"""
+        if isinstance(e, HTTPException):
+            return api_http_exception(e)
         error_logger.log_error(e, {
             'endpoint': request.path,
             'method': request.method

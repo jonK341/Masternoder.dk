@@ -4,6 +4,8 @@ Provides downloadable debugger tools and scripts
 """
 
 from flask import Blueprint, send_file, jsonify, request, Response
+
+from backend.services.admin_gate import protect_blueprint
 import os
 import zipfile
 import tempfile
@@ -479,3 +481,5 @@ def list_debugger_tools():
         'resistant_paths': True,
         'message': 'Multiple download paths available for resistance'
     })
+
+protect_blueprint(debugger_download_bp)

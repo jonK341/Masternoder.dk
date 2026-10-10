@@ -169,7 +169,7 @@
       fetch('/api/exchange/health').then(function (r) { return r.ok ? r.json() : {}; }),
       fetch('/api/exchange/trades?limit=25').then(function (r) { return r.ok ? r.json() : {}; }),
       fetch('/api/exchange/catalog').then(function (r) { return r.ok ? r.json() : {}; }),
-      fetch('/api/exchange/profit-agent?user_id=' + encodeURIComponent(uid())).then(function (r) { return r.ok ? r.json() : {}; }),
+      fetch('/api/exchange/profit-agent?user_id=' + encodeURIComponent(uid()), { signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return { success: false, pending: true }; }),
       fetch('/api/exchange/gateway/status').then(function (r) { return r.ok ? r.json() : {}; })
     ]).then(function (res) {
       var h = res[0] || {};

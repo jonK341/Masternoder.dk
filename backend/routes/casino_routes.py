@@ -9,6 +9,7 @@ from flask import Blueprint, jsonify, request
 
 from backend.services.account_resolution_service import resolve_user_id
 import backend.services.casino_service as casino_service
+from backend.services.bounded_cache import cached_get
 
 
 casino_bp = Blueprint("virtual_casino", __name__)
@@ -958,6 +959,7 @@ def casino_trophies():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/rival-board", methods=["GET"])
 @casino_bp.route("/api/casino/rivals", methods=["GET"])
 def casino_rivals():
     try:
@@ -1581,6 +1583,7 @@ def casino_mines_duel_pick():
 
 
 @casino_bp.route("/api/casino/duels/mines", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def casino_mines_duel_list():
     try:
         from backend.services import casino_game_duel_service

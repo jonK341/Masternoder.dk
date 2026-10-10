@@ -12,6 +12,8 @@ import base64
 import threading
 
 from backend.middleware.response_cache_middleware import cached_response
+from backend.services.admin_gate import admin_required_response
+from backend.services.bounded_cache import cached_get
 
 missing_endpoints_bp = Blueprint('missing_endpoints', __name__)
 
@@ -392,6 +394,9 @@ def sync_now():
 @missing_endpoints_bp.route('/api/debug/request-path', methods=['GET'])
 def debug_request_path():
     """Return the path Flask received (for 404 debugging)."""
+    denied = admin_required_response()
+    if denied:
+        return denied
     return jsonify({'path': request.path, 'script_root': getattr(request, 'script_root', '') or ''}), 200
 
 
@@ -2432,6 +2437,9 @@ def trophies_user(user_id):
 @missing_endpoints_bp.route('/api/debug/status', methods=['GET'])
 def debug_status():
     """Get debugger status"""
+    denied = admin_required_response()
+    if denied:
+        return denied
     try:
         info = {
             'status': 'active',
@@ -2457,6 +2465,9 @@ def debug_status():
 @missing_endpoints_bp.route('/api/debug/routes', methods=['GET'])
 def debug_routes():
     """List registered routes containing 'unified' or 'api' - for debugging 404"""
+    denied = admin_required_response()
+    if denied:
+        return denied
     from flask import current_app
     routes = [str(r) for r in current_app.url_map.iter_rules() if 'unified' in str(r) or 'monetization' in str(r) or 'progression' in str(r) or 'generator/test' in str(r)]
     return jsonify({'success': True, 'routes': sorted(routes)[:50]}), 200
@@ -4664,6 +4675,7 @@ def agent_ai_diagnose_compat():
 
 
 @missing_endpoints_bp.route('/api/system/overview', methods=['GET'])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def system_overview():
     """
     Mission Control — full platform status in a single call.

@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify
 from typing import Dict, List, Optional
 from datetime import datetime
 import os
+from backend.services.admin_gate import protect_blueprint
 
 debugger_agent_tasks_bp = Blueprint('debugger_agent_tasks', __name__)
 
@@ -123,7 +124,7 @@ def _load_starmap50_projects() -> List[Dict]:
             agents = data.get("agents") or FREE_AGENTS
             return [
                 {
-                    "task_id": p.get("task_id", "starmap50_%02d" % p.get("num", i + 1)),
+                    "task_id": p.get("task_id", "starmap50_%02d" % p.get("num", idx + 1)),
                     "description": p.get("description", ""),
                     "tab": "starmap25",
                     "suggested_agent": p.get("suggested_agent") or agents[idx % len(agents)],
@@ -792,3 +793,5 @@ def assign_starmap50():
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+protect_blueprint(debugger_agent_tasks_bp)

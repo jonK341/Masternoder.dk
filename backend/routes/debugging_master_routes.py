@@ -5,6 +5,7 @@ Comprehensive API for the debugging system - THE AUTHORITY
 from flask import Blueprint, request, jsonify
 from typing import Dict, List
 from datetime import datetime
+from backend.services.admin_gate import protect_blueprint
 
 debugging_master_bp = Blueprint('debugging_master', __name__)
 
@@ -563,3 +564,5 @@ def get_analytics():
         )
         payload['ai_orchestrator_metrics'] = _get_ai_metrics()
         return jsonify(payload), 200
+
+protect_blueprint(debugging_master_bp)

@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from backend.services.account_resolution_service import resolve_user_id, resolve_user_id_with_source
 from backend.services import ai_user_controller
+from backend.services.bounded_cache import cached_get
 
 user_account_bp = Blueprint("user_account", __name__)
 
@@ -303,6 +304,7 @@ def user_identity_full():
 
 
 @user_account_bp.route("/api/user/account-privacy", methods=["GET", "POST"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def user_account_privacy():
     """Get or update profile privacy, notification, language, and feature preferences."""
     user_id = _resolve()
@@ -377,6 +379,7 @@ def user_account_privacy():
 
 
 @user_account_bp.route("/api/user/export", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def user_account_export():
     """Export the user's account/profile state as JSON."""
     user_id = _resolve()
@@ -423,6 +426,7 @@ def user_account_delete():
 
 
 @user_account_bp.route("/api/user/linked-providers", methods=["GET", "POST"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def user_linked_providers():
     """List configured social providers and manage profile-linked provider labels."""
     user_id = _resolve()
@@ -991,6 +995,7 @@ def user_db_all():
 
 
 @user_account_bp.route("/api/user/portal-nav-preferences", methods=["GET", "POST"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def user_portal_nav_preferences():
     """Get or save portal nav template + theme (profile preferences — same across devices)."""
     from backend.services.nav_portal_preferences_service import (

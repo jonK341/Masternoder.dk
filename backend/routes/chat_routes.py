@@ -220,9 +220,11 @@ def chat_stream():
         resp.headers['Connection'] = 'keep-alive'
         return resp
 
-    except Exception as e:
+    except Exception as exc:
+        err_text = str(exc)
+
         def _err2():
-            yield 'data: ' + json.dumps({'type': 'error', 'error': str(e)}) + '\n\n'
+            yield 'data: ' + json.dumps({'type': 'error', 'error': err_text}) + '\n\n'
         return Response(stream_with_context(_err2()), content_type='text/event-stream')
 
 

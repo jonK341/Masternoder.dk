@@ -11,6 +11,7 @@ from flask import Blueprint, jsonify, request
 _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
+from backend.services.user_id_policy import rejection_for
 from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
 
@@ -128,6 +129,26 @@ def _user_facing_rpc_error(rpc_error: str) -> str:
     if len(err) > 120:
         return err[:117] + "..."
     return err
+
+
+@mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])
+def mn2_wallet_refresh():
+    """Re-read the in-app balance and deposit address for the profile wallet card."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    rejected = rejection_for(user_id)
+    if rejected:
+        body, status = rejected
+        return jsonify(body), status
+    balance = get_balance(user_id)
+    address = get_or_create_deposit_address(user_id)
+    success = bool(address.get("success"))
+    return jsonify({
+        "success": success,
+        "user_id": user_id,
+        "deposit_address": address.get("deposit_address"),
+        "mn2_balance": balance.get("mn2_balance", 0),
+        "error": None if success else address.get("error"),
+    }), 200
 
 
 @mn2_bp.route("/api/mn2/deposit-address", methods=["GET"])

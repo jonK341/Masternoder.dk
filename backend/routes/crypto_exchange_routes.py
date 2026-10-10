@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request
 
 from backend.services.account_resolution_service import resolve_user_id
 from backend.services import crypto_exchange_service as ex
+from backend.services.bounded_cache import cached_get
 
 crypto_exchange_bp = Blueprint("crypto_exchange", __name__)
 
@@ -152,11 +153,13 @@ def exchange_rewards():
 
 
 @crypto_exchange_bp.route("/api/exchange/user-progress", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_user_progress():
     return jsonify(ex.get_user_progress_report(_uid()))
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-agent", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_profit_agent():
     from backend.services.crypto_exchange_profit_agent_service import build_profit_report
 
@@ -338,6 +341,7 @@ def exchange_ai_trading_probe():
 
 
 @crypto_exchange_bp.route("/api/exchange/treasury/status", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_treasury_status():
     from backend.services.exchange_treasury_service import treasury_status
     mode = (request.args.get("mode") or "").strip() or None
@@ -647,6 +651,7 @@ def exchange_prediction_batch():
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-tools/radar", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_profit_tools_radar():
     from backend.services.exchange_profit_tools_service import opportunity_radar
 
@@ -684,6 +689,7 @@ def exchange_profit_tools_simulate():
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-path/search", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_profit_path_search():
     from backend.services.exchange_profit_path_service import search_paths
 
@@ -703,6 +709,7 @@ def exchange_profit_path_search():
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-path/summary", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_profit_path_summary():
     from backend.services.exchange_profit_path_service import profit_path_summary
 
@@ -712,6 +719,7 @@ def exchange_profit_path_summary():
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-path/suggestions", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_profit_path_suggestions():
     from backend.services.exchange_profit_path_service import suggest_improvements
 
@@ -749,6 +757,7 @@ def exchange_profit_path_skills_sync():
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-path/critical-top25", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_profit_path_critical_top25():
     from backend.services.exchange_profit_agent_skills_service import critical_problems_top25
 
@@ -760,6 +769,7 @@ def exchange_profit_path_critical_top25():
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-path/baselines", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_profit_path_baselines():
     from backend.services.exchange_profit_baseline_service import list_baselines
 
@@ -771,6 +781,7 @@ def exchange_profit_path_baselines():
 
 
 @crypto_exchange_bp.route("/api/exchange/profit-path/baselines/summary", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_profit_path_baselines_summary():
     from backend.services.exchange_profit_baseline_service import baseline_summary
 
@@ -793,6 +804,7 @@ def exchange_swap_rotation_analyze():
 
 
 @crypto_exchange_bp.route("/api/exchange/swap-rotation/suggestions", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_swap_rotation_suggestions():
     from backend.services.exchange_swap_rotation_service import suggest_swap_actions
 
@@ -860,6 +872,7 @@ def exchange_profit_tools_boost():
 
 
 @crypto_exchange_bp.route("/api/exchange/monitor/live", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_monitor_live():
     try:
         from backend.services.exchange_trading_monitor_service import live_monitor
@@ -902,6 +915,7 @@ def exchange_trust_agent_activate():
 
 
 @crypto_exchange_bp.route("/api/exchange/live-watch", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def exchange_live_watch_user():
     try:
         from backend.services.exchange_live_watch_service import user_live_watch

@@ -3,6 +3,8 @@ Debugger Builder - Custom debugger creation and download
 Awards points to hunters game
 """
 from flask import Blueprint, jsonify, request, send_file, make_response
+
+from backend.services.admin_gate import protect_blueprint
 import json
 import os
 import tempfile
@@ -570,3 +572,5 @@ def fix_agent_all():
             'error': str(e),
             'traceback': traceback.format_exc()
         }), 500
+
+protect_blueprint(debugger_builder_bp)

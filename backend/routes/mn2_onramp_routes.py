@@ -7,7 +7,8 @@ See docs/MN2_STAKING_PLAN.md sec.17 and backend/services/mn2_onramp_service.py.
 import os
 from flask import Blueprint, jsonify, request
 
-from backend.services.account_resolution_service import resolve_user_id
+from backend.services.account_resolution_service import resolve_user_id, resolve_user_id_with_source
+from backend.services.user_id_policy import rejection_for
 import backend.services.mn2_onramp_service as onramp
 
 mn2_onramp_bp = Blueprint("mn2_onramp", __name__)
@@ -50,7 +51,14 @@ def onramp_config():
 @mn2_onramp_bp.route("/api/mn2/onramp/quote", methods=["GET", "POST"])
 def onramp_quote():
     try:
-        user_id = resolve_user_id(from_body=True, from_query=True)
+        user_id, source = resolve_user_id_with_source(from_body=True, from_query=True)
+        if source in ("default", "identification"):
+            body, status = rejection_for("")
+            return jsonify(body), status
+        rejected = rejection_for(user_id)
+        if rejected:
+            body, status = rejected
+            return jsonify(body), status
         usd = _body().get("usd") if request.method == "POST" else request.args.get("usd")
         if usd is None:
             usd = request.args.get("usd")

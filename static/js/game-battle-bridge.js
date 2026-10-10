@@ -198,7 +198,9 @@
         host.innerHTML = '<div class="mn-gbb-inner"><p class="mn-gbb-loading">Loading profile bridge…</p></div>';
 
         var url = '/api/game/hunters/battle-bridge-snapshot?user_id=' + encodeURIComponent(getUserId());
-        fetch(url)
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () { ctrl.abort(); }, 8000);
+        fetch(url, { signal: ctrl.signal }).finally(function () { clearTimeout(timer); })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (!d || !d.success) {

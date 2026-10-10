@@ -35,7 +35,7 @@ This checks that `MN2_RPC_USER` / `MN2_RPC_PASSWORD` match `config/masternoder2.
 
 1. Open `**config/masternoder2.conf**` in the project root.
 2. Set `**rpcpassword=**` to a strong secret (e.g. long random string).
-  Example: `rpcpassword=Kp9mN2xL7vQw4jRc8sFb3hYt6nWz1aDg5`
+  Example: `rpcpassword=CHANGE_ME_STRONG_PASSWORD`
 3. Ensure `**rpcuser=mn2rpc**` (or match what you will put in `.env`).
 4. Save the file.
   - `config/masternoder2.conf` is gitignored; do not commit real passwords.

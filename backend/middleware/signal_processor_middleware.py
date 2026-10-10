@@ -60,10 +60,16 @@ _SKIP_PATH_CORRECTION_PREFIXES = ('/api/profit-daemon/',)
 
 
 def correct_paths_in_request():
-    """Correct paths in incoming requests"""
-    if request.path in _SKIP_PATH_CORRECTION:
+    """Correct paths in incoming requests.
+
+    A matched route does not need AI path correction. That call ran on every
+    API request, including /api/health, and was the multi-second stall.
+    """
+    if request.path in _SKIP_PATH_CORRECTION or request.path.startswith("/api/health"):
         return
     if any(request.path.startswith(p) for p in _SKIP_PATH_CORRECTION_PREFIXES):
+        return
+    if getattr(request, "url_rule", None) is not None:
         return
     try:
         from backend.services.path_corrector import path_corrector

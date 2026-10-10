@@ -1586,6 +1586,7 @@
         }
     }
 
+    async function shareCasinoSite() {
         var text = shareNetworks.default_share_text || 'Play at MasterNoder Casino — coins, MN2, and USD rails.';
         var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
         try {
@@ -2066,7 +2067,7 @@
     async function refreshMinesDuels() {
         var list = $('mines-duel-open');
         if (!list) return;
-        var data = await api('/api/casino/duels/mines?status=open');
+        var data = await api('/api/casino/duels/mines?status=open', null, 8000);
         if (!data.success || !(data.duels || []).length) {
             list.textContent = 'No open mines duels — create one above.';
             return;
@@ -2154,6 +2155,8 @@
             await refreshBalance();
         }
     }
+
+    function setupFairnessExportLink() {
         var link = $('casino-fairness-export-link');
         if (!link) return;
         link.href = '/api/casino/fairness/export?user_id=' + encodeURIComponent(userId) + '&limit=100';

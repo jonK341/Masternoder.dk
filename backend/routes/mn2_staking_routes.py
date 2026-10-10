@@ -11,6 +11,7 @@ from flask import Blueprint, jsonify, request, Response, stream_with_context
 
 from backend.services.account_resolution_service import resolve_user_id
 import backend.services.mn2_staking_service as staking
+from backend.services.bounded_cache import cached_get
 
 mn2_staking_bp = Blueprint("mn2_staking", __name__)
 
@@ -72,6 +73,7 @@ def staking_yield_report():
 
 
 @mn2_staking_bp.route("/api/mn2/staking/reserves-overview", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def staking_reserves_overview():
     """Public reserves tab aggregator: PoR, treasury, fee pool, and network ops snapshot."""
     try:

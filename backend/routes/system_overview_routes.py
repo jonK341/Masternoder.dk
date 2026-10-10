@@ -7,6 +7,7 @@ import os
 import hashlib
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
+from backend.services.bounded_cache import cached_get
 
 system_overview_bp = Blueprint("system_overview", __name__)
 
@@ -19,6 +20,7 @@ def _safe(fn, default=None):
 
 
 @system_overview_bp.route("/api/system/overview", methods=["GET"])
+@cached_get(ttl=20, timeout=3.0, fallback={'success': False, 'error': 'timeout', 'pending': True})
 def system_overview():
     compact = request.args.get("compact", "0") == "1"
     user_id = (request.args.get("user_id") or "default_user").strip()

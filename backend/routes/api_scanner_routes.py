@@ -4,6 +4,7 @@ Provides API endpoints for the API scanner debugger tool
 """
 from flask import Blueprint, jsonify, request
 from backend.services.api_scanner import api_scanner
+from backend.services.admin_gate import protect_blueprint
 
 api_scanner_bp = Blueprint('api_scanner', __name__)
 
@@ -164,3 +165,5 @@ def get_services():
             'success': False,
             'error': str(e)
         }), 500
+
+protect_blueprint(api_scanner_bp)

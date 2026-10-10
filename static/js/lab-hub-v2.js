@@ -182,7 +182,7 @@
         const uid = global.userId || localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         try {
             const [shopR, trophyR, mn2R] = await Promise.all([
-                fetch('/api/game/shop/items').then(function (x) { return x.json(); }).catch(function () { return {}; }),
+                fetch('/api/game/shop/items', { signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined }).then(function (x) { return x.json(); }).catch(function () { return {}; }),
                 fetch('/api/trophies/definitions').then(function (x) { return x.json(); }).catch(function () { return {}; }),
                 fetch('/api/mn2/balance?user_id=' + encodeURIComponent(uid)).then(function (x) { return x.json(); }).catch(function () { return {}; })
             ]);

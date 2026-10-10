@@ -200,9 +200,11 @@
       fetch(origin + "/api/game/hunters/nexus-levels").then(function (r) {
         return r.json();
       }),
-      fetch(origin + "/api/game/hunters/nexus-state?user_id=" + encodeURIComponent(uid)).then(function (r) {
+      fetch(origin + "/api/game/hunters/nexus-state?user_id=" + encodeURIComponent(uid), {
+        signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined,
+      }).then(function (r) {
         return r.json();
-      }),
+      }).catch(function () { return { success: false, pending: true }; }),
     ])
       .then(function (pair) {
         var lvRes = pair[0];

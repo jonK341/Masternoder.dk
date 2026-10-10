@@ -14,7 +14,16 @@ from datetime import datetime, timedelta
 from flask import request, session, g
 
 _API_PREFIX = "/api/"
+_FAST_EXACT = {"/api/health", "/api/version", "/api/monitor/status", "/api/monitor/endpoints"}
 _SAVE_INTERVAL_SECONDS = 300  # snapshot at most every 5 min per user
+
+
+def _skip_lifecycle(path: str) -> bool:
+    if path in _FAST_EXACT or path.startswith("/api/health/"):
+        return True
+    return False
+
+
 _DORMANT_DAYS = 7
 _last_save_times: dict = {}
 
@@ -26,7 +35,7 @@ def register_ai_user_lifecycle_middleware(app):
     def _lifecycle_before():
         if getattr(g, "skip_api_middleware", False):
             return None
-        if _API_PREFIX not in request.path:
+        if _API_PREFIX not in request.path or _skip_lifecycle(request.path):
             return None
         try:
             _detect_and_classify_user()
@@ -37,7 +46,7 @@ def register_ai_user_lifecycle_middleware(app):
     def _lifecycle_after(response):
         if getattr(g, "skip_api_middleware", False):
             return response
-        if _API_PREFIX not in request.path:
+        if _API_PREFIX not in request.path or _skip_lifecycle(request.path):
             return response
         if response.status_code < 400:
             try:

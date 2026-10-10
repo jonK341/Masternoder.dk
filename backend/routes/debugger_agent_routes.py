@@ -5,6 +5,7 @@ Agent fix and maintenance endpoints for debugger site
 from flask import Blueprint, request, jsonify
 from typing import Dict, Optional
 import os
+from backend.services.admin_gate import protect_blueprint
 
 debugger_agent_bp = Blueprint('debugger_agent', __name__)
 
@@ -244,3 +245,5 @@ def fix_all():
             'success': False,
             'error': str(e)
         }), 500
+
+protect_blueprint(debugger_agent_bp)

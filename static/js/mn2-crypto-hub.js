@@ -224,7 +224,9 @@
   }
 
   function loadProofOfReserves() {
-    fetch('/api/mn2/staking/reserves-overview').then(function (r) { return r.json(); })
+    var reservesCtrl = new AbortController();
+    var reservesTimer = setTimeout(function () { reservesCtrl.abort(); }, 8000);
+    fetch('/api/mn2/staking/reserves-overview', { signal: reservesCtrl.signal }).then(function (r) { clearTimeout(reservesTimer); return r.json(); })
       .then(function (d) {
         renderPoR(d);
         renderTreasuryOverview(d);
@@ -234,7 +236,7 @@
       });
     setInterval(function () {
       if (q('mn2-tab-reserves') && !q('mn2-tab-reserves').hidden) {
-        fetch('/api/mn2/staking/reserves-overview').then(function (r) { return r.json(); })
+        fetch('/api/mn2/staking/reserves-overview', { signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined }).then(function (r) { return r.json(); })
           .then(function (d) { renderPoR(d); renderTreasuryOverview(d); }).catch(function () {});
       }
     }, 60000);
