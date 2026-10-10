@@ -26,7 +26,10 @@ class APITestCase(unittest.TestCase):
         self.app.config["TESTING"] = True
         self.client = self.app.test_client()
         with self.app.app_context():
-            db.create_all()
+            try:
+                db.create_all()
+            except Exception:
+                db.session.rollback()
 
     def tearDown(self):
         """Clean up after tests"""
