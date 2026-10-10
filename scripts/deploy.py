@@ -670,6 +670,7 @@ MANIFESTS = {
         "backend/services/mn2_conservation_gate.py",
         "scripts/mn2_staking_reconcile_report.py",
         "scripts/mn2_reconcile_repair_p2p_escrow.py",
+        "scripts/mn2_reconcile_repair_staking_ledger.py",
         "backend/services/discord_service.py",
         "backend/services/discord_m8_streams.py",
         "backend/services/casino_discord_fanout.py",
