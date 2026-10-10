@@ -33,6 +33,9 @@ def main() -> int:
                 continue
             if path == "/api/nft/catalog":
                 skus = data.get("skus") or []
+                if len(skus) != 3:
+                    print(f"FAIL {path} expected 3 launch skus, got {len(skus)}")
+                    continue
                 print(f"OK {path} skus={len(skus)}")
             elif path == "/api/nft/deals":
                 print(
@@ -42,6 +45,9 @@ def main() -> int:
             elif path == "/api/shop/paypal-items":
                 items = data.get("paypal_items") or {}
                 nft = [k for k in items if str(k).startswith("nft-")]
+                if len(nft) != 3:
+                    print(f"FAIL {path} expected 3 nft paypal SKUs, got {len(nft)}")
+                    continue
                 print(f"OK {path} nft_skus={len(nft)}")
             else:
                 print(f"OK {path} count={data.get('count', len(data.get('listings') or []))}")

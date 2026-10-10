@@ -334,6 +334,17 @@
                 </div>
             </div>
         </div>
+        <div class="card" id="shop-nft-editions-section" style="margin-bottom: var(--spacing-xl); border: 2px solid rgba(192,140,255,0.45); background: linear-gradient(135deg, rgba(170,0,255,0.08), rgba(0,212,255,0.06));">
+            <div style="padding: var(--spacing-lg);">
+                <h2 style="color: #c08cff; margin-bottom: var(--spacing-sm);">💎 NFT editions (PayPal)</h2>
+                <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md); max-width: 52rem;">
+                    Three numbered collectibles — same SKUs as the <a href="/market" style="color:#c08cff;">MN2 market</a>. PayPal mints your serial; resell for coins on the market (5% fee).
+                </p>
+                <div id="shop-nft-editions-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--spacing-md);">
+                    <p style="color: var(--text-secondary); margin: 0;">Loading editions…</p>
+                </div>
+            </div>
+        </div>
         <div class="card" id="subscription-section" style="margin-bottom: var(--spacing-xl); border: 2px solid var(--secondary); background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(170,0,255,0.06));">
             <div style="padding: var(--spacing-lg);">
                 <h2 style="color: var(--secondary); margin-bottom: var(--spacing-sm);">⭐ Pro subscription (PayPal)</h2>
@@ -2160,6 +2171,35 @@
             }
         }
 
+        async function loadNftEditions() {
+            const container = document.getElementById('shop-nft-editions-container');
+            if (!container) return;
+            try {
+                const response = await fetch(`${BASE_URL}/api/shop/paypal-items`);
+                const data = await response.json();
+                const rows = (data && data.nft_editions) || [];
+                if (!rows.length) {
+                    container.innerHTML = '<p style="color:var(--text-secondary);margin:0;">No NFT editions configured.</p>';
+                    return;
+                }
+                container.innerHTML = rows.map(function (sku) {
+                    const soldOut = (sku.remaining || 0) <= 0;
+                    const price = Number(sku.price_usd || 0).toFixed(2);
+                    return '<div class="shop-item" style="padding:var(--spacing-md);border:1px solid rgba(192,140,255,0.35);border-radius:var(--radius-lg);background:rgba(0,0,0,0.2);">' +
+                        '<div style="font-size:0.75rem;text-transform:uppercase;opacity:0.7;">' + (sku.rarity || '') + ' · ' + (sku.remaining || 0) + ' left</div>' +
+                        '<h3 style="margin:8px 0;color:#c08cff;">' + (sku.name || sku.sku) + '</h3>' +
+                        '<p style="font-size:0.88rem;color:var(--text-secondary);margin:0 0 12px;">' + (sku.description || '') + '</p>' +
+                        '<button type="button" class="btn-purchase btn-paypal-item" data-item-id="' + sku.sku + '" ' +
+                        (soldOut ? 'disabled ' : '') +
+                        'onclick="buyItemWithPayPal(\'' + sku.sku + '\', ' + price + ', \'' + String(sku.name || sku.sku).replace(/'/g, '') + '\')">' +
+                        (soldOut ? 'Sold out' : '<i class="fab fa-paypal"></i> Pay $' + price) +
+                        '</button></div>';
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<p style="color:var(--text-secondary);margin:0;">Could not load NFT editions.</p>';
+            }
+        }
+
         async function loadCoinPacks() {
             try {
                 const response = await fetch(`${BASE_URL}/api/shop/coin-packs`);
@@ -2654,6 +2694,9 @@
                         const itemGranted = data.item_granted;
                         if (coins) {
                             if (typeof toast !== 'undefined') toast.success(`Purchased ${coins} coins!`);
+                        } else if (data.edition && data.edition.edition_id) {
+                            if (typeof toast !== 'undefined') toast.success('Minted ' + data.edition.edition_id + ' — see Profile or /market.');
+                            loadNftEditions();
                         } else if (itemGranted) {
                             if (typeof toast !== 'undefined') toast.success('Item purchased! Check your inventory.');
                             loadInventory();
@@ -3264,6 +3307,7 @@
             loadCurrency();
             loadUnifiedPoints();
             loadCoinPacks();
+            loadNftEditions();
             loadSubscriptionPlans();
             loadScrDepositSkus();
             loadUsageAllowance();

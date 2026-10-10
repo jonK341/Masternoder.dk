@@ -64,9 +64,8 @@ def main() -> int:
         and "profile-completeness-card" in html
         and "data-hub-scroll=\"account\"" in html
         and "data-hub-scroll=\"wallet\"" in html
-        and "profile-hub.js" in html
-        and "profile-glance-stats" in html
-        and "frontpage-home.css" in html
+        and ("applyFocusedProfileRoute" in html or "profile-hub.js" in html)
+        and "profile-hero" in html
         and 'id="mn2-wallet"' in html,
         f"status={status}",
     )

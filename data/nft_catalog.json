@@ -1,8 +1,22 @@
 {
+  "wallet_schema_version": 2,
   "secondary_fee_percent": 5,
   "min_list_coins": 20,
-  "note": "Site-issued numbered editions. Primary sales settle in USD via PayPal or in shop coins. Resale is a coin order book on /market with a house fee. These are not public-chain mints.",
+  "note": "Three launch editions on /market and /exchange. Primary: PayPal or coins. Resale: coin book, 5% house fee.",
   "skus": [
+    {
+      "sku": "nft-license-plate",
+      "name": "MN2 License Plate",
+      "series": "Market",
+      "rarity": "common",
+      "supply": 100,
+      "price_usd": 2.99,
+      "price_coins": 299,
+      "trophy_id": "nft_edition_license_plate",
+      "emblem_icon": "🪪",
+      "avatar_url": "/static/img/nft/license-plate.svg",
+      "description": "Entry edition — numbered plate for the MN2 market."
+    },
     {
       "sku": "nft-block-smile",
       "name": "Block Smile",
@@ -11,7 +25,10 @@
       "supply": 50,
       "price_usd": 4.99,
       "price_coins": 499,
-      "description": "Numbered block-smile edition. First sale is the house; owners can resell it on the market."
+      "trophy_id": "nft_edition_block_smile",
+      "emblem_icon": "😊",
+      "avatar_url": "/static/img/nft/block-smile.svg",
+      "description": "Numbered block-smile. Owners can resell on the market."
     },
     {
       "sku": "nft-vault-holo",
@@ -21,27 +38,10 @@
       "supply": 25,
       "price_usd": 9.99,
       "price_coins": 999,
-      "description": "Holographic vault card with a fixed serial. Resale pays a 5% house fee."
-    },
-    {
-      "sku": "nft-license-plate",
-      "name": "MN2 License Plate",
-      "series": "Market",
-      "rarity": "common",
-      "supply": 100,
-      "price_usd": 2.99,
-      "price_coins": 299,
-      "description": "Low-price market plate meant to be the first thing someone actually buys."
-    },
-    {
-      "sku": "nft-arena-frame",
-      "name": "Arena Champion Frame",
-      "series": "Arena",
-      "rarity": "legendary",
-      "supply": 10,
-      "price_usd": 14.99,
-      "price_coins": 1499,
-      "description": "Short-supply arena frame. Primary revenue is the PayPal price; resale is coins."
+      "trophy_id": "nft_edition_vault_holo",
+      "emblem_icon": "💎",
+      "avatar_url": "/static/img/nft/vault-holo.svg",
+      "description": "Holographic vault card with a fixed serial."
     }
   ]
 }

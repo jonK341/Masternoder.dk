@@ -147,3 +147,25 @@ def nft_cancel():
     data = request.get_json(silent=True) or {}
     result = nft.cancel_listing(_uid(from_body=True), data.get("listing_id"))
     return jsonify(result), 200 if result.get("success") else 400
+
+
+@nft_bp.route("/api/nft/wallet", methods=["GET"])
+def nft_wallet():
+    return jsonify(nft.wallet_summary(_uid()))
+
+
+@nft_bp.route("/api/nft/avatar-presets", methods=["GET"])
+def nft_avatar_presets():
+    return jsonify(nft.avatar_presets_for_user(_uid()))
+
+
+@nft_bp.route("/api/nft/emblems", methods=["GET"])
+def nft_emblems():
+    return jsonify(nft.emblems_for_user(_uid()))
+
+
+@nft_bp.route("/api/nft/equip-avatar", methods=["POST"])
+def nft_equip_avatar():
+    data = request.get_json(silent=True) or {}
+    result = nft.equip_avatar(_uid(from_body=True), data.get("edition_id"))
+    return jsonify(result), 200 if result.get("success") else 400

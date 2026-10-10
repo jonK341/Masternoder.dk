@@ -105,6 +105,17 @@ def test_cannot_list_unowned_or_buy_own(nft_state, points_db):
     assert own["error"] == "cannot_buy_own_listing"
 
 
+def test_agent_wallet_mint_and_wallet_summary(nft_state):
+    minted = nft_state.mint_agent_edition("trader_alpha", "nft-test", source="test")
+    assert minted["success"] is True
+    wallet = nft_state.agent_nft_wallet("trader_alpha")
+    assert wallet["edition_count"] == 1
+    assert wallet["wallet_schema_version"] == 2
+    summary = nft_state.wallet_summary("human1")
+    assert summary["success"] is True
+    assert "editions" in summary
+
+
 def test_catalog_route(nft_state):
     from flask import Flask
 
@@ -117,4 +128,5 @@ def test_catalog_route(nft_state):
     assert response.status_code == 200
     body = response.get_json()
     assert body["skus"][0]["sku"] == "nft-test"
+    assert len(body["skus"]) == 1
     assert body["skus"][0]["remaining"] == 2
