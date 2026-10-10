@@ -111,7 +111,12 @@ class AutoFixEndpoints:
     def should_auto_fix(self, path: str, method: str = 'GET') -> bool:
         """Determine if endpoint should be auto-fixed"""
         normalized = path or ""
-        if normalized.startswith("/api/mn2/") or normalized.startswith("/vidgenerator/api/mn2/"):
+        # Unknown API routes must 404. The auto-create stub used to answer
+        # every /api/ miss with HTTP 200 and success=true.
+        if (
+            normalized.startswith("/api/")
+            or normalized.startswith("/vidgenerator/api/")
+        ):
             return False
         # Check if already fixed
         if path in self.fixed_endpoints:

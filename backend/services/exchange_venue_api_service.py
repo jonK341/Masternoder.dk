@@ -389,8 +389,8 @@ def venue_supports_symbol(venue_id: str, symbol: str, *, quote: Optional[str] = 
         return False
     cfg = conn.load_connectors_config()
     supported = [str(s).upper() for s in (cfg.get("supported_symbols") or [])]
-    if supported:
-        return sym in supported
+    if supported and sym not in supported:
+        return False
     tick = conn.fetch_ticker(venue_id, sym, timeout=4.0)
     return tick is not None
 
