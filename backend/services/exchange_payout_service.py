@@ -165,8 +165,9 @@ def _live_enabled() -> bool:
 
 def _realized_total_usd() -> float:
     try:
-        from backend.services.trading_bots_control_service import business_overview
-        return float(business_overview().get("totals", {}).get("total_realized_pnl_usd") or 0)
+        from backend.services.trading_bots_control_service import list_bots
+        bots = list_bots(light=True)
+        return round(sum(float(b.get("realized_pnl_usd") or 0) for b in bots), 4)
     except Exception:
         return 0.0
 
