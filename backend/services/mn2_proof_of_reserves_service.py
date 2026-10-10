@@ -301,6 +301,7 @@ def _build_proof_of_reserves() -> Dict[str, Any]:
     coverage_ratio = None
     coverage_all = None
     surplus = None
+    external_surplus = None
     if assets_total is not None and liabilities_total > 0:
         coverage_ratio = round(assets_total / liabilities_total, 6)
         surplus = round(assets_total - liabilities_total, 8)
