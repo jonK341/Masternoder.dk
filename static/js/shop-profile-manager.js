@@ -1,7 +1,5 @@
 /**
- * Shop profile manager.
- * Uses the same account id and profile APIs as /profile so checkout, inventory,
- * and the profile form stay on one game_user_id.
+ * Shop profile manager — same game_user_id and APIs as /profile.
  */
 (function () {
     var prefsCache = {};
@@ -16,7 +14,7 @@
             try {
                 var parsed = JSON.parse(value);
                 if (parsed && typeof parsed === 'object') return parsed;
-            } catch (err) { /* keep empty prefs */ }
+            } catch (err) { /* ignore */ }
         }
         return {};
     }
@@ -220,7 +218,7 @@
     async function logoutAccount() {
         try {
             await readJson('/api/user/logout', { method: 'POST', credentials: 'same-origin' });
-        } catch (err) { /* local logout still proceeds */ }
+        } catch (err) { /* ignore */ }
         localStorage.removeItem('game_user_id');
         localStorage.removeItem('user_id');
         setStatus('Logged out on this device.');
@@ -345,9 +343,7 @@
         }
     }
 
-    window.ShopProfileManager = {
-        open: loadProfile
-    };
+    window.ShopProfileManager = { open: loadProfile };
 
     function boot() {
         bind();
