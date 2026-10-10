@@ -259,7 +259,7 @@ def main() -> int:
 
     if args.apply:
         manifest_url = MANIFEST_URL if manifest_ok else ""
-        print(f"=== upgrade {TARGET_VERSION} (stop → backup wallet → fetch → verify → install → start) ===")
+        print(f"=== upgrade {TARGET_VERSION} (stop -> backup wallet -> fetch -> verify -> install -> start) ===")
         if manifest_ok:
             print(f"Manifest: {MANIFEST_URL}")
         else:
