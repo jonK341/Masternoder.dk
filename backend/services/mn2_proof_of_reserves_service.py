@@ -110,6 +110,35 @@ def _is_paper_mn2_account(user_id: str, path: str = "") -> bool:
     return any(m in hay for m in _PAPER_MARKERS)
 
 
+def external_liability_user_ids() -> frozenset[str]:
+    """User IDs that count toward external (customer) MN2 liabilities in PoR."""
+    ids: set[str] = set()
+    try:
+        names = [fn for fn in os.listdir(_POINTS_DIR) if fn.endswith(".json")]
+    except Exception:
+        return frozenset()
+    for fn in names:
+        path = os.path.join(_POINTS_DIR, fn)
+        uid = fn[:-5]
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                raw = json.load(f) or {}
+        except Exception:
+            continue
+        systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
+        try:
+            bal = float(systems.get("mn2_balance", 0) or 0)
+            staked = float(systems.get("mn2_staked", 0) or 0)
+        except Exception:
+            continue
+        if bal <= 0 and staked <= 0:
+            continue
+        if _is_paper_mn2_account(uid, path):
+            continue
+        ids.add(uid)
+    return frozenset(ids)
+
+
 def _sum_user_liabilities_split() -> Dict[str, Dict[str, Any]]:
     """
     Sum (mn2_balance, mn2_staked) over the file-backed points store, split into

@@ -49,34 +49,26 @@ def _ledger_reward(entries: list, uid: str) -> float:
 
 
 def _external_points_staked() -> dict[str, float]:
-    from backend.services.mn2_proof_of_reserves_service import _POINTS_DIR, _is_paper_mn2_account
+    from backend.services.mn2_proof_of_reserves_service import _POINTS_DIR, external_liability_user_ids
 
+    ext = external_liability_user_ids()
     out: dict[str, float] = {}
-    try:
-        names = [fn for fn in os.listdir(_POINTS_DIR) if fn.endswith(".json")]
-    except Exception:
-        return out
-    for fn in names:
-        uid = fn[:-5]
-        if _is_paper_mn2_account(uid, os.path.join(_POINTS_DIR, fn)):
-            continue
+    for uid in ext:
+        path = os.path.join(_POINTS_DIR, f"{uid}.json")
         try:
-            with open(os.path.join(_POINTS_DIR, fn), encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 raw = json.load(f) or {}
         except Exception:
             continue
         systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
-        staked = float(systems.get("mn2_staked", 0) or 0)
-        bal = float(systems.get("mn2_balance", 0) or 0)
-        if abs(staked) <= _TOL and bal <= _TOL:
-            continue
-        out[uid] = round(staked, 8)
+        out[uid] = round(float(systems.get("mn2_staked", 0) or 0), 8)
     return out
 
 
 def _external_reward_rows() -> dict[str, float]:
-    from backend.services.mn2_staking_reconcile_service import _is_paper_user
+    from backend.services.mn2_proof_of_reserves_service import external_liability_user_ids
 
+    ext = external_liability_user_ids()
     path = os.path.join(ROOT, "data", "mn2_staking_rewards.jsonl")
     out: dict[str, float] = {}
     if not os.path.isfile(path):
@@ -91,7 +83,7 @@ def _external_reward_rows() -> dict[str, float]:
             except Exception:
                 continue
             uid = str(row.get("user_id") or "")
-            if not uid or _is_paper_user(uid):
+            if not uid or uid not in ext:
                 continue
             out[uid] = round(out.get(uid, 0.0) + float(row.get("reward_mn2", 0) or 0), 8)
     return out

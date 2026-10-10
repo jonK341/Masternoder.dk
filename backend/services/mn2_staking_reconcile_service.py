@@ -68,18 +68,19 @@ def _sum_ledger(entries: List[Dict[str, Any]], entry_type: str) -> float:
     return round(sum(float(e.get("amount", 0) or 0) for e in entries if e.get("type") == entry_type), 8)
 
 
-def _is_paper_user(user_id: str) -> bool:
-    from backend.services.mn2_proof_of_reserves_service import _is_paper_mn2_account
+def _external_user_ids() -> frozenset[str]:
+    from backend.services.mn2_proof_of_reserves_service import external_liability_user_ids
 
-    return _is_paper_mn2_account(str(user_id or ""))
+    return external_liability_user_ids()
 
 
 def _sum_ledger_external(entries: List[Dict[str, Any]], entry_type: str) -> float:
+    ext = _external_user_ids()
     return round(
         sum(
             float(e.get("amount", 0) or 0)
             for e in entries
-            if e.get("type") == entry_type and not _is_paper_user(e.get("user_id"))
+            if e.get("type") == entry_type and e.get("user_id") in ext
         ),
         8,
     )
@@ -92,12 +93,13 @@ def _external_live_staked() -> float:
 
 
 def _sum_reward_rows_external() -> float:
+    ext = _external_user_ids()
     reward_rows = _read_jsonl("mn2_staking_rewards.jsonl")
     return round(
         sum(
             float(r.get("reward_mn2", 0) or 0)
             for r in reward_rows
-            if not _is_paper_user(r.get("user_id"))
+            if r.get("user_id") in ext
         ),
         8,
     )
@@ -174,7 +176,7 @@ def reconcile() -> Dict[str, Any]:
                 float(l.get("mn2_available", 0) or 0) + float(l.get("mn2_reserved", 0) or 0)
                 for l in listings.values()
                 if l.get("status") in ("open", "sold_out")
-                and not _is_paper_user(l.get("seller_id") or l.get("user_id") or "")
+                and (l.get("seller_id") or l.get("user_id") or "") in _external_user_ids()
             ),
             8,
         )

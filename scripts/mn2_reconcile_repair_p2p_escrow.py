@@ -24,7 +24,7 @@ def main() -> int:
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
 
-    from backend.services.mn2_staking_reconcile_service import _is_paper_user
+    from backend.services.mn2_proof_of_reserves_service import external_liability_user_ids
     from backend.services import mn2_ledger
 
     data = os.path.join(ROOT, "data", "mn2_p2p_listings.json")
@@ -51,7 +51,7 @@ def main() -> int:
         if listing.get("status") not in ("open", "sold_out"):
             continue
         sid = listing.get("seller_id") or listing.get("user_id") or ""
-        if _is_paper_user(sid):
+        if sid not in external_liability_user_ids():
             continue
         amt = round(
             float(listing.get("mn2_available", 0) or 0) + float(listing.get("mn2_reserved", 0) or 0),
