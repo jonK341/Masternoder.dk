@@ -39,13 +39,14 @@ def test_video_stage_cache_roundtrip():
 
 
 def test_float_gate_assess(monkeypatch):
-    from backend.services.mn2_float_gate import assess
+    from backend.services import mn2_float_gate as gate
 
-    monkeypatch.setattr(
-        "backend.services.mn2_proof_of_reserves_service.proof_of_reserves",
-        lambda force=False: {"assets": {"onchain": {"total": 1000000}}},
-    )
-    r = assess(0)
+    # Hot balance comes from the daemon, not proof-of-reserves. Stub it so the
+    # verdict does not depend on a live RPC.
+    monkeypatch.setattr(gate, "_hot_wallet_balance", lambda: 1_000_000.0)
+    monkeypatch.setattr(gate, "_p95_daily_outflow_mn2", lambda: 0.0)
+    monkeypatch.setattr(gate, "_external_liabilities_total", lambda: None)
+    r = gate.assess(0)
     assert "allowed" in r
     assert r.get("verdict") == "green"
 
