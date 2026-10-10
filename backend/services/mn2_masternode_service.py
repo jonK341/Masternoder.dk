@@ -1503,6 +1503,36 @@ def maintain_ping_loop() -> Dict[str, Any]:
     }
 
 
+def sync_ping_targets() -> Dict[str, Any]:
+    """
+    Ops: unlock collateral and run ``startmasternode all`` so every masternode.conf
+    alias joins the daemon multi-ping set (v1.3+). Used by fleet cron / SSH ops.
+    """
+    if not multi_ping_enabled():
+        return {
+            "success": False,
+            "skipped": True,
+            "reason": "multi_ping_disabled",
+            "multi_ping_enabled": False,
+        }
+    reg_err = _register_fleet_ping_targets()
+    snap = get_service_status(fresh=True)
+    daemon = snap.get("daemon") if isinstance(snap, dict) else {}
+    return {
+        "success": reg_err is None,
+        "error": reg_err,
+        "multi_ping_enabled": True,
+        "platform_enabled_on_chain": (
+            daemon.get("platform_enabled_on_chain") if isinstance(daemon, dict) else None
+        ),
+        "enabled_with_activetime": (
+            daemon.get("enabled_with_activetime") if isinstance(daemon, dict) else None
+        ),
+        "hosted_count": snap.get("hosted_count") if isinstance(snap, dict) else None,
+        "action": "startmasternode all (fleet ping register)",
+    }
+
+
 def _start_masternode_alias(alias: str) -> Optional[str]:
     """Backward-compatible wrapper — prefer ``_start_masternode`` with privkey when available."""
     return _start_masternode(alias)

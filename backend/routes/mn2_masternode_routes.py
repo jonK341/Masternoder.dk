@@ -10,6 +10,7 @@ Ops (X-Ops-Token / MN2_OPS_SECRET):
   POST /api/mn2/masternode/hosts
   DELETE /api/mn2/masternode/hosts/<host_id>
   GET  /api/mn2/masternode/collateral-outputs
+  POST /api/mn2/masternode/sync-ping-targets
 """
 import os
 from flask import Blueprint, jsonify, request
@@ -274,6 +275,19 @@ def masternode_maintain_ping():
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     try:
         return jsonify(mn_service.maintain_ping_loop()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/sync-ping-targets", methods=["POST"])
+def masternode_sync_ping_targets():
+    """Ops: register all masternode.conf aliases in the multi-ping set (fleet cron)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        result = mn_service.sync_ping_targets()
+        code = 200 if result.get("success") or result.get("skipped") else 400
+        return jsonify(result), code
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

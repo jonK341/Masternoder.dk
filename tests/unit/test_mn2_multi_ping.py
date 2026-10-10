@@ -94,6 +94,30 @@ def test_start_masternode_multi_ping_skips_missing(monkeypatch):
     assert calls == [("alias", False, "customermn1")]
 
 
+def test_sync_ping_targets_returns_status(monkeypatch):
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: True)
+    monkeypatch.setattr(mn, "_register_fleet_ping_targets", lambda: None)
+    monkeypatch.setattr(
+        mn,
+        "get_service_status",
+        lambda fresh=False: {
+            "hosted_count": 32,
+            "daemon": {"platform_enabled_on_chain": 1, "enabled_with_activetime": 5},
+        },
+    )
+    out = mn.sync_ping_targets()
+    assert out["success"] is True
+    assert out["platform_enabled_on_chain"] == 1
+    assert out["enabled_with_activetime"] == 5
+
+
+def test_sync_ping_targets_skipped_when_multi_ping_off(monkeypatch):
+    monkeypatch.setattr(mn, "multi_ping_enabled", lambda: False)
+    out = mn.sync_ping_targets()
+    assert out["skipped"] is True
+    assert out["reason"] == "multi_ping_disabled"
+
+
 def test_register_fleet_ping_targets_calls_all(monkeypatch):
     seen = {}
 
