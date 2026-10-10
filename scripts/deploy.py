@@ -1044,6 +1044,17 @@ def _hub_rollout_category_gifs():
     return out
 
 
+def _hub_rollout_nav_svgs():
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    nav_dir = os.path.join(root, "static", "img", "nav")
+    out = []
+    if os.path.isdir(nav_dir):
+        for fn in sorted(os.listdir(nav_dir)):
+            if fn.lower().endswith(".svg"):
+                out.append(f"static/img/nav/{fn}")
+    return out
+
+
 def _merge_manifest_files(manifest_names):
     """Merge file lists from multiple manifests, preserving order and deduplicating."""
     files = []
@@ -1496,11 +1507,11 @@ def main():
         files = _merge_manifest_files(manifest_names)
         if hub_rollout:
             seen = set(files)
-            for path in HUB_ROLLOUT_EXTRAS + _hub_rollout_category_gifs():
+            for path in HUB_ROLLOUT_EXTRAS + _hub_rollout_category_gifs() + _hub_rollout_nav_svgs():
                 if path not in seen:
                     seen.add(path)
                     files.append(path)
-            print("(hub_rollout: merged static_pages + trophies + nft_market + fix_404 + nav GIFs)")
+            print("(hub_rollout: merged static_pages + trophies + nft_market + fix_404 + nav assets)")
         restart_services = _resolve_restart_services(manifest_names, upload_only)
     if list_files:
         _print_file_list(files, manifest_names)

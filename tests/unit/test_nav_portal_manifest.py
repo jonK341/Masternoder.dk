@@ -12,6 +12,29 @@ def test_nav_portal_manifest_loads():
     assert data["defaultTheme"] in data["themes"]
 
 
+def test_nav_toolbar_icon_svgs_exist():
+    nav_dir = ROOT / "static" / "img" / "nav"
+    required = [
+        "home.svg",
+        "brand.svg",
+        "trophy.svg",
+        "stories.svg",
+        "game.svg",
+        "casino.svg",
+        "news.svg",
+        "battlegrounds.svg",
+        "profile.svg",
+        "shop.svg",
+        "customers.svg",
+        "chat.svg",
+        "lab.svg",
+        "starmap.svg",
+        "explorer.svg",
+    ]
+    for name in required:
+        assert (nav_dir / name).is_file(), f"missing nav icon {name}"
+
+
 def test_nav_portal_categories_reference_valid_link_ids():
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     nav_js = (ROOT / "static" / "js" / "navigation-toolbar.js").read_text(encoding="utf-8")
