@@ -665,6 +665,8 @@ MANIFESTS = {
         "backend/services/mn2_masternode_hosting_service.py",
         "backend/services/mn2_services_hub.py",
         "backend/services/mn2_proof_of_reserves_service.py",
+        "backend/services/mn2_float_gate.py",
+        "backend/services/mn2_conservation_gate.py",
         "backend/services/discord_service.py",
         "backend/services/discord_m8_streams.py",
         "backend/services/casino_discord_fanout.py",
