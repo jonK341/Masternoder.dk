@@ -30,6 +30,26 @@ def _admin_key_ok():
     return supplied == expected, expected
 
 
+def _risk_disabled():
+    """Real empty report when the admin key is not configured.
+
+    503 made the debugger panel look like the route was down. The data is
+    simply unavailable until COGS_ADMIN_REPORT_KEY is set.
+    """
+    return jsonify({
+        "success": False,
+        "error": "admin_risk_disabled",
+        "hint": "set COGS_ADMIN_REPORT_KEY",
+        "total_logged": 0,
+        "by_level_24h": {},
+        "by_level_7d": {},
+        "recent_high_users": [],
+        "count": 0,
+        "assessments": [],
+        "clusters": [],
+    }), 200
+
+
 @ai_assist_bp.route("/api/support/faq/topics", methods=["GET"])
 def support_faq_topics():
     from backend.services.support_faq_service import list_topics
@@ -98,7 +118,7 @@ def copy_assist_generate():
 def admin_risk_summary():
     ok, expected = _admin_key_ok()
     if not expected:
-        return jsonify({"success": False, "error": "admin_risk_disabled", "hint": "set COGS_ADMIN_REPORT_KEY"}), 503
+        return _risk_disabled()
     if not ok:
         return jsonify({"success": False, "error": "unauthorized"}), 401
     from backend.services.mn2_risk_ops_service import risk_summary
@@ -110,7 +130,7 @@ def admin_risk_summary():
 def admin_risk_withdrawals():
     ok, expected = _admin_key_ok()
     if not expected:
-        return jsonify({"success": False, "error": "admin_risk_disabled", "hint": "set COGS_ADMIN_REPORT_KEY"}), 503
+        return _risk_disabled()
     if not ok:
         return jsonify({"success": False, "error": "unauthorized"}), 401
     from backend.services.mn2_risk_ops_service import read_withdrawal_assessments
@@ -127,7 +147,7 @@ def admin_risk_withdrawals():
 def admin_risk_sybil():
     ok, expected = _admin_key_ok()
     if not expected:
-        return jsonify({"success": False, "error": "admin_risk_disabled", "hint": "set COGS_ADMIN_REPORT_KEY"}), 503
+        return _risk_disabled()
     if not ok:
         return jsonify({"success": False, "error": "unauthorized"}), 401
     from backend.services.mn2_risk_ops_service import sybil_summary

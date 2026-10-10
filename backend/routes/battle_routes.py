@@ -579,6 +579,7 @@ def battle_stats():
 
 
 @battle_bp.route('/api/battle/history', methods=['GET'])
+@battle_bp.route('/api/game/battle/history', methods=['GET'])
 def battle_history():
     """Get battle history (from DB when migration run)."""
     try:
@@ -600,6 +601,7 @@ def battle_history():
 
 
 @battle_bp.route('/api/battle/quick', methods=['POST'])
+@battle_bp.route('/api/game/battle/start', methods=['POST'])
 def battle_quick():
     """Quick battle vs AI or PvP queue stub. Optional player_move (rock|paper|scissors) for an RPS opening duel (both modes)."""
     try:

@@ -1158,28 +1158,73 @@ def progression_all(user_id):
 
 # ========== NOTIFICATIONS ROUTES ==========
 
-@missing_endpoints_bp.route('/api/notifications/count', methods=['GET'])
-def notifications_count():
-    """Get unread notification count — derived from recent points activity."""
-    user_id = request.args.get('user_id', 'default_user')
-    count = 0
+def _notification_items(user_id):
+    """Notifications derived from the caller's points snapshot."""
     notifications = []
     try:
         snap = _safe_points_snapshot(user_id)
         xp = int(snap.get('xp_total', 0))
         level = int(snap.get('level', 1))
         systems = snap.get('systems', {})
-        # Generate meaningful notifications based on state
         if xp > 0 and xp % 500 < 50:
             notifications.append({'type': 'milestone', 'message': f'You are close to {(xp // 500 + 1) * 500} XP!', 'unread': True})
         if systems.get('generation_points', 0) > 0:
             notifications.append({'type': 'activity', 'message': 'Your videos are generating XP', 'unread': True})
         if level >= 5 and level % 5 == 0:
             notifications.append({'type': 'level', 'message': f'Level {level} milestone reached!', 'unread': True})
-        count = len(notifications)
     except Exception:
         pass
-    return jsonify({'success': True, 'count': count, 'user_id': user_id, 'notifications': notifications}), 200
+    return notifications
+
+
+@missing_endpoints_bp.route('/api/notifications/count', methods=['GET'])
+def notifications_count():
+    """Get unread notification count — derived from recent points activity."""
+    user_id = request.args.get('user_id', 'default_user')
+    notifications = _notification_items(user_id)
+    return jsonify({
+        'success': True,
+        'count': len(notifications),
+        'user_id': user_id,
+        'notifications': notifications,
+    }), 200
+
+
+@missing_endpoints_bp.route('/api/notifications', methods=['GET'])
+def notifications_list():
+    """Inbox list used by the navigation toolbar. Same source as /count."""
+    user_id = request.args.get('user_id', 'default_user')
+    notifications = _notification_items(user_id)
+    return jsonify({
+        'success': True,
+        'user_id': user_id,
+        'count': len(notifications),
+        'notifications': notifications,
+    }), 200
+
+
+@missing_endpoints_bp.route('/api/stats/activity', methods=['GET'])
+def stats_activity():
+    """Activity snapshot from the caller's points record."""
+    user_id = request.args.get('user_id', 'default_user')
+    snap = {}
+    try:
+        snap = _safe_points_snapshot(user_id) or {}
+    except Exception:
+        snap = {}
+    systems = snap.get('systems') if isinstance(snap.get('systems'), dict) else {}
+    activity = [
+        {'type': key, 'value': value}
+        for key, value in list(systems.items())[:30]
+    ]
+    return jsonify({
+        'success': True,
+        'user_id': user_id,
+        'activity': activity,
+        'level': snap.get('level', 1),
+        'xp_total': snap.get('xp_total', 0),
+        'updated_at': snap.get('updated_at'),
+    }), 200
 
 # ========== TRIGGER ROUTES (trigger-based-actions.js) ==========
 
@@ -3525,6 +3570,7 @@ def video_generation_solve_problems():
                 task_type='speed',
                 max_tokens=600,
                 temperature=0.3,
+                timeout=1,
             )
             if resp.success:
                 raw = resp.content.strip().lstrip('```json').lstrip('```').rstrip('```').strip()
@@ -4630,11 +4676,19 @@ def agent_ai_diagnose_compat():
 def system_overview():
     """
     Mission Control — full platform status in a single call.
-    ?compact=1  skip live AI calls  |  ?user_id=X  personalise stats
+    ?compact=1  skip the coach line  |  ?user_id=X  personalise stats
     """
-    import hashlib, importlib
+    import hashlib, importlib, time as _time
     compact = request.args.get("compact", "0") == "1"
     user_id = (request.args.get("user_id") or "default_user").strip()
+    cache = getattr(system_overview, "_response_cache", None)
+    if cache is None:
+        cache = {}
+        system_overview._response_cache = cache
+    cache_key = (compact, user_id)
+    cached = cache.get(cache_key)
+    if cached and (_time.time() - cached[0]) < 20:
+        return jsonify(cached[1]), 200
 
     def _safe(fn, default=None):
         try:
@@ -4727,25 +4781,10 @@ def system_overview():
         return {"item_id": item.get("id"), "name": item.get("name"),
                 "original_price": orig, "deal_price": deal, "discount_pct": disc_pct}
 
-    # AI coach tip
+    # AI coach tip. A live chat() call walks every configured provider and
+    # held the debugger Mission Control request open until the proxy timed out.
     def _tip():
-        from backend.services.llm_service import chat
-        xp = level = 0
-        try:
-            from backend.services.unified_points_database import unified_points_db
-            snap = unified_points_db.get_all_points(user_id) or {}
-            if snap.get("success"):
-                xp    = int(snap.get("xp_total", 0))
-                level = int(snap.get("level",    1))
-        except Exception:
-            pass
-        resp = chat(
-            messages=[{"role": "user", "content":
-                f"One short punchy power tip for a MasterNoder.dk player, "
-                f"level {level}, {xp} XP. Max 15 words. Direct and motivating."}],
-            task_type="speed", max_tokens=35, temperature=0.9,
-        )
-        return resp.content.strip().strip('"') if resp.success else "Generate videos — every clip earns XP!"
+        return "Generate videos — every clip earns XP!"
 
     llm   = _safe(_llm,   {"configured": 0, "available": 0, "total": 0, "providers": []})
     vid   = _safe(_video, [])
@@ -4786,6 +4825,8 @@ def system_overview():
     }
     if not compact:
         result["ai_coach_tip"] = _safe(_tip, "")
+        result["ai_coach_tip_source"] = "local"
+    cache[cache_key] = (_time.time(), result)
     return jsonify(result), 200
 
 

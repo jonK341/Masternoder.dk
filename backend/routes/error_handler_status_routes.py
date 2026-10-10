@@ -124,6 +124,7 @@ def analyze_error_handlers():
         }
 
 
+@error_handler_status_bp.route('/api/errors/handler-status', methods=['GET'])
 @error_handler_status_bp.route('/api/errors/handler-status/analyze', methods=['GET'])
 def analyze_error_handlers_route():
     """

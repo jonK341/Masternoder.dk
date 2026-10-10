@@ -276,21 +276,45 @@ def monitor_page():
 
 @api_monitor_bp.route("/api/monitor/status", methods=["GET"])
 def monitor_status_json():
-    """Return JSON status of all probe-able endpoints (server-side)."""
-    base = request.url_root.rstrip("/")
-    endpoints = _get_api_endpoints()
-    to_probe = [e["path"] for e in endpoints if e.get("probe")]
-    results = []
-    for path in to_probe:
-        r = _probe(base + path)
-        results.append({"path": path, "url": base + path, **r})
-    ok = sum(1 for r in results if r.get("ok"))
+    """Mounted-route census for the debugger health card.
+
+    The previous implementation HTTP-probed every API route from inside the
+    request. On a single uWSGI worker that calls back into the same process
+    and hangs until the proxy times out. This reports routes that are actually
+    registered, which is what the health card can answer without a self-request.
+    """
+    rules = []
+    try:
+        for rule in current_app.url_map.iter_rules():
+            path = rule.rule or ""
+            if not path.startswith("/api/"):
+                continue
+            methods = sorted(m for m in (rule.methods or set()) if m not in {"HEAD", "OPTIONS"})
+            rules.append({
+                "path": path,
+                "methods": methods,
+                "ok": True,
+                "mounted": True,
+            })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "check": "mounted_routes",
+            "live_probe": False,
+            "ok": 0,
+            "fail": 1,
+            "total": 0,
+            "endpoints": [],
+        }), 200
+    rules.sort(key=lambda item: item["path"])
     return jsonify({
         "success": True,
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "base": base,
-        "ok": ok,
-        "fail": len(results) - ok,
-        "total": len(results),
-        "endpoints": results,
+        "check": "mounted_routes",
+        "live_probe": False,
+        "ok": len(rules),
+        "fail": 0,
+        "total": len(rules),
+        "endpoints": rules,
     })

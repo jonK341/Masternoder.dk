@@ -107,3 +107,39 @@ def points_analytics():
             "message": "Analytics unavailable; returned safe empty payload"
         }), 200
 
+
+_POINTS_ADD_BLOCKED = frozenset({
+    "mn2_balance",
+    "coins",
+    "casino_fiat_balance",
+    "mn2_staked",
+    "shop_balance",
+})
+
+
+@points_bp.route("/api/points/add", methods=["POST"])
+def points_add():
+    """Add non-cash points. Template services post user_id, point_type, amount, source."""
+    data = request.get_json(silent=True) or {}
+    user_id = (data.get("user_id") or request.args.get("user_id") or "").strip()
+    point_type = (data.get("point_type") or data.get("type") or "").strip()
+    source = (data.get("source") or "api").strip() or "api"
+    if not user_id:
+        return jsonify({"success": False, "error": "user_id required"}), 400
+    if not point_type:
+        return jsonify({"success": False, "error": "point_type required"}), 400
+    if point_type in _POINTS_ADD_BLOCKED:
+        return jsonify({"success": False, "error": "point_type_not_allowed"}), 400
+    try:
+        amount = float(data.get("amount") or 0)
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "amount must be a number"}), 400
+    if amount == 0:
+        return jsonify({"success": False, "error": "amount must be non-zero"}), 400
+    try:
+        result = unified_points_db.add_points(user_id, point_type, amount, source, {"via": "api/points/add"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status
+
