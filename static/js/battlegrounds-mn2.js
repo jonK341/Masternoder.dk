@@ -70,7 +70,7 @@
             } else {
                 showStatus(d.error || 'Buy-in failed', false);
             }
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'battlegrounds-mn2.js', context: 'catch' }); }
             showStatus('Network error during buy-in', false);
         });
     }
@@ -80,7 +80,7 @@
         return bridge.loadBalance().then(function (d) {
             var bal = (d && (d.balance != null ? d.balance : d.mn2_balance)) || 0;
             setText('bg-mn2-balance', fmt(bal) + ' MN2');
-        }).catch(function () { setText('bg-mn2-balance', '—'); });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'battlegrounds-mn2.js', context: 'catch' }); } setText('bg-mn2-balance', '—'); });
     }
 
     function loadArenaConfig() {
@@ -90,7 +90,7 @@
             renderTiers();
             var rake = arenaConfig.rake && arenaConfig.rake.tournaments;
             setText('bg-mn2-rake', rake != null ? (rake + '% house rake on tournaments') : '—');
-        }).catch(function () { showStatus('Could not load arena config', false); });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'battlegrounds-mn2.js', context: 'catch' }); } showStatus('Could not load arena config', false); });
     }
 
     function init() {
@@ -100,10 +100,20 @@
             bridge.loadPrice().then(function (d) {
                 var p = d && (d.price_usd != null ? d.price_usd : d.usd);
                 setText('bg-mn2-rate', p != null ? ('$' + Number(p).toFixed(4) + ' / MN2') : '—');
-            }).catch(function () { setText('bg-mn2-rate', '—'); });
+            }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'battlegrounds-mn2.js', context: 'catch' }); } setText('bg-mn2-rate', '—'); });
         }
     }
 
     global.BattlegroundsMn2 = { init: init, buyInMn2: buyInMn2, refreshBalance: refreshBalance };
     global.document.addEventListener('DOMContentLoaded', init);
 })(window);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'battlegrounds-mn2.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

@@ -182,11 +182,11 @@ class BackendConnector {
                             );
                         }
                         return errorData;
-                    } catch (e) {
+                    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'backend-connector.js', context: 'catch' }); }
                         // JSON parse failed, continue to retry logic
                         try {
                             responseBody = await response.text();
-                        } catch (e2) {
+                        } catch (e2) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e2 instanceof Error ? e2 : new Error(String(e2)), { source: 'backend-connector.js', context: 'catch' }); }
                             // Can't read body
                         }
                     }
@@ -194,7 +194,7 @@ class BackendConnector {
                     // Try to read as text
                     try {
                         responseBody = await response.text();
-                    } catch (e) {
+                    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'backend-connector.js', context: 'catch' }); }
                         // Can't read body
                     }
                 }
@@ -238,7 +238,7 @@ class BackendConnector {
             }
 
             return data;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'backend-connector.js', context: 'catch' }); }
             // Network error - retry if possible
             if (retryCount < this.maxRetries && error.name !== 'AbortError') {
                 const delay = this.retryDelays[retryCount] || this.retryDelays[this.retryDelays.length - 1];

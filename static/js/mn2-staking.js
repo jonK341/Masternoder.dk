@@ -10,7 +10,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking.js', context: 'catch' }); } return 'default_user'; }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -25,7 +25,7 @@
       .then(function (p) {
         if (p && p.mn2_usd_price != null) _mn2Usd = Number(p.mn2_usd_price);
         return _mn2Usd;
-      }).catch(function () { return null; });
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); } return null; });
   }
 
   function fiatHint(mn2) {
@@ -100,19 +100,19 @@
             if (res && res.uptime_ratio != null) {
               var u = q('mn2-staking-uptime'); if (u) u.textContent = Math.round(res.uptime_ratio * 100);
             }
-          }).catch(function () {});
+          }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
         }
       };
       worker.postMessage({ cmd: 'start', difficulty: workerCfg.difficulty, intervalSec: workerCfg.intervalSec });
       rigOn = true;
       updateRigUi();
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking.js', context: 'catch' }); }
       msg('Staking rig unavailable in this browser', false);
     }
   }
 
   function stopRig() {
-    if (worker) { try { worker.postMessage({ cmd: 'stop' }); worker.terminate(); } catch (e) {} }
+    if (worker) { try { worker.postMessage({ cmd: 'stop' }); worker.terminate(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking.js', context: 'catch' }); }} }
     worker = null;
     rigOn = false;
     updateRigUi();
@@ -165,7 +165,7 @@
   function refreshStatus() {
     return api('/api/mn2/staking/status').then(function (s) {
       if (s && s.success !== false) renderStatus(s);
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   // ----------------------------------------------------------- charts (#2)
@@ -302,7 +302,7 @@
         rows + '</tbody></table>' +
         '<p style="opacity:0.7; margin-top:6px;">Total: ' + fmt(res.summary && res.summary.total_earned_mn2, 6) + ' MN2 over ' +
         (res.summary ? res.summary.intervals : 0) + ' intervals.</p>';
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   // ----------------------------------------------------------- calculator
@@ -318,7 +318,7 @@
         q('mn2-calc-result').textContent =
           '≈ ' + fmt(c.projected_reward_mn2, 6) + ' MN2' + fiatHint(c.projected_reward_mn2) + ' over ' + c.days + ' days at ' + fmt(c.apr_percent, 2) +
           '% APR (total ≈ ' + fmt(c.projected_total_mn2, 4) + ' MN2). Estimate only — not guaranteed.';
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   function runGoal() {
@@ -343,7 +343,7 @@
         if (!g.required_stake_mn2) { out.textContent = g.note || 'Target already met.'; return; }
         out.textContent = 'Stake ≈ ' + fmt(g.required_stake_mn2, 4) + ' MN2 now to reach ' + fmt(g.target_mn2, 4) +
           ' MN2 in ' + g.days_remaining + ' days (' + g.note + ')';
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   function loadNotifyPrefs() {
@@ -354,7 +354,7 @@
         var p = d.prefs;
         if (q('mn2-notify-rewards')) q('mn2-notify-rewards').checked = !!p.reward_alerts;
         if (q('mn2-notify-digest')) q('mn2-notify-digest').checked = !!p.weekly_digest;
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
     fetch('/api/mn2/staking/leaderboard-settings', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -362,12 +362,12 @@
         if (q('mn2-leaderboard-optin')) q('mn2-leaderboard-optin').checked = !!d.staking_leaderboard_opt_in;
         if (q('mn2-leaderboard-amounts')) q('mn2-leaderboard-amounts').checked = !!d.staking_show_amounts;
         if (q('mn2-leaderboard-name')) q('mn2-leaderboard-name').value = d.staking_display_name || '';
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   function saveNotifyPref(key, val) {
     var body = {}; body[key] = val;
-    fetch('/api/mn2/staking/notification-prefs', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(function () {});
+    fetch('/api/mn2/staking/notification-prefs', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   function saveLeaderboardSettings() {
@@ -376,7 +376,7 @@
       staking_show_amounts: !!(q('mn2-leaderboard-amounts') && q('mn2-leaderboard-amounts').checked),
       staking_display_name: (q('mn2-leaderboard-name') && q('mn2-leaderboard-name').value) || ''
     };
-    fetch('/api/mn2/staking/leaderboard-settings', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(function () {});
+    fetch('/api/mn2/staking/leaderboard-settings', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   function teamMsg(text, ok) {
@@ -414,7 +414,7 @@
     fetch('/api/mn2/staking/team', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(renderTeam)
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   function wireTeam() {
@@ -459,7 +459,7 @@
         if (txt) txt.textContent = t.summary || '';
         var st = q('mn2-staking-consent-statement');
         if (st) st.textContent = t.acceptance_statement || 'I accept the staking terms and risk disclosure.';
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
   }
 
   // ----------------------------------------------------------- wire events
@@ -573,7 +573,7 @@
     fetch('/api/ops/snapshot', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (j) { if (j.success) applyKs(j); })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking.js', context: 'catch' }); }});
     if (typeof EventSource !== 'undefined') {
       try {
         var es = new EventSource('/api/ops/stream?interval=30');
@@ -581,10 +581,10 @@
           try {
             var d = JSON.parse(ev.data);
             if (d.type === 'ops') applyKs(d);
-          } catch (e) { /* ignore */ }
+          } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking.js', context: 'catch' }); } /* ignore */ }
         };
         es.onerror = function () { if (es) es.close(); };
-      } catch (e) { /* ignore */ }
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking.js', context: 'catch' }); } /* ignore */ }
     }
   }
 

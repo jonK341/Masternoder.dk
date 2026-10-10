@@ -227,7 +227,7 @@ class PointSystemSaveManager {
             try {
                 const askedAt = sessionStorage.getItem(keySaveAsked);
                 if (askedAt && (Date.now() - parseInt(askedAt, 10)) < cooldownMs) mayShowPicker = false;
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'point-system-save-manager.js', context: 'catch' }); }}
 
             if (mayShowPicker && 'showSaveFilePicker' in window) {
                 try {
@@ -238,10 +238,10 @@ class PointSystemSaveManager {
                     const writable = await fileHandle.createWritable();
                     await writable.write(JSON.stringify(points, null, 2));
                     await writable.close();
-                    try { sessionStorage.setItem(keySaveAsked, String(Date.now())); } catch (_) {}
+                    try { sessionStorage.setItem(keySaveAsked, String(Date.now())); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'point-system-save-manager.js', context: 'catch' }); }}
                     return { success: true, file_path: fileHandle.name };
-                } catch (e) {
-                    try { sessionStorage.setItem(keySaveAsked, String(Date.now())); } catch (_) {}
+                } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-save-manager.js', context: 'catch' }); }
+                    try { sessionStorage.setItem(keySaveAsked, String(Date.now())); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'point-system-save-manager.js', context: 'catch' }); }}
                 }
             }
             // No picker shown (cooldown or cancelled): save to localStorage only
@@ -257,7 +257,7 @@ class PointSystemSaveManager {
             try {
                 localStorage.setItem(`points_${this.userId}`, JSON.stringify(points));
                 return { success: true, method: 'localStorage' };
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-save-manager.js', context: 'catch' }); }
                 return { success: false, error: e.message };
             }
         }
@@ -273,15 +273,15 @@ class PointSystemSaveManager {
             const askedAt = sessionStorage.getItem(keyAsked);
             if (askedAt && (Date.now() - parseInt(askedAt, 10)) < cooldownMs) return null;
             if (this._cachedDirHandle) return this._cachedDirHandle;
-        } catch (_) {}
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'point-system-save-manager.js', context: 'catch' }); }}
         if ('showDirectoryPicker' in window) {
             try {
                 const dirHandle = await window.showDirectoryPicker();
                 this._cachedDirHandle = dirHandle;
-                try { sessionStorage.setItem(keyAsked, String(Date.now())); } catch (_) {}
+                try { sessionStorage.setItem(keyAsked, String(Date.now())); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'point-system-save-manager.js', context: 'catch' }); }}
                 return dirHandle;
-            } catch (e) {
-                try { sessionStorage.setItem(keyDeclined, '1'); } catch (_) {}
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-save-manager.js', context: 'catch' }); }
+                try { sessionStorage.setItem(keyDeclined, '1'); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'point-system-save-manager.js', context: 'catch' }); }}
             }
         }
         return null;

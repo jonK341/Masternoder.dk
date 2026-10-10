@@ -20,7 +20,7 @@
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     }).then(function (r) {
       return r.json().then(function (j) { return { ok: r.ok, data: j }; });
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'business-control.js', context: 'catch' }); }
       return { ok: false, data: { success: false, error: "local_offline" } };
     });
   }
@@ -87,7 +87,7 @@
         return "<li><strong>" + (n.title || "") + "</strong><br><span class='muted'>" +
           (n.summary || "") + " · " + (n.date || "") + "</span></li>";
       }).join("") + "</ul>";
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'business-control.js', context: 'catch' }); }
       el.textContent = "Could not load profit news.";
     });
   }
@@ -143,7 +143,7 @@
       signal: ctrl ? ctrl.signal : undefined,
     }).then(function (r) {
       return r.json().then(function (j) { return { ok: r.ok, status: r.status, data: j }; });
-    }).catch(function (err) {
+    }).catch(function (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'business-control.js', context: 'catch' }); }
       if (err && err.name === "AbortError") {
         return { ok: false, status: 0, data: { success: false, error: "timeout" }, timedOut: true };
       }
@@ -349,7 +349,7 @@
         );
         load({ force: true, timeoutMs: 90000 });
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'business-control.js', context: 'catch' }); }
         status("Fleet run failed — network error.", true);
         load({ force: true, timeoutMs: 90000 });
       })
@@ -387,7 +387,7 @@
         }
         load({ force: true, timeoutMs: 90000 });
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'business-control.js', context: 'catch' }); }
         status("Run request failed — network error.", true);
         load({ force: true, timeoutMs: 90000 });
       })
@@ -720,7 +720,7 @@
       }
       if (d.monthly_projection_note) note += " — " + d.monthly_projection_note;
       status(note);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'business-control.js', context: 'catch' }); }
       if (gen !== loadGen) return;
       status("Network error — check connection or try Refresh.", true);
       renderStalePanels("Network error.");
@@ -953,7 +953,7 @@
             (f.ts || "") + " · " + (f.action || "") + " · " + (f.user_id || "") + " · $" + Number(f.amount_usd || 0).toFixed(2) + "</div>";
         }).join("") || "No trust/trading events yet.";
       }
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'business-control.js', context: 'catch' }); }
       if (totalsEl) totalsEl.textContent = "Live Watch network error.";
     });
   }
@@ -1035,4 +1035,14 @@
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'business-control.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

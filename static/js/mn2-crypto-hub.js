@@ -25,7 +25,7 @@
       return window.localStorage.getItem('game_user_id')
         || window.localStorage.getItem('user_id')
         || 'default_user';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
       return 'default_user';
     }
   }
@@ -63,7 +63,7 @@
       if (tabId === 'explorer') url.searchParams.delete('tab');
       else url.searchParams.set('tab', tabId);
       window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-crypto-hub.js', context: 'catch' }); } /* ignore */ }
 
     if (tabId === 'leaderboard') loadLeaderboard();
     if (tabId === 'teams') loadTeams();
@@ -110,7 +110,7 @@
               '</td><td>' + (r.total_earned != null ? Number(r.total_earned).toFixed(4) : '—') : '') + '</td></tr>';
         }).join('');
       })
-      .catch(function () { body.innerHTML = '<tr><td colspan="6">Could not load.</td></tr>'; });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); } body.innerHTML = '<tr><td colspan="6">Could not load.</td></tr>'; });
   }
 
   function loadTeams() {
@@ -131,7 +131,7 @@
             '</td><td class="mult">' + Number(t.team_multiplier || 1).toFixed(3) + '×</td></tr>';
         }).join('');
       })
-      .catch(function () { tb.innerHTML = '<tr><td colspan="7">Could not load.</td></tr>'; });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); } tb.innerHTML = '<tr><td colspan="7">Could not load.</td></tr>'; });
   }
 
   function renderPoR(d) {
@@ -228,14 +228,14 @@
       .then(function (d) {
         renderPoR(d);
         renderTreasuryOverview(d);
-      }).catch(function () {
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
         var text = q('pr-banner-text');
         if (text) text.textContent = 'Could not load reserve data. Please retry shortly.';
       });
     setInterval(function () {
       if (q('mn2-tab-reserves') && !q('mn2-tab-reserves').hidden) {
         fetch('/api/mn2/staking/reserves-overview').then(function (r) { return r.json(); })
-          .then(function (d) { renderPoR(d); renderTreasuryOverview(d); }).catch(function () {});
+          .then(function (d) { renderPoR(d); renderTreasuryOverview(d); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }});
       }
     }, 60000);
   }
@@ -376,7 +376,7 @@
             }).join('');
           }
         }
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }});
 
     fetch('/api/mn2/masternodes?limit=50&fresh=1', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
@@ -418,7 +418,7 @@
             );
           }).join('');
         }
-      }).catch(function () {
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
         var tbody = q('mn-net-table');
         if (tbody) tbody.innerHTML = '<tr><td colspan="4">Could not load network masternodes.</td></tr>';
         renderMnRpcBanner('request failed');
@@ -432,7 +432,7 @@
           applyMasternodeCheckoutPricing();
           applyMasternodeCheckoutRails();
         }
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }});
 
     setupMasternodeCheckout();
     loadMasternodeMyOrders();
@@ -462,7 +462,7 @@
             '</td><td>' + (o.slots || 1) + '</td><td class="num">' + total +
             '</td><td>' + (o.paid_at || o.created_at || '—') + '</td></tr>';
         }).join('');
-      }).catch(function () {
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
         tbody.innerHTML = '<tr><td colspan="5">Could not load orders.</td></tr>';
       });
   }
@@ -573,7 +573,7 @@
       }
       if (msg) msg.textContent = pay.message || okFallback;
       loadMasternodeHosting();
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
       setCheckoutBusy(false);
       if (msg) msg.textContent = 'Payment failed — try again.';
     });
@@ -591,13 +591,13 @@
     statusEl.textContent = 'Waiting for payment…';
     if (qrEl) qrEl.innerHTML = '';
     if (qrEl && window.QRCode && data.address) {
-      try { new window.QRCode(qrEl, { text: data.address, width: 120, height: 120 }); } catch (e) { qrEl.innerHTML = 'QR N/A'; }
+      try { new window.QRCode(qrEl, { text: data.address, width: 120, height: 120 }); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-crypto-hub.js', context: 'catch' }); } qrEl.innerHTML = 'QR N/A'; }
     }
     var copyBtn = q('mn2-onchain-copy');
     if (copyBtn) {
       copyBtn.onclick = function () {
         if (navigator.clipboard && data.address) {
-          navigator.clipboard.writeText(data.address).catch(function () {});
+          navigator.clipboard.writeText(data.address).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }});
         }
       };
     }
@@ -621,7 +621,7 @@
           } else if (s.status === 'confirmed' && statusEl) {
             statusEl.textContent = 'Confirming…';
           }
-        }).catch(function () {});
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }});
     }, 10000);
   }
 
@@ -641,7 +641,7 @@
       }
       if (msg) msg.textContent = 'Send the exact MN2 amount in the modal.';
       openHostingOnchainModal(pay);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
       setCheckoutBusy(false);
       if (msg) msg.textContent = 'On-chain setup failed.';
     });
@@ -676,7 +676,7 @@
         return payHostingOnchain(quote);
       }
       return payHostingPayPal(quote);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
       setCheckoutBusy(false);
       if (msg) msg.textContent = 'Checkout failed — try again.';
     });
@@ -732,8 +732,8 @@
           url.searchParams.delete('paypal');
           url.searchParams.delete('mn_quote');
           window.history.replaceState({}, document.title, url.pathname + url.search);
-        } catch (e) { /* ignore */ }
-      }).catch(function () {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-crypto-hub.js', context: 'catch' }); } /* ignore */ }
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
         if (msg) msg.textContent = 'Could not confirm payment.';
       });
   }
@@ -752,7 +752,7 @@
         if (paypalPanel) paypalPanel.style.display = 'none';
         if (paypalSection) paypalSection.style.display = 'none';
       }
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }
       var paypalPanel = q('mn2-p2p-panel');
       var paypalSection = q('mn2-paypal-market-section');
       if (paypalPanel) paypalPanel.style.display = 'none';

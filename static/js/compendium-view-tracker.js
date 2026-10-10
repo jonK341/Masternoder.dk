@@ -36,7 +36,7 @@
             xhr.open('POST', API_BASE + '/compendium/view', true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(payload));
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'compendium-view-tracker.js', context: 'catch' }); }}
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', sendView);

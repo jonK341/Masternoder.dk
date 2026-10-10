@@ -45,7 +45,7 @@ class TriggerBasedActions {
                 return result.trigger_id;
             }
             return null;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'trigger-based-actions.js', context: 'catch' }); }
             return null;
         }
     }
@@ -53,7 +53,7 @@ class TriggerBasedActions {
     /**
      * Catch a pointer and check for matching triggers
      */
-    async catchPointer(pointerId, pointerData = {}) {
+    async catchPointer(pointerId, pointerData = { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'trigger-based-actions.js', context: 'catch' }); }}) {
         try {
             const response = await fetch(`${this.baseURL}/trigger/pointer`, {
                 method: 'POST',
@@ -72,7 +72,8 @@ class TriggerBasedActions {
                 }
             }
             return result;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'trigger-based-actions.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'trigger-based-actions.js', context: 'console.error' }); }
             console.error('Error catching pointer:', error);
             return {success: false, error: error.message};
         }
@@ -107,7 +108,8 @@ class TriggerBasedActions {
         try {
             const response = await fetch(`${this.baseURL}/trigger/status/${triggerId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'trigger-based-actions.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'trigger-based-actions.js', context: 'console.error' }); }
             console.error('Error getting trigger status:', error);
             return null;
         }
@@ -137,19 +139,19 @@ class TriggerBasedActions {
         // Check energy (pointer 1)
         const energy = await this.checkEnergy();
         if (energy.success && energy.energy.total_energy > 50) {
-            await this.catchPointer('energy_sufficient', {energy: energy.energy});
+            await this.catchPointer('energy_sufficient', { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'trigger-based-actions.js', context: 'catch' }); }energy: energy.energy});
         }
 
         // Check points (pointer 2)
         const points = await this.checkPoints();
         if (points.success && points.points.total > 0) {
-            await this.catchPointer('points_available', {points: points.points});
+            await this.catchPointer('points_available', { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'trigger-based-actions.js', context: 'catch' }); }points: points.points});
         }
 
         // Check generation ready (pointer 3)
         const ready = await this.checkGenerationReady();
         if (ready.success && ready.ready) {
-            await this.catchPointer('generation_ready', {ready: true});
+            await this.catchPointer('generation_ready', { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'trigger-based-actions.js', context: 'catch' }); }ready: true});
         }
 
         return {
@@ -183,19 +185,19 @@ class TriggerBasedActions {
         // Check energy (pointer 1)
         const energy = await this.checkEnergy();
         if (energy.success) {
-            await this.catchPointer('energy_check', {energy: energy.energy});
+            await this.catchPointer('energy_check', { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'trigger-based-actions.js', context: 'catch' }); }energy: energy.energy});
         }
 
         // Check points (pointer 2)
         const points = await this.checkPoints();
         if (points.success && points.points.total > 0) {
-            await this.catchPointer('points_available', {points: points.points});
+            await this.catchPointer('points_available', { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'trigger-based-actions.js', context: 'catch' }); }points: points.points});
         }
 
         // Check battle ready (pointer 3)
         const ready = await this.checkBattleReady();
         if (ready.success && ready.ready) {
-            await this.catchPointer('battle_ready', {ready: true});
+            await this.catchPointer('battle_ready', { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'trigger-based-actions.js', context: 'catch' }); }ready: true});
         }
 
         return {
@@ -212,7 +214,7 @@ class TriggerBasedActions {
         try {
             const response = await fetch(`/api/ultra-resource/energy?user_id=${this.userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'trigger-based-actions.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -224,7 +226,7 @@ class TriggerBasedActions {
         try {
             const response = await fetch(`/api/points/unified/get?user_id=${this.userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'trigger-based-actions.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -289,7 +291,7 @@ class TriggerBasedActions {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'trigger-based-actions.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -309,7 +311,7 @@ class TriggerBasedActions {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'trigger-based-actions.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -323,7 +325,7 @@ class TriggerBasedActions {
             const data = await response.json();
             if (!data || !response.ok) return { success: false, points: {}, energy: {} };
             return { success: !!data.success, user_id: data.user_id, points: data.points || {}, energy: {} };
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'trigger-based-actions.js', context: 'catch' }); }
             return { success: false, points: {}, energy: {} };
         }
     }

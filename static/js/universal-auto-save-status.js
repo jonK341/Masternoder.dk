@@ -137,7 +137,7 @@ class UniversalAutoSaveStatus {
                     this.updateStatus(data.status || 'ready', null, data.last_save_time);
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'universal-auto-save-status.js', context: 'catch' }); }
             // Silently fail - status check is optional
         }
     }

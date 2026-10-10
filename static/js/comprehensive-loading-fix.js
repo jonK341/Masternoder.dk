@@ -105,7 +105,7 @@ class ComprehensiveLoadingFix {
                 // Update stats display
                 this.updateElement('battle-stats', data.stats);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load battle stats:', error);
         }
     }
@@ -119,7 +119,7 @@ class ComprehensiveLoadingFix {
             if (data.success && document.getElementById('battle-inventory')) {
                 this.updateElement('battle-inventory', data.inventory);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load battle inventory:', error);
         }
     }
@@ -133,7 +133,7 @@ class ComprehensiveLoadingFix {
             if (data.success && document.getElementById('battle-artifacts')) {
                 this.updateElement('battle-artifacts', data.artifacts);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load battle artifacts:', error);
         }
     }
@@ -147,7 +147,7 @@ class ComprehensiveLoadingFix {
             if (data.success && document.getElementById('battle-power-stats')) {
                 this.updateElement('battle-power-stats', data.stats);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load battle power stats:', error);
         }
     }
@@ -161,7 +161,7 @@ class ComprehensiveLoadingFix {
             if (data.success && document.getElementById('fantasy-resources')) {
                 this.updateElement('fantasy-resources', data.resources);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load fantasy resources:', error);
         }
     }
@@ -174,7 +174,7 @@ class ComprehensiveLoadingFix {
             if (data.success && document.getElementById('rule-books-list')) {
                 this.updateElement('rule-books-list', data.rule_books);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load rule books:', error);
         }
     }
@@ -187,7 +187,7 @@ class ComprehensiveLoadingFix {
             if (data.success && document.getElementById('battle-series-list')) {
                 this.updateElement('battle-series-list', data.series);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load battle series:', error);
         }
     }
@@ -201,7 +201,7 @@ class ComprehensiveLoadingFix {
             if (data.success && document.getElementById('battle-history')) {
                 this.updateElement('battle-history', data.history);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load battle history:', error);
         }
     }
@@ -214,7 +214,7 @@ class ComprehensiveLoadingFix {
             if (data.success && document.getElementById('battle-leaderboard')) {
                 this.updateElement('battle-leaderboard', data.leaderboard);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-loading-fix.js', context: 'catch' }); }
             console.warn('[LoadingFix] Could not load battle leaderboard:', error);
         }
     }

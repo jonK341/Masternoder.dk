@@ -29,7 +29,7 @@
     opts = opts || {};
     if (!opts.method || opts.method === "GET") {
       if (window.ExchangeHub && window.ExchangeHub.fetchJson) {
-        return window.ExchangeHub.fetchJson(path, { timeout: 8000 }).catch(function () { return {}; });
+        return window.ExchangeHub.fetchJson(path, { timeout: 8000 }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'agent-marketplace.js', context: 'catch' }); } return {}; });
       }
     }
     var headers = {};
@@ -39,7 +39,7 @@
       headers: headers,
       credentials: "same-origin",
       body: opts.body ? JSON.stringify(opts.body) : undefined,
-    }).then(function (r) { return r.json().catch(function () { return {}; }); });
+    }).then(function (r) { return r.json().catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'agent-marketplace.js', context: 'catch' }); } return {}; }); });
   }
 
   function renderCatalog(data) {
@@ -671,7 +671,7 @@
         try {
           sessionStorage.setItem("cex_ctrl_paypal_order", res.order_id || "");
           sessionStorage.setItem("cex_ctrl_paypal_action", type + ":" + tid);
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'agent-marketplace.js', context: 'catch' }); } /* ignore */ }
         if (res.approve_url) window.location.href = res.approve_url;
         else ctrlMsg("No PayPal URL returned.", false);
       });
@@ -701,7 +701,7 @@
     if (params.get("controller_paypal") === "cancel" || params.get("paypal") === "cancel") return;
     var orderId = params.get("token") || params.get("order_id") || "";
     var storedOrder = "";
-    try { storedOrder = sessionStorage.getItem("cex_ctrl_paypal_order") || ""; orderId = orderId || storedOrder; } catch (e) { /* ignore */ }
+    try { storedOrder = sessionStorage.getItem("cex_ctrl_paypal_order") || ""; orderId = orderId || storedOrder; } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'agent-marketplace.js', context: 'catch' }); } /* ignore */ }
     var payerId = params.get("PayerID") || params.get("PayerId");
     var flagged = params.get("controller_paypal") === "success";
     var approved = flagged || params.get("paypal") === "success" || !!payerId;
@@ -711,7 +711,7 @@
     api("/api/exchange/controller/paypal/capture", { method: "POST", body: { order_id: orderId } }).then(function (res) {
       if (res && res.success) {
         ctrlMsg("PayPal purchase complete.", true);
-        try { sessionStorage.removeItem("cex_ctrl_paypal_order"); } catch (e) { /* ignore */ }
+        try { sessionStorage.removeItem("cex_ctrl_paypal_order"); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'agent-marketplace.js', context: 'catch' }); } /* ignore */ }
         loadController(); loadMyRentals(); loadPortfolio(); loadShop(); loadBridgeProduct();
       } else ctrlMsg("Capture failed: " + ((res && res.error) || ""), false);
       if (window.history && window.history.replaceState) {

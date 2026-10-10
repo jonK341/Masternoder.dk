@@ -61,7 +61,7 @@
         channels = (d && d.success && d.channels) ? d.channels : [];
         renderFilters();
       })
-      .catch(function () { renderFilters(); });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-news.js', context: 'catch' }); } renderFilters(); });
   }
 
   function loadNews() {
@@ -71,11 +71,21 @@
     return fetch(url, { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) { renderFeed((d && d.success && d.news) ? d.news : []); })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-news.js', context: 'catch' }); }
         if (q('news-feed')) q('news-feed').innerHTML = '<div class="news-card"><p>Could not load news feed.</p></div>';
         if (q('news-status')) q('news-status').textContent = 'Error loading feed';
       });
   }
 
   loadChannels().then(loadNews);
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'platform-news.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

@@ -96,7 +96,7 @@
 
             }
 
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-hub-panel.js', context: 'catch' }); }
 
             btn.disabled = false;
 
@@ -630,7 +630,7 @@
 
             })
 
-            .catch(function (e) {
+            .catch(function (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'game-hub-panel.js', context: 'catch' }); }
 
                 if (status) status.textContent = 'Offline';
 

@@ -30,7 +30,8 @@ class UnifiedGeneratorBattle {
                 console.log('[UnifiedGeneratorBattle] Services status:', data.services);
                 return data.services;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'unified-generator-battle.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-generator-battle.js', context: 'console.error' }); }
             console.error('[UnifiedGeneratorBattle] Error checking status:', error);
         }
         return null;
@@ -65,13 +66,15 @@ class UnifiedGeneratorBattle {
                 
                 return data;
             } else {
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-generator-battle.js', context: 'console.error' }); }
                 console.error('[UnifiedGeneratorBattle] Generation failed:', data.error);
                 if (window.showToast) {
                     window.showToast(`Generation failed: ${data.error}`, 'error');
                 }
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'unified-generator-battle.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-generator-battle.js', context: 'console.error' }); }
             console.error('[UnifiedGeneratorBattle] Error generating video:', error);
             if (window.showToast) {
                 window.showToast('Error generating video', 'error');
@@ -111,13 +114,15 @@ class UnifiedGeneratorBattle {
                 
                 return data;
             } else {
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-generator-battle.js', context: 'console.error' }); }
                 console.error('[UnifiedGeneratorBattle] Battle creation failed:', data.error);
                 if (window.showToast) {
                     window.showToast(`Battle creation failed: ${data.error}`, 'error');
                 }
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'unified-generator-battle.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-generator-battle.js', context: 'console.error' }); }
             console.error('[UnifiedGeneratorBattle] Error creating battle:', error);
             if (window.showToast) {
                 window.showToast('Error creating battle', 'error');
@@ -159,13 +164,15 @@ class UnifiedGeneratorBattle {
                 
                 return data;
             } else {
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-generator-battle.js', context: 'console.error' }); }
                 console.error('[UnifiedGeneratorBattle] Battle completion failed:', data.error);
                 if (window.showToast) {
                     window.showToast(`Battle completion failed: ${data.error}`, 'error');
                 }
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'unified-generator-battle.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-generator-battle.js', context: 'console.error' }); }
             console.error('[UnifiedGeneratorBattle] Error completing battle:', error);
             if (window.showToast) {
                 window.showToast('Error completing battle', 'error');
@@ -185,7 +192,8 @@ class UnifiedGeneratorBattle {
             if (data.success) {
                 return data.stats;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'unified-generator-battle.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-generator-battle.js', context: 'console.error' }); }
             console.error('[UnifiedGeneratorBattle] Error getting stats:', error);
         }
         return null;

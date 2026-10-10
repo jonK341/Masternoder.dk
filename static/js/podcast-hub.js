@@ -50,7 +50,7 @@
                     banner.className = 'podcast-sound-banner ok';
                 }
             }
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'podcast-hub.js', context: 'catch' }); }
             banner.textContent = 'Sound check unavailable';
             banner.className = 'podcast-sound-banner warn';
         }
@@ -109,7 +109,7 @@
             };
             if (vizRAF) cancelAnimationFrame(vizRAF);
             draw();
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'podcast-hub.js', context: 'catch' }); }
             /* visualizer optional */
         }
     }
@@ -146,7 +146,7 @@
         el.querySelectorAll('.podcast-chapter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const audio = qs('#audio-player');
-                if (audio) { audio.currentTime = Number(btn.dataset.sec) || 0; audio.play().catch(() => {}); }
+                if (audio) { audio.currentTime = Number(btn.dataset.sec) || 0; audio.play().catch(() => { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'podcast-hub.js', context: 'catch' }); }}); }
             });
         });
     }
@@ -206,7 +206,7 @@
                     <span>${(s.total_plays || 0).toLocaleString()} plays</span>
                     <span>🫧 BBCG flavor</span>`;
             }
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'podcast-hub.js', context: 'catch' }); }}
     }
 
     async function loadChannels() {
@@ -293,7 +293,7 @@
             await API('/api/podcast/sound-check?repair=1', { method: 'POST' });
             audio.src = playUrl + '?t=' + Date.now();
             audio.load();
-            audio.play().catch(() => {});
+            audio.play().catch(() => { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'podcast-hub.js', context: 'catch' }); }});
         };
 
         const playRes = await API('/api/podcast/episodes/' + id + '/play', {

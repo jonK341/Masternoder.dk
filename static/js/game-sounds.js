@@ -13,7 +13,7 @@ class GameSounds {
         // Create audio context for sound generation
         try {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-sounds.js', context: 'catch' }); }
             console.warn('[GameSounds] AudioContext not supported');
             this.enabled = false;
         }
@@ -54,7 +54,7 @@ class GameSounds {
             notes.forEach((freq, index) => {
                 setTimeout(() => playNote(freq, 0.2), index * 150);
             });
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-sounds.js', context: 'catch' }); }
             console.warn('[GameSounds] Error playing victory sound:', e);
         }
     }
@@ -81,7 +81,7 @@ class GameSounds {
             
             oscillator.start(this.audioContext.currentTime);
             oscillator.stop(this.audioContext.currentTime + 0.1);
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-sounds.js', context: 'catch' }); }
             console.warn('[GameSounds] Error playing progress sound:', e);
         }
     }
@@ -111,7 +111,7 @@ class GameSounds {
                     osc.stop(this.audioContext.currentTime + 0.3);
                 }, index * 100);
             });
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-sounds.js', context: 'catch' }); }
             console.warn('[GameSounds] Error playing achievement sound:', e);
         }
     }
@@ -135,7 +135,7 @@ class GameSounds {
             
             oscillator.start(this.audioContext.currentTime);
             oscillator.stop(this.audioContext.currentTime + 0.2);
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-sounds.js', context: 'catch' }); }
             console.warn('[GameSounds] Error playing item sound:', e);
         }
     }
@@ -165,7 +165,7 @@ class GameSounds {
                     osc.stop(this.audioContext.currentTime + 0.5);
                 }, index * 200);
             });
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-sounds.js', context: 'catch' }); }
             console.warn('[GameSounds] Error playing artifact sound:', e);
         }
     }

@@ -80,7 +80,7 @@
     if (pushHash !== false) {
       try {
         history.replaceState(null, '', '#' + tabId);
-      } catch (e) {}
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-tabulator.js', context: 'catch' }); }}
     }
   }
 
@@ -165,7 +165,7 @@
           renderSections();
         }
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'game-tabulator.js', context: 'catch' }); }});
   }
 
   function init() {

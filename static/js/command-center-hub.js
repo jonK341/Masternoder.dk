@@ -142,7 +142,7 @@
             'Battles: ' + wins + ' wins · Generator jobs: ' + genJobs + ' · MN2: ' + mn2.toFixed(4);
         }
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'command-center-hub.js', context: 'catch' }); }
         if (label) label.textContent = 'Power data unavailable — links still work.';
       });
   }
@@ -157,7 +157,7 @@
         var n = (d.agents || d.items || []).length;
         if (st) st.textContent = n ? n + ' agents available — assign from Agents tab.' : 'Agents API ready — open Agents control.';
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'command-center-hub.js', context: 'catch' }); }
         if (st) st.textContent = 'Agent plugin idle (no blocking spinner).';
       });
   }
@@ -183,7 +183,7 @@
         ' · treasury fees: ' + Number(h.treasury_fees_mn2 || 0).toFixed(4) + ' MN2' +
         ' · P/L: $' + Number(profit.estimated_total_pnl_usd || 0).toFixed(2) +
         ' · gateway pending: ' + Number(gateway.pending_count || 0);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'command-center-hub.js', context: 'catch' }); }
       el.textContent = 'Exchange monitor unavailable.';
     });
   }
@@ -197,7 +197,7 @@
         el.innerHTML = '<strong>Casino monitor</strong> · bets: ' + (d.total_bets || d.bets || '—') +
           ' · wagered: ' + Number(d.total_wagered || 0).toFixed(2) +
           ' · house net: ' + Number(d.house_profit || d.net || 0).toFixed(2);
-      }).catch(function () {
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'command-center-hub.js', context: 'catch' }); }
         el.textContent = 'Casino monitor unavailable.';
       });
   }
@@ -217,3 +217,13 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })(window);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'command-center-hub.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

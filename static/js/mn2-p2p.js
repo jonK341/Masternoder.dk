@@ -10,7 +10,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-p2p.js', context: 'catch' }); } return 'default_user'; }
   }
   function q(id) { return document.getElementById(id); }
   function fmt(n, d) { return Number(n || 0).toFixed(d == null ? 4 : d); }
@@ -33,7 +33,7 @@
   function loadConfig() {
     get('/api/mn2/p2p/config').then(function (cfg) {
       if (cfg && cfg.success && cfg.enabled) { panel.style.display = 'block'; loadListings(); }
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-p2p.js', context: 'catch' }); }});
   }
 
   function loadListings() {
@@ -56,7 +56,7 @@
           buy(id, parseFloat(input && input.value));
         });
       });
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-p2p.js', context: 'catch' }); }});
   }
 
   function listForSale() {
@@ -79,7 +79,7 @@
     }).then(function (res) {
       if (res && res.success && res.approve_url) {
         // order id isn't known at return_url build time; stash it and read on return
-        try { sessionStorage.setItem('mn2_p2p_order', res.order_id); } catch (e) {}
+        try { sessionStorage.setItem('mn2_p2p_order', res.order_id); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-p2p.js', context: 'catch' }); }}
         window.location.href = res.approve_url;
       } else { msg((res && res.error) || 'Could not start checkout'); }
     });
@@ -90,7 +90,7 @@
     if (!params.has('p2p_capture')) return;
     var orderId = params.get('p2p_capture');
     if (orderId === 'PENDING' || !orderId) {
-      try { orderId = sessionStorage.getItem('mn2_p2p_order'); } catch (e) {}
+      try { orderId = sessionStorage.getItem('mn2_p2p_order'); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-p2p.js', context: 'catch' }); }}
     }
     if (!orderId) return;
     msg('Confirming payment…');
@@ -100,7 +100,7 @@
         loadListings();
         if (window.MN2Staking) window.MN2Staking.refresh();
       } else { msg((res && res.error) || 'Could not confirm payment.'); }
-      try { sessionStorage.removeItem('mn2_p2p_order'); window.history.replaceState({}, '', window.location.pathname); } catch (e) {}
+      try { sessionStorage.removeItem('mn2_p2p_order'); window.history.replaceState({}, '', window.location.pathname); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-p2p.js', context: 'catch' }); }}
     });
   }
 

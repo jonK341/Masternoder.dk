@@ -9,7 +9,7 @@
   function getUserId() {
     try {
       return localStorage.getItem('user_id') || localStorage.getItem('vidgenerator_user_id') || 'default_user';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-monitor-game.js', context: 'catch' }); }
       return 'default_user';
     }
   }
@@ -144,7 +144,7 @@
         window.AggregatorEngagement.refreshTotalsHud();
       }
       await refreshProgressReader();
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-monitor-game.js', context: 'catch' }); }
       el('agg-battle-status').textContent = 'Battle request failed';
       logPrint('battle error: ' + (e && e.message));
     }
@@ -171,7 +171,7 @@
       html += `<dt>Hunter XP</dt><dd>${li.current_xp ?? '—'}</dd>`;
       html += `<dt>Monitor moves</dt><dd>${state.moves}</dd>`;
       html += '</dl>';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-monitor-game.js', context: 'catch' }); }
       html = `<p>Could not load progress (${e.message})</p>`;
     }
     box.innerHTML = html;
@@ -249,7 +249,7 @@
             ta.value = JSON.stringify(defaultLinks(), null, 2);
           }
         })
-        .catch(function () {
+        .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'aggregator-monitor-game.js', context: 'catch' }); }
           ta.value = JSON.stringify(defaultLinks(), null, 2);
         });
     }
@@ -264,7 +264,7 @@
           el('agg-share-url').textContent = share;
           logPrint('encoded link list (' + links.length + ' items)');
           eg('link_encode');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-monitor-game.js', context: 'catch' }); }
           out.value = 'Error: ' + e.message;
         }
       });
@@ -278,7 +278,7 @@
           const links = JSON.parse(json);
           renderLinkList(links);
           eg('link_decode');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-monitor-game.js', context: 'catch' }); }
           list.innerHTML = '<p style="color:#f88">Decode error: ' + e.message + '</p>';
         }
       });
@@ -306,7 +306,7 @@
         out.value = payload;
         renderLinkList(links);
         eg('link_decode');
-      } catch (e) {
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-monitor-game.js', context: 'catch' }); }
         console.warn('hash list decode', e);
       }
     }

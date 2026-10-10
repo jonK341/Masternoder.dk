@@ -92,13 +92,13 @@
                     gainToDisconnect.gain.cancelScheduledValues(this.ctx.currentTime);
                     gainToDisconnect.gain.setTargetAtTime(0, this.ctx.currentTime, 0.08);
                     setTimeout(() => {
-                        try { gainToDisconnect.disconnect(); } catch (_) {}
+                        try { gainToDisconnect.disconnect(); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }}
                         if (this.masterGain === gainToDisconnect) {
                             this.masterGain = null;
                         }
                     }, 180);
-                } catch (_) {
-                    try { gainToDisconnect.disconnect(); } catch (__) {}
+                } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }
+                    try { gainToDisconnect.disconnect(); } catch (__) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(__ instanceof Error ? __ : new Error(String(__)), { source: 'frontpage-home.js', context: 'catch' }); }}
                     if (this.masterGain === gainToDisconnect) {
                         this.masterGain = null;
                     }
@@ -125,7 +125,7 @@
             this.clearBeat();
             this.stopNodes();
             if (this.masterGain) {
-                try { this.masterGain.disconnect(); } catch (_) {}
+                try { this.masterGain.disconnect(); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }}
                 this.masterGain = null;
             }
 
@@ -180,7 +180,7 @@
             try {
                 this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
                 this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.08);
-            } catch (_) {
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }
                 this.masterGain.gain.value = target;
             }
         }
@@ -205,8 +205,8 @@
             this.nodes.forEach((node) => {
                 try {
                     if (typeof node.stop === 'function') node.stop();
-                } catch (_) {}
-                try { node.disconnect(); } catch (_) {}
+                } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }}
+                try { node.disconnect(); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }}
             });
             this.nodes = [];
         }
@@ -254,7 +254,7 @@
                 volume.value = String(saved);
                 sound.setVolume(saved / 100);
             }
-        } catch (_) {}
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }}
 
         const render = () => {
             const mode = SOUND_MODES[sound.mode] || SOUND_MODES.focus;
@@ -287,7 +287,7 @@
             }
             try {
                 await sound.start();
-            } catch (err) {
+            } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'frontpage-home.js', context: 'catch' }); }
                 if (status) status.textContent = 'Sound kunne ikke starte i denne browser.';
                 console.warn('[Frontpage] sound', err);
             }
@@ -300,7 +300,7 @@
             const applyVol = () => {
                 const lin = parseInt(volume.value, 10) / 100;
                 sound.setVolume(lin);
-                try { localStorage.setItem(SOUND_VOL_KEY, String(volume.value)); } catch (_) {}
+                try { localStorage.setItem(SOUND_VOL_KEY, String(volume.value)); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }}
                 volume.setAttribute('aria-valuetext', volume.value + ' procent');
                 updateSoundbarUI(lin);
                 if (sound.isActive) sound.playPing(620 + lin * 420, 0.015);
@@ -335,7 +335,7 @@
         try {
             const raw = localStorage.getItem(VISIT_KEY);
             return raw ? JSON.parse(raw) : {};
-        } catch (_) {
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }
             return {};
         }
     }
@@ -345,7 +345,7 @@
             const v = readVisits();
             v[path] = (v[path] || 0) + 1;
             localStorage.setItem(VISIT_KEY, JSON.stringify(v));
-        } catch (_) {}
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }}
     }
 
     function wireVisitTracking() {
@@ -354,7 +354,7 @@
                 try {
                     const u = new URL(a.getAttribute('href'), window.location.origin);
                     bumpVisit(u.pathname);
-                } catch (_) {}
+                } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }}
             });
         });
     }
@@ -444,9 +444,9 @@
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
             const [platformRes, profitRes, feedRes] = await Promise.all([
-                fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
-                fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ news: [] })),
-                fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ news: [] })),
+                fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
+                fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
+                fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
             ]);
             const profit = (profitRes && profitRes.news) || [];
             const platform = (platformRes && platformRes.news) || [];
@@ -500,7 +500,7 @@
                 li.appendChild(meta);
                 ul.appendChild(li);
             });
-        } catch (_) {
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }
             ul.innerHTML = '<li class="fp-muted">Nyheder midlertidigt utilgængelige.</li>';
         }
     }
@@ -570,7 +570,7 @@
                 const data = await res.json();
                 const sm = data && data.star_map_25;
                 this.points = (sm && sm.points) || [];
-            } catch (_) {
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }
                 this.points = [];
             }
             this.resize();

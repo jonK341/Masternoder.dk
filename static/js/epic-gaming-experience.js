@@ -42,7 +42,8 @@ class EpicGamingExperience {
                 this.lastUpdate = new Date();
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'epic-gaming-experience.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'epic-gaming-experience.js', context: 'console.error' }); }
             console.error('[Epic Gaming] Error loading progress:', error);
         }
         return null;
@@ -83,7 +84,8 @@ class EpicGamingExperience {
                 
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'epic-gaming-experience.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'epic-gaming-experience.js', context: 'console.error' }); }
             console.error('[Epic Gaming] Error tracking activity:', error);
         }
         return null;
@@ -193,7 +195,8 @@ class EpicGamingExperience {
                     `).join('');
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'epic-gaming-experience.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'epic-gaming-experience.js', context: 'console.error' }); }
             console.error('[Epic Gaming] Error updating timeline:', error);
         }
     }
@@ -231,7 +234,8 @@ class EpicGamingExperience {
                     `;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'epic-gaming-experience.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'epic-gaming-experience.js', context: 'console.error' }); }
             console.error('[Epic Gaming] Error updating story:', error);
         }
     }

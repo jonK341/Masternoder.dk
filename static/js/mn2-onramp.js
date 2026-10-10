@@ -10,7 +10,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-onramp.js', context: 'catch' }); } return 'default_user'; }
   }
   function q(id) { return document.getElementById(id); }
   function fmt(n, d) { return Number(n || 0).toFixed(d == null ? 4 : d); }
@@ -34,7 +34,7 @@
   function loadConfig() {
     get('/api/mn2/onramp/config').then(function (cfg) {
       if (cfg && cfg.success && cfg.enabled) panel.style.display = 'block';
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-onramp.js', context: 'catch' }); }});
   }
 
   function refreshHeld() {
@@ -43,7 +43,7 @@
       if (el && res && res.held_mn2 > 0) {
         el.textContent = fmt(res.held_mn2, 4) + ' MN2 in clearance hold (not yet withdrawable).';
       } else if (el) { el.textContent = ''; }
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-onramp.js', context: 'catch' }); }});
   }
 
   function getQuote() {
@@ -62,7 +62,7 @@
         '≈ ' + fmt(res.mn2_amount, 6) + ' MN2 for $' + fmt(res.usd_amount, 2) +
         ' (rate ' + fmt(res.rate_mn2_per_usd, 6) + ' MN2/$, ' + res.spread_percent + '% spread). ' +
         'Held ' + res.hold_hours + 'h before withdrawal. Quote expires soon.';
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-onramp.js', context: 'catch' }); }
       q('mn2-onramp-quote-result').textContent = 'Could not get a quote.';
     });
   }
@@ -104,7 +104,7 @@
         q('mn2-onramp-quote-result').textContent = (res && res.error) || 'Could not confirm payment. If you were charged, it will be credited shortly.';
       }
       // clean the URL
-      try { window.history.replaceState({}, '', window.location.pathname); } catch (e) {}
+      try { window.history.replaceState({}, '', window.location.pathname); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-onramp.js', context: 'catch' }); }}
     });
   }
 

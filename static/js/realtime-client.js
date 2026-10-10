@@ -68,7 +68,8 @@ class RealtimeClient {
             } else {
                 console.warn('[Realtime] Socket.IO not loaded');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'realtime-client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'realtime-client.js', context: 'console.error' }); }
             console.error('[Realtime] Connection error:', error);
             this.attemptReconnect();
         }
@@ -89,6 +90,7 @@ class RealtimeClient {
             console.log(`[Realtime] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
             setTimeout(() => this.connect(), delay);
         } else {
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'realtime-client.js', context: 'console.error' }); }
             console.error('[Realtime] Max reconnection attempts reached');
         }
     }

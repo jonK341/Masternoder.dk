@@ -25,7 +25,8 @@ class ThemeTimeline {
             if (data.success && data.themes) {
                 this.themes = data.themes;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'theme-timeline.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'theme-timeline.js', context: 'console.error' }); }
             console.error('Error loading themes:', error);
         }
     }
@@ -38,7 +39,8 @@ class ThemeTimeline {
             if (data.success && data.themes) {
                 this.userThemes = data.themes.map(t => t.theme_id);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'theme-timeline.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'theme-timeline.js', context: 'console.error' }); }
             console.error('Error loading user themes:', error);
         }
     }

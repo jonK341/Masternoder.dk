@@ -20,7 +20,7 @@
 
       return global.localStorage.getItem('game_user_id') || global.localStorage.getItem('user_id') || 'default_user';
 
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls-studio.js', context: 'catch' }); }
 
       return 'default_user';
 
@@ -64,7 +64,7 @@
 
       })
 
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-studio.js', context: 'catch' }); }
 
         return null;
 
@@ -120,7 +120,7 @@
 
       })
 
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-studio.js', context: 'catch' }); }});
 
   }
 
@@ -428,7 +428,7 @@
 
         })
 
-        .catch(function () {});
+        .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-studio.js', context: 'catch' }); }});
 
     });
 

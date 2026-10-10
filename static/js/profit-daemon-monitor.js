@@ -113,7 +113,7 @@
                         '<span>' + (row.summary || '') + '</span></div>';
                 }).join('');
             }
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profit-daemon-monitor.js', context: 'catch' }); }
             const pill = $('pdm-running-pill');
             if (pill) { pill.textContent = 'Status unavailable'; pill.classList.add('off'); }
         }
@@ -135,7 +135,7 @@
                 '<li><a href="' + (n.href || '/profit/') + '">' + (n.title || 'Update') + '</a>' +
                 '<div class="pdm-muted">' + (n.date || '') + ' · ' + (n.summary || '') + '</div></li>'
             ).join('');
-        } catch (_) {
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'profit-daemon-monitor.js', context: 'catch' }); }
             ul.innerHTML = '<li class="pdm-muted">Could not load profit news.</li>';
         }
     }
@@ -153,7 +153,7 @@
                 '<p>' + (r.price_mn2 || '?') + ' MN2 · ' + (r.days || '?') + ' days · reward ' +
                 (r.completion_reward_mn2 || 0) + ' MN2</p></div>'
             ).join('');
-        } catch (_) {
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'profit-daemon-monitor.js', context: 'catch' }); }
             el.textContent = 'Rentals unavailable.';
         }
     }

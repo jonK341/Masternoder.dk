@@ -281,6 +281,7 @@ class StatsGameMode {
             })
             .catch(err => {
                 list.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center; padding: 2rem;">Leaderboard unavailable</p>';
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'game-mode.js', context: 'console.error' }); }
                 console.error('[GameMode] Leaderboard error:', err);
             });
     }
@@ -340,6 +341,7 @@ class StatsGameMode {
             })
             .catch(err => {
                 gallery.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center; padding: 2rem;">Frames unavailable</p>';
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'game-mode.js', context: 'console.error' }); }
                 console.error('[GameMode] Frames error:', err);
             });
     }

@@ -35,7 +35,7 @@
   function prefersReducedMotion() {
     try {
       return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'story-monitor-5d.js', context: 'catch' }); }
       return false;
     }
   }
@@ -128,7 +128,7 @@
         g.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
         o.start(now);
         o.stop(now + 0.1);
-      } catch (e) {}
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'story-monitor-5d.js', context: 'catch' }); }}
     }
 
     function startDrone() {
@@ -157,7 +157,7 @@
         o1.start();
         o2.start();
         audio = { ctx: ctx, gain: g, o1: o1, o2: o2 };
-      } catch (e) {
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'story-monitor-5d.js', context: 'catch' }); }
         audio = null;
       }
     }
@@ -173,9 +173,9 @@
             audio.o1.stop();
             audio.o2.stop();
             ctx.close();
-          } catch (e2) {}
+          } catch (e2) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e2 instanceof Error ? e2 : new Error(String(e2)), { source: 'story-monitor-5d.js', context: 'catch' }); }}
         }, 300);
-      } catch (e) {}
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'story-monitor-5d.js', context: 'catch' }); }}
       audio = null;
     }
 

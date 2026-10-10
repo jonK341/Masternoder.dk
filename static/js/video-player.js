@@ -7,6 +7,7 @@ class CustomVideoPlayer {
     constructor(containerId, options = {}) {
         this.container = document.getElementById(containerId);
         if (!this.container) {
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'video-player.js', context: 'console.error' }); }
             console.error(`Container with id "${containerId}" not found`);
             return;
         }

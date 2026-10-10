@@ -194,7 +194,7 @@
                     input.value = '';
                     refresh();
                 }
-            }).catch(function () { sendBtn.disabled = false; });
+            }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-chat-portal.js', context: 'catch' }); } sendBtn.disabled = false; });
         }
 
         sendBtn.addEventListener('click', doSend);
@@ -217,3 +217,13 @@
         stopAll: function () { Object.keys(_pollers).forEach(stopPoll); },
     };
 })(typeof window !== 'undefined' ? window : this);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'social-chat-portal.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

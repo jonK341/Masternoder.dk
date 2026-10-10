@@ -9,7 +9,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking-agents.js', context: 'catch' }); } return 'default_user'; }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -113,7 +113,7 @@
       if (pool) pool.textContent = fmt(data.pool_staked_by_traders_mn2);
       renderAgents(data.trader_agents || []);
       renderFollower(data);
-    }).catch(function () { msg('Network error loading trader agents', false); });
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking-agents.js', context: 'catch' }); } msg('Network error loading trader agents', false); });
   }
 
   function follow() {
@@ -133,7 +133,7 @@
       } else {
         msg((r && r.error) || 'Follow failed', false);
       }
-    }).catch(function () { msg('Follow request failed', false); });
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking-agents.js', context: 'catch' }); } msg('Follow request failed', false); });
   }
 
   function unfollow() {
@@ -144,7 +144,7 @@
       } else {
         msg((r && r.error) || 'Unfollow failed', false);
       }
-    }).catch(function () { msg('Unfollow request failed', false); });
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking-agents.js', context: 'catch' }); } msg('Unfollow request failed', false); });
   }
 
   document.addEventListener('DOMContentLoaded', function () {

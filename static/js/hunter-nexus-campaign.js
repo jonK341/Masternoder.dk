@@ -38,7 +38,7 @@
       const u = localStorage.getItem("game_user_id") || "default_user";
       localStorage.setItem("game_user_id", u);
       return u;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }
       return "default_user";
     }
   }
@@ -48,7 +48,7 @@
       const n = parseInt(localStorage.getItem(STORAGE_PLAY) || "0", 10) || 0;
       localStorage.setItem(STORAGE_PLAY, String(n + 1));
       return n + 1;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }
       return 1;
     }
   }
@@ -56,7 +56,7 @@
   function playCount() {
     try {
       return parseInt(localStorage.getItem(STORAGE_PLAY) || "0", 10) || 0;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }
       return 0;
     }
   }
@@ -75,7 +75,7 @@
   function tabVisited(tab) {
     try {
       return sessionStorage.getItem("hunter_tab_visit_" + tab) === "1";
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }
       return false;
     }
   }
@@ -85,7 +85,7 @@
       if (global.clickGame && typeof global.clickGame.getStats === "function") {
         return Number(global.clickGame.getStats().clicks || 0);
       }
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }}
     return 0;
   }
 
@@ -141,12 +141,12 @@
       el("game-overview-level", String(p.level != null ? p.level : 1));
       el("game-overview-xp", String(p.xp_total != null ? p.xp_total : 0).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
       el("game-overview-coins", String(p.coins != null ? p.coins : 0).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }}
     try {
       if (global.unifiedPointCounters && typeof global.unifiedPointCounters.updateAllCounters === "function") {
         await global.unifiedPointCounters.updateAllCounters();
       }
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }}
   }
 
   async function claimLevel(levelId, meta) {
@@ -446,7 +446,7 @@
                     }
                     notify(msg, "warning");
                   })
-                  .catch(function () {
+                  .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }
                     btn.disabled = false;
                     notify("Network error", "warning");
                   });
@@ -471,7 +471,7 @@
                 db.disabled = false;
                 notify((r && r.error) || "Daily claim failed", "warning");
               })
-              .catch(function () {
+              .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }
                 db.disabled = false;
                 notify("Network error", "warning");
               });
@@ -491,7 +491,7 @@
           '<a href="/profile?tab=points" style="color:#7fdbff">Unified points</a> · <a href="/battle" style="color:#7fdbff">Battle</a> · <a href="/social" style="color:#7fdbff">Social</a>';
         root.appendChild(foot);
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }
         root.innerHTML =
           '<p class="nexus-muted">Could not load Nexus arc. Check API and refresh.</p>';
       });

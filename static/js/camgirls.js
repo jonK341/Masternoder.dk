@@ -11,7 +11,7 @@
   function uid() {
     try {
       return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }
       return 'default_user';
     }
   }
@@ -38,7 +38,7 @@
   function loadFavorites() {
     try {
       return JSON.parse(localStorage.getItem(favoritesKey()) || '[]');
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }
       return [];
     }
   }
@@ -46,7 +46,7 @@
   function saveFavorites(list) {
     try {
       localStorage.setItem(favoritesKey(), JSON.stringify(list));
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }}
   }
 
   function toggleFav(id) {
@@ -59,7 +59,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() }),
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }});
     renderGrid();
   }
 
@@ -107,7 +107,7 @@
           })
           .join('');
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }});
   }
 
   function loadStatus() {
@@ -128,7 +128,7 @@
           ' · ' +
           (d.note || 'AI studio ready');
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }});
   }
 
   function paypalUnlock(id) {
@@ -144,7 +144,7 @@
         if (d.approve_url) {
           try {
             sessionStorage.setItem('cg_paypal_order', d.order_id || '');
-          } catch (e) {}
+          } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }}
           window.location.href = d.approve_url;
         } else msg(d.error || 'PayPal unavailable', true);
       });
@@ -177,7 +177,7 @@
   function handlePayPalReturn() {
     var params = new URLSearchParams(window.location.search);
     if (params.get('paypal') === 'cancel') {
-      try { sessionStorage.removeItem('cg_paypal_order'); } catch (e) {}
+      try { sessionStorage.removeItem('cg_paypal_order'); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }}
       if (window.history && window.history.replaceState) {
         window.history.replaceState({}, '', '/camgirls/');
       }
@@ -187,7 +187,7 @@
     try {
       orderId = orderId || sessionStorage.getItem('cg_paypal_order') || '';
       sessionStorage.removeItem('cg_paypal_order');
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }}
     var approved = params.get('paypal') === 'success' || !!(params.get('PayerID') || params.get('PayerId'));
     if (!orderId || !approved) {
       if (params.get('paypal') === 'success' && !orderId) {
@@ -236,7 +236,7 @@
         showAgeGate(needsAge);
         renderGrid();
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }
         msg('Network error loading performers', true);
         if (grid) grid.innerHTML = '<p>Could not reach API.</p>';
       });

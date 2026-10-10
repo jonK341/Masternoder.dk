@@ -127,7 +127,8 @@ class ComprehensivePageIntegration {
                 pointsData = await window.comprehensiveAPI.getPointsJSON();
                 energyData = await window.comprehensiveAPI.getEnergyStatus();
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-page-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-page-integration.js', context: 'console.error' }); }
             console.error('Error loading points/energy:', error);
         }
 
@@ -237,7 +238,8 @@ class ComprehensivePageIntegration {
                     window.showToast('Points & Energy refreshed', 'success');
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-page-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-page-integration.js', context: 'console.error' }); }
             console.error('Error refreshing points/energy:', error);
             if (window.showToast) {
                 window.showToast('Error refreshing data', 'error');

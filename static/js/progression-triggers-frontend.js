@@ -171,7 +171,8 @@ class ProgressionTriggersFrontend {
             }));
             
             return result;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'progression-triggers-frontend.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'progression-triggers-frontend.js', context: 'console.error' }); }
             console.error('[ProgressionTriggers] Error:', error);
             return { success: false, error: error.message };
         }

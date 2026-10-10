@@ -23,7 +23,7 @@
     function uid() {
         try {
             return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'copy-assist-widget.js', context: 'catch' }); }
             return 'default_user';
         }
     }
@@ -94,7 +94,7 @@
                     resultEl.textContent = lastText;
                     applyBtn.disabled = !lastText;
                 })
-                .catch(function () {
+                .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'copy-assist-widget.js', context: 'catch' }); }
                     resultEl.textContent = 'Request failed.';
                 });
         });

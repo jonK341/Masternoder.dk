@@ -62,7 +62,7 @@
                         btn.disabled = false;
                         btn.textContent = d.error || 'Failed';
                     }
-                }).catch(function () {
+                }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-mn2-rewards.js', context: 'catch' }); }
                     btn.disabled = false;
                     btn.textContent = 'Failed';
                 });
@@ -128,7 +128,7 @@
 
         var tasks = [
             fetch(base + '/api/social/rewards/status?user_id=' + encodeURIComponent(userId)).then(function (r) { return r.json(); }),
-            fetch(base + '/api/agents/rewards/info').then(function (r) { return r.json(); }).catch(function () { return null; }),
+            fetch(base + '/api/agents/rewards/info').then(function (r) { return r.json(); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-mn2-rewards.js', context: 'catch' }); } return null; }),
         ];
         if (global.Mn2SiteBridge) {
             tasks.push(global.Mn2SiteBridge.loadBalance());
@@ -207,7 +207,7 @@
                 }
                 return data;
             })
-            .catch(function () {
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-mn2-rewards.js', context: 'catch' }); }
                 container.innerHTML = '<p style="color:var(--text-secondary);margin:0;">Earn coach unavailable.</p>';
                 return null;
             });
@@ -313,7 +313,7 @@
                 if (data && data.success) feedEl.dataset.chatLoaded = '1';
                 return data;
             })
-            .catch(function () {
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-mn2-rewards.js', context: 'catch' }); }
                 if (forceRender || !feedEl.dataset.chatLoaded) {
                     feedEl.innerHTML = '<p style="color:var(--text-secondary);margin:0;">Could not load chat.</p>';
                 }
@@ -370,7 +370,7 @@
                 } else if (global.showToast) {
                     global.showToast('Chat', d.error || 'Failed', 'error');
                 }
-            }).catch(function () {
+            }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-mn2-rewards.js', context: 'catch' }); }
                 sendBtn.disabled = false;
             });
         }
@@ -390,7 +390,7 @@
         if (global.navigator && global.navigator.clipboard && global.navigator.clipboard.writeText) {
             global.navigator.clipboard.writeText(text).then(function () {
                 if (typeof onDone === 'function') onDone(true);
-            }).catch(function () {
+            }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-mn2-rewards.js', context: 'catch' }); }
                 if (typeof onDone === 'function') onDone(false);
             });
             return;
@@ -404,7 +404,7 @@
         try {
             document.execCommand('copy');
             if (typeof onDone === 'function') onDone(true);
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'social-mn2-rewards.js', context: 'catch' }); }
             if (typeof onDone === 'function') onDone(false);
         }
         document.body.removeChild(ta);
@@ -441,7 +441,7 @@
                 } else if (global.showToast) {
                     global.showToast('AI draft', d.error || 'Failed', 'error');
                 }
-            }).catch(function () {
+            }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-mn2-rewards.js', context: 'catch' }); }
                 btn.disabled = false;
                 if (toneEl) toneEl.disabled = false;
                 btn.classList.remove('is-loading');
@@ -521,7 +521,7 @@
                     });
                 }
                 if (data.reward) showRewardToast(data.reward);
-            }).catch(function () {
+            }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'social-mn2-rewards.js', context: 'catch' }); }
                 btn.disabled = false;
                 btn.textContent = prev;
                 outputEl.innerHTML = '<p style="color:#ff6b6b;margin:0;">Could not generate promo text.</p>';

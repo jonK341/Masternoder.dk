@@ -109,7 +109,8 @@ class ProgressionTriggers {
                     detail: { progression_events: result.progression_events }
                 }));
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'progression-triggers.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'progression-triggers.js', context: 'console.error' }); }
             console.error('[ProgressionTriggers] Error checking progression:', error);
         }
     }
@@ -128,7 +129,8 @@ class ProgressionTriggers {
                     this.showMilestoneNotification(event);
                 });
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'progression-triggers.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'progression-triggers.js', context: 'console.error' }); }
             console.error('[ProgressionTriggers] Error checking all stats:', error);
         }
     }

@@ -264,7 +264,8 @@ class ClickThroughGame {
 
             // Load achievements
             this.achievements = this.getDefaultAchievements();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'click-through-game.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'click-through-game.js', context: 'console.error' }); }
             console.error('Error loading game data:', error);
             // Use defaults
             this.missions = this.getDefaultMissions();
@@ -294,7 +295,7 @@ class ClickThroughGame {
                     placement: quest.placement || 'click_quest'
                 });
             });
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'click-through-game.js', context: 'catch' }); }
             console.warn('Error loading sponsored click quests:', error);
         }
     }
@@ -340,7 +341,8 @@ class ClickThroughGame {
                 this.clicks = data.progress.totalClicks || 0;
                 this.points = data.progress.totalEarned || 0;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'click-through-game.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'click-through-game.js', context: 'console.error' }); }
             console.error('Error loading user progress:', error);
         }
     }
@@ -362,7 +364,8 @@ class ClickThroughGame {
                     }
                 })
             });
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'click-through-game.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'click-through-game.js', context: 'console.error' }); }
             console.error('Error saving progress:', error);
         }
     }
@@ -527,7 +530,8 @@ class ClickThroughGame {
                 }
             }
             return data;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'click-through-game.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'click-through-game.js', context: 'console.error' }); }
             console.error('Instant MN2 reward error:', error);
             return { success: false };
         }
@@ -734,7 +738,8 @@ class ClickThroughGame {
                     points: pointsData
                 })
             });
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'click-through-game.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'click-through-game.js', context: 'console.error' }); }
             console.error('Error awarding unified points:', error);
         }
     }

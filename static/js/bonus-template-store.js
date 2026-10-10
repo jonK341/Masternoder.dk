@@ -23,7 +23,8 @@ class BonusTemplateStore {
                 return data.templates;
             }
             return [];
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'bonus-template-store.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'bonus-template-store.js', context: 'console.error' }); }
             console.error('Error loading owned templates:', error);
             return [];
         }
@@ -37,7 +38,8 @@ class BonusTemplateStore {
                 return data.templates;
             }
             return [];
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'bonus-template-store.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'bonus-template-store.js', context: 'console.error' }); }
             console.error('Error listing templates:', error);
             return [];
         }
@@ -51,7 +53,8 @@ class BonusTemplateStore {
                 return data.template;
             }
             return null;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'bonus-template-store.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'bonus-template-store.js', context: 'console.error' }); }
             console.error('Error getting template:', error);
             return null;
         }
@@ -89,7 +92,8 @@ class BonusTemplateStore {
                 
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'bonus-template-store.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'bonus-template-store.js', context: 'console.error' }); }
             console.error('Error purchasing template:', error);
             this.showNotification('error', 'Network error. Please try again.');
             return { success: false, error: error.message };
@@ -117,7 +121,8 @@ class BonusTemplateStore {
                 this.showNotification('error', data.error || 'Failed to apply template');
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'bonus-template-store.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'bonus-template-store.js', context: 'console.error' }); }
             console.error('Error applying template:', error);
             this.showNotification('error', 'Network error. Please try again.');
             return { success: false, error: error.message };

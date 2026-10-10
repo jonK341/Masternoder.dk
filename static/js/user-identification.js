@@ -42,7 +42,7 @@ class UserIdentification {
                         return storedUserId;
                     }
                 }
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'user-identification.js', context: 'catch' }); }
                 // Continue to identification if verification fails
             }
         }
@@ -88,7 +88,8 @@ class UserIdentification {
                     return data.user_id;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'user-identification.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'user-identification.js', context: 'console.error' }); }
             console.error('Error identifying user:', error);
         }
 
@@ -179,6 +180,7 @@ const userIdentification = new UserIdentification();
 if (typeof window !== 'undefined') {
     // Initialize immediately but don't block
     userIdentification.initialize().catch(err => {
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'user-identification.js', context: 'console.error' }); }
         console.error('User identification initialization failed:', err);
     });
 }

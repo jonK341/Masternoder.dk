@@ -38,7 +38,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body || {})
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'ptc-ad-rotator.js', context: 'catch' }); }}));
         if (!res.ok || data.success === false) {
             throw new Error(data.error || `Request failed (${res.status})`);
         }
@@ -53,7 +53,7 @@
                 user_id: USER_ID()
             });
             return data.impression_id || '';
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'ptc-ad-rotator.js', context: 'catch' }); }
             console.warn('[PTC] impression failed', err);
             return '';
         }
@@ -103,7 +103,7 @@
                 button.textContent = `Claim +${start.reward_points || campaign.reward_points || 0}`;
                 button.onclick = () => verifySponsoredClick(start.click_id, campaign, placement, button);
             }, 1000);
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'ptc-ad-rotator.js', context: 'catch' }); }
             button.disabled = false;
             button.textContent = originalText;
             notify(err.message || 'Could not start sponsored click', 'error');
@@ -131,7 +131,7 @@
                     reward_kind: result.reward_kind || 'internal_points'
                 }
             }));
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'ptc-ad-rotator.js', context: 'catch' }); }
             button.disabled = false;
             button.textContent = 'Try claim again';
             notify(err.message || 'Sponsored click verification failed', 'error');
@@ -178,7 +178,7 @@
             grid.className = 'ptc-card-grid';
             container.appendChild(grid);
             campaigns.forEach((campaign) => renderCampaign(grid, campaign, placement));
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'ptc-ad-rotator.js', context: 'catch' }); }
             console.warn('[PTC] placement failed', placement, err);
             container.innerHTML = '';
         }

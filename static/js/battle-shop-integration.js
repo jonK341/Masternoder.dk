@@ -66,7 +66,7 @@ class BattleShopIntegration {
                     source: 'battle_page',
                     url: url
                 });
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'battle-shop-integration.js', context: 'catch' }); }
                 console.log('[BattleShop] Tracking error (non-critical):', e);
             }
         }
@@ -145,7 +145,7 @@ class BattleShopIntegration {
             if (data.success && data.items) {
                 return data.items;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'battle-shop-integration.js', context: 'catch' }); }
             console.warn('[BattleShop] Could not load shop preview:', error);
         }
         return null;

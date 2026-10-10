@@ -33,10 +33,12 @@ class PointAnalyticsDashboard {
                 this.displayAnalytics(data.analytics);
                 return data.analytics;
             } else {
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-analytics-dashboard.js', context: 'console.error' }); }
                 console.error('Failed to load analytics:', data.error);
                 return null;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'point-analytics-dashboard.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-analytics-dashboard.js', context: 'console.error' }); }
             console.error('Error loading analytics:', error);
             return null;
         }
@@ -247,10 +249,12 @@ class PointAnalyticsDashboard {
                 this.displayHistory(data.history);
                 return data.history;
             } else {
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-analytics-dashboard.js', context: 'console.error' }); }
                 console.error('Failed to load history:', data.error);
                 return null;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'point-analytics-dashboard.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-analytics-dashboard.js', context: 'console.error' }); }
             console.error('Error loading history:', error);
             return null;
         }

@@ -13,7 +13,8 @@ const GameMechanicsAPI = {
             const response = await fetch(`${API_BASE}/game-mechanics/subjects?user_id=${userId}`);
             const data = await response.json();
             return data;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching subjects:', error);
             return {success: false, error: error.message};
         }
@@ -27,7 +28,8 @@ const GameMechanicsAPI = {
                 body: JSON.stringify({user_id: userId, subject_id: subjectId})
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error starting subject:', error);
             return {success: false, error: error.message};
         }
@@ -46,7 +48,8 @@ const GameMechanicsAPI = {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error using function:', error);
             return {success: false, error: error.message};
         }
@@ -60,7 +63,8 @@ const GameMechanicsAPI = {
                 body: JSON.stringify({user_id: userId, subject_id: subjectId})
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error completing subject:', error);
             return {success: false, error: error.message};
         }
@@ -70,7 +74,8 @@ const GameMechanicsAPI = {
         try {
             const response = await fetch(`${API_BASE}/game-mechanics/progress?user_id=${userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching progress:', error);
             return {success: false, error: error.message};
         }
@@ -83,7 +88,8 @@ const UltraResourceAPI = {
         try {
             const response = await fetch(`${API_BASE}/ultra-resource/energy?user_id=${userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching energy:', error);
             return {success: false, error: error.message};
         }
@@ -101,7 +107,8 @@ const UltraResourceAPI = {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error creating node:', error);
             return {success: false, error: error.message};
         }
@@ -115,7 +122,8 @@ const UltraResourceAPI = {
                 body: JSON.stringify({user_id: userId})
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error generating income:', error);
             return {success: false, error: error.message};
         }
@@ -125,7 +133,8 @@ const UltraResourceAPI = {
         try {
             const response = await fetch(`${API_BASE}/ultra-resource/summary?user_id=${userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching summary:', error);
             return {success: false, error: error.message};
         }
@@ -138,7 +147,8 @@ const EnhancedSystemsAPI = {
         try {
             const response = await fetch(`${API_BASE}/skills/abilities?user_id=${userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching abilities:', error);
             return {success: false, error: error.message};
         }
@@ -148,7 +158,8 @@ const EnhancedSystemsAPI = {
         try {
             const response = await fetch(`${API_BASE}/points/json/get?user_id=${userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching points:', error);
             return {success: false, error: error.message};
         }
@@ -161,7 +172,8 @@ const NewSystemsAPI = {
         try {
             const response = await fetch(`${API_BASE}/calendar/events?user_id=${userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching calendar events:', error);
             return {success: false, error: error.message};
         }
@@ -171,7 +183,8 @@ const NewSystemsAPI = {
         try {
             const response = await fetch(`${API_BASE}/todos/list?user_id=${userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching todos:', error);
             return {success: false, error: error.message};
         }
@@ -181,7 +194,8 @@ const NewSystemsAPI = {
         try {
             const response = await fetch(`${API_BASE}/groups/user?user_id=${userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'all-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'all-api-integration.js', context: 'console.error' }); }
             console.error('Error fetching groups:', error);
             return {success: false, error: error.message};
         }

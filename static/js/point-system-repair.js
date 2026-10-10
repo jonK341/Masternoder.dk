@@ -37,7 +37,8 @@ class PointSystemRepair {
                 this.pointsCache = JSON.parse(saved);
                 console.log('[PointSystemRepair] Loaded points from local storage', this.pointsCache);
             }
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-repair.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-system-repair.js', context: 'console.error' }); }
             console.error('[PointSystemRepair] Error loading points:', e);
         }
     }
@@ -51,7 +52,8 @@ class PointSystemRepair {
             };
             localStorage.setItem('masternoder_points', JSON.stringify(data));
             console.log('[PointSystemRepair] Saved points to local storage');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-repair.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-system-repair.js', context: 'console.error' }); }
             console.error('[PointSystemRepair] Error saving to local:', e);
         }
     }
@@ -72,7 +74,8 @@ class PointSystemRepair {
                 console.log('[PointSystemRepair] Saved points to DB');
             }
             return result;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-repair.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-system-repair.js', context: 'console.error' }); }
             console.error('[PointSystemRepair] Error saving to DB:', e);
             return { success: false, error: e.message };
         }
@@ -91,7 +94,8 @@ class PointSystemRepair {
             
             const result = await response.json();
             return result;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-repair.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-system-repair.js', context: 'console.error' }); }
             console.error('[PointSystemRepair] Error saving to local JSON:', e);
             return { success: false, error: e.message };
         }
@@ -140,12 +144,14 @@ class PointSystemRepair {
     setupErrorHandlers() {
         // Global error handler
         window.addEventListener('error', (event) => {
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-system-repair.js', context: 'console.error' }); }
             console.error('[PointSystemRepair] Global error:', event.error);
             this.triggerEvent('error', { error: event.error, message: event.message });
         });
         
         // Unhandled promise rejection
         window.addEventListener('unhandledrejection', (event) => {
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-system-repair.js', context: 'console.error' }); }
             console.error('[PointSystemRepair] Unhandled rejection:', event.reason);
             this.triggerEvent('error', { error: event.reason, type: 'promise_rejection' });
         });
@@ -230,7 +236,8 @@ class PointSystemRepair {
                     toast.success(result.message || `Milestone reached! +${result.bonus_points} bonus points`);
                 }
             }
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-repair.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-system-repair.js', context: 'console.error' }); }
             console.error('[PointSystemRepair] Error checking progression:', e);
         }
     }
@@ -278,7 +285,8 @@ class PointSystemRepair {
                 this.saveAllPoints(result.points);
             }
             return result;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'point-system-repair.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'point-system-repair.js', context: 'console.error' }); }
             console.error('[PointSystemRepair] Error repairing counters:', e);
             return { success: false, error: e.message };
         }

@@ -184,7 +184,7 @@ class Top50MonetizationFrame {
 
             content.innerHTML = html || '<div style="text-align: center; color: #888;">No data available</div>';
 
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'top50-monetization-frame.js', context: 'catch' }); }
             console.warn('Top 50 API unavailable:', error.message);
             content.innerHTML = '<div style="text-align: center; color: #888;">No leaderboard data available</div>';
         }
