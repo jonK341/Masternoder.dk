@@ -6,6 +6,7 @@ Usage:
   python scripts/deploy.py profile     # profile + auth
   python scripts/deploy.py sync        # sync + agent DB
   python scripts/deploy.py loading     # loading optimizations
+  python scripts/deploy.py hub_rollout   # NFT hub + portal nav + trophies tema + static_pages + fix_404
   python scripts/deploy.py static_pages  # root index.html pages + static/js + static/css (not bulk media)
   python scripts/deploy.py mn2_staking static_pages mn2_env --ask-pass  # multiple manifests (merged upload)
   python scripts/deploy.py mn2_staking static_pages mn2_env --list-files  # print merged upload set only
@@ -288,6 +289,10 @@ MANIFESTS = {
     # Trophy system: collector levels, passive income (pts + MN2), social, agent tools
     "trophies": [
         "trophies/index.html",
+        "static/css/trophies-page-tema.css",
+        "static/css/trophies-ww2-theme.css",
+        "static/data/nav_portal_manifest.json",
+        "static/js/nav-portal-template.js",
         "profile/index.html",
         "backend/routes/trophies_routes.py",
         "backend/services/trophy_level_service.py",
@@ -762,6 +767,9 @@ MANIFESTS = {
         "cron/mn2_read_ops_secret.sh",
     ],
     "nft_market": [
+        "backend/routes/all_page_routes.py",
+        "backend/routes/user_account_routes.py",
+        "backend/services/nav_portal_preferences_service.py",
         "backend/services/nft_exchange_service.py",
         "backend/services/agent_wallet_service.py",
         "backend/routes/nft_routes.py",
@@ -776,12 +784,28 @@ MANIFESTS = {
         "data/nft_catalog.json",
         "data/trophy_definitions.json",
         "market/index.html",
+        "nft/index.html",
         "shop/index.html",
         "exchange/index.html",
         "profile/index.html",
+        "static/css/nft-hub.css",
+        "static/js/nft-hub.js",
+        "static/js/nft-paypal-return.js",
         "static/js/nft-market.js",
         "static/js/cex-nft-market.js",
+        "static/js/profile-nft-holdings.js",
         "static/js/profile-mn2-wallet.js",
+        "static/css/exchange-frontpage.css",
+        "static/css/nav-portal-themes.css",
+        "static/js/nav-portal-template.js",
+        "static/js/exchange-account-bridge.js",
+        "static/js/exchange-onboard.js",
+        "static/data/nav_portal_manifest.json",
+        "trophies/index.html",
+        "wallets/index.html",
+        "index.html",
+        "explorer/index.html",
+        "profit/index.html",
         "static/img/nft/license-plate.svg",
         "static/img/nft/block-smile.svg",
         "static/img/nft/vault-holo.svg",
@@ -893,6 +917,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "mn2_staking",
     "camgirls",
     "trophies",
+    "nft_market",
     "compendium",
     "create_app_release",
     "game_hub",
@@ -1000,6 +1025,23 @@ def run_server_prune(server_pass=None, with_disk=False):
                 ssh.close()
             except Exception:
                 pass
+
+
+# One-shot: NFT hub + portal nav tema + trophies + page routes + PayPal (see docs in commit message).
+HUB_ROLLOUT_COMPONENTS = ("static_pages", "trophies", "nft_market", "fix_404")
+
+HUB_ROLLOUT_EXTRAS = []
+
+
+def _hub_rollout_category_gifs():
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cat_dir = os.path.join(root, "static", "img", "nav", "categories")
+    out = []
+    if os.path.isdir(cat_dir):
+        for fn in sorted(os.listdir(cat_dir)):
+            if fn.lower().endswith(".gif"):
+                out.append(f"static/img/nav/categories/{fn}")
+    return out
 
 
 def _merge_manifest_files(manifest_names):
@@ -1429,6 +1471,11 @@ def main():
         print("  --list-files   Print the merged file list and exit (no SSH).")
         print("Manifests:", ", ".join(MANIFESTS))
         sys.exit(1)
+    hub_rollout = False
+    if args and args[0].lower() == "hub_rollout":
+        hub_rollout = True
+        args = list(HUB_ROLLOUT_COMPONENTS) + [a for a in args[1:] if a.lower() != "hub_rollout"]
+
     manifest_names = None
     if args[0] == "--files":
         files = args[1:]
@@ -1447,6 +1494,13 @@ def main():
         if len(manifest_names) > 1:
             print(f"(Manifests: {', '.join(manifest_names)})")
         files = _merge_manifest_files(manifest_names)
+        if hub_rollout:
+            seen = set(files)
+            for path in HUB_ROLLOUT_EXTRAS + _hub_rollout_category_gifs():
+                if path not in seen:
+                    seen.add(path)
+                    files.append(path)
+            print("(hub_rollout: merged static_pages + trophies + nft_market + fix_404 + nav GIFs)")
         restart_services = _resolve_restart_services(manifest_names, upload_only)
     if list_files:
         _print_file_list(files, manifest_names)

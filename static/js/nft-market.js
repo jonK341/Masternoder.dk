@@ -126,7 +126,7 @@
 
   function buyPaypal(sku) {
     if (!uid()) { msg('Create an account in Profile before paying with PayPal'); return; }
-    post('/api/nft/buy-paypal', { sku: sku }).then(function (out) {
+    post('/api/nft/buy-paypal', { sku: sku, return_to: 'market' }).then(function (out) {
       if (out && out.success && out.approve_url) {
         window.location.href = out.approve_url;
         return;
@@ -136,30 +136,12 @@
   }
 
   function captureReturn() {
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('paypal') === 'cancel') {
-      msg('PayPal checkout cancelled');
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    }
-    var token = params.get('token');
-    if (params.get('paypal') !== 'success' || !token) return;
-    fetch('/api/paypal/capture', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: token,
-        item_id: params.get('item_id') || '',
-        user_id: params.get('user_id') || uid()
-      })
-    }).then(function (r) { return r.json(); }).then(function (data) {
-      if (data && data.success && data.edition) msg('Minted ' + data.edition.edition_id);
-      else if (data && data.success) msg('Payment captured');
-      else msg((data && (data.details || data.error)) || 'Capture failed');
-      window.history.replaceState({}, '', window.location.pathname);
-      load();
-    }).catch(function () { msg('Capture failed'); });
+    if (!window.NftPayPalReturn) return;
+    window.NftPayPalReturn.handle({
+      onMessage: msg,
+      redirectAfterMint: '/nft#nft-wallet',
+      onReload: load
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {

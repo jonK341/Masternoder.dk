@@ -6,21 +6,40 @@
     <title>MN2 Market — P2P Trade - MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .market-page { min-height: 100vh; padding: 100px 20px 60px; max-width: 960px; margin: 0 auto; }
-        .market-card { background: rgba(20,20,35,0.9); border: 1px solid rgba(170,0,255,0.35); border-radius: 16px; padding: 24px; margin-top: 20px; }
+        .market-card { background: rgba(20,20,35,0.9); border: 1px solid rgba(170,0,255,0.35); border-radius: 16px; padding: 24px; margin-top: 12px; }
         .market-card h2 { color: #c08cff; margin: 0 0 8px; }
         #mn2-p2p-panel { display: block !important; }
         .market-disabled { padding: 24px; text-align: center; color: rgba(255,255,255,0.65); }
+        .market-tabs-wrap {
+            margin: 18px 0 8px;
+            padding: 14px 16px 10px;
+            border-radius: 16px;
+            border: 1px solid rgba(192, 140, 255, 0.22);
+            background: linear-gradient(160deg, rgba(12, 8, 24, 0.75), rgba(8, 6, 18, 0.55));
+        }
+        .market-tabs-heading { margin: 4px 0 0; font-size: 1.05rem; color: #e8d4ff; }
+        .market-route-note { margin: 8px 0 0; font-size: 0.82rem; color: rgba(255,255,255,0.55); }
+        .market-hub-panel { display: none; }
+        .market-hub-panel.active { display: block; }
+        .market-hub-tabs .gh-tab.is-active {
+            border-color: rgba(192, 140, 255, 0.65);
+            background: #c08cff;
+            color: #160820;
+        }
     </style>
 </head>
 <body>
     <div class="market-page">
         <h1>📈 MN2 Market</h1>
-        <p class="subtitle">NFT editions (PayPal or coins) plus peer-to-peer MN2 trades with PayPal settlement (Model B)</p>
-
+        <p class="subtitle">NFT editions on the <a href="/nft" style="color:#c08cff;">NFT hub</a> (PayPal or coins) plus peer-to-peer MN2 trades with PayPal settlement (Model B)</p>
+        <p style="margin:0 0 16px;"><a href="/nft" style="display:inline-block;padding:8px 14px;border-radius:8px;border:1px solid #c08cff;color:#c08cff;text-decoration:none;font-weight:600;">Open full NFT hub →</a></p>
         <section class="mn2-page-strip" data-mn2-auto data-balance-id="market-mn2-balance" data-rate-id="market-mn2-rate" aria-labelledby="market-mn2-title">
             <h2 id="market-mn2-title">🪙 Your MN2 wallet</h2>
             <p>Live balance and USD reference price. Purchased MN2 may be held until clearance; seller payouts release after the buyer chargeback window.</p>
@@ -35,7 +54,18 @@
                 <a href="/explorer" class="secondary">Explorer</a>
             </div>
         </section>
-
+        <section class="market-tabs-wrap" aria-label="Market sections">
+            <div>
+                <p class="fp-kicker"><span>Sections</span><span id="market-tab-status">NFT</span></p>
+                <h2 class="market-tabs-heading">What do you need?</h2>
+            </div>
+            <div class="gh-tabs gh-tabs--compact market-hub-tabs" id="market-hub-nav" role="tablist" aria-label="Market sections">
+                <button type="button" class="gh-tab is-active" data-market-tab="nft" role="tab" aria-selected="true" aria-controls="market-panel-nft"><span class="gh-tab-icon" aria-hidden="true">💎</span><span class="gh-tab-label">NFT editions</span></button>
+                <button type="button" class="gh-tab" data-market-tab="p2p" role="tab" aria-selected="false" aria-controls="market-panel-p2p"><span class="gh-tab-icon" aria-hidden="true">🔁</span><span class="gh-tab-label">P2P MN2</span></button>
+            </div>
+            <p class="market-route-note" id="market-route-note">One desk per tab — NFT primary/resale or peer MN2 trades.</p>
+        </section>
+        <div id="market-panel-nft" class="market-hub-panel active" role="tabpanel" data-market-panel="nft">
         <div class="market-card" id="nft-market-panel">
             <h2><i class="fas fa-gem"></i> NFT editions</h2>
             <p style="font-size:0.88rem;opacity:0.8;">Numbered site editions. PayPal or coins on the first sale. Resale is a coin book on this page; the house keeps 5%.</p>
@@ -48,7 +78,8 @@
             <div id="nft-listings" style="max-height:240px;overflow-y:auto;font-size:0.85rem;">Loading asks…</div>
             <p id="nft-market-msg" style="font-size:0.85rem;color:#c08cff;min-height:1.2em;"></p>
         </div>
-
+        </div>
+        <div id="market-panel-p2p" class="market-hub-panel" role="tabpanel" data-market-panel="p2p" hidden>
         <div class="market-card">
             <div id="market-disabled" class="market-disabled" style="display:none;">
                 <p>P2P market is disabled on this server. Enable it in staking/P2P config when ready.</p>
@@ -66,16 +97,61 @@
                 <p id="mn2-p2p-msg" style="font-size:0.85rem;color:#c08cff;min-height:1.2em;"></p>
             </div>
         </div>
+        </div>
     </div>
-
     <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614d"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260614d"></script>
     <script src="/static/js/mn2-p2p.js?v=20260614d"></script>
-    <script src="/static/js/nft-market.js?v=20261001b"></script>
+    <script src="/static/js/nft-paypal-return.js?v=20261002b"></script>
+    <script src="/static/js/nft-market.js?v=20261002b"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
+        var LABELS = { nft: 'NFT editions', p2p: 'P2P MN2' };
+        function applyMarketTab(tab, opts) {
+            opts = opts || {};
+            var key = LABELS[tab] ? tab : 'nft';
+            document.querySelectorAll('[data-market-panel]').forEach(function (panel) {
+                var on = panel.getAttribute('data-market-panel') === key;
+                panel.classList.toggle('active', on);
+                if (on) panel.removeAttribute('hidden');
+                else panel.setAttribute('hidden', '');
+            });
+            document.querySelectorAll('#market-hub-nav [data-market-tab]').forEach(function (btn) {
+                var on = btn.getAttribute('data-market-tab') === key;
+                btn.classList.toggle('is-active', on);
+                btn.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            var status = document.getElementById('market-tab-status');
+            if (status) status.textContent = LABELS[key] || key;
+            var note = document.getElementById('market-route-note');
+            if (note) {
+                note.textContent = 'Viewing: ' + (LABELS[key] || key) + '. Switch tabs to jump desks without long scroll.';
+            }
+            if (opts.updateUrl !== false) {
+                try {
+                    var url = new URL(window.location.href);
+                    if (key === 'nft') url.searchParams.delete('tab');
+                    else url.searchParams.set('tab', key);
+                    window.history.replaceState({}, document.title, url.pathname + url.search);
+                } catch (e) { /* ignore */ }
+            }
+        }
+        var nav = document.getElementById('market-hub-nav');
+        if (nav) {
+            nav.addEventListener('click', function (ev) {
+                var btn = ev.target.closest('[data-market-tab]');
+                if (!btn) return;
+                applyMarketTab(btn.getAttribute('data-market-tab'));
+            });
+        }
+        var params = new URLSearchParams(window.location.search);
+        var initial = params.get('tab') || '';
+        if (initial === 'mn2' || initial === 'trade' || initial === 'listings') initial = 'p2p';
+        if (initial === 'editions' || initial === 'catalog') initial = 'nft';
+        applyMarketTab(LABELS[initial] ? initial : 'nft', { updateUrl: false });
         fetch('/api/mn2/p2p/config').then(function (r) { return r.json(); }).then(function (cfg) {
             if (!cfg || !cfg.success || !cfg.enabled) {
                 document.getElementById('market-disabled').style.display = 'block';

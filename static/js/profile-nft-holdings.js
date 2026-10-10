@@ -21,13 +21,13 @@
       .then(function (res) {
         var rows = (res && res.editions) || [];
         if (!rows.length) {
-          root.innerHTML = 'No editions yet. <a href="/market" style="color:#c08cff;">Buy on the market</a> (PayPal from $2.99).';
+          root.innerHTML = 'No editions yet. <a href="/nft" style="color:#c08cff;">Buy on NFT hub</a> (PayPal from $2.99).';
           return;
         }
         root.innerHTML = rows.map(function (row) {
           return '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);">' +
             '<strong>' + row.edition_id + '</strong> · ' + (row.status || 'held') +
-            (row.status === 'listed' ? '' : ' · <a href="/market" style="color:#c08cff;">List for resale</a>') +
+            (row.status === 'listed' ? '' : ' · <a href="/nft#nft-wallet" style="color:#c08cff;">List for resale</a>') +
             '</div>';
         }).join('');
       })

@@ -16,7 +16,7 @@
       '<div class="cex-market-title">' + (row.emblem_icon || '💎') + ' ' + (row.name || row.sku) + '</div>' +
       '<div class="cex-muted">' + (row.rarity || '') + ' · ' + (row.remaining != null ? row.remaining : '?') + ' left</div>' +
       '<div>$' + (row.price_usd || 0) + ' · ' + (row.price_coins || 0) + ' coins</div>' +
-      '<a class="cex-btn cex-btn--ghost" href="/market">Buy on market</a>' +
+      '<a class="cex-btn cex-btn--ghost" href="/nft">Buy on NFT hub</a>' +
       '</article>'
     );
   }
@@ -27,7 +27,7 @@
       '<div class="cex-market-title">' + (row.edition_id || row.listing_id) + '</div>' +
       '<div class="cex-muted">Seller: ' + (row.seller_id || '') + '</div>' +
       '<div>' + (row.price_coins || 0) + ' coins</div>' +
-      '<a class="cex-btn cex-btn--ghost" href="/market">Trade on market</a>' +
+      '<a class="cex-btn cex-btn--ghost" href="/nft#nft-resale">Trade on hub</a>' +
       '</article>'
     );
   }
