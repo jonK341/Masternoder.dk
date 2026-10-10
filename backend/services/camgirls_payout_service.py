@@ -31,21 +31,102 @@ def _write(data: dict) -> None:
         json.dump(data, f, indent=2)
 
 
+def _default_paypal_email() -> str:
+    return (
+        os.environ.get("CAMGIRLS_PAYOUT_PAYPAL_EMAIL")
+        or os.environ.get("EXCHANGE_PAYOUT_PAYPAL_EMAIL")
+        or os.environ.get("PAYPAL_BUSINESS_EMAIL")
+        or ""
+    ).strip()
+
+
+def paypal_checkout_available() -> bool:
+    return bool(
+        (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
+        and (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
+    )
+
+
 def get_payout_address(performer_id: str) -> Dict[str, Any]:
     data = _read()
     row = (data.get("performers") or {}).get(performer_id) or {}
-    return {"address": row.get("address"), "success": bool(row.get("address"))}
+    return {
+        "address": row.get("address"),
+        "success": bool(row.get("address")),
+        "paypal_email": row.get("paypal_email"),
+        "paypal_checkout_enabled": bool(row.get("paypal_checkout_enabled")),
+    }
 
 
 def list_payout_addresses() -> Dict[str, Any]:
     data = _read()
     performers = data.get("performers") or {}
     rows = [
-        {"performer_id": pid, "payout_address": (row or {}).get("address"), "created_at": (row or {}).get("created_at")}
+        {
+            "performer_id": pid,
+            "payout_address": (row or {}).get("address"),
+            "created_at": (row or {}).get("created_at"),
+            "paypal_email": (row or {}).get("paypal_email"),
+            "paypal_checkout_enabled": (row or {}).get("paypal_checkout_enabled"),
+        }
         for pid, row in performers.items()
         if isinstance(row, dict)
     ]
     return {"success": True, "count": len(rows), "performers": rows}
+
+
+def provision_paypal_for_performers(performer_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Tag each performer for site PayPal checkout + optional payout email metadata."""
+    from backend.services.camgirls_service import _get_performer, _load_performers_raw
+
+    targets = performer_ids or [str(p.get("id")) for p in _load_performers_raw() if p.get("id")]
+    targets = [t for t in targets if t]
+    checkout_on = paypal_checkout_available()
+    fallback_email = _default_paypal_email()
+    data = _read()
+    bucket = data.setdefault("performers", {})
+    results: List[Dict[str, Any]] = []
+    for pid in targets:
+        row = bucket.get(pid)
+        if not isinstance(row, dict):
+            row = {}
+            bucket[pid] = row
+        performer = _get_performer(pid) or {}
+        email = (performer.get("paypal_email") or "").strip() or fallback_email
+        row["paypal_checkout_enabled"] = checkout_on
+        if email:
+            row["paypal_email"] = email
+        row["paypal_provisioned_at"] = _iso()
+        results.append({
+            "success": True,
+            "performer_id": pid,
+            "paypal_checkout_enabled": checkout_on,
+            "paypal_email": email or None,
+        })
+    data.setdefault("platform", {})["paypal_checkout"] = checkout_on
+    data["platform"]["paypal_provisioned_at"] = _iso()
+    _write(data)
+    return {
+        "success": True,
+        "paypal_checkout_enabled": checkout_on,
+        "provisioned": len(results),
+        "total": len(targets),
+        "results": results,
+    }
+
+
+def provision_payout_rails(performer_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """MN2 daemon addresses + PayPal checkout metadata for all targets."""
+    mn2 = provision_payout_addresses(performer_ids=performer_ids)
+    paypal = provision_paypal_for_performers(performer_ids=performer_ids)
+    return {
+        "success": bool(mn2.get("success")) and bool(paypal.get("success")),
+        "mn2": mn2,
+        "paypal": paypal,
+        "provisioned_mn2": mn2.get("provisioned"),
+        "provisioned_paypal": paypal.get("provisioned"),
+        "total": mn2.get("total"),
+    }
 
 
 def provision_payout_addresses(performer_ids: Optional[List[str]] = None) -> Dict[str, Any]:

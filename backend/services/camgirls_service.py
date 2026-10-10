@@ -304,6 +304,47 @@ def get_chat_history(user_id: str, performer_id: str, limit: int = 30) -> Dict[s
     return {"success": True, "messages": rows[-limit:]}
 
 
+def upsert_performer(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge one performer into camgirls_performers.json (ops onboarding)."""
+    if not isinstance(row, dict):
+        return {"success": False, "error": "invalid_row"}
+    pid = str(row.get("id") or "").strip()
+    if not pid:
+        return {"success": False, "error": "id_required"}
+    data = _read_json(_PERFORMERS_FILE, {"performers": []})
+    performers = data.get("performers") if isinstance(data, dict) else []
+    if not isinstance(performers, list):
+        performers = []
+    merged = None
+    out: List[Dict[str, Any]] = []
+    for p in performers:
+        if not isinstance(p, dict):
+            continue
+        if str(p.get("id")) == pid:
+            merged = {**p, **row, "id": pid}
+            out.append(merged)
+        else:
+            out.append(p)
+    if merged is None:
+        merged = dict(row)
+        merged["id"] = pid
+        out.append(merged)
+    _write_json(_PERFORMERS_FILE, {"performers": out})
+    payout_hint: Dict[str, Any] = {}
+    try:
+        from backend.services.camgirls_payout_service import get_payout_address, provision_paypal_for_performers
+
+        provision_paypal_for_performers(performer_ids=[pid])
+        pa = get_payout_address(pid)
+        if pa.get("address"):
+            payout_hint["payout_address"] = pa.get("address")
+        elif pa.get("paypal_checkout_enabled"):
+            payout_hint["payout_warning"] = "mn2_address_pending"
+    except Exception:
+        pass
+    return {"success": True, "performer_id": pid, **payout_hint}
+
+
 def deactivate_demo_performers() -> Dict[str, Any]:
     data = _read_json(_PERFORMERS_FILE, {"performers": []})
     rows = data.get("performers") if isinstance(data, dict) else []

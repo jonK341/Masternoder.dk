@@ -47,6 +47,20 @@ def test_load_performers_from_db_roundtrip(tmp_path, monkeypatch):
     assert not any(p.get("id") == "performer_db_1" for p in cg._load_performers_raw())
 
 
+def test_provision_paypal_for_performers(tmp_path, monkeypatch):
+    from backend.services import camgirls_payout_service as pay
+
+    monkeypatch.setattr(pay, "_PAYOUT_FILE", str(tmp_path / "payout.json"))
+    monkeypatch.setenv("PAYPAL_CLIENT_ID", "test-id")
+    monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "test-secret")
+    monkeypatch.setenv("CAMGIRLS_PAYOUT_PAYPAL_EMAIL", "studio@example.com")
+    out = pay.provision_paypal_for_performers(performer_ids=["p1"])
+    assert out.get("success") is True
+    assert out.get("paypal_checkout_enabled") is True
+    listing = pay.list_payout_addresses()
+    assert listing["performers"][0].get("paypal_checkout_enabled") is True
+
+
 def test_provision_payout_addresses_cached(tmp_path, monkeypatch):
     from backend.services import camgirls_payout_service as pay
 
