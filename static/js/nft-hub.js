@@ -243,31 +243,90 @@
     });
   }
 
-  function captureReturn() {
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('paypal') === 'cancel') {
-      msg('PayPal checkout cancelled');
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
+  var TAB_LABELS = {
+    primary: 'Primary',
+    resale: 'Resale',
+    wallet: 'Wallet',
+    agents: 'Agents'
+  };
+
+  function applyNftTab(tab, opts) {
+    opts = opts || {};
+    var key = TAB_LABELS[tab] ? tab : 'primary';
+    document.querySelectorAll('[data-nft-panel]').forEach(function (panel) {
+      var on = panel.getAttribute('data-nft-panel') === key;
+      panel.classList.toggle('active', on);
+      if (on) panel.removeAttribute('hidden');
+      else panel.setAttribute('hidden', '');
+    });
+    document.querySelectorAll('#nft-hub-nav [data-nft-tab]').forEach(function (btn) {
+      var on = btn.getAttribute('data-nft-tab') === key;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    setText('nft-tab-status', TAB_LABELS[key] || key);
+    var note = q('nft-route-note');
+    if (note) {
+      note.textContent =
+        'Viewing: ' + (TAB_LABELS[key] || key) +
+        '. Switch tabs above — inactive sections stay hidden.';
     }
-    var token = params.get('token');
-    if (params.get('paypal') !== 'success' || !token) return;
-    fetch('/api/paypal/capture', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: token,
-        item_id: params.get('item_id') || '',
-        user_id: params.get('user_id') || uid()
-      })
-    }).then(function (r) { return r.json(); }).then(function (data) {
-      if (data && data.success && data.edition) msg('Minted ' + data.edition.edition_id);
-      else if (data && data.success) msg('Payment captured');
-      else msg((data && (data.details || data.error)) || 'Capture failed');
-      window.history.replaceState({}, '', window.location.pathname);
-      load();
-    }).catch(function () { msg('Capture failed'); });
+    if (opts.updateUrl !== false) {
+      try {
+        var url = new URL(window.location.href);
+        if (key === 'primary') url.searchParams.delete('tab');
+        else url.searchParams.set('tab', key);
+        var hash = key === 'primary' ? '' : '#nft-' + key;
+        window.history.replaceState({}, document.title, url.pathname + url.search + hash);
+      } catch (e) { /* ignore */ }
+    }
+  }
+
+  function resolveInitialTab() {
+    var params = new URLSearchParams(window.location.search);
+    var tab = params.get('tab');
+    var hash = (window.location.hash || '').replace(/^#/, '').toLowerCase();
+    if (!tab && hash.indexOf('nft-') === 0) tab = hash.replace(/^nft-/, '');
+    if (!tab && (hash === 'nft-primary' || hash === 'nft-resale' || hash === 'nft-wallet' || hash === 'nft-agents')) {
+      tab = hash.replace(/^nft-/, '');
+    }
+    if (tab === 'catalog' || tab === 'drops') tab = 'primary';
+    if (tab === 'book' || tab === 'asks') tab = 'resale';
+    if (tab === 'holdings' || tab === 'editions') tab = 'wallet';
+    return TAB_LABELS[tab] ? tab : 'primary';
+  }
+
+  function wireNftTabs() {
+    var nav = q('nft-hub-nav');
+    if (nav && !nav._bound) {
+      nav._bound = true;
+      nav.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-nft-tab]');
+        if (!btn) return;
+        applyNftTab(btn.getAttribute('data-nft-tab'));
+      });
+    }
+    document.querySelectorAll('[data-nft-go]').forEach(function (el) {
+      if (el._bound) return;
+      el._bound = true;
+      el.addEventListener('click', function () {
+        applyNftTab(el.getAttribute('data-nft-go'));
+      });
+    });
+  }
+
+  function captureReturn() {
+    if (!window.NftPayPalReturn) return;
+    window.NftPayPalReturn.handle({
+      onMessage: msg,
+      focusHash: '#nft-wallet',
+      onReload: load,
+      onSuccess: function (data) {
+        if (data && data.edition && data.edition.edition_id) {
+          applyNftTab('wallet', { updateUrl: true });
+        }
+      }
+    });
   }
 
   function load() {
@@ -293,6 +352,8 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    wireNftTabs();
+    applyNftTab(resolveInitialTab(), { updateUrl: false });
     captureReturn();
     load();
     var refresh = q('nft-hero-refresh');

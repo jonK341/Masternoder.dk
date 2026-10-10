@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
-    <link rel="stylesheet" href="/static/css/nft-hub.css?v=20261002a">
+    <link rel="stylesheet" href="/static/css/nft-hub.css?v=20261010a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>window.MN_NAV_TEMPLATE = 'exchange_focus_v1';</script>
 </head>
@@ -32,7 +32,7 @@
                 <p class="fp-hero-text">MN2 wallet schema v2 ties editions to your profile avatar, trophies, and exchange marketplace. Primary sales fund the house; resale stays on-platform in coins.</p>
                 <div class="fp-hero-actions">
                     <button type="button" class="fp-primary-action" id="nft-hero-refresh">Refresh hub</button>
-                    <a class="fp-secondary-action" href="#nft-primary">Primary drops</a>
+                    <button type="button" class="fp-secondary-action" data-nft-go="primary">Primary drops</button>
                     <a class="fp-secondary-action" href="/exchange#cex-nft-exchange-market">Exchange NFT tab</a>
                     <a class="fp-secondary-action" href="/market">MN2 P2P market</a>
                 </div>
@@ -50,19 +50,21 @@
             <div class="fp-stat"><div class="v" id="nft-glance-fee">—</div><div class="l">House fees</div></div>
         </section>
 
-        <section class="nft-frame nft-frame--bold" aria-labelledby="nft-hot-heading">
-            <header class="nft-frame-head">
-                <h2 id="nft-hot-heading"><strong>Hot spots</strong></h2>
-                <p>Jump between wallet, trading desks, and profile equip without losing your serial.</p>
-            </header>
-            <div class="nft-hot-grid">
-                <a class="nft-hot-card" href="#nft-primary"><strong>Primary drops</strong><span>PayPal or coins</span></a>
-                <a class="nft-hot-card" href="#nft-resale"><strong>Resale book</strong><span>Coin asks + house fee</span></a>
-                <a class="nft-hot-card" href="#nft-wallet"><strong>Your wallet</strong><span>List · equip avatar</span></a>
-                <a class="nft-hot-card" href="/profile"><strong>Profile</strong><span>Equipped edition + trophies</span></a>
+        <section class="nft-tabs-wrap" aria-label="NFT hub sections">
+            <div class="nft-tabs-head">
+                <p class="fp-kicker"><span>Sections</span><span id="nft-tab-status">Primary</span></p>
+                <h2 class="nft-tabs-heading">What do you need?</h2>
             </div>
+            <div class="gh-tabs gh-tabs--compact nft-hub-tabs" id="nft-hub-nav" role="tablist" aria-label="NFT hub sections">
+                <button type="button" class="gh-tab is-active" data-nft-tab="primary" role="tab" aria-selected="true" aria-controls="nft-panel-primary"><span class="gh-tab-icon" aria-hidden="true">💎</span><span class="gh-tab-label">Primary</span></button>
+                <button type="button" class="gh-tab" data-nft-tab="resale" role="tab" aria-selected="false" aria-controls="nft-panel-resale"><span class="gh-tab-icon" aria-hidden="true">📖</span><span class="gh-tab-label">Resale</span></button>
+                <button type="button" class="gh-tab" data-nft-tab="wallet" role="tab" aria-selected="false" aria-controls="nft-panel-wallet"><span class="gh-tab-icon" aria-hidden="true">👛</span><span class="gh-tab-label">Wallet</span></button>
+                <button type="button" class="gh-tab" data-nft-tab="agents" role="tab" aria-selected="false" aria-controls="nft-panel-agents"><span class="gh-tab-icon" aria-hidden="true">🤖</span><span class="gh-tab-label">Agents</span></button>
+            </div>
+            <p class="nft-route-note" id="nft-route-note">One section per tab — buy, list, or equip without scrolling the whole hub.</p>
         </section>
 
+        <div id="nft-panel-primary" class="nft-hub-panel active" role="tabpanel" data-nft-panel="primary" aria-labelledby="nft-primary-heading">
         <section class="nft-frame nft-frame--bold" id="nft-primary" aria-labelledby="nft-primary-heading">
             <header class="nft-frame-head">
                 <h2 id="nft-primary-heading"><strong>Primary catalog</strong></h2>
@@ -71,7 +73,9 @@
             </header>
             <div class="nft-catalog-grid" id="nft-catalog-grid">Loading catalog…</div>
         </section>
+        </div>
 
+        <div id="nft-panel-resale" class="nft-hub-panel" role="tabpanel" data-nft-panel="resale" hidden aria-labelledby="nft-resale-heading">
         <section class="nft-frame" id="nft-resale" aria-labelledby="nft-resale-heading">
             <header class="nft-frame-head">
                 <h2 id="nft-resale-heading">Resale book</h2>
@@ -79,15 +83,20 @@
             </header>
             <div id="nft-resale-book">Loading asks…</div>
         </section>
+        </div>
 
+        <div id="nft-panel-wallet" class="nft-hub-panel" role="tabpanel" data-nft-panel="wallet" hidden aria-labelledby="nft-wallet-heading">
         <section class="nft-frame nft-frame--bold" id="nft-wallet" aria-labelledby="nft-wallet-heading">
             <header class="nft-frame-head">
                 <h2 id="nft-wallet-heading"><strong>Your MN2 NFT wallet</strong></h2>
                 <p>Hold numbered editions, list for resale, or equip an avatar preset on your profile card.</p>
             </header>
             <div id="nft-wallet-editions">Loading wallet…</div>
+            <p class="nft-muted" style="margin-top:12px;"><a href="/profile" style="color:#7df9ff;">Open profile</a> for equipped edition + trophies.</p>
         </section>
+        </div>
 
+        <div id="nft-panel-agents" class="nft-hub-panel" role="tabpanel" data-nft-panel="agents" hidden aria-labelledby="nft-agents-heading">
         <section class="nft-frame" id="nft-agents" aria-labelledby="nft-agents-heading">
             <header class="nft-frame-head">
                 <h2 id="nft-agents-heading">Trader agent wallets</h2>
@@ -95,13 +104,15 @@
             </header>
             <div id="nft-agent-wallets">Loading agent wallets…</div>
         </section>
+        </div>
 
         <p id="nft-hub-msg" class="nft-toast" aria-live="polite"></p>
     </main>
 
     <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
-    <script src="/static/js/nav-portal-template.js"></script>
-    <script src="/static/js/nft-hub.js?v=20261002a"></script>
+    <script src="/static/js/nft-paypal-return.js?v=20261002b"></script>
+    <script src="/static/js/nft-hub.js?v=20261010a"></script>
 </body>
 </html>

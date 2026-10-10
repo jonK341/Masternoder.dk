@@ -101,44 +101,42 @@
   color: rgba(255, 255, 255, 0.65);
 }
 
-.nft-hot-grid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.nft-tabs-wrap {
+  margin: 8px 0 18px;
+  padding: 14px 16px 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(192, 140, 255, 0.22);
+  background: linear-gradient(160deg, rgba(12, 8, 24, 0.75), rgba(8, 6, 18, 0.55));
 }
 
-@media (min-width: 720px) {
-  .nft-hot-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+.nft-tabs-head {
+  margin-bottom: 4px;
 }
 
-.nft-hot-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.25);
-  color: inherit;
-  text-decoration: none;
-  transition: border-color 0.15s, transform 0.15s;
+.nft-tabs-heading {
+  margin: 4px 0 0;
+  font-size: 1.05rem;
+  color: #e8d4ff;
 }
 
-.nft-hot-card:hover {
-  border-color: rgba(192, 140, 255, 0.45);
-  transform: translateY(-2px);
-}
-
-.nft-hot-card strong {
-  font-size: 0.95rem;
-  color: #f0e6ff;
-}
-
-.nft-hot-card span {
-  font-size: 0.78rem;
+.nft-route-note {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.55);
+}
+
+.nft-hub-panel {
+  display: none;
+}
+
+.nft-hub-panel.active {
+  display: block;
+}
+
+.nft-hub-tabs .gh-tab.is-active {
+  border-color: rgba(192, 140, 255, 0.65);
+  background: #c08cff;
+  color: #160820;
 }
 
 .nft-catalog-grid {

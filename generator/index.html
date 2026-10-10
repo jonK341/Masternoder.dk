@@ -4,7 +4,7 @@
     <script>window._pageLoadStart = performance.now();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="cache-version" content="20260617b">
+    <meta name="cache-version" content="20261010a">
     <meta name="description" content="AI video generator on MasterNoder.dk — create clips with coins, generation credits, and Pro tiers. Themes, Runway-style jobs, and MN2 wallet pay.">
     <meta name="keywords" content="AI video generator, MasterNoder, text to video, generation credits, MN2">
     <link rel="canonical" href="https://masternoder.dk/generator/">
@@ -166,6 +166,60 @@
         .gen-health-pill.ok { border-color: rgba(0,255,136,0.4); color: #00ff88; }
         .gen-health-pill.warn { border-color: rgba(255,170,0,0.4); color: #ffcc66; }
         .gen-crypto-hint { font-size: 0.82rem; color: rgba(0,212,255,0.85); margin-top: 8px; }
+        .gen-hub-tabs-wrap {
+            margin: 0 0 18px;
+            padding: 12px 14px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,255,136,0.22);
+            background: rgba(22,27,34,0.85);
+        }
+        .gen-hub-tabs-wrap .fp-kicker { margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.55); display: flex; gap: 10px; }
+        .gen-hub-tabs-heading { margin: 4px 0 8px; font-size: 1.05rem; color: #00ff88; }
+        .gen-hub-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+        .gen-hub-tab {
+            display: inline-flex; align-items: center; gap: 6px;
+            min-height: 36px; padding: 8px 12px; border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.72); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+        }
+        .gen-hub-tab:hover, .gen-hub-tab.is-active {
+            color: #00160c; border-color: rgba(0,255,136,0.55); background: #00ff88;
+        }
+        .gen-hub-panel { display: none; }
+        .gen-hub-panel.active { display: block; }
+        .gen-route-note { margin: 8px 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+        .gen-pay-jump {
+            margin: 0 0 14px; padding: 10px 12px; border-radius: 8px;
+            background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25);
+            font-size: 0.85rem; color: rgba(255,255,255,0.8);
+        }
+        .gen-pay-jump button {
+            margin-left: 6px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+            border: 1px solid rgba(0,212,255,0.4); background: rgba(0,212,255,0.15); color: #00d4ff; font-weight: 700;
+        }
+        .gen-advanced-details {
+            margin: 0 0 14px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.18);
+        }
+        .gen-advanced-details > summary {
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: #00ff88;
+            list-style: none;
+        }
+        .gen-advanced-details > summary::-webkit-details-marker { display: none; }
+        .gen-advanced-details > summary::after {
+            content: ' ▾';
+            font-size: 0.85em;
+            opacity: 0.75;
+        }
+        .gen-advanced-details:not([open]) > summary::after { content: ' ▸'; }
+        .gen-advanced-details .gen-config-table { margin-top: 12px; margin-bottom: 0; }
+        .gen-advanced-details .gen-checklist { margin-bottom: 0; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -188,6 +242,18 @@
 
         <div class="gen-queue-bar" id="genQueueBar" aria-live="polite"></div>
 
+        <section class="gen-hub-tabs-wrap" aria-label="Generator sections">
+            <p class="fp-kicker"><span>Sections</span><span id="gen-hub-tab-status">Create</span></p>
+            <h2 class="gen-hub-tabs-heading">What do you need?</h2>
+            <div class="gen-hub-tabs" id="genHubTabs" role="tablist" aria-label="Generator sections">
+                <button type="button" class="gen-hub-tab is-active" data-gen-hub="create" role="tab" aria-selected="true" aria-controls="gen-hub-panel-create"><i class="fas fa-play-circle" aria-hidden="true"></i> Create</button>
+                <button type="button" class="gen-hub-tab" data-gen-hub="pay" role="tab" aria-selected="false" aria-controls="gen-hub-panel-pay"><i class="fas fa-coins" aria-hidden="true"></i> MN2 pay</button>
+                <button type="button" class="gen-hub-tab" data-gen-hub="agents" role="tab" aria-selected="false" aria-controls="gen-hub-panel-agents"><i class="fas fa-robot" aria-hidden="true"></i> Agents</button>
+            </div>
+            <p class="gen-route-note" id="gen-hub-route-note">Create stays above the fold — MN2 pay and agents open in their own tabs.</p>
+        </section>
+
+        <div id="gen-hub-panel-pay" class="gen-hub-panel" role="tabpanel" data-gen-hub-panel="pay" hidden>
         <section class="gen-mn2-strip" id="genMn2Strip" aria-labelledby="gen-mn2-title">
             <h2 id="gen-mn2-title"><i class="fas fa-coins"></i> MN2 pay &amp; earn</h2>
             <p>Standard generations use credits. Pay with MN2 for express/premium/ultra tiers (<code>pay_with_mn2: true</code>). Each completed video earns a small MN2 finish bonus.</p>
@@ -219,44 +285,55 @@
             <p id="genMn2EarnNote"></p>
             <p class="gen-crypto-hint" id="genCryptoHint">Earn MN2 on every finish: base bonus + multi-AI + daily first + staking boost.</p>
         </section>
+        </div>
 
+        <div id="gen-hub-panel-create" class="gen-hub-panel active" role="tabpanel" data-gen-hub-panel="create">
+        <p class="gen-pay-jump">Paying with MN2? Set balance, tier, and Pay-with-MN2 on the
+            <button type="button" data-gen-hub-go="pay">MN2 pay</button> tab (settings stay applied when you generate).
+        </p>
         <div class="gen-card" id="genMainCard">
             <div class="gen-card-header">
                 <h2><i class="fas fa-play-circle"></i> Mission control</h2>
                 <span class="gen-badge">VIDEO</span><span class="gen-badge">CLIP</span>
             </div>
 
+            <details class="gen-advanced-details">
+                <summary><i class="fas fa-clipboard-check" aria-hidden="true"></i> Pre-flight checklist (optional)</summary>
+                <div class="gen-checklist" id="genChecklist">
+                    <div class="gen-checklist-row">
+                        <label><input type="checkbox" id="checkAi" disabled> LLM (script/planning)</label>
+                        <span class="check-status" id="checkLlmStatus">Tjekker...</span>
+                        <button type="button" class="gen-refresh-btn" id="btnRefreshChecklist" title="Opdater">↻</button>
+                    </div>
+                    <div class="gen-checklist-row">
+                        <label><input type="checkbox" id="checkVideo" disabled> Video AI (clips)</label>
+                        <span class="check-status" id="checkVideoStatus">—</span>
+                    </div>
+                    <div class="gen-checklist-row">
+                        <label><input type="checkbox" id="checkAgents" disabled> Agents (daily tasks)</label>
+                        <span class="check-status" id="checkAgentsStatus">Kør &quot;Assign 25&quot; under Agents-fanen ved behov.</span>
+                    </div>
+                    <div style="margin-top:10px; font-size:0.85rem;"><a href="/agent_support" style="color:#00d4ff;" target="_blank">Agent Support → Resources</a> for API keys</div>
+                </div>
+            </details>
+
             <table class="gen-config-table" style="margin-bottom:0;">
                 <tbody>
-                <tr><td colspan="2" style="padding:0; border: none; vertical-align: top;">
-                    <div class="gen-checklist" id="genChecklist">
-                        <div class="gen-mission-title"><i class="fas fa-clipboard-check"></i> Pre-flight checklist</div>
-                        <div class="gen-checklist-row">
-                            <label><input type="checkbox" id="checkAi" disabled> LLM (script/planning)</label>
-                            <span class="check-status" id="checkLlmStatus">Tjekker...</span>
-                            <button type="button" class="gen-refresh-btn" id="btnRefreshChecklist" title="Opdater">↻</button>
-                        </div>
-                        <div class="gen-checklist-row">
-                            <label><input type="checkbox" id="checkVideo" disabled> Video AI (clips)</label>
-                            <span class="check-status" id="checkVideoStatus">—</span>
-                        </div>
-                        <div class="gen-checklist-row">
-                            <label><input type="checkbox" id="checkAgents" disabled> Agents (daily tasks)</label>
-                            <span class="check-status" id="checkAgentsStatus">Kør &quot;Assign 25&quot; nedenfor ved behov.</span>
-                        </div>
-                        <div style="margin-top:10px; font-size:0.85rem;"><a href="/agent_support" style="color:#00d4ff;" target="_blank">Agent Support → Resources</a> for API keys</div>
-                    </div>
-                </td></tr>
-                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
                 <tr><th scope="row" style="width:38%;">Titel</th><td>
                     <input type="text" id="videoTitle" class="gen-input" placeholder="Fx: Min dokumentar om natur" style="margin-bottom:8px;">
                     <button type="button" class="gen-btn gen-btn-inline" id="btnAiIdeas" title="AI prompt forslag"><i class="fas fa-lightbulb"></i> AI idéer</button>
                     <span id="aiIdeasStatus" style="font-size:0.82rem;color:rgba(255,255,255,0.55);display:block;margin-top:4px;"></span>
                 </td></tr>
-                <tr><th scope="row">Beskrivelse</th><td><textarea id="videoDesc" class="gen-textarea" placeholder="Beskriv videoens indhold..." style="min-height:80px; margin-bottom:0;"></textarea></td></tr>
+                <tr><th scope="row">Beskrivelse</th><td><textarea id="videoDesc" class="gen-textarea" placeholder="Beskriv videoens indhold..." style="min-height:72px; margin-bottom:0;"></textarea></td></tr>
                 <tr><th scope="row">Kategori</th><td><select id="configCategory"><option value="general">General</option></select></td></tr>
                 <tr><th scope="row">Tema</th><td><div id="theme-timeline-container"></div><input type="hidden" id="videoTheme" value="default"></td></tr>
-                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
+                </tbody>
+            </table>
+
+            <details class="gen-advanced-details">
+                <summary><i class="fas fa-sliders-h" aria-hidden="true"></i> Advanced video settings</summary>
+                <table class="gen-config-table">
+                <tbody>
                 <tr><th scope="row">Varighed (sek)</th><td><input type="number" id="configDuration" min="30" max="300" value="60" title="30–300 sek"></td></tr>
                 <tr><th scope="row">Kort klip</th><td><label><input type="checkbox" id="configShortClip" checked> Ja (hurtigere)</label></td></tr>
                 <tr><th scope="row">Profil &amp; agents</th><td><label><input type="checkbox" id="configUseContext" checked> Inkluder min profil, agents og point i klippet</label></td></tr>
@@ -273,12 +350,12 @@
                         <div class="gen-provider-grid gen-collapse-content collapsed" id="genProviderGrid"></div>
                     </div>
                 </td></tr>
-                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
                 <tr><th scope="row">Style</th><td><select id="configStyle"><option value="">Auto</option><option value="cinematic">Cinematic</option><option value="documentary">Documentary</option><option value="dramatic">Dramatic</option><option value="educational">Educational</option></select></td></tr>
                 <tr><th scope="row">Tone</th><td><select id="configTone"><option value="">Auto</option><option value="mysterious">Mysterious</option><option value="inspiring">Inspiring</option><option value="calm">Calm</option><option value="energetic">Energetic</option></select></td></tr>
                 <tr><th scope="row">Creative twist</th><td><input type="text" id="configTwist" placeholder="Fx: Start med et overraskende spørgsmål"></td></tr>
                 </tbody>
-            </table>
+                </table>
+            </details>
 
             <hr class="gen-section-row">
             <div class="gen-tabs" id="genTabs">
@@ -329,7 +406,9 @@
             <h3 class="gen-label" style="margin-bottom:12px;">Mine seneste klip</h3>
             <div id="recentClipsList"></div>
         </div>
+        </div>
 
+        <div id="gen-hub-panel-agents" class="gen-hub-panel" role="tabpanel" data-gen-hub-panel="agents" hidden>
         <div class="gen-card" id="dailyAgentsCard">
             <div class="gen-card-header">
                 <h2><i class="fas fa-robot"></i> Agents &amp; gallery</h2>
@@ -373,6 +452,7 @@
                 <li><strong>Checklist:</strong> LLM + Video AI-status og provider-grid</li>
             </ul>
         </div>
+        </div>
         <p class="gen-footer">
             <strong>Connect:</strong> <a href="/profile">Profile</a> · <a href="/generator">Generator</a> · <a href="/podcast">Podcast</a> · <a href="/agents">Agents</a> · <a href="/agent_support">Agent Support</a> · <a href="/gallery">Gallery</a> · <a href="/aggregator">Aggregator</a> · <a href="/theme_premium">Themes</a> · <a href="/profile#monetization-25-card">Monetization 25 (AI + agents)</a>
             &nbsp;|&nbsp; <a href="/lab">Lab</a> · <a href="/debugger">Debugger</a>
@@ -397,6 +477,62 @@
             document.querySelector('.gen-tab[data-mode="' + m + '"]').classList.add('active');
             document.querySelectorAll('.gen-panel').forEach(p => p.classList.remove('active'));
             document.getElementById('panel' + (m === 'video' ? 'Video' : 'Clip')).classList.add('active');
+        }
+
+        var GEN_HUB_LABELS = { create: 'Create', pay: 'MN2 pay', agents: 'Agents' };
+        function applyGenHubTab(tab, opts) {
+            opts = opts || {};
+            var key = GEN_HUB_LABELS[tab] ? tab : 'create';
+            document.querySelectorAll('[data-gen-hub-panel]').forEach(function (panel) {
+                var on = panel.getAttribute('data-gen-hub-panel') === key;
+                panel.classList.toggle('active', on);
+                if (on) panel.removeAttribute('hidden');
+                else panel.setAttribute('hidden', '');
+            });
+            document.querySelectorAll('#genHubTabs [data-gen-hub]').forEach(function (btn) {
+                var on = btn.getAttribute('data-gen-hub') === key;
+                btn.classList.toggle('is-active', on);
+                btn.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            var status = document.getElementById('gen-hub-tab-status');
+            if (status) status.textContent = GEN_HUB_LABELS[key] || key;
+            var note = document.getElementById('gen-hub-route-note');
+            if (note) {
+                note.textContent = 'Viewing: ' + (GEN_HUB_LABELS[key] || key) +
+                    '. MN2 pay checkbox stays applied even when that tab is hidden.';
+            }
+            if (opts.updateUrl !== false) {
+                try {
+                    var url = new URL(window.location.href);
+                    if (key === 'create') url.searchParams.delete('tab');
+                    else url.searchParams.set('tab', key);
+                    window.history.replaceState({}, document.title, url.pathname + url.search);
+                } catch (e) { /* ignore */ }
+            }
+        }
+        function wireGenHubTabs() {
+            var nav = document.getElementById('genHubTabs');
+            if (nav && !nav._bound) {
+                nav._bound = true;
+                nav.addEventListener('click', function (ev) {
+                    var btn = ev.target.closest('[data-gen-hub]');
+                    if (!btn) return;
+                    applyGenHubTab(btn.getAttribute('data-gen-hub'));
+                });
+            }
+            document.querySelectorAll('[data-gen-hub-go]').forEach(function (el) {
+                if (el._bound) return;
+                el._bound = true;
+                el.addEventListener('click', function () {
+                    applyGenHubTab(el.getAttribute('data-gen-hub-go'));
+                });
+            });
+            var params = new URLSearchParams(window.location.search);
+            var initial = params.get('tab') || '';
+            if (initial === 'mn2' || initial === 'pay' || initial === 'wallet') initial = 'pay';
+            if (initial === 'agent' || initial === 'gallery' || initial === 'daily') initial = 'agents';
+            if (initial === 'video' || initial === 'clip') initial = 'create';
+            applyGenHubTab(GEN_HUB_LABELS[initial] ? initial : 'create', { updateUrl: false });
         }
 
         async function enhancedFetch(url, opts) {
@@ -1307,6 +1443,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            wireGenHubTabs();
             handlePremiumPayPalReturn();
             if (typeof ThemeTimeline !== 'undefined') {
                 themeTimeline = new ThemeTimeline('theme-timeline-container', function(id) {

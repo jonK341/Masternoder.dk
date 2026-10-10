@@ -39,6 +39,7 @@
         social: APP_BASE + '/static/img/agents/social_engagement_agent.svg',
         shop: APP_BASE + '/static/img/nav/shop.svg',
         market: APP_BASE + '/static/img/agents/analytics_agent.svg',
+        nft: APP_BASE + '/static/img/nft/vault-holo.svg',
         customers: APP_BASE + '/static/img/nav/customers.svg',
         agents_control: APP_BASE + '/static/img/agents/master_dashboard_agent.svg',
         chat: APP_BASE + '/static/img/nav/chat.svg',
@@ -88,7 +89,7 @@
             { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
             { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'MN2 wallet portal: deposit, withdraw, trusted addresses, and downloads' },
             { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
-            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
+            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'NFT editions + P2P MN2 marketplace' },
             { name: 'NFT Hub', icon: '💎', url: APP_BASE + '/nft', id: 'nft', title: 'Numbered NFT editions — primary, resale, profile avatar' },
             { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', title: 'MN2 staking leaderboard' },
             { name: 'Staking Teams', icon: '🤝', url: APP_BASE + '/staking-teams', id: 'staking_teams', title: 'MN2 staking team leaderboard' },
@@ -394,7 +395,7 @@
             if (!NAV_CATEGORIES.length) {
                 NAV_CATEGORIES = [
                     { id: 'play', label: 'Play', menuTitle: 'Play portals', smiley: '🎮', gif: 'play.gif', ids: ['game', 'battle', 'trophies', 'quests', 'casino', 'battlegrounds', 'starmap25'] },
-                    { id: 'account', label: 'Shop & profile', menuTitle: 'Shop & profile', smiley: '🛒', gif: 'account.gif', ids: ['shop', 'profile', 'market'] },
+                    { id: 'account', label: 'Shop & profile', menuTitle: 'Shop & profile', smiley: '🛒', gif: 'account.gif', ids: ['shop', 'profile', 'nft', 'market'] },
                     { id: 'finance', label: 'MN2 & exchange', menuTitle: 'MN2 & exchange', smiley: '💠', gif: 'finance.gif', ids: ['exchange', 'nft', 'wallets', 'explorer', 'profit', 'staking_leaderboard', 'staking_teams', 'hosting', 'market'] },
                     { id: 'create', label: 'Create', menuTitle: 'Create & publish', smiley: '🎬', gif: 'create.gif', ids: ['generator', 'create_app', 'podcast', 'gallery'] },
                     { id: 'intel', label: 'Lab & agents', menuTitle: 'Lab & agents', smiley: '🤖', gif: 'intel.gif', ids: ['lab', 'aggregator', 'agents', 'agent_support', 'agents_control', 'debugger'] },
@@ -1024,6 +1025,15 @@
         if (document.querySelector('script[src*="' + src.split('?')[0] + '"]')) return;
         var s = document.createElement('script');
         s.src = '/static/js/' + src;
+        s.defer = true;
+        document.body.appendChild(s);
+    })();
+
+    // Cap tall hub/tab panels (~3 viewports) on toolbar pages
+    (function loadPageLengthGuard() {
+        if (document.querySelector('script[src*="page-length-guard"]')) return;
+        var s = document.createElement('script');
+        s.src = '/static/js/page-length-guard.js?v=20261010';
         s.defer = true;
         document.body.appendChild(s);
     })();

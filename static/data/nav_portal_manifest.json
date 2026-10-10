@@ -22,7 +22,7 @@
       "favorites": ["generator", "game", "battle", "trophies"],
       "categories": [
         { "id": "play", "label": "Play", "menuTitle": "Play portals", "smiley": "🎮", "gif": "play.gif", "ids": ["game", "battle", "trophies", "quests", "casino", "battlegrounds", "starmap25"] },
-        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile", "market"] },
+        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile", "nft", "market"] },
         { "id": "finance", "label": "MN2 & exchange", "menuTitle": "MN2 & exchange", "smiley": "💠", "gif": "finance.gif", "ids": ["exchange", "nft", "wallets", "explorer", "profit", "staking_leaderboard", "staking_teams", "hosting", "market"] },
         { "id": "create", "label": "Create", "menuTitle": "Create & publish", "smiley": "🎬", "gif": "create.gif", "ids": ["generator", "create_app", "podcast", "gallery"] },
         { "id": "intel", "label": "Lab & agents", "menuTitle": "Lab & agents", "smiley": "🤖", "gif": "intel.gif", "ids": ["lab", "aggregator", "agents", "agent_support", "agents_control", "debugger"] },
@@ -37,7 +37,7 @@
       "favorites": [],
       "categories": [
         { "id": "play", "label": "Play", "menuTitle": "Play portals", "smiley": "🎮", "gif": "play.gif", "ids": ["game", "battle", "trophies", "quests", "casino", "battlegrounds", "starmap25"] },
-        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile", "market"] },
+        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile", "nft", "market"] },
         { "id": "finance", "label": "MN2 & exchange", "menuTitle": "MN2 & exchange", "smiley": "💠", "gif": "finance.gif", "ids": ["exchange", "nft", "wallets", "explorer", "profit", "staking_leaderboard", "staking_teams", "hosting", "market"] },
         { "id": "create", "label": "Create", "menuTitle": "Create & publish", "smiley": "🎬", "gif": "create.gif", "ids": ["generator", "create_app", "podcast", "gallery"] },
         { "id": "intel", "label": "Lab & agents", "menuTitle": "Lab & agents", "smiley": "🤖", "gif": "intel.gif", "ids": ["lab", "aggregator", "agents", "agent_support", "agents_control", "debugger"] },
@@ -49,11 +49,11 @@
       "description": "Finance-first quick links for trading hubs.",
       "layout": "categorized",
       "theme": "exchange_ice",
-      "favorites": ["exchange", "wallets", "profit", "shop"],
+      "favorites": ["exchange", "nft", "wallets", "profit", "shop"],
       "categories": [
         { "id": "finance", "label": "MN2 & exchange", "menuTitle": "MN2 & exchange", "smiley": "💠", "gif": "finance.gif", "ids": ["exchange", "nft", "wallets", "explorer", "profit", "staking_leaderboard", "staking_teams", "hosting", "market"] },
         { "id": "play", "label": "Play", "menuTitle": "Play portals", "smiley": "🎮", "gif": "play.gif", "ids": ["game", "battle", "trophies", "quests", "casino", "battlegrounds", "starmap25"] },
-        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile"] },
+        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile", "nft", "market"] },
         { "id": "create", "label": "Create", "menuTitle": "Create & publish", "smiley": "🎬", "gif": "create.gif", "ids": ["generator", "create_app", "podcast", "gallery"] },
         { "id": "intel", "label": "Lab & agents", "menuTitle": "Lab & agents", "smiley": "🤖", "gif": "intel.gif", "ids": ["lab", "aggregator", "agents", "agent_support", "agents_control", "debugger"] },
         { "id": "social", "label": "Social & news", "menuTitle": "Social & news", "smiley": "💬", "gif": "social.gif", "ids": ["social", "news", "library", "camgirls", "customers"] }

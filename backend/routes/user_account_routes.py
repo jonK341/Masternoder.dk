@@ -1038,6 +1038,9 @@ def user_portal_nav_preferences():
 
     user_id = _resolve(allow_default=False) or _resolve(allow_default=True)
     if request.method == "GET":
+        query_uid = str(request.args.get("user_id") or "").strip()
+        if query_uid:
+            user_id = query_uid
         return jsonify(get_nav_portal_preferences(user_id)), 200
 
     data = request.get_json(silent=True) or {}

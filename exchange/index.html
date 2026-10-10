@@ -36,6 +36,7 @@
                     <button type="button" class="fp-secondary-action" id="cex-onboard-start">Site tour</button>
                     <a class="fp-secondary-action" href="/wallets">Wallets</a>
                     <a class="fp-secondary-action" href="/profit/">Profit monitor</a>
+                    <a class="fp-secondary-action" href="/nft">NFT hub</a>
                 </div>
                 <p id="cex-hero-status" class="cex-hero-status" aria-live="polite">Loading exchange status…</p>
             </div>
@@ -84,6 +85,13 @@
                     <span class="cex-account-meta">Pay agents &amp; marketplace with coins</span>
                     <a class="cex-account-link" href="/shop">Shop · top up</a>
                 </article>
+                <article class="cex-account-card">
+                    <span class="cex-account-kicker">NFT wallet v2</span>
+                    <strong>Editions</strong>
+                    <span class="cex-account-meta">Primary mint · coin resale · profile avatar</span>
+                    <a class="cex-account-link" href="/nft">Open NFT hub</a>
+                    <a class="cex-account-link cex-account-link--ghost" href="/nft#nft-resale">Resale book</a>
+                </article>
             </div>
             <p id="cex-account-sync-status" class="cex-account-sync" aria-live="polite">Connecting profile, MN2, and exchange wallet…</p>
         </section>
@@ -112,6 +120,17 @@
                     <div class="cex-frame-body">
                         <ul><li>Live price gaps across venues</li><li>Paper mode by default</li></ul>
                         <button type="button" class="cex-hotshot-cta" data-cex-goto="bots" data-cex-hash="#cex-agent-cross-trading">Open arb desk →</button>
+                    </div>
+                </article>
+                <article class="cex-frame cex-frame--bold cex-hotshot">
+                    <header class="cex-frame-head">
+                        <h3><strong>NFT editions</strong></h3>
+                        <p>PayPal or coins · wallet v2</p>
+                    </header>
+                    <div class="cex-hotshot-img" style="display:flex;align-items:center;justify-content:center;font-size:4rem;min-height:120px;" aria-hidden="true">💎</div>
+                    <div class="cex-frame-body">
+                        <ul><li>Numbered serials on-profile</li><li>Coin resale book (5% fee)</li></ul>
+                        <a class="cex-hotshot-cta" href="/nft" style="text-decoration:none;display:inline-block;">Open NFT hub →</a>
                     </div>
                 </article>
                 <article class="cex-frame cex-frame--bold cex-hotshot">
@@ -516,10 +535,10 @@
             <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
         <section class="cex-market" id="cex-nft-exchange-market">
             <h2>NFT editions on Exchange</h2>
-            <p class="cex-market-sub">Primary mints and agent resale listings share the same coin book as <a href="/market" class="cex-mini-link">/market</a>. Wallet schema v2 lives on your profile.</p>
+            <p class="cex-market-sub">Primary mints and agent resale listings share the same coin book as the <a href="/nft" class="cex-mini-link">NFT hub</a> and <a href="/market" class="cex-mini-link">MN2 market</a>. Wallet schema v2 lives on your profile.</p>
             <div id="cex-nft-catalog" class="cex-market-grid">Loading NFT catalog…</div>
             <div id="cex-nft-listings" class="cex-market-grid" style="margin-top:14px;">Loading resale book…</div>
-            <p class="cex-muted"><a href="/market" class="cex-mini-link">Open full NFT market</a> · <a href="/profile#wallet" class="cex-mini-link">Profile NFT wallet</a></p>
+            <p class="cex-muted"><a href="/nft" class="cex-mini-link">Open full NFT hub</a> · <a href="/nft#nft-resale" class="cex-mini-link">Resale book</a> · <a href="/profile#wallet" class="cex-mini-link">Profile wallet</a></p>
         </section>
         <section class="cex-market" id="cex-agent-marketplace">
             <h2>Agent marketplace — buy bots that earn on your account</h2>

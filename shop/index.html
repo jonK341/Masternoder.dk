@@ -339,7 +339,7 @@
             <div style="padding: var(--spacing-lg);">
                 <h2 style="color: #c08cff; margin-bottom: var(--spacing-sm);">💎 NFT editions (PayPal)</h2>
                 <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md); max-width: 52rem;">
-                    Three numbered collectibles — same SKUs as the <a href="/market" style="color:#c08cff;">MN2 market</a>. PayPal mints your serial; resell for coins on the market (5% fee).
+                    Three numbered collectibles — mint on the <a href="/nft" style="color:#c08cff;">NFT hub</a> or here via PayPal. Resell for coins on the <a href="/nft#nft-resale" style="color:#c08cff;">resale book</a> (5% fee).
                 </p>
                 <div id="shop-nft-editions-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--spacing-md);">
                     <p style="color: var(--text-secondary); margin: 0;">Loading editions…</p>
@@ -2697,8 +2697,9 @@
                         if (coins) {
                             if (typeof toast !== 'undefined') toast.success(`Purchased ${coins} coins!`);
                         } else if (data.edition && data.edition.edition_id) {
-                            if (typeof toast !== 'undefined') toast.success('Minted ' + data.edition.edition_id + ' — see Profile or /market.');
+                            if (typeof toast !== 'undefined') toast.success('Minted ' + data.edition.edition_id + ' — opening NFT hub…');
                             loadNftEditions();
+                            setTimeout(function () { window.location.href = '/nft#nft-wallet'; }, 1400);
                         } else if (itemGranted) {
                             if (typeof toast !== 'undefined') toast.success('Item purchased! Check your inventory.');
                             loadInventory();

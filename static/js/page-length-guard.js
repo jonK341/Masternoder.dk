@@ -22,6 +22,9 @@
         '[role="tabpanel"]:not([hidden])',
         '.profile-tab-panel.active',
         '.shop-tab-panel.active',
+        '.nft-hub-panel.active',
+        '.market-hub-panel.active',
+        '.gen-hub-panel.active',
         '.lab-hub-panel:not(.hidden)',
         '.page-main',
         '.page-main-wrap',
@@ -159,7 +162,8 @@
             if (!t || !t.closest) return;
             if (t.closest(
                 '[role="tab"], .tab-btn, .tab-button, .page-tab, .game-tab, '
-                + '.casino-v10-main-tab, .profile-tab, .shop-tab, .lab-hub-tab'
+                + '.casino-v10-main-tab, .profile-tab, .shop-tab, .lab-hub-tab, '
+                + '.nft-hub-tab, .gen-hub-tab, .market-hub-tabs .gh-tab'
             )) {
                 setTimeout(scan, 60);
                 setTimeout(scan, 400);
@@ -184,6 +188,11 @@
             });
         }
     }
+
+    window.PageLengthGuard = {
+        rescan: scan,
+        cap: capElement,
+    };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 50); });
