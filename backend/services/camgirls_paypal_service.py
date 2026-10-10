@@ -236,3 +236,56 @@ def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
     rows.get("pending", {}).pop(order_id, None)
     _write_orders(rows)
     return {"success": True, **cap}
+
+
+# Restored from pre-merge branch so both APIs stay callable.
+def list_pending_paypal_payments() -> list:
+    out = []
+    for oid, row in (_read_orders().get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "camgirls",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": row.get("user_id"),
+        })
+    return out
+
+
+def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
+    """Capture APPROVED camgirls checkouts without depending on sessionStorage."""
+    if not signature_ok:
+        return {"success": False, "error": "Webhook signature not verified"}
+    event_type = str((event or {}).get("event_type") or "").upper()
+    resource = event.get("resource") if isinstance((event or {}).get("resource"), dict) else {}
+    related = ((resource.get("supplementary_data") or {}).get("related_ids") or {})
+    if not isinstance(related, dict):
+        related = {}
+    pp_oid = str(
+        related.get("order_id")
+        or (resource.get("id") if event_type.startswith("CHECKOUT.ORDER.") else "")
+        or ""
+    ).strip()
+    rows = _read_orders()
+    captured = rows.get("captured") or {}
+    pending_rows = rows.get("pending") or {}
+    if pp_oid and pp_oid in captured:
+        return {"success": True, "already_fulfilled": True, "order_id": pp_oid}
+    oid = ""
+    pending = None
+    if pp_oid and isinstance(pending_rows.get(pp_oid), dict):
+        oid, pending = pp_oid, pending_rows[pp_oid]
+    else:
+        for key, row in pending_rows.items():
+            if not isinstance(row, dict):
+                continue
+            if pp_oid and (row.get("order_id") == pp_oid or key == pp_oid):
+                oid, pending = key, row
+                break
+    if not pending:
+        return {"success": True, "ignored": True, "reason": "no matching camgirls order"}
+    if event_type in ("CHECKOUT.ORDER.APPROVED", "CHECKOUT.ORDER.COMPLETED", "PAYMENT.CAPTURE.COMPLETED"):
+        return fulfill_capture(oid, user_id=str(pending.get("user_id") or ""))
+    return {"success": True, "ignored": True, "event_type": event_type}
+

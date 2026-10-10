@@ -402,3 +402,45 @@ def catalog_for_controller() -> Dict[str, Any]:
         "buy_bots": [_wrap(b, "buy") for b in buy_bots],
         "payment_rails": cfg.get("payment_rails") or ["mn2", "coins", "paypal"],
     }
+
+# Restored PayPal webhook helpers from the branch.
+def list_pending_paypal_payments() -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    rows = ex._read_json(_PAYPAL_ORDERS, {"pending": {}, "captured": {}})
+    for oid, row in (rows.get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "exchange_controller",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": row.get("user_id"),
+        })
+    return out
+
+
+def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
+    """Capture APPROVED controller checkouts without the browser return flag."""
+    if not signature_ok:
+        return {"success": False, "error": "Webhook signature not verified"}
+    event_type = str((event or {}).get("event_type") or "").upper()
+    if event_type not in (
+        "CHECKOUT.ORDER.APPROVED",
+        "CHECKOUT.ORDER.COMPLETED",
+        "PAYMENT.CAPTURE.COMPLETED",
+    ):
+        return {"success": True, "ignored": True, "event_type": event_type}
+    oid = ex._paypal_event_order_id(event or {})
+    if not oid:
+        return {"success": True, "ignored": True, "reason": "no_order_id"}
+    rows = ex._read_json(_PAYPAL_ORDERS, {"pending": {}, "captured": {}})
+    if oid in (rows.get("captured") or {}):
+        return {"success": True, "already_fulfilled": True, "order_id": oid}
+    pending = (rows.get("pending") or {}).get(oid)
+    if not isinstance(pending, dict):
+        return {"success": True, "ignored": True, "reason": "no matching controller order"}
+    from backend.services.paypal_service import finish_checkout_order
+
+    cap = finish_checkout_order(oid)
+    return fulfill_paypal_order(str(pending.get("user_id") or ""), oid, cap)
+

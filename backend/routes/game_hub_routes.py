@@ -65,7 +65,23 @@ def game_hub_overview():
 def game_hub_quests():
     try:
         from backend.services.trophy_quest_service import get_unified_quests
-        return jsonify(get_unified_quests(_resolve_uid())), 200
+        from backend.services.quest_system import get_quest_statistics, get_user_quests
+
+        uid = _resolve_uid()
+        hub = get_unified_quests(uid)
+        progression = get_user_quests(uid)
+        stats = get_quest_statistics(uid)
+        if not isinstance(hub, dict):
+            hub = {"success": True}
+        return jsonify({
+            **hub,
+            "progression": progression.get("progression"),
+            "progression_levels": progression.get("levels") or [],
+            "chapters": progression.get("chapters") or [],
+            "total_progression_levels": progression.get("total_levels"),
+            "quest_level": stats.get("quest_level"),
+            "progression_quests": progression.get("quests") or [],
+        }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -74,9 +90,16 @@ def game_hub_quests():
 def game_hub_quest_claim():
     try:
         data = request.get_json() or {}
-        quest_id = data.get('quest_id') or request.args.get('quest_id')
+        quest_id = str(data.get('quest_id') or request.args.get('quest_id') or '')
+        if quest_id.startswith("progression_"):
+            from backend.services.quest_system import claim_level_reward
+            try:
+                level_num = int(quest_id.replace("progression_", ""))
+            except ValueError:
+                return jsonify({"success": False, "error": "invalid_quest_id"}), 200
+            return jsonify(claim_level_reward(_resolve_uid(), level_num)), 200
         from backend.services.trophy_quest_service import claim_quest
-        return jsonify(claim_quest(_resolve_uid(), str(quest_id or ''))), 200
+        return jsonify(claim_quest(_resolve_uid(), quest_id)), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

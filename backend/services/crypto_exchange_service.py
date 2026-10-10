@@ -1417,3 +1417,102 @@ def health() -> Dict[str, Any]:
         "mn2_pool": pool_summary,
         "timestamp": _iso(),
     }
+
+
+# Restored from pre-merge branch so both APIs stay callable.
+def paypal_buyer_id(requested: str, pending_user: str) -> Tuple[str, str]:
+    """Resolve the paying user. Empty/default_user falls back to the stored buyer."""
+    req = str(requested or "").strip()
+    pending = str(pending_user or "").strip()
+    if not req or req.lower() == "default_user":
+        uid = pending or req
+        if not uid or uid.lower() == "default_user":
+            return "", "user_id required"
+        return uid, ""
+    if pending and pending != req:
+        return "", "user_mismatch"
+    return req, ""
+
+
+def _paypal_event_order_id(event: Dict[str, Any]) -> str:
+    resource = event.get("resource") if isinstance(event.get("resource"), dict) else {}
+    related = ((resource.get("supplementary_data") or {}).get("related_ids") or {})
+    if not isinstance(related, dict):
+        related = {}
+    event_type = str(event.get("event_type") or "")
+    for candidate in (
+        related.get("order_id"),
+        resource.get("id") if event_type.upper().startswith("CHECKOUT.ORDER.") else None,
+        resource.get("custom_id"),
+    ):
+        val = str(candidate or "").strip()
+        if val:
+            return val
+    return ""
+
+
+def list_pending_paypal_payments() -> List[Dict[str, Any]]:
+    """Pending exchange MN2 packs and crypto buys that still need capture/fulfill."""
+    out: List[Dict[str, Any]] = []
+    mn2 = _read_json(_PAYPAL_MN2_ORDERS_PATH, {"pending": {}, "captured": {}})
+    for oid, row in (mn2.get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "exchange_mn2",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": row.get("user_id"),
+            "item_id": ((row.get("pack") or {}).get("id") or ""),
+        })
+    crypto = _read_json(_PAYPAL_CRYPTO_ORDERS_PATH, {"pending": {}, "captured": {}})
+    for oid, row in (crypto.get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        quote = row.get("quote") if isinstance(row.get("quote"), dict) else {}
+        out.append({
+            "rail": "exchange_crypto",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": quote.get("user_id") or row.get("user_id"),
+            "item_id": f"crypto:{quote.get('symbol') or ''}",
+        })
+    return out
+
+
+def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
+    """Capture APPROVED exchange checkouts without browser return or pack_id."""
+    if not signature_ok:
+        return {"success": False, "error": "Webhook signature not verified"}
+    event_type = str((event or {}).get("event_type") or "").upper()
+    if event_type not in (
+        "CHECKOUT.ORDER.APPROVED",
+        "CHECKOUT.ORDER.COMPLETED",
+        "PAYMENT.CAPTURE.COMPLETED",
+    ):
+        return {"success": True, "ignored": True, "event_type": event_type}
+    oid = _paypal_event_order_id(event or {})
+    if not oid:
+        return {"success": True, "ignored": True, "reason": "no_order_id"}
+    mn2 = _read_json(_PAYPAL_MN2_ORDERS_PATH, {"pending": {}, "captured": {}})
+    crypto = _read_json(_PAYPAL_CRYPTO_ORDERS_PATH, {"pending": {}, "captured": {}})
+    if oid in (mn2.get("captured") or {}) or oid in (crypto.get("captured") or {}):
+        return {"success": True, "already_fulfilled": True, "order_id": oid}
+    rail = None
+    pending_user = ""
+    if isinstance((mn2.get("pending") or {}).get(oid), dict):
+        rail = "exchange_mn2"
+        pending_user = str(((mn2["pending"][oid] or {}).get("user_id") or ""))
+    elif isinstance((crypto.get("pending") or {}).get(oid), dict):
+        rail = "exchange_crypto"
+        quote = (crypto["pending"][oid] or {}).get("quote") or {}
+        pending_user = str(quote.get("user_id") or "")
+    if not rail:
+        return {"success": True, "ignored": True, "reason": "no matching exchange order"}
+    from backend.services.paypal_service import finish_checkout_order
+
+    cap = finish_checkout_order(oid)
+    if rail == "exchange_mn2":
+        return fulfill_paypal_mn2_order(pending_user, oid, cap)
+    return fulfill_paypal_crypto_order(pending_user, oid, cap)
+

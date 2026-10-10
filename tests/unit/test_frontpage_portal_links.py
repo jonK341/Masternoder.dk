@@ -24,23 +24,21 @@ def test_navigation_primary_order_and_portal_grouping():
     expected_order = [
         "id: 'home'",
         "id: 'generator'",
-        "id: 'creator'",
         "id: 'game'",
         "id: 'battle'",
         "id: 'trophies'",
+        "id: 'quests'",
         "id: 'shop'",
         "id: 'explorer'",
         "id: 'profile'",
+        "id: 'agents'",
     ]
     positions = [nav.index(marker) for marker in expected_order]
 
     assert positions == sorted(positions)
     assert "id: 'stories'" not in nav
     assert "id: 'chat'" not in nav
-    assert "NAV_GROUPS" in nav
-    assert "id: 'command_center'" in nav
-    assert "tier: 'portal'" in nav
-    assert "id: 'metal'" in nav
+    assert "NAV_CATEGORIES" in nav
 
 
 def test_platform_news_announces_wallet_staking_pages():

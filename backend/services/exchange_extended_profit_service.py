@@ -170,23 +170,136 @@ def tick_defi_rotation(scfg: Dict[str, Any]) -> Dict[str, Any]:
         holding = float((ex.get_wallet(uid).get("assets") or {}).get(symbol) or 0)
         amount = min(amount, holding) if holding > 0 else amount
     res = ex.execute_swap(uid, uuid.uuid4().hex[:12], symbol, side, amount, "MN2")
-    return {"success": bool(res.get("success")), "strategy": "defi_rotation", "symbol": symbol, "side": side, "trade": res.get("trade")}
+    ok = bool(res.get("success"))
+    return {
+        "success": ok,
+        "executed": ok,
+        "strategy": "defi_rotation",
+        "symbol": symbol,
+        "side": side,
+        "trade": res.get("trade"),
+    }
 
 
 def tick_fast_arb_rescan(scfg: Dict[str, Any]) -> Dict[str, Any]:
-    min_bps = float(scfg.get("min_net_bps") or 10)
+    env_min = os.environ.get("EXCHANGE_FAST_MIN_BPS", "").strip()
+    min_bps = float(env_min) if env_min else float(scfg.get("min_net_bps") or 10)
     venues = list(scfg.get("venues") or ["binance", "nonkyc"])
     notional = float(scfg.get("notional_usd") or 250)
+    execute_on_threshold = bool(scfg.get("execute_on_threshold", False))
+    agent_id = str(scfg.get("agent_id") or "arb_live_dual_farm")
+    max_exec = int(scfg.get("max_executions_per_tick") or 1)
+
     scan = arb.scan_opportunities(venues=venues, notional_usd=notional)
-    opps = [o for o in (scan.get("opportunities") or []) if float(o.get("net_bps") or 0) >= min_bps]
-    return {
+    pair_search: Optional[Dict[str, Any]] = None
+    try:
+        from backend.services.exchange_profit_pair_search_service import enabled, run_profit_pair_search
+
+        if enabled():
+            search = run_profit_pair_search(venues=venues)
+            pair_search = {
+                "success": bool(search.get("success")),
+                "hot_symbols": list(search.get("hot_symbols") or []),
+                "hit_count": int(search.get("hit_count") or 0),
+            }
+            hot = pair_search["hot_symbols"]
+            if hot:
+                scan = arb.scan_opportunities(symbols=hot, venues=venues, notional_usd=notional)
+    except Exception as exc:
+        pair_search = {"success": False, "error": str(exc)}
+    all_opps = sorted(
+        (scan.get("opportunities") or []),
+        key=lambda o: float(o.get("net_bps") or 0),
+        reverse=True,
+    )
+    top = all_opps[0] if all_opps else None
+    opps = [o for o in all_opps if float(o.get("net_bps") or 0) >= min_bps]
+
+    hot_syms = pair_search.get("hot_symbols") if pair_search else None
+    write_arb_threshold_state(
+        best=top, threshold_bps=min_bps, source="fast_arb_rescan", hot_symbols=hot_syms,
+    )
+
+    ready = bool(
+        top
+        and float(top.get("net_bps") or 0) >= min_bps
+        and float(top.get("est_profit_usd") or 0) > 0
+    )
+    result: Dict[str, Any] = {
         "success": True,
         "strategy": "fast_arb_rescan",
         "opportunity_count": scan.get("opportunity_count"),
         "profitable_count": len(opps),
-        "top_net_bps": opps[0].get("net_bps") if opps else None,
-        "top_symbol": opps[0].get("symbol") if opps else None,
+        "top_net_bps": top.get("net_bps") if top else None,
+        "top_symbol": top.get("symbol") if top else None,
+        "threshold_bps": min_bps,
+        "ready": ready,
+        "executed": False,
     }
+    if pair_search is not None:
+        result["profit_pair_search"] = pair_search
+
+    if not execute_on_threshold or not opps:
+        return result
+
+    from backend.services.exchange_live_execution_service import book_agent_profit, execute_spatial_arbitrage
+
+    skip_reason: Optional[str] = None
+    for opp in opps[:max_exec]:
+        trade_opp = opp
+        if arb.live_enabled():
+            prepared = arb.prepare_live_opportunity(
+                opp, configured_usd=float(opp.get("notional_usd") or notional),
+            )
+            if not prepared.get("ok"):
+                skip_reason = str(prepared.get("reason") or "insufficient_venue_balance")
+                continue
+            trade_opp = prepared["opportunity"]
+        try:
+            from backend.services.exchange_profit_path_service import record_execution, record_scan
+
+            tick_mode = "live" if arb.live_enabled() else "paper"
+            path_id = record_scan(
+                agent_id=agent_id,
+                strategy="fast_arb_rescan",
+                best=trade_opp,
+                threshold_bps=min_bps,
+                mode=tick_mode,
+                decision="attempt",
+                notional_usd=float(trade_opp.get("notional_usd") or notional),
+                venues=venues,
+            )
+            exec_res = execute_spatial_arbitrage(trade_opp, agent_id=agent_id)
+            record_execution(
+                path_id=path_id,
+                agent_id=agent_id,
+                opp=trade_opp,
+                exec_res=exec_res,
+                strategy="fast_arb_rescan",
+                threshold_bps=min_bps,
+                venues=venues,
+            )
+            if exec_res.get("success"):
+                try:
+                    from backend.services.exchange_profit_baseline_service import record_arb_baseline
+
+                    record_arb_baseline(trade_opp, exec_res, source="fast_ext", agent_id=agent_id)
+                except Exception:
+                    pass
+            book_agent_profit(agent_id, trade_opp, exec_res)
+            result["executed"] = bool(exec_res.get("success"))
+            result["mode"] = exec_res.get("mode")
+            result["profit_path_id"] = path_id
+            if exec_res.get("success"):
+                return result
+            skip_reason = str(exec_res.get("error") or "execution_failed")
+        except Exception as exc:
+            skip_reason = str(exc)
+            break
+
+    if skip_reason:
+        result["skip_reason"] = skip_reason
+    return result
 
 
 _STRATEGY_RUNNERS = {
@@ -222,3 +335,40 @@ def run_extended_profit_tick(*, profile: str = "standard") -> Dict[str, Any]:
             results[name] = {"success": False, "error": str(exc)}
     executed = sum(1 for r in results.values() if isinstance(r, dict) and r.get("executed"))
     return {"success": True, "profile": profile, "ran_at": _iso(), "strategy_count": len(names), "executed_count": executed, "results": results}
+
+
+# Restored from pre-merge branch so both APIs stay callable.
+_THRESHOLD_STATE_PATH = os.path.join(ex._DATA_DIR, "arb_threshold_state.json")
+
+
+def read_arb_threshold_state() -> Dict[str, Any]:
+    state = ex._read_json(_THRESHOLD_STATE_PATH, {})
+    return state if isinstance(state, dict) else {}
+
+
+def write_arb_threshold_state(
+    *,
+    best: Optional[Dict[str, Any]],
+    threshold_bps: float,
+    source: str,
+    hot_symbols: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    best_net_bps = float(best.get("net_bps") or 0) if best else 0.0
+    est_profit = float(best.get("est_profit_usd") or 0) if best else 0.0
+    ready = bool(best and best_net_bps >= threshold_bps and est_profit > 0)
+    state = {
+        "best_net_bps": round(best_net_bps, 2) if best else None,
+        "threshold_bps": threshold_bps,
+        "ready": ready,
+        "top_symbol": best.get("symbol") if best else None,
+        "buy_venue": best.get("buy_venue") if best else None,
+        "sell_venue": best.get("sell_venue") if best else None,
+        "est_profit_usd": round(est_profit, 4) if best else None,
+        "updated_at": _iso(),
+        "source": source,
+    }
+    if hot_symbols:
+        state["hot_symbols"] = list(dict.fromkeys(str(s).upper() for s in hot_symbols if s))
+    ex._write_json(_THRESHOLD_STATE_PATH, state)
+    return state
+
