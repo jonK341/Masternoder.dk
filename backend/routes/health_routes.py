@@ -10,6 +10,8 @@ from datetime import datetime
 from sqlalchemy import text
 from src.db.models import db
 
+from backend.services.schema_bootstrap import SCHEMA_MIGRATIONS_HEALTH_COLUMNS
+
 health_bp = Blueprint('health', __name__)
 
 # App version for cache busting - bump on deploy to force client reload
@@ -127,9 +129,10 @@ def data_schema_health():
             out['tables'][t] = {'present': False, 'error': str(e)[:200]}
 
     try:
+        columns = ", ".join(SCHEMA_MIGRATIONS_HEALTH_COLUMNS)
         rows = db.session.execute(
             text(
-                'SELECT script_name, status, applied_at FROM schema_migrations ORDER BY applied_at DESC LIMIT 8'
+                f"SELECT {columns} FROM schema_migrations ORDER BY applied_at DESC LIMIT 8"
             )
         ).fetchall()
         out['schema_migrations_recent'] = [
@@ -394,14 +397,24 @@ def mn2_health():
     except Exception as exc:
         out['components']['masternode_hosting'] = {'status': 'unknown', 'error': str(exc)}
 
+    # Avoid building the full services catalog on the health path — it re-probes
+    # PoR/RPC and was a major contributor to worker starvation. Peek cache only.
     try:
         from backend.services import mn2_services_hub
-        catalog = mn2_services_hub.get_services_catalog(use_cache=True)
-        out['components']['mn2_services'] = {
-            'status': (catalog.get('summary') or {}).get('overall') or 'unknown',
-            'summary': catalog.get('summary'),
-            'service_count': len(catalog.get('services') or []),
-        }
+        peek = getattr(mn2_services_hub, "peek_catalog_cache", None)
+        catalog = peek() if callable(peek) else None
+        if catalog:
+            out['components']['mn2_services'] = {
+                'status': (catalog.get('summary') or {}).get('overall') or 'unknown',
+                'summary': catalog.get('summary'),
+                'service_count': len(catalog.get('services') or []),
+                'cached': True,
+            }
+        else:
+            out['components']['mn2_services'] = {
+                'status': 'unknown',
+                'detail': 'catalog cache cold',
+            }
     except Exception as exc:
         out['components']['mn2_services'] = {'status': 'unknown', 'error': str(exc)}
 

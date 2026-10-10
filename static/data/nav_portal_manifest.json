@@ -1,0 +1,110 @@
+{
+  "version": "1",
+  "defaultTemplate": "categorized_portals_v1",
+  "defaultTheme": "neon_masternoder",
+  "pathTemplates": [
+    { "prefix": "/exchange", "template": "exchange_focus_v1", "theme": "exchange_ice" },
+    { "prefix": "/shop", "template": "categorized_portals_v1", "theme": "shop_gold" },
+    { "prefix": "/market", "template": "exchange_focus_v1", "theme": "exchange_ice" },
+    { "prefix": "/wallets", "template": "exchange_focus_v1", "theme": "exchange_ice" },
+    { "prefix": "/profit", "template": "exchange_focus_v1", "theme": "exchange_ice" },
+    { "prefix": "/nft", "template": "exchange_focus_v1", "theme": "exchange_ice" },
+    { "prefix": "/trophies", "template": "categorized_portals_v1", "theme": "shop_gold" },
+    { "prefix": "/profile", "template": "categorized_portals_v1", "theme": "shop_gold" },
+    { "prefix": "/explorer", "template": "exchange_focus_v1", "theme": "exchange_ice" }
+  ],
+  "templates": {
+    "categorized_portals_v1": {
+      "label": "Categorized portals",
+      "description": "Quick favorites + category dropdowns with GIF headers (site default).",
+      "layout": "categorized",
+      "theme": "neon_masternoder",
+      "favorites": ["generator", "game", "battle", "trophies"],
+      "categories": [
+        { "id": "play", "label": "Play", "menuTitle": "Play portals", "smiley": "🎮", "gif": "play.gif", "ids": ["game", "battle", "trophies", "quests", "casino", "battlegrounds", "starmap25"] },
+        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile", "market"] },
+        { "id": "finance", "label": "MN2 & exchange", "menuTitle": "MN2 & exchange", "smiley": "💠", "gif": "finance.gif", "ids": ["exchange", "nft", "wallets", "explorer", "profit", "staking_leaderboard", "staking_teams", "hosting", "market"] },
+        { "id": "create", "label": "Create", "menuTitle": "Create & publish", "smiley": "🎬", "gif": "create.gif", "ids": ["generator", "create_app", "podcast", "gallery"] },
+        { "id": "intel", "label": "Lab & agents", "menuTitle": "Lab & agents", "smiley": "🤖", "gif": "intel.gif", "ids": ["lab", "aggregator", "agents", "agent_support", "agents_control", "debugger"] },
+        { "id": "social", "label": "Social & news", "menuTitle": "Social & news", "smiley": "💬", "gif": "social.gif", "ids": ["social", "news", "library", "camgirls", "customers"] }
+      ]
+    },
+    "home_portal_void_v1": {
+      "label": "Home portal void",
+      "description": "Single Portals button with full categorized panel (front page).",
+      "layout": "portal_void",
+      "theme": "neon_masternoder",
+      "favorites": [],
+      "categories": [
+        { "id": "play", "label": "Play", "menuTitle": "Play portals", "smiley": "🎮", "gif": "play.gif", "ids": ["game", "battle", "trophies", "quests", "casino", "battlegrounds", "starmap25"] },
+        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile", "market"] },
+        { "id": "finance", "label": "MN2 & exchange", "menuTitle": "MN2 & exchange", "smiley": "💠", "gif": "finance.gif", "ids": ["exchange", "nft", "wallets", "explorer", "profit", "staking_leaderboard", "staking_teams", "hosting", "market"] },
+        { "id": "create", "label": "Create", "menuTitle": "Create & publish", "smiley": "🎬", "gif": "create.gif", "ids": ["generator", "create_app", "podcast", "gallery"] },
+        { "id": "intel", "label": "Lab & agents", "menuTitle": "Lab & agents", "smiley": "🤖", "gif": "intel.gif", "ids": ["lab", "aggregator", "agents", "agent_support", "agents_control", "debugger"] },
+        { "id": "social", "label": "Social & news", "menuTitle": "Social & news", "smiley": "💬", "gif": "social.gif", "ids": ["social", "news", "library", "camgirls", "customers"] }
+      ]
+    },
+    "exchange_focus_v1": {
+      "label": "Exchange focus",
+      "description": "Finance-first quick links for trading hubs.",
+      "layout": "categorized",
+      "theme": "exchange_ice",
+      "favorites": ["exchange", "wallets", "profit", "shop"],
+      "categories": [
+        { "id": "finance", "label": "MN2 & exchange", "menuTitle": "MN2 & exchange", "smiley": "💠", "gif": "finance.gif", "ids": ["exchange", "nft", "wallets", "explorer", "profit", "staking_leaderboard", "staking_teams", "hosting", "market"] },
+        { "id": "play", "label": "Play", "menuTitle": "Play portals", "smiley": "🎮", "gif": "play.gif", "ids": ["game", "battle", "trophies", "quests", "casino", "battlegrounds", "starmap25"] },
+        { "id": "account", "label": "Shop & profile", "menuTitle": "Shop & profile", "smiley": "🛒", "gif": "account.gif", "ids": ["shop", "profile"] },
+        { "id": "create", "label": "Create", "menuTitle": "Create & publish", "smiley": "🎬", "gif": "create.gif", "ids": ["generator", "create_app", "podcast", "gallery"] },
+        { "id": "intel", "label": "Lab & agents", "menuTitle": "Lab & agents", "smiley": "🤖", "gif": "intel.gif", "ids": ["lab", "aggregator", "agents", "agent_support", "agents_control", "debugger"] },
+        { "id": "social", "label": "Social & news", "menuTitle": "Social & news", "smiley": "💬", "gif": "social.gif", "ids": ["social", "news", "library", "camgirls", "customers"] }
+      ]
+    }
+  },
+  "themes": {
+    "neon_masternoder": {
+      "label": "Neon MasterNoder",
+      "className": "nav-tema-neon-masternoder",
+      "categoryGifBase": "/static/img/nav/categories/",
+      "cssVars": {
+        "--nav-tb-bg": "linear-gradient(135deg, #2d1b4e 0%, #1a0a2e 50%, #3d2463 100%)",
+        "--nav-tb-border": "rgba(0, 255, 136, 0.4)",
+        "--nav-tb-text": "rgba(57, 255, 20, 0.9)",
+        "--nav-tb-text-hover": "#39ff14",
+        "--nav-tb-accent": "#00ff88",
+        "--nav-tb-accent-alt": "#00d4ff",
+        "--nav-tb-menu-bg": "linear-gradient(165deg, rgba(22, 12, 38, 0.98), rgba(12, 8, 24, 0.98))",
+        "--nav-tb-menu-head": "#b8f0ff"
+      }
+    },
+    "exchange_ice": {
+      "label": "Exchange ice",
+      "className": "nav-tema-exchange-ice",
+      "categoryGifBase": "/static/img/nav/categories/",
+      "cssVars": {
+        "--nav-tb-bg": "linear-gradient(135deg, #0a1628 0%, #061018 50%, #0c2040 100%)",
+        "--nav-tb-border": "rgba(0, 212, 255, 0.45)",
+        "--nav-tb-text": "rgba(184, 240, 255, 0.92)",
+        "--nav-tb-text-hover": "#e8fbff",
+        "--nav-tb-accent": "#00d4ff",
+        "--nav-tb-accent-alt": "#7df9ff",
+        "--nav-tb-menu-bg": "linear-gradient(165deg, rgba(6, 14, 28, 0.98), rgba(8, 12, 22, 0.98))",
+        "--nav-tb-menu-head": "#b8f0ff"
+      }
+    },
+    "shop_gold": {
+      "label": "Shop gold",
+      "className": "nav-tema-shop-gold",
+      "categoryGifBase": "/static/img/nav/categories/",
+      "cssVars": {
+        "--nav-tb-bg": "linear-gradient(135deg, #2a1a08 0%, #1a1008 50%, #3d2810 100%)",
+        "--nav-tb-border": "rgba(255, 215, 0, 0.4)",
+        "--nav-tb-text": "rgba(255, 230, 180, 0.92)",
+        "--nav-tb-text-hover": "#ffd966",
+        "--nav-tb-accent": "#ffd700",
+        "--nav-tb-accent-alt": "#ffaa44",
+        "--nav-tb-menu-bg": "linear-gradient(165deg, rgba(28, 18, 8, 0.98), rgba(16, 10, 6, 0.98))",
+        "--nav-tb-menu-head": "#ffe9a8"
+      }
+    }
+  }
+}

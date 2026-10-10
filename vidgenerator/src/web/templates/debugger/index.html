@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Debugger & Auto-Fixer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-fix-all {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 18px;
+            padding: 15px 30px;
+        }
+        .result-box {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .result-item.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .result-item.error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .result-item.warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .log-viewer {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-entry.error {
+            color: #f48771;
+        }
+        .log-entry.success {
+            color: #89d185;
+        }
+        .log-entry.info {
+            color: #75beff;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-indicator.success {
+            background: #28a745;
+        }
+        .status-indicator.error {
+            background: #dc3545;
+        }
+        .status-indicator.warning {
+            background: #ffc107;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        .stat-card p {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 System Debugger & Auto-Fixer</h1>
+            <p>Comprehensive system diagnostics and automatic fixing</p>
+        </div>
+        
+        <div class="content">
+            <!-- Quick Actions -->
+            <div class="section">
+                <h2>Quick Actions</h2>
+                <button class="btn-fix-all" onclick="fixAll()">
+                    🚀 Fix All Issues
+                </button>
+                <button class="btn-primary" onclick="scanErrors()" style="margin-left: 10px;">
+                    🔍 Scan for Errors
+                </button>
+                <button class="btn-primary" onclick="listRoutes()" style="margin-left: 10px;">
+                    📋 List Routes
+                </button>
+                <button class="btn-primary" onclick="autoFixErrors()" style="margin-left: 10px;">
+                    🔧 Auto-Fix Errors
+                </button>
+            </div>
+            
+            <!-- Download Debugger Tools -->
+            <div class="section">
+                <h2>📥 Download Debugger Tools</h2>
+                <p style="margin-bottom: 15px; color: #666;">Download standalone debugger tools for your computer. Choose your preferred platform:</p>
+                <div class="button-group">
+                    <button class="btn-success" onclick="downloadDebugger('python')">
+                        🐍 Python Debugger
+                    </button>
+                    <button class="btn-success" onclick="downloadDebugger('bash')">
+                        🐧 Bash Debugger (Linux/Mac)
+                    </button>
+                    <button class="btn-success" onclick="downloadDebugger('powershell')">
+                        💻 PowerShell Debugger (Windows)
+                    </button>
+                    <button class="btn-success" onclick="downloadDebugger('batch')">
+                        📝 Batch Debugger (Windows)
+                    </button>
+                    <button class="btn-primary" onclick="downloadDebugger('full_package')" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        📦 Complete Package (All Tools)
+                    </button>
+                </div>
+                <div id="download-status" style="margin-top: 10px; padding: 10px; border-radius: 5px; display: none;"></div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="section">
+                <h2>System Statistics</h2>
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="fixes-count">-</h3>
+                        <p>Fixes Applied</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="errors-count">-</h3>
+                        <p>Errors Found</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="success-rate">-</h3>
+                        <p>Success Rate</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Individual Fixes -->
+            <div class="section">
+                <h2>Individual Fixes</h2>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="fixStructures()">Fix Organizational Structures</button>
+                    <button class="btn-primary" onclick="fixPermissions()">Fix Permissions</button>
+                    <button class="btn-primary" onclick="fixDatabase()">Fix Database</button>
+                    <button class="btn-primary" onclick="fixErrors()">Fix Errors</button>
+                </div>
+                <div id="fix-results" class="result-box"></div>
+            </div>
+            
+            <!-- Fix Log -->
+            <div class="section">
+                <h2>Fix Log</h2>
+                <button class="btn-success" onclick="refreshLog()">Refresh Log</button>
+                <div id="fix-log" class="log-viewer">
+                    <div class="log-entry info">Waiting for log data...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        
+        async function fixAll() {
+            const resultsDiv = document.getElementById('fix-results');
+            resultsDiv.innerHTML = '<div class="loading"></div> Fixing all issues...';
+            
+            try {
+                // Try multiple endpoint paths
+                let response;
+                let data;
+                
+                const endpoints = [
+                    `${BASE_URL}/vidgenerator/api/system/fix-all`,
+                    `${BASE_URL}/api/system/fix-all`,
+                    `${BASE_URL}/system/fix-all`,
+                    `${BASE_URL}/vidgenerator/system/fix-all`
+                ];
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'}
+                        });
+                        
+                        if (response.ok) {
+                            const contentType = response.headers.get('content-type') || '';
+                            if (contentType.includes('application/json')) {
+                                data = await response.json();
+                                break;
+                            } else {
+                                const text = await response.text();
+                                if (text.trim().startsWith('{')) {
+                                    data = JSON.parse(text);
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (!response || !response.ok) {
+                    resultsDiv.innerHTML = `<div class="result-item error">Error: Could not reach fix-all endpoint. Status: ${response?.status || 'No response'}</div>`;
+                    return;
+                }
+                
+                if (!data) {
+                    const text = await response.text();
+                    resultsDiv.innerHTML = `<div class="result-item error">Error: Invalid response format. Status: ${response.status}<br>${text.substring(0, 200)}</div>`;
+                    return;
+                }
+                
+                if (data.success) {
+                    displayResults(data.results, resultsDiv);
+                    updateStats(data.results);
+                    refreshLog();
+                } else {
+                    resultsDiv.innerHTML = `<div class="result-item error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function fixStructures() {
+            await runFix('fix-structures', 'Organizational Structures');
+        }
+        
+        async function fixPermissions() {
+            await runFix('fix-permissions', 'Permissions');
+        }
+        
+        async function fixDatabase() {
+            await runFix('fix-database', 'Database');
+        }
+        
+        async function fixErrors() {
+            await runFix('fix-errors', 'Errors');
+        }
+        
+        async function runFix(endpoint, name) {
+            const resultsDiv = document.getElementById('fix-results');
+            resultsDiv.innerHTML = `<div class="loading"></div> Fixing ${name}...`;
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/system/${endpoint}`, {
+                    method: 'POST'
+                });
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultsDiv.innerHTML = `<div class="result-item error">Error: Server returned HTML instead of JSON. Status: ${response.status}<br>${text.substring(0, 200)}</div>`;
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data.results, resultsDiv);
+                    updateStats(data.results);
+                    refreshLog();
+                } else {
+                    resultsDiv.innerHTML = `<div class="result-item error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayResults(results, container) {
+            let html = '';
+            
+            if (results.fixes_applied && results.fixes_applied.length > 0) {
+                html += '<h3 style="color: #28a745; margin-bottom: 10px;">✓ Fixes Applied:</h3>';
+                results.fixes_applied.forEach(fix => {
+                    html += `<div class="result-item success">✓ ${fix}</div>`;
+                });
+            }
+            
+            if (results.errors && results.errors.length > 0) {
+                html += '<h3 style="color: #dc3545; margin-top: 15px; margin-bottom: 10px;">✗ Errors:</h3>';
+                results.errors.forEach(error => {
+                    html += `<div class="result-item error">✗ ${error}</div>`;
+                });
+            }
+            
+            if (results.summary) {
+                html += `<div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 5px;">
+                    <strong>Summary:</strong> ${results.summary.fixes_applied} fixes applied, ${results.summary.errors} errors
+                </div>`;
+            }
+            
+            container.innerHTML = html || '<div class="result-item warning">No results to display</div>';
+        }
+        
+        function updateStats(results) {
+            if (results.summary) {
+                document.getElementById('fixes-count').textContent = results.summary.fixes_applied || 0;
+                document.getElementById('errors-count').textContent = results.summary.errors || 0;
+                
+                const total = (results.summary.fixes_applied || 0) + (results.summary.errors || 0);
+                const successRate = total > 0 ? Math.round((results.summary.fixes_applied / total) * 100) : 0;
+                document.getElementById('success-rate').textContent = successRate + '%';
+            }
+        }
+        
+        async function refreshLog() {
+            const logDiv = document.getElementById('fix-log');
+            logDiv.innerHTML = '<div class="log-entry info">Loading log...</div>';
+            
+            try {
+                // Try multiple endpoint paths
+                let response;
+                let data;
+                
+                const endpoints = [
+                    `${BASE_URL}/vidgenerator/api/system/fix-log`,
+                    `${BASE_URL}/api/system/fix-log`,
+                    `${BASE_URL}/system/fix-log`,
+                    `${BASE_URL}/vidgenerator/system/fix-log`
+                ];
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        response = await fetch(endpoint);
+                        
+                        if (response.ok) {
+                            const contentType = response.headers.get('content-type') || '';
+                            if (contentType.includes('application/json')) {
+                                data = await response.json();
+                                break;
+                            } else {
+                                const text = await response.text();
+                                if (text.trim().startsWith('{')) {
+                                    data = JSON.parse(text);
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (!response || !response.ok) {
+                    logDiv.innerHTML = `<div class="log-entry error">Error: Could not reach fix-log endpoint. Status: ${response?.status || 'No response'}</div>`;
+                    return;
+                }
+                
+                if (!data) {
+                    const text = await response.text();
+                    logDiv.innerHTML = `<div class="log-entry error">Error: Invalid response format. Status: ${response.status}</div>`;
+                    console.error('Expected JSON but got:', text.substring(0, 200));
+                    return;
+                }
+                
+                if (data.success && data.log && data.log.fixes) {
+                    let html = '';
+                    const fixes = data.log.fixes.slice(-50); // Last 50 entries
+                    
+                    fixes.reverse().forEach(entry => {
+                        const level = entry.success ? 'success' : 'error';
+                        const icon = entry.success ? '✓' : '✗';
+                        html += `<div class="log-entry ${level}">
+                            [${new Date(entry.timestamp).toLocaleString()}] ${icon} ${entry.action}
+                        </div>`;
+                    });
+                    
+                    logDiv.innerHTML = html || '<div class="log-entry info">No log entries yet</div>';
+                } else {
+                    logDiv.innerHTML = '<div class="log-entry info">No log entries yet</div>';
+                }
+            } catch (error) {
+                logDiv.innerHTML = `<div class="log-entry error">Error loading log: ${error.message}</div>`;
+            }
+        }
+        
+        async function scanErrors() {
+            const resultsDiv = document.getElementById('fix-results');
+            resultsDiv.innerHTML = '<div class="loading"></div> Scanning for errors...';
+            
+            try {
+                const endpoints = [
+                    `${BASE_URL}/vidgenerator/api/debug/errors/scan`,
+                    `${BASE_URL}/api/debug/errors/scan`
+                ];
+                
+                let response;
+                let data;
+                
+                for (const url of endpoints) {
+                    try {
+                        response = await fetch(url);
+                        if (response.ok) {
+                            const contentType = response.headers.get('content-type') || '';
+                            if (contentType.includes('application/json')) {
+                                data = await response.json();
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (data && data.success) {
+                    let html = '<pre>';
+                    html += `<span class="info">=== ERROR SCAN RESULTS ===</span>\\n`;
+                    html += `<span class="info">Total Errors: ${data.summary.total_errors}</span>\\n`;
+                    html += `<span class="info">Total Warnings: ${data.summary.total_warnings}</span>\\n`;
+                    html += `<span class="info">Common Issues: ${data.summary.common_issues_count}</span>\\n\\n`;
+                    
+                    if (data.errors && data.errors.length > 0) {
+                        html += `<span class="fail">=== ERRORS ===</span>\\n`;
+                        data.errors.slice(0, 10).forEach(err => {
+                            html += `<span class="fail">✗ [${err.timestamp}] ${err.message}</span>\\n`;
+                        });
+                    }
+                    
+                    if (data.common_issues && data.common_issues.length > 0) {
+                        html += `\\n<span class="warning">=== COMMON ISSUES ===</span>\\n`;
+                        data.common_issues.forEach(issue => {
+                            html += `<span class="warning">⚠ ${issue.type}: ${issue.message}</span>\\n`;
+                        });
+                    }
+                    
+                    html += '</pre>';
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<div class="result-item error">Error: ${data?.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function listRoutes() {
+            const resultsDiv = document.getElementById('fix-results');
+            resultsDiv.innerHTML = '<div class="loading"></div> Loading routes...';
+            
+            try {
+                const endpoints = [
+                    `${BASE_URL}/vidgenerator/api/debug/routes/list`,
+                    `${BASE_URL}/api/debug/routes/list`
+                ];
+                
+                let response;
+                let data;
+                
+                for (const url of endpoints) {
+                    try {
+                        response = await fetch(url);
+                        if (response.ok) {
+                            data = await response.json();
+                            break;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (data && data.success) {
+                    let html = '<pre>';
+                    html += `<span class="info">=== ROUTES LIST ===</span>\\n`;
+                    html += `<span class="info">Total Routes: ${data.total_routes}</span>\\n\\n`;
+                    
+                    if (data.system_routes && data.system_routes.length > 0) {
+                        html += `<span class="info">=== SYSTEM ROUTES ===</span>\\n`;
+                        data.system_routes.forEach(route => {
+                            html += `<span class="pass">✓ ${route.rule} [${', '.join(route.methods)}]</span>\\n`;
+                        });
+                    } else {
+                        html += `<span class="fail">✗ No system routes found!</span>\\n`;
+                    }
+                    
+                    html += '</pre>';
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<div class="result-item error">Error: ${data?.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function autoFixErrors() {
+            const resultsDiv = document.getElementById('fix-results');
+            resultsDiv.innerHTML = '<div class="loading"></div> Auto-fixing errors...';
+            
+            try {
+                const endpoints = [
+                    `${BASE_URL}/vidgenerator/api/debug/errors/auto-fix`,
+                    `${BASE_URL}/api/debug/errors/auto-fix`
+                ];
+                
+                let response;
+                let data;
+                
+                for (const url of endpoints) {
+                    try {
+                        response = await fetch(url, {method: 'POST'});
+                        if (response.ok) {
+                            data = await response.json();
+                            break;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (data && data.success) {
+                    let html = '<pre>';
+                    html += `<span class="pass">${data.message}</span>\\n\\n`;
+                    if (data.fixes_applied && data.fixes_applied.length > 0) {
+                        html += `<span class="info">=== FIXES APPLIED ===</span>\\n`;
+                        data.fixes_applied.forEach(fix => {
+                            html += `<span class="pass">✓ ${fix}</span>\\n`;
+                        });
+                    }
+                    if (data.errors && data.errors.length > 0) {
+                        html += `\\n<span class="fail">=== ERRORS ===</span>\\n`;
+                        data.errors.forEach(err => {
+                            html += `<span class="fail">✗ ${err}</span>\\n`;
+                        });
+                    }
+                    html += '</pre>';
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<div class="result-item error">Error: ${data?.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-item error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-refresh log every 10 seconds
+        setInterval(refreshLog, 10000);
+        
+        // Auto-scan for errors every 30 seconds
+        setInterval(scanErrors, 30000);
+        
+        async function downloadDebugger(toolType) {
+            console.log('[Download] Attempting to download:', toolType);
+            const statusDiv = document.getElementById('download-status');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<div class="loading"></div> Preparing download...';
+            statusDiv.className = 'result-item info';
+            
+            try {
+                // Try all possible endpoints (resistant paths)
+                const endpoints = [
+                    `${BASE_URL}/vidgenerator/api/debugger/download/${toolType}`,
+                    `${BASE_URL}/api/debugger/download/${toolType}`,
+                    `${BASE_URL}/vidgenerator/download/fixer/${toolType}`,
+                    `${BASE_URL}/download/fixer/${toolType}`,
+                    `${BASE_URL}/vidgenerator/tools/${toolType}`,
+                    `${BASE_URL}/tools/${toolType}`,
+                    `${BASE_URL}/download/${toolType}`,
+                    `${BASE_URL}/vidgenerator/api/fixer/download/${toolType}`,
+                    `${BASE_URL}/api/fixer/download/${toolType}`
+                ];
+                
+                let downloadUrl = null;
+                let lastError = null;
+                
+                // Try each endpoint
+                for (const url of endpoints) {
+                    try {
+                        console.log('[Download] Trying endpoint:', url);
+                        const testResponse = await fetch(url, { 
+                            method: 'HEAD',
+                            mode: 'no-cors' // Allow CORS issues
+                        });
+                        
+                        // If we get here, endpoint exists (even if CORS blocks)
+                        downloadUrl = url;
+                        console.log('[Download] Found working endpoint:', url);
+                        break;
+                    } catch (e) {
+                        console.log('[Download] Endpoint failed:', url, e.message);
+                        lastError = e;
+                        // Try direct download without HEAD check
+                        try {
+                            // Create a test link to see if it works
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.style.display = 'none';
+                            document.body.appendChild(link);
+                            downloadUrl = url; // Assume it works
+                            document.body.removeChild(link);
+                            break;
+                        } catch (e2) {
+                            continue;
+                        }
+                    }
+                }
+                
+                // If no endpoint found via HEAD, try direct download
+                if (!downloadUrl) {
+                    console.log('[Download] No endpoint found via HEAD, trying direct download...');
+                    // Use first endpoint as fallback
+                    downloadUrl = endpoints[0];
+                }
+                
+                if (downloadUrl) {
+                    statusDiv.innerHTML = '<div class="result-item success">✓ Download starting... If download does not start, <a href="' + downloadUrl + '" download target="_blank">click here</a></div>';
+                    
+                    // Try multiple download methods
+                    try {
+                        // Method 1: Direct link
+                        const link = document.createElement('a');
+                        link.href = downloadUrl;
+                        link.download = '';
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    } catch (e) {
+                        console.log('[Download] Link method failed, trying window.location...');
+                        // Method 2: Window location
+                        window.location.href = downloadUrl;
+                    }
+                    
+                    // Update status after a moment
+                    setTimeout(() => {
+                        statusDiv.innerHTML = '<div class="result-item success">✓ Download initiated. Check your downloads folder. <br><small>If download did not start, <a href="' + downloadUrl + '" download target="_blank">click here to download</a></small></div>';
+                    }, 1000);
+                } else {
+                    statusDiv.innerHTML = '<div class="result-item error">✗ Error: Could not find download endpoint. <br><small>Last error: ' + (lastError ? lastError.message : 'Unknown') + '</small><br><small>Please check server logs or try again later.</small></div>';
+                }
+            } catch (error) {
+                console.error('[Download] Error:', error);
+                statusDiv.innerHTML = `<div class="result-item error">✗ Error: ${error.message}<br><small>Please try again or contact support.</small></div>`;
+            }
+        }
+        
+        // Load initial data
+        window.addEventListener('load', function() {
+            refreshLog();
+            scanErrors();
+        });
+    </script>
+    <script src="/vidgenerator/static/js/error-manager.js"></script>
+</body>
+</html>
+

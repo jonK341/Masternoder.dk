@@ -1,0 +1,230 @@
+/**
+ * Game hub tabulator v2 — grouped horizontal nav (aggregator-style).
+ */
+
+.game-tabulator-v2 .hunter-game-sidebar,
+.game-tabulator-v2 .hunter-game-tabs-row {
+  display: none !important;
+}
+
+.game-tabulator-v2 .hunter-game-layout {
+  display: block;
+  min-height: auto;
+}
+
+.game-tabulator-v2 .hunter-game-main {
+  width: 100%;
+  max-width: 100%;
+  border-left: none;
+  padding-top: 0;
+}
+
+.game-hub-shell {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  padding: 0 12px;
+  position: sticky;
+  top: 52px;
+  z-index: 30;
+  background: linear-gradient(180deg, rgba(4, 8, 14, 0.97) 0%, rgba(4, 8, 14, 0.88) 100%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.22);
+  padding-bottom: 10px;
+}
+
+.game-hub-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 0 6px;
+  scrollbar-width: thin;
+}
+
+.game-hub-nav::-webkit-scrollbar {
+  height: 6px;
+}
+
+.game-hub-nav::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.35);
+  border-radius: 999px;
+}
+
+.game-hub-section {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.game-hub-section:hover,
+.game-hub-section.active {
+  border-color: rgba(0, 212, 255, 0.45);
+  color: #fff;
+}
+
+.game-hub-section.active {
+  border-color: rgba(0, 255, 136, 0.55);
+  background: rgba(0, 255, 136, 0.12);
+  color: #00ff88;
+}
+
+.game-hub-section .gh-dot {
+  display: inline-block;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ffd700;
+  color: #0a0a0a;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.game-hub-subnav {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0 2px;
+}
+
+.game-hub-tab {
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.game-hub-tab:hover {
+  border-color: rgba(0, 212, 255, 0.35);
+  color: #fff;
+}
+
+.game-hub-tab.active {
+  border-color: rgba(0, 255, 136, 0.5);
+  background: rgba(0, 255, 136, 0.14);
+  color: #00ff88;
+  font-weight: 700;
+}
+
+.game-level-crypto-panel {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.28);
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.game-level-crypto-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.game-level-crypto-head h3 {
+  margin: 0;
+  color: #ffd700;
+  font-size: 1.05rem;
+}
+
+.game-level-crypto-meta {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.game-level-crypto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.game-level-crypto-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+
+.game-level-crypto-card.ready {
+  border-color: rgba(255, 215, 0, 0.45);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.12);
+}
+
+.game-level-crypto-card.claimed {
+  opacity: 0.55;
+  border-color: rgba(0, 255, 136, 0.25);
+}
+
+.game-level-crypto-card.locked {
+  opacity: 0.45;
+}
+
+.game-level-crypto-card strong {
+  display: block;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.game-level-crypto-card span.lvl-mn2 {
+  display: block;
+  margin: 4px 0 8px;
+  color: #ffd700;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.game-level-crypto-card button {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  background: rgba(255, 215, 0, 0.12);
+  color: #ffd700;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.game-level-crypto-card button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.game-level-crypto-card .lvl-state {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 640px) {
+  .game-hub-shell {
+    top: 48px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .game-hub-section {
+    padding: 7px 11px;
+    font-size: 0.76rem;
+  }
+}

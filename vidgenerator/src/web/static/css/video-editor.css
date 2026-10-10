@@ -1,0 +1,231 @@
+/* Video Editor Styles */
+.video-editor-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.video-editor-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 1200px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(0, 200, 255, 0.3);
+}
+
+.video-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    border-bottom: 2px solid rgba(0, 200, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.video-editor-header h2 {
+    margin: 0;
+    color: #00c8ff;
+    font-size: 24px;
+}
+
+.editor-close-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 32px;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.editor-close-btn:hover {
+    background: rgba(255, 0, 0, 0.3);
+    transform: rotate(90deg);
+}
+
+.video-editor-body {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    padding: 30px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.editor-video-preview {
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.editor-video-preview video {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+}
+
+.editor-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.editor-section {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 200, 255, 0.2);
+}
+
+.editor-section h3 {
+    margin: 0 0 15px 0;
+    color: #00c8ff;
+    font-size: 18px;
+    border-bottom: 1px solid rgba(0, 200, 255, 0.2);
+    padding-bottom: 10px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.info-item label {
+    font-weight: bold;
+    color: #aaa;
+}
+
+.info-item input {
+    flex: 1;
+    margin-left: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    border-radius: 4px;
+    color: #fff;
+}
+
+.info-item input:focus {
+    outline: none;
+    border-color: #00c8ff;
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+}
+
+.editor-btn {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: rgba(0, 200, 255, 0.2);
+    border: 1px solid rgba(0, 200, 255, 0.4);
+    border-radius: 6px;
+    color: #00c8ff;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.editor-btn:hover {
+    background: rgba(0, 200, 255, 0.4);
+    border-color: #00c8ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 200, 255, 0.3);
+}
+
+.editor-btn.primary {
+    background: linear-gradient(135deg, #00c8ff 0%, #0080ff 100%);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+}
+
+.editor-btn.primary:hover {
+    background: linear-gradient(135deg, #00d9ff 0%, #0090ff 100%);
+    box-shadow: 0 4px 20px rgba(0, 200, 255, 0.5);
+}
+
+.editor-btn.cancel {
+    background: rgba(255, 0, 0, 0.2);
+    border-color: rgba(255, 0, 0, 0.4);
+    color: #ff6b6b;
+}
+
+.editor-btn.cancel:hover {
+    background: rgba(255, 0, 0, 0.4);
+}
+
+.editor-btn.save {
+    background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+}
+
+.editor-btn.save:hover {
+    background: linear-gradient(135deg, #00ff99 0%, #00dd77 100%);
+    box-shadow: 0 4px 20px rgba(0, 255, 136, 0.5);
+}
+
+#editor-strategy-select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+}
+
+#editor-strategy-select:focus {
+    outline: none;
+    border-color: #00c8ff;
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+}
+
+.editor-actions {
+    display: flex;
+    gap: 10px;
+    padding: 20px 30px;
+    border-top: 2px solid rgba(0, 200, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.editor-actions .editor-btn {
+    flex: 1;
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .video-editor-body {
+        grid-template-columns: 1fr;
+    }
+    
+    .video-editor-content {
+        max-height: 95vh;
+    }
+}
+

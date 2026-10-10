@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Enemy War Plan - MasterNoder{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}?v={{ cache_bust() }}">
+<style>
+    .war-plan-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1a0a0a 0%, #2a1a1a 50%, #1a0a0a 100%);
+        padding: 2rem;
+    }
+    
+    .war-plan-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        color: #ff4444;
+    }
+    
+    .war-plan-header h1 {
+        font-size: 3em;
+        text-shadow: 0 0 20px rgba(255, 68, 68, 0.8);
+        margin-bottom: 1rem;
+    }
+    
+    .war-plan-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .war-plan-card {
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid rgba(255, 68, 68, 0.5);
+        border-radius: 15px;
+        padding: 2rem;
+        color: #fff;
+    }
+    
+    .war-plan-card h2 {
+        color: #ff4444;
+        margin-bottom: 1rem;
+        font-size: 1.5em;
+    }
+    
+    .threat-level {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .threat-level.critical {
+        background: rgba(255, 0, 0, 0.3);
+        color: #ff0000;
+        border: 1px solid #ff0000;
+    }
+    
+    .threat-level.high {
+        background: rgba(255, 100, 0, 0.3);
+        color: #ff6400;
+        border: 1px solid #ff6400;
+    }
+    
+    .threat-level.medium {
+        background: rgba(255, 200, 0, 0.3);
+        color: #ffc800;
+        border: 1px solid #ffc800;
+    }
+    
+    .btn-war {
+        background: linear-gradient(135deg, #ff4444, #cc0000);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin: 5px;
+    }
+    
+    .btn-war:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(255, 68, 68, 0.5);
+    }
+    
+    .btn-defense {
+        background: linear-gradient(135deg, #00ff00, #00cc00);
+        color: #000;
+    }
+    
+    .btn-defense:hover {
+        box-shadow: 0 5px 20px rgba(0, 255, 0, 0.5);
+    }
+    
+    .intelligence-box {
+        background: rgba(0, 50, 100, 0.5);
+        border: 1px solid rgba(0, 150, 255, 0.5);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    .status-active {
+        color: #ff4444;
+        font-weight: bold;
+    }
+    
+    .status-defeated {
+        color: #00ff00;
+        font-weight: bold;
+    }
+    
+    .xp-reward {
+        color: #ffd700;
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="war-plan-container">
+    <div class="war-plan-header">
+        <h1>⚔️ Enemy War Plan</h1>
+        <p style="font-size: 1.2em; color: rgba(255, 255, 255, 0.8);">Strategic Defense System - Defend Against Enemy Attacks</p>
+    </div>
+    
+    <div class="war-plan-grid">
+        <!-- Generate War Plan Card -->
+        <div class="war-plan-card">
+            <h2>🎯 Generate Enemy Plan</h2>
+            <p>Generate a new enemy war plan to defend against. Each plan has different threat levels and XP rewards.</p>
+            <button class="btn-war" onclick="generateWarPlan()">Generate Enemy Plan</button>
+            <div id="plan-result" style="margin-top: 1rem;"></div>
+        </div>
+        
+        <!-- Current War Plan Status -->
+        <div class="war-plan-card">
+            <h2>📊 Current Status</h2>
+            <div id="war-plan-status">
+                <p>No active war plan. Generate one to start!</p>
+            </div>
+            <button class="btn-war" onclick="checkStatus()">Refresh Status</button>
+        </div>
+        
+        <!-- Intelligence Card -->
+        <div class="war-plan-card">
+            <h2>🔍 Intelligence</h2>
+            <div id="intelligence-box" class="intelligence-box">
+                <p>Gather intelligence on enemy plans and recommended defenses.</p>
+            </div>
+            <button class="btn-war" onclick="gatherIntelligence()">Gather Intelligence</button>
+        </div>
+        
+        <!-- Defense Actions Card -->
+        <div class="war-plan-card">
+            <h2>🛡️ Defense Actions</h2>
+            <p>Execute defense tactics against active enemy plans.</p>
+            <button class="btn-defense" onclick="executeDefense()">Execute Defense</button>
+            <div id="defense-result" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE_URL = window.location.origin;
+const USER_ID = 'user_' + Math.random().toString(36).substr(2, 9);
+
+async function generateWarPlan() {
+    const resultDiv = document.getElementById('plan-result');
+    resultDiv.innerHTML = '<p>Generating enemy plan...</p>';
+    
+    try {
+        const response = await fetch(`${BASE_URL}/vidgenerator/api/war-plan/generate`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({user_id: USER_ID})
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const plan = data.war_plan;
+            resultDiv.innerHTML = `
+                <div style="background: rgba(255, 68, 68, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255, 68, 68, 0.5);">
+                    <h3 style="color: #ff4444; margin-bottom: 0.5rem;">${plan.enemy_name}</h3>
+                    <p><span class="threat-level ${plan.threat_level}">${plan.threat_level.toUpperCase()}</span></p>
+                    <p>${plan.description}</p>
+                    <p class="xp-reward">XP Reward: ${plan.xp_reward}</p>
+                    <p style="color: #00ff00;">Status: <span class="status-active">${plan.status.toUpperCase()}</span></p>
+                </div>
+            `;
+            checkStatus();
+        } else {
+            resultDiv.innerHTML = `<p style="color: #ff4444;">Error: ${data.error}</p>`;
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `<p style="color: #ff4444;">Error: ${error.message}</p>`;
+    }
+}
+
+async function checkStatus() {
+    const statusDiv = document.getElementById('war-plan-status');
+    
+    try {
+        const response = await fetch(`${BASE_URL}/vidgenerator/api/war-plan/status/${USER_ID}`);
+        const data = await response.json();
+        
+        if (data.success && data.active) {
+            const plan = data.war_plan;
+            statusDiv.innerHTML = `
+                <div style="background: rgba(255, 68, 68, 0.1); padding: 1rem; border-radius: 8px;">
+                    <h3 style="color: #ff4444;">${plan.enemy_name}</h3>
+                    <p><span class="threat-level ${plan.threat_level}">${plan.threat_level.toUpperCase()}</span></p>
+                    <p>Progress: ${plan.progress}%</p>
+                    <p>XP Reward: <span class="xp-reward">${plan.xp_reward}</span></p>
+                    <p>Status: <span class="status-active">${plan.status.toUpperCase()}</span></p>
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = '<p>No active war plan. Generate one to start!</p>';
+        }
+    } catch (error) {
+        statusDiv.innerHTML = `<p style="color: #ff4444;">Error: ${error.message}</p>`;
+    }
+}
+
+async function gatherIntelligence() {
+    const intelDiv = document.getElementById('intelligence-box');
+    intelDiv.innerHTML = '<p>Gathering intelligence...</p>';
+    
+    try {
+        const response = await fetch(`${BASE_URL}/vidgenerator/api/war-plan/intelligence/${USER_ID}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const intel = data.intelligence;
+            if (intel.active_threats > 0) {
+                intelDiv.innerHTML = `
+                    <h3 style="color: #00aaff; margin-bottom: 0.5rem;">Intelligence Report</h3>
+                    <p><strong>Active Threats:</strong> ${intel.active_threats}</p>
+                    <p><strong>Threat Level:</strong> <span class="threat-level ${intel.threat_level}">${intel.threat_level.toUpperCase()}</span></p>
+                    <p><strong>Enemy Type:</strong> ${intel.enemy_type}</p>
+                    <p><strong>Recommended Defense:</strong> ${intel.recommended_defense}</p>
+                    <p><strong>Estimated XP Reward:</strong> <span class="xp-reward">${intel.estimated_xp_reward}</span></p>
+                `;
+            } else {
+                intelDiv.innerHTML = '<p>No active threats detected. System is secure.</p>';
+            }
+        } else {
+            intelDiv.innerHTML = `<p style="color: #ff4444;">Error: ${data.error}</p>`;
+        }
+    } catch (error) {
+        intelDiv.innerHTML = `<p style="color: #ff4444;">Error: ${error.message}</p>`;
+    }
+}
+
+async function executeDefense() {
+    const resultDiv = document.getElementById('defense-result');
+    resultDiv.innerHTML = '<p>Executing defense...</p>';
+    
+    try {
+        const response = await fetch(`${BASE_URL}/vidgenerator/api/war-plan/defend`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({user_id: USER_ID})
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.enemy_defeated) {
+                resultDiv.innerHTML = `
+                    <div style="background: rgba(0, 255, 0, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(0, 255, 0, 0.5);">
+                        <h3 style="color: #00ff00;">✓ Victory!</h3>
+                        <p>${data.message}</p>
+                        <p>Defense Used: <strong>${data.defense_used}</strong></p>
+                        <p class="xp-reward">XP Earned: ${data.xp_earned}</p>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div style="background: rgba(255, 200, 0, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255, 200, 0, 0.5);">
+                        <h3 style="color: #ffc800;">⚠ Partial Defense</h3>
+                        <p>${data.message}</p>
+                        <p>Defense Used: <strong>${data.defense_used}</strong></p>
+                        <p>XP Earned: <span class="xp-reward">${data.xp_earned}</span></p>
+                        <p>Progress: ${data.progress}%</p>
+                    </div>
+                `;
+            }
+            checkStatus();
+        } else {
+            resultDiv.innerHTML = `<p style="color: #ff4444;">Error: ${data.error}</p>`;
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `<p style="color: #ff4444;">Error: ${error.message}</p>`;
+    }
+}
+
+// Auto-refresh status every 10 seconds
+setInterval(checkStatus, 10000);
+
+// Load initial status
+window.addEventListener('load', function() {
+    checkStatus();
+    gatherIntelligence();
+});
+</script>
+{% endblock %}
+

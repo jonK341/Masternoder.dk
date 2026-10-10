@@ -10,8 +10,8 @@
   var termsVersion = '2026-06-v1';
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    try { return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''); }
+    catch (e) { return (window.MnUserId ? window.MnUserId.read() : ''); }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -301,11 +301,25 @@
     }).catch(function () { msg('Could not load exchange data.'); });
   }
 
+  function loadMn2Packs() {
+    function withPacks(data) {
+      var packs = (data && (data.packs || data.mn2_packs)) || [];
+      return Object.assign({}, data || {}, { packs: packs });
+    }
+    return getJson('/api/exchange/paypal/mn2-packs').then(function (data) {
+      if (data && (data.packs || data.mn2_packs)) return withPacks(data);
+      return getJson('/api/shop/mn2-packs').then(withPacks);
+    }).catch(function () {
+      return getJson('/api/shop/mn2-packs').then(withPacks).catch(function () {
+        return { packs: [] };
+      });
+    });
+  }
+
   function refreshTradeExtras() {
-    var u = encodeURIComponent(uid());
     return Promise.all([
-      getJson('/api/exchange/orders?limit=20'),
-      getJson('/api/exchange/paypal/mn2-packs'),
+      getJson('/api/exchange/orders?limit=20').catch(function () { return { orders: [] }; }),
+      loadMn2Packs(),
     ]).then(function (res) {
       renderOrders(res[0]);
       renderPayPalMn2Packs(res[1]);

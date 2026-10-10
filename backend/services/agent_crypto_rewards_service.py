@@ -45,6 +45,30 @@ def _write_json(path: str, data: dict) -> None:
     os.replace(tmp, path)
 
 
+def _overlay_monetization_rewards(defaults: Dict[str, Any]) -> None:
+    """Apply data/monetization_config.json agent_ai_rewards when present."""
+    try:
+        from backend.services.monetization_config_service import _load_raw
+
+        block = (_load_raw() or {}).get("agent_ai_rewards") or {}
+    except Exception:
+        return
+    if not isinstance(block, dict):
+        return
+    if "enabled" in block:
+        defaults["enabled"] = block["enabled"]
+    if block.get("daily_cap_mn2") is not None:
+        defaults["daily_cap_mn2"] = block["daily_cap_mn2"]
+    actions = block.get("actions") if isinstance(block.get("actions"), dict) else {}
+    for name, row in actions.items():
+        if not isinstance(row, dict):
+            continue
+        if row.get("mn2") is not None:
+            defaults["action_rewards_mn2"][str(name)] = float(row["mn2"])
+        if row.get("coins") is not None:
+            defaults["action_rewards_coins"][str(name)] = float(row["coins"])
+
+
 def _agent_rewards_cfg() -> Dict[str, Any]:
     raw = _read_json(_MN2_CONFIG).get("agent_rewards") or {}
     defaults: Dict[str, Any] = {
@@ -79,6 +103,7 @@ def _agent_rewards_cfg() -> Dict[str, Any]:
             "like_received": 1,
         },
     }
+    _overlay_monetization_rewards(defaults)
     if isinstance(raw.get("action_rewards_mn2"), dict):
         defaults["action_rewards_mn2"].update(raw["action_rewards_mn2"])
     if isinstance(raw.get("action_rewards_coins"), dict):
@@ -131,6 +156,13 @@ def award_agent_action(
     """
     if require_success and not success:
         return {"success": False, "skipped": "action_not_successful"}
+
+    from backend.services.mn2_earn_auth import require_earn_user
+
+    ok, uid_or_err = require_earn_user(user_id)
+    if not ok:
+        return {"success": False, "error": uid_or_err, "skipped": uid_or_err}
+    user_id = uid_or_err
 
     cfg = _agent_rewards_cfg()
     if not cfg.get("enabled", True):
@@ -230,11 +262,18 @@ def award_agent_action(
 
 def public_rewards_info() -> Dict[str, Any]:
     cfg = _agent_rewards_cfg()
+    mn2_map = cfg.get("action_rewards_mn2") or {}
+    coin_map = cfg.get("action_rewards_coins") or {}
+    actions = {
+        name: {"mn2": float(mn2_map.get(name) or 0), "coins": float(coin_map.get(name) or 0)}
+        for name in set(mn2_map) | set(coin_map)
+    }
     return {
         "success": True,
         "enabled": bool(cfg.get("enabled", True)),
         "daily_cap_mn2": cfg.get("daily_cap_mn2"),
-        "actions_mn2": cfg.get("action_rewards_mn2") or {},
-        "actions_coins": cfg.get("action_rewards_coins") or {},
+        "actions_mn2": mn2_map,
+        "actions_coins": coin_map,
+        "actions": actions,
         "currency": "MN2",
     }

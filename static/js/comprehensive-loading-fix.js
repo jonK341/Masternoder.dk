@@ -97,7 +97,7 @@ class ComprehensiveLoadingFix {
     
     async loadBattleStats() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`/api/battle/stats/overview?user_id=${userId}`);
             const data = await response.json();
             
@@ -112,7 +112,7 @@ class ComprehensiveLoadingFix {
     
     async loadBattleInventory() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`/api/battle/resources/inventory?user_id=${userId}`);
             const data = await response.json();
             
@@ -126,7 +126,7 @@ class ComprehensiveLoadingFix {
     
     async loadBattleArtifacts() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`/api/battle/resources/artifacts?user_id=${userId}`);
             const data = await response.json();
             
@@ -140,7 +140,7 @@ class ComprehensiveLoadingFix {
     
     async loadBattlePowerStats() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`/api/unified/stats?user_id=${userId}`);
             const data = await response.json();
             
@@ -154,7 +154,7 @@ class ComprehensiveLoadingFix {
     
     async loadFantasyResources() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`/api/battle/resources/fantasy?user_id=${userId}`);
             const data = await response.json();
             
@@ -194,7 +194,7 @@ class ComprehensiveLoadingFix {
     
     async loadBattleHistory() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`/api/battle/history?user_id=${userId}`);
             const data = await response.json();
             

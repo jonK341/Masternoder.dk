@@ -16,6 +16,7 @@ from backend.services import crypto_exchange_service as ex
 
 _CFG_PATH = os.path.join(ex._DATA_DIR, "profit_path_protocol.json")
 _LEDGER_PATH = os.path.join(ex._DATA_DIR, "profit_path_ledger.jsonl")
+_CFG_CACHE: Dict[str, Any] = {"mtime": 0.0, "cfg": {}}
 
 
 def _iso() -> str:
@@ -37,7 +38,21 @@ def _parse_ts(ts: str) -> Optional[datetime]:
         return None
 
 
+def reload_config() -> Dict[str, Any]:
+    """Hot-reload PPP config from disk (no daemon restart)."""
+    global _CFG_CACHE
+    _CFG_CACHE = {"mtime": 0.0, "cfg": {}}
+    cfg = load_config()
+    return {"success": True, "reloaded_at": _iso(), "keys": sorted(cfg.keys())}
+
+
 def load_config() -> Dict[str, Any]:
+    try:
+        mtime = os.path.getmtime(_CFG_PATH) if os.path.isfile(_CFG_PATH) else 0.0
+    except OSError:
+        mtime = 0.0
+    if _CFG_CACHE.get("cfg") and float(_CFG_CACHE.get("mtime") or 0) == mtime:
+        return dict(_CFG_CACHE["cfg"])
     cfg = ex._read_json(_CFG_PATH, {})
     if not isinstance(cfg, dict):
         cfg = {}
@@ -58,6 +73,8 @@ def load_config() -> Dict[str, Any]:
     cfg.setdefault("rotation_auto_types", [
         "internal_stable_swap", "external_market_buy", "external_market_sell", "reduce_notional",
     ])
+    _CFG_CACHE["mtime"] = mtime
+    _CFG_CACHE["cfg"] = dict(cfg)
     return cfg
 
 
@@ -498,6 +515,38 @@ def profit_path_summary(*, hours: Optional[float] = None) -> Dict[str, Any]:
         "top_skip_reasons": [{"reason": k, "count": v} for k, v in skip_reasons.most_common(8)],
         "best_routes_24h": routes_24h[:10],
         "best_routes_7d": routes_7d[:10],
+    }
+
+
+def profit_path_monitor_summary(*, hours: float = 24) -> Dict[str, Any]:
+    """Light PPP rollup for profit monitor — tail ledger only."""
+    from collections import Counter
+    from datetime import timedelta
+
+    rows = _read_ledger(limit=2500)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=float(hours))
+    filtered: List[Dict[str, Any]] = []
+    for row in reversed(rows):
+        ts = _parse_ts(str(row.get("ts") or ""))
+        if ts and ts < cutoff:
+            break
+        filtered.append(row)
+    scans = [r for r in filtered if r.get("phase") == "scan"]
+    attempts = [r for r in filtered if r.get("phase") == "execute"]
+    fills = [r for r in attempts if r.get("decision") in ("fill", "paper", "live") and (r.get("execution") or {}).get("success")]
+    skip_reasons = Counter(str(r.get("skip_reason") or "unknown") for r in filtered if r.get("decision") == "skip" and r.get("skip_reason"))
+    hit_rate = round(100.0 * len(fills) / len(attempts), 1) if attempts else 0.0
+    net_rows = [r for r in filtered if float(r.get("net_bps") or 0) != 0]
+    avg_net = round(sum(float(r.get("net_bps") or 0) for r in net_rows) / len(net_rows), 2) if net_rows else 0.0
+    return {
+        "success": True,
+        "window_hours": hours,
+        "scan_count": len(scans),
+        "attempt_count": len(attempts),
+        "fill_count": len(fills),
+        "hit_rate_pct": hit_rate,
+        "avg_net_bps": avg_net,
+        "top_skip_reasons": [{"reason": k, "count": v} for k, v in skip_reasons.most_common(8)],
     }
 
 

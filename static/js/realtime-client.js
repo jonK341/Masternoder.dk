@@ -4,7 +4,7 @@
 class RealtimeClient {
     constructor() {
         this.socket = null;
-        this.userId = localStorage.getItem('game_user_id') || 'default_user';
+        this.userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         this.connected = false;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;

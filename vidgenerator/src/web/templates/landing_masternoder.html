@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MasterNoder.dk - AI-drevet videogenerering platform. Opret professionelle dokumentarfilm med kunstig intelligens.">
+    <meta name="keywords" content="AI video, dokumentarfilm, videogenerering, MasterNoder, kunstig intelligens">
+    <title>MasterNoder.dk - AI Videogenerering Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Animated Background Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(50px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 60px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.8s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.4em;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+        
+        .feature-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        .feature-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .feature-description {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .cta-section {
+            margin-top: 50px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            margin: 15px;
+            padding: 20px 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.2em;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .cta-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+        }
+        
+        .cta-button.primary {
+            background: linear-gradient(135deg, #00d4ff 0%, #667eea 100%);
+            font-size: 1.4em;
+            padding: 25px 60px;
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.4);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+            color: #666;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .footer-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .footer-link:hover {
+            color: #764ba2;
+        }
+        
+        .verification-badge {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid #00d4ff;
+            border-radius: 25px;
+            color: #00d4ff;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .subtitle {
+                font-size: 1.1em;
+            }
+            
+            .cta-button {
+                padding: 15px 30px;
+                font-size: 1em;
+            }
+            
+            .cta-button.primary {
+                font-size: 1.2em;
+                padding: 20px 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Particles -->
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <div class="logo">🎬</div>
+        <h1>Velkommen til MasterNoder.dk</h1>
+        <p class="subtitle">Din platform for AI-drevet videogenerering og dokumentarfilm</p>
+        
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-value" id="stat-videos">0</span>
+                <span class="stat-label">Videos Oprettet</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-users">0</span>
+                <span class="stat-label">Aktive Brugere</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">12</span>
+                <span class="stat-label">Tilgængelige Temaer</span>
+            </div>
+        </div>
+        
+        <!-- Features -->
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <div class="feature-title">AI-Drevet Generering</div>
+                <div class="feature-description">
+                    Brug avanceret kunstig intelligens til at skabe professionelle dokumentarfilm fra tekstprompter
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <div class="feature-title">12 Unikke Temaer</div>
+                <div class="feature-description">
+                    Vælg mellem Matrix, WWII, Space, Nature og mange flere temaer til dine videoer
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Hurtig Generering</div>
+                <div class="feature-description">
+                    Få dine videoer genereret på få minutter med vores optimerede AI-systemer
+                </div>
+            </div>
+        </div>
+        
+        <!-- Call to Action -->
+        <div class="cta-section">
+            <a href="/vidgenerator/generator" class="cta-button primary" id="generator-link" onclick="trackAction('generator_click')">
+                <i class="fas fa-rocket"></i> Gå til Video Generator
+            </a>
+            <br>
+            <a href="/vidgenerator" class="cta-button" onclick="trackAction('platform_click')">
+                <i class="fas fa-home"></i> Se Platform
+            </a>
+            <a href="/vidgenerator/gallery" class="cta-button" onclick="trackAction('gallery_click')">
+                <i class="fas fa-images"></i> Se Galleri
+            </a>
+            <a href="/vidgenerator/stats" class="cta-button" onclick="trackAction('stats_click')">
+                <i class="fas fa-chart-line"></i> Se Statistikker
+            </a>
+        </div>
+        
+        <!-- Verification Badge -->
+        <div class="verification-badge" id="verification-badge">
+            <i class="fas fa-check-circle"></i> Platform Verificeret og Aktiv
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2024 MasterNoder.dk - Alle rettigheder forbeholdes</p>
+            <div class="footer-links">
+                <a href="/vidgenerator/generator" class="footer-link">Generator</a>
+                <a href="/vidgenerator/gallery" class="footer-link">Galleri</a>
+                <a href="/vidgenerator/stats" class="footer-link">Statistikker</a>
+                <a href="/vidgenerator/debugger" class="footer-link">Debugger</a>
+                <a href="/vidgenerator/documentation" class="footer-link">Dokumentation</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Create animated particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                const size = Math.random() * 5 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // Track user actions
+        function trackAction(action) {
+            console.log('[Landing] Action tracked:', action);
+            
+            // Send to analytics endpoint
+            fetch('/vidgenerator/api/landing/track-action', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: action,
+                    timestamp: new Date().toISOString(),
+                    page: 'landing',
+                    user_agent: navigator.userAgent
+                })
+            }).catch(err => {
+                console.log('[Landing] Analytics tracking failed (non-critical):', err);
+            });
+        }
+        
+        // Load dynamic stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/vidgenerator/api/stats/summary');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.stats) {
+                        document.getElementById('stat-videos').textContent = data.stats.total_videos || 0;
+                        document.getElementById('stat-users').textContent = data.stats.total_users || 0;
+                    }
+                }
+            } catch (error) {
+                console.log('[Landing] Stats loading failed (non-critical):', error);
+            }
+        }
+        
+        // Verify platform status
+        async function verifyPlatform() {
+            try {
+                const response = await fetch('/vidgenerator/api/health');
+                if (response.ok) {
+                    const badge = document.getElementById('verification-badge');
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Platform Verificeret og Aktiv';
+                    badge.style.borderColor = '#00d4ff';
+                    badge.style.color = '#00d4ff';
+                }
+            } catch (error) {
+                const badge = document.getElementById('verification-badge');
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Platform Status Ukendt';
+                badge.style.borderColor = '#ffc107';
+                badge.style.color = '#ffc107';
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            loadStats();
+            verifyPlatform();
+            
+            // Track page view
+            trackAction('page_view');
+        });
+    </script>
+    <script src="/vidgenerator/static/js/error-manager.js"></script>
+</body>
+</html>
+

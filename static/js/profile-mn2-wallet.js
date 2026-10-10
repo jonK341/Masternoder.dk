@@ -7,12 +7,10 @@
   var TIMEOUT_MS = 12000;
 
   function uid() {
-    return (
-      (global.profileManager && global.profileManager.userId) ||
-      localStorage.getItem('game_user_id') ||
-      localStorage.getItem('user_id') ||
-      'default_user'
-    );
+    var fromProfile = global.profileManager && global.profileManager.userId;
+    if (global.MnUserId && global.MnUserId.isUsable(fromProfile)) return String(fromProfile).trim();
+    if (global.MnUserId && typeof global.MnUserId.read === 'function') return global.MnUserId.read();
+    return '';
   }
 
   function base() {

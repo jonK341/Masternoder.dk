@@ -12,12 +12,10 @@
   }
 
   function hubUserId() {
-    return (
-      (global.profileManager && global.profileManager.userId) ||
-      localStorage.getItem('game_user_id') ||
-      localStorage.getItem('user_id') ||
-      'default_user'
-    );
+    var fromProfile = global.profileManager && global.profileManager.userId;
+    if (global.MnUserId && global.MnUserId.isUsable(fromProfile)) return String(fromProfile).trim();
+    if (global.MnUserId && typeof global.MnUserId.read === 'function') return global.MnUserId.read();
+    return '';
   }
 
   var SCROLL_MAP = {
@@ -222,6 +220,7 @@
 
   global.refreshProfileHubSummary = function (userId, opts) {
     var uid = userId || hubUserId();
+    if (!uid || (global.MnUserId && !global.MnUserId.isUsable(uid))) return Promise.resolve(null);
     return fetch('/api/user/profile/' + encodeURIComponent(uid) + '/aggregated')
       .then(function (r) {
         return r.json();
@@ -365,7 +364,7 @@
   }
 
   function initProfileHub() {
-    var uid = localStorage.getItem('game_user_id') || 'default_user';
+    var uid = hubUserId();
     var nav = document.getElementById('profile-hub-nav');
     if (nav && !nav._hubNavBound) {
       nav._hubNavBound = true;
@@ -375,7 +374,7 @@
         navigateHubTab(b.getAttribute('data-hub-scroll'));
       });
     }
-    global.refreshProfileHubSummary(uid);
+    if (uid) global.refreshProfileHubSummary(uid);
     var initial = resolveInitialTab();
     setTimeout(function () {
       if (initial === 'overview') {

@@ -1,0 +1,184 @@
+/* Casino v14 — MultiPlay mega tab + Facebook bot panel */
+
+body[data-casino-v10-tab="multiplay"] .casino-v10-lobby-only {
+    display: none !important;
+}
+
+.casino-v14-multiplay {
+    max-width: 1100px;
+    margin: 0 auto var(--spacing-lg);
+    padding: 0 var(--spacing-sm);
+}
+
+.casino-v14-hero {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(167, 139, 250, 0.35);
+    background: linear-gradient(135deg, rgba(40, 20, 80, 0.65), rgba(10, 30, 60, 0.55));
+    margin-bottom: var(--spacing-md);
+}
+
+.casino-v14-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.casino-v14-stat {
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.35);
+    font-size: 0.82rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.casino-v14-stat strong {
+    color: #a78bfa;
+}
+
+.casino-v14-fb-panel {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(24, 119, 242, 0.45);
+    background: rgba(24, 119, 242, 0.12);
+    margin-bottom: var(--spacing-md);
+}
+
+.casino-v14-fb-panel h3 {
+    margin: 0 0 0.5rem;
+    color: #6eb3ff;
+}
+
+.casino-v14-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: var(--spacing-md);
+    align-items: center;
+}
+
+.casino-v14-filter-chip {
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.3);
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.82rem;
+}
+
+.casino-v14-filter-chip.active {
+    background: var(--primary);
+    color: #000;
+    border-color: transparent;
+    font-weight: 700;
+}
+
+.casino-v14-search {
+    flex: 1;
+    min-width: 160px;
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.35);
+    color: inherit;
+}
+
+.casino-v14-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.casino-v14-card {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    background: rgba(12, 18, 32, 0.72);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.casino-v14-card h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.casino-v14-card p {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.8;
+    flex: 1;
+}
+
+.casino-v14-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    background: rgba(110, 231, 160, 0.15);
+    border: 1px solid rgba(110, 231, 160, 0.35);
+    color: #6ee7a0;
+}
+
+.casino-v14-card input[type="number"] {
+    width: 100%;
+    padding: 0.35rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.35);
+    color: inherit;
+}
+
+.casino-v14-btn {
+    padding: 0.45rem 0.75rem;
+    border: none;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, #a78bfa, #7c3aed);
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.casino-v14-btn.secondary {
+    background: rgba(24, 119, 242, 0.85);
+    color: #fff;
+}
+
+.casino-v14-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.casino-v14-result {
+    margin-top: var(--spacing-md);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.4);
+    min-height: 2rem;
+    font-size: 0.9rem;
+}
+
+.casino-v14-seller-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.casino-v14-seller-chip {
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+    background: rgba(255, 215, 0, 0.12);
+    border: 1px solid rgba(255, 215, 0, 0.35);
+    font-size: 0.78rem;
+}
+
+.casino-v14-link-code {
+    font-family: monospace;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    margin: 0.5rem 0;
+}

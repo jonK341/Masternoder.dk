@@ -25,7 +25,7 @@ class EnergyRegenerationTimers {
     getUserId() {
         const stored = localStorage.getItem('user_id');
         if (stored) return stored;
-        return 'default_user';
+        return (window.MnUserId ? window.MnUserId.read() : '');
     }
 
     /**

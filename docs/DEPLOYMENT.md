@@ -5,7 +5,7 @@ This doc describes how to upload and deploy the generator, agents, and related a
 ## Prerequisites
 
 - Python 3 with `paramiko` for SSH/SFTP: `pip install paramiko`
-- Required for SSH deploy helpers: set `DEPLOY_PASS` in the environment (no default is embedded in the repo).
+- Optional: set `DEPLOY_PASS` environment variable for SSH password (otherwise script default is used).
 
 ## Deploy Generator + Agents (recommended)
 
@@ -18,7 +18,7 @@ python scripts/deploy_vidgenerator_solution.py
 - Backend: `video_generator_service.py`, `generator_agent_connections.py`, `missing_endpoints_routes.py`, `battle_routes.py`, `register_blueprints.py`
 - Frontend: `vidgenerator/generator/index.html`, `vidgenerator/service-worker.js`, `vidgenerator/static/js/service-worker-gatherer.js`, lab, navigation toolbar
 
-**Steps:** Connect via SSH → upload files → clear Python cache → restart `uwsgi-vidgenerator` and `python-proxy` → reload nginx.
+**Steps:** Connect via SSH → upload files → clear Python cache → restart `python-proxy`, `uwsgi-vidgenerator`, `uwsgi` → reload nginx.
 
 **Verify:** https://masternoder.dk/vidgenerator/ (hard refresh Ctrl+F5). Check Generator → Agent Connections (20), Service Worker, Magic, Deployment tabs.
 
@@ -40,9 +40,7 @@ python scripts/full_deploy_and_restart.py
 
 - **Host:** masternoder.dk  
 - **Remote base:** `/var/www/html`  
-- **Services:** `uwsgi-vidgenerator`, optional `uwsgi-vidgenerator-5001`, `python-proxy`, nginx  
-
-Do not start the legacy `uwsgi` wrapper for this app. It can race `uwsgi-vidgenerator` for `127.0.0.1:5000` and trigger 500/502 failures.
+- **Services:** `python-proxy`, `uwsgi-vidgenerator`, `uwsgi`, nginx  
 
 ## Generator-specific deploy checklist
 

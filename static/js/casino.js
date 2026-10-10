@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const userId = localStorage.getItem('game_user_id') || 'default_user';
+    const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
     const baseUrl = window.location.origin;
     let leaderboardPeriod = 'today';
     let leaderboardScope = 'local';

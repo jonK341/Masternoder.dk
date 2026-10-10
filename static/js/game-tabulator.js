@@ -151,10 +151,8 @@
   }
 
   function refreshClaimable() {
-    var uid =
-      localStorage.getItem('game_user_id') ||
-      localStorage.getItem('user_id') ||
-      'default_user';
+    var uid = window.MnUserId && typeof window.MnUserId.read === 'function' ? window.MnUserId.read() : '';
+    if (!uid) return;
     fetch('/api/game/crypto/level-rewards?user_id=' + encodeURIComponent(uid))
       .then(function (r) {
         return r.ok ? r.json() : {};

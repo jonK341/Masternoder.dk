@@ -1526,7 +1526,7 @@ class AgentSkillset:
                     })
         return results
 
-# Global instance (lite init under pytest — avoids multi-minute skillset expansion on import)
+# Global instance (lite init under pytest ï¿½ avoids multi-minute skillset expansion on import)
 def _agent_skillset_singleton():
     if os.environ.get('AGENT_SKILLSET_LITE_INIT') == '1':
         inst = AgentSkillset.__new__(AgentSkillset)

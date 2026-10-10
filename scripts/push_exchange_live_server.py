@@ -24,40 +24,23 @@ UPLOAD_FILES = [
     "data/exchange_sales_pool_config.json",
     "data/crypto_exchange/payout_config.json",
     "data/exchange_treasury_config.json",
-    "backend/services/exchange_binance_withdraw_service.py",
-    "backend/services/exchange_binance_time_service.py",
     "backend/services/exchange_live_execution_service.py",
     "backend/services/exchange_secrets_vault_service.py",
     "backend/services/exchange_arbitrage_service.py",
-    "backend/services/exchange_sales_pool_service.py",
     "backend/services/exchange_payout_service.py",
     "backend/services/crypto_exchange_service.py",
     "backend/services/external_exchange_connector_service.py",
     "backend/services/exchange_venue_api_service.py",
-    "backend/services/exchange_http_util.py",
     "backend/services/exchange_ai_trading_service.py",
     "backend/services/exchange_treasury_service.py",
-    "backend/services/exchange_treasury_liquidity_service.py",
-    "backend/routes/crypto_exchange_routes.py",
-    "data/mn2_masternode_config.json",
-    "backend/services/mn2_masternode_service.py",
-    "dashboard/agents_control/index.html",
     "backend/services/agent_marketplace_service.py",
     "backend/services/trading_bots_control_service.py",
-    "backend/services/exchange_extended_profit_service.py",
-    "data/exchange_extended_profit_config.json",
     "scripts/exchange_master_daemon.py",
-    "scripts/configure_live_profit_max.py",
-    "scripts/all_profit_daemons.py",
-    "scripts/daemon_preflight.py",
+    "scripts/exchange_arbitrage_daemon.py",
     "scripts/daemon_env.py",
     "data/exchange_venue_api_config.json",
     "cron/exchange_master_tick.sh",
     "cron/masternoder-exchange-master.cron.d",
-    "scripts/configure_live_profit_max.py",
-    "scripts/profit_status_report.py",
-    "scripts/_server_live_check_once.py",
-    "docs/LIVE_PROFIT_TRADING.md",
 ]
 
 KEYS = [
@@ -78,12 +61,6 @@ KEYS = [
     "KUCOIN_API_SECRET",
     "XEGGEX_API_KEY",
     "XEGGEX_API_SECRET",
-    "EXCHANGE_PROFIT_PROFILE",
-    "EXCHANGE_LIVE_PROFIT_MAX",
-    "EXCHANGE_LIVE_MICRO_USD",
-    "BINANCE_QUOTE",
-    "EXCHANGE_AUTO_PAYPAL_SWEEP",
-    "EXCHANGE_FORCE_IPV4",
 ]
 
 
@@ -176,18 +153,14 @@ def main() -> int:
 
         remote_cmd = (
             f"cd {REMOTE_ROOT} && "
-            "export DAEMON_QUIET=1 LITE_APP=1 && "
             "python3 scripts/remote_vault_import.py && "
-            "python3 scripts/configure_live_profit_max.py && "
             "python3 scripts/configure_paypal_payout.py 2>/dev/null || true && "
-            "python3 scripts/profit_status_report.py --save 2>/dev/null | tail -40 && "
             "chmod +x cron/exchange_master_tick.sh 2>/dev/null || true && "
             "sed -i 's/\\r$//' cron/exchange_master_tick.sh 2>/dev/null || true && "
             "cp cron/masternoder-exchange-master.cron.d /etc/cron.d/masternoder-exchange-master "
             "&& chmod 644 /etc/cron.d/masternoder-exchange-master && "
             "chmod 640 .env && chown root:www-data .env && "
-            "systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001 && "
-            "bash cron/exchange_master_tick.sh 2>&1 | tail -5"
+            "systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001"
         )
         print("Importing keys into server vault...")
         _, stdout, stderr = ssh.exec_command(remote_cmd, timeout=180)

@@ -86,51 +86,77 @@ def _is_internal_ledger_user(user_id: str) -> bool:
     return False
 
 
-def _sum_user_liabilities() -> Tuple[float, float, int, float, float, int]:
+_PAPER_MARKERS = (
+    "agent_",
+    "treasury",
+    "trader_agent",
+    "p2p_agent",
+    "exchange_agent",
+    "exchange_sales",
+    "platform_treasury",
+    "casino_liquidity",
+    "payments_hub",
+    "exchange_mn2_pool_reserve",
+)
+
+
+def _is_paper_mn2_account(user_id: str, path: str = "") -> bool:
+    """Agent/treasury/system book ("paper" MN2) - not a customer liability."""
+    if _is_internal_ledger_user(user_id):
+        return True
+    hay = (str(user_id or "") + " " + os.path.basename(str(path or ""))).lower()
+    if hay.strip().startswith("agent_user"):
+        return False
+    return any(m in hay for m in _PAPER_MARKERS)
+
+
+def _sum_user_liabilities_split() -> Dict[str, Dict[str, Any]]:
     """
-    Σ over all users of (mn2_balance, mn2_staked) from the file-backed points store.
-    Returns
-      (total_liquid, total_staked, holder_count,
-       external_liquid, external_staked, external_holders).
+    Sum (mn2_balance, mn2_staked) over the file-backed points store, split into
+    real users vs paper (agent/treasury) accounts. Returns
+    {"users": {...}, "paper": {...}, "all": {...}} each with liquid/staked/holders.
     """
-    total_liquid = 0.0
-    total_staked = 0.0
-    holders = 0
-    ext_liquid = 0.0
-    ext_staked = 0.0
-    ext_holders = 0
+    acc = {k: {"liquid": 0.0, "staked": 0.0, "holders": 0} for k in ("users", "paper", "all")}
     try:
         names = [fn for fn in os.listdir(_POINTS_DIR) if fn.endswith(".json")]
     except Exception:
         names = []
     for fn in names:
+        path = os.path.join(_POINTS_DIR, fn)
         try:
-            with open(os.path.join(_POINTS_DIR, fn), "r", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 raw = json.load(f) or {}
         except Exception:
             continue
         systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
-        bal = float(systems.get("mn2_balance", 0) or 0)
-        staked = float(systems.get("mn2_staked", 0) or 0)
+        try:
+            bal = float(systems.get("mn2_balance", 0) or 0)
+            staked = float(systems.get("mn2_staked", 0) or 0)
+        except Exception:
+            continue
         if bal <= 0 and staked <= 0:
             continue
-        holders += 1
-        total_liquid += bal
-        total_staked += staked
-        uid = fn[:-5]
-        if _is_internal_ledger_user(uid):
-            continue
-        ext_holders += 1
-        ext_liquid += bal
-        ext_staked += staked
-    return (
-        round(total_liquid, 8),
-        round(total_staked, 8),
-        holders,
-        round(ext_liquid, 8),
-        round(ext_staked, 8),
-        ext_holders,
-    )
+        bucket = "paper" if _is_paper_mn2_account(fn[:-5], path) else "users"
+        for k in (bucket, "all"):
+            acc[k]["liquid"] += bal
+            acc[k]["staked"] += staked
+            acc[k]["holders"] += 1
+    for k in acc:
+        acc[k]["liquid"] = round(acc[k]["liquid"], 8)
+        acc[k]["staked"] = round(acc[k]["staked"], 8)
+        acc[k]["total"] = round(acc[k]["liquid"] + acc[k]["staked"], 8)
+    return acc
+
+
+def _sum_user_liabilities() -> Tuple[float, float, int, float, float, int]:
+    """
+    Backward-compatible 6-tuple (used by mn2_float_gate):
+      (all_liquid, all_staked, all_holders, users_liquid, users_staked, users_holders)
+    where "users" excludes agent/treasury paper accounts.
+    """
+    s = _sum_user_liabilities_split()
+    return (s["all"]["liquid"], s["all"]["staked"], s["all"]["holders"],
+            s["users"]["liquid"], s["users"]["staked"], s["users"]["holders"])
 
 
 # ----------------------------------------------------------------- on-chain
@@ -260,10 +286,11 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
 
 
 def _build_proof_of_reserves() -> Dict[str, Any]:
-    liquid, staked, holders, ext_liquid, ext_staked, ext_holders = _sum_user_liabilities()
-    liabilities_total = round(liquid + staked, 8)
-    external_total = round(ext_liquid + ext_staked, 8)
-    internal_total = round(liabilities_total - external_total, 8)
+    split = _sum_user_liabilities_split()
+    u, pp, al = split["users"], split["paper"], split["all"]
+    liquid, staked, holders = u["liquid"], u["staked"], u["holders"]
+    liabilities_total = u["total"]
+    all_total = al["total"]
 
     onchain = _onchain_balance()
     reserve = _read_json("mn2_staking_reserve.json", {}) or {}
@@ -272,21 +299,21 @@ def _build_proof_of_reserves() -> Dict[str, Any]:
     onchain_total = onchain.get("total")
     assets_total = round((onchain_total or 0) + reserve_mn2, 8) if onchain_total is not None else None
     coverage_ratio = None
-    external_coverage_ratio = None
+    coverage_all = None
     surplus = None
-    external_surplus = None
     if assets_total is not None and liabilities_total > 0:
         coverage_ratio = round(assets_total / liabilities_total, 6)
         surplus = round(assets_total - liabilities_total, 8)
-    elif assets_total is not None and liabilities_total == 0:
-        coverage_ratio = None
+    elif assets_total is not None:
         surplus = assets_total
-    if assets_total is not None and external_total > 0:
-        external_coverage_ratio = round(assets_total / external_total, 6)
-        external_surplus = round(assets_total - external_total, 8)
-    elif assets_total is not None and external_total == 0:
-        external_coverage_ratio = None
-        external_surplus = assets_total
+    if assets_total is not None and all_total > 0:
+        coverage_all = round(assets_total / all_total, 6)
+    # legacy aliases (services hub / float gate read external_*)
+    external_coverage_ratio = coverage_ratio
+    external_surplus = surplus
+    ext_liquid, ext_staked, ext_holders = liquid, staked, holders
+    external_total = liabilities_total
+    internal_total = pp["total"]
 
     reconcile = {"ok": None, "failed_checks": [], "error": None}
     try:
@@ -328,15 +355,24 @@ def _build_proof_of_reserves() -> Dict[str, Any]:
             "user_staked_mn2": staked,
             "total_mn2": liabilities_total,
             "holders": holders,
+            "paper_liquid_mn2": pp["liquid"],
+            "paper_staked_mn2": pp["staked"],
+            "paper_total_mn2": pp["total"],
+            "paper_holders": pp["holders"],
+            "all_liquid_mn2": al["liquid"],
+            "all_staked_mn2": al["staked"],
+            "all_total_mn2": all_total,
+            "all_holders": al["holders"],
             "external_liquid_mn2": ext_liquid,
             "external_staked_mn2": ext_staked,
             "external_total_mn2": external_total,
             "external_holders": ext_holders,
             "internal_book_mn2": internal_total,
+            "basis": "users_only_excludes_agent_treasury_paper",
         },
         "coverage_ratio": coverage_ratio,
         "external_coverage_ratio": external_coverage_ratio,
-        "coverage_ratio_all_including_paper": coverage_ratio,
+        "coverage_ratio_all_including_paper": coverage_all,
         "surplus_mn2": surplus,
         "external_surplus_mn2": external_surplus,
         "fully_backed": fully_backed,
@@ -349,7 +385,7 @@ def _build_proof_of_reserves() -> Dict[str, Any]:
             "currently PoS-staked) plus the stabilization reserve. "
             "`external_*` liabilities exclude agent/treasury/test book balances; "
             "`fully_backed` and the services hub use external coverage (>= 1.0). "
-            "`coverage_ratio` / `coverage_ratio_all_including_paper` include internal "
+            "`coverage_ratio` is users-only; `coverage_ratio_all_including_paper` includes internal "
             "agent books and will look thin when paper MN2 exists — that is expected, "
             "not evidence the hot wallet was drained. Float gate enforces external "
             "coverage on large withdrawals when enabled in mn2_config.float_gate."

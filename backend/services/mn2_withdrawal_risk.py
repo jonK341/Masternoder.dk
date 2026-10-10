@@ -102,17 +102,6 @@ def assess(user_id: str, address: str, amount: float, balance: float, config: Di
             score += 1
             reasons.append("rapid repeated withdrawals")
 
-    result_extra: Dict[str, Any] = {}
-    try:
-        from backend.services.mn2_sybil_graph import score_user
-        sybil = score_user(user_id)
-        if sybil.get("elevated"):
-            score += 2
-            reasons.append(f"sybil cluster size {sybil.get('cluster_size')}")
-        result_extra = {"sybil_score": sybil.get("sybil_score", 0), "cluster_size": sybil.get("cluster_size")}
-    except Exception:
-        pass
-
     if score >= int(cfg["block_score"]):
         level = "high"
     elif score >= int(cfg["step_up_score"]):
@@ -128,7 +117,6 @@ def assess(user_id: str, address: str, amount: float, balance: float, config: Di
         "velocity_count": velocity_count,
         "require_step_up": level in ("elevated", "high"),
         "hard_block_if_no_password": level == "high",
-        **result_extra,
     }
     _log(user_id, addr, amount, result)
     return result

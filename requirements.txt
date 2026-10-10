@@ -1,27 +1,148 @@
-# Local development dependencies.
-# Install: python -m pip install -r requirements.txt
-#
-# This file intentionally builds on the slim production runtime and adds
-# test/debug tooling only. Install requirements-optional.txt when working on
-# AI, video generation, TTS, browser automation, realtime, or ML features.
+# Phase 1: Core Foundation
+# Flask 2.2.5 and Werkzeug 2.2.3 are compatible and stable
+Flask==2.2.5
+click>=8.0.0  # Required for Flask 2.2.5 - ParameterSource import
+Flask-SQLAlchemy==3.0.5
+SQLAlchemy==1.4.23
+requests==2.31.0
+python-dotenv>=1.0.1
+Werkzeug==2.2.3
 
--r requirements-production.txt
+# For testing and debugging
+urllib3>=1.26.0
+ipython>=8.18.0  # Enhanced Python shell for debugging
+ipdb>=0.13.13  # IPython debugger
+pdbpp>=0.10.3  # Enhanced Python debugger (PyPI name for pdb++)
+memory-profiler>=0.61.0  # Memory profiling
+line-profiler>=4.1.1  # Line-by-line profiling
+py-spy>=0.3.14  # Sampling profiler
+pyinstrument>=5.1.2  # Call stack profiler (5.4+ not on PyPI; 5.1.2 is latest)
+
+# For production deployment (server uses uwsgi; gunicorn removed to avoid port conflict with uwsgi)
+paramiko>=3.3.0  # For SFTP/SSH deployment
+scp>=0.14.0  # For SCP file transfers
+
+# For video processing (Phase 1 basic)
+moviepy>=1.0.3
+ffmpeg-python>=0.2.0
+Pillow>=10.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# For face detection (future Phase 5 - removed for now to reduce dependencies)
+# face-recognition>=1.3.0  # Commented out - can be enabled in Phase 5 when needed
+# Note: face-recognition requires dlib which is heavy to compile
+
+# For web scraping (Phase 2 - Enhanced)
+beautifulsoup4>=4.12.0
+duckduckgo-search>=5.3.1
+lxml>=4.9.0  # Faster HTML parsing
+
+# For image provider APIs (optional - requires API keys)
+# pexels-api>=1.0.0  # Uncomment if using Pexels API
+# pixabay>=1.0.2  # Uncomment if using Pixabay API
+
+# For AI generation (Phase 1 basic)
+openai>=1.52.0
+tenacity>=8.2.3
+
+# For TTS (narration in video pipeline)
+elevenlabs>=0.2.26
+gTTS>=2.5.0
+# Optional: Piper TTS — free, local, no API key (set PIPER_MODEL_PATH or add piper_voices/*.onnx)
+# piper-tts>=1.2.0
+# Optional: DeepFilterNet — noise reduction for narration (env AUDIO_ENHANCE=1)
+# deepfilternet>=0.5.0
+# soundfile>=0.12.0  # for deepfilternet
+
+# For configuration
+configparser>=5.3.0
+
+# For external storage (optional - install separately if using S3)
+# boto3>=1.28.0  # Uncomment if using AWS S3 storage
+
+# External API Services (Open Source)
+# Note: SeaGOAT may need to be installed from GitHub - check repository
+# seagoat-code-search>=0.1.0  # Semantic code search (not on PyPI - install from GitHub)
+transformers>=4.30.0  # For fake news detection
+torch>=2.0.0  # Required for transformers
+
+# Google OAuth for API key retrieval
+google-auth>=2.20.0
+google-auth-oauthlib>=1.0.0
+google-auth-httplib2>=0.1.1
+
+# System monitoring (optional - for metrics)
+psutil>=5.9.0
 
 # Testing
-pytest>=9.0.3,<10.0
-pytest-cov>=7.1.0,<8.0
-pytest-flask>=1.3.0,<2.0
-pytest-mock>=3.12.0,<4.0
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-flask>=1.2.0
 
-# Debugging / profiling
-ipython>=8.18.0,<9.0
-ipdb>=0.13.13,<1.0
-pdbpp>=0.10.3,<1.0
-memory-profiler>=0.61.0,<1.0
-line-profiler>=4.1.1,<5.0
-py-spy>=0.3.14,<1.0
-pyinstrument>=5.1.2,<6.0
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-flask>=1.3.0
+pytest-mock>=3.12.0
 
-# Optional server process manager note:
-# uWSGI is installed via apt on the server (uwsgi + uwsgi-plugin-python3).
-# Avoid pip-installing uwsgi on OpenSSL 3 systems; builds can fail at link time.
+# ============================================
+# NEW TECHNOLOGIES - Game Enhancement v3.0
+# ============================================
+
+# Real-Time Communication
+flask-socketio>=5.3.6  # WebSocket support for real-time updates
+python-socketio>=5.10.0  # Socket.IO server
+eventlet>=0.33.3  # Async networking library for Socket.IO
+
+# Caching & Performance
+redis>=5.0.1  # Redis for caching and real-time data
+flask-caching>=2.1.0  # Flask caching extension
+hiredis>=2.2.3  # Fast Redis client
+
+# Background Task Processing
+celery>=5.3.4  # Distributed task queue
+celery[redis]>=5.3.4  # Celery with Redis backend
+
+# Real-Time Analytics
+prometheus-client>=0.19.0  # Metrics collection
+# flask-prometheus>=0.2.0  # Not available on PyPI, using prometheus-client directly
+
+# Advanced AI/ML
+scikit-learn>=1.3.2  # Machine learning
+pandas>=2.1.4  # Data analysis
+scipy>=1.11.4  # Scientific computing
+
+# WebRTC for Peer Connections
+aiortc>=1.6.0  # WebRTC implementation for Python
+
+# Advanced Image Processing
+imageio>=2.33.1  # Advanced image I/O
+imageio-ffmpeg>=0.4.9  # FFmpeg plugin for imageio
+
+# Web Scraping Enhancement
+selenium>=4.15.2  # Browser automation
+playwright>=1.40.0  # Modern browser automation
+
+# API Enhancement
+flask-restx>=1.3.0  # REST API framework
+flask-cors>=4.0.0  # CORS support
+flask-compress>=1.14  # Response compression
+
+# Security Enhancement
+flask-limiter>=3.5.0  # Rate limiting
+flask-talisman>=1.1.0  # Security headers
+cryptography>=41.0.7  # Cryptographic library
+
+# Database Enhancement
+alembic>=1.13.1  # Database migrations
+sqlalchemy-utils>=0.41.1  # SQLAlchemy utilities
+
+# Monitoring & Logging
+sentry-sdk[flask]>=1.40.0  # Error tracking
+structlog>=23.2.0  # Structured logging
+# ============================================
+# ADDITIONAL PRODUCTION DEPENDENCIES
+# ============================================
+# uwsgi: install via apt on server (sudo apt install uwsgi uwsgi-plugin-python3).
+# Pip build fails on OpenSSL 3 (EVP_* / SSL_get_peer_certificate linker errors).
