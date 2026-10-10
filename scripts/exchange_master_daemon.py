@@ -71,6 +71,12 @@ def run_once(auto_sweep: bool = False) -> dict:
         out["sales_pool"] = {"success": False, "error": str(exc)}
 
     try:
+        from backend.services.exchange_mn2_pool_agent_service import tick as mn2_pool_tick
+        out["mn2_pool"] = mn2_pool_tick()
+    except Exception as exc:
+        out["mn2_pool"] = {"success": False, "error": str(exc)}
+
+    try:
         from backend.services.exchange_rental_service import process_auto_renewals
 
         out["auto_renewals"] = process_auto_renewals()

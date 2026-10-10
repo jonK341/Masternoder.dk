@@ -207,6 +207,22 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_p2p: {e}")
     try:
+        from backend.routes.nft_routes import nft_bp
+        if "nft" not in app.blueprints:
+            app.register_blueprint(nft_bp)
+            n += 1
+            print("  [OK] Registered nft blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP nft: {e}")
+    try:
+        from backend.routes.p2p_market_routes import p2p_market_bp
+        if "p2p_market" not in app.blueprints:
+            app.register_blueprint(p2p_market_bp)
+            n += 1
+            print("  [OK] Registered p2p_market blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP p2p_market: {e}")
+    try:
         from backend.routes.ptc_ads_routes import ptc_ads_bp
         app.register_blueprint(ptc_ads_bp)
         n += 1
@@ -305,6 +321,15 @@ def register_lite_blueprints(app):
         print("  [OK] Registered shop blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP shop: {e}")
+    try:
+        from backend.routes.shop_monetization_routes import shop_monetization_bp
+        if 'shop_monetization' not in app.blueprints:
+            app.register_blueprint(shop_monetization_bp)
+            n += 1
+            print("  [OK] Registered shop_monetization blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP shop_monetization: {e}")
+
     try:
         from backend.routes.social_auth_routes import social_auth_bp
         app.register_blueprint(social_auth_bp)

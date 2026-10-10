@@ -160,7 +160,7 @@ def analyze_user_activity(user_id: str) -> Dict[str, Any]:
         f"- Login streak: {user_data.get('streak', 0)} days\n"
         f"- Battles: {user_data.get('battles', 0)}, Trophies: {user_data.get('trophies', 0)}\n"
         f"- Theories studied: {user_data.get('theories', 0)}/25\n"
-        f"- Compendium pages read: {user_data.get('compendium_read', 0)}/25\n"
+        f"- Compendium pages read: {user_data.get('compendium_read', 0)}/24\n"
         f"- Quests completed today: {user_data.get('quests_done', 0)}\n"
         f"- Achievements: {user_data.get('achievements', 0)}/{user_data.get('achievements_total', 20)}\n"
         f"What should they focus on next? Be specific and encouraging."
@@ -258,7 +258,7 @@ def generate_engagement_nudge(user_id: str) -> Dict[str, Any]:
         nudge_message = "You have uncompleted daily quests. Complete them before reset for bonus rewards!"
     elif state.get("compendium_read", 0) < 3:
         nudge_type = "compendium"
-        nudge_message = "The Compendium has 25 pages of knowledge. Read a few to earn compendium points!"
+        nudge_message = "The Compendium has 24 pages of knowledge. Read a few to earn compendium points!"
     elif state.get("battles", 0) == 0:
         nudge_type = "battle"
         nudge_message = "You haven't tried battles yet. Challenge an AI opponent for battle points!"
@@ -294,10 +294,9 @@ def suggest_next_actions(user_id: str, count: int = 3) -> Dict[str, Any]:
         actions.append({"action": "complete_quest", "label": "Complete a daily quest", "priority": "high", "path": "/api/user/quests"})
     if state.get("streak", 0) > 0 and state.get("streak", 0) < 7:
         actions.append({"action": "maintain_streak", "label": f"Keep your {state['streak']}-day streak alive!", "priority": "high", "path": "/api/user/streak"})
-    if state.get("compendium_read", 0) < 25:
+    if state.get("compendium_read", 0) < 24:
         next_page = state.get("compendium_read", 0) + 1
-        path = f"/compendium/page-{next_page}.html" if next_page <= 10 else "/compendium/"
-        actions.append({"action": "read_compendium", "label": f"Read Compendium page {next_page}", "priority": "medium", "path": path})
+        actions.append({"action": "read_compendium", "label": f"Read Compendium page {next_page}", "priority": "medium", "path": f"/vidgenerator/compendium/page-{next_page}.html"})
     if state.get("theories", 0) < 25:
         actions.append({"action": "study_theory", "label": "Study a new theory", "priority": "medium", "path": "/api/communication-psychology/theories"})
     if state.get("battles", 0) < 10:
@@ -361,7 +360,7 @@ def profile_user(user_id: str) -> Dict[str, Any]:
         f"Create a brief 1-sentence personality profile for a user who is: "
         f"Level {state.get('level')}, {engagement} engagement, '{archetype}' archetype, "
         f"{state.get('streak')} day streak, {state.get('theories')}/25 theories studied, "
-        f"{state.get('compendium_read')}/25 pages read, {state.get('battles')} battle points.",
+        f"{state.get('compendium_read')}/24 pages read, {state.get('battles')} battle points.",
         max_tokens=80,
         timeout=8,
     )
