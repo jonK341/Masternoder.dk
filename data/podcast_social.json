@@ -55,44 +55,11 @@
         "created_at": "2026-06-22T01:14:27.932282Z",
         "likes": []
       }
-    ],
-    "gen-c245c393": [
-      {
-        "id": "pcc-cb2ee88ba3",
-        "episode_id": "gen-c245c393",
-        "user_id": "test_comment_user",
-        "content": "Great episode \u2014 MN2 rewards rock!",
-        "platform": "podcast",
-        "created_at": "2026-10-10T04:35:56.207339Z",
-        "likes": []
-      }
     ]
   },
   "likes": {},
   "follows": {},
   "activity": [
-    {
-      "type": "news_comment",
-      "news_id": "casino-tournament-daily_coins-20261010043357-65489b",
-      "user_id": "route_news_user",
-      "preview": "Route test komment on news",
-      "at": "2026-10-10T04:36:11.561379Z"
-    },
-    {
-      "type": "news_comment",
-      "news_id": "casino-tournament-daily_coins-20261010043357-65489b",
-      "user_id": "test_news_comment_user",
-      "preview": "Podcast news komment \u2014 platform change looks great!",
-      "at": "2026-10-10T04:36:08.503829Z"
-    },
-    {
-      "type": "comment",
-      "episode_id": "gen-c245c393",
-      "user_id": "test_comment_user",
-      "comment_id": "pcc-cb2ee88ba3",
-      "preview": "Great episode \u2014 MN2 rewards rock!",
-      "at": "2026-10-10T04:35:56.207339Z"
-    },
     {
       "type": "news_comment",
       "news_id": "game-battle_win-b1d15310",
@@ -255,22 +222,6 @@
         "user_id": "test_news_comment_user",
         "content": "Podcast news komment \u2014 platform change looks great!",
         "created_at": "2026-06-22T01:22:30.026598Z"
-      }
-    ],
-    "casino-tournament-daily_coins-20261010043357-65489b": [
-      {
-        "id": "pnc-9593f8c02a",
-        "news_id": "casino-tournament-daily_coins-20261010043357-65489b",
-        "user_id": "route_news_user",
-        "content": "Route test komment on news",
-        "created_at": "2026-10-10T04:36:11.561379Z"
-      },
-      {
-        "id": "pnc-30bb956fcc",
-        "news_id": "casino-tournament-daily_coins-20261010043357-65489b",
-        "user_id": "test_news_comment_user",
-        "content": "Podcast news komment \u2014 platform change looks great!",
-        "created_at": "2026-10-10T04:36:08.503829Z"
       }
     ]
   }

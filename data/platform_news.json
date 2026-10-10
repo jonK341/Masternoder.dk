@@ -2,26 +2,6 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
-      "id": "casino-tournament-daily_coins-20261010043357-65489b",
-      "title": "Tournament finished \u2014 Casino tournament",
-      "summary": "Prizes from a 2100 coins pool were awarded to top 2 players. Join the next tournament at the casino. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
-      "date": "2026-10-10",
-      "category": "casino",
-      "channel": "casino",
-      "href": "/casino/",
-      "featured": false
-    },
-    {
-      "id": "casino-tournament-start-daily_coins-20261010043357-65489b",
-      "title": "Tournament live \u2014 Daily Coin Cup",
-      "summary": "A new 2000 coins prize pool tournament is open. Join before it ends and climb the leaderboard. Play responsibly. Set deposit and loss limits in your profile. 18+ only where online gambling is licensed.",
-      "date": "2026-10-10",
-      "category": "casino",
-      "channel": "casino",
-      "href": "/casino/",
-      "featured": false
-    },
-    {
       "id": "news-page-portal-wallet-staking-20260706",
       "title": "Portal cleanup: wallets and staking pages are live",
       "summary": "Wallets, staking leaderboard, and staking teams now have first-class pages in the main portal with versioned uWSGI page serving instead of missing-page fallbacks.",
