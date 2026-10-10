@@ -65,11 +65,8 @@ def main() -> int:
         help="Include tests marked @pytest.mark.slow (e.g. full purchase flow); default skips them for speed",
     )
     p.add_argument("--list", action="store_true", dest="list_only", help="Print manual checklist and exit 0")
+    p.add_argument("--discord", action="store_true", help="Run Discord Casino Bot post-deploy checks only")
     args = p.parse_args()
-
-    if args.smoke_only and args.pytest_only:
-        print("Use only one of --smoke-only or --pytest-only.", file=sys.stderr)
-        return 2
 
     if args.list_only:
         print("Manual post-deploy checklist:\n")
@@ -80,7 +77,23 @@ def main() -> int:
         print("  [ ] Optional: pytest shop unit tests (local minimal app; excludes slow by default)")
         print("        python scripts/post_deploy_verify.py --pytest-only")
         print("  [ ] If needed: GET /api/shop/payment-health and shop DB migration per deploy.py notes")
+        print("  [ ] Discord Casino Bot: python scripts/discord_casino_bot_post_deploy.py")
+        print("        See docs/DISCORD_CASINO_BOT.md — portal registration + register slash commands")
         return 0
+
+    if args.discord:
+        disc_script = ROOT / "scripts" / "discord_casino_bot_post_deploy.py"
+        if not disc_script.is_file():
+            print(f"Missing {disc_script}", file=sys.stderr)
+            return 1
+        return _run(
+            [sys.executable, str(disc_script), "--base-url", args.base_url.rstrip("/")],
+            ROOT,
+        )
+
+    if args.smoke_only and args.pytest_only:
+        print("Use only one of --smoke-only or --pytest-only.", file=sys.stderr)
+        return 2
 
     smoke_script = ROOT / "scripts" / "shop_v4_production_smoke.py"
     if not smoke_script.is_file():
