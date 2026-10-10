@@ -27,9 +27,9 @@
     },
     {
       "id": "phase4_db_catalog",
-      "priority": "P2",
-      "title": "DB catalog",
-      "detail": "CAMGIRLS_CATALOG_SOURCE=db after onboard migration."
+      "priority": "done",
+      "title": "DB catalog sync",
+      "detail": "scripts/camgirls_sync_catalog_db.py + deploy hook; set CAMGIRLS_CATALOG_SOURCE=db on prod after sync."
     },
     {
       "id": "phase5_scale",

@@ -149,6 +149,19 @@ def ops_upsert_performer():
     return jsonify(result), code
 
 
+@camgirls_bp.route("/api/camgirls/ops/sync-catalog-db", methods=["POST"])
+def ops_sync_catalog_db():
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.camgirls_catalog_sync_service import sync_json_catalog_to_db
+
+    body = request.get_json(silent=True) or {}
+    dry_run = bool(body.get("dry_run"))
+    result = sync_json_catalog_to_db(dry_run=dry_run)
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
 @camgirls_bp.route("/api/camgirls/ops/payout-addresses", methods=["GET", "POST"])
 def ops_payout_addresses():
     if not _ops_ok():
