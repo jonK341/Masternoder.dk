@@ -2,6 +2,8 @@
 Basic API Endpoint Tests
 Tests for key API endpoints
 """
+import os
+import tempfile
 import unittest
 from src.app import create_app
 from src.db.models import db
@@ -11,19 +13,35 @@ class APITestCase(unittest.TestCase):
     """Test case for API endpoints"""
     
     def setUp(self):
-        """Set up test client"""
-        self.app = create_app('testing')
-        self.app.config['TESTING'] = True
-        self.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        """Set up test client on a private sqlite file, not the shared instance db."""
+        self._prev_db_url = os.environ.get("DATABASE_URL")
+        fd, self._db_path = tempfile.mkstemp(prefix="apitest-", suffix=".db")
+        os.close(fd)
+        os.environ["DATABASE_URL"] = "sqlite:///" + self._db_path.replace("\\", "/")
+        try:
+            db.engine.dispose()
+        except Exception:
+            pass
+        self.app = create_app("testing")
+        self.app.config["TESTING"] = True
         self.client = self.app.test_client()
         with self.app.app_context():
             db.create_all()
-    
+
     def tearDown(self):
         """Clean up after tests"""
         with self.app.app_context():
             db.session.remove()
             db.drop_all()
+            db.engine.dispose()
+        if self._prev_db_url is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = self._prev_db_url
+        try:
+            os.remove(self._db_path)
+        except OSError:
+            pass
     
     def test_health_check(self):
         """Test health check endpoint"""
