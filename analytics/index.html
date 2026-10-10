@@ -1,0 +1,969 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="cache-version" content="20260114100145">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta name="description" content="Analytics & Monitoring Dashboard - Track usage, performance, and system health">
+    <title>Analytics & Monitoring - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/loading-states.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+        <script src="/static/js/error-manager.js?v=20260304154115"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .analytics-page {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+            padding-top: 40px;
+            padding-bottom: 60px;
+        }
+
+        .analytics-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+        }
+
+        .analytics-header h1 {
+            font-size: var(--font-size-5xl);
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .analytics-header .subtitle {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            transition: all var(--transition-base);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-secondary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .metric-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .metric-value {
+            font-size: var(--font-size-3xl);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .metric-change {
+            font-size: var(--font-size-sm);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .metric-change.negative {
+            color: var(--error);
+        }
+
+        .chart-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .chart-title {
+            font-size: var(--font-size-xl);
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .health-status {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+        }
+
+        .health-status.healthy {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .health-status.degraded {
+            background: rgba(255, 170, 0, 0.1);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .health-status.unhealthy {
+            background: rgba(255, 51, 102, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .error-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .error-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .error-endpoint {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .error-count {
+            color: var(--error);
+            font-weight: 700;
+        }
+
+        .error-rate {
+            color: var(--text-tertiary);
+            font-size: var(--font-size-sm);
+        }
+
+        @media (max-width: 768px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-wrapper {
+                height: 250px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/template-effects.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css?v=20260304154115">
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container analytics-page">
+        <header class="analytics-header">
+            <h1>📊 Analytics & Monitoring</h1>
+            <p class="subtitle">Usage • Performance • Quality • Health</p>
+        </header>
+        
+        <!-- Overview Metrics -->
+        <section class="analytics-section">
+            <div class="analytics-grid" id="overview-metrics">
+                <!-- Metrics will be loaded here -->
+            </div>
+        </section>
+        
+        <!-- Charts Section -->
+        <section class="analytics-section">
+            <div class="chart-container">
+                <h2 class="chart-title">Usage Trends</h2>
+                <div class="chart-wrapper">
+                    <canvas id="trends-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="chart-container">
+                    <h2 class="chart-title">Quality Distribution</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="quality-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h2 class="chart-title">Usage by Category</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="category-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Performance & Health -->
+        <section class="analytics-section">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">System Health</h2>
+                    </div>
+                    <div id="health-status-content">
+                        <!-- Health status will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Performance Metrics</h2>
+                    </div>
+                    <div id="performance-content">
+                        <!-- Performance metrics will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Agent Data -->
+        <section class="analytics-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-robot"></i> Agent Data Overview
+                    </h2>
+                </div>
+                <div id="agent-data-content">
+                    <div class="loading">Loading agent data...</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Error Tracking -->
+        <section class="analytics-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Error Tracking</h2>
+                </div>
+                <div id="error-tracking-content">
+                    <!-- Error tracking will be loaded here -->
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <script src="/static/js/toast-notifications.js?v=20260304154115"></script>
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+            const count = 50;
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        const BASE_URL = window.location.origin;
+        const analyticsUserId = () => localStorage.getItem('game_user_id') || 'default_user';
+        let trendsChart, qualityChart, categoryChart;
+
+        // Load Overview Metrics
+        async function loadOverviewMetrics() {
+            const container = document.getElementById('overview-metrics');
+            if (container) {
+                container.innerHTML = Array(6).fill(0).map(() => `
+                    <div class="metric-card skeleton-loader" style="height: 150px;"></div>
+                `).join('');
+            }
+            
+            try {
+                const uid = analyticsUserId();
+                const response = await fetch(`${BASE_URL}/api/analytics/overview?user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                if (data.success && data.overview) {
+                    const overview = data.overview;
+                    
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="metric-card">
+                                <div class="metric-label">Total Videos</div>
+                                <div class="metric-value">${overview.videos?.total || 0}</div>
+                                <div class="metric-change">
+                                    <i class="fas fa-arrow-up"></i>
+                                    ${overview.videos?.today || 0} today
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Total Duration</div>
+                                <div class="metric-value">${formatDuration(overview.duration?.total_seconds || 0)}</div>
+                                <div class="metric-change">
+                                    <i class="fas fa-clock"></i>
+                                    ${overview.duration?.total_hours || 0} hours
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Average Quality</div>
+                                <div class="metric-value">${((overview.quality?.average || 0) * 100).toFixed(1)}%</div>
+                                <div class="metric-change">
+                                    <i class="fas fa-star"></i>
+                                    ${overview.quality?.high_quality_count || 0} high quality
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">Success Rate</div>
+                                <div class="metric-value">${overview.generations?.success_rate || 0}%</div>
+                                <div class="metric-change">
+                                    <i class="fas fa-check-circle"></i>
+                                    ${overview.generations?.completed || 0} completed
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">This Week</div>
+                                <div class="metric-value">${overview.videos?.this_week || 0}</div>
+                                <div class="metric-change">
+                                    <i class="fas fa-calendar-week"></i>
+                                    ${overview.videos?.this_month || 0} this month
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">High Quality %</div>
+                                <div class="metric-value">${(overview.quality?.high_quality_percentage || 0).toFixed(1)}%</div>
+                                <div class="metric-change">
+                                    <i class="fas fa-trophy"></i>
+                                    ${overview.quality?.high_quality_count || 0} videos
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading overview metrics:', error);
+                if (container) container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load metrics</p>';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load overview metrics');
+                }
+            }
+        }
+
+        // Load Trends Chart
+        async function loadTrendsChart() {
+            try {
+                const uid = analyticsUserId();
+                const response = await fetch(`${BASE_URL}/api/analytics/trends?days=30&user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                if (data.success && data.trends) {
+                    const ctx = document.getElementById('trends-chart');
+                    if (ctx && typeof Chart !== 'undefined') {
+                        if (trendsChart) trendsChart.destroy();
+                        
+                        trendsChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.trends.dates,
+                                datasets: [{
+                                    label: 'Videos Created',
+                                    data: data.trends.counts,
+                                    borderColor: '#00ff88',
+                                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }, {
+                                    label: 'Cumulative',
+                                    data: data.trends.cumulative,
+                                    borderColor: '#00d4ff',
+                                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        labels: { color: '#ffffff' }
+                                    }
+                                },
+                                scales: {
+                                    x: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                                    y: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading trends chart:', error);
+            }
+        }
+
+        // Load Quality Chart
+        async function loadQualityChart() {
+            try {
+                const uid = analyticsUserId();
+                const response = await fetch(`${BASE_URL}/api/analytics/quality?user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                if (data.success && data.quality && data.quality.distribution) {
+                    const ctx = document.getElementById('quality-chart');
+                    if (ctx && typeof Chart !== 'undefined') {
+                        if (qualityChart) qualityChart.destroy();
+                        
+                        const dist = data.quality.distribution;
+                        qualityChart = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Excellent (90%+)', 'High (80-90%)', 'Medium (50-80%)', 'Low (<50%)'],
+                                datasets: [{
+                                    data: [dist.excellent || 0, dist.high || 0, dist.medium || 0, dist.low || 0],
+                                    backgroundColor: [
+                                        'rgba(0, 255, 136, 0.8)',
+                                        'rgba(0, 212, 255, 0.8)',
+                                        'rgba(255, 170, 0, 0.8)',
+                                        'rgba(255, 51, 102, 0.8)'
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        labels: { color: '#ffffff' }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading quality chart:', error);
+            }
+        }
+
+        // Load Category Chart
+        async function loadCategoryChart() {
+            try {
+                const uid = analyticsUserId();
+                const response = await fetch(`${BASE_URL}/api/analytics/usage?user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                if (data.success && data.usage && data.usage.by_category) {
+                    const ctx = document.getElementById('category-chart');
+                    if (ctx && typeof Chart !== 'undefined') {
+                        if (categoryChart) categoryChart.destroy();
+                        
+                        const categories = Object.keys(data.usage.by_category);
+                        const counts = Object.values(data.usage.by_category);
+                        
+                        categoryChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: categories,
+                                datasets: [{
+                                    label: 'Videos',
+                                    data: counts,
+                                    backgroundColor: 'rgba(0, 255, 136, 0.8)',
+                                    borderColor: '#00ff88',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        labels: { color: '#ffffff' }
+                                    }
+                                },
+                                scales: {
+                                    x: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                                    y: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading category chart:', error);
+            }
+        }
+
+        // Load Health Status
+        async function loadHealthStatus() {
+            const container = document.getElementById('health-status-content');
+            if (container) {
+                container.innerHTML = '<div class="skeleton-loader" style="height: 200px;"></div>';
+            }
+            
+            try {
+                const uid = analyticsUserId();
+                const response = await fetch(`${BASE_URL}/api/analytics/performance?user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                if (data.success && data.performance && data.performance.health) {
+                    const health = data.performance.health;
+                    const system = data.performance.system || {};
+                    
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="margin-bottom: var(--spacing-md);">
+                                <span class="health-status ${health.status || 'healthy'}">
+                                    <i class="fas fa-${health.status === 'healthy' ? 'check-circle' : health.status === 'degraded' ? 'exclamation-triangle' : 'times-circle'}"></i>
+                                    ${(health.status || 'healthy').toUpperCase()}
+                                </span>
+                            </div>
+                            <div style="margin-bottom: var(--spacing-sm);">
+                                <div style="color: var(--text-secondary); font-size: var(--font-size-sm);">Uptime</div>
+                                <div style="color: var(--text-primary); font-weight: 600;">${health.uptime_formatted || 'N/A'}</div>
+                            </div>
+                            ${health.issues && health.issues.length > 0 ? `
+                                <div style="margin-top: var(--spacing-md);">
+                                    <div style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">Issues:</div>
+                                    <ul style="color: var(--error); font-size: var(--font-size-sm);">
+                                        ${health.issues.map(issue => `<li>${issue}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading health status:', error);
+                if (container) container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load health status</p>';
+            }
+        }
+
+        // Load Performance Metrics
+        async function loadPerformanceMetrics() {
+            const container = document.getElementById('performance-content');
+            if (container) {
+                container.innerHTML = '<div class="skeleton-loader" style="height: 200px;"></div>';
+            }
+            
+            try {
+                const uid = analyticsUserId();
+                const response = await fetch(`${BASE_URL}/api/analytics/performance?user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                if (data.success && data.performance) {
+                    const perf = data.performance;
+                    const requests = perf.requests || {};
+                    
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="margin-bottom: var(--spacing-sm);">
+                                <div style="color: var(--text-secondary); font-size: var(--font-size-sm);">Avg Response Time</div>
+                                <div style="color: var(--text-primary); font-weight: 600; font-size: var(--font-size-lg);">
+                                    ${(requests.avg_response_time || 0).toFixed(2)}ms
+                                </div>
+                            </div>
+                            <div style="margin-bottom: var(--spacing-sm);">
+                                <div style="color: var(--text-secondary); font-size: var(--font-size-sm);">Total Requests</div>
+                                <div style="color: var(--text-primary); font-weight: 600;">${requests.total_requests || 0}</div>
+                            </div>
+                            <div style="margin-bottom: var(--spacing-sm);">
+                                <div style="color: var(--text-secondary); font-size: var(--font-size-sm);">P95 Response Time</div>
+                                <div style="color: var(--text-primary); font-weight: 600;">${(requests.p95_response_time || 0).toFixed(2)}ms</div>
+                            </div>
+                            ${perf.generation && perf.generation.average_generation_time ? `
+                                <div style="margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--border-primary);">
+                                    <div style="color: var(--text-secondary); font-size: var(--font-size-sm);">Avg Generation Time</div>
+                                    <div style="color: var(--primary); font-weight: 600;">${perf.generation.average_generation_time_formatted || 'N/A'}</div>
+                                </div>
+                            ` : ''}
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading performance metrics:', error);
+                if (container) container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load performance metrics</p>';
+            }
+        }
+
+        // Load Error Tracking
+        async function loadErrorTracking() {
+            const container = document.getElementById('error-tracking-content');
+            if (container) {
+                container.innerHTML = '<div class="skeleton-loader" style="height: 150px;"></div>';
+            }
+            
+            try {
+                const uid = analyticsUserId();
+                const response = await fetch(`${BASE_URL}/api/analytics/errors?user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                if (data.success && data.errors) {
+                    const errors = data.errors;
+                    
+                    if (container) {
+                        if (errors.by_endpoint && errors.by_endpoint.length > 0) {
+                            container.innerHTML = `
+                                <div style="margin-bottom: var(--spacing-md);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <div style="color: var(--text-secondary); font-size: var(--font-size-sm);">Total Errors</div>
+                                            <div style="color: var(--error); font-size: var(--font-size-2xl); font-weight: 700;">${errors.total_errors || 0}</div>
+                                        </div>
+                                        <div>
+                                            <div style="color: var(--text-secondary); font-size: var(--font-size-sm);">Error Rate</div>
+                                            <div style="color: var(--error); font-size: var(--font-size-2xl); font-weight: 700;">${errors.overall_error_rate || 0}%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="error-list">
+                                    ${errors.by_endpoint.map(err => `
+                                        <div class="error-item">
+                                            <div>
+                                                <div class="error-endpoint">${err.endpoint || 'Unknown'}</div>
+                                                <div class="error-rate">${err.request_count || 0} requests</div>
+                                                ${err.unique_errors ? `<div style="color: var(--text-tertiary); font-size: 0.85em; margin-top: 5px;">${err.unique_errors} unique errors</div>` : ''}
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                                                <div class="error-count">${err.error_count || 0} errors</div>
+                                                <div class="error-rate">${err.error_rate || 0}%</div>
+                                            </div>
+                                        </div>
+                                        ${err.error_hashes && err.error_hashes.length > 0 ? `
+                                            <div style="margin-left: 20px; margin-top: 10px; padding-left: 15px; border-left: 2px solid rgba(255, 51, 102, 0.3);">
+                                                ${err.error_hashes.slice(0, 3).map(hashErr => `
+                                                    <div style="margin-bottom: 8px; padding: 8px; background: rgba(255, 51, 102, 0.05); border-radius: 5px;">
+                                                        <div style="font-size: 0.85em; color: var(--text-secondary); font-family: monospace; word-break: break-all;">
+                                                            Hash: ${hashErr.error_hash ? hashErr.error_hash.substring(0, 16) + '...' : 'N/A'}
+                                                        </div>
+                                                        <div style="font-size: 0.9em; color: var(--text-primary); margin-top: 4px;">
+                                                            ${hashErr.error_type || 'Error'}: ${(hashErr.error_message || '').substring(0, 60)}${(hashErr.error_message || '').length > 60 ? '...' : ''}
+                                                        </div>
+                                                        <div style="font-size: 0.8em; color: var(--text-tertiary); margin-top: 4px;">
+                                                            Count: ${hashErr.count || 0} | Last: ${hashErr.last_occurrence ? new Date(hashErr.last_occurrence).toLocaleString() : 'N/A'}
+                                                        </div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+                                    `).join('')}
+                                </div>
+                                ${errors.by_hash && errors.by_hash.length > 0 ? `
+                                    <div style="margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-primary);">
+                                        <h3 style="color: var(--primary); margin-bottom: var(--spacing-md);">Top Errors by Hash</h3>
+                                        <div class="error-list">
+                                            ${errors.by_hash.slice(0, 10).map(hashErr => `
+                                                <div class="error-item">
+                                                    <div>
+                                                        <div class="error-endpoint" style="font-family: monospace; font-size: 0.9em;">
+                                                            ${hashErr.error_hash ? hashErr.error_hash.substring(0, 24) + '...' : 'N/A'}
+                                                        </div>
+                                                        <div style="color: var(--text-secondary); font-size: 0.85em; margin-top: 5px;">
+                                                            ${hashErr.endpoint || 'Unknown'} - ${hashErr.error_type || 'Error'}
+                                                        </div>
+                                                        <div style="color: var(--text-tertiary); font-size: 0.8em; margin-top: 5px;">
+                                                            ${(hashErr.error_message || '').substring(0, 80)}${(hashErr.error_message || '').length > 80 ? '...' : ''}
+                                                        </div>
+                                                    </div>
+                                                    <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                                                        <div class="error-count">${hashErr.count || 0} times</div>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            `;
+                        } else {
+                            container.innerHTML = `
+                                <div style="text-align: center; padding: var(--spacing-xl); color: var(--text-secondary);">
+                                    <i class="fas fa-check-circle" style="font-size: 3em; color: var(--primary); margin-bottom: var(--spacing-md);"></i>
+                                    <div>No errors detected</div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading error tracking:', error);
+                if (container) container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load error tracking</p>';
+            }
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+
+        // Load Agent Data with Handling
+        async function loadAgentData() {
+            const container = document.getElementById('agent-data-content');
+            if (!container) return;
+            
+            try {
+                // Try to load from agent analytics API first
+                try {
+                    const analyticsRes = await fetch('/api/debugger/agent/analytics');
+                    if (analyticsRes.ok) {
+                        const analyticsData = await analyticsRes.json();
+                        if (analyticsData.success && analyticsData.analytics) {
+                            const analytics = analyticsData.analytics;
+                            container.innerHTML = `
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                                    <div class="metric-card">
+                                        <div class="metric-label">Agent Level</div>
+                                        <div class="metric-value">${analytics.agent_manager?.level || 1}</div>
+                                        <div class="metric-change">XP: ${analytics.agent_manager?.experience || 0}</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Tasks Completed</div>
+                                        <div class="metric-value">${analytics.tasks?.total_completed || 0}</div>
+                                        <div class="metric-change">${analytics.tasks?.completion_rate || 0}% rate</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Total XP Awarded</div>
+                                        <div class="metric-value">${analytics.points?.total_xp_awarded || 0}</div>
+                                        <div class="metric-change">Activity: ${analytics.points?.total_activity_awarded || 0}</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Efficiency Score</div>
+                                        <div class="metric-value">${analytics.performance?.efficiency_score || 0}%</div>
+                                        <div class="metric-change">Value: ${analytics.points?.value_created || 0}</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 20px;">
+                                    <h3 style="margin-bottom: 10px;">Recent Actions</h3>
+                                    <div style="max-height: 200px; overflow-y: auto;">
+                                        ${Object.entries(analytics.points?.points_by_action || {}).slice(0, 10).map(([action, data]) => `
+                                            <div style="padding: 8px; margin: 5px 0; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                                                <strong>${action}</strong>: ${data.count || 0} times, ${data.total_points || 0} points
+                                            </div>
+                                        `).join('') || '<div style="opacity: 0.7;">No recent actions</div>'}
+                                    </div>
+                                </div>
+                            `;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Agent analytics API not available, using fallback');
+                }
+                
+                // Fallback to agent dashboard data
+                if (window.agentDashboardData) {
+                    const userId = localStorage.getItem('game_user_id') || 'test_user_1';
+                    await window.agentDashboardData.loadAndRender('agent-data-content', userId);
+                } else {
+                    container.innerHTML = '<div class="loading">Agent dashboard utility not loaded</div>';
+                }
+            } catch (error) {
+                console.error('Error loading agent data:', error);
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load agent data</p>';
+            }
+        }
+        
+        // Load Agent Handling Stats
+        async function loadAgentHandling() {
+            try {
+                const handlingRes = await fetch('/api/debugger/agent/handling');
+                if (handlingRes.ok) {
+                    const handlingData = await handlingRes.json();
+                    if (handlingData.success && handlingData.handling) {
+                        const handling = handlingData.handling;
+                        // Update agent data content with handling stats
+                        const container = document.getElementById('agent-data-content');
+                        if (container) {
+                            container.innerHTML = `
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                                    <div class="metric-card">
+                                        <div class="metric-label">Total Agents</div>
+                                        <div class="metric-value">${handling.total_agents || 0}</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Active Agents</div>
+                                        <div class="metric-value">${handling.active_agents || 0}</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Tasks In Progress</div>
+                                        <div class="metric-value">${handling.tasks_in_progress || 0}</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Success Rate</div>
+                                        <div class="metric-value">${handling.success_rate || 0}%</div>
+                                    </div>
+                                </div>
+                                ${handling.recent_actions && handling.recent_actions.length > 0 ? `
+                                    <div style="margin-top: 20px;">
+                                        <h3>Recent Actions</h3>
+                                        ${handling.recent_actions.map(action => `
+                                            <div style="padding: 8px; margin: 5px 0; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                                                <strong>${action.action}</strong>: ${action.count} times, ${action.total_points} points
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            `;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading agent handling:', error);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            
+            // Load all analytics data
+            loadOverviewMetrics();
+            loadTrendsChart();
+            loadQualityChart();
+            loadCategoryChart();
+            loadHealthStatus();
+            loadPerformanceMetrics();
+            loadAgentData();
+            loadAgentHandling();
+            loadErrorTracking();
+            
+            // Refresh every 60 seconds
+            setInterval(() => {
+                loadOverviewMetrics();
+                loadTrendsChart();
+                loadQualityChart();
+                loadCategoryChart();
+                loadHealthStatus();
+                loadPerformanceMetrics();
+                loadAgentData();
+                loadAgentHandling();
+                loadErrorTracking();
+            }, 60000);
+        });
+    </script>
+    <script src="/static/js/navigation-toolbar.js?v=20260304154115"></script>
+    
+    
+    <script src="/static/js/progression-display.js?v=20260304154115"></script>
+    <script src="/static/js/image-support.js?v=20260304154115"></script>
+    <script src="/static/js/template-effects.js?v=20260304154115"></script>
+    <script src="/static/js/template-services.js?v=20260304154115"></script>
+    <script src="/static/js/agent-skill-sets.js?v=20260304154115"></script>
+    <script src="/static/js/agent-dashboard-data.js?v=20260304154115"></script>
+    <script src="/static/js/template-engine-core.js?v=20260304154115"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js?v=20260304154115"></script>
+    <script src="/static/js/comprehensive-api-integration.js?v=20260304154115"></script>
+
+    <script>
+        // Simple cache version check (no forced reloads)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed and not already reloading
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>
+

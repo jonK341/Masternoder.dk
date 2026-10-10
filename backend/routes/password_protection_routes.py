@@ -39,20 +39,23 @@ def password_unlock():
     try:
         user_id = _user_id()
         result = unlock_password_protection(user_id)
-        return jsonify(result), 200
+        status = 200 if result.get("success") else 400
+        return jsonify(result), status
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 
 @password_protection_bp.route("/api/auth/password/set", methods=["POST"])
 def password_set():
-    """POST { user_id, password } — Set or change password. Unlocks automatically if rule met. Awards game_points reward on first set."""
+    """POST { user_id, password, current_password? } — Set or change password. Unlocks automatically if eligible. Awards game_points reward on first set."""
     try:
         data = request.get_json(silent=True) or {}
         user_id = (data.get("user_id") or "default_user").strip()
-        password = data.get("password") or ""
-        result = set_password(user_id, password)
-        return jsonify(result), 200
+        password = data.get("password") or data.get("new_password") or ""
+        current_password = data.get("current_password")
+        result = set_password(user_id, password, current_password=current_password)
+        status = 200 if result.get("success") else 400
+        return jsonify(result), status
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

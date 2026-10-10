@@ -4,6 +4,7 @@ Creates and configures the Flask application instance
 """
 import os
 import sys
+import threading
 from flask import Flask
 
 # Load .env from vidgenerator or project root (for DATABASE_URL etc.)
@@ -30,6 +31,14 @@ if _project_root:
 
 # Import db from models to avoid circular imports
 from src.db.models import db
+
+_daemon_cached_app = None
+_daemon_init_lock = threading.Lock()
+_daemon_boot_logged = False
+
+
+def _daemon_quiet() -> bool:
+    return os.environ.get("DAEMON_QUIET", "").strip().lower() in ("1", "true", "yes", "on")
 
 
 def _register_critical_blueprints(app):
@@ -65,14 +74,31 @@ def create_app(config_name=None):
     Returns:
         Flask application instance
     """
+    global _daemon_cached_app, _daemon_boot_logged
+    if _daemon_quiet() and _daemon_cached_app is not None:
+        return _daemon_cached_app
+
     try:
         from backend.services import unified_points_sync
         unified_points_sync._app_creation_in_progress = True
     except Exception:
         pass
     try:
-        app = _create_app_impl(config_name)
-        return app
+        if _daemon_quiet():
+            with _daemon_init_lock:
+                if _daemon_cached_app is not None:
+                    return _daemon_cached_app
+                import contextlib
+                import io
+
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    app = _create_app_impl(config_name)
+                _daemon_cached_app = app
+                if not _daemon_boot_logged:
+                    _daemon_boot_logged = True
+                    print("[daemon] Flask app loaded (quiet mode — blueprint logs suppressed)", flush=True)
+                return app
+        return _create_app_impl(config_name)
     finally:
         try:
             from backend.services import unified_points_sync
@@ -161,6 +187,11 @@ def _create_app_impl(config_name=None):
             db.create_all()
         except Exception as e:
             print(f"Warning: Could not create database tables: {e}")
+        try:
+            from backend.services.schema_bootstrap import ensure_point_ledger_schema
+            ensure_point_ledger_schema()
+        except Exception as e:
+            print(f"Warning: Could not ensure point ledger schema: {e}")
 
     # CRITICAL: Register unified/monetization/progression routes FIRST via explicit loader
     try:

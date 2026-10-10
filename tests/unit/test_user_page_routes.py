@@ -19,8 +19,9 @@ def test_user_page_serves_account_html():
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Privacy controls" in html
-    assert "Password protection" in html
-    assert "Request recovery token" in html
+    assert "Account password" in html
+    assert "Guided setup with unlock progress" in html
+    assert "account-password-setup" in html
     assert "/api/user/account-privacy" in html
 
 

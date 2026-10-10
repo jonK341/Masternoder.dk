@@ -1,0 +1,31 @@
+{
+  "agent_id": "arb_agent_btc_eth",
+  "realized_profit_usd": 0.0,
+  "trade_count": 0,
+  "notional_traded_usd": 0.0,
+  "by_venue": {},
+  "wallet_label": "arb_btc_eth_wallet",
+  "last_action": {
+    "agent_id": "arb_agent_btc_eth",
+    "executed": false,
+    "reason": "below_threshold",
+    "best": {
+      "symbol": "ETH",
+      "buy_venue": "binance",
+      "buy_ask": 1793.6,
+      "sell_venue": "nonkyc",
+      "sell_bid": 1798.03,
+      "gross_bps": 24.7,
+      "fee_bps": 36.0,
+      "net_bps": -11.3,
+      "notional_usd": 10.0,
+      "est_profit_usd": -0.0113
+    },
+    "mode": "live",
+    "profit_path_id": "bfa6c4d8"
+  },
+  "created_at": "2026-06-27T20:44:46.968420Z",
+  "ticks": 2274,
+  "game_time_sec": 8186400,
+  "agent_level": 46
+}

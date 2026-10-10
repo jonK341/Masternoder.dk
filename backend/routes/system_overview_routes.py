@@ -105,8 +105,6 @@ def _video_providers():
     _checks = [
         ("RunwayML Gen-4",  "backend.services.runwayml_service",         "RUNWAYML_API_KEY",   "video"),
         ("Pika 2.2",        "backend.services.pika_service",              "PIKA_LABS_API_KEY",  "video"),
-        ("HeyGen Avatar",   "backend.services.heygen_service",            "HEYGEN_API_KEY",     "video"),
-        ("Replicate SVD",   "backend.services.replicate_video_service",   "REPLICATE_API_TOKEN","video"),
         ("ModelsLab",       "backend.services.modelslab_video_service",   "MODELSLAB_API_KEY",  "video"),
         ("Stability AI",    "backend.services.stability_image_service",   "STABILITY_AI_API_KEY","image"),
     ]

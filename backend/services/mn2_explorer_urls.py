@@ -3,6 +3,8 @@ Centralized MN2 block-explorer URL builders.
 
 Supports Chainz `.dws` query URLs and iquidus/eiquidus path URLs (`/tx/`, `/address/`).
 Config lives in data/mn2_config.json (explorer_base_url, explorer_kind, fallback, local API).
+Environment overrides (when set): MN2_EXPLORER_BASE_URL, MN2_EXPLORER_FALLBACK_BASE_URL,
+MN2_EXPLORER_LOCAL_API_URL, MN2_EXPLORER_KIND.
 """
 import json
 import os
@@ -16,17 +18,33 @@ def _config_path() -> str:
     return os.path.join(base, "data", "mn2_config.json")
 
 
+def _env_overlay(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Apply self-hosted explorer env vars over mn2_config.json when present."""
+    out = dict(cfg)
+    for key, env_key in (
+        ("explorer_base_url", "MN2_EXPLORER_BASE_URL"),
+        ("explorer_fallback_base_url", "MN2_EXPLORER_FALLBACK_BASE_URL"),
+        ("explorer_local_api_url", "MN2_EXPLORER_LOCAL_API_URL"),
+        ("explorer_kind", "MN2_EXPLORER_KIND"),
+    ):
+        val = (os.environ.get(env_key) or "").strip()
+        if val:
+            out[key] = val
+    return out
+
+
 def load_explorer_config() -> Dict[str, Any]:
     path = _config_path()
+    cfg: Dict[str, Any] = {}
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
-                cfg = json.load(f)
-                if isinstance(cfg, dict):
-                    return cfg
+                loaded = json.load(f)
+                if isinstance(loaded, dict):
+                    cfg = loaded
         except Exception:
             pass
-    return {}
+    return _env_overlay(cfg)
 
 
 def explorer_base_url(cfg: Optional[Dict[str, Any]] = None) -> str:

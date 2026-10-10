@@ -1,0 +1,2 @@
+"""Documentary generation pipeline"""
+

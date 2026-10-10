@@ -1,0 +1,94 @@
+/* Camgirl AI stream voice controls */
+.cgv-deck {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 100, 255, 0.22);
+  background: linear-gradient(160deg, rgba(12, 8, 28, 0.75), rgba(6, 12, 24, 0.85));
+  font-size: 11px;
+  color: #e8eefc;
+}
+
+.cgv-deck-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cgv-deck-title {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffb8ff;
+  margin-right: auto;
+}
+
+.cgv-btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: #e8eefc;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cgv-btn.primary {
+  border-color: rgba(196, 167, 255, 0.45);
+  color: #e8d4ff;
+}
+
+.cgv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px 14px;
+  align-items: center;
+}
+
+.cgv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: rgba(232, 238, 252, 0.75);
+}
+
+.cgv-field input[type="range"] {
+  width: 100%;
+  accent-color: #ff64ff;
+}
+
+.cgv-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(232, 238, 252, 0.82);
+  cursor: pointer;
+}
+
+.f5-voice-deck-wrap {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
+.f5-stream .f5-voice-deck-wrap {
+  order: 10;
+}
+
+.streamer-voice-wrap {
+  max-width: 1400px;
+  margin: 10px auto 0;
+  padding: 0 12px;
+}
+
+.streamer-body.streamer-obs .streamer-voice-wrap {
+  display: none;
+}
+
+.sc-voice-hint {
+  margin: 0 0 8px;
+  font-size: 10px;
+  color: rgba(196, 167, 255, 0.85);
+}

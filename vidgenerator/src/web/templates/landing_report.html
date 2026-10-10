@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing Page Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .improvement-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+        .improvement-item.high {
+            border-left-color: #dc3545;
+        }
+        .improvement-item.medium {
+            border-left-color: #ffc107;
+        }
+        .improvement-item.low {
+            border-left-color: #28a745;
+        }
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Landing Page Report</h1>
+            <p>Comprehensive analysis of masternoder.dk landing page</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>Quick Actions</h2>
+                <button onclick="loadReport()">🔄 Refresh Report</button>
+                <button onclick="viewEnhancedHome()">👁️ View Enhanced Home</button>
+            </div>
+            
+            <div class="section">
+                <h2>Analysis Results</h2>
+                <div id="analysis-results">
+                    <p>Loading analysis...</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Improvements</h2>
+                <div id="improvements">
+                    <p>Loading improvements...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const BASE_URL = window.location.origin;
+        
+        async function loadReport() {
+            const resultsDiv = document.getElementById('analysis-results');
+            const improvementsDiv = document.getElementById('improvements');
+            
+            resultsDiv.innerHTML = '<p>Loading...</p>';
+            improvementsDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/landing/report`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const report = data.report;
+                    
+                    // Display analysis
+                    let analysisHTML = '<div>';
+                    analysisHTML += `<p><strong>Template Exists:</strong> <span class="status ${report.template_exists ? 'success' : 'error'}">${report.template_exists ? 'Yes' : 'No'}</span></p>`;
+                    
+                    analysisHTML += '<h3 style="margin-top: 20px;">Links:</h3><ul>';
+                    for (const [link, exists] of Object.entries(report.links)) {
+                        analysisHTML += `<li><span class="status ${exists ? 'success' : 'error'}">${exists ? '✓' : '✗'}</span> ${link}: ${exists ? 'Present' : 'Missing'}</li>`;
+                    }
+                    analysisHTML += '</ul>';
+                    
+                    analysisHTML += '<h3 style="margin-top: 20px;">Structure:</h3><ul>';
+                    for (const [element, exists] of Object.entries(report.structure)) {
+                        analysisHTML += `<li><span class="status ${exists ? 'success' : 'warning'}">${exists ? '✓' : '✗'}</span> ${element}: ${exists ? 'Present' : 'Missing'}</li>`;
+                    }
+                    analysisHTML += '</ul>';
+                    
+                    if (report.issues.length > 0) {
+                        analysisHTML += '<h3 style="margin-top: 20px; color: #dc3545;">Issues:</h3><ul>';
+                        report.issues.forEach(issue => {
+                            analysisHTML += `<li style="color: #dc3545;">✗ ${issue}</li>`;
+                        });
+                        analysisHTML += '</ul>';
+                    }
+                    
+                    analysisHTML += '</div>';
+                    resultsDiv.innerHTML = analysisHTML;
+                    
+                    // Display improvements
+                    let improvementsHTML = '';
+                    report.improvements.forEach(imp => {
+                        improvementsHTML += `<div class="improvement-item ${imp.priority}">
+                            <h4>${imp.action}</h4>
+                            <p><strong>Priority:</strong> ${imp.priority.toUpperCase()}</p>
+                            <p><strong>Type:</strong> ${imp.type}</p>
+                            <p>${imp.description}</p>
+                        </div>`;
+                    });
+                    improvementsDiv.innerHTML = improvementsHTML || '<p>No improvements needed</p>';
+                } else {
+                    resultsDiv.innerHTML = `<p style="color: #dc3545;">Error: ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color: #dc3545;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        function viewEnhancedHome() {
+            window.open('/vidgenerator', '_blank');
+        }
+        
+        // Load report on page load
+        window.addEventListener('load', loadReport);
+    </script>
+    <script src="/vidgenerator/static/js/error-manager.js"></script>
+</body>
+</html>
+

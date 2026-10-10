@@ -1,0 +1,130 @@
+/* Debugger page only. Every rule is scoped to body.mn-debugger-terminal. */
+
+body.mn-debugger-terminal {
+    margin: 0;
+    padding: 18px 12px 28px;
+    min-height: 100vh;
+    background: #070a07;
+    color: #b7f7c2;
+    font-family: "Ubuntu Mono", "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+body.mn-debugger-terminal .mn-term-window {
+    max-width: 1440px;
+    margin: 0 auto;
+    background: #0b100c;
+    border: 1px solid #1e3a24;
+    border-radius: 10px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+}
+
+body.mn-debugger-terminal .mn-term-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 36px;
+    padding: 0 12px;
+    background: #121812;
+    border-bottom: 1px solid #243628;
+    color: #e7d7a2;
+}
+
+body.mn-debugger-terminal .mn-term-dots {
+    display: inline-flex;
+    gap: 6px;
+}
+
+body.mn-debugger-terminal .mn-term-dots i {
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+body.mn-debugger-terminal .mn-term-dots i:nth-child(1) { background: #ff5f56; }
+body.mn-debugger-terminal .mn-term-dots i:nth-child(2) { background: #ffbd2e; }
+body.mn-debugger-terminal .mn-term-dots i:nth-child(3) { background: #27c93f; }
+
+body.mn-debugger-terminal .mn-term-title {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: #e7d7a2;
+}
+
+body.mn-debugger-terminal .mn-term-body {
+    padding: 8px 8px 20px;
+}
+
+body.mn-debugger-terminal .container {
+    color: #c8f7cf;
+}
+
+body.mn-debugger-terminal h1,
+body.mn-debugger-terminal h2,
+body.mn-debugger-terminal h3,
+body.mn-debugger-terminal h4 {
+    font-family: inherit;
+    color: #7dff9a;
+    text-shadow: none;
+}
+
+body.mn-debugger-terminal .tab {
+    background: #101710;
+    border: 1px solid #2a4a32;
+    color: #b7f7c2;
+    border-radius: 4px;
+}
+
+body.mn-debugger-terminal .tab:hover {
+    background: #162216;
+    border-color: #e7d7a2;
+}
+
+body.mn-debugger-terminal .tab.active {
+    background: #132418;
+    border-color: #e7d7a2;
+    color: #e7d7a2;
+}
+
+body.mn-debugger-terminal .tab-content,
+body.mn-debugger-terminal .status,
+body.mn-debugger-terminal pre,
+body.mn-debugger-terminal code,
+body.mn-debugger-terminal input,
+body.mn-debugger-terminal select,
+body.mn-debugger-terminal textarea {
+    font-family: inherit;
+}
+
+body.mn-debugger-terminal .tab-content {
+    background: rgba(8, 16, 10, 0.72);
+    border: 1px solid #1e3a24;
+    color: #c8f7cf;
+}
+
+body.mn-debugger-terminal .button {
+    background: #16331f;
+    color: #9dffb0;
+    border: 1px solid #2f6b3a;
+    border-radius: 4px;
+}
+
+body.mn-debugger-terminal .button:hover {
+    background: #1e462b;
+    color: #e7d7a2;
+}
+
+body.mn-debugger-terminal a {
+    color: #e7d7a2;
+}
+
+body.mn-debugger-terminal input,
+body.mn-debugger-terminal select,
+body.mn-debugger-terminal textarea {
+    background: #0c140e;
+    color: #d8ffe0;
+    border: 1px solid #2a4a32;
+}

@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "name": "MasterNoder Casino Bot",
+  "graph_api_version": "v21.0",
+  "use_llm": true,
+  "welcome_message": "Welcome to MasterNoder Casino on Messenger! Play with virtual coins or MN2 at masternoder.dk/casino — type help for commands.",
+  "commands": {
+    "help": "Commands: casino · shop · hosting · faq <question> · help",
+    "casino": "Open the casino lounge: https://masternoder.dk/casino/ — coins, MN2 buy-in packs, tournaments, and social tab.",
+    "shop": "Coin packs, Pro subscription, and boosters: https://masternoder.dk/shop/",
+    "hosting": "Rent masternode hosting ($4.99/slot): https://masternoder.dk/hosting/",
+    "play": "Play now: https://masternoder.dk/casino/",
+    "social": "Follow us and share big wins: https://masternoder.dk/casino/?tab=social"
+  },
+  "quick_replies": [
+    {"title": "Play casino", "payload": "casino"},
+    {"title": "Shop coins", "payload": "shop"},
+    {"title": "Help", "payload": "help"}
+  ]
+}

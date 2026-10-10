@@ -64,6 +64,15 @@ def main() -> int:
         return 1
 
     if args.all_from_conf:
+        if mn.multi_ping_enabled():
+            mn._unlock_wallet()
+            mn._unlock_collateral_utxos()
+            err = mn._register_fleet_ping_targets()
+            if err:
+                print(f"ERROR fleet register: {err}", file=sys.stderr)
+                return 1
+            print("OK fleet multi-ping (startmasternode all)")
+            return 0
         aliases = _aliases_from_conf()
         if not aliases:
             print("No aliases in masternode.conf", file=sys.stderr)

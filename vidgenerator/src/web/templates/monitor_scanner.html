@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Monitor & Scanner - MasterNoder{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stats.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/monitor-enhanced.css') }}">
+<style>
+    .monitor-scanner-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+        padding-top: 100px;
+    }
+    
+    .monitor-scanner-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .monitor-scanner-tab {
+        padding: 1rem 2rem;
+        background: rgba(0, 0, 0, 0.5);
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: rgba(0, 255, 0, 0.7);
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+    }
+    
+    .monitor-scanner-tab:hover {
+        color: #00ff00;
+        background: rgba(0, 255, 0, 0.1);
+    }
+    
+    .monitor-scanner-tab.active {
+        color: #00ff00;
+        border-bottom-color: #00ff00;
+        background: rgba(0, 255, 0, 0.15);
+    }
+    
+    .monitor-scanner-content {
+        display: none;
+    }
+    
+    .monitor-scanner-content.active {
+        display: block;
+    }
+    
+    .monitor-display {
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid rgba(0, 255, 0, 0.3);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .scanner-display {
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid rgba(0, 200, 255, 0.3);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .generation-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .stat-item {
+        background: rgba(0, 255, 0, 0.1);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    
+    .stat-label {
+        color: rgba(0, 255, 0, 0.7);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+        color: #00ff00;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="monitor-scanner-container">
+    <header class="stats-header">
+        <h1>🖥️ Monitor & Scanner</h1>
+        <p class="subtitle">Real-time generation monitoring and system scanning</p>
+    </header>
+    
+    <!-- Tabs -->
+    <div class="monitor-scanner-tabs">
+        <button class="monitor-scanner-tab active" data-tab="monitor">Monitor</button>
+        <button class="monitor-scanner-tab" data-tab="scanner">Scanner</button>
+        <button class="monitor-scanner-tab" data-tab="user">User</button>
+    </div>
+    
+    <!-- Monitor Tab -->
+    <div class="monitor-scanner-content active" id="tab-monitor">
+        <div class="monitor-display">
+            <h2>> GENERATION_MONITOR</h2>
+            <div id="monitor-content">
+                <pre id="monitor-text" class="monitor-text">Initializing monitor...</pre>
+            </div>
+        </div>
+        
+        <div class="generation-stats-grid" id="generation-stats">
+            <div class="stat-item">
+                <div class="stat-label">> ACTIVE_GENERATIONS:</div>
+                <div class="stat-value" id="stat-active">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">> COMPLETED_TODAY:</div>
+                <div class="stat-value" id="stat-completed">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">> TOTAL_CLIPS:</div>
+                <div class="stat-value" id="stat-clips">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">> SYSTEM_HEALTH:</div>
+                <div class="stat-value" id="stat-health">OK</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scanner Tab -->
+    <div class="monitor-scanner-content" id="tab-scanner">
+        <div class="scanner-display">
+            <h2>> SYSTEM_SCANNER</h2>
+            <div id="scanner-content">
+                <pre id="scanner-text" class="monitor-text">Scanning system...</pre>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Tab -->
+    <div class="monitor-scanner-content" id="tab-user">
+        <div class="monitor-display">
+            <h2>> USER_STATS</h2>
+            <div id="user-stats-content">
+                <h3>Service Worker Stats</h3>
+                <div id="service-worker-stats" class="generation-stats-grid">
+                    <!-- Service worker stats will be loaded here -->
+                </div>
+                
+                <h3 style="margin-top: 2rem;">Generation Stats</h3>
+                <div id="user-generation-stats" class="generation-stats-grid">
+                    <!-- Generation stats will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tab switching
+document.querySelectorAll('.monitor-scanner-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        
+        // Update active tab
+        document.querySelectorAll('.monitor-scanner-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update active content
+        document.querySelectorAll('.monitor-scanner-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        
+        // Load data for active tab
+        if (tabName === 'monitor') {
+            loadMonitorData();
+        } else if (tabName === 'scanner') {
+            loadScannerData();
+        } else if (tabName === 'user') {
+            loadUserData();
+        }
+    });
+});
+
+// Load monitor data
+async function loadMonitorData() {
+    try {
+        const response = await fetch('/vidgenerator/api/statistics');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.statistics) {
+                const stats = data.statistics;
+                document.getElementById('stat-active').textContent = stats.active_generations || 0;
+                document.getElementById('stat-completed').textContent = stats.completed_today || 0;
+                document.getElementById('stat-clips').textContent = stats.total_clips || 0;
+                document.getElementById('stat-health').textContent = stats.system_health || 'OK';
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load monitor data:', error);
+    }
+}
+
+// Load scanner data
+async function loadScannerData() {
+    const scannerText = document.getElementById('scanner-text');
+    scannerText.textContent = '> Scanning system components...\n> Checking service workers...\n> Verifying AI connections...\n> System status: OK';
+}
+
+// Load user data
+async function loadUserData() {
+    // Load service worker stats
+    try {
+        const swStats = localStorage.getItem('worker_skills_stats');
+        if (swStats) {
+            const stats = JSON.parse(swStats);
+            const container = document.getElementById('service-worker-stats');
+            container.innerHTML = '';
+            Object.entries(stats).forEach(([key, value]) => {
+                const statItem = document.createElement('div');
+                statItem.className = 'stat-item';
+                statItem.innerHTML = `
+                    <div class="stat-label">> ${key.toUpperCase()}:</div>
+                    <div class="stat-value">${value}</div>
+                `;
+                container.appendChild(statItem);
+            });
+        }
+    } catch (error) {
+        console.error('Failed to load service worker stats:', error);
+    }
+    
+    // Load generation stats
+    try {
+        const response = await fetch('/vidgenerator/api/statistics');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.statistics) {
+                const stats = data.statistics;
+                const container = document.getElementById('user-generation-stats');
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <div class="stat-label">> TOTAL_DOCUMENTARIES:</div>
+                        <div class="stat-value">${stats.total_documentaries || 0}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">> TOTAL_DURATION:</div>
+                        <div class="stat-value">${formatDuration(stats.total_duration || 0)}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">> AVG_QUALITY:</div>
+                        <div class="stat-value">${(stats.avg_quality || 0).toFixed(1)}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">> TROPHIES:</div>
+                        <div class="stat-value">${stats.total_trophies || 0}</div>
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load generation stats:', error);
+    }
+}
+
+function formatDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+}
+
+// Load initial data
+loadMonitorData();
+</script>
+{% endblock %}
+

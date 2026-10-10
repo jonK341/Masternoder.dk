@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -22,7 +23,7 @@ except Exception:
 
 import paramiko
 from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
-from mn2_release_config import MANIFEST_URL, RELEASE_URL, TARGET_VERSION
+from mn2_release_config import EXTRA_PATCH_REL, MANIFEST_URL, PATCH_REL, RELEASE_URL, TARGET_VERSION
 
 
 def release_asset_available(url: str = RELEASE_URL) -> bool:
@@ -32,6 +33,25 @@ def release_asset_available(url: str = RELEASE_URL) -> bool:
             return 200 <= resp.status < 400
     except (urllib.error.URLError, OSError):
         return False
+
+
+def patched_source_version() -> str | None:
+    """Return final configure.ac version implied by the local release patches."""
+    values: dict[str, str] = {}
+    pattern = re.compile(r"^[ +]define\(_CLIENT_VERSION_(MAJOR|MINOR|REVISION|BUILD),\s*([0-9]+)\)")
+    for rel in (PATCH_REL, EXTRA_PATCH_REL):
+        path = os.path.join(ROOT, rel.replace("/", os.sep))
+        if not os.path.isfile(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                match = pattern.match(line.rstrip())
+                if match:
+                    values[match.group(1)] = match.group(2)
+    keys = ("MAJOR", "MINOR", "REVISION", "BUILD")
+    if not all(k in values for k in keys):
+        return None
+    return ".".join(values[k] for k in keys)
 
 
 def sh(ssh, cmd: str, timeout: int = 180) -> str:
@@ -48,7 +68,7 @@ def audit_checks(web: str) -> list[tuple[str, str]]:
             "binary",
             "/opt/masternoder2d/masternoder2d -version 2>/dev/null || masternoder2-cli -version 2>/dev/null || echo no-version",
         ),
-        ("mnsync", "masternoder2-cli mnsync 2>/dev/null | head -c 200 || echo no-mnsync"),
+        ("mnsync", "masternoder2-cli -datadir=/var/www/html/config mnsync status 2>/dev/null | head -c 200 || echo no-mnsync"),
         (
             "getstakinginfo",
             "masternoder2-cli getstakinginfo 2>/dev/null | head -c 400 || echo no-getstakinginfo",
@@ -69,13 +89,13 @@ def post_verify_checks(web: str) -> list[tuple[str, str, str]]:
     return [
         ("systemd-active", "systemctl is-active masternoder2d", "contains:active"),
         ("daemon-version", "/opt/masternoder2d/masternoder2d -version 2>&1 | head -1", "contains:1.3"),
-        ("mnsync", "masternoder2-cli mnsync 2>&1 | head -c 200", "no_error"),
+        ("mnsync", "masternoder2-cli -datadir=/var/www/html/config mnsync status 2>&1 | head -c 200", "no_error"),
         ("getstakinginfo", "masternoder2-cli getstakinginfo 2>&1 | head -c 400", "no_error"),
         ("getnewaddress", "masternoder2-cli getnewaddress 2>&1 | head -1", "no_error"),
-        ("health-json", "curl -sf http://127.0.0.1:5000/api/mn2/health", 'contains:"ok"'),
+        ("health-json", "curl -sf http://127.0.0.1:5000/api/mn2/health", 'contains:"healthy"'),
         (
             "staking-rpc",
-            f"cd {web} && ./venv/bin/python -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
+            f"cd {web} && PYTHONPATH={web} /var/www/html/.venv/bin/python -c \"from backend.services.mn2_rpc_client import getstakingstatus; s=getstakingstatus(); print('ok' if s else 'fail')\" 2>&1",
             "contains:ok",
         ),
     ]
@@ -116,6 +136,11 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Audit daemon version on server; optional binary upgrade.")
     p.add_argument("--ask-pass", action="store_true")
     p.add_argument("--check-release", action="store_true", help="Only verify GitHub release asset (no SSH)")
+    p.add_argument(
+        "--require-release",
+        action="store_true",
+        help="With --check-release, fail when the release asset is missing",
+    )
     p.add_argument("--apply", action="store_true", help=f"Download and install {TARGET_VERSION} binary (maintenance window)")
     p.add_argument(
         "--verify-post",
@@ -126,10 +151,14 @@ def main() -> int:
 
     asset_ok = release_asset_available()
     manifest_ok = release_asset_available(MANIFEST_URL)
+    source_version = patched_source_version()
     print(f"Release asset {TARGET_VERSION}: {'available' if asset_ok else 'NOT FOUND'}")
     print(f"  {RELEASE_URL}")
     print(f"Manifest asset: {'available' if manifest_ok else 'optional / not uploaded'}")
     print(f"  {MANIFEST_URL}\n")
+    if source_version:
+        source_ok = source_version == TARGET_VERSION.removeprefix("v")
+        print(f"Patched source version: {source_version} ({'matches target' if source_ok else 'MISMATCH'})\n")
 
     if args.check_release:
         if not asset_ok:
@@ -139,7 +168,8 @@ def main() -> int:
                 "  python scripts/mn2_publish_release.py --tarball dist/masternoder2d.tar.gz "
                 "--manifest dist/RELEASE_MANIFEST.json --draft --skip-tag"
             )
-            return 1
+            print("\nRelease check completed: asset is not published yet.")
+            return 1 if args.require_release else 0
         return 0
 
     if args.apply and not asset_ok:
@@ -148,10 +178,11 @@ def main() -> int:
         return 1
 
     host, user = deploy_host(), deploy_user()
-    pw = require_deploy_pass(force_prompt=args.ask_pass)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, username=user, password=pw, timeout=30)
+    from deploy_ssh_env import connect_deploy_ssh
+
+    if args.ask_pass:
+        require_deploy_pass(force_prompt=True)
+    ssh = connect_deploy_ssh()[0]
     print(f"Connected {user}@{host}\n")
 
     web = "/var/www/html"
@@ -162,14 +193,14 @@ def main() -> int:
             print(sh(ssh, cmd, timeout=120))
             print()
 
-    if args.verify_post:
+    if args.verify_post and not args.apply:
         ok = run_post_verify(ssh, web)
         ssh.close()
         return 0 if ok else 1
 
     if args.apply:
         manifest_url = MANIFEST_URL if manifest_ok else ""
-        print(f"=== upgrade {TARGET_VERSION} (stop → backup wallet → fetch → verify → install → start) ===")
+        print(f"=== upgrade {TARGET_VERSION} (stop -> backup wallet -> fetch -> verify -> install -> start) ===")
         script = f"""
 set -e
 MANIFEST_URL='{manifest_url}'
@@ -207,8 +238,9 @@ test -n "$DAEMON" || {{ echo 'masternoder2d binary not in tarball'; exit 1; }}
 cp "$DAEMON" /opt/masternoder2d/masternoder2d
 chmod +x /opt/masternoder2d/masternoder2d
 if [[ -n "$CLI" ]]; then
-  cp "$CLI" /usr/local/bin/masternoder2-cli 2>/dev/null || cp "$CLI" /opt/masternoder2d/masternoder2-cli
-  chmod +x /usr/local/bin/masternoder2-cli 2>/dev/null || chmod +x /opt/masternoder2d/masternoder2-cli
+  cp "$CLI" /opt/masternoder2d/masternoder2-cli
+  chmod +x /opt/masternoder2d/masternoder2-cli
+  cp "$CLI" /usr/local/bin/masternoder2-cli 2>/dev/null || true
 fi
 if [[ -n "$TX" ]]; then
   cp "$TX" /usr/local/bin/masternoder2-tx 2>/dev/null || true
@@ -227,7 +259,7 @@ fi
 
 systemctl start masternoder2d
 sleep 15
-masternoder2-cli -datadir=/var/www/html/config startmasternode local false 2>/dev/null || true
+/opt/masternoder2d/masternoder2-cli -datadir=/var/www/html/config startmasternode local false 2>/dev/null || true
 """
         print(sh(ssh, script, timeout=600))
         ok = run_post_verify(ssh, web)

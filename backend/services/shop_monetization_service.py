@@ -218,6 +218,24 @@ def _grant(user_id: str, grant: Dict[str, Any], *, source: str) -> Dict[str, Any
         if amount > 0:
             _add_loyalty_points(user_id, amount, source=source)
         return {"type": "loyalty", "amount": amount, "label": label or f"{amount} loyalty"}
+    if gtype == "mn2":
+        amount = float(grant.get("amount") or 0)
+        if amount > 0:
+            try:
+                from backend.services.shop_mn2_fulfillment_service import fulfill_mn2_purchase
+
+                fulfill_mn2_purchase(
+                    user_id,
+                    grant.get("ref") or f"grant:{source}",
+                    1,
+                    source=source,
+                    reference=f"{source}:{grant.get('ref') or 'mn2'}:{amount}",
+                    metadata={"grant": grant},
+                    item={"mn2_granted": amount},
+                )
+            except Exception:
+                pass
+        return {"type": "mn2", "amount": amount, "label": label or f"{amount} MN2"}
     if gtype == "game_time":
         minutes = int(grant.get("minutes") or grant.get("amount") or 0)
         if minutes > 0:

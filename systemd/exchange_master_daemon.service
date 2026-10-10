@@ -1,0 +1,29 @@
+[Unit]
+Description=MasterNoder Exchange Master Daemon
+Documentation=https://github.com/jonK341/Masternoder.dk  # pragma: allowlist secret
+After=network-online.target uwsgi-vidgenerator.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/html
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/var/www/html/.env
+ExecStart=/var/www/html/.venv/bin/python scripts/exchange_master_daemon.py \
+    --interval 60 \
+    --auto-sweep
+Restart=always
+RestartSec=30
+StandardOutput=append:/var/log/masternoder/exchange_daemon.log
+StandardError=append:/var/log/masternoder/exchange_daemon_err.log
+
+# Safety limits
+MemoryMax=512M
+CPUQuota=50%
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

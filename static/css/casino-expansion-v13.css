@@ -1,0 +1,127 @@
+/* Casino v13 — Intel, guides, prognosis, agent bot */
+
+body[data-casino-v10-tab="intel"] .casino-v10-lobby-only {
+    display: none !important;
+}
+
+.casino-v13-panel {
+    max-width: 980px;
+    margin: 0 auto var(--spacing-lg);
+    padding: 0 var(--spacing-sm);
+}
+
+.casino-v13-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.casino-v13-card {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary);
+    background: rgba(12, 18, 32, 0.65);
+}
+
+.casino-v13-card h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+}
+
+.casino-v13-win {
+    color: #6ee7a0;
+    font-size: 0.85rem;
+}
+
+.casino-v13-lose {
+    color: #f87171;
+    font-size: 0.85rem;
+}
+
+.casino-v13-tip {
+    opacity: 0.8;
+    font-size: 0.82rem;
+    margin-top: 0.5rem;
+}
+
+.casino-v13-agent-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+.casino-v13-btn {
+    padding: 0.45rem 0.75rem;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.casino-v13-btn.secondary {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+}
+
+.casino-game-guide-banner {
+    margin: 0.5rem 0 1rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(120, 180, 255, 0.25);
+    background: rgba(30, 50, 90, 0.35);
+    font-size: 0.85rem;
+}
+
+.casino-game-guide-banner strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.casino-v13-payments {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+}
+
+.casino-v13-payments-label {
+    opacity: 0.7;
+}
+
+.casino-v13-pay-chip {
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid rgba(167, 139, 250, 0.35);
+    background: rgba(30, 20, 60, 0.45);
+}
+
+.casino-v13-pay-chip.planned {
+    opacity: 0.5;
+    border-style: dashed;
+}
+
+.casino-v13-network-line {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.casino-v13-uber-result {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.casino-v13-ai-hosts {
+    margin-bottom: 1.5rem;
+}
+
+.casino-v13-card.locked {
+    opacity: 0.55;
+}

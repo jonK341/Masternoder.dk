@@ -50,6 +50,32 @@ Build is **tag-pinned** (`git checkout v1.2.3.0`), runs **offline smoke tests** 
 
 Faster dev build (not portable): `USE_DEPENDS=0 bash scripts/mn2_build_release.sh` (adds `--with-unsupported-ssl` on OpenSSL 3 hosts)
 
+### Qt wallet builds (v1.3.0.0)
+
+Qt packages are **not** built by the daemon script. Use the Qt pipeline:
+
+```powershell
+# Linux Qt on production server (fast / system libs, ~15–30 min)
+python scripts/mn2_build_qt_release_remote.py --target linux --fast
+
+# Windows Qt zip (mingw depends cross-compile, ~60–120 min)
+python scripts/mn2_build_qt_release_remote.py --target win
+
+# Upload Qt assets to existing v1.3.0.0 GitHub release
+python scripts/mn2_publish_release.py --qt-assets --skip-tag
+```
+
+WSL or Linux:
+
+```bash
+bash scripts/mn2_build_qt_release.sh --target linux   # MasterNoder2-qt-linux.tar.gz
+bash scripts/mn2_build_qt_release.sh --target win       # MasterNoder2-qt-win.zip
+```
+
+**GCC 15 hosts:** compat patch `docs/patches/mn2-gcc15-httpserver-deque.patch` is applied automatically.
+
+**GitHub Actions:** `.github/workflows/mn2-release-build.yml` — workflow_dispatch with targets `daemon`, `qt-linux`, `qt-win`, or `all`. Set repo secret `MN2_RELEASE_TOKEN` (PAT with `repo` on `jonK341/MasterNoder2`) for cross-repo publish.
+
 ### 2 — Publish GitHub release
 
 Requires `gh auth login` with access to `jonK341/MasterNoder2`.

@@ -1,0 +1,198 @@
+# Build MasterNoder2 daemon + Qt wallet release artifacts on Ubuntu.
+# Publishes to jonK341/MasterNoder2 GitHub releases (draft) when triggered manually or on tag push.
+#
+# Secrets: MN2_RELEASE_TOKEN (PAT with repo scope on jonK341/MasterNoder2) for cross-repo publish.
+# Falls back to GITHUB_TOKEN (same-repo only).
+
+name: MN2 Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Build target"
+        required: true
+        default: "daemon"
+        type: choice
+        options:
+          - daemon
+          - qt-linux
+          - qt-win
+          - all
+      use_depends:
+        description: "Use depends (portable, slower)"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      publish:
+        description: "Upload to GitHub release (draft)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+  push:
+    tags:
+      - "v*.*.*.*"
+
+env:
+  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'v1.3.0.0' }}
+
+jobs:
+  build-daemon:
+    if: >-
+      github.event_name == 'push' ||
+      github.event.inputs.target == 'daemon' ||
+      github.event.inputs.target == 'all'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            git build-essential g++ autoconf automake libtool pkg-config patch bzip2 \
+            libboost-all-dev libssl-dev libevent-dev libzmq3-dev \
+            libdb-dev libminiupnpc-dev libgmp-dev libbsd-dev
+
+      - name: Build Linux daemon
+        env:
+          VERSION: ${{ env.VERSION }}
+          USE_DEPENDS: ${{ github.event.inputs.use_depends || 'true' }}
+          INSTALL_BUILD_DEPS: "0"
+          BUILD_ROOT: /tmp/mn2-build
+          JOBS: "2"
+        run: bash scripts/mn2_build_release.sh
+
+      - name: Upload daemon artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mn2-daemon-${{ env.VERSION }}
+          path: |
+            /tmp/mn2-build/dist/masternoder2d.tar.gz
+            /tmp/mn2-build/dist/masternoder2d.tar.gz.sha256
+            /tmp/mn2-build/dist/RELEASE_MANIFEST.json
+          if-no-files-found: error
+
+  build-qt-linux:
+    if: >-
+      github.event.inputs.target == 'qt-linux' ||
+      github.event.inputs.target == 'all'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            git build-essential g++ autoconf automake libtool pkg-config patch bzip2 \
+            libboost-all-dev libssl-dev libevent-dev libzmq3-dev \
+            libdb-dev libminiupnpc-dev libgmp-dev libbsd-dev \
+            qtbase5-dev qttools5-dev-tools qttools5-dev libqrencode-dev \
+            libprotobuf-dev protobuf-compiler
+
+      - name: Build Linux Qt wallet
+        env:
+          VERSION: ${{ env.VERSION }}
+          USE_DEPENDS: ${{ github.event.inputs.use_depends || 'false' }}
+          INSTALL_BUILD_DEPS: "0"
+          BUILD_ROOT: /tmp/mn2-build
+          JOBS: "2"
+          TARGET: linux
+        run: bash scripts/mn2_build_qt_release.sh --target linux
+
+      - name: Upload Qt Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mn2-qt-linux-${{ env.VERSION }}
+          path: |
+            /tmp/mn2-build/dist/MasterNoder2-qt-linux.tar.gz
+            /tmp/mn2-build/dist/MasterNoder2-qt-linux.tar.gz.sha256
+            /tmp/mn2-build/dist/QT_RELEASE_MANIFEST.json
+          if-no-files-found: error
+
+  build-qt-win:
+    if: github.event.inputs.target == 'qt-win'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Windows cross-compile dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            git build-essential g++ autoconf automake libtool pkg-config patch bzip2 \
+            libboost-all-dev libssl-dev libevent-dev libzmq3-dev \
+            libdb-dev libminiupnpc-dev libgmp-dev libbsd-dev \
+            g++-mingw-w64-x86-64 nsis zip
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix || true
+
+      - name: Build Windows Qt wallet
+        env:
+          VERSION: ${{ env.VERSION }}
+          USE_DEPENDS: "true"
+          INSTALL_BUILD_DEPS: "0"
+          BUILD_ROOT: /tmp/mn2-build
+          JOBS: "2"
+          TARGET: win
+        run: bash scripts/mn2_build_qt_release.sh --target win
+
+      - name: Upload Qt Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mn2-qt-win-${{ env.VERSION }}
+          path: |
+            /tmp/mn2-build/dist/MasterNoder2-qt-win.zip
+            /tmp/mn2-build/dist/MasterNoder2-qt-win.zip.sha256
+            /tmp/mn2-build/dist/QT_RELEASE_MANIFEST.json
+          if-no-files-found: error
+
+  publish:
+    if: >-
+      (github.event_name == 'push' || github.event.inputs.publish == 'true') &&
+      (needs.build-daemon.result == 'success' || needs.build-daemon.result == 'skipped')
+    needs: [build-daemon, build-qt-linux, build-qt-win]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect dist/
+        run: |
+          mkdir -p dist
+          find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name '*.json' -o -name '*.sha256' \) \
+            -exec cp {} dist/ \;
+          ls -la dist/
+
+      - name: Publish GitHub release (draft)
+        env:
+          GH_TOKEN: ${{ secrets.MN2_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          TARBALL="dist/masternoder2d.tar.gz"
+          if [[ -f "${TARBALL}" ]]; then
+            python scripts/mn2_publish_release.py \
+              --tarball "${TARBALL}" \
+              --manifest dist/RELEASE_MANIFEST.json \
+              --skip-tag --draft \
+              $( [[ -f dist/MasterNoder2-qt-linux.tar.gz || -f dist/MasterNoder2-qt-win.zip ]] && echo --qt-assets )
+          elif [[ -f dist/MasterNoder2-qt-linux.tar.gz || -f dist/MasterNoder2-qt-win.zip ]]; then
+            python scripts/mn2_publish_release.py --qt-assets --skip-tag --draft
+          else
+            echo "No artifacts to publish" >&2
+            exit 1
+          fi

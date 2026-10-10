@@ -4,7 +4,7 @@
 
 ## Rulebook V16 — Sync Mechanisms
 
-Rulebook V16 documents all sync domains and mechanisms. See `data/rulebook_v16_sync.json` and `/compendium/rulebook-v16` (or `/compendium/rulebook-v16.html`).
+Rulebook V16 documents all sync domains and mechanisms. See `data/rulebook_v16_sync.json` and `/vidgenerator/compendium/rulebook-v16.html`.
 
 **Sync domains:** unified_points, users, profiles, aggregator, trophies, achievements, battle, shop, quests, leaderboards, analytics, compendium, generator, gallery, stats, social, agent_skillsets, agent_knowledge, game, paypal, login, onboarding.
 

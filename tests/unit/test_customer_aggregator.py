@@ -19,6 +19,7 @@ def test_customers_requires_admin(monkeypatch):
 
 def test_customers_list_localhost(tmp_path, monkeypatch):
     monkeypatch.delenv("ADMIN_OPS_SECRET", raising=False)
+    monkeypatch.delenv("DISCORD_OPS_SECRET", raising=False)
     from backend.services import unified_points_database as upd
     from contextlib import contextmanager
 

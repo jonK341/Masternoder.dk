@@ -1,0 +1,59 @@
+{
+  "enabled": true,
+  "currency": "MN2",
+  "level_base_cost": 100,
+  "level_growth": 1.22,
+  "level_reward": {
+    "mn2_per_level": 0.02,
+    "fee_discount_bps_per_level": 1,
+    "max_fee_discount_bps": 40
+  },
+  "xp_actions": {
+    "agent_purchase": 80,
+    "premium_purchase_bonus": 60,
+    "buy_crypto": 25,
+    "agent_profit_per_usd": 6,
+    "agent_tick": 2,
+    "sweep": 40,
+    "daily_login": 15
+  },
+  "agent_levels": {
+    "tick_seconds": 3600,
+    "xp_per_profit_usd": 4,
+    "xp_per_tick": 2,
+    "base_cost": 60,
+    "growth": 1.2,
+    "edge_bonus_bps_per_level": 0.4,
+    "max_edge_bonus_bps": 8
+  },
+  "learning": {
+    "learning_rate": 0.06,
+    "proficiency_cap": 1.0,
+    "reward_capital_divisor": 0.0015,
+    "max_bonus_bps": 14,
+    "base_intelligence": 100,
+    "intelligence_per_proficiency": 80,
+    "super_skill_bonus_multiplier": 1.5
+  },
+  "ranks": [
+    {"min_level": 1, "name": "Rookie Trader", "icon": "🐣"},
+    {"min_level": 5, "name": "Trader", "icon": "📈"},
+    {"min_level": 10, "name": "Pro Trader", "icon": "💹"},
+    {"min_level": 20, "name": "Elite Trader", "icon": "🔥"},
+    {"min_level": 35, "name": "Master Trader", "icon": "🏆"},
+    {"min_level": 50, "name": "Legend", "icon": "👑"}
+  ],
+  "achievements": [
+    {"id": "first_agent", "name": "First Recruit", "desc": "Buy your first trading agent.", "icon": "🤝", "metric": "agents_owned", "threshold": 1, "reward_mn2": 0.01, "reward_xp": 40},
+    {"id": "fleet_commander", "name": "Fleet Commander", "desc": "Own 5 trading agents at once.", "icon": "🚀", "metric": "agents_owned", "threshold": 5, "reward_mn2": 0.05, "reward_xp": 120},
+    {"id": "crypto_initiate", "name": "Crypto Initiate", "desc": "Make your first crypto buy.", "icon": "🪙", "metric": "crypto_buys", "threshold": 1, "reward_mn2": 0.01, "reward_xp": 30},
+    {"id": "profit_century", "name": "Century Club", "desc": "Accrue $100 in agent profit.", "icon": "💵", "metric": "total_agent_profit_usd", "threshold": 100, "reward_mn2": 0.03, "reward_xp": 90},
+    {"id": "profit_whale", "name": "Profit Whale", "desc": "Accrue $1,000 in agent profit.", "icon": "🐋", "metric": "total_agent_profit_usd", "threshold": 1000, "reward_mn2": 0.15, "reward_xp": 300},
+    {"id": "relentless", "name": "Relentless", "desc": "Run 100 agent trade cycles.", "icon": "⚙️", "metric": "total_ticks", "threshold": 100, "reward_mn2": 0.04, "reward_xp": 100},
+    {"id": "iron_marathon", "name": "Iron Marathon", "desc": "Accumulate 24h of agent game time.", "icon": "⏱️", "metric": "total_game_time_sec", "threshold": 86400, "reward_mn2": 0.05, "reward_xp": 130},
+    {"id": "always_on", "name": "Always On", "desc": "Accumulate 7 days of agent game time.", "icon": "🌙", "metric": "total_game_time_sec", "threshold": 604800, "reward_mn2": 0.2, "reward_xp": 400},
+    {"id": "premium_elite", "name": "Premium Elite", "desc": "Own a premium agent.", "icon": "💎", "metric": "premium_owned", "threshold": 1, "reward_mn2": 0.08, "reward_xp": 150},
+    {"id": "level_10", "name": "Double Digits", "desc": "Reach trader level 10.", "icon": "🔟", "metric": "level", "threshold": 10, "reward_mn2": 0.06, "reward_xp": 0},
+    {"id": "level_25", "name": "Quarter Master", "desc": "Reach trader level 25.", "icon": "🎖️", "metric": "level", "threshold": 25, "reward_mn2": 0.2, "reward_xp": 0}
+  ]
+}

@@ -71,17 +71,32 @@ def staking_yield_report():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_staking_bp.route("/api/mn2/staking/reserves-overview", methods=["GET"])
+def staking_reserves_overview():
+    """Public reserves tab aggregator: PoR, treasury, fee pool, and network ops snapshot."""
+    try:
+        from backend.services.mn2_proof_of_reserves_service import reserves_overview
+        force = (request.args.get("force") or "").lower() in ("1", "true", "yes")
+        return jsonify(reserves_overview(force=force)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_staking_bp.route("/api/mn2/staking/config", methods=["GET"])
 def staking_config():
     try:
         cfg = staking.get_config()
+        apr_info = staking.public_apr_status()
         public = {
             "success": True,
             "enabled": cfg.get("enabled"),
             "min_stake": cfg.get("min_stake"),
             "max_stake_per_user": cfg.get("max_stake_per_user"),
             "instant_unstake": cfg.get("instant_unstake"),
-            "apr_percent": staking.dynamic_apr(),
+            "apr_percent": apr_info.get("apr_percent"),
+            "estimated_apr_percent": apr_info.get("estimated_apr_percent"),
+            "apr_status": apr_info.get("apr_status"),
+            "staking_active": apr_info.get("staking_active"),
             "longevity_tiers": cfg.get("longevity_tiers"),
             "accrual_interval_minutes": cfg.get("accrual_interval_minutes"),
             "terms_version": cfg.get("terms_version"),
@@ -410,6 +425,11 @@ def network_overview():
                 overview["rpc_degraded"] = True
         except Exception:
             overview["rpc_failover"] = None
+        try:
+            from backend.services.mn2_network_peers_service import peer_health_from_overview
+            overview["peer_health"] = peer_health_from_overview(overview)
+        except Exception:
+            overview["peer_health"] = None
         # Record a throttled snapshot for sparklines + run stop-staking/stall alerts (best-effort).
         try:
             from backend.services import mn2_network_stats

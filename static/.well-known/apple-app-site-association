@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.dk.masternoder.casino",
+        "paths": [
+          "/casino",
+          "/casino/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAMID.dk.masternoder.casino"
+    ]
+  }
+}

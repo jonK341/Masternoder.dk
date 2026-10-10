@@ -1006,11 +1006,15 @@ def mn2_withdraw():
     try:
         from backend.services.mn2_float_gate import assess as float_assess
         fg = float_assess(amount)
-        if not fg.get("allowed") and fg.get("code") == "float_insufficient":
+        if not fg.get("allowed") and fg.get("code") in (
+            "float_insufficient",
+            "external_coverage_insufficient",
+            "float_oracle_unavailable",
+        ):
             return jsonify({
                 "success": False,
-                "error": "Hot wallet float is below safety threshold for large withdrawals. Try again later or contact support.",
-                "code": "float_insufficient",
+                "error": "Hot wallet float is below safety threshold for this withdrawal. Try again later or contact support.",
+                "code": fg.get("code") or "float_insufficient",
                 "float_gate": fg,
             }), 503
     except ImportError:

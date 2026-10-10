@@ -1,0 +1,26 @@
+# Systemd unit for scripts/exchange_master_daemon.py — 24/7 exchange bot + treasury liquidity tick
+# Copy to /etc/systemd/system/masternoder-exchange-master.service
+#
+# Requires uwsgi app running. Set in EnvironmentFile (same .env):
+#   EXCHANGE_ARBITRAGE_LIVE=0          # paper until live gates documented
+#   EXCHANGE_PAYOUT_PAYPAL_LIVE=0        # do not enable without PayPal Payouts credentials
+#   EXCHANGE_ADMIN_KEY=<long random>     # for control-board admin routes
+
+[Unit]
+Description=MasterNoder exchange master daemon (platform bots + user agents + treasury liquidity)
+After=network.target uwsgi-vidgenerator.service
+Wants=uwsgi-vidgenerator.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/html
+EnvironmentFile=-/var/www/html/.env
+Environment=AGENT_DAEMON_ENV_FILE=/var/www/html/.env
+ExecStart=/usr/bin/python3 /var/www/html/scripts/exchange_master_daemon.py --interval 300
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

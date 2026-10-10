@@ -758,3 +758,20 @@ def p2p_stats() -> Dict[str, Any]:
         "funded_orders": funded,
         "chargeback_rate": round(charged / denom, 4) if denom else 0.0,
     }
+
+
+def list_pending_paypal_payments() -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for order in _read(_ORDERS_FILE).values():
+        if not isinstance(order, dict):
+            continue
+        ppid = str(order.get("paypal_order_id") or "").strip()
+        if order.get("status") != "pending_payment" or not ppid:
+            continue
+        out.append({
+            "rail": "p2p",
+            "local_id": order.get("order_id"),
+            "paypal_order_id": ppid,
+            "user_id": order.get("buyer_id"),
+        })
+    return out

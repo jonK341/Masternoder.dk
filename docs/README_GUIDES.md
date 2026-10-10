@@ -32,11 +32,6 @@
 - **Middleware Guide** - Technical architecture
 - **Integration Guide** - System integration
 
-### Revenue & unit economics
-- **[Monetization (PayPal)](./MONETIZATION_PAYPAL.md)** — packs, tiers, subscriptions, B2B, marketplace (phased), checklist  
-- **[Reference job & COGS](./REFERENCE_JOB_COGS.md)** — pricing anchor and `metering.jsonl`
-- **[Monetization investigation closeout](./MONETIZATION_INVESTIGATION_CLOSEOUT.md)** — conclusion, ref table, button notes, deploy list
-
 ### Problem Solving
 - **Troubleshooting** - Common problems and solutions
 - **Problem TODOs** - Maintenance checklists
@@ -77,7 +72,6 @@
 - **Fix a problem** → [Problem Solving Guide](./PROBLEM_SOLVING_TODOS.md)
 - **Learn skills** → [Skills & Abilities Guide](./SKILLS_ABILITIES_GUIDE.md)
 - **Use API** → [API Documentation](./API_DOCUMENTATION.md)
-- **Price products / PayPal strategy** → [Monetization (PayPal)](./MONETIZATION_PAYPAL.md) and [Reference job & COGS](./REFERENCE_JOB_COGS.md)
 
 ---
 

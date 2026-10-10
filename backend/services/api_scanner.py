@@ -183,7 +183,95 @@ class APIScanner:
                         })
         
         return missing
-    
+
+    def find_missing_frontend_calls(self) -> List[Dict]:
+        """Frontend /api paths that no backend route serves.
+
+        Generated CRUD guesses are not included. Only string and fetch URLs
+        that appear in page and script sources are compared to real routes.
+        """
+        frontend = self._scan_frontend_api_paths()
+        backend = set()
+        for route in self.scan_routes():
+            backend.add(self._normalize_api_path(route.get("path") or ""))
+        missing = []
+        for path, sources in sorted(frontend.items()):
+            if self._frontend_path_served(path, backend):
+                continue
+            missing.append({
+                "path": path,
+                "method": "GET",
+                "sources": sources[:8],
+                "source_count": len(sources),
+            })
+        return missing
+
+    def _scan_frontend_api_paths(self) -> Dict[str, List[str]]:
+        roots = [
+            os.path.join(self.base_dir, "static", "js"),
+            os.path.join(self.base_dir, "static", "html"),
+            os.path.join(self.base_dir, "backend", "templates"),
+            os.path.join(self.base_dir, "vidgenerator"),
+        ]
+        for name in os.listdir(self.base_dir):
+            candidate = os.path.join(self.base_dir, name)
+            if os.path.isdir(candidate) and os.path.isfile(os.path.join(candidate, "index.html")):
+                roots.append(candidate)
+        index_html = os.path.join(self.base_dir, "index.html")
+        paths: Dict[str, List[str]] = {}
+        files = []
+        if os.path.isfile(index_html):
+            files.append(index_html)
+        for root in roots:
+            if not os.path.isdir(root):
+                continue
+            for dirpath, dirnames, filenames in os.walk(root):
+                dirnames[:] = [d for d in dirnames if d not in ("node_modules", "__pycache__", ".git")]
+                for fname in filenames:
+                    if fname.endswith((".js", ".html", ".htm")):
+                        files.append(os.path.join(dirpath, fname))
+        pattern = re.compile(r"['\"`](/(?:vidgenerator/)?api/[a-zA-Z0-9_./${}<>-]+)['\"`]")
+        for path in files:
+            try:
+                with open(path, "r", encoding="utf-8", errors="replace") as handle:
+                    content = handle.read()
+            except OSError:
+                continue
+            rel = os.path.relpath(path, self.base_dir)
+            for match in pattern.finditer(content):
+                normalized = self._normalize_api_path(match.group(1))
+                if not normalized.startswith("/api/") and "/api/" not in normalized:
+                    continue
+                paths.setdefault(normalized, [])
+                if rel not in paths[normalized]:
+                    paths[normalized].append(rel)
+        return paths
+
+    def _normalize_api_path(self, path: str) -> str:
+        value = (path or "").split("?")[0].split("#")[0]
+        value = re.sub(r"\$\{[^}]+\}", "<id>", value)
+        value = re.sub(r"<[^>]+>", "<id>", value)
+        value = re.sub(r"/:[A-Za-z_][A-Za-z0-9_]*", "/<id>", value)
+        if "://" in value:
+            value = "/" + value.split("://", 1)[1].split("/", 1)[-1]
+        if not value.startswith("/"):
+            value = "/" + value
+        if value.startswith("/vidgenerator/"):
+            value = value[len("/vidgenerator"):]
+        return value.rstrip("/") or "/"
+
+    def _frontend_path_served(self, path: str, backend_paths: set) -> bool:
+        if path in backend_paths:
+            return True
+        parts = path.split("/")
+        for candidate in backend_paths:
+            other = candidate.split("/")
+            if len(parts) != len(other):
+                continue
+            if all(right == "<id>" or right == left for left, right in zip(parts, other)):
+                return True
+        return False
+
     def _get_base_paths(self, bp_name: str) -> Dict[str, List[str]]:
         """Get standard CRUD paths for a blueprint"""
         # Convert blueprint name to resource name

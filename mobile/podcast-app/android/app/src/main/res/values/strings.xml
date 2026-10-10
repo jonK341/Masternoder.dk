@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MasterNoder Podcast</string>
+    <string name="title_activity_main">MasterNoder Podcast</string>
+    <string name="package_name">dk.masternoder.podcast</string>
+    <string name="custom_url_scheme">dk.masternoder.podcast</string>
+</resources>

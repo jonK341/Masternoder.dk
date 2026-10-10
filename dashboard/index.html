@@ -1,0 +1,1237 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="cache-version" content="20260114100145">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Dashboard - All Points - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+        <script src="/static/js/error-manager.js?v=20260304154115"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .dashboard-page {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+            padding: 100px 20px 60px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
+            border-radius: 30px;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .dashboard-header h1 {
+            font-size: 4em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.5));
+        }
+
+        .points-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .points-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid var(--border-primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .points-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .points-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .card-category {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.2em;
+        }
+
+        .points-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .point-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(0, 255, 136, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .point-label {
+            color: var(--text-secondary);
+            font-size: 0.95em;
+        }
+
+        .point-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 2px solid var(--border-primary);
+        }
+
+        .chart-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
+            border-radius: 20px;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .summary-stat-value {
+            font-size: 3em;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .summary-stat-label {
+            font-size: 1.1em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: #000;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg) scale(1.1);
+            box-shadow: 0 6px 30px rgba(0, 255, 136, 0.6);
+        }
+
+        .accuracy-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #000;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            margin-left: 15px;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            25% { transform: translateY(-20px) translateX(10px); }
+            50% { transform: translateY(-40px) translateX(-10px); }
+            75% { transform: translateY(-20px) translateX(5px); }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/template-effects.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=20260304154115">
+
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div class="particles" id="particles"></div>
+    
+    <div id="navigation-toolbar"></div>
+    
+    <div class="dashboard-page">
+        <div class="dashboard-header">
+            <h1>
+                <i class="fas fa-tachometer-alt"></i>
+                Comprehensive Points Dashboard
+                <span class="accuracy-badge">A+ Accuracy</span>
+            </h1>
+            <p style="font-size: 1.2em; color: var(--text-secondary);">Complete overview of all your points and statistics</p>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="summary-stats" id="summary-stats">
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="summary-total-xp">0</div>
+                <div class="summary-stat-label">Total XP</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="summary-level">1</div>
+                <div class="summary-stat-label">Level</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="summary-total-points">0</div>
+                <div class="summary-stat-label">Total Points</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="summary-achievements">0</div>
+                <div class="summary-stat-label">Achievements</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="stat-trophies">0</div>
+                <div class="summary-stat-label">Trophy Points</div>
+            </div>
+        </div>
+
+        <!-- Recap: quick links to Stats, Quests, Profile -->
+        <div class="recap-strip" style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-bottom:24px;">
+            <span style="opacity:0.9;">Daily recap:</span>
+            <a href="/stats" style="color:var(--primary); text-decoration:none; padding:6px 12px; border:1px solid rgba(0,255,136,0.4); border-radius:8px;">📈 Statistics</a>
+            <a href="/quests" style="color:var(--primary); text-decoration:none; padding:6px 12px; border:1px solid rgba(0,255,136,0.4); border-radius:8px;">📜 Quests</a>
+            <a href="/profile" style="color:var(--primary); text-decoration:none; padding:6px 12px; border:1px solid rgba(0,255,136,0.4); border-radius:8px;">👤 Profile</a>
+            <a href="/news" style="color:var(--primary); text-decoration:none; padding:6px 12px; border:1px solid rgba(0,255,136,0.4); border-radius:8px;">📰 News</a>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-container">
+            <div class="chart-title">Points Distribution</div>
+            <canvas id="pointsChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">XP Progress</div>
+            <canvas id="xpChart"></canvas>
+        </div>
+
+        <!-- All Points Grid -->
+        <div class="points-grid" id="points-grid">
+            <!-- Points will be loaded here -->
+        </div>
+
+        <!-- Battle System Overview -->
+        <div class="chart-container" id="battle-system-section">
+            <div class="chart-title">
+                <i class="fas fa-sword"></i> Battle System Overview
+            </div>
+            <div id="battle-overview-content">
+                <div class="loading">Loading battle data...</div>
+            </div>
+        </div>
+
+        <!-- Calculator Section -->
+        <div class="chart-container" id="calculator-section">
+            <div class="chart-title">
+                <i class="fas fa-calculator"></i> Point Calculator
+            </div>
+            <div id="calculator-content">
+                <div class="calculator-interface">
+                    <div class="calculator-inputs">
+                        <button class="btn-primary" onclick="calculatePoints()">
+                            <i class="fas fa-calculator"></i> Calculate Points
+                        </button>
+                        <button class="btn-primary" onclick="getCalculatorBreakdown()">
+                            <i class="fas fa-chart-pie"></i> View Breakdown
+                        </button>
+                    </div>
+                    <div id="calculator-results" class="calculator-results">
+                        <p class="text-secondary">Click "Calculate Points" to see calculation results</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Data Section -->
+        <div class="chart-container" id="agent-data-section">
+            <div class="chart-title">
+                <i class="fas fa-robot"></i> Agent Data Overview
+            </div>
+            <div id="agent-data-content">
+                <div class="loading">Loading agent data...</div>
+            </div>
+        </div>
+
+        <!-- Agent Behavior Section -->
+        <div class="chart-container" id="agent-behavior-section">
+            <div class="chart-title">
+                <i class="fas fa-gamepad"></i> Agent Behavior (Real Players)
+            </div>
+            <div id="agent-behavior-content">
+                <div class="loading">Loading agent behavior...</div>
+            </div>
+        </div>
+
+        <!-- Unified Points Overview -->
+        <div class="chart-container" id="unified-points-section">
+            <div class="chart-title">
+                <i class="fas fa-coins"></i> Unified Points System Overview
+            </div>
+            <div id="unified-points-content">
+                <div class="unified-points-grid" id="unified-points-grid">
+                    <div class="loading">Loading unified points...</div>
+                </div>
+            </div>
+        </div>
+        <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+            <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+            <div id="intelligence-content">
+                <div class="intelligence-subtabs">
+                    <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                    <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                    <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+                </div>
+                <div id="intelligence-panels"></div>
+                <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+            </div>
+        </section>
+    </div>
+
+    <button class="refresh-btn" onclick="refreshDashboard()" title="Refresh Dashboard">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <script src="/static/js/unified-point-counters.js?v=20260304154115"></script>
+    <script src="/static/js/progression-display.js?v=20260304154115"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260304154115"></script>
+    <script src="/static/js/agent-behavior-widget.js?v=20260304154115"></script>
+    <script>
+        const BASE_URL = window.location.origin;
+        let pointsChart = null;
+        let xpChart = null;
+
+        // Create particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+            
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: absolute;
+                    width: 2px;
+                    height: 2px;
+                    background: var(--primary);
+                    border-radius: 50%;
+                    opacity: 0.5;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    animation: float ${5 + Math.random() * 10}s infinite ease-in-out;
+                    animation-delay: ${Math.random() * 5}s;
+                `;
+                container.appendChild(particle);
+            }
+        }
+
+        // Load Agent Data
+        async function loadAgentData() {
+            const container = document.getElementById('agent-data-content');
+            if (!container) return;
+            
+            try {
+                if (window.agentDashboardData) {
+                    const userId = localStorage.getItem('game_user_id') || 'test_user_1';
+                    await window.agentDashboardData.loadAndRender('agent-data-content', userId);
+                } else {
+                    container.innerHTML = '<div class="error">Agent dashboard utility not loaded</div>';
+                }
+            } catch (error) {
+                console.error('Error loading agent data:', error);
+                container.innerHTML = `<div class="error">Error loading agent data: ${error.message}</div>`;
+            }
+        }
+
+        // Load Agent Behavior
+        async function loadAgentBehavior() {
+            try {
+                if (window.agentBehaviorWidget) {
+                    await window.agentBehaviorWidget.load('agent-behavior-content', 20);
+                }
+            } catch (e) {
+                const container = document.getElementById('agent-behavior-content');
+                if (container) container.innerHTML = `<div class="error">Error loading agent behavior: ${e.message}</div>`;
+            }
+        }
+
+        // Load comprehensive dashboard
+        async function loadDashboard() {
+            try {
+                // Load agent data in parallel
+                loadAgentData();
+                loadAgentBehavior();
+                
+                // Try comprehensive points first
+                const comprehensiveData = await loadComprehensivePoints();
+                if (comprehensiveData) {
+                    // Calculate totals from comprehensive data
+                    const totalXP = comprehensiveData.CORE?.points?.xp?.value || 0;
+                    const level = comprehensiveData.CORE?.points?.level?.value || 1;
+                    const totalStats = comprehensiveData.STATS?.total || 0;
+                    const achievements = comprehensiveData.ACHIEVEMENTS?.points?.achievements?.value || 0;
+                    
+                    // Update summary stats
+                    const summaryXP = document.getElementById('summary-total-xp');
+                    const summaryLevel = document.getElementById('summary-level');
+                    const summaryPoints = document.getElementById('summary-total-points');
+                    const summaryAchievements = document.getElementById('summary-achievements');
+                    
+                    if (summaryXP) summaryXP.textContent = totalXP.toLocaleString();
+                    if (summaryLevel) summaryLevel.textContent = level;
+                    if (summaryPoints) summaryPoints.textContent = totalStats.toLocaleString();
+                    if (summaryAchievements) summaryAchievements.textContent = achievements;
+                    
+                    // Update charts with comprehensive data
+                    if (comprehensiveData.STATS) {
+                        updateChartsWithComprehensive(comprehensiveData);
+                    }
+                    return;
+                }
+                
+                // Fallback to legacy API (with user_id for profile/points sync)
+                const uid = typeof localStorage !== 'undefined' ? (localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user') : 'default_user';
+                const response = await fetch(`${BASE_URL}/api/points/all?user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                if (data.success && data.points) {
+                    const points = data.points;
+                    
+                    // Update summary stats
+                    const summaryXP = document.getElementById('summary-total-xp');
+                    const summaryLevel = document.getElementById('summary-level');
+                    const summaryPoints = document.getElementById('summary-total-points');
+                    const summaryAchievements = document.getElementById('summary-achievements');
+                    const summaryTrophies = document.getElementById('stat-trophies');
+                    
+                    if (summaryXP) summaryXP.textContent = (points.xp_total || points.xp || 0).toLocaleString();
+                    if (summaryLevel) summaryLevel.textContent = points.level || 1;
+                    if (summaryPoints) summaryPoints.textContent = (points.stats_points_total || 0).toLocaleString();
+                    if (summaryAchievements) summaryAchievements.textContent = points.achievements_earned || 0;
+                    if (summaryTrophies) summaryTrophies.textContent = (points.trophy_points || points.trophies_collected || 0).toLocaleString();
+                    
+                    // Render points grid (legacy)
+                    renderPointsGrid(points);
+                    
+                    // Update charts
+                    updateCharts(points);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+        
+        // Update charts with comprehensive data
+        function updateChartsWithComprehensive(categories) {
+            const statsData = categories.STATS?.points || {};
+            const points = {
+                creativity_points: statsData.creativity?.value || 0,
+                efficiency_points: statsData.efficiency?.value || 0,
+                quality_points: statsData.quality?.value || 0,
+                social_points: statsData.social?.value || 0,
+                knowledge_points: statsData.knowledge?.value || 0,
+                xp_total: categories.CORE?.points?.xp?.value || 0,
+                level: categories.CORE?.points?.level?.value || 1
+            };
+            updateCharts(points);
+        }
+
+        // Load comprehensive points
+        async function loadComprehensivePoints() {
+            try {
+                const userId = localStorage.getItem('game_user_id') || 'default_user';
+                const res = await fetch(`${BASE_URL}/api/points/comprehensive?user_id=${userId}`);
+                const data = await res.json();
+                
+                if (data.success && data.categories) {
+                    renderComprehensivePointsGrid(data.categories, data.flat_list);
+                    return data.categories;
+                }
+            } catch (error) {
+                console.error('Error loading comprehensive points:', error);
+            }
+            return null;
+        }
+        
+        // Render comprehensive points grid
+        function renderComprehensivePointsGrid(categories, flatList) {
+            const grid = document.getElementById('points-grid');
+            if (!grid) return;
+            
+            const categoryCards = Object.entries(categories).map(([key, category]) => {
+                const pointItems = Object.entries(category.points).map(([pointKey, pointData]) => {
+                    let displayValue = pointData.value;
+                    if (pointData.format === 'percentage') {
+                        displayValue = displayValue.toFixed(1) + '%';
+                    } else if (pointData.format === 'decimal') {
+                        displayValue = displayValue.toFixed(2);
+                    } else if (typeof displayValue === 'number') {
+                        displayValue = displayValue.toLocaleString();
+                    }
+                    return {
+                        label: pointData.label,
+                        value: displayValue,
+                        icon: pointData.icon
+                    };
+                });
+                
+                return {
+                    title: category.name,
+                    icon: category.icon,
+                    description: category.description,
+                    total: category.total,
+                    items: pointItems
+                };
+            });
+            
+            // Render grid with all categories
+            grid.innerHTML = categoryCards.map(category => `
+                <div class="points-card">
+                    <div class="card-category">${category.title} (${category.total.toLocaleString()} total)</div>
+                    <div class="card-title">
+                        <span class="card-icon">${category.icon}</span>
+                        ${category.title}
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px;">
+                        ${category.description}
+                    </div>
+                    <div class="points-list">
+                        ${category.items.map(item => `
+                            <div class="point-item">
+                                <span class="point-label">
+                                    ${item.icon} ${item.label}
+                                </span>
+                                <span class="point-value">${typeof item.value === 'number' ? item.value.toLocaleString() : item.value}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Render points grid (legacy - kept for backward compatibility)
+        function renderPointsGrid(points) {
+            const grid = document.getElementById('points-grid');
+            if (!grid) return;
+            
+            const categories = [
+                {
+                    title: 'Core Points',
+                    icon: '⭐',
+                    items: [
+                        { label: 'Total XP', value: points.xp_total || points.xp || 0 },
+                        { label: 'Level', value: points.level || 1 },
+                        { label: 'XP Today', value: points.xp_today || 0 },
+                        { label: 'XP This Week', value: points.xp_this_week || 0 },
+                        { label: 'XP This Month', value: points.xp_this_month || 0 },
+                    ]
+                },
+                {
+                    title: 'Stats Points',
+                    icon: '💎',
+                    items: [
+                        { label: 'Total Stats Points', value: points.stats_points_total || 0 },
+                        { label: 'Available Points', value: points.stats_points_available || 0 },
+                        { label: 'Used Points', value: points.stats_points_used || 0 },
+                        { label: 'Creativity', value: points.creativity_points || 0 },
+                        { label: 'Efficiency', value: points.efficiency_points || 0 },
+                        { label: 'Quality', value: points.quality_points || 0 },
+                        { label: 'Social', value: points.social_points || 0 },
+                        { label: 'Knowledge', value: points.knowledge_points || 0 },
+                    ]
+                },
+                {
+                    title: 'Quest Points',
+                    icon: '📋',
+                    items: [
+                        { label: 'Quest Points', value: points.quest_points || 0 },
+                        { label: 'Quest XP', value: points.quest_xp || 0 },
+                        { label: 'Active Quests', value: points.active_quests || 0 },
+                        { label: 'Completed Quests', value: points.completed_quests || 0 },
+                    ]
+                },
+                {
+                    title: 'Achievements & Milestones',
+                    icon: '🏆',
+                    items: [
+                        { label: 'Achievements Earned', value: points.achievements_earned || 0 },
+                        { label: 'Achievement Points', value: points.achievement_points || 0 },
+                        { label: 'Milestones Reached', value: points.milestones_reached || 0 },
+                        { label: 'Milestone Points', value: points.milestone_points || 0 },
+                        { label: 'Trophies Collected', value: points.trophies_collected || 0 },
+                        { label: 'Trophy Points', value: points.trophy_points || 0 },
+                    ]
+                },
+                {
+                    title: 'Economic',
+                    icon: '💰',
+                    items: [
+                        { label: 'Coins', value: points.coins || 0 },
+                        { label: 'Credits', value: points.credits || 0 },
+                        { label: 'Tokens', value: points.tokens || 0 },
+                        { label: 'Total Earned', value: points.total_earned || 0 },
+                        { label: 'Total Spent', value: points.total_spent || 0 },
+                    ]
+                },
+                {
+                    title: 'Battle',
+                    icon: '⚔️',
+                    items: [
+                        { label: 'Battle Points', value: points.battle_points || 0 },
+                        { label: 'Wins', value: points.battle_wins || 0 },
+                        { label: 'Losses', value: points.battle_losses || 0 },
+                        { label: 'Win Streak', value: points.battle_streak || 0 },
+                    ]
+                },
+                {
+                    title: 'Metal Systems',
+                    icon: '🔩',
+                    items: [
+                        { label: 'Territory Points', value: points.territory_points || 0 },
+                        { label: 'Territory Level', value: points.territory_level || 1 },
+                        { label: 'Sex Metal Points', value: points.sex_metal_points || 0 },
+                        { label: 'Sex Metal Level', value: points.sex_metal_level || 1 },
+                        { label: 'Porno Rights Points', value: points.porno_rights_points || 0 },
+                        { label: 'Porno Rights Level', value: points.porno_rights_level || 1 },
+                        { label: 'MTG Points', value: points.mtg_points || 0 },
+                        { label: 'MTG Level', value: points.mtg_level || 1 },
+                        { label: 'Trophy Hunt Points', value: points.trophy_hunt_points || 0 },
+                        { label: 'Trophy Hunt Level', value: points.trophy_hunt_level || 1 },
+                    ]
+                },
+                {
+                    title: 'Social',
+                    icon: '👥',
+                    items: [
+                        { label: 'Friends', value: points.friends_count || 0 },
+                        { label: 'Followers', value: points.followers_count || 0 },
+                        { label: 'Social Interactions', value: points.social_interactions || 0 },
+                    ]
+                },
+                {
+                    title: 'Activity',
+                    icon: '📹',
+                    items: [
+                        { label: 'Videos Created', value: points.videos_created || 0 },
+                        { label: 'Videos Watched', value: points.videos_watched || 0 },
+                        { label: 'Videos Shared', value: points.videos_shared || 0 },
+                        { label: 'Total Generations', value: points.generations_total || 0 },
+                    ]
+                },
+                {
+                    title: 'Quality',
+                    icon: '✨',
+                    items: [
+                        { label: 'High Quality Generations', value: points.high_quality_generations || 0 },
+                        { label: 'Average Quality Score', value: (points.average_quality_score || 0).toFixed(2) },
+                        { label: 'Quality Points', value: points.quality_points || 0 },
+                    ]
+                },
+                {
+                    title: 'Time & Engagement',
+                    icon: '⏱️',
+                    items: [
+                        { label: 'Time Played', value: formatTime(points.time_played || 0) },
+                        { label: 'Login Streak', value: points.login_streak || 0 },
+                        { label: 'Daily Logins', value: points.daily_logins || 0 },
+                    ]
+                },
+                {
+                    title: 'Prestige',
+                    icon: '👑',
+                    items: [
+                        { label: 'Prestige Count', value: points.prestige_count || 0 },
+                    ]
+                },
+            ];
+            
+            grid.innerHTML = categories.map(category => `
+                <div class="points-card">
+                    <div class="card-category">${category.title}</div>
+                    <div class="card-title">
+                        <span class="card-icon">${category.icon}</span>
+                        ${category.title}
+                    </div>
+                    <div class="points-list">
+                        ${category.items.map(item => `
+                            <div class="point-item">
+                                <span class="point-label">${item.label}</span>
+                                <span class="point-value">${typeof item.value === 'number' ? item.value.toLocaleString() : item.value}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update charts
+        function updateCharts(points) {
+            // Points Distribution Chart
+            const pointsCtx = document.getElementById('pointsChart');
+            if (pointsCtx) {
+                if (pointsChart) pointsChart.destroy();
+                
+                pointsChart = new Chart(pointsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Creativity', 'Efficiency', 'Quality', 'Social', 'Knowledge'],
+                        datasets: [{
+                            data: [
+                                points.creativity_points || 0,
+                                points.efficiency_points || 0,
+                                points.quality_points || 0,
+                                points.social_points || 0,
+                                points.knowledge_points || 0,
+                            ],
+                            backgroundColor: [
+                                'rgba(0, 255, 136, 0.8)',
+                                'rgba(0, 212, 255, 0.8)',
+                                'rgba(255, 100, 255, 0.8)',
+                                'rgba(255, 215, 0, 0.8)',
+                                'rgba(255, 20, 147, 0.8)',
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#000'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#fff',
+                                    font: { size: 14 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // XP Progress Chart
+            const xpCtx = document.getElementById('xpChart');
+            if (xpCtx) {
+                if (xpChart) xpChart.destroy();
+                
+                const level = points.level || 1;
+                const xpTotal = points.xp_total || 0;
+                const xpForCurrentLevel = level * 1000;
+                const xpForNextLevel = (level + 1) * 1000;
+                const xpInLevel = Math.max(0, xpTotal - xpForCurrentLevel);
+                const xpNeeded = xpForNextLevel - xpForCurrentLevel;
+                const progress = Math.min(100, Math.max(0, (xpInLevel / xpNeeded) * 100));
+                
+                xpChart = new Chart(xpCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['XP in Current Level', 'XP Needed for Next Level'],
+                        datasets: [{
+                            label: 'XP',
+                            data: [xpInLevel, xpNeeded - xpInLevel],
+                            backgroundColor: [
+                                'rgba(0, 255, 136, 0.8)',
+                                'rgba(255, 255, 255, 0.1)',
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#000'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed.y.toLocaleString() + ' XP';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#fff',
+                                    callback: function(value) {
+                                        return value.toLocaleString();
+                                    }
+                                },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#fff' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Format time
+        function formatTime(seconds) {
+            if (seconds < 60) return `${seconds}s`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${mins}m`;
+        }
+
+        // Load battle system overview
+        async function loadBattleSystem() {
+            try {
+                const userId = 'default_user'; // Get from session or context
+                const response = await fetch(`${BASE_URL}/api/battle/stats?user_id=${userId}`);
+                const data = await response.json();
+                
+                const container = document.getElementById('battle-overview-content');
+                if (!container) return;
+                
+                if (data.success) {
+                    const stats = data.stats || {};
+                    container.innerHTML = `
+                        <div class="battle-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div class="battle-stat-card" style="padding: 20px; background: rgba(0, 255, 136, 0.1); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 2em; color: var(--primary); font-weight: 700;">${stats.total_battles || 0}</div>
+                                <div style="color: var(--text-secondary);">Total Battles</div>
+                            </div>
+                            <div class="battle-stat-card" style="padding: 20px; background: rgba(0, 255, 136, 0.1); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 2em; color: var(--primary); font-weight: 700;">${stats.wins || 0}</div>
+                                <div style="color: var(--text-secondary);">Wins</div>
+                            </div>
+                            <div class="battle-stat-card" style="padding: 20px; background: rgba(0, 255, 136, 0.1); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 2em; color: var(--primary); font-weight: 700;">${stats.losses || 0}</div>
+                                <div style="color: var(--text-secondary);">Losses</div>
+                            </div>
+                            <div class="battle-stat-card" style="padding: 20px; background: rgba(0, 255, 136, 0.1); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 2em; color: var(--primary); font-weight: 700;">${stats.win_streak || 0}</div>
+                                <div style="color: var(--text-secondary);">Win Streak</div>
+                            </div>
+                            <div class="battle-stat-card" style="padding: 20px; background: rgba(0, 255, 136, 0.1); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 2em; color: var(--primary); font-weight: 700;">${stats.battle_points || 0}</div>
+                                <div style="color: var(--text-secondary);">Battle Points</div>
+                            </div>
+                            <div class="battle-stat-card" style="padding: 20px; background: rgba(0, 255, 136, 0.1); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 2em; color: var(--primary); font-weight: 700;">${stats.win_rate ? (stats.win_rate * 100).toFixed(1) + '%' : '0%'}</div>
+                                <div style="color: var(--text-secondary);">Win Rate</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <a href="/battle" class="btn-primary" style="display: inline-block; padding: 15px 30px; text-decoration: none;">
+                                <i class="fas fa-sword"></i> Go to Battle Arena
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<p class="text-secondary">Battle data not available</p>';
+                }
+            } catch (error) {
+                console.error('Error loading battle system:', error);
+                const container = document.getElementById('battle-overview-content');
+                if (container) {
+                    container.innerHTML = '<p class="text-secondary">Error loading battle data</p>';
+                }
+            }
+        }
+
+        // Calculate points using calculator
+        async function calculatePoints() {
+            try {
+                const userId = 'default_user';
+                const response = await fetch(`${BASE_URL}/api/points/calculator/calculate?user_id=${userId}&sync=true`);
+                const data = await response.json();
+                
+                const container = document.getElementById('calculator-results');
+                if (!container) return;
+                
+                if (data.success) {
+                    const calc = data.calculation || {};
+                    container.innerHTML = `
+                        <div class="calculator-result-card" style="padding: 20px; background: rgba(0, 255, 136, 0.1); border-radius: 15px; border: 2px solid var(--primary); margin-top: 20px;">
+                            <h3 style="color: var(--primary); margin-bottom: 15px;">Calculation Results</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <div>
+                                    <div style="color: var(--text-secondary);">Base Points</div>
+                                    <div style="font-size: 1.5em; color: var(--primary); font-weight: 700;">${(calc.base_total || 0).toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-secondary);">Bonus Points</div>
+                                    <div style="font-size: 1.5em; color: var(--primary); font-weight: 700;">${(calc.bonus_total || 0).toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-secondary);">Multiplier</div>
+                                    <div style="font-size: 1.5em; color: var(--primary); font-weight: 700;">${(calc.multiplier_product || 1).toFixed(2)}x</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-secondary);">Final Total</div>
+                                    <div style="font-size: 2em; color: var(--primary); font-weight: 900;">${(calc.final_total || 0).toLocaleString()}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<p class="text-secondary">Calculation failed: ' + (data.error || 'Unknown error') + '</p>';
+                }
+            } catch (error) {
+                console.error('Error calculating points:', error);
+                const container = document.getElementById('calculator-results');
+                if (container) {
+                    container.innerHTML = '<p class="text-secondary">Error calculating points</p>';
+                }
+            }
+        }
+
+        // Get calculator breakdown
+        async function getCalculatorBreakdown() {
+            try {
+                const userId = 'default_user';
+                const response = await fetch(`${BASE_URL}/api/points/calculator/breakdown/${userId}`);
+                const data = await response.json();
+                
+                const container = document.getElementById('calculator-results');
+                if (!container) return;
+                
+                if (data.success) {
+                    const breakdown = data.breakdown || {};
+                    container.innerHTML = `
+                        <div class="calculator-breakdown" style="margin-top: 20px;">
+                            <h3 style="color: var(--primary); margin-bottom: 15px;">Detailed Breakdown</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                                ${Object.entries(breakdown).map(([key, value]) => `
+                                    <div style="padding: 15px; background: rgba(0, 255, 136, 0.05); border-radius: 10px; border-left: 4px solid var(--primary);">
+                                        <div style="color: var(--text-secondary); font-size: 0.9em;">${key.replace(/_/g, ' ').toUpperCase()}</div>
+                                        <div style="color: var(--primary); font-size: 1.2em; font-weight: 700;">${typeof value === 'number' ? value.toLocaleString() : value}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<p class="text-secondary">Breakdown not available</p>';
+                }
+            } catch (error) {
+                console.error('Error getting breakdown:', error);
+            }
+        }
+
+        // Load unified points overview (user_id for profile/points sync)
+        async function loadUnifiedPoints() {
+            try {
+                const uid = typeof localStorage !== 'undefined' ? (localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user') : 'default_user';
+                const response = await fetch(`${BASE_URL}/api/points/all?user_id=${encodeURIComponent(uid)}`);
+                const data = await response.json();
+                
+                const container = document.getElementById('unified-points-grid');
+                if (!container) return;
+                
+                if (data.success && data.points) {
+                    const points = data.points;
+                    container.innerHTML = `
+                        <div class="unified-points-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                            <div class="unified-point-card" style="padding: 20px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1)); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px;">TOTAL POINTS</div>
+                                <div style="font-size: 2.5em; color: var(--primary); font-weight: 900;">${(points.stats_points_total || 0).toLocaleString()}</div>
+                            </div>
+                            <div class="unified-point-card" style="padding: 20px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1)); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px;">XP TOTAL</div>
+                                <div style="font-size: 2.5em; color: var(--primary); font-weight: 900;">${(points.xp_total || 0).toLocaleString()}</div>
+                            </div>
+                            <div class="unified-point-card" style="padding: 20px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1)); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px;">LEVEL</div>
+                                <div style="font-size: 2.5em; color: var(--primary); font-weight: 900;">${points.level || 1}</div>
+                            </div>
+                            <div class="unified-point-card" style="padding: 20px; background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1)); border-radius: 15px; border: 2px solid var(--primary);">
+                                <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px;">BATTLE POINTS</div>
+                                <div style="font-size: 2.5em; color: var(--primary); font-weight: 900;">${(points.battle_points || 0).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<p class="text-secondary">Unified points data not available</p>';
+                }
+            } catch (error) {
+                console.error('Error loading unified points:', error);
+                const container = document.getElementById('unified-points-grid');
+                if (container) {
+                    container.innerHTML = '<p class="text-secondary">Error loading unified points</p>';
+                }
+            }
+        }
+
+        // Refresh dashboard
+        function refreshDashboard() {
+            if (window.unifiedPointCounters) {
+                unifiedPointCounters.updateAllCounters(true); // Force refresh
+            }
+            loadDashboard();
+            loadBattleSystem();
+            loadUnifiedPoints();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            
+            if (window.unifiedPointCounters) {
+                unifiedPointCounters.updateAllCounters();
+                unifiedPointCounters.startAutoUpdate(30000);
+            }
+            
+            loadDashboard();
+            loadBattleSystem();
+            loadUnifiedPoints();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                loadDashboard();
+                loadBattleSystem();
+                loadUnifiedPoints();
+            }, 30000);
+        });
+    </script>
+<script src="/static/js/universal-auto-save-status.js?v=20260304154115"></script>
+<script src="/static/js/connect-all-point-counters.js?v=20260304154115"></script>
+    <script src="/static/js/image-support.js?v=20260304154115"></script>
+    <script src="/static/js/template-effects.js?v=20260304154115"></script>
+    <script src="/static/js/template-services.js?v=20260304154115"></script>
+    <script src="/static/js/agent-skill-sets.js?v=20260304154115"></script>
+    <script src="/static/js/agent-dashboard-data.js?v=20260304154115"></script>
+    <script src="/static/js/template-engine-core.js?v=20260304154115"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/comprehensive-api-integration.js?v=20260304154115"></script>
+
+    <!-- System Aggregator Integration -->
+    <script>
+        const AGGREGATOR_API = '/api/aggregator';
+        
+        // Unified data loader using aggregator
+        async function loadAllSystemData(userId) {
+            try {
+                const response = await fetch(`${AGGREGATOR_API}/frontend?user_id=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return data.data;
+                    }
+                }
+            } catch (error) {
+                console.warn('Aggregator API failed, falling back to individual endpoints:', error);
+            }
+            return null;
+        }
+        
+        // Update page-specific data
+        async function updatePageData(userId) {
+            const allData = await loadAllSystemData(userId);
+            if (!allData) return;
+            
+            // Update based on page type
+            if (allData.dashboard) {
+                updateDashboardData(allData.dashboard);
+            }
+            if (allData.battle) {
+                updateBattleData(allData.battle);
+            }
+            if (allData.shop) {
+                updateShopData(allData.shop);
+            }
+            if (allData.quest) {
+                updateQuestData(allData.quest);
+            }
+            if (allData.points) {
+                updatePointsData(allData.points);
+            }
+        }
+        
+        // Helper functions for each page type
+        function updateDashboardData(data) {
+            if (data.points && data.points.total !== undefined) {
+                const pointsEl = document.getElementById('total-points');
+                if (pointsEl) pointsEl.textContent = data.points.total;
+            }
+        }
+        
+        function updateBattleData(data) {
+            if (data.battles && Array.isArray(data.battles)) {
+                const battlesEl = document.getElementById('battle-list');
+                if (battlesEl) {
+                    battlesEl.innerHTML = data.battles.map(b => 
+                        `<div class="battle-item">${b.name || 'Battle'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateShopData(data) {
+            if (data.items && Array.isArray(data.items)) {
+                const itemsEl = document.getElementById('shop-items');
+                if (itemsEl) {
+                    itemsEl.innerHTML = data.items.map(item => 
+                        `<div class="shop-item">${item.name || 'Item'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateQuestData(data) {
+            if (data.active_quests && Array.isArray(data.active_quests)) {
+                const questsEl = document.getElementById('active-quests');
+                if (questsEl) {
+                    questsEl.innerHTML = data.active_quests.map(q => 
+                        `<div class="quest-item">${q.name || 'Quest'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updatePointsData(data) {
+            // Update points displays across the page
+            const pointsElements = document.querySelectorAll('[data-points]');
+            pointsElements.forEach(el => {
+                const pointType = el.getAttribute('data-points');
+                if (data[pointType] !== undefined) {
+                    el.textContent = data[pointType];
+                }
+            });
+        }
+        
+        // Auto-update on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            updatePageData(userId);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => updatePageData(userId), 30000);
+        });
+    </script>
+    
+
+    <!-- Production Debugger Integration -->
+    <script>
+        const DEBUGGER_API = '/api/debug';
+        
+        // Debug function (only in development)
+        function debugSystem(systemName) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                fetch(`${DEBUGGER_API}/system/${systemName}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log(`[Debug] ${systemName}:`, data);
+                    })
+                    .catch(e => console.error(`[Debug] Error debugging ${systemName}:`, e));
+            }
+        }
+        
+        // Auto-debug on errors (development only)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.addEventListener('error', (event) => {
+                console.error('[Debug] Page error detected:', event.error);
+                // Optionally send to debugger API
+            });
+        }
+    </script>
+    
+
+    
+
+    
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) { window.location.reload(); return; }
+            }
+            if (!storedVersion) sessionStorage.setItem('pageCacheVersion', currentVersion);
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>

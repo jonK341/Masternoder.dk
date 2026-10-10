@@ -1,0 +1,44 @@
+/* HALO Theme - Halo 4 sci-fi theme */
+
+.theme-halo4 {
+    --theme-primary: rgb(74, 144, 226);
+    --theme-secondary: rgb(0, 255, 255);
+    --theme-bg: rgb(10, 10, 26);
+    --theme-accent: rgb(255, 69, 0);
+}
+
+.theme-halo4 .generator-frame {
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-primary) 100%);
+    border: 2px solid var(--theme-primary);
+    box-shadow: 0 0 30px rgba(74, 144, 226, 0.3);
+}
+
+.theme-halo4 .matrix-monitor {
+    color: var(--theme-primary);
+    text-shadow: 0 0 10px var(--theme-primary), 0 0 20px var(--theme-primary);
+}
+
+.theme-halo4 button {
+    background: var(--theme-primary);
+    color: var(--theme-bg);
+    border: 2px solid var(--theme-secondary);
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+}
+
+.theme-halo4 button:hover {
+    background: var(--theme-secondary);
+    box-shadow: 0 0 25px var(--theme-primary), 0 0 40px var(--theme-primary);
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.theme-halo4 input, .theme-halo4 textarea {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background: rgba(10, 10, 26, 0.8);
+}
+
+.theme-halo4 input:focus, .theme-halo4 textarea:focus {
+    border-color: var(--theme-secondary);
+    box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+}

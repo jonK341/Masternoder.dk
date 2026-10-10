@@ -8,7 +8,6 @@ Usage:
 import os
 import sys
 import json
-from datetime import datetime, timezone
 
 try:
     import requests
@@ -19,28 +18,21 @@ except ImportError:
 BASE_URL = os.environ.get("BASE_URL", "https://masternoder.dk").rstrip("/")
 if BASE_URL.rstrip("/").endswith("/vidgenerator"):
     BASE_URL = BASE_URL.rstrip("/").rsplit("/vidgenerator", 1)[0]
-# Production serves generator under /api/ only (see vidgenerator_disabled_routes).
-API_PREFIX = os.environ.get("API_PREFIX", "/api").rstrip("/") or "/api"
 USER_ID = os.environ.get("USER_ID", "default_user")
-TIMEOUT = (10, 120)  # connect, read (video job create can be slow)
+TIMEOUT = (10, 90)  # connect, read (video can be slow)
 
 
 def main():
     mode = (sys.argv[1] or "clip").lower() if len(sys.argv) > 1 else "clip"
 
     if mode == "clip":
-        url = BASE_URL + API_PREFIX + "/generator/ai-clips"
-        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
-        clip_prompt = (
-            f"Clip test {stamp}: mist rolling over fjord cliffs at golden hour, "
-            "different mood and pacing than any previous run."
-        )
+        url = BASE_URL + "/vidgenerator/api/generator/ai-clips"
         if not os.environ.get("TRY_AI_CLIPS_FIRST"):
-            url_alt = BASE_URL + API_PREFIX + "/ai-clips/generate"
+            url_alt = BASE_URL + "/vidgenerator/api/ai-clips/generate"
             try:
                 r = requests.post(
                     url_alt,
-                    json={"prompt": clip_prompt, "user_id": USER_ID, "clip_count": 1},
+                    json={"prompt": "Sunset over the ocean, dramatic light and waves", "user_id": USER_ID, "clip_count": 1},
                     headers={"Content-Type": "application/json"},
                     timeout=TIMEOUT,
                 )
@@ -53,7 +45,7 @@ def main():
                     return
             except Exception as e:
                 print("ai-clips/generate failed:", e)
-        payload = {"prompt": clip_prompt, "user_id": USER_ID, "clip_count": 1}
+        payload = {"prompt": "Sunset over the ocean, dramatic light and waves"}
         r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=TIMEOUT)
         print("POST", url, "->", r.status_code)
         try:
@@ -67,16 +59,11 @@ def main():
             print(r.text[:500])
 
     elif mode == "video":
-        url = BASE_URL + API_PREFIX + "/generator/create"
-        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
-        unique_prompt = (
-            f"Ephemeral test run {stamp}: a fresh micro-documentary angle on how curiosity "
-            "reshapes everyday decisions — different structure each run."
-        )
+        url = BASE_URL + "/vidgenerator/api/generator/create"
         body = {
-            "title": f"Generator test {stamp}",
-            "description": unique_prompt,
-            "prompt": unique_prompt,
+            "title": "Test video from script",
+            "description": "Short test of the AI video generator.",
+            "prompt": "Short test of the AI video generator.",
             "theme": "default",
             "user_id": USER_ID,
             "duration": 60,
@@ -102,7 +89,7 @@ def main():
             doc_id = d.get("documentary_id") or d.get("video_id") or d.get("id")
             if d.get("success") and doc_id:
                 print("\n[OK] Video job created. documentary_id:", doc_id)
-                print("Poll progress: GET", BASE_URL + API_PREFIX + "/documentary/progress/" + doc_id)
+                print("Poll progress: GET", BASE_URL + "/vidgenerator/api/documentary/progress/" + doc_id)
             elif d.get("error") or d.get("message"):
                 print("\nResponse:", d.get("error") or d.get("message"))
         except Exception:

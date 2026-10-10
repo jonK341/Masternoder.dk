@@ -471,7 +471,7 @@ def user_linked_providers():
     data = request.get_json() or {}
     provider = str(data.get("provider") or "").strip().lower()
     action = str(data.get("action") or "unlink").strip().lower()
-    allowed = {p.get("id") for p in configured if isinstance(p, dict) and p.get("id")} | {"github", "google"}
+    allowed = {p.get("id") for p in configured if isinstance(p, dict) and p.get("id")} | {"github", "google", "facebook", "discord"}
     if provider not in allowed:
         return jsonify({"success": False, "error": "unknown provider"}), 400
     revocation = {"success": False, "revocation_supported": False, "error": "not requested"}
@@ -988,3 +988,32 @@ def user_db_all():
     offset = max(0, int(request.args.get("offset", 0)))
     from backend.services.user_db_service import get_all_users
     return jsonify({"success": True, **get_all_users(limit=limit, offset=offset)}), 200
+
+
+@user_account_bp.route("/api/user/portal-nav-preferences", methods=["GET", "POST"])
+def user_portal_nav_preferences():
+    """Get or save portal nav template + theme (profile preferences — same across devices)."""
+    from backend.services.nav_portal_preferences_service import (
+        get_nav_portal_preferences,
+        save_nav_portal_preferences,
+    )
+
+    user_id = _resolve(allow_default=False) or _resolve(allow_default=True)
+    if request.method == "GET":
+        return jsonify(get_nav_portal_preferences(user_id)), 200
+
+    data = request.get_json(silent=True) or {}
+    body_uid = str(data.get("user_id") or "").strip()
+    if body_uid:
+        user_id = body_uid
+    nav_template = data.get("nav_template")
+    nav_theme = data.get("nav_theme")
+    if nav_template is None and nav_theme is None:
+        return jsonify({"success": False, "error": "nav_template or nav_theme required"}), 400
+    if nav_template is not None:
+        nav_template = str(nav_template).strip() or None
+    if nav_theme is not None:
+        nav_theme = str(nav_theme).strip() or None
+    result = save_nav_portal_preferences(user_id, nav_template=nav_template, nav_theme=nav_theme)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status

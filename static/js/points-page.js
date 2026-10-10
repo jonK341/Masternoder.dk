@@ -4,7 +4,7 @@
  */
 
 const BASE_URL = window.location.origin;
-const userId = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+const userId = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
 
 // Tab Management
 document.addEventListener('DOMContentLoaded', () => {
