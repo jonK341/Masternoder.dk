@@ -166,6 +166,37 @@
         .gen-health-pill.ok { border-color: rgba(0,255,136,0.4); color: #00ff88; }
         .gen-health-pill.warn { border-color: rgba(255,170,0,0.4); color: #ffcc66; }
         .gen-crypto-hint { font-size: 0.82rem; color: rgba(0,212,255,0.85); margin-top: 8px; }
+        .gen-hub-tabs-wrap {
+            margin: 0 0 18px;
+            padding: 12px 14px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,255,136,0.22);
+            background: rgba(22,27,34,0.85);
+        }
+        .gen-hub-tabs-wrap .fp-kicker { margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.55); display: flex; gap: 10px; }
+        .gen-hub-tabs-heading { margin: 4px 0 8px; font-size: 1.05rem; color: #00ff88; }
+        .gen-hub-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+        .gen-hub-tab {
+            display: inline-flex; align-items: center; gap: 6px;
+            min-height: 36px; padding: 8px 12px; border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.72); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+        }
+        .gen-hub-tab:hover, .gen-hub-tab.is-active {
+            color: #00160c; border-color: rgba(0,255,136,0.55); background: #00ff88;
+        }
+        .gen-hub-panel { display: none; }
+        .gen-hub-panel.active { display: block; }
+        .gen-route-note { margin: 8px 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+        .gen-pay-jump {
+            margin: 0 0 14px; padding: 10px 12px; border-radius: 8px;
+            background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25);
+            font-size: 0.85rem; color: rgba(255,255,255,0.8);
+        }
+        .gen-pay-jump button {
+            margin-left: 6px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+            border: 1px solid rgba(0,212,255,0.4); background: rgba(0,212,255,0.15); color: #00d4ff; font-weight: 700;
+        }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -188,6 +219,18 @@
 
         <div class="gen-queue-bar" id="genQueueBar" aria-live="polite"></div>
 
+        <section class="gen-hub-tabs-wrap" aria-label="Generator sections">
+            <p class="fp-kicker"><span>Sections</span><span id="gen-hub-tab-status">Create</span></p>
+            <h2 class="gen-hub-tabs-heading">What do you need?</h2>
+            <div class="gen-hub-tabs" id="genHubTabs" role="tablist" aria-label="Generator sections">
+                <button type="button" class="gen-hub-tab is-active" data-gen-hub="create" role="tab" aria-selected="true" aria-controls="gen-hub-panel-create"><i class="fas fa-play-circle" aria-hidden="true"></i> Create</button>
+                <button type="button" class="gen-hub-tab" data-gen-hub="pay" role="tab" aria-selected="false" aria-controls="gen-hub-panel-pay"><i class="fas fa-coins" aria-hidden="true"></i> MN2 pay</button>
+                <button type="button" class="gen-hub-tab" data-gen-hub="agents" role="tab" aria-selected="false" aria-controls="gen-hub-panel-agents"><i class="fas fa-robot" aria-hidden="true"></i> Agents</button>
+            </div>
+            <p class="gen-route-note" id="gen-hub-route-note">Create stays above the fold — MN2 pay and agents open in their own tabs.</p>
+        </section>
+
+        <div id="gen-hub-panel-pay" class="gen-hub-panel" role="tabpanel" data-gen-hub-panel="pay" hidden>
         <section class="gen-mn2-strip" id="genMn2Strip" aria-labelledby="gen-mn2-title">
             <h2 id="gen-mn2-title"><i class="fas fa-coins"></i> MN2 pay &amp; earn</h2>
             <p>Standard generations use credits. Pay with MN2 for express/premium/ultra tiers (<code>pay_with_mn2: true</code>). Each completed video earns a small MN2 finish bonus.</p>
@@ -219,7 +262,12 @@
             <p id="genMn2EarnNote"></p>
             <p class="gen-crypto-hint" id="genCryptoHint">Earn MN2 on every finish: base bonus + multi-AI + daily first + staking boost.</p>
         </section>
+        </div>
 
+        <div id="gen-hub-panel-create" class="gen-hub-panel active" role="tabpanel" data-gen-hub-panel="create">
+        <p class="gen-pay-jump">Paying with MN2? Set balance, tier, and Pay-with-MN2 on the
+            <button type="button" data-gen-hub-go="pay">MN2 pay</button> tab (settings stay applied when you generate).
+        </p>
         <div class="gen-card" id="genMainCard">
             <div class="gen-card-header">
                 <h2><i class="fas fa-play-circle"></i> Mission control</h2>
@@ -242,7 +290,7 @@
                         </div>
                         <div class="gen-checklist-row">
                             <label><input type="checkbox" id="checkAgents" disabled> Agents (daily tasks)</label>
-                            <span class="check-status" id="checkAgentsStatus">Kør &quot;Assign 25&quot; nedenfor ved behov.</span>
+                            <span class="check-status" id="checkAgentsStatus">Kør &quot;Assign 25&quot; under Agents-fanen ved behov.</span>
                         </div>
                         <div style="margin-top:10px; font-size:0.85rem;"><a href="/agent_support" style="color:#00d4ff;" target="_blank">Agent Support → Resources</a> for API keys</div>
                     </div>
@@ -329,7 +377,9 @@
             <h3 class="gen-label" style="margin-bottom:12px;">Mine seneste klip</h3>
             <div id="recentClipsList"></div>
         </div>
+        </div>
 
+        <div id="gen-hub-panel-agents" class="gen-hub-panel" role="tabpanel" data-gen-hub-panel="agents" hidden>
         <div class="gen-card" id="dailyAgentsCard">
             <div class="gen-card-header">
                 <h2><i class="fas fa-robot"></i> Agents &amp; gallery</h2>
@@ -373,6 +423,7 @@
                 <li><strong>Checklist:</strong> LLM + Video AI-status og provider-grid</li>
             </ul>
         </div>
+        </div>
         <p class="gen-footer">
             <strong>Connect:</strong> <a href="/profile">Profile</a> · <a href="/generator">Generator</a> · <a href="/podcast">Podcast</a> · <a href="/agents">Agents</a> · <a href="/agent_support">Agent Support</a> · <a href="/gallery">Gallery</a> · <a href="/aggregator">Aggregator</a> · <a href="/theme_premium">Themes</a> · <a href="/profile#monetization-25-card">Monetization 25 (AI + agents)</a>
             &nbsp;|&nbsp; <a href="/lab">Lab</a> · <a href="/debugger">Debugger</a>
@@ -396,6 +447,62 @@
             document.querySelector('.gen-tab[data-mode="' + m + '"]').classList.add('active');
             document.querySelectorAll('.gen-panel').forEach(p => p.classList.remove('active'));
             document.getElementById('panel' + (m === 'video' ? 'Video' : 'Clip')).classList.add('active');
+        }
+
+        var GEN_HUB_LABELS = { create: 'Create', pay: 'MN2 pay', agents: 'Agents' };
+        function applyGenHubTab(tab, opts) {
+            opts = opts || {};
+            var key = GEN_HUB_LABELS[tab] ? tab : 'create';
+            document.querySelectorAll('[data-gen-hub-panel]').forEach(function (panel) {
+                var on = panel.getAttribute('data-gen-hub-panel') === key;
+                panel.classList.toggle('active', on);
+                if (on) panel.removeAttribute('hidden');
+                else panel.setAttribute('hidden', '');
+            });
+            document.querySelectorAll('#genHubTabs [data-gen-hub]').forEach(function (btn) {
+                var on = btn.getAttribute('data-gen-hub') === key;
+                btn.classList.toggle('is-active', on);
+                btn.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            var status = document.getElementById('gen-hub-tab-status');
+            if (status) status.textContent = GEN_HUB_LABELS[key] || key;
+            var note = document.getElementById('gen-hub-route-note');
+            if (note) {
+                note.textContent = 'Viewing: ' + (GEN_HUB_LABELS[key] || key) +
+                    '. MN2 pay checkbox stays applied even when that tab is hidden.';
+            }
+            if (opts.updateUrl !== false) {
+                try {
+                    var url = new URL(window.location.href);
+                    if (key === 'create') url.searchParams.delete('tab');
+                    else url.searchParams.set('tab', key);
+                    window.history.replaceState({}, document.title, url.pathname + url.search);
+                } catch (e) { /* ignore */ }
+            }
+        }
+        function wireGenHubTabs() {
+            var nav = document.getElementById('genHubTabs');
+            if (nav && !nav._bound) {
+                nav._bound = true;
+                nav.addEventListener('click', function (ev) {
+                    var btn = ev.target.closest('[data-gen-hub]');
+                    if (!btn) return;
+                    applyGenHubTab(btn.getAttribute('data-gen-hub'));
+                });
+            }
+            document.querySelectorAll('[data-gen-hub-go]').forEach(function (el) {
+                if (el._bound) return;
+                el._bound = true;
+                el.addEventListener('click', function () {
+                    applyGenHubTab(el.getAttribute('data-gen-hub-go'));
+                });
+            });
+            var params = new URLSearchParams(window.location.search);
+            var initial = params.get('tab') || '';
+            if (initial === 'mn2' || initial === 'pay' || initial === 'wallet') initial = 'pay';
+            if (initial === 'agent' || initial === 'gallery' || initial === 'daily') initial = 'agents';
+            if (initial === 'video' || initial === 'clip') initial = 'create';
+            applyGenHubTab(GEN_HUB_LABELS[initial] ? initial : 'create', { updateUrl: false });
         }
 
         async function enhancedFetch(url, opts) {
@@ -1306,6 +1413,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            wireGenHubTabs();
             handlePremiumPayPalReturn();
             if (typeof ThemeTimeline !== 'undefined') {
                 themeTimeline = new ThemeTimeline('theme-timeline-container', function(id) {
