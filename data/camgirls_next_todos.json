@@ -21,9 +21,9 @@
     },
     {
       "id": "phase3_livekit",
-      "priority": "P2",
-      "title": "LiveKit voice E2E",
-      "detail": "Unlock → voice; mode=live on prod."
+      "priority": "done",
+      "title": "LiveKit voice E2E (browser)",
+      "detail": "livekit-client + CgLiveKitVoice toggle after unlock; scripts/camgirls_livekit_smoke.py for status/token gate."
     },
     {
       "id": "phase4_db_catalog",
