@@ -1,7 +1,53 @@
 {
   "version": "1.0.0",
-  "updated_at": "2026-06-22",
+  "updated_at": "2026-10-10",
   "episodes": [
+    {
+      "id": "gen-c245c393",
+      "channel_id": "masternoder-main",
+      "title": "First App",
+      "description": "Create App capp_e1552da00967 \u2014 Super Encoder (premium)",
+      "duration_sec": 30,
+      "audio_url": "/static/audio/podcast/generated/gen-c245c393.mp3",
+      "published_at": "2026-10-10T04:34:37.391415Z",
+      "view_count": 2,
+      "play_count": 1,
+      "share_count": 0,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": true,
+      "encode_profile": "premium",
+      "assigned_agent": "podcast_producer_agent",
+      "tags": [
+        "ai-generated",
+        "generator-intelligence"
+      ],
+      "platform_links": {},
+      "job_id": "pod-1dfbc245c393"
+    },
+    {
+      "id": "gen-aae00ef9",
+      "channel_id": "masternoder-main",
+      "title": "Test Podcast Play App",
+      "description": "Create App capp_b26562e35d20 \u2014 Super Encoder (premium)",
+      "duration_sec": 30,
+      "audio_url": "/static/audio/podcast/generated/gen-aae00ef9.mp3",
+      "published_at": "2026-10-10T04:34:21.233275Z",
+      "view_count": 0,
+      "play_count": 0,
+      "share_count": 0,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": true,
+      "encode_profile": "premium",
+      "assigned_agent": "podcast_producer_agent",
+      "tags": [
+        "ai-generated",
+        "generator-intelligence"
+      ],
+      "platform_links": {},
+      "job_id": "pod-613faae00ef9"
+    },
     {
       "id": "ep-001-welcome",
       "channel_id": "masternoder-main",
@@ -148,7 +194,7 @@
     {
       "id": "ep-006-new-encoder-1",
       "channel_id": "generator-intelligence",
-      "title": "New Encoder nr. 1 — Super Encoder + Create App",
+      "title": "New Encoder nr. 1 \u2014 Super Encoder + Create App",
       "description": "E1 hardware H.264, AI API encode tuning, Play Store + Podcast TWA, agent leaderboard MN2 rewards, and 100 product finish checks.",
       "duration_sec": 1320,
       "audio_url": "/static/audio/podcast/ep-006-new-encoder-1.mp3",

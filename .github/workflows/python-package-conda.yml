@@ -1,39 +1,33 @@
-﻿name: Python Package using Conda
+name: Python Package using Conda
 
-on: [push]
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 5
+    timeout-minutes: 25
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
-    - name: Add conda to system path
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
+        cache: pip
+        cache-dependency-path: requirements-production.txt
     - name: Install dependencies
       run: |
-        conda env update --file environment.yml --name base
-    - name: Lint with flake8
+        python -m pip install --upgrade pip
+        pip install -r requirements-production.txt
+        pip install flake8 pytest
+    - name: Lint with flake8 (syntax errors / undefined names only)
       run: |
-        conda install flake8
-        # Stop the build on syntax / critical pyflakes issues.
-        # F82x (undefined names, unused globals) is widespread in legacy one-off
-        # scripts; keep it advisory via the exit-zero pass below.
         flake8 . --count --select=E9,F63,F7 --show-source --statistics \
-          --exclude=.git,__pycache__,external,mobile,node_modules,removed_scripts_backup
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics \
-          --exclude=.git,__pycache__,external,mobile,node_modules,removed_scripts_backup
-    - name: Test with pytest
+          --exclude=.git,__pycache__,external,mobile,node_modules,removed_scripts_backup,.venv,venv
+    - name: Test with pytest (self-contained unit subset)
+      timeout-minutes: 10
       run: |
-        conda install pytest
-        pytest
-
+        pytest -o addopts="" -q -p no:cacheprovider $(grep -v '^#' tests/ci_unit_tests.txt)

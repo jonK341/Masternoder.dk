@@ -90,6 +90,41 @@
       "message": "cooldown proof",
       "timestamp": "2026-04-29T01:29:56.841160",
       "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "alice",
+      "message": "Hello casino crew",
+      "timestamp": "2026-10-10T06:36:15.264787",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "bob",
+      "message": "Monitor test",
+      "timestamp": "2026-10-10T06:36:15.342261",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Alpha Master",
+      "message": "Hello social network",
+      "timestamp": "2026-10-10T06:36:16.775954",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Gold Seeker",
+      "message": "Scanning my network",
+      "timestamp": "2026-10-10T06:36:17.520912",
+      "is_ai": false
+    },
+    {
+      "user_id": "social_room",
+      "username": "Elite Wizard",
+      "message": "cooldown proof",
+      "timestamp": "2026-10-10T06:36:17.812331",
+      "is_ai": false
     }
   ]
 }

@@ -4,6 +4,36 @@
   "user_crews": {},
   "activity_feed": [
     {
+      "id": "9c63f7b2",
+      "user_id": "bob",
+      "action_type": "social_chat",
+      "label": "Cross-posted to discord",
+      "ts": "2026-10-10T04:36:15.328221Z",
+      "extra": {
+        "message_id": "hub_d251df77-2f0"
+      }
+    },
+    {
+      "id": "05af4389",
+      "user_id": "alice",
+      "action_type": "social_chat",
+      "label": "Cross-posted to site, casino",
+      "ts": "2026-10-10T04:36:15.238956Z",
+      "extra": {
+        "message_id": "hub_e5bbe57b-355"
+      }
+    },
+    {
+      "id": "80cff94c",
+      "user_id": "player_a",
+      "action_type": "game_level_crypto_claim",
+      "label": "Claimed 0.00010000 MN2 for reaching level 1",
+      "ts": "2026-10-10T04:35:09.953133Z",
+      "extra": {
+        "level": 1
+      }
+    },
+    {
       "id": "5823c94a",
       "user_id": "player_a",
       "action_type": "game_level_crypto_claim",
@@ -103,7 +133,35 @@
     "claims": {},
     "total_mn2_earned": 0
   },
-  "chat_messages": [],
+  "chat_messages": [
+    {
+      "id": "hub_e5bbe57b-355",
+      "user_id": "alice",
+      "display_name": "alice",
+      "avatar": null,
+      "message": "Hello casino crew",
+      "created_at": "2026-10-10T04:36:14.642157+00:00",
+      "room": "social",
+      "networks": [
+        "site",
+        "casino"
+      ],
+      "fx": "glow"
+    },
+    {
+      "id": "hub_d251df77-2f0",
+      "user_id": "bob",
+      "display_name": "bob",
+      "avatar": null,
+      "message": "Monitor test",
+      "created_at": "2026-10-10T04:36:15.291193+00:00",
+      "room": "social",
+      "networks": [
+        "discord"
+      ],
+      "fx": "none"
+    }
+  ],
   "moderation": {
     "blocks": {},
     "reports": [],

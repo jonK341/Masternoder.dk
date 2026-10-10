@@ -109,6 +109,17 @@
       "subscription_id": null,
       "created_at": "2026-06-25T16:50:21.171789+00:00",
       "active": true
+    },
+    {
+      "id": "4b098c543b2fa158",
+      "key_hash": "a6f76198cc5f924ed3e1f4b2b6ff951c4820920cdab44aff03bf2d5c9fd6e627",
+      "org_label": "acme",
+      "user_id": "u_api",
+      "label": "test",
+      "tier_id": null,
+      "subscription_id": null,
+      "created_at": "2026-10-10T04:35:48.150299+00:00",
+      "active": true
     }
   ],
   "subscriptions": []
