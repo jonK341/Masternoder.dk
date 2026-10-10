@@ -40,8 +40,8 @@ def run_preflight(*, light_overview: bool = True) -> Dict[str, Any]:
             f"{len(fleet_bots)} fleet bots (expected 23)",
         )
         all_ok &= _check(
-            checks, "fleet_mechanics", int(sf.get("mechanics_count") or 0) == 25,
-            "M01–M25 registry",
+            checks, "fleet_mechanics", int(sf.get("mechanics_count") or 0) == 27,
+            "M01–M27 registry",
         )
         health = sf.get("health") or {}
         all_ok &= _check(

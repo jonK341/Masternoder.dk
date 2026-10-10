@@ -191,6 +191,10 @@ class TestMN2Withdraw(unittest.TestCase):
         self.app = get_app()
         self.client = self.app.test_client()
 
+    @patch("backend.services.account_security_service.check_real_money_action", return_value=None)
+    @patch("backend.services.mn2_withdrawal_security.check_totp_gate", return_value={"allowed": True})
+    @patch("backend.services.mn2_withdrawal_security.check_whitelist_gate", return_value={"allowed": True})
+    @patch("backend.routes.mn2_routes.resolve_user_id", return_value="test_user")
     @patch("backend.routes.mn2_routes.append_entry")
     @patch("backend.services.unified_points_database.unified_points_db")
     @patch("backend.services.mn2_rpc_client.sendtoaddress")
@@ -209,6 +213,10 @@ class TestMN2Withdraw(unittest.TestCase):
         mock_send,
         mock_db,
         mock_append,
+        mock_resolve,
+        mock_whitelist,
+        mock_totp,
+        mock_password,
     ):
         mock_config.return_value = {
             "withdrawal_requires_verification": False,

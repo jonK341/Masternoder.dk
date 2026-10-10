@@ -1453,15 +1453,6 @@ def exchange_balances_agg():
     return jsonify(account_balances(venues))
 
 
-@crypto_exchange_bp.route("/api/exchange/grid/status", methods=["GET"])
-def exchange_grid_status():
-    if not _admin_authorized():
-        return jsonify({"success": False, "error": "unauthorized"}), 401
-    from backend.services.exchange_grid_bot_service import grid_status
-
-    return jsonify(grid_status())
-
-
 @crypto_exchange_bp.route("/api/exchange/grid/profit", methods=["GET"])
 def exchange_grid_profit():
     if not _admin_authorized():

@@ -16,6 +16,7 @@ def arb_env(tmp_path, monkeypatch):
     monkeypatch.setattr(ex, "_AUDIT_PATH", str(data / "audit_log.jsonl"))
     monkeypatch.setattr(conn, "_PRICE_CACHE_PATH", str(data / "external_prices.json"))
     monkeypatch.setattr(arb, "_ACCOUNTS_DIR", str(data / "agent_accounts"))
+    monkeypatch.delenv("EXCHANGE_ARBITRAGE_LIVE", raising=False)
     monkeypatch.setattr(vault, "_DATA_DIR", str(data))
     monkeypatch.setattr(vault, "_VAULT_PATH", str(data / "secrets_vault.enc"))
     monkeypatch.setattr(vault, "_REGISTRY_PATH", str(data / "wallet_registry.json"))

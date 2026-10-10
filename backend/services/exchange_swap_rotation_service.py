@@ -172,7 +172,29 @@ def _is_permanent_rotation_failure(reason: str) -> bool:
     return "pair_not_supported" in r
 
 
-def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]:
+def profit_first_enabled() -> bool:
+    cfg = load_config()
+    if cfg.get("rotation_profit_first") is True:
+        return True
+    flag = (os.environ.get("EXCHANGE_ROTATION_PROFIT_FIRST") or "").strip().lower()
+    return flag in ("1", "true", "yes", "on")
+
+
+def _hot_spread_ready(*_args: Any, **_kwargs: Any):
+    bps = _current_net_bps()
+    if bps is None:
+        return False, 0.0
+    return float(bps) >= 15.0, float(bps)
+
+
+def _refresh_rotation_balances() -> None:
+    try:
+        vapi.refresh_venue_balances(["binance", "nonkyc"], force=False)
+    except Exception:
+        return
+
+
+def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any], *, bypass_cooldown: bool = False) -> Optional[str]:
     """Return skip reason when action should not re-run yet."""
     now = datetime.now(timezone.utc)
     fp = _action_fingerprint(action)
@@ -199,6 +221,8 @@ def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]
         if not entry_at or (now - entry_at) >= timedelta(minutes=_DEDUPE_MINUTES):
             continue
         if str(entry.get("asset_key") or "") != asset_key:
+            continue
+        if bypass_cooldown:
             continue
         prev_amt = float(entry.get("amount_usd") or 0)
         if prev_amt > 0 and amount > 0:
@@ -613,6 +637,11 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
 
     rot = suggest_swap_actions(hours=6, limit=3)
     actions = rot.get("actions") or []
+    hot, _hot_bps = _hot_spread_ready()
+    if profit_first_enabled() and hot:
+        preferred = [row for row in actions if str(row.get("type") or "") != "reduce_notional"]
+        if preferred:
+            actions = preferred
     if not actions:
         return {"skipped": True, "reason": "no_actions"}
 
@@ -659,7 +688,13 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
             capped = {**capped, **{k: spec[k] for k in ("market", "quote", "quantity", "notional_usd") if k in spec}}
 
     state = _load_rotation_state()
-    skip = _dedupe_skip(capped, state)
+    skip = _dedupe_skip(
+        capped,
+        state,
+        bypass_cooldown=bool(
+            profit_first_enabled() and str(capped.get("type") or "") == "reduce_notional"
+        ),
+    )
     if skip:
         log_fields = _rotation_log_fields(capped)
         return {"skipped": True, "reason": skip, "action": capped.get("label"), **log_fields}
@@ -1081,6 +1116,7 @@ def suggest_swap_actions(
     agent_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Ranked swap/rotation actions from PPP skips + live venue balances."""
+    _refresh_rotation_balances()
     cfg = load_config()
     lookback = float(hours if hours is not None else cfg.get("rotation_lookback_hours") or 24)
     rows = search_paths(hours=lookback, limit=3000, agent_id=agent_id).get("paths") or []

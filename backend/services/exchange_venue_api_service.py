@@ -389,8 +389,8 @@ def venue_supports_symbol(venue_id: str, symbol: str, *, quote: Optional[str] = 
         return False
     cfg = conn.load_connectors_config()
     supported = [str(s).upper() for s in (cfg.get("supported_symbols") or [])]
-    if supported and sym not in supported:
-        return False
+    if supported:
+        return sym in supported
     tick = conn.fetch_ticker(venue_id, sym, timeout=4.0)
     return tick is not None
 
@@ -490,7 +490,17 @@ def normalize_order_qty(
 
     filt = fetch_binance_symbol_filters(pair)
     if not filt.get("ok"):
-        return {"ok": False, "error": filt.get("error") or "filter_fetch_failed", "venue_id": venue, "market": pair}
+        # Exchange info is optional for sizing. A geo-block or timeout must not
+        # reject paper ticks; live orders still fail later if the venue rejects qty.
+        return {
+            "ok": True,
+            "venue_id": venue,
+            "market": pair,
+            "quantity": round(raw_qty, 8),
+            "adjusted": False,
+            "filters_unavailable": True,
+            "filter_error": filt.get("error"),
+        }
 
     step = float(filt.get("step_size") or 0)
     tick_size = float(filt.get("tick_size") or 0)
@@ -886,11 +896,58 @@ def venue_quote_asset(venue_id: str) -> str:
     return conn.venue_quote(venue_id)
 
 
-def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dict[str, float]:
+_BALANCE_CACHE: Dict[str, Dict[str, float]] = {}
+_BALANCE_CACHE_TS: Dict[str, float] = {}
+_BALANCE_CACHE_TTL_SEC = 45.0
+
+
+def invalidate_venue_balance_cache(venue_id: Optional[str] = None) -> None:
+    if venue_id:
+        vid = str(venue_id).lower()
+        _BALANCE_CACHE.pop(vid, None)
+        _BALANCE_CACHE_TS.pop(vid, None)
+        return
+    _BALANCE_CACHE.clear()
+    _BALANCE_CACHE_TS.clear()
+
+
+def balance_cache_age_sec(venue_id: str) -> Optional[float]:
+    ts = _BALANCE_CACHE_TS.get(str(venue_id or "").lower())
+    if ts is None:
+        return None
+    return round(max(0.0, time.time() - ts), 3)
+
+
+def refresh_venue_balances(venue_ids: List[str], *, force: bool = False) -> Dict[str, Any]:
+    """Prefetch spot balances for credentialed venues before a live tick."""
+    refreshed: List[str] = []
+    for raw in venue_ids or []:
+        vid = str(raw or "").lower()
+        if not vid or vid == "internal" or not venue_has_credentials(vid):
+            continue
+        if force:
+            invalidate_venue_balance_cache(vid)
+        parse_spot_balances(vid, dry_run=False, force_refresh=force)
+        refreshed.append(vid)
+    return {"success": True, "refreshed": refreshed}
+
+
+def parse_spot_balances(
+    venue_id: str,
+    *,
+    dry_run: Optional[bool] = None,
+    force_refresh: bool = False,
+) -> Dict[str, float]:
     """Return asset -> free spot balance for a credentialed venue."""
-    if not venue_has_credentials(venue_id):
+    vid = str(venue_id or "").lower()
+    if not venue_has_credentials(vid):
         return {}
-    res = get_account_balance(venue_id, dry_run=dry_run)
+    if dry_run is False and not force_refresh:
+        cached = _BALANCE_CACHE.get(vid)
+        ts = _BALANCE_CACHE_TS.get(vid)
+        if cached is not None and ts is not None and (time.time() - ts) < _BALANCE_CACHE_TTL_SEC:
+            return dict(cached)
+    res = get_account_balance(vid, dry_run=dry_run)
     if not res.get("success"):
         return {}
     body = res.get("body")
@@ -906,6 +963,9 @@ def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dic
                 free = 0.0
             if sym and free > 0:
                 out[sym] = free
+        if dry_run is False:
+            _BALANCE_CACHE[vid] = dict(out)
+            _BALANCE_CACHE_TS[vid] = time.time()
         return out
     items: List[Any] = []
     if isinstance(body, list):
@@ -925,6 +985,9 @@ def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dic
             free = 0.0
         if sym and free > 0:
             out[sym] = free
+    if dry_run is False:
+        _BALANCE_CACHE[vid] = dict(out)
+        _BALANCE_CACHE_TS[vid] = time.time()
     return out
 
 
