@@ -43,7 +43,9 @@ def load_secret() -> str:
 
 
 def req(method: str, path: str, body: dict | None = None, headers: dict | None = None, timeout: int = 90):
-    hdrs = {"Accept": "application/json", "Content-Type": "application/json"}
+    hdrs = {"Accept": "application/json"}
+    if body is not None:
+        hdrs["Content-Type"] = "application/json"
     if headers:
         hdrs.update(headers)
     data = None
@@ -73,18 +75,19 @@ def main() -> int:
     if code != 200 or not isinstance(cfg, dict):
         print(f"FAIL config HTTP {code} {cfg}")
         return 2
-    rails = cfg.get("payment_rails") or []
-    pp = cfg.get("paypal") or {}
-    print(f"checkout_open={cfg.get('checkout_open')} slots_available={cfg.get('slots_available')}")
-    print(f"payment_rails={rails} paypal_enabled={pp.get('enabled')}")
+    sample = cfg.get("pricing_sample") or {}
+    rails = cfg.get("payment_rails") or sample.get("payment_rails") or []
+    print(f"slots_available={cfg.get('slots_available')} hosted_count={cfg.get('hosted_count')}")
+    print(f"price_usd_per_slot={cfg.get('price_usd_per_slot')} paypal_enabled={cfg.get('enabled')}")
+    print(f"payment_rails={rails}")
     if "paypal" not in [str(r).lower() for r in rails]:
         print("FAIL: paypal not in payment_rails")
         return 2
-    if pp.get("enabled") is False:
-        print("FAIL: paypal disabled in hosting config")
+    if cfg.get("enabled") is False:
+        print("FAIL: PayPal hosting checkout disabled")
         return 2
-    if not cfg.get("checkout_open"):
-        print("WARN: checkout not open (no slots) — quote may fail")
+    if int(cfg.get("slots_available") or 0) < 1:
+        print("WARN: no slots_available — quote may fail")
 
     if DO_CAPTURE and CAPTURE_ORDER:
         print(f"=== CAPTURE order_id={CAPTURE_ORDER} ===")

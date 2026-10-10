@@ -33,7 +33,9 @@ def load_secret() -> str:
 
 
 def req(method: str, path: str, body: dict | None = None, headers: dict | None = None, timeout: int = 60):
-    hdrs = {"Accept": "application/json", "Content-Type": "application/json"}
+    hdrs = {"Accept": "application/json"}
+    if body is not None:
+        hdrs["Content-Type"] = "application/json"
     if headers:
         hdrs.update(headers)
     data = None
