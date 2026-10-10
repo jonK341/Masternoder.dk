@@ -157,18 +157,26 @@
     box.innerHTML = '<p>Loading…</p>';
     let html = '';
     try {
-      const [bs, lv] = await Promise.all([
+      const [bs, lv, comp, story] = await Promise.all([
         fetch(`/api/battle/stats?user_id=${encodeURIComponent(uid)}`).then((r) => r.json()),
         fetch(`/api/game/hunters/level?user_id=${encodeURIComponent(uid)}`).then((r) => r.json()),
+        fetch(`/api/user/compendium/progress?user_id=${encodeURIComponent(uid)}`).then((r) => r.json()),
+        fetch(`/api/game-hub/stories/progress?user_id=${encodeURIComponent(uid)}`).then((r) => r.json()),
       ]);
       const st = (bs && bs.stats) || {};
       const li = (lv && lv.level_info) || {};
+      const compRead = comp.total_read ?? (comp.pages_read && comp.pages_read.length) ?? 0;
+      const compTotal = comp.total_pages ?? 25;
+      const storyPct = story.read_percent ?? story.percent ?? 0;
+      const storyRead = story.read_count ?? 0;
       html += '<dl>';
       html += `<dt>Battle points</dt><dd>${st.battle_points ?? 0}</dd>`;
       html += `<dt>Wins / losses</dt><dd>${st.wins ?? 0} / ${st.losses ?? 0}</dd>`;
       html += `<dt>Streak</dt><dd>${st.win_streak ?? 0}</dd>`;
       html += `<dt>Hunter level</dt><dd>${li.current_level ?? '—'}</dd>`;
       html += `<dt>Hunter XP</dt><dd>${li.current_xp ?? '—'}</dd>`;
+      html += `<dt>Compendium read</dt><dd>${compRead} / ${compTotal}${comp.completion_pct != null ? ` (${comp.completion_pct}%)` : ''}</dd>`;
+      html += `<dt>Stories read</dt><dd>${storyRead}${storyPct ? ` (${storyPct}%)` : ''}</dd>`;
       html += `<dt>Monitor moves</dt><dd>${state.moves}</dd>`;
       html += '</dl>';
     } catch (e) {
