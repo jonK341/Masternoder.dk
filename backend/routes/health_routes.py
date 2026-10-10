@@ -10,6 +10,8 @@ from datetime import datetime
 from sqlalchemy import text
 from src.db.models import db
 
+from backend.services.schema_bootstrap import SCHEMA_MIGRATIONS_HEALTH_COLUMNS
+
 health_bp = Blueprint('health', __name__)
 
 # App version for cache busting - bump on deploy to force client reload
@@ -127,9 +129,10 @@ def data_schema_health():
             out['tables'][t] = {'present': False, 'error': str(e)[:200]}
 
     try:
+        columns = ", ".join(SCHEMA_MIGRATIONS_HEALTH_COLUMNS)
         rows = db.session.execute(
             text(
-                'SELECT script_name, status, applied_at FROM schema_migrations ORDER BY applied_at DESC LIMIT 8'
+                f"SELECT {columns} FROM schema_migrations ORDER BY applied_at DESC LIMIT 8"
             )
         ).fetchall()
         out['schema_migrations_recent'] = [
@@ -349,6 +352,71 @@ def mn2_health():
         }
     except Exception as exc:
         out['components']['staking'] = {'status': 'unknown', 'error': str(exc)}
+
+    try:
+        from backend.services.mn2_rpc_client import staking_health
+        sh = staking_health() or {}
+        minting = sh.get('status') == 'active' or sh.get('staking_active') is True
+        out['components']['daemon_staking'] = {
+            'status': sh.get('status') or ('active' if minting else 'inactive'),
+            'staking_active': bool(sh.get('staking_active')),
+            'mnsync': sh.get('mnsync'),
+            'have_connections': sh.get('have_connections'),
+            'walletunlocked': sh.get('walletunlocked'),
+        }
+        if sh.get('status') == 'inactive' or sh.get('staking_active') is False:
+            degraded = True
+    except Exception as exc:
+        out['components']['daemon_staking'] = {'status': 'unknown', 'error': str(exc)}
+
+    try:
+        from backend.services.discord_service import outbox_stats
+        out['components']['discord_outbox'] = outbox_stats(30)
+        if out['components']['discord_outbox'].get('status') == 'degraded':
+            degraded = True
+    except Exception as exc:
+        out['components']['discord_outbox'] = {'status': 'unknown', 'error': str(exc)}
+
+    try:
+        from backend.services import mn2_network_stats
+        alerts = mn2_network_stats.get_alerts(limit=5)
+        out['components']['network_alerts'] = {
+            'status': 'healthy' if not alerts else 'warn',
+            'recent_count': len(alerts),
+            'latest': alerts[0] if alerts else None,
+        }
+    except Exception as exc:
+        out['components']['network_alerts'] = {'status': 'unknown', 'error': str(exc)}
+
+    try:
+        from backend.services import mn2_masternode_service
+        out['components']['masternode_hosting'] = mn2_masternode_service.probe_health()
+        mh = out['components']['masternode_hosting']
+        if mh.get('status') in ('degraded', 'warn') and mh.get('enabled'):
+            degraded = True
+    except Exception as exc:
+        out['components']['masternode_hosting'] = {'status': 'unknown', 'error': str(exc)}
+
+    # Avoid building the full services catalog on the health path — it re-probes
+    # PoR/RPC and was a major contributor to worker starvation. Peek cache only.
+    try:
+        from backend.services import mn2_services_hub
+        peek = getattr(mn2_services_hub, "peek_catalog_cache", None)
+        catalog = peek() if callable(peek) else None
+        if catalog:
+            out['components']['mn2_services'] = {
+                'status': (catalog.get('summary') or {}).get('overall') or 'unknown',
+                'summary': catalog.get('summary'),
+                'service_count': len(catalog.get('services') or []),
+                'cached': True,
+            }
+        else:
+            out['components']['mn2_services'] = {
+                'status': 'unknown',
+                'detail': 'catalog cache cold',
+            }
+    except Exception as exc:
+        out['components']['mn2_services'] = {'status': 'unknown', 'error': str(exc)}
 
     if degraded:
         out['status'] = 'degraded'

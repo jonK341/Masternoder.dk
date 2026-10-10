@@ -9,8 +9,15 @@
   if (!card) return;
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    try {
+      if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
+      var raw = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
+      if (!raw || raw === '[object Promise]') return '';
+      var lowered = String(raw).toLowerCase();
+      if (lowered === 'default_user' || lowered === 'undefined' || lowered === 'null') return '';
+      return String(raw).trim();
+    }
+    catch (e) { return ''; }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -72,7 +79,9 @@
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
-    }).then(function (r) { return r.json(); });
+    }).then(function (r) { return r.json(); }).catch(function () {
+      return { success: false, error: 'network', offline: true };
+    });
   }
 
   function msg(text, ok) {

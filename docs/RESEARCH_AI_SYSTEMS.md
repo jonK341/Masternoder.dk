@@ -8,11 +8,9 @@ Oversigt over alle AI-relaterede tjenester, agents og providers i projektet. **C
 
 | Hvad | Hvor |
 |------|------|
-| **COGS / reference job** (Runway, encode, storage, LLM blend, USD) | `docs/REFERENCE_JOB_COGS.md`, `GET /api/system/cogs/summary`, `logs/cogs/metering.jsonl` |
 | API-nøgler til .env | §8 (tabel med links), .env.example, Agent Support → Resources |
 | Valgfrie nøgler (nem) | §11 (copy-paste blok) |
 | Profile ↔ API keys / agents | §12 (tabel + flow) |
-| **Agent cron jobs** (scheduled) | **§Agent cron** — `AGENT_CRON_SECRET`, `POST /api/agents/cron/run`, `cron/agents_cron_*.sh` |
 | Production & 404-fix | §10; også `docs/CHECKPOINTS_RECHECK.md` §9 |
 | Videre udvikling | §13 |
 
@@ -71,47 +69,6 @@ Valgfri lydforbedring på TTS-narration.
 | FFmpeg loudnorm | AUDIO_ENHANCE=1 eller AUDIO_ENHANCE_LOUDNORM=1 | Normalisering, mastering   |
 
 Aktiveres i pipeline når `AUDIO_ENHANCE=1` (fx i `.env`).
-
----
-
-## Agent cron (scheduled tasks)
-
-**Purpose:** Run skillset ensures, user-skills cleanup, automation maintenance, LLM provider snapshots, research rotation, and optional knowledge ingredients on a schedule — aligned with LLM/agents in §1–§7 and research in §4.
-
-**Secret:** Set `AGENT_CRON_SECRET` in `.env` (same file uwsgi loads). Cron scripts read it and call localhost.
-
-**Endpoint:** `POST /api/agents/cron/run` with header `X-Agent-Cron-Token: <AGENT_CRON_SECRET>` (or `?token=`).
-
-**Named presets (`jobs` query or JSON):**
-
-| Preset | Jobs |
-|--------|------|
-| `daily` | `user_skills_maintenance`, `automation_maintenance`, `llm_status_snapshot` |
-| `weekly` | `skillsets_ensure` (battle/sales/paypal/top25/shared-growth), `agent_health_check`, `research_rotation` |
-| `monthly` | `skillsets_rebalance` |
-| `knowledge` | `knowledge_ingredients` (optional; overlaps with `cron/knowledge_sharing_report.sh` + `KNOWLEDGE_REPORT_SECRET`) |
-| `blueprint_route` | `blueprint_route_fixer` only |
-| `api_service` | `api_service_skill` only |
-| `routes` | both `blueprint_route_fixer` and `api_service_skill` |
-
-**Individual job names:** `skillsets_ensure`, `skillsets_rebalance`, `user_skills_maintenance`, `knowledge_ingredients`, `automation_maintenance`, `agent_health_check`, `research_rotation`, `llm_status_snapshot`, **`blueprint_route_fixer`** (Register Intelligence full audit → `logs/agent_cron/blueprint_route_fixer.jsonl`), **`api_service_skill`** (frontend vs backend API gap scan → `logs/agent_cron/api_service_skill.jsonl`).
-
-**Logs:** `logs/agent_cron/llm_provider_status.jsonl`; knowledge append: `logs/knowledge_sharing/ingredients.jsonl` (when using `knowledge_ingredients` with `append_knowledge_log=1`).
-
-**Shell scripts (repo `cron/`):**
-
-| Script | Schedule (example cron.d) |
-|--------|---------------------------|
-| `agents_cron_daily.sh` | `masternoder-agents-daily.cron.d` — 03:35 daily |
-| `agents_cron_weekly.sh` | `masternoder-agents-weekly.cron.d` — Sun 05:00 |
-| `agents_cron_monthly.sh` | `masternoder-agents-monthly.cron.d` — 1st of month 04:15 |
-| `knowledge_sharing_report.sh` | `masternoder-knowledge-report.cron.d` — 06:00 daily (reporter; separate secret) |
-| `agents_blueprint_route_fixer.sh` | `masternoder-agents-blueprint-route.cron.d` — Monday 04:30 weekly |
-| `agents_api_service_skill.sh` | `masternoder-agents-api-service.cron.d` — Thursday 04:45 weekly |
-
-**Deploy:** `python scripts/deploy.py agents_cron_env` (uploads scripts + installs `/etc/cron.d/masternoder-agents-*`). Use `--upload-only` to copy files without service restart.
-
-**Discovery:** `GET /api/agents/cron/presets` lists preset → job lists (no auth).
 
 ---
 
@@ -193,7 +150,6 @@ Bruges i `video_generator_service` til AI-clips og billeder til dokumentarflow.
 | `OPENAI_API_KEY` | Primær LLM, embeddings | [OpenAI API keys](https://platform.openai.com/api-keys) |
 | `GROQ_API_KEY` | Speed, Llama 3.3 70B | [Groq console](https://console.groq.com/keys) |
 | `GOOGLE_AI_API_KEY` | Gemini, lang kontekst | [Google AI Studio](https://aistudio.google.com/apikey) |
-| `GOOGLE_GEMINI_API_KEY` | Valgfri 2. nøgle til Gemini (samme Studio); bruges først hvis sat | [Google AI Studio](https://aistudio.google.com/apikey) |
 | `OPENROUTER_API_KEY` | 30+ modeller, reason | [OpenRouter keys](https://openrouter.ai/keys) |
 | `CEREBRAS_API_KEY` | Hurtig, 1M tok/dag | [Cerebras cloud](https://cloud.cerebras.ai/) |
 | `DEEPSEEK_API_KEY` | V3/R1 reasoning | [DeepSeek platform](https://platform.deepseek.com/api_keys) |
@@ -203,8 +159,6 @@ Bruges i `video_generator_service` til AI-clips og billeder til dokumentarflow.
 | `PIKA_LABS_API_KEY` | Pika 2.2 clips | [Pika](https://pika.art/) / [fal.ai](https://fal.ai) |
 | `STABILITY_AI_API_KEY` | Billeder/video | [Stability account](https://platform.stability.ai/account/keys) |
 | `MODELSLAB_API_KEY` | CogVideoX, billeder | [ModelsLab dashboard](https://modelslab.com/dashboard/api-keys) |
-| `REPLICATE_API_TOKEN` | Stable Video m.fl. (Replicate API) | [Replicate tokens](https://replicate.com/account/api-tokens) |
-| `HEYGEN_API_KEY` | Avatar / korte videoer (valgfri pipeline) | [HeyGen API](https://app.heygen.com/settings/api) |
 | **TTS AI** | | |
 | `ELEVENLABS_API_KEY` | Voice narration | [ElevenLabs API keys](https://elevenlabs.io/app/settings/api-keys) |
 | `PIPER_MODEL_PATH` | Lokal TTS (ingen nøgle) | [Piper GitHub](https://github.com/rhasspy/piper) |
@@ -215,10 +169,6 @@ Bruges i `video_generator_service` til AI-clips og billeder til dokumentarflow.
 | `COHERE_API_KEY` | Embeddings/chat | [Cohere dashboard](https://dashboard.cohere.com/api-keys) |
 | `HUGGINGFACE_HUB_TOKEN` | Inference, hub | [Hugging Face tokens](https://huggingface.co/settings/tokens) |
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI | [Azure portal](https://portal.azure.com/) |
-| `AZURE_OPENAI_ENDPOINT` | Azure resource URL | (sættes sammen med nøgle) |
-| `AZURE_OPENAI_DEPLOYMENT` | Deployment-navn (fx gpt-4o) | — |
-
-**Verifikation lokalt:** `python scripts/check_ai_env.py` (maskerede værdier, ingen netværkskald).
 
 Eksempel i `.env` (kun de du bruger):
 
@@ -231,10 +181,6 @@ OPENROUTER_API_KEY=
 CEREBRAS_API_KEY=
 MISTRAL_API_KEY=
 DEEPSEEK_API_KEY=
-COHERE_API_KEY=
-GOOGLE_GEMINI_API_KEY=
-ANTHROPIC_API_KEY=
-TOGETHER_API_KEY=
 
 # AI TTS
 ELEVENLABS_API_KEY=
@@ -248,8 +194,6 @@ RUNWAYML_API_KEY=
 MODELSLAB_API_KEY=
 PIKA_LABS_API_KEY=
 STABILITY_AI_API_KEY=
-REPLICATE_API_TOKEN=
-HEYGEN_API_KEY=
 ```
 
 ---

@@ -55,3 +55,15 @@ def _fast_unified_points(monkeypatch):
     monkeypatch.setattr(upd.UnifiedPointsDatabase, "add_points", _file_add)
     monkeypatch.setattr(upd.UnifiedPointsDatabase, "get_all_points", _file_get)
     yield
+
+
+@pytest.fixture(autouse=True)
+def _isolate_paypal_shop_orders(tmp_path, monkeypatch):
+    """Keep PayPal pending-order JSON out of data/ so capture tests stay independent."""
+    try:
+        from backend.services import paypal_service as svc
+    except ImportError:
+        yield
+        return
+    monkeypatch.setattr(svc, "_SHOP_ORDERS_PATH", str(tmp_path / "paypal_shop_orders.json"))
+    yield

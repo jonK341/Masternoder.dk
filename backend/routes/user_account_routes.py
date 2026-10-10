@@ -11,8 +11,19 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from backend.services.account_resolution_service import resolve_user_id, resolve_user_id_with_source
 from backend.services import ai_user_controller
+from backend.services.profile_access_service import require_profile_owner
 
 user_account_bp = Blueprint("user_account", __name__)
+
+
+def _access_denied(err):
+    if err:
+        return jsonify(err[0]), err[1]
+    return None
+
+
+def _require_owned(user_id: str, *, allow_default_guest: bool = False):
+    return _access_denied(require_profile_owner(user_id, allow_default_guest=allow_default_guest))
 
 
 def _resolve(allow_default: bool = True) -> str:
@@ -306,6 +317,9 @@ def user_identity_full():
 def user_account_privacy():
     """Get or update profile privacy, notification, language, and feature preferences."""
     user_id = _resolve()
+    denied = _require_owned(user_id, allow_default_guest=True)
+    if denied:
+        return denied
     from backend.services.user_engagement import get_settings, update_settings
 
     if request.method == "GET":
@@ -380,6 +394,9 @@ def user_account_privacy():
 def user_account_export():
     """Export the user's account/profile state as JSON."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     export = {"success": True, "user_id": user_id, "exported_at": datetime.now(timezone.utc).isoformat()}
     try:
         from backend.services.user_onboarding import user_onboarding
@@ -403,6 +420,9 @@ def user_account_export():
 def user_account_delete():
     """Soft-delete an account by hiding profile data and disabling outward-facing preferences."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     data = request.get_json() or {}
     if data.get("confirm") != "DELETE":
         return jsonify({"success": False, "error": "confirm must equal DELETE"}), 400
@@ -426,6 +446,9 @@ def user_account_delete():
 def user_linked_providers():
     """List configured social providers and manage profile-linked provider labels."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     try:
         from backend.services.social_auth_service import list_providers
         configured = list_providers().get("providers", [])
@@ -471,7 +494,7 @@ def user_linked_providers():
     data = request.get_json() or {}
     provider = str(data.get("provider") or "").strip().lower()
     action = str(data.get("action") or "unlink").strip().lower()
-    allowed = {p.get("id") for p in configured if isinstance(p, dict) and p.get("id")} | {"github", "google"}
+    allowed = {p.get("id") for p in configured if isinstance(p, dict) and p.get("id")} | {"github", "google", "facebook", "discord"}
     if provider not in allowed:
         return jsonify({"success": False, "error": "unknown provider"}), 400
     revocation = {"success": False, "revocation_supported": False, "error": "not requested"}
@@ -512,6 +535,9 @@ def user_linked_providers():
 def user_sessions():
     """Return persistent session/device identity details for account UI."""
     user_id, resolution_source = resolve_user_id_with_source(from_body=True, from_query=True)
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     sessions = _record_current_session(user_id, resolution_source)
     return jsonify({
         "success": True,
@@ -525,6 +551,9 @@ def user_sessions():
 def user_session_revoke():
     """Mark a persisted non-current session/device as revoked."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     data = request.get_json() or {}
     session_id = str(data.get("session_id") or "").strip()
     if not session_id:
@@ -548,6 +577,9 @@ def account_summary():
     Single comprehensive payload that ties everything to the user account.
     """
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     try:
         from backend.services.user_account_summary import get_full_account_summary
         return jsonify(get_full_account_summary(user_id)), 200
@@ -566,6 +598,9 @@ def account_summary():
 def account_summary_points():
     """Return only the points section of the account summary."""
     user_id = _resolve()
+    denied = _require_owned(user_id, allow_default_guest=True)
+    if denied:
+        return denied
     try:
         from backend.services.user_account_summary import get_points
         return jsonify({"success": True, "user_id": user_id, "points": get_points(user_id)}), 200
@@ -577,6 +612,9 @@ def account_summary_points():
 def account_summary_progress():
     """Return game progress + communication psychology for a user."""
     user_id = _resolve()
+    denied = _require_owned(user_id)
+    if denied:
+        return denied
     try:
         from backend.services.user_account_summary import get_game_progress, get_communication_psychology
         return jsonify({
@@ -988,3 +1026,32 @@ def user_db_all():
     offset = max(0, int(request.args.get("offset", 0)))
     from backend.services.user_db_service import get_all_users
     return jsonify({"success": True, **get_all_users(limit=limit, offset=offset)}), 200
+
+
+@user_account_bp.route("/api/user/portal-nav-preferences", methods=["GET", "POST"])
+def user_portal_nav_preferences():
+    """Get or save portal nav template + theme (profile preferences — same across devices)."""
+    from backend.services.nav_portal_preferences_service import (
+        get_nav_portal_preferences,
+        save_nav_portal_preferences,
+    )
+
+    user_id = _resolve(allow_default=False) or _resolve(allow_default=True)
+    if request.method == "GET":
+        return jsonify(get_nav_portal_preferences(user_id)), 200
+
+    data = request.get_json(silent=True) or {}
+    body_uid = str(data.get("user_id") or "").strip()
+    if body_uid:
+        user_id = body_uid
+    nav_template = data.get("nav_template")
+    nav_theme = data.get("nav_theme")
+    if nav_template is None and nav_theme is None:
+        return jsonify({"success": False, "error": "nav_template or nav_theme required"}), 400
+    if nav_template is not None:
+        nav_template = str(nav_template).strip() or None
+    if nav_theme is not None:
+        nav_theme = str(nav_theme).strip() or None
+    result = save_nav_portal_preferences(user_id, nav_template=nav_template, nav_theme=nav_theme)
+    status = 200 if result.get("success") else 400
+    return jsonify(result), status

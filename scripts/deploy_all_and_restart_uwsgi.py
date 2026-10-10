@@ -53,7 +53,8 @@ ROOT_PAGE_DIRS = (
     "milkyway", "rights-law", "victory-tech-tree", "danish-divine-tech-tree", "academic-perspective",
     "theme_premium", "time-achievement-guides", "beta_testing", "unified_dashboard", "advanced_calculator",
     "agent_support", "game", "lab", "stats", "social", "profile", "aggregator", "points", "trophies",
-    "dashboard", "analytics", "compendium", "starmap25", "agents", "admin", "videos",
+    "dashboard", "analytics", "compendium", "starmap25", "agents", "admin", "videos", "create-app",
+    "mobile", "podcast",
 )
 ROOT_FILES = ("index.html", "service-worker.js", "uwsgi.ini", ".env")
 

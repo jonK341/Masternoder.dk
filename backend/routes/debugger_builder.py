@@ -217,7 +217,7 @@ chmod +x {name}.sh
 
 ### PowerShell
 ```powershell
-.\{name}.ps1
+.\\{name}.ps1
 ```
 
 ## Generated

@@ -223,7 +223,21 @@ def record_daily_login(user_id: str) -> Dict[str, Any]:
     data["daily"]["last_login"] = today
     _save_state(user_id, data)
     xa = cfg.get("xp_actions") or {}
-    return award_xp(user_id, float(xa.get("daily_login") or 0), "daily_login")
+    result = award_xp(user_id, float(xa.get("daily_login") or 0), "daily_login")
+    try:
+        from backend.services.micro_tx_hooks import try_micro_tx_reward
+
+        micro = try_micro_tx_reward(
+            user_id,
+            "daily_login",
+            idempotency_key=f"daily_login:{user_id}:{today}",
+            reason="Daily login reward",
+        )
+        if micro:
+            result["micro_tx_reward"] = micro
+    except Exception:
+        pass
+    return result
 
 
 # ----------------------------- claim / read -----------------------------

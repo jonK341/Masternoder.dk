@@ -26,7 +26,7 @@
     }
     if (pageNum === null || pageNum < 1 || pageNum > 25) return;
 
-    var userId = typeof localStorage !== 'undefined' && localStorage.getItem('game_user_id') || 'default_user';
+    var userId = typeof localStorage !== 'undefined' && localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
     var API_BASE = '/api';
     var payload = { user_id: userId, page_number: pageNum };
 

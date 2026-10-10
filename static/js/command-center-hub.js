@@ -2,7 +2,7 @@
   'use strict';
 
   var uid = function () {
-    return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+    return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
   };
 
   var LINKS = {

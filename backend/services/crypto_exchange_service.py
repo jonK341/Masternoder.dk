@@ -89,6 +89,12 @@ def _asset_map(cfg: Optional[Dict] = None) -> Dict[str, dict]:
     return {a["symbol"]: a for a in (cfg.get("assets") or []) if a.get("symbol")}
 
 
+def _quote_currencies(cfg: Optional[Dict] = None) -> List[str]:
+    cfg = cfg or load_config()
+    quotes = [str(q).strip().upper() for q in (cfg.get("quote_currencies") or ["MN2", "COINS"])]
+    return [q for q in quotes if q] or ["MN2", "COINS"]
+
+
 def _mn2_usd() -> float:
     try:
         from backend.services.mn2_chainz import chainz_ticker_usd
@@ -146,10 +152,16 @@ def get_wallet(user_id: str) -> Dict[str, Any]:
         return {"success": False, "error": "user_id required"}
     data = _read_json(_wallet_path(uid), {"assets": {}, "staking": {}, "bonus": {}, "volume_usd_30d": 0})
     assets = data.get("assets") if isinstance(data.get("assets"), dict) else {}
+    for stable in _STABLE_QUOTES:
+        assets.setdefault(stable, 0.0)
+    mn2_balance = _get_quote_balance(uid, "MN2")
+    coins_balance = _get_quote_balance(uid, "COINS")
     return {
         "success": True,
         "user_id": uid,
         "assets": assets,
+        "mn2_balance": round(mn2_balance, 8),
+        "coins_balance": round(coins_balance, 8),
         "staking": data.get("staking") or {},
         "bonus": data.get("bonus") or {},
         "volume_usd_30d": float(data.get("volume_usd_30d") or 0),
@@ -215,6 +227,23 @@ def _adjust_quote_balance(user_id: str, quote: str, delta: float, source: str, m
         raise ValueError("invalid_quote")
     from backend.services.unified_points_database import unified_points_db
     unified_points_db.add_points(user_id, field, float(delta), source=source, metadata=meta)
+
+
+def _is_mn2_symbol(symbol: str) -> bool:
+    return (symbol or "").strip().upper() == "MN2"
+
+
+def _get_symbol_balance(user_id: str, symbol: str) -> float:
+    if _is_mn2_symbol(symbol):
+        return _get_quote_balance(user_id, "MN2")
+    return _get_balance(user_id, symbol)
+
+
+def _adjust_symbol_balance(user_id: str, symbol: str, delta: float, source: str, meta: dict) -> None:
+    if _is_mn2_symbol(symbol):
+        _adjust_quote_balance(user_id, "MN2", delta, source, meta)
+        return
+    _adjust_balance(user_id, symbol, delta)
 
 
 def _fee_quote_to_mn2(fee_quote: float, quote: str, cfg: Optional[Dict] = None) -> float:
@@ -421,14 +450,17 @@ def get_catalog() -> Dict[str, Any]:
             "price_usd": _price_usd(sym, cfg),
             "price_mn2": _price_in_quote(sym, "MN2", cfg),
             "price_coins": _price_in_quote(sym, "COINS", cfg),
+            "price_usdt": _price_in_quote(sym, "USDT", cfg),
+            "price_usdc": _price_in_quote(sym, "USDC", cfg),
         })
+    quotes = _quote_currencies(cfg)
     return {
         "success": True,
         "enabled": bool(cfg.get("enabled", True)),
         "name": cfg.get("name"),
         "jurisdiction": cfg.get("jurisdiction"),
         "legal_notice": cfg.get("legal_notice"),
-        "quote_currencies": cfg.get("quote_currencies") or ["MN2", "COINS"],
+        "quote_currencies": quotes,
         "default_quote": cfg.get("default_quote") or "MN2",
         "fees": cfg.get("platform_fees"),
         "tax": cfg.get("tax"),
@@ -452,6 +484,8 @@ def get_ticker(symbol: str) -> Dict[str, Any]:
         "price_usd": _price_usd(sym, cfg),
         "price_mn2": _price_in_quote(sym, "MN2", cfg),
         "price_coins": _price_in_quote(sym, "COINS", cfg),
+        "price_usdt": _price_in_quote(sym, "USDT", cfg),
+        "price_usdc": _price_in_quote(sym, "USDC", cfg),
         "change_24h_pct": 0.0,
         "volume_24h_usd": 0.0,
     }
@@ -751,6 +785,10 @@ def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str =
         return {"success": False, "error": "unknown_asset"}
     if side not in ("buy", "sell"):
         return {"success": False, "error": "invalid_side"}
+    if quote not in _quote_currencies(cfg):
+        return {"success": False, "error": "invalid_quote"}
+    if sym == quote:
+        return {"success": False, "error": "same_asset"}
     amt = float(amount or 0)
     asset = _asset_map(cfg)[sym]
     if amt < float(asset.get("min_trade") or 0):
@@ -792,6 +830,22 @@ def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str =
         payload["quote_cost"] = round(quote_cost, 8)
     else:
         payload["quote_received"] = round(quote_out, 8)
+
+    try:
+        from backend.services.exchange_mn2_pool_service import (
+            apply_pool_reserve_to_quote,
+            check_pool_liquidity,
+            is_pool_swap,
+        )
+
+        if is_pool_swap(sym, quote):
+            payload["pool_backed"] = True
+            payload = apply_pool_reserve_to_quote(payload)
+            pool_err = check_pool_liquidity(sym, side, quote, payload)
+            if pool_err:
+                return {"success": False, "error": pool_err, "pool_backed": True}
+    except Exception:
+        pass
     return payload
 
 
@@ -814,19 +868,57 @@ def execute_swap(user_id: str, quote_id: str, symbol: str, side: str, amount: fl
 
     try:
         with _LOCK:
+            try:
+                from backend.services.exchange_mn2_pool_service import (
+                    check_pool_liquidity,
+                    is_pool_swap,
+                    pool_user_id,
+                )
+
+                if uid != pool_user_id() and is_pool_swap(sym, quote_cur):
+                    pool_err = check_pool_liquidity(sym, side, quote_cur, q)
+                    if pool_err:
+                        return {"success": False, "error": pool_err, "pool_backed": True}
+            except ImportError:
+                pass
+
             if side == "buy":
                 cost = float(q.get("quote_cost") or 0)
                 bal = _get_quote_balance(uid, quote_cur)
                 if bal < cost:
                     return {"success": False, "error": f"insufficient_{quote_cur.lower()}"}
                 _adjust_quote_balance(uid, quote_cur, -cost, "exchange_buy", meta)
-                _adjust_balance(uid, sym, amt)
+                _adjust_symbol_balance(uid, sym, amt, "exchange_buy", meta)
             else:
-                if _get_balance(uid, sym) < amt:
+                if _get_symbol_balance(uid, sym) < amt:
                     return {"success": False, "error": f"insufficient_{sym.lower()}"}
                 received = float(q.get("quote_received") or 0)
-                _adjust_balance(uid, sym, -amt)
+                _adjust_symbol_balance(uid, sym, -amt, "exchange_sell", meta)
                 _adjust_quote_balance(uid, quote_cur, received, "exchange_sell", meta)
+
+            try:
+                from backend.services.exchange_mn2_pool_service import apply_pool_leg, pool_user_id
+
+                if uid != pool_user_id():
+                    pool_res = apply_pool_leg(sym, side, quote_cur, q)
+                    if not pool_res.get("success") and not pool_res.get("skipped"):
+                        raise ValueError(pool_res.get("error") or "pool_leg_failed")
+            except ValueError:
+                raise
+            except ImportError:
+                pass
+
+            try:
+                from backend.services.exchange_mn2_pool_service import pool_user_id, stash_swap_reserve
+
+                if uid != pool_user_id() and float(q.get("pool_reserve_quote") or 0) > 0:
+                    reserve_res = stash_swap_reserve(q, ref)
+                    if not reserve_res.get("success") and not reserve_res.get("skipped"):
+                        raise ValueError(reserve_res.get("error") or "pool_reserve_failed")
+            except ValueError:
+                raise
+            except ImportError:
+                pass
 
             fee_mn2 = _fee_quote_to_mn2(float(q.get("fee_quote") or 0), quote_cur, load_config())
             _collect_fee(fee_mn2)
@@ -837,6 +929,8 @@ def execute_swap(user_id: str, quote_id: str, symbol: str, side: str, amount: fl
                 "ts": _iso(), "trade_id": ref, "user_id": uid, "type": "swap",
                 "symbol": sym, "side": side, "amount": amt, "quote": quote_cur,
                 "usd_value": q.get("usd_value"), "fee_bps": q.get("fee_bps"),
+                "pool_reserve_quote": q.get("pool_reserve_quote"),
+                "pool_reserve_bps": q.get("pool_reserve_bps"),
             }
             _append_jsonl(_TRADES_PATH, trade)
     except ValueError as e:
@@ -878,15 +972,17 @@ def create_limit_order(user_id: str, symbol: str, side: str, amount: float, limi
     quote = (quote or "MN2").upper()
     amt = float(amount or 0)
     price = float(limit_price or 0)
+    if quote not in _quote_currencies(cfg) or sym == quote:
+        return {"success": False, "error": "invalid_order"}
     if sym not in _asset_map(cfg) or side not in ("buy", "sell") or amt <= 0 or price <= 0:
         return {"success": False, "error": "invalid_order"}
 
     with _LOCK:
         ref = f"ex-order:{uuid.uuid4().hex[:12]}"
         if side == "sell":
-            if _get_balance(uid, sym) < amt:
+            if _get_symbol_balance(uid, sym) < amt:
                 return {"success": False, "error": f"insufficient_{sym.lower()}"}
-            _adjust_balance(uid, sym, -amt)
+            _adjust_symbol_balance(uid, sym, -amt, "exchange_order_lock", {"reference": ref})
         else:
             cost = amt * price
             if _get_quote_balance(uid, quote) < cost:
@@ -1304,11 +1400,20 @@ def deposit_from_mn2(user_id: str, symbol: str, mn2_amount: float) -> Dict[str, 
 def health() -> Dict[str, Any]:
     cfg = load_config()
     tre = _read_json(_TREASURY_PATH, {})
+    pool_summary = None
+    try:
+        from backend.services.exchange_mn2_pool_service import mn2_pool_status
+
+        pool_summary = mn2_pool_status()
+    except Exception:
+        pass
     return {
         "success": True,
         "service": "crypto_exchange",
         "status": "healthy" if cfg.get("enabled", True) else "disabled",
         "asset_count": len(cfg.get("assets") or []),
+        "quote_currencies": _quote_currencies(cfg),
         "treasury_fees_mn2": tre.get("total_fees_mn2"),
+        "mn2_pool": pool_summary,
         "timestamp": _iso(),
     }

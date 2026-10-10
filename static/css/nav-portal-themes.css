@@ -1,0 +1,65 @@
+/**
+ * Portal nav themes — CSS variables set by nav-portal-template.js (manifest: static/data/nav_portal_manifest.json)
+ */
+:root {
+  --nav-tb-bg: linear-gradient(135deg, #2d1b4e 0%, #1a0a2e 50%, #3d2463 100%);
+  --nav-tb-border: rgba(0, 255, 136, 0.4);
+  --nav-tb-text: rgba(57, 255, 20, 0.9);
+  --nav-tb-text-hover: #39ff14;
+  --nav-tb-accent: #00ff88;
+  --nav-tb-accent-alt: #00d4ff;
+  --nav-tb-menu-bg: linear-gradient(165deg, rgba(22, 12, 38, 0.98), rgba(12, 8, 24, 0.98));
+  --nav-tb-menu-head: #b8f0ff;
+}
+
+.nav-toolbar {
+  background: var(--nav-tb-bg);
+  border-bottom-color: var(--nav-tb-border);
+}
+
+.nav-toolbar-brand {
+  color: var(--nav-tb-accent);
+}
+
+.nav-toolbar-link,
+.nav-toolbar-cat-btn {
+  color: var(--nav-tb-text);
+}
+
+.nav-toolbar-link:hover,
+.nav-toolbar-link.active,
+.nav-toolbar-cat-btn:hover,
+.nav-toolbar-cat-btn.active,
+.nav-toolbar-cat.open .nav-toolbar-cat-btn {
+  color: var(--nav-tb-text-hover);
+  border-color: color-mix(in srgb, var(--nav-tb-accent) 55%, transparent);
+}
+
+.nav-toolbar-cat-menu {
+  background: var(--nav-tb-menu-bg);
+  border-color: color-mix(in srgb, var(--nav-tb-accent-alt) 40%, transparent);
+}
+
+.nav-toolbar-cat-menu-head-text strong,
+.nav-toolbar-portal-section-title {
+  color: var(--nav-tb-menu-head);
+}
+
+.nav-toolbar-cat-link {
+  color: var(--nav-tb-text);
+}
+
+.nav-toolbar-cat-link:hover {
+  color: var(--nav-tb-text-hover);
+  border-color: color-mix(in srgb, var(--nav-tb-accent) 35%, transparent);
+}
+
+.nav-toolbar-portal-trigger {
+  border-color: color-mix(in srgb, var(--nav-tb-text-hover) 45%, transparent);
+  color: var(--nav-tb-text-hover);
+}
+
+.nav-toolbar-currency {
+  color: var(--nav-tb-accent);
+  border-color: color-mix(in srgb, var(--nav-tb-accent) 35%, transparent);
+}

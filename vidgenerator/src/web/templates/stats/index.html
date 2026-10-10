@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics & Analytics - MasterNoder{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stats.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stats-enhanced.css') }}">
+<style>
+    .stats-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .stats-tab {
+        padding: 1rem 2rem;
+        background: rgba(0, 0, 0, 0.5);
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: rgba(0, 255, 0, 0.7);
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+    }
+    
+    .stats-tab:hover {
+        color: #00ff00;
+        background: rgba(0, 255, 0, 0.1);
+    }
+    
+    .stats-tab.active {
+        color: #00ff00;
+        border-bottom-color: #00ff00;
+        background: rgba(0, 255, 0, 0.15);
+    }
+    
+    .stats-tab-content {
+        display: none;
+    }
+    
+    .stats-tab-content.active {
+        display: block;
+    }
+    
+    .profile-card {
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid rgba(0, 255, 0, 0.3);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #00ff00, #00cc00);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        border: 3px solid rgba(0, 255, 0, 0.5);
+    }
+    
+    .profile-info h2 {
+        color: #00ff00;
+        margin: 0;
+        font-size: 2rem;
+    }
+    
+    .profile-info .profile-title {
+        color: rgba(0, 255, 0, 0.7);
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .profile-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .profile-stat-item {
+        background: rgba(0, 255, 0, 0.1);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .profile-stat-value {
+        color: #00ff00;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .profile-stat-label {
+        color: rgba(0, 255, 0, 0.7);
+        font-size: 0.9rem;
+    }
+    
+    .game-section {
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid rgba(0, 255, 0, 0.3);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .game-level {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .level-progress-bar {
+        flex: 1;
+        height: 30px;
+        background: rgba(0, 0, 0, 0.5);
+        border: 2px solid rgba(0, 255, 0, 0.3);
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .level-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00ff00, #00cc00);
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #000;
+        font-weight: bold;
+    }
+    
+    .trophies-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .trophy-item {
+        background: rgba(0, 0, 0, 0.5);
+        border: 2px solid rgba(0, 255, 0, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .trophy-item.earned {
+        border-color: #00ff00;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    }
+    
+    .trophy-icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .trophy-name {
+        color: #00ff00;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+    
+    .trophy-description {
+        color: rgba(0, 255, 0, 0.7);
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+    <header class="stats-header">
+        <h1>📊 Statistics & Analytics</h1>
+        <p class="subtitle">Comprehensive analysis, profile, and game statistics</p>
+    </header>
+    
+    <!-- Stats Tabs -->
+    <div class="stats-tabs">
+        <button class="stats-tab active" data-tab="overview">Overview</button>
+        <button class="stats-tab" data-tab="profile">Profile</button>
+        <button class="stats-tab" data-tab="game">Game</button>
+    </div>
+    
+    <!-- Overview Tab -->
+    <div class="stats-tab-content active" id="tab-overview">
+        <section class="stats-section">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-bar"></i> Generation Statistics</h2>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎬</div>
+                    <div class="stat-value" id="total-documentaries">--</div>
+                    <div class="stat-label">Total Documentaries</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-value" id="total-duration">--</div>
+                    <div class="stat-label">Total Duration</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="avg-quality">--</div>
+                    <div class="stat-label">Average Quality</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-value" id="total-trophies">--</div>
+                    <div class="stat-label">Trophies Earned</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="total-xp">--</div>
+                    <div class="stat-label">Total XP</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-value" id="user-level">--</div>
+                    <div class="stat-label">Level</div>
+                </div>
+            </div>
+            
+            <!-- XP Breakdown Section -->
+            <section class="stats-section" style="margin-top: 2rem;">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-pie"></i> XP Breakdown</h2>
+                </div>
+                <div class="stats-grid" id="xp-breakdown">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎬</div>
+                        <div class="stat-value" id="xp-from-generations">--</div>
+                        <div class="stat-label">From Generations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-value" id="xp-from-trophies">--</div>
+                        <div class="stat-label">From Trophies</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-value" id="xp-from-calendar">--</div>
+                        <div class="stat-label">From Calendar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚔️</div>
+                        <div class="stat-value" id="xp-from-war-plan">--</div>
+                        <div class="stat-label">From War Plan</div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </div>
+    
+    <!-- Profile Tab -->
+    <div class="stats-tab-content" id="tab-profile">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profile-avatar">👤</div>
+                <div class="profile-info">
+                    <h2 id="profile-name">Creator</h2>
+                    <div class="profile-title" id="profile-title">Novice Creator</div>
+                </div>
+            </div>
+            
+            <div class="profile-stats">
+                <div class="profile-stat-item">
+                    <div class="profile-stat-value" id="profile-level">1</div>
+                    <div class="profile-stat-label">Level</div>
+                </div>
+                <div class="profile-stat-item">
+                    <div class="profile-stat-value" id="profile-xp">0</div>
+                    <div class="profile-stat-label">Total XP</div>
+                </div>
+                <div class="profile-stat-item">
+                    <div class="profile-stat-value" id="profile-docs">0</div>
+                    <div class="profile-stat-label">Documentaries</div>
+                </div>
+                <div class="profile-stat-item">
+                    <div class="profile-stat-value" id="profile-trophies">0</div>
+                    <div class="profile-stat-label">Trophies</div>
+                </div>
+                <div class="profile-stat-item">
+                    <div class="profile-stat-value" id="profile-graduation-points">0</div>
+                    <div class="profile-stat-label">Graduation Points</div>
+                </div>
+                <div class="profile-stat-item">
+                    <div class="profile-stat-value" id="profile-chat-points">0</div>
+                    <div class="profile-stat-label">Chat Points</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Tab -->
+    <div class="stats-tab-content" id="tab-game">
+        <div class="game-section">
+            <h2><i class="fas fa-gamepad"></i> Game Progress</h2>
+            
+            <div class="game-level">
+                <div style="color: #00ff00; font-weight: bold; min-width: 80px;">Level <span id="game-level">1</span></div>
+                <div class="level-progress-bar">
+                    <div class="level-progress-fill" id="level-progress" style="width: 0%">0%</div>
+                </div>
+                <div style="color: rgba(0, 255, 0, 0.7); min-width: 100px;">XP: <span id="game-xp">0</span> / <span id="game-xp-next">100</span></div>
+            </div>
+            
+            <h3 style="color: #00ff00; margin-top: 2rem; margin-bottom: 1rem;">🏆 Trophies</h3>
+            <div class="trophies-grid" id="trophies-grid">
+                <!-- Trophies will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tab switching
+document.querySelectorAll('.stats-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        
+        // Update active tab
+        document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update active content
+        document.querySelectorAll('.stats-tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        
+        // Load data for active tab
+        if (tabName === 'profile') {
+            loadProfileData();
+        } else if (tabName === 'game') {
+            loadGameData();
+        }
+    });
+});
+
+// Load statistics
+async function loadStatistics() {
+    try {
+        const response = await fetch('/vidgenerator/api/statistics');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.statistics) {
+                const stats = data.statistics;
+                document.getElementById('total-documentaries').textContent = stats.total_documentaries || 0;
+                document.getElementById('total-duration').textContent = formatDuration(stats.total_duration || 0);
+                document.getElementById('avg-quality').textContent = (stats.avg_quality || 0).toFixed(1);
+                document.getElementById('total-trophies').textContent = stats.total_trophies || 0;
+                
+                // Display XP data
+                if (stats.xp) {
+                    document.getElementById('total-xp').textContent = stats.xp.total || 0;
+                    document.getElementById('user-level').textContent = stats.xp.level || 1;
+                    
+                    if (stats.xp.breakdown) {
+                        document.getElementById('xp-from-generations').textContent = stats.xp.breakdown.from_generations || 0;
+                        document.getElementById('xp-from-trophies').textContent = stats.xp.breakdown.from_trophies || 0;
+                        document.getElementById('xp-from-calendar').textContent = stats.xp.breakdown.from_calendar || 0;
+                        document.getElementById('xp-from-war-plan').textContent = stats.xp.breakdown.from_war_plan || 0;
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load statistics:', error);
+    }
+}
+
+// Load profile data
+async function loadProfileData() {
+    try {
+        const response = await fetch('/vidgenerator/api/stats/profile');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.profile) {
+                const profile = data.profile;
+                document.getElementById('profile-level').textContent = profile.level || 1;
+                document.getElementById('profile-xp').textContent = profile.total_xp || 0;
+                document.getElementById('profile-docs').textContent = profile.documentaries || 0;
+                document.getElementById('profile-trophies').textContent = profile.trophies || 0;
+                document.getElementById('profile-title').textContent = profile.title || 'Novice Creator';
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load profile:', error);
+    }
+}
+
+// Load game data
+async function loadGameData() {
+    try {
+        const response = await fetch('/vidgenerator/api/stats/profile');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.profile) {
+                const profile = data.profile;
+                const level = profile.level || 1;
+                const xp = profile.total_xp || 0;
+                const xpForNext = profile.xp_for_next_level || 100;
+                const xpProgress = profile.xp_progress || 0;
+                
+                document.getElementById('game-level').textContent = level;
+                document.getElementById('game-xp').textContent = xp;
+                document.getElementById('game-xp-next').textContent = xpForNext;
+                document.getElementById('level-progress').style.width = `${xpProgress}%`;
+                document.getElementById('level-progress').textContent = `${Math.round(xpProgress)}%`;
+            }
+        }
+        
+        // Load trophies
+        const trophiesResponse = await fetch('/vidgenerator/api/stats/trophies');
+        if (trophiesResponse.ok) {
+            const trophiesData = await trophiesResponse.json();
+            if (trophiesData.success && trophiesData.trophies) {
+                const grid = document.getElementById('trophies-grid');
+                grid.innerHTML = '';
+                trophiesData.trophies.forEach(trophy => {
+                    const trophyEl = document.createElement('div');
+                    trophyEl.className = `trophy-item ${trophy.earned ? 'earned' : ''}`;
+                    trophyEl.innerHTML = `
+                        <div class="trophy-icon">${trophy.icon || '🏆'}</div>
+                        <div class="trophy-name">${trophy.name}</div>
+                        <div class="trophy-description">${trophy.description || ''}</div>
+                    `;
+                    grid.appendChild(trophyEl);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load game data:', error);
+    }
+}
+
+function formatDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    } else if (minutes > 0) {
+        return `${minutes}m ${secs}s`;
+    } else {
+        return `${secs}s`;
+    }
+}
+
+// Load graduation and chat points
+async function loadPointsData() {
+    try {
+        const response = await fetch('/vidgenerator/api/points/all');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('profile-graduation-points').textContent = data.graduation_points || 0;
+            document.getElementById('profile-chat-points').textContent = data.chat_points || 0;
+        }
+    } catch (error) {
+        console.error('Failed to load points data:', error);
+    }
+}
+
+// Load initial statistics
+loadStatistics();
+loadPointsData();
+</script>
+{% endblock %}

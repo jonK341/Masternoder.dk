@@ -12,7 +12,7 @@
 
     const HUB = {
 
-        userId: localStorage.getItem('game_user_id') || 'default_user',
+        userId: localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''),
 
         data: null,
 
@@ -40,19 +40,89 @@
 
 
 
+    function canonicalHubUserId() {
+
+        if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
+
+        const raw = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
+
+        if (!raw || raw === '[object Promise]') return '';
+
+        const lowered = String(raw).toLowerCase();
+
+        if (lowered === 'default_user' || lowered === 'undefined' || lowered === 'null') return '';
+
+        return String(raw).trim();
+
+    }
+
+
+
+    function degradeOverview() {
+
+        const root = document.getElementById('fp-game-hub');
+
+        if (!root) return;
+
+        const status = root.querySelector('#gh-status');
+
+        if (status) status.textContent = 'Offline';
+
+        const panel = root.querySelector('#gh-panel');
+
+        if (panel && !HUB.data) {
+
+            panel.innerHTML = '<p class="gh-empty">Game hub is temporarily unavailable.</p>';
+
+        }
+
+    }
+
+
+
     async function loadOverview() {
 
-        const r = await fetch('/api/game-hub/overview?user_id=' + encodeURIComponent(HUB.userId));
+        const userId = canonicalHubUserId();
 
-        if (!r.ok) throw new Error('overview ' + r.status);
+        if (userId) HUB.userId = userId;
 
-        const d = await r.json();
+        const qs = userId ? ('?user_id=' + encodeURIComponent(userId)) : '';
 
-        if (!d.success) throw new Error(d.error || 'overview failed');
+        try {
 
-        HUB.data = d;
+            const r = await fetch('/api/game-hub/overview' + qs);
 
-        render();
+            if (!r.ok) {
+
+                degradeOverview();
+
+                return;
+
+            }
+
+            const d = await r.json();
+
+            if (!d.success) {
+
+                degradeOverview();
+
+                return;
+
+            }
+
+            HUB.data = d;
+
+            render();
+
+            const status = document.querySelector('#fp-game-hub #gh-status');
+
+            if (status) status.textContent = 'Live';
+
+        } catch (e) {
+
+            degradeOverview();
+
+        }
 
     }
 
@@ -224,11 +294,9 @@
 
                 (q.description ? '<p class="gh-quest-desc">' + esc(q.description) + '</p>' : '') +
 
-                '<div class="gh-progress"><div class="gh-progress-fill" style="width:' + pct + '%"></div></div>' +
-
                 '<div class="gh-quest-meta">' +
 
-                '<span>' + (q.progress || 0) + ' / ' + q.target + '</span>' +
+                '<span class="gh-quest-progress">' + pct + '% · ' + (q.progress || 0) + ' / ' + q.target + '</span>' +
 
                 '<span>+' + (q.reward || 0) + ' pts' + mn2 + xp + coins + '</span>' +
 
@@ -328,9 +396,7 @@
 
             '<div class="gh-streak">' +
 
-            '<div class="gh-streak-head"><span>Claim streak</span><span>' + days + ' / ' + target + ' days</span></div>' +
-
-            '<div class="gh-progress"><div class="gh-progress-fill gh-progress-fill--streak" style="width:' + pct + '%"></div></div>' +
+            '<div class="gh-streak-head"><span>Claim streak</span><span>' + days + ' / ' + target + ' days (' + pct + '%)</span></div>' +
 
             '<p class="gh-streak-note">Claim any quest daily — day ' + target + ' awards +' + fmt(streak.bonus_mn2 || 0.007, 4) + ' MN2</p>' +
 
@@ -624,29 +690,9 @@
 
         bindTabs(root);
 
-        const status = root.querySelector('#gh-status');
+        loadOverview();
 
-        loadOverview()
-
-            .then(function () {
-
-                if (status) status.textContent = 'Live';
-
-            })
-
-            .catch(function (e) {
-
-                if (status) status.textContent = 'Offline';
-
-                const panel = root.querySelector('#gh-panel');
-
-                if (panel) panel.innerHTML = '<p class="gh-empty">Game hub loading failed. Try refresh.</p>';
-
-                console.warn('[GameHub]', e);
-
-            });
-
-        setInterval(loadOverview, 60000);
+        setInterval(function () { loadOverview(); }, 60000);
 
     }
 

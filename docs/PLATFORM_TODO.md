@@ -2,6 +2,17 @@
 
 This list tracks follow-ups after the gallery, shop, starmap25, leaderboard, agents, themes (Metallica / WW1 / WW2), Technologi/metal, and generator–profile points alignment work.
 
+**Last refreshed:** 2026-09-30 · Living map: [README.md](README.md) · MN2 detail: [MN2_TODO.md](MN2_TODO.md)
+
+## Recent platform notes (repo — verify on deploy)
+
+- **Monetization revenue tracks** — `data/monetization_revenue_tracks.json` (tiers A–E) + streams/recap services. Narrative checklist: [MN2_TODO.md § Monetization machine](MN2_TODO.md#monetization-machine--revenue-tracks).
+- **Quests (90 levels)** — `quest_system.py` progression (9×10) + `quest_page` API routes in repo; confirm registration/UI on the branch you ship before treating as live.
+- **Shop / auction** — `shop_auction_service` + `/api/shop/auction/*` (fees / listings / buy). Ideas layer: [SHOP_MONETIZATION_V92.md](SHOP_MONETIZATION_V92.md).
+- **API / crypto profile** — `generator_api_crypto_service` (profile + daily MN2 caps) with unit tests; generator API tiers via monetization expansion routes.
+- **Create App** — deploy handoff: [DEPLOY_CREATE_APP_RELEASE.md](DEPLOY_CREATE_APP_RELEASE.md) (laptop/SSH).
+- **Google Play** — casino TWA/Capacitor shell + assetlinks checklist: [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md). Broader podcast/app vision still deferred below — **do not** treat Play Store listing as done.
+
 ## Done in this round
 
 - [x] **Podcast vertical (web)** — `/podcast` hub with BBCG theme, verified sound (`sound-check`, stream repair, Sound Lab), AI generate/encode, MN2 rewards, episode + news comments, 24-site portal strip, RSS (`/api/podcast/rss.xml`), transcripts, chapters, queue, leaderboard, bubble visualizer. **33 tests** (`test_podcast.py` + `test_podcast_routes.py`). Docs: `docs/PODCAST.md`.
@@ -22,6 +33,7 @@ This list tracks follow-ups after the gallery, shop, starmap25, leaderboard, age
 - [ ] **Leaderboard**: Wire timeframe filters if the UI sends `timeframe=` (currently ignored); add tests for `/api/leaderboard/generation` vs unified DB field names.
 - [ ] **Star Map 25**: If JSON `point_value` should be the single source of truth without multiplier, set multiplier to `1.0` and bump `data/star_map_25.json` values instead.
 - [ ] **Points audit**: Run one full generation job and confirm `GET /api/points/comprehensive` (or profile UI) shows the same delta as `_award_generation_points` for the same job.
+- [ ] **Quests UI**: Confirm `quest_page` blueprint is registered where you expect and that a player-facing progression UI is deployed (90-level service exists in repo).
 
 ## Medium-term
 
@@ -30,9 +42,10 @@ This list tracks follow-ups after the gallery, shop, starmap25, leaderboard, age
 - [x] **Agents** (done): `user_agent_skills.get_user_skills()` seeds balanced path (content_generator, analytics, learning, **reporter_agent** with `broadcast` + `news_report_ingredients`, 10 skills) when no file exists; **`POST /api/agents/user-skills/maintenance-inactive`** trims stale files (batch 10); **`/api/agents/reporter/knowledge-ingredients`** + `cron/knowledge_sharing_report.sh` for knowledge-sharing report ingredients. See `docs/AGENTS_SKILLS_SYNC.md`.
 - [x] **Star Map 25** (done): `starmap25/index.html` and `game/index.html` expose `investigation_reward_multiplier`; show multiplier stat box, reward formula (base × mult = awarded) on each point card.
 
-## Google Play Store app — **deferred**
+## Google Play Store app — **deferred / gated**
 
-Saved for later. Full spec when resumed: **[docs/PODCAST.md](PODCAST.md)** § Google Play Store app. Todo id: `a1b2c3d4-e5f6-7890-abcd-ef1234567890` in `data/todos/todos.json`. Do not start until explicitly scheduled.
+- **Podcast / general app vision:** saved for later. Spec when resumed: **[PODCAST.md](PODCAST.md)** § Google Play Store app. Todo id: `a1b2c3d4-e5f6-7890-abcd-ef1234567890` in `data/todos/todos.json`. Do not start until explicitly scheduled.
+- **Casino Android shell:** follow **[CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md)** after Play developer account + App Signing SHA for `assetlinks.json`. Revenue-track JSON may label a Google Play track as inventory “live”; that is **not** the same as store listing approval.
 
 ## Ops / security
 
