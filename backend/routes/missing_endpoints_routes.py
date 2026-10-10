@@ -148,6 +148,33 @@ def profile_aggregated_fallback(user_id):
         }), 200
 
 
+@missing_endpoints_bp.route('/api/exchange/paypal/mn2-packs', methods=['GET'])
+def exchange_paypal_mn2_packs_fallback():
+    """PayPal MN2 pack list. The exchange page Promise.all asks for this path.
+
+    Imports stay inside the handler: loading crypto_exchange_routes or shop_routes
+    at module import time cycles while this blueprint is registered.
+    """
+    try:
+        from backend.routes.crypto_exchange_routes import exchange_paypal_mn2_packs
+        return exchange_paypal_mn2_packs()
+    except Exception:
+        try:
+            from backend.routes.shop_routes import get_mn2_packs
+            packs = []
+            for pack in get_mn2_packs():
+                packs.append({
+                    "id": pack.get("id"),
+                    "name": pack.get("name") or pack.get("label") or pack.get("id"),
+                    "price_usd": float(pack.get("price_usd") or 0),
+                    "mn2_granted": float(pack.get("mn2_granted") or 0),
+                    "description": pack.get("description") or "",
+                })
+            return jsonify({"success": True, "enabled": True, "currency": "USD", "packs": packs}), 200
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e), "packs": []}), 200
+
+
 @missing_endpoints_bp.route('/api/gallery/recent-temp', methods=['GET'])
 def gallery_recent_temp_fallback():
     """List recent completed videos (5 min window). Delegates to gallery_routes when available."""

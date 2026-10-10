@@ -40,19 +40,81 @@
 
 
 
+    function canonicalHubUserId() {
+
+        const raw = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
+
+        return /^user_[A-Za-z0-9_]{4,120}$/.test(raw) ? raw : '';
+
+    }
+
+
+
+    function degradeOverview() {
+
+        const root = document.getElementById('fp-game-hub');
+
+        if (!root) return;
+
+        const status = root.querySelector('#gh-status');
+
+        if (status) status.textContent = 'Offline';
+
+        const panel = root.querySelector('#gh-panel');
+
+        if (panel && !HUB.data) {
+
+            panel.innerHTML = '<p class="gh-empty">Game hub is temporarily unavailable.</p>';
+
+        }
+
+    }
+
+
+
     async function loadOverview() {
 
-        const r = await fetch('/api/game-hub/overview?user_id=' + encodeURIComponent(HUB.userId));
+        const userId = canonicalHubUserId();
 
-        if (!r.ok) throw new Error('overview ' + r.status);
+        if (userId) HUB.userId = userId;
 
-        const d = await r.json();
+        const qs = userId ? ('?user_id=' + encodeURIComponent(userId)) : '';
 
-        if (!d.success) throw new Error(d.error || 'overview failed');
+        try {
 
-        HUB.data = d;
+            const r = await fetch('/api/game-hub/overview' + qs);
 
-        render();
+            if (!r.ok) {
+
+                degradeOverview();
+
+                return;
+
+            }
+
+            const d = await r.json();
+
+            if (!d.success) {
+
+                degradeOverview();
+
+                return;
+
+            }
+
+            HUB.data = d;
+
+            render();
+
+            const status = document.querySelector('#fp-game-hub #gh-status');
+
+            if (status) status.textContent = 'Live';
+
+        } catch (e) {
+
+            degradeOverview();
+
+        }
 
     }
 
@@ -620,29 +682,9 @@
 
         bindTabs(root);
 
-        const status = root.querySelector('#gh-status');
+        loadOverview();
 
-        loadOverview()
-
-            .then(function () {
-
-                if (status) status.textContent = 'Live';
-
-            })
-
-            .catch(function (e) {
-
-                if (status) status.textContent = 'Offline';
-
-                const panel = root.querySelector('#gh-panel');
-
-                if (panel) panel.innerHTML = '<p class="gh-empty">Game hub loading failed. Try refresh.</p>';
-
-                console.warn('[GameHub]', e);
-
-            });
-
-        setInterval(loadOverview, 60000);
+        setInterval(function () { loadOverview(); }, 60000);
 
     }
 

@@ -7,15 +7,20 @@
     var BASE = global.location ? global.location.origin : '';
 
     function uid() {
-        return global.localStorage.getItem('game_user_id')
+        var raw = global.localStorage.getItem('game_user_id')
             || global.localStorage.getItem('user_id')
-            || 'default_user';
+            || '';
+        return /^user_[A-Za-z0-9_]{4,120}$/.test(raw) ? raw : '';
     }
 
     function fetchJson(url) {
         return fetch(url).then(function (r) {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
+            if (!r.ok) {
+                return { success: false, unavailable: true, status: r.status };
+            }
             return r.json();
+        }).catch(function () {
+            return { success: false, unavailable: true, status: 0 };
         });
     }
 

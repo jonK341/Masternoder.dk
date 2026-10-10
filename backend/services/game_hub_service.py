@@ -5,7 +5,12 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from typing import Any, Dict, List, Optional
+
+_OVERVIEW_CACHE: Dict[str, Any] = {}
+_OVERVIEW_TTL_SEC = 45
+_OVERVIEW_MAX = 256
 
 
 def _resolve_uid_fallback(user_id: str) -> str:
@@ -57,7 +62,22 @@ def _active_mission(quests: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
 
 def get_overview(user_id: str) -> Dict[str, Any]:
     user_id = _resolve_uid_fallback(user_id)
+    now = time.monotonic()
+    hit = _OVERVIEW_CACHE.get(user_id)
+    if hit and now - hit[0] < _OVERVIEW_TTL_SEC:
+        cached = dict(hit[1])
+        cached['cached'] = True
+        return cached
+    payload = _build_overview(user_id)
+    if len(_OVERVIEW_CACHE) >= _OVERVIEW_MAX:
+        _OVERVIEW_CACHE.clear()
+    _OVERVIEW_CACHE[user_id] = (now, payload)
+    return payload
+
+
+def _build_overview(user_id: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {'success': True, 'user_id': user_id, 'tabs': {}, 'summary': {}}
+    points_payload = _overview_points(user_id)
 
     unified_quests: List[Dict[str, Any]] = []
     claim_streak = {'days': 0, 'bonus_at_day': 7, 'bonus_mn2': 0.007}
@@ -112,12 +132,8 @@ def get_overview(user_id: str) -> Dict[str, Any]:
 
     # Game — hunter level + active mission (#22)
     try:
-        from backend.services.unified_points_database import unified_points_db
         from backend.routes.hunters_game import get_user_level_info
-        pts = {}
-        if unified_points_db:
-            raw = unified_points_db.get_all_points(user_id) or {}
-            pts = raw.get('points', raw) if isinstance(raw, dict) else {}
+        pts = points_payload
         hunter = get_user_level_info(user_id) or {}
         mission = _active_mission(unified_quests)
         out['tabs']['game'] = {
@@ -136,13 +152,8 @@ def get_overview(user_id: str) -> Dict[str, Any]:
 
     # Battle — last 3 matches (#20)
     try:
-        from backend.services.unified_points_database import unified_points_db
         from backend.services.battle_db_service import get_battle_history
-        bp = 0
-        if unified_points_db:
-            raw = unified_points_db.get_all_points(user_id) or {}
-            pts = raw.get('points', raw) if isinstance(raw, dict) else {}
-            bp = float(pts.get('battle_points', 0) or 0)
+        bp = float(points_payload.get('battle_points', 0) or 0)
         recent = get_battle_history(user_id, limit=3) or []
         out['tabs']['battle'] = {
             'battle_points': bp,
@@ -181,3 +192,15 @@ def get_overview(user_id: str) -> Dict[str, Any]:
     out['summary']['has_notifications'] = out['summary']['claimable'] > 0
 
     return out
+
+
+def _overview_points(user_id: str) -> Dict[str, Any]:
+    try:
+        from backend.services.unified_points_database import unified_points_db
+        if not unified_points_db:
+            return {}
+        raw = unified_points_db.get_all_points(user_id) or {}
+        pts = raw.get('points', raw) if isinstance(raw, dict) else {}
+        return pts if isinstance(pts, dict) else {}
+    except Exception:
+        return {}

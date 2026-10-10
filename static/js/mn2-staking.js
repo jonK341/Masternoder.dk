@@ -9,8 +9,11 @@
   if (!card) return;
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    try {
+      var raw = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
+      return /^user_[A-Za-z0-9_]{4,120}$/.test(raw) ? raw : '';
+    }
+    catch (e) { return ''; }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -72,7 +75,9 @@
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
-    }).then(function (r) { return r.json(); });
+    }).then(function (r) { return r.json(); }).catch(function () {
+      return { success: false, error: 'network', offline: true };
+    });
   }
 
   function msg(text, ok) {

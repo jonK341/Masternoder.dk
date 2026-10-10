@@ -97,10 +97,27 @@ class ErrorManager {
     /**
      * Set up global error handlers
      */
+    shouldIgnore(errorData) {
+        const src = String((errorData && errorData.error_source) || '');
+        const stack = String((errorData && errorData.error_stack) || '');
+        const msg = String((errorData && errorData.error_message) || '');
+        const blob = src + '\n' + stack + '\n' + msg;
+        if (/chrome-extension:\/\/|moz-extension:\/\/|safari-web-extension:\/\/|extension:\//i.test(blob)) {
+            return true;
+        }
+        if (/MetaMask|nkbihfbeogaeaoehlefnkodbefgpgknn|inpage\.js/i.test(blob)) {
+            return true;
+        }
+        if (/AbortError|signal is aborted|user aborted a request|Fetch is aborted/i.test(blob)) {
+            return true;
+        }
+        return false;
+    }
+
     setupGlobalHandlers() {
         // JavaScript errors
         window.addEventListener('error', (event) => {
-            this.handleError({
+            const payload = {
                 error_type: 'javascript',
                 error_level: 'error',
                 error_message: event.message || 'Unknown JavaScript error',
@@ -113,13 +130,15 @@ class ErrorManager {
                     timestamp: new Date().toISOString(),
                     userAgent: navigator.userAgent
                 }
-            });
+            };
+            if (this.shouldIgnore(payload)) return;
+            this.handleError(payload);
         });
         
         // Unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
             const error = event.reason;
-            this.handleError({
+            const payload = {
                 error_type: 'javascript',
                 error_level: 'error',
                 error_message: error?.message || 'Unhandled promise rejection',
@@ -130,7 +149,9 @@ class ErrorManager {
                     timestamp: new Date().toISOString(),
                     rejection: String(error)
                 }
-            });
+            };
+            if (this.shouldIgnore(payload)) return;
+            this.handleError(payload);
         });
     }
     
@@ -139,6 +160,7 @@ class ErrorManager {
      * @param {Object} errorData - Error information
      */
     async handleError(errorData) {
+        if (this.shouldIgnore(errorData)) return;
         try {
             // Add default fields
             const fullErrorData = {
