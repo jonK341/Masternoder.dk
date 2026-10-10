@@ -297,23 +297,40 @@
           infobarPill('Catalog: ' + (d.catalog_source || 'json'), true);
         text.textContent = d.note || 'AI studio ready';
         if (todos) {
-          var items = d.next_todos || [];
-          if (!items.length) {
-            todos.innerHTML = '<li>All Phase 0 items shipped — see MN2_TODO for ops.</li>';
-          } else {
-            todos.innerHTML = items
-              .map(function (item) {
-                return (
-                  '<li><span class="cg-todo-pri">' +
-                  esc(item.priority || '—') +
-                  '</span><strong>' +
-                  esc(item.title || '') +
-                  '</strong> — ' +
-                  esc(item.detail || '') +
-                  '</li>'
-                );
+          function todoLi(item) {
+            return (
+              '<li><span class="cg-todo-pri">' +
+              esc(item.priority || '—') +
+              '</span><strong>' +
+              esc(item.title || '') +
+              '</strong> — ' +
+              esc(item.detail || '') +
+              '</li>'
+            );
+          }
+          var byCat = d.next_todos_by_category || [];
+          if (byCat.length) {
+            todos.innerHTML = byCat
+              .map(function (cat) {
+                var catItems = cat.items || [];
+                if (!catItems.length) return '';
+                var head =
+                  '<div class="cg-todo-cat"><h4 class="cg-todo-cat-title">' +
+                  esc(cat.title || cat.id || '') +
+                  '</h4>';
+                if (cat.description) {
+                  head += '<p class="cg-todo-cat-desc">' + esc(cat.description) + '</p>';
+                }
+                return head + '<ol>' + catItems.map(todoLi).join('') + '</ol></div>';
               })
               .join('');
+          } else {
+            var items = d.next_todos || [];
+            if (!items.length) {
+              todos.innerHTML = '<ol><li>All Phase 0 items shipped — see MN2_TODO for ops.</li></ol>';
+            } else {
+              todos.innerHTML = '<ol>' + items.map(todoLi).join('') + '</ol>';
+            }
           }
         }
       })

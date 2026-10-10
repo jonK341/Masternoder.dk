@@ -1,41 +1,267 @@
 {
   "updated_at": "2026-10-10",
-  "items": [
+  "categories": [
     {
-      "id": "links_p4",
-      "priority": "done",
-      "title": "Phase 4 link fix",
-      "detail": "Studio host: /app/shop, performer paths, nav toolbar → masternoder.dk or /app/*."
+      "id": "platform_core",
+      "title": "Platform core",
+      "description": "Phase 0 studio stack — catalog, chat, monetization, and 15-performer go-live.",
+      "items": [
+        {
+          "id": "phase0_roster_15",
+          "priority": "done",
+          "title": "15 live AI performers",
+          "detail": "Roster tripled from Phase 1c (Nova–Iris) to 15 personas; deploy manifest + verify (PR #126, 2026-10-10)."
+        },
+        {
+          "id": "phase0_paypal_checkout",
+          "priority": "done",
+          "title": "PayPal studio checkout",
+          "detail": "Unlock, tip, gift, fan club, and private show flows via /api/camgirls/paypal/* when PAYPAL_* env is set."
+        },
+        {
+          "id": "phase0_sse_chat",
+          "priority": "done",
+          "title": "SSE performer chat",
+          "detail": "Streaming chat on performer cards and studio; agent-linked task kinds per performer."
+        },
+        {
+          "id": "phase0_performer_landings",
+          "priority": "done",
+          "title": "Performer landing pages",
+          "detail": "Individual studio entry points with unlock, gifts, dances, and info-bar tech chips."
+        },
+        {
+          "id": "phase0_catalog_perf",
+          "priority": "done",
+          "title": "Catalog lite mode",
+          "detail": "_tip_index cache + performers?lite=1 — public API ~3.6s (2026-06-20 deploy)."
+        }
+      ]
     },
     {
-      "id": "phase1_shop",
-      "priority": "P1",
-      "title": "Brand packs in shop",
-      "detail": "16 SKUs dg-camgirls-brand-* — filter digital_goods + tag camgirls on /app/shop/."
+      "id": "media_content",
+      "title": "Media & content",
+      "description": "Phase 2 raster assets, previews, and optional real-photo drops.",
+      "items": [
+        {
+          "id": "phase2_svg_defaults",
+          "priority": "done",
+          "title": "Phase 1 SVG gallery defaults",
+          "detail": "Generated icon/logo/gallery SVGs for all performers; camgirls_media_service tier fallback."
+        },
+        {
+          "id": "phase2_media_real",
+          "priority": "done",
+          "title": "Phase 2 raster + preview video",
+          "detail": "WebP gallery defaults + preview.webm/mp4 from stills; scripts/camgirls_generate_performer_media.py."
+        },
+        {
+          "id": "media_real_photos",
+          "priority": "P2",
+          "title": "Real photo gallery drops",
+          "detail": "Add gallery-*.webp|png|jpg under static/camgirls/media/<slug>/ then re-run camgirls_generate_performer_media.py per wave."
+        }
+      ]
     },
     {
-      "id": "phase2_media_real",
-      "priority": "done",
-      "title": "Phase 2 raster + preview video",
-      "detail": "WebP gallery defaults + preview.webm/mp4 from stills; drop real photos as gallery-*.webp|png|jpg then re-run scripts/camgirls_generate_performer_media.py."
+      "id": "payments_payouts",
+      "title": "Payments & payouts",
+      "description": "MN2 wallet rails, PayPal metadata, and daemon settlement.",
+      "items": [
+        {
+          "id": "payouts_15_rails",
+          "priority": "done",
+          "title": "15/15 MN2 payout addresses",
+          "detail": "data/camgirls_payout_addresses.json + camgirls_provision_payout_addresses.py on deploy."
+        },
+        {
+          "id": "phase1c_daemon_payouts",
+          "priority": "done",
+          "title": "Phase 1c daemon payouts",
+          "detail": "Original five performers (Nova–Iris) wired before roster expansion; same rail pattern for wave stubs."
+        },
+        {
+          "id": "payout_wave_batch",
+          "priority": "P2",
+          "title": "Wave payout batch provision",
+          "detail": "After wave onboard: --provision-addresses + camgirls_provision_payout_addresses.py --check-rpc on prod."
+        }
+      ]
     },
     {
-      "id": "phase3_livekit",
-      "priority": "done",
-      "title": "LiveKit voice E2E (browser)",
-      "detail": "livekit-client + CgLiveKitVoice toggle after unlock; scripts/camgirls_livekit_smoke.py for status/token gate."
+      "id": "voice_livekit",
+      "title": "Voice (LiveKit)",
+      "description": "Phase 3 browser microphone after unlock.",
+      "items": [
+        {
+          "id": "phase3_livekit",
+          "priority": "done",
+          "title": "LiveKit voice E2E (browser)",
+          "detail": "livekit-client + CgLiveKitVoice toggle after unlock; scripts/camgirls_livekit_smoke.py for status/token gate."
+        },
+        {
+          "id": "livekit_prod_ssh_confirm",
+          "priority": "P2",
+          "title": "Prod LiveKit ops confirm",
+          "detail": "mn2_ops_optionals_remote.py --livekit-url … --reload --verify; MN2_TODO open SSH item."
+        }
+      ]
     },
     {
-      "id": "phase4_db_catalog",
-      "priority": "done",
-      "title": "DB catalog sync",
-      "detail": "scripts/camgirls_sync_catalog_db.py + deploy hook; set CAMGIRLS_CATALOG_SOURCE=db on prod after sync."
+      "id": "catalog_data",
+      "title": "Catalog & data",
+      "description": "Phase 4 SQLite catalog and JSON fallback.",
+      "items": [
+        {
+          "id": "phase4_db_catalog",
+          "priority": "done",
+          "title": "DB catalog sync",
+          "detail": "scripts/camgirls_sync_catalog_db.py + deploy hook; set CAMGIRLS_CATALOG_SOURCE=db on prod after sync."
+        },
+        {
+          "id": "catalog_db_prod_flag",
+          "priority": "P2",
+          "title": "Flip prod to DB source",
+          "detail": "Run full catalog sync on server post-wave; confirm catalog_source=db in /api/camgirls/status."
+        }
+      ]
     },
     {
-      "id": "phase5_scale",
-      "priority": "P3",
-      "title": "250-scale roster ops",
-      "detail": "Shipped: scripts/camgirls_batch_onboard.py, data/camgirls_performers_wave.template.json, media meta overlay (data/camgirls_performer_media_meta.json), docs/CAMGIRLS_SCALE_250.md. Next: run wave 2 file + prod payout/media after review."
+      "id": "shop_resell",
+      "title": "Shop & resell",
+      "description": "Affiliate brand packs and digital goods on /app/shop.",
+      "items": [
+        {
+          "id": "resell_service",
+          "priority": "done",
+          "title": "Resell SKU generator",
+          "detail": "camgirls_resell_shop_service.py — dg-camgirls-brand-* + mega pack dg-camgirls-brand-all-15."
+        },
+        {
+          "id": "phase1_shop",
+          "priority": "P1",
+          "title": "Brand packs in shop UI",
+          "detail": "16 SKUs dg-camgirls-brand-* — filter digital_goods + tag camgirls on /app/shop/."
+        }
+      ]
+    },
+    {
+      "id": "studio_ui_links",
+      "title": "Studio UI & links",
+      "description": "Explorer coexistence, /app/ studio mirror, and nav fixes.",
+      "items": [
+        {
+          "id": "links_p4",
+          "priority": "done",
+          "title": "Phase 4 link fix",
+          "detail": "Studio host: /app/shop, performer paths, nav toolbar → masternoder.dk or /app/* (camgirls-nav-fix.js)."
+        },
+        {
+          "id": "phase4_nginx_subdomain",
+          "priority": "P2",
+          "title": "Phase 4 nginx /app/ (optional)",
+          "detail": "Only if product moves UI to camgirls.masternoder.dk/app/ — config/nginx/camgirls-phase4-app.conf.snippet + camgirls_phase4_nginx_remote.py."
+        }
+      ]
+    },
+    {
+      "id": "ops_deploy_verify",
+      "title": "Ops, deploy & verify",
+      "description": "Manifest deploy, fast sync, and post-deploy smoke.",
+      "items": [
+        {
+          "id": "deploy_manifest",
+          "priority": "done",
+          "title": "deploy.py camgirls manifest",
+          "detail": "Onboard, payouts, media scripts, wave template, and data overlays in camgirls deploy target."
+        },
+        {
+          "id": "fast_sync",
+          "priority": "done",
+          "title": "camgirls_prod_fast_sync.sh",
+          "detail": "Rsync hot paths including data/camgirls_next_todos.json without full tarball."
+        },
+        {
+          "id": "verify_4of4",
+          "priority": "done",
+          "title": "Post-deploy verify 4/4",
+          "detail": "camgirls_post_deploy_verify.py — page, performers, agents, agent-tools (60s public timeout)."
+        },
+        {
+          "id": "verify_milestone_50",
+          "priority": "P2",
+          "title": "Roster verify @50 performers",
+          "detail": "Extend verify script counts + spot-check payout/media for first scale wave; run after wave 2 onboard."
+        },
+        {
+          "id": "verify_milestone_100",
+          "priority": "P3",
+          "title": "Roster verify @100 performers",
+          "detail": "Load-test lite catalog + agent burst; document baseline in CAMGIRLS_SCALE_250.md."
+        },
+        {
+          "id": "verify_milestone_250",
+          "priority": "P3",
+          "title": "Roster verify @250 performers",
+          "detail": "Full-scale verify + DB catalog sync SLA; align with wave ops runbook."
+        }
+      ]
+    },
+    {
+      "id": "scale_250",
+      "title": "Scale to 250",
+      "description": "Phase 5 wave onboarding — docs/CAMGIRLS_SCALE_250.md.",
+      "items": [
+        {
+          "id": "scale_batch_onboard",
+          "priority": "done",
+          "title": "Batch onboard script",
+          "detail": "scripts/camgirls_batch_onboard.py — dry-run, upsert JSON/DB, optional media + payout rails."
+        },
+        {
+          "id": "scale_wave_template",
+          "priority": "done",
+          "title": "Wave file template",
+          "detail": "data/camgirls_performers_wave.template.json; copy to waves/waveN.json (CSV also supported)."
+        },
+        {
+          "id": "scale_media_meta_registry",
+          "priority": "done",
+          "title": "Performer media meta overlay",
+          "detail": "data/camgirls_performer_media_meta.json merged in camgirls_media_service for wave brand colors."
+        },
+        {
+          "id": "scale_wave2_run",
+          "priority": "P2",
+          "title": "Run wave 2 onboard",
+          "detail": "waves/wave2.json + --batch 2 --wave-size 25 --provision-addresses --generate-media --full-catalog-sync after review."
+        },
+        {
+          "id": "scale_wave3_plus",
+          "priority": "P3",
+          "title": "Waves 3–N toward 250",
+          "detail": "Repeat 15–50 stub waves; track counts in ops_state; avoid single bulk JSON dump."
+        }
+      ]
+    },
+    {
+      "id": "future",
+      "title": "Future / backlog",
+      "description": "Not scheduled for current PR; tracked for product ops.",
+      "items": [
+        {
+          "id": "discord_spotlight",
+          "priority": "done",
+          "title": "Discord spotlight fan-out",
+          "detail": "camgirls_discord_spotlight.py --remote-only — #market posts (2026-06-20)."
+        },
+        {
+          "id": "explorer_coexist",
+          "priority": "P3",
+          "title": "Explorer + studio UX polish",
+          "detail": "Deeper integration between eiquidus explorer landing and /app/ studio without nginx churn."
+        }
+      ]
     }
   ]
 }

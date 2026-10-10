@@ -105,6 +105,9 @@
         .cg-infobar-on { border-color: rgba(0,212,255,0.45); color: #00d4ff; background: rgba(0,212,255,0.1); }
         .cg-next-todo-block ol { margin: 0; padding-left: 1.2rem; font-size: 0.82rem; opacity: 0.9; }
         .cg-next-todo-block li { margin: 4px 0; }
+        .cg-todo-cat { margin-top: 10px; }
+        .cg-todo-cat-title { margin: 0 0 4px; font-size: 0.78rem; color: #00ff88; font-weight: 600; text-transform: none; letter-spacing: 0; }
+        .cg-todo-cat-desc { margin: 0 0 6px; font-size: 0.75rem; opacity: 0.65; line-height: 1.35; }
         .cg-todo-pri { font-size: 0.68rem; padding: 1px 6px; border-radius: 4px; background: rgba(255,209,102,0.2); color: #ffd166; margin-right: 6px; }
         .cg-card .cg-infobar { margin-bottom: 10px; }
     </style>
@@ -142,7 +145,7 @@
             <p id="cg-status-text" class="cg-info-note">Loading…</p>
             <div class="cg-next-todo-block">
                 <h3>Next todos</h3>
-                <ol id="cg-next-todos"></ol>
+                <div id="cg-next-todos" class="cg-next-todos-root"></div>
             </div>
         </div>
         <div id="cg-msg"></div>
