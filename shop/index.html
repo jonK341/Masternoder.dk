@@ -1140,10 +1140,19 @@
                     const sc = (item.serial_class || '').toLowerCase();
                     const scl = (item.serial_class_label || '').toLowerCase();
                     const sno = item.serial_no != null ? String(item.serial_no) : '';
+                    const tags = (item.tags || []).join(' ').toLowerCase();
                     return name.includes(searchLower) || desc.includes(searchLower)
                         || sk.includes(searchLower) || sc.includes(searchLower) || scl.includes(searchLower)
-                        || sno.includes(searchLower);
+                        || sno.includes(searchLower) || tags.includes(searchLower);
                 });
+            }
+            if (window.__shopTagFilter) {
+                const tf = String(window.__shopTagFilter).toLowerCase();
+                list = list.filter(item => (item.tags || []).some(t => String(t).toLowerCase() === tf));
+            }
+            if (window.__shopHighlightId) {
+                const hid = String(window.__shopHighlightId);
+                list = list.filter(item => String(item.id || '') === hid);
             }
             if (sortVal === 'name_asc') list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             else if (sortVal === 'name_desc') list.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
@@ -3263,6 +3272,24 @@
                 if (sel) sel.value = catParam;
                 if (catParam === 'buy_coins') showShopTab('coins');
                 if (catParam === 'mn2_services') showShopTab('mn2');
+            }
+            const tagParam = (params.get('tag') || '').trim().toLowerCase();
+            if (tagParam) {
+                window.__shopTagFilter = tagParam;
+                currentCategory = 'digital_goods';
+                const selTag = document.getElementById('shop-category-select');
+                if (selTag) selTag.value = 'digital_goods';
+                const searchIn = document.getElementById('shop-search-input');
+                if (searchIn && tagParam === 'camgirls' && !searchIn.value) {
+                    searchIn.value = 'camgirls brand';
+                }
+            }
+            const highlightParam = (params.get('highlight') || '').trim();
+            if (highlightParam) {
+                window.__shopHighlightId = highlightParam;
+                currentCategory = 'digital_goods';
+                const selHi = document.getElementById('shop-category-select');
+                if (selHi) selHi.value = 'digital_goods';
             }
             const tabParam = (params.get('tab') || '').trim().toLowerCase();
             if (tabParam) showShopTab(tabParam);

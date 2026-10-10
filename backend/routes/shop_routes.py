@@ -383,7 +383,8 @@ def _digital_goods_shop_items():
             "price_usd": float(good.get("price_usd") or 0),
             "icon": "💎" if str(good.get("line") or "").lower() == "exclusive" else "📦",
             "rarity": "legendary" if str(good.get("line") or "").lower() == "exclusive" else ("rare" if price_coins else "common"),
-            "tags": ["digital_good", good.get("delivery") or "download", f"line_{str(good.get('line') or 'x').lower()}"],
+            "tags": ["digital_good", good.get("delivery") or "download", f"line_{str(good.get('line') or 'x').lower()}"]
+            + list(good.get("tags_extra") or []),
             "payment_rails": good.get("payment_rails") or ["credits"],
             "delivery": good.get("delivery") or "download",
             "license": good.get("license") or "",
@@ -589,10 +590,13 @@ def _artifact_abs_path(good: dict) -> str:
         return ""
     root = os.path.realpath(_project_root())
     path = os.path.realpath(os.path.join(root, rel))
-    allowed_root = os.path.realpath(os.path.join(root, "content", "digital_goods"))
-    if not (path == allowed_root or path.startswith(allowed_root + os.sep)):
-        return ""
-    return path
+    allowed_roots = [
+        os.path.realpath(os.path.join(root, "content", "digital_goods")),
+    ]
+    for allowed_root in allowed_roots:
+        if path == allowed_root or path.startswith(allowed_root + os.sep):
+            return path
+    return ""
 
 
 def _seed_shop_items():
@@ -1617,11 +1621,13 @@ def download_digital_good(item_id):
         if not path or not os.path.isfile(path):
             return jsonify({'success': False, 'error': 'Artifact file missing', 'item_id': item_id}), 404
 
+        ext = os.path.splitext(path)[1].lower()
+        mime = "application/zip" if ext == ".zip" else "text/markdown"
         return send_file(
             path,
             as_attachment=True,
             download_name=good.get("download_filename") or os.path.basename(path),
-            mimetype="text/markdown",
+            mimetype=mime,
             max_age=0,
         )
     except Exception as e:

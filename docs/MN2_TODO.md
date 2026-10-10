@@ -65,7 +65,8 @@ No separate **P0** label in the issue table — treat as **P0-equivalent** for $
 - **Host resize (RAM + disk)** — **2026-09-30**: production VPS upgraded to **8 GB RAM** + **~180 GB** disk (was ~1.6 GB RAM / ~56 GB root at 78%). Closes the **host RAM pressure** action from the MN2 system report (API timeouts / load spike). Re-check with `python scripts/_system_health_check.py` after reboot if needed.
 - Treasury cold-wallet **sign-off gate** — `treasury_signoff_service`, `GET/POST /api/agents/treasury/sign-off`, CLI `scripts/treasury_signoff.py`; required before distribute batches ≥100k MN2 (MN2_OPS §8.6)
 - Explorer · staking · trader pool/market · Game Hub · compendium calm reader (V1–V16)
-- Camgirls Phase 1c + daemon payouts — **5 live AI models** (Nova, Luna, Sage, Ember, Iris)
+- Camgirls Phase 0 studio expansion (2026-10-10) — **15 live AI models**, PayPal checkout, SSE chat, performer landings, **15/15** MN2 payout rails (`deploy.py camgirls`)
+- Camgirls Phase 1c + daemon payouts — original **5** (Nova–Iris); roster tripled in PR #126
 - **Discord cross-roads (code)** — market fan-out, alert funnel types, affiliate rotator, FAQ, trader tick emit
 - **Shop V.9 MN2 services** — masternode hosting catalog, live slot meter, Proof of Reserves SKU, digital downloads, unified purchase history
 - **Masternode hosting checkout (multi-rail)** — PayPal **$4.99/slot**, coins, in-wallet MN2, on-chain MN2; shop + Explorer
@@ -467,11 +468,12 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 
 ## Camgirls
 
-- [x] Phase 1c + daemon payouts — 5 performers
+- [x] Phase 1c + daemon payouts — 5 performers (expanded to **15** 2026-10-10)
+- [x] **Phase 0 expansion** — PayPal unlock/tip/gift/fan club/private show, info bar, `camgirls_prod_fast_sync.sh`, verify **15** performers
 - [x] **Studio stack** — voice, music, dances, gifts, goals, wheel/dice, emoji, buzz bar
 - [x] **Social layer** — favorites, fan club, offline inbox, private show, moods/scenes, leaderboard, chat history
 - [x] **Deploy** `camgirls` manifest — social layer live 2026-06-18 (`deploy.py camgirls --ask-pass`)
-- [x] **Server onboard + payouts** — 5/5 performers (Nova, Luna, Sage, Ember, Iris), daemon payout addresses on server
+- [x] **Server onboard + payouts** — **15/15** performers, MN2 + PayPal metadata in `camgirls_payout_addresses.json` (2026-10-10 deploy)
 - [x] **Post-deploy verify** — public **4/4** + remote checks pass; agents burst **6/6** stable (2026-06-18). Public timeout **60s** in `camgirls_post_deploy_verify.py` (uncommitted repo fix).
 - [x] **Discord spotlight — platform news** — partner-spotlight API published news item 2026-06-18
 - [x] **Discord spotlight — webhook fan-out** — re-posted to `#market` 2026-06-20 (webhook URL fixed)

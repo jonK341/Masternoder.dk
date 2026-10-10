@@ -586,13 +586,19 @@ def sitemap_xml():
     try:
         from backend.services.camgirls_service import list_active_performer_ids
 
+        app_base = (os.environ.get('CAMGIRLS_APP_BASE_URL') or 'https://camgirls.masternoder.dk/app').rstrip('/')
+        lines.append('  <url>')
+        lines.append(f'    <loc>{app_base}/</loc>')
+        lines.append('    <changefreq>daily</changefreq>')
+        lines.append('    <priority>0.92</priority>')
+        lines.append('  </url>')
         for pid in list_active_performer_ids():
-            loc = f'{base}/camgirls/p/{pid}/'
-            lines.append('  <url>')
-            lines.append(f'    <loc>{loc}</loc>')
-            lines.append('    <changefreq>weekly</changefreq>')
-            lines.append('    <priority>0.75</priority>')
-            lines.append('  </url>')
+            for loc in (f'{base}/camgirls/p/{pid}/', f'{app_base}/p/{pid}/'):
+                lines.append('  <url>')
+                lines.append(f'    <loc>{loc}</loc>')
+                lines.append('    <changefreq>weekly</changefreq>')
+                lines.append('    <priority>0.75</priority>')
+                lines.append('  </url>')
     except Exception:
         pass
     lines.append('</urlset>')

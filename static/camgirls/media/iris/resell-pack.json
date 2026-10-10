@@ -1,0 +1,23 @@
+{
+  "performer_id": "performer_iris",
+  "slug": "iris",
+  "display_name": "Iris Prism",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/iris/icon.webp",
+    "logo": "/static/camgirls/media/iris/logo.svg",
+    "avatar_hd": "/static/camgirls/media/iris/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/iris/gallery-1.webp",
+      "/static/camgirls/media/iris/gallery-2.webp",
+      "/static/camgirls/media/iris/gallery-3.webp"
+    ],
+    "preview_video": "/static/camgirls/media/iris/preview.webm",
+    "preview_poster": "/static/camgirls/media/iris/gallery-1.webp"
+  },
+  "initials": "IP",
+  "brand_colors": [
+    "#ec4899",
+    "#831843"
+  ]
+}

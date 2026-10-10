@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{{BIO}}">
-    <link rel="canonical" href="https://masternoder.dk/camgirls/p/{{PERFORMER_ID}}/">
+    <link rel="canonical" href="{{CANONICAL_URL}}">
     <meta property="og:type" content="profile">
     <meta property="og:title" content="{{DISPLAY_NAME}} — Camgirls Studio">
     <meta property="og:description" content="{{BIO}}">
-    <meta property="og:image" content="https://masternoder.dk{{AVATAR_URL}}">
+    <meta property="og:image" content="{{SITE_ORIGIN}}{{AVATAR_URL}}">
     <title>{{DISPLAY_NAME}} — Camgirls Studio</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
@@ -18,11 +18,17 @@
         .cg-back { margin-bottom: 16px; font-size: 0.9rem; }
         .cg-hero { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
         .cg-hero img { width: 96px; height: 96px; border-radius: 16px; object-fit: cover; }
+        .cg-media-hero { margin: 16px 0; }
+        .cg-preview-video { width: 100%; max-height: 220px; border-radius: 12px; background: #0d1117; }
+        .cg-gallery-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+        .cg-gallery-row img { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; }
+        .cg-brand-row { display: flex; gap: 12px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+        .cg-brand-row img { height: 48px; }
     </style>
 </head>
 <body>
     <div class="cg-page">
-        <p class="cg-back"><a href="/camgirls/">← All performers</a></p>
+        <p class="cg-back"><a id="cg-back-link" href="/camgirls/">← All performers</a></p>
         <div class="cg-hero">
             <img src="{{AVATAR_URL}}" alt="{{DISPLAY_NAME}}">
             <div>
@@ -30,14 +36,23 @@
                 <p style="opacity:0.8;margin:0;">{{BIO}}</p>
             </div>
         </div>
+        <div id="cg-performer-media" class="cg-media-hero"></div>
         <div id="cg-status-strip" class="cg-info-bar" style="display:none;"></div>
         <div id="cg-msg"></div>
         <div id="cg-grid" class="cg-grid"></div>
     </div>
     <script>window.CG_SINGLE_PERFORMER = "{{PERFORMER_ID}}";</script>
+    <script src="/static/js/camgirls-api-base.js?v=20261010p4b"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var a = document.getElementById('cg-back-link');
+        if (a && window.cgPageBase) a.setAttribute('href', window.cgPageBase());
+      });
+    </script>
     <script src="/static/js/user-id.js?v=20261010b"></script>
     <script src="/static/js/camgirls-studio.js?v=20261010e"></script>
     <script src="/static/js/camgirls.js?v=20261010f"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
+    <script src="/static/js/camgirls-nav-fix.js?v=20261010"></script>
 </body>
 </html>

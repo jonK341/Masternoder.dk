@@ -1,0 +1,23 @@
+{
+  "performer_id": "performer_mist",
+  "slug": "mist",
+  "display_name": "Mist Serene",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/mist/icon.webp",
+    "logo": "/static/camgirls/media/mist/logo.svg",
+    "avatar_hd": "/static/camgirls/media/mist/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/mist/gallery-1.webp",
+      "/static/camgirls/media/mist/gallery-2.webp",
+      "/static/camgirls/media/mist/gallery-3.webp"
+    ],
+    "preview_video": "/static/camgirls/media/mist/preview.webm",
+    "preview_poster": "/static/camgirls/media/mist/gallery-1.webp"
+  },
+  "initials": "MS",
+  "brand_colors": [
+    "#94a3b8",
+    "#334155"
+  ]
+}

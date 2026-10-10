@@ -1,0 +1,23 @@
+{
+  "performer_id": "performer_luna",
+  "slug": "luna",
+  "display_name": "Luna Eclipse",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/luna/icon.webp",
+    "logo": "/static/camgirls/media/luna/logo.svg",
+    "avatar_hd": "/static/camgirls/media/luna/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/luna/gallery-1.webp",
+      "/static/camgirls/media/luna/gallery-2.webp",
+      "/static/camgirls/media/luna/gallery-3.webp"
+    ],
+    "preview_video": "/static/camgirls/media/luna/preview.webm",
+    "preview_poster": "/static/camgirls/media/luna/gallery-1.webp"
+  },
+  "initials": "LE",
+  "brand_colors": [
+    "#6366f1",
+    "#312e81"
+  ]
+}

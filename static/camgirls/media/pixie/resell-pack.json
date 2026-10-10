@@ -1,0 +1,23 @@
+{
+  "performer_id": "performer_pixie",
+  "slug": "pixie",
+  "display_name": "Pixie Glitch",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/pixie/icon.webp",
+    "logo": "/static/camgirls/media/pixie/logo.svg",
+    "avatar_hd": "/static/camgirls/media/pixie/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/pixie/gallery-1.webp",
+      "/static/camgirls/media/pixie/gallery-2.webp",
+      "/static/camgirls/media/pixie/gallery-3.webp"
+    ],
+    "preview_video": "/static/camgirls/media/pixie/preview.webm",
+    "preview_poster": "/static/camgirls/media/pixie/gallery-1.webp"
+  },
+  "initials": "PG",
+  "brand_colors": [
+    "#f472b6",
+    "#be185d"
+  ]
+}

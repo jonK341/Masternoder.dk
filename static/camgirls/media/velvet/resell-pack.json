@@ -1,0 +1,23 @@
+{
+  "performer_id": "performer_velvet",
+  "slug": "velvet",
+  "display_name": "Velvet Noir",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/velvet/icon.webp",
+    "logo": "/static/camgirls/media/velvet/logo.svg",
+    "avatar_hd": "/static/camgirls/media/velvet/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/velvet/gallery-1.webp",
+      "/static/camgirls/media/velvet/gallery-2.webp",
+      "/static/camgirls/media/velvet/gallery-3.webp"
+    ],
+    "preview_video": "/static/camgirls/media/velvet/preview.webm",
+    "preview_poster": "/static/camgirls/media/velvet/gallery-1.webp"
+  },
+  "initials": "VN",
+  "brand_colors": [
+    "#c084fc",
+    "#581c87"
+  ]
+}

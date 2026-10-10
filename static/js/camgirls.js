@@ -8,6 +8,76 @@
   var studio = null;
   var filter = 'all';
 
+  function apiUrl(path) {
+    return typeof window.cgApi === 'function' ? window.cgApi(path) : path;
+  }
+
+  function staticUrl(path) {
+    return typeof window.cgStatic === 'function' ? window.cgStatic(path) : path;
+  }
+
+  function pageBase() {
+    if (typeof window.cgPageBase === 'function') {
+      return window.cgPageBase();
+    }
+    if (typeof window.cgIsAppMount === 'function' && window.cgIsAppMount()) {
+      return '/app/';
+    }
+    return '/camgirls/';
+  }
+
+  function cgPerformerHref(id) {
+    if (typeof window.cgPerformerPath === 'function') {
+      return window.cgPerformerPath(id);
+    }
+    return '/camgirls/p/' + encodeURIComponent(id) + '/';
+  }
+
+  function cgShopHref(query) {
+    if (typeof window.cgShopUrl === 'function') {
+      return window.cgShopUrl(query || '');
+    }
+    return '/shop/' + (query ? (query.charAt(0) === '?' ? query : '?' + query) : '');
+  }
+
+  function applyAppExpandLayout() {
+    if (typeof window.cgIsAppMount !== 'function' || !window.cgIsAppMount()) {
+      return;
+    }
+    document.documentElement.classList.add('cg-app-expanded');
+    var hdr = document.querySelector('.cg-header p');
+    if (hdr && hdr.textContent.indexOf('MN2 block explorer') < 0) {
+      var sub = document.querySelector('.cg-app-subtitle');
+      if (!sub) {
+        sub = document.createElement('p');
+        sub.className = 'cg-app-subtitle';
+        sub.style.cssText = 'font-size:0.9rem;opacity:0.85;margin:8px 0 0;';
+        sub.innerHTML =
+          '<strong>camgirls.masternoder.dk studio</strong> — 15 AI hosts · ' +
+          '<a href="/">MN2 block explorer</a> · ' +
+          '<a href="' +
+          cgShopHref('category=digital_goods') +
+          '">Brand packs shop</a>';
+        var header = document.querySelector('.cg-header');
+        if (header) header.appendChild(sub);
+      }
+    }
+    document.querySelectorAll('.cg-shop-strip a[href], .cg-resell-link').forEach(function (a) {
+      var href = a.getAttribute('href') || '';
+      if (href.indexOf('/shop') >= 0 && href.indexOf('/app/shop') < 0) {
+        a.setAttribute('href', cgShopHref(href.split('?')[1] || 'category=digital_goods'));
+      }
+    });
+    document.querySelectorAll('a[href^="/camgirls"]').forEach(function (a) {
+      var h = a.getAttribute('href') || '';
+      if (h.indexOf('/camgirls/p/') === 0) {
+        a.setAttribute('href', cgPerformerHref(h.split('/camgirls/p/')[1].replace(/\/?$/, '')));
+      } else if (h === '/camgirls/' || h === '/camgirls') {
+        a.setAttribute('href', pageBase());
+      }
+    });
+  }
+
   function uid() {
     try {
       return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
@@ -55,7 +125,7 @@
     if (i >= 0) favs.splice(i, 1);
     else favs.push(id);
     saveFavorites(favs);
-    fetch('/api/camgirls/performers/' + encodeURIComponent(id) + '/favorite', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/favorite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() }),
@@ -74,7 +144,7 @@
       msg('Enter birth year', true);
       return;
     }
-    fetch('/api/camgirls/age-verify', {
+    fetch(apiUrl('/api/camgirls/age-verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid(), birth_year: year }),
@@ -92,7 +162,7 @@
   }
 
   function loadAgents() {
-    fetch('/api/camgirls/agents')
+    fetch(apiUrl('/api/camgirls/agents')
       .then(function (r) {
         return r.json();
       })
@@ -120,6 +190,74 @@
     );
   }
 
+  function performerMediaBlock(p) {
+    var m = p.media;
+    if (!m) return '';
+    var gal = (m.gallery || []).slice(0, 3);
+    var thumbs = gal
+      .map(function (url) {
+        return (
+          '<img class="cg-gallery-thumb" src="' +
+          esc(staticUrl(url)) +
+          '" alt="" loading="lazy">'
+        );
+      })
+      .join('');
+    var preview = '';
+    if (m.preview_video_url || m.preview_video_mp4_url) {
+      var vsrc = '';
+      if (m.preview_video_url) {
+        vsrc +=
+          '<source src="' +
+          esc(staticUrl(m.preview_video_url)) +
+          '" type="video/webm">';
+      }
+      if (m.preview_video_mp4_url) {
+        vsrc +=
+          '<source src="' +
+          esc(staticUrl(m.preview_video_mp4_url)) +
+          '" type="video/mp4">';
+      }
+      preview =
+        '<video class="cg-preview-video" muted loop playsinline poster="' +
+        esc(staticUrl(m.preview_poster_url || '')) +
+        '">' +
+        vsrc +
+        '</video>';
+    } else if (m.preview_loop_svg_url) {
+      preview =
+        '<img class="cg-preview-video" src="' +
+        esc(staticUrl(m.preview_loop_svg_url)) +
+        '" alt="Preview loop">';
+    }
+    var resell = '';
+    if (p.resell && p.resell.logo_url) {
+      var shopQ =
+        p.resell.shop_query ||
+        (p.resell.shop_item_id ? 'highlight=' + encodeURIComponent(p.resell.shop_item_id) : 'category=digital_goods');
+      var shopHref = cgShopHref(shopQ);
+      resell =
+        '<a class="cg-resell-link" href="' +
+        esc(staticUrl(p.resell.logo_url)) +
+        '" download title="Logo">Logo</a> · ' +
+        '<a class="cg-resell-link" href="' +
+        esc(shopHref) +
+        '">Buy brand pack</a> · ' +
+        '<a class="cg-resell-link" href="' +
+        esc(apiUrl('/api/camgirls/performers/' + p.id + '/media')) +
+        '" target="_blank" rel="noopener">Manifest</a>';
+    }
+    return (
+      '<div class="cg-media-block">' +
+      preview +
+      '<div class="cg-gallery-row">' +
+      thumbs +
+      '</div>' +
+      (resell ? '<p class="cg-resell-row">' + resell + '</p>' : '') +
+      '</div>'
+    );
+  }
+
   function performerInfobar(p) {
     var t = p.tech || {};
     var voice = t.voice_mode === 'live' ? 'Voice live' : 'Voice preview';
@@ -137,7 +275,7 @@
   }
 
   function loadStatus() {
-    fetch('/api/camgirls/status')
+    fetch(apiUrl('/api/camgirls/status')
       .then(function (r) {
         return r.json();
       })
@@ -188,7 +326,7 @@
     if (extra.amount_mn2 != null) body.amount_mn2 = extra.amount_mn2;
     if (extra.gift_id) body.gift_id = extra.gift_id;
     if (extra.minutes != null) body.minutes = extra.minutes;
-    fetch('/api/camgirls/paypal/create-order', {
+    fetch(apiUrl('/api/camgirls/paypal/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -228,7 +366,7 @@
 
   function startPrivateShow(id, minutes) {
     var mins = parseInt(minutes, 10) || 5;
-    fetch('/api/camgirls/performers/' + encodeURIComponent(id) + '/private-show', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/private-show', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid(), minutes: mins }),
@@ -254,7 +392,7 @@
   }
 
   function joinFanClub(id) {
-    fetch('/api/camgirls/performers/' + encodeURIComponent(id) + '/fan-club', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/fan-club', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() }),
@@ -285,7 +423,7 @@
         sessionStorage.removeItem('cg_paypal_ctx');
       } catch (e) {}
       if (window.history && window.history.replaceState) {
-        window.history.replaceState({}, '', '/camgirls/');
+        window.history.replaceState({}, '', pageBase());
       }
       return;
     }
@@ -308,7 +446,7 @@
       }
       return;
     }
-    fetch('/api/camgirls/paypal/capture', {
+    fetch(apiUrl('/api/camgirls/paypal/capture', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() || params.get('user_id') || '', order_id: orderId }),
@@ -328,38 +466,65 @@
         msg(d.success ? doneMsg : d.error || 'Capture failed', !d.success);
         if (d.success) loadPerformers();
         if (window.history && window.history.replaceState) {
-          window.history.replaceState({}, '', '/camgirls/');
+          window.history.replaceState({}, '', pageBase());
         }
       });
   }
 
+  function applyPerformerCatalog(d) {
+    if (!d || !d.success) return false;
+    performers = d.performers || [];
+    if (window.CG_SINGLE_PERFORMER) {
+      performers = performers.filter(function (p) {
+        return p.id === window.CG_SINGLE_PERFORMER;
+      });
+    } else {
+      var deep = new URLSearchParams(window.location.search).get('performer');
+      if (deep) {
+        performers = performers.filter(function (p) {
+          return p.id === deep;
+        });
+      }
+    }
+    return performers.length > 0;
+  }
+
   function loadPerformers() {
     var grid = document.getElementById('cg-grid');
-    if (grid) grid.textContent = 'Loading performers…';
-    fetch('/api/camgirls/performers?user_id=' + encodeURIComponent(uid()))
+    var user = encodeURIComponent(uid());
+    if (grid) {
+      grid.innerHTML =
+        '<p class="cg-loading">Loading performers… <span class="cg-loading-hint">(first load can take up to a minute)</span></p>';
+    }
+    fetch(apiUrl('/api/camgirls/performers?user_id=' + user + '&lite=1'))
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (d) {
+        if (applyPerformerCatalog(d)) {
+          showAgeGate(
+            performers.some(function (p) {
+              return !p.age_verified;
+            })
+          );
+          renderGrid();
+          msg('Loading gallery & shop links…');
+        }
+      })
+      .catch(function () {});
+    fetch(apiUrl('/api/camgirls/performers?user_id=' + user))
       .then(function (r) {
         return r.json();
       })
       .then(function (d) {
         if (!d.success) {
-          msg(d.error || 'Could not load performers', true);
-          if (grid) grid.innerHTML = '<p>Failed to load catalog.</p>';
+          if (!performers.length) {
+            msg(d.error || 'Could not load performers', true);
+            if (grid) grid.innerHTML = '<p>Failed to load catalog.</p>';
+          }
           return;
         }
-        performers = d.performers || [];
-        if (window.CG_SINGLE_PERFORMER) {
-          performers = performers.filter(function (p) {
-            return p.id === window.CG_SINGLE_PERFORMER;
-          });
-        } else {
-          var deep = new URLSearchParams(window.location.search).get('performer');
-          if (deep) {
-            performers = performers.filter(function (p) {
-              return p.id === deep;
-            });
-          }
-        }
-        if (!performers.length) {
+        if (!applyPerformerCatalog(d)) {
           if (grid) grid.innerHTML = '<p>No performers available.</p>';
           return;
         }
@@ -368,11 +533,36 @@
         });
         showAgeGate(needsAge);
         renderGrid();
+        if (window.CG_SINGLE_PERFORMER && performers[0]) {
+          renderPerformerPageMedia(performers[0]);
+        }
+        msg('');
       })
       .catch(function () {
-        msg('Network error loading performers', true);
-        if (grid) grid.innerHTML = '<p>Could not reach API.</p>';
+        if (!performers.length) {
+          msg('Network error loading performers', true);
+          if (grid) grid.innerHTML = '<p>Could not reach API. Retry in a moment.</p>';
+        }
       });
+  }
+
+  function renderPerformerPageMedia(p) {
+    var el = document.getElementById('cg-performer-media');
+    if (!el || !p.media) return;
+    var m = p.media;
+    var brand =
+      '<div class="cg-brand-row">' +
+      '<img src="' +
+      esc(staticUrl(m.icon_url || p.avatar_url)) +
+      '" alt="Icon">' +
+      '<img src="' +
+      esc(staticUrl(m.logo_url || '')) +
+      '" alt="Logo">' +
+      '<a href="' +
+      esc(apiUrl('/api/camgirls/performers/' + p.id + '/media')) +
+      '" target="_blank" rel="noopener">Download resell manifest (JSON)</a>' +
+      '</div>';
+    el.innerHTML = performerMediaBlock(p) + brand;
   }
 
   function renderGrid() {
@@ -389,15 +579,16 @@
     }
     grid.innerHTML = rows
       .map(function (p) {
-        var avatar = p.avatar_url || '/static/camgirls/avatar-demo.svg';
+        var avatar = p.icon_url || p.avatar_url || '/static/camgirls/avatar-demo.svg';
         var unlocked = p.unlocked ? '<span class="cg-badge">Unlocked</span>' : '';
         var fanBadge = p.fan_club ? ' <span class="cg-fc-badge">Fan club</span>' : '';
         return (
           '<article class="cg-card" data-id="' + esc(p.id) + '">' +
           performerInfobar(p) +
+          performerMediaBlock(p) +
           '<div style="display:flex;gap:12px;align-items:center;">' +
-          '<img class="cg-card-thumb" src="' + esc(avatar) + '" alt="">' +
-          '<div><strong><a href="/camgirls/p/' + esc(p.id) + '/" style="color:inherit;text-decoration:none;">' +
+          '<img class="cg-card-thumb" src="' + esc(staticUrl(avatar)) + '" alt="">' +
+          '<div><strong><a href="' + esc(cgPerformerHref(p.id)) + '" style="color:inherit;text-decoration:none;">' +
           esc(p.display_name) +
           '</a></strong> <span class="cg-ai-badge">AI</span>' +
           unlocked +
@@ -440,7 +631,7 @@
     grid.querySelectorAll('[data-unlock]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-unlock');
-        fetch('/api/camgirls/performers/' + encodeURIComponent(id) + '/unlock', {
+        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/unlock', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: uid() }),
@@ -508,7 +699,7 @@
           return x.id === id;
         });
         var amt = (p && p.tip_min_mn2) || 5;
-        fetch('/api/camgirls/performers/' + encodeURIComponent(id) + '/tip', {
+        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/tip', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: uid(), amount: amt }),
@@ -555,6 +746,7 @@
         renderGrid();
       });
     });
+    applyAppExpandLayout();
     loadAgents();
     loadStatus();
     handlePayPalReturn();
