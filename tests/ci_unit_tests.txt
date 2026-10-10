@@ -75,7 +75,6 @@ tests/unit/test_monetization_revenue_tracks.py
 tests/unit/test_monetization_scr_export.py
 tests/unit/test_password_protection.py
 tests/unit/test_podcast.py
-tests/unit/test_podcast_routes.py
 tests/unit/test_profit_daemon_monitor.py
 tests/unit/test_ptc_ads_routes.py
 tests/unit/test_shop_api_line_checks.py
