@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const USER_ID = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+    const USER_ID = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
     const API = (path, opts) => fetch(path, opts).then(r => r.json());
 
     function qs(sel) { return document.querySelector(sel); }

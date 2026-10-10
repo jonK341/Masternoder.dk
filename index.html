@@ -210,15 +210,46 @@
 
     <script>
         const BASE_URL = window.location.origin;
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
+
+        function isCanonicalHomeUserId(id) {
+            if (window.MnUserId && typeof window.MnUserId.isUsable === 'function') {
+                return window.MnUserId.isUsable(id);
+            }
+            if (typeof id !== 'string') return false;
+            var value = id.trim();
+            if (!value || value === '[object Promise]') return false;
+            var lowered = value.toLowerCase();
+            return lowered !== 'default_user' && lowered !== 'undefined' && lowered !== 'null';
+        }
+
+        async function resolveHomeUserId() {
+            try {
+                if (window.backendConnector && typeof backendConnector.getUserId === 'function') {
+                    const uid = await backendConnector.getUserId();
+                    if (isCanonicalHomeUserId(uid)) return uid.trim();
+                }
+                if (window.userIdentification && typeof userIdentification.getUserId === 'function') {
+                    const uid = await userIdentification.getUserId();
+                    if (isCanonicalHomeUserId(uid)) return uid.trim();
+                }
+            } catch (e) {
+                console.warn('[Frontpage] user id', e);
+            }
+            const stored = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
+            return isCanonicalHomeUserId(stored) ? stored.trim() : null;
+        }
 
         async function loadMn2Surface() {
             try {
-                const [balRes, priceRes] = await Promise.all([
-                    fetch(`${BASE_URL || ''}/api/mn2/balance?user_id=${encodeURIComponent(userId)}`),
-                    fetch(`${BASE_URL || ''}/api/mn2/price`)
-                ]);
-                if (balRes.ok) {
+                const userId = await resolveHomeUserId();
+                const requests = [fetch(`${BASE_URL || ''}/api/mn2/price`)];
+                if (userId) {
+                    requests.unshift(fetch(`${BASE_URL || ''}/api/mn2/balance?user_id=${encodeURIComponent(userId)}`));
+                }
+                const responses = await Promise.all(requests);
+                const balRes = userId ? responses[0] : null;
+                const priceRes = userId ? responses[1] : responses[0];
+                if (balRes && balRes.ok) {
                     const bal = await balRes.json();
                     const el = document.getElementById('fp-mn2-balance');
                     const usdEl = document.getElementById('fp-mn2-usd');
@@ -243,14 +274,19 @@
 
         async function loadAllStats() {
             try {
-                const [statsRes, pointsRes, battleRes] = await Promise.all([
-                    fetch(`${BASE_URL || ''}/api/stats/summary`),
-                    fetch(`${BASE_URL || ''}/api/points/all?user_id=${encodeURIComponent(userId)}`),
-                    fetch(`${BASE_URL || ''}/api/battle/stats?user_id=${encodeURIComponent(userId)}`)
-                ]);
+                const userId = (typeof resolveHomeUserId === 'function') ? await resolveHomeUserId() : null;
+                const requests = [fetch(`${BASE_URL || ''}/api/stats/summary`)];
+                if (userId) {
+                    requests.push(fetch(`${BASE_URL || ''}/api/points/all?user_id=${encodeURIComponent(userId)}`));
+                    requests.push(fetch(`${BASE_URL || ''}/api/battle/stats?user_id=${encodeURIComponent(userId)}`));
+                }
+                const responses = await Promise.all(requests);
+                const statsRes = responses[0];
+                const pointsRes = userId ? responses[1] : null;
+                const battleRes = userId ? responses[2] : null;
                 const stats = await statsRes.json();
-                const points = await pointsRes.json();
-                const battle = await battleRes.json();
+                const points = pointsRes ? await pointsRes.json() : null;
+                const battle = battleRes ? await battleRes.json() : null;
 
                 if (stats.success && stats.stats) {
                     const s = stats.stats;
@@ -261,12 +297,12 @@
                     if (u) u.textContent = (s.total_users || 0).toLocaleString();
                     if (a) a.textContent = (s.total_achievements || 0).toLocaleString();
                 }
-                if (battle.success && battle.stats) {
+                if (battle && battle.success && battle.stats) {
                     const totalBattles = (battle.stats.wins || 0) + (battle.stats.losses || 0);
                     const b = document.getElementById('stat-battles');
                     if (b) b.textContent = totalBattles.toLocaleString();
                 }
-                if (points.success && points.points) {
+                if (points && points.success && points.points) {
                     const p = points.points;
                     const xp = document.getElementById('stat-total-xp');
                     const lv = document.getElementById('stat-level');
@@ -298,12 +334,13 @@
             });
         });
     </script>
-    <script src="/static/js/error-manager.js?v=20260304154115" defer></script>
+    <script src="/static/js/user-id.js?v=20261010b"></script>
+    <script src="/static/js/error-manager.js?v=20261010a" defer></script>
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/game-hub-panel.js?v=20260909b" defer></script>
-    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
+    <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="home" defer></script>
     <link rel="stylesheet" href="/static/css/mobile-install.css?v=20260704a">

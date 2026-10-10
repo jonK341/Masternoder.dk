@@ -8,9 +8,9 @@
 
   function getUserId() {
     try {
-      return localStorage.getItem('user_id') || localStorage.getItem('vidgenerator_user_id') || 'default_user';
+      return localStorage.getItem('user_id') || localStorage.getItem('vidgenerator_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
     } catch (e) {
-      return 'default_user';
+      return (window.MnUserId ? window.MnUserId.read() : '');
     }
   }
 

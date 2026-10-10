@@ -160,7 +160,7 @@
       '<button type="button" class="f5-stream-chat-btn primary f5-stream-chat-send">Send</button>' +
       '<button type="button" class="f5-stream-chat-btn f5-stream-chat-claim">Claim MN2 drop</button>' +
       "</div></div>" +
-      '<p class="f5-stream-chat-meta">Logged-in users earn MN2 for live comments (daily cap). Event drops credit wallet; optional on-chain micro-tx when enabled.</p>";
+      '<p class="f5-stream-chat-meta">Logged-in users earn MN2 for live comments (daily cap). Event drops credit wallet; optional on-chain micro-tx when enabled.</p>';
 
     el.querySelectorAll(".f5-stream-chat-tab").forEach(function (btn) {
       btn.addEventListener("click", function () {

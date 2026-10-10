@@ -7,7 +7,7 @@
     var bridge = global.Mn2SiteBridge;
 
     function uid() {
-        return bridge ? bridge.uid() : (global.localStorage.getItem('game_user_id') || 'default_user');
+        return bridge ? bridge.uid() : (global.localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''));
     }
 
     function fmt(n) {

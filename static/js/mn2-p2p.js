@@ -9,8 +9,8 @@
   if (!panel) return;
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    try { return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''); }
+    catch (e) { return (window.MnUserId ? window.MnUserId.read() : ''); }
   }
   function q(id) { return document.getElementById(id); }
   function fmt(n, d) { return Number(n || 0).toFixed(d == null ? 4 : d); }

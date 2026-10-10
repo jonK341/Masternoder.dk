@@ -409,6 +409,17 @@ def find_broken_urls():
         }), 500
 
 
+def _is_intentional_page_redirect(rule) -> bool:
+    """all_page registers /slug and /slug/index.html as deliberate aliases."""
+    endpoint = getattr(rule, "endpoint", "") or ""
+    if "redirect_" in endpoint or "vidgenerator_redirect" in endpoint:
+        return True
+    path = str(rule)
+    if path.endswith("/index.html") and endpoint.startswith("all_page."):
+        return True
+    return False
+
+
 @debug_bp.route('/api/debug/check-duplicates', methods=['GET'])
 def check_duplicates():
     """Check for duplicate blueprints"""
@@ -421,6 +432,8 @@ def check_duplicates():
         try:
             with current_app.app_context():
                 for rule in current_app.url_map.iter_rules():
+                    if _is_intentional_page_redirect(rule):
+                        continue
                     blueprint_name = rule.endpoint.split('.')[0] if '.' in rule.endpoint else rule.endpoint
                     
                     if blueprint_name not in blueprints:
@@ -429,17 +442,30 @@ def check_duplicates():
                     blueprints[blueprint_name].append({
                         'route': str(rule),
                         'endpoint': rule.endpoint,
-                        'methods': list(rule.methods)
+                        'methods': list(rule.methods - {'HEAD', 'OPTIONS'})
                     })
                 
-                # Find duplicates
+                # Same path + method registered more than once.
+                # Intentional /page and /page/index.html redirects are omitted above.
+                seen = {}
                 for blueprint_name, routes in blueprints.items():
-                    if len(routes) > 1:
-                        duplicates.append({
-                            'blueprint': blueprint_name,
-                            'routes': routes,
-                            'count': len(routes)
-                        })
+                    for route in routes:
+                        for method in route['methods']:
+                            key = (route['route'], method)
+                            seen.setdefault(key, []).append({
+                                'blueprint': blueprint_name,
+                                'endpoint': route['endpoint'],
+                            })
+                for (path, method), entries in seen.items():
+                    endpoints = {item['endpoint'] for item in entries}
+                    if len(endpoints) < 2:
+                        continue
+                    duplicates.append({
+                        'route': path,
+                        'method': method,
+                        'endpoints': sorted(endpoints),
+                        'count': len(endpoints),
+                    })
         except Exception as e:
             return jsonify({
                 'success': False,

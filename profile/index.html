@@ -1746,7 +1746,8 @@
     </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
+        <script src="/static/js/user-id.js?v=20261010b"></script>
+<script src="/static/js/profile-mn2-wallet.js?v=20260623"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
@@ -1795,6 +1796,27 @@
             if (el) el.textContent = message || '';
         }
 
+        function profileResolvedUserId() {
+            var list = [];
+            if (window.profileManager && window.profileManager.userId) list.push(window.profileManager.userId);
+            try {
+                list.push(localStorage.getItem('game_user_id'));
+                list.push(localStorage.getItem('user_id'));
+            } catch (e) {}
+            for (var i = 0; i < list.length; i++) {
+                var value = list[i];
+                if (window.MnUserId && window.MnUserId.isUsable(value)) return String(value).trim();
+                if (typeof value === 'string') {
+                    var trimmed = value.trim();
+                    var lowered = trimmed.toLowerCase();
+                    if (trimmed && trimmed !== '[object Promise]' && lowered !== 'default_user' && lowered !== 'undefined' && lowered !== 'null') {
+                        return trimmed;
+                    }
+                }
+            }
+            return window.MnUserId && window.MnUserId.read ? window.MnUserId.read() : '';
+        }
+
         // Profile Manager using BackendConnector
         class ProfileManager {
             constructor() {
@@ -1809,7 +1831,12 @@
                 var headerEl = document.getElementById('profile-header');
                 try {
                     var uid = await backendConnector.getUserId();
-                    this.userId = (uid && typeof uid === 'string') ? uid : 'default_user';
+                    this.userId = profileResolvedUserId() || (window.MnUserId && window.MnUserId.isUsable(uid) ? String(uid).trim() : '');
+                    if (!this.userId) {
+                        if (overlay) overlay.style.display = 'none';
+                        if (headerEl) headerEl.textContent = 'Sign in to load this profile.';
+                        return;
+                    }
 
                     // Keep server session in sync so progress is stored under this user
                     fetch('/api/user/bind-session', {
@@ -1966,7 +1993,8 @@
 
                 var starmapLevelsEl = document.getElementById('profile-starmap25-levels-text');
                 if (starmapLevelsEl) {
-                    var uid = this.userId || 'default_user';
+                    var uid = this.userId || profileResolvedUserId();
+                    if (!uid) return;
                     fetch('/api/star-map/25/levels?user_id=' + encodeURIComponent(uid)).then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; }).then(function(levelsData) {
                         return fetch('/api/star-map/25/buildup?user_id=' + encodeURIComponent(uid)).then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; }).then(function(buildupData) {
                             var maxLevel = (levelsData && levelsData.max_level) || 5;
@@ -2057,7 +2085,8 @@
             }
 
             async loadAccountPrivacyControls() {
-                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const uid = this.userId || localStorage.getItem('game_user_id') || profileResolvedUserId();
+                if (!uid) return;
                 const status = document.getElementById('account-privacy-status');
                 const setValue = function(id, value) {
                     const el = document.getElementById(id);
@@ -2146,7 +2175,8 @@
             }
 
             async saveAccountPrivacyControls() {
-                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const uid = this.userId || localStorage.getItem('game_user_id') || profileResolvedUserId();
+                if (!uid) return;
                 const status = document.getElementById('account-privacy-status');
                 const value = (id) => (document.getElementById(id) || {}).value || '';
                 const checked = (id) => Boolean((document.getElementById(id) || {}).checked);
@@ -2178,7 +2208,8 @@
             }
 
             async exportAccountData() {
-                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const uid = this.userId || localStorage.getItem('game_user_id') || profileResolvedUserId();
+                if (!uid) return;
                 const status = document.getElementById('account-privacy-status');
                 if (status) status.textContent = 'Preparing export...';
                 try {
@@ -2204,7 +2235,7 @@
                     const res = await fetch('/api/user/linked-providers', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ provider: provider, action: 'unlink', user_id: this.userId || 'default_user' })
+                        body: JSON.stringify({ provider: provider, action: 'unlink', user_id: this.userId || profileResolvedUserId() })
                     });
                     const data = await res.json();
                     if (!data.success) throw new Error(data.error || 'Provider update failed');
@@ -2223,7 +2254,7 @@
                     const res = await fetch('/api/user/sessions/revoke', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: this.userId || 'default_user', session_id: sessionId })
+                        body: JSON.stringify({ user_id: this.userId || profileResolvedUserId(), session_id: sessionId })
                     });
                     const data = await res.json();
                     if (!data.success) throw new Error(data.error || 'Session revoke failed');
@@ -2237,7 +2268,8 @@
             async softDeleteAccount() {
                 const input = document.getElementById('account-delete-confirm');
                 const status = document.getElementById('account-privacy-status');
-                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const uid = this.userId || localStorage.getItem('game_user_id') || profileResolvedUserId();
+                if (!uid) return;
                 const confirm = (input && input.value || '').trim();
                 if (confirm !== 'DELETE') {
                     if (status) status.textContent = 'Type DELETE to confirm soft-delete.';
@@ -2314,7 +2346,8 @@
             }
 
             loadPasswordProtection() {
-                const uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                const uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
+                if (!uid) return;
                 const statusEl = document.getElementById('password-protection-status');
                 const inputEl = document.getElementById('password-protection-input');
                 const setBtn = document.getElementById('password-protection-set-btn');
@@ -2442,7 +2475,8 @@
             }
 
             loadAccountSecurity() {
-                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
+                if (!uid) return;
                 var statusEl = document.getElementById('account-security-status');
                 var recEl = document.getElementById('account-security-recommendations');
                 var loginCb = document.getElementById('sec-require-login');
@@ -2553,7 +2587,8 @@
             }
 
             loadProfileProPlan() {
-                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
+                if (!uid) return;
                 var statusEl = document.getElementById('profile-pro-plan-status');
                 var usageEl = document.getElementById('profile-pro-plan-usage');
                 if (!statusEl) return;
@@ -2598,7 +2633,8 @@
             }
 
             loadQuickBattleAndLeaderboard() {
-                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
+                if (!uid) return;
                 var statsEl = document.getElementById('profile-battle-stats');
                 var leaderboardEl = document.getElementById('profile-battle-leaderboard');
                 var myRankEl = document.getElementById('profile-battle-my-rank');
@@ -2665,7 +2701,8 @@
             }
 
             loadAgentControl() {
-                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
+                if (!uid) return;
                 var assignBtn = document.getElementById('profile-assign-task-btn');
                 var statusEl = document.getElementById('profile-assign-status');
                 if (!assignBtn || assignBtn._wired) return;
@@ -2690,7 +2727,8 @@
             }
 
             loadMonetization25() {
-                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                var uid = this.userId || localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
+                if (!uid) return;
                 var recEl = document.getElementById('monetization-25-ai-recommendations');
                 var leverSelect = document.getElementById('monetization-25-lever-select');
                 var assignBtn = document.getElementById('monetization-25-assign-btn');
@@ -2822,7 +2860,8 @@
                 const content = document.getElementById('user-identity-content');
                 const syncBtn = document.getElementById('sync-session-btn');
                 const syncStatus = document.getElementById('sync-session-status');
-                const browserUid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                const browserUid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
+                if (!browserUid) return;
                 try {
                     const r = await fetch(`${window.location.origin}/api/user/identity?user_id=${encodeURIComponent(browserUid)}`);
                     const data = r.ok ? await r.json() : {};
@@ -2874,7 +2913,7 @@
                 const unlinkBtn = document.getElementById('discord-unlink-btn');
                 const statusEl = document.getElementById('discord-link-status');
                 const input = document.getElementById('discord-id-input');
-                const uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                const uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
                 if (!content) return;
                 try {
                     const r = await fetch(`/api/discord/link/status?user_id=${encodeURIComponent(uid)}`);
@@ -2948,7 +2987,8 @@
             async syncSession() {
                 const syncStatus = document.getElementById('sync-session-status');
                 const input = document.getElementById('account-user-id');
-                const uid = (input && input.value ? input.value : localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user').trim() || 'default_user';
+                const uid = (input && input.value ? input.value : localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId()).trim() || profileResolvedUserId();
+                if (!uid) return;
                 if (syncStatus) syncStatus.textContent = 'Syncing…';
                 try {
                     const r = await fetch('/api/user/bind-session', {
@@ -2989,7 +3029,7 @@
                 const status = document.getElementById('account-save-status');
                 const socialStatus = document.getElementById('social-login-status');
                 if (!input || !btn) return;
-                input.value = localStorage.getItem('game_user_id') || 'default_user';
+                input.value = localStorage.getItem('game_user_id') || profileResolvedUserId();
 
                 this.handleSocialLoginReturn(input, status, socialStatus);
                 this.loadUserIdentity();
@@ -3015,7 +3055,8 @@
                 if (!btn._bound) {
                     btn._bound = true;
                     btn.addEventListener('click', async () => {
-                        const uid = (input.value || '').trim() || 'default_user';
+                        const uid = (input.value || '').trim() || profileResolvedUserId();
+                        if (!uid) return;
                         try {
                             const out = await bindSession(uid);
                             localStorage.setItem('game_user_id', uid);
@@ -3037,8 +3078,8 @@
                         localStorage.removeItem('game_user_id');
                         localStorage.removeItem('user_id');
                         if (status) status.textContent = 'Logged out on this device.';
-                        input.value = 'default_user';
-                        this.userId = 'default_user';
+                        input.value = profileResolvedUserId();
+                        this.userId = profileResolvedUserId();
                         await this.loadUserIdentity();
                         await this.loadProfile();
                         if (typeof window.refreshProfileHubSummary === 'function') {
@@ -3202,7 +3243,8 @@
                 const btn = document.getElementById('profile-geo-ref-btn');
                 if (!el) return;
                 try {
-                    const uid = encodeURIComponent(this.userId || 'default_user');
+                    const uid = encodeURIComponent(this.userId || profileResolvedUserId());
+                    if (!uid) return;
                     let g = null;
                     const locR = await fetch(`/api/user/location?user_id=${uid}`);
                     if (locR.ok) {
@@ -3296,7 +3338,8 @@
             }
 
             async updateGeoRef() {
-                const uid = this.userId || 'default_user';
+                const uid = this.userId || profileResolvedUserId();
+                if (!uid) return;
                 const send = async (latitude, longitude, geo_ref, accuracy, source) => {
                     const r = await fetch('/api/user/location', {
                         method: 'POST',
@@ -3352,7 +3395,7 @@
 
             async buyAgentOffer(itemId, amount, itemNameEncoded) {
                 try {
-                    const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                    const uid = this.userId || localStorage.getItem('game_user_id') || profileResolvedUserId();
                     if (!uid || uid === 'default_user') {
                         alert('Create or log in to an account first.');
                         return;
@@ -3458,7 +3501,8 @@
             }
 
             async refreshProfilePoints() {
-                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const uid = this.userId || localStorage.getItem('game_user_id') || profileResolvedUserId();
+                if (!uid) return;
                 try {
                     const r = await fetch(`${window.location.origin}/api/user/account-summary/points?user_id=${encodeURIComponent(uid)}`);
                     const data = r.ok ? await r.json() : {};
@@ -3513,7 +3557,8 @@
                         });
                     } catch (e) { /* ignore */ }
                 }
-                const u = uid || 'default_user';
+                const u = uid || profileResolvedUserId();
+                if (!u) return Array.from(m.values());
                 try {
                     mergeFromRaw(localStorage.getItem('shop_v9_shadow_' + u));
                     mergeFromRaw(localStorage.getItem('shop_v4_shadow_' + u));
@@ -3524,7 +3569,8 @@
             async loadShopInventoryV9() {
                 const el = document.getElementById('profile-shop-v9-inventory');
                 if (!el) return;
-                const uid = this.userId || localStorage.getItem('game_user_id') || 'default_user';
+                const uid = this.userId || localStorage.getItem('game_user_id') || profileResolvedUserId();
+                if (!uid) return;
                 el.innerHTML = '<p style="opacity:0.85;">Loading…</p>';
                 try {
                     const r = await fetch(`${window.location.origin}/api/shop/inventory?user_id=${encodeURIComponent(uid)}`);
@@ -4256,7 +4302,8 @@
     <script>
     (function() {
         function loadProfileShowcase() {
-            var uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+            var uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || profileResolvedUserId();
+            if (!uid) return;
             try {
                 var params = new URLSearchParams(window.location.search);
                 if (params.get('user_id')) uid = params.get('user_id');

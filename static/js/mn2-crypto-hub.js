@@ -24,9 +24,9 @@
     try {
       return window.localStorage.getItem('game_user_id')
         || window.localStorage.getItem('user_id')
-        || 'default_user';
+        || (window.MnUserId ? window.MnUserId.read() : '');
     } catch (e) {
-      return 'default_user';
+      return (window.MnUserId ? window.MnUserId.read() : '');
     }
   }
 

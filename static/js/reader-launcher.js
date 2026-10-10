@@ -20,9 +20,9 @@
 
     function getUserId() {
         try {
-            return localStorage.getItem('game_user_id') || 'default_user';
+            return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         } catch (e) {
-            return 'default_user';
+            return (window.MnUserId ? window.MnUserId.read() : '');
         }
     }
 

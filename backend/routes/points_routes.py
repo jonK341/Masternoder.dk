@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request
 
 from backend.services.unified_points_database import unified_points_db
 from backend.services.account_resolution_service import resolve_user_id
+from backend.services.user_id_policy import missing_user_response, rejection_for, user_exists
 from backend.middleware.response_cache_middleware import cached_response
 
 
@@ -43,6 +44,16 @@ def _default_points_payload():
 @cached_response(ttl=60)
 def points_all():
     """Return all points used by the frontend counters. Returns 200 with empty points on failure so pages still load."""
+    raw_user_id = request.args.get("user_id")
+    if raw_user_id is not None:
+        rejected = rejection_for(raw_user_id)
+        if rejected:
+            body, status = rejected
+            return jsonify(body), status
+        found = user_exists(raw_user_id)
+        if found is False:
+            body, status = missing_user_response(raw_user_id)
+            return jsonify(body), status
     user_id = resolve_user_id(from_body=False, from_query=True)
     points = _default_points_payload()
     try:
