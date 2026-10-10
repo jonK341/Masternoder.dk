@@ -62,7 +62,16 @@ def _curl_json_ok(body: str) -> bool:
     return _json_success(line)
 
 
-def _performer_count_ok(body: str, minimum: int = 5) -> bool:
+def _performer_count_minimum() -> int:
+    try:
+        return max(5, int(os.environ.get("CAMGIRLS_MIN_PERFORMERS", "15")))
+    except (TypeError, ValueError):
+        return 15
+
+
+def _performer_count_ok(body: str, minimum: int | None = None) -> bool:
+    if minimum is None:
+        minimum = _performer_count_minimum()
     line = body.split("HTTP:")[0].strip() if "HTTP:" in body else body.strip()
     try:
         data = json.loads(line)
@@ -197,12 +206,22 @@ def verify_remote(*, force_prompt: bool = False) -> int:
         (
             "studio catalog",
             "curl -s http://127.0.0.1:5000/api/camgirls/studio/catalog",
-            lambda body: _json_success(body) and '"moods"' in body,
+            lambda body: _json_success(body) and '"gifts"' in body,
+        ),
+        (
+            "platform status",
+            "curl -s http://127.0.0.1:5000/api/camgirls/status",
+            lambda body: _json_success(body) and '"catalog_source"' in body,
+        ),
+        (
+            "performer landing",
+            "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/camgirls/p/performer_nova/",
+            lambda body: body.strip() == "200",
         ),
         (
             "performer count",
             "curl -s 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'",
-            lambda body: _performer_count_ok(body, 5),
+            lambda body: _performer_count_ok(body),
         ),
         (
             "favorite route",
@@ -219,7 +238,11 @@ def verify_remote(*, force_prompt: bool = False) -> int:
         code, body = sh(cmd)
         print(body)
         ok = ok_fn(body) if label in (
-            "chat route", "blueprint registered", "local page", "favorite route",
+            "chat route",
+            "blueprint registered",
+            "local page",
+            "favorite route",
+            "performer landing",
         ) else (code == 0 and ok_fn(body))
         print(f"{'PASS' if ok else 'FAIL'} (exit {code})")
         if ok:
