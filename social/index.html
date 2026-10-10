@@ -580,7 +580,11 @@
     <script src="/static/js/toast-notifications.js"></script>
     <script>
         const BASE_URL = window.location.origin;
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        function readSocialUserId() {
+            const raw = (localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '').trim();
+            return /^user_[A-Za-z0-9_]{4,120}$/.test(raw) ? raw : '';
+        }
+        const userId = readSocialUserId();
         const SOCIAL_TABS = ['friends', 'guilds', 'requests', 'mn2-rewards', 'chat', 'intelligence', 'resources'];
 
         function activateSocialTab(tabName, updateUrl) {
@@ -697,12 +701,12 @@
         async function loadFriends() {
             try {
                 // Try both API endpoints
-                let response = await fetch(`${BASE_URL}/api/game/social/friends?user_id=${userId}`);
+                let response = await fetch(`${BASE_URL}/api/game/social/friends?user_id=${encodeURIComponent(userId)}`);
                 let data = await response.json();
                 
                 // Fallback to social network API
                 if (!data.success) {
-                    response = await fetch(`${BASE_URL}/api/social/friends?user_id=${userId}`);
+                    response = await fetch(`${BASE_URL}/api/social/friends?user_id=${encodeURIComponent(userId)}`);
                     data = await response.json();
                 }
                 
@@ -836,7 +840,7 @@
         
         async function loadGuilds() {
             try {
-                const response = await fetch(`${BASE_URL}/api/game/social/guild/my-guild?user_id=${userId}`);
+                const response = await fetch(`${BASE_URL}/api/game/social/guild/my-guild?user_id=${encodeURIComponent(userId)}`);
                 const data = await response.json();
                 
                 const guildDiv = document.getElementById('my-guild');
@@ -1002,7 +1006,7 @@
         
         async function loadFriendRequests() {
             try {
-                const response = await fetch(`${BASE_URL}/api/game/social/friend-requests?user_id=${userId}`);
+                const response = await fetch(`${BASE_URL}/api/game/social/friend-requests?user_id=${encodeURIComponent(userId)}`);
                 const data = await response.json();
                 
                 const div = document.getElementById('friend-requests');
@@ -1097,7 +1101,7 @@
         
         async function loadPlayerProfile() {
             try {
-                const response = await fetch(`${BASE_URL}/api/profiler/profile?user_id=${userId}`);
+                const response = await fetch(`${BASE_URL}/api/profiler/profile?user_id=${encodeURIComponent(userId)}`);
                 const data = await response.json();
                 
                 const div = document.getElementById('intelligence-profile');
@@ -1137,7 +1141,7 @@
         
         async function loadActiveTriggers() {
             try {
-                const response = await fetch(`${BASE_URL}/api/profiler/triggers?user_id=${userId}`);
+                const response = await fetch(`${BASE_URL}/api/profiler/triggers?user_id=${encodeURIComponent(userId)}`);
                 const data = await response.json();
                 
                 const div = document.getElementById('active-triggers');
@@ -1160,7 +1164,7 @@
         
         async function loadIntelligenceAnalytics() {
             try {
-                const historyResponse = await fetch(`${BASE_URL}/api/profiler/history?user_id=${userId}&limit=10`);
+                const historyResponse = await fetch(`${BASE_URL}/api/profiler/history?user_id=${encodeURIComponent(userId)}&limit=10`);
                 const historyData = await historyResponse.json();
                 
                 const div = document.getElementById('intelligence-analytics');
@@ -1228,7 +1232,7 @@
         
         async function loadInventory() {
             try {
-                const response = await fetch(`${BASE_URL}/api/items/inventory?user_id=${userId}`);
+                const response = await fetch(`${BASE_URL}/api/items/inventory?user_id=${encodeURIComponent(userId)}`);
                 const data = await response.json();
                 
                 const div = document.getElementById('inventory-items');
@@ -1263,7 +1267,7 @@
         
         async function loadArtifacts() {
             try {
-                const response = await fetch(`${BASE_URL}/api/artifacts/user?user_id=${userId}`);
+                const response = await fetch(`${BASE_URL}/api/artifacts/user?user_id=${encodeURIComponent(userId)}`);
                 const data = await response.json();
                 
                 const div = document.getElementById('artifacts-collection');
@@ -1299,8 +1303,8 @@
         async function loadXPStats() {
             try {
                 const [xpResponse, statsResponse] = await Promise.all([
-                    fetch(`${BASE_URL}/api/game/hunters/level?user_id=${userId}`),
-                    fetch(`${BASE_URL}/api/game/stats-points?user_id=${userId}`)
+                    fetch(`${BASE_URL}/api/game/hunters/level?user_id=${encodeURIComponent(userId)}`),
+                    fetch(`${BASE_URL}/api/game/stats-points?user_id=${encodeURIComponent(userId)}`)
                 ]);
                 
                 const xpData = await xpResponse.json();
@@ -1354,8 +1358,8 @@
         async function loadResourceStatistics() {
             try {
                 const [itemsResponse, artifactsResponse] = await Promise.all([
-                    fetch(`${BASE_URL}/api/items/inventory?user_id=${userId}`),
-                    fetch(`${BASE_URL}/api/artifacts/user?user_id=${userId}`)
+                    fetch(`${BASE_URL}/api/items/inventory?user_id=${encodeURIComponent(userId)}`),
+                    fetch(`${BASE_URL}/api/artifacts/user?user_id=${encodeURIComponent(userId)}`)
                 ]);
                 
                 const itemsData = await itemsResponse.json();
@@ -1397,7 +1401,7 @@
         // Social Feed Functions
         async function loadSocialFeed() {
             try {
-                const response = await fetch(`${BASE_URL}/api/social/feed?user_id=${userId}&limit=20&ranked=1`);
+                const response = await fetch(`${BASE_URL}/api/social/feed?user_id=${encodeURIComponent(userId)}&limit=20&ranked=1`);
                 const data = await response.json();
                 
                 const feedDiv = document.getElementById('social-feed');
@@ -1533,12 +1537,14 @@
             }
 
             const tabParam = new URLSearchParams(window.location.search).get('tab');
-            if (tabParam && SOCIAL_TABS.includes(tabParam) && tabParam !== 'friends') {
+            if (!userId) {
+                console.warn('Social page skipped user-scoped loads: no canonical user id');
+            } else if (tabParam && SOCIAL_TABS.includes(tabParam) && tabParam !== 'friends') {
                 activateSocialTab(tabParam, false);
             } else {
                 loadFriends();
             }
-            loadSocialFeed();
+            if (userId) loadSocialFeed();
             bindSocialAiDraftButton();
             bindSocialTabShareLinks();
 
@@ -1558,7 +1564,7 @@
             // Auto-refresh feed every 30 seconds when on friends tab
             setInterval(() => {
                 const friendsTab = document.getElementById('tab-friends');
-                if (friendsTab && friendsTab.classList.contains('active')) {
+                if (userId && friendsTab && friendsTab.classList.contains('active')) {
                     loadSocialFeed();
                 }
             }, 30000);
@@ -1568,14 +1574,18 @@
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="social"></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a"></script>
-    <script src="/static/js/backend-connector.js?v=20260114120000"></script>
-    <script src="/static/js/page-data-loaders.js?v=20260114120000"></script>
-    <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>
+    <script src="/static/js/backend-connector.js?v=20261010a"></script>
+    <script src="/static/js/page-data-loaders.js?v=20261010a"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20261010a"></script>
     <script src="/static/js/social-mn2-rewards.js?v=20260618e"></script>
     <script>
         // Social Page Data Loader
         document.addEventListener('DOMContentLoaded', async function() {
             loadSocialMn2Rewards();
+            if (typeof pageDataLoaders === 'undefined' || !pageDataLoaders.social) {
+                console.warn('pageDataLoaders unavailable');
+                return;
+            }
             const loader = new pageDataLoaders.social();
             const data = await loader.loadAll();
             

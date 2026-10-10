@@ -30,17 +30,8 @@ class BackendConnector {
         try {
             this.userId = await this.identificationPromise;
         } catch (error) {
-            // Log error using ErrorManager if available
-            if (window.ErrorManager) {
-                window.ErrorManager.logJSError(error, {
-                    source: 'backend-connector.js',
-                    context: 'user_identification',
-                    line: 33
-                });
-            } else {
-                console.error('User identification failed:', error);
-            }
-            this.userId = 'default_user'; // Fallback only on complete failure
+            console.warn('User identification failed:', error);
+            this.userId = null;
         }
         return this.userId;
     }
@@ -58,8 +49,8 @@ class BackendConnector {
         const stored = localStorage.getItem('game_user_id') || 
                       localStorage.getItem('user_id');
         
-        if (stored && stored !== 'default_user') {
-            return stored;
+        if (this._isCanonicalUserId(stored)) {
+            return stored.trim();
         }
 
         // Try to identify via API
@@ -79,23 +70,18 @@ class BackendConnector {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.success && data.user_id) {
-                    localStorage.setItem('game_user_id', data.user_id);
-                    localStorage.setItem('user_id', data.user_id);
-                    return data.user_id;
+                if (data.success && this._isCanonicalUserId(data.user_id)) {
+                    const resolved = String(data.user_id).trim();
+                    localStorage.setItem('game_user_id', resolved);
+                    localStorage.setItem('user_id', resolved);
+                    return resolved;
                 }
             }
         } catch (error) {
-            // Log error using ErrorManager if available
-            if (window.ErrorManager) {
-                window.ErrorManager.logNetworkError(`${this.apiBase}/user/identify/simple`, 'POST', error.message);
-            } else {
-                console.error('User identification API call failed:', error);
-            }
+            console.warn('User identification API call failed:', error);
         }
 
-        // Last resort fallback
-        return 'default_user';
+        return null;
     }
 
     /**
@@ -112,13 +98,35 @@ class BackendConnector {
     /**
      * Get user ID (async - ensures identification)
      */
+    _isCanonicalUserId(id) {
+        return typeof id === 'string' && /^user_[A-Za-z0-9_]{4,120}$/.test(id.trim());
+    }
+
+    async _requireUserId(userId) {
+        let uid = userId;
+        if (uid != null && typeof uid.then === 'function') {
+            uid = await uid;
+        }
+        if (!this._isCanonicalUserId(uid)) {
+            uid = await this.getUserId();
+        }
+        if (!this._isCanonicalUserId(uid)) {
+            return null;
+        }
+        return String(uid).trim();
+    }
+
+    _skippedUser() {
+        return { success: false, skipped: true, error: 'canonical user id unavailable' };
+    }
+
     async getUserId() {
-        if (this.userId) {
-            return this.userId;
+        if (this._isCanonicalUserId(this.userId)) {
+            return this.userId.trim();
         }
         
         await this.initializeUser();
-        return this.userId;
+        return this._isCanonicalUserId(this.userId) ? this.userId.trim() : null;
     }
 
     /**
@@ -132,7 +140,7 @@ class BackendConnector {
         const stored = localStorage.getItem('game_user_id') || 
                       localStorage.getItem('user_id');
         
-        return stored && stored !== 'default_user' ? stored : null;
+        return this._isCanonicalUserId(stored) ? stored.trim() : null;
     }
 
     /**
@@ -272,16 +280,14 @@ class BackendConnector {
      * USER PROFILE APIs
      */
     async getUserProfile(userId = null) {
-        var uid = userId;
-        if (uid != null && typeof uid.then === 'function') uid = await uid;
-        if (!uid || typeof uid !== 'string') uid = await this.getUserId();
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
         return await this.fetchAPI('/user/profile/' + encodeURIComponent(uid));
     }
 
     async getUserProfileDisplay(userId = null) {
-        var uid = userId;
-        if (uid != null && typeof uid.then === 'function') uid = await uid;
-        if (!uid || typeof uid !== 'string') uid = await this.getUserId();
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
         return await this.fetchAPI('/user/profile/' + encodeURIComponent(uid) + '/display');
     }
 
@@ -290,9 +296,8 @@ class BackendConnector {
      * Use this for the profile page to avoid many loading states.
      */
     async getUserProfileAggregated(userId = null) {
-        var uid = userId;
-        if (uid != null && typeof uid.then === 'function') uid = await uid;
-        if (!uid || typeof uid !== 'string') uid = await this.getUserId();
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
         return await this.fetchAPI('/user/profile/' + encodeURIComponent(uid) + '/aggregated');
     }
 
@@ -304,10 +309,12 @@ class BackendConnector {
     }
 
     async updateUserProfile(updateData) {
+        const uid = await this._requireUserId(null);
+        if (!uid) return this._skippedUser();
         return await this.fetchAPI('/user/profile/update', {
             method: 'POST',
             body: JSON.stringify({
-                user_id: await this.getUserId(),
+                user_id: uid,
                 update_data: updateData
             })
         });
@@ -317,12 +324,14 @@ class BackendConnector {
      * ONBOARDING APIs
      */
     async getOnboardingStatus(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/user/onboarding/status/${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/user/onboarding/status/' + encodeURIComponent(uid));
     }
 
     async startOnboarding(userId = null) {
-        const uid = userId || await this.getUserId();
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
         return await this.fetchAPI('/user/onboarding/start', {
             method: 'POST',
             body: JSON.stringify({ user_id: uid })
@@ -330,7 +339,8 @@ class BackendConnector {
     }
 
     async completeOnboardingStep(stepName, userId = null) {
-        const uid = userId || await this.getUserId();
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
         return await this.fetchAPI('/user/onboarding/complete-step', {
             method: 'POST',
             body: JSON.stringify({
@@ -341,16 +351,18 @@ class BackendConnector {
     }
 
     async getOnboardingProgress(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/user/onboarding/progress/${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/user/onboarding/progress/' + encodeURIComponent(uid));
     }
 
     /**
      * AGENT SKILLS APIs
      */
     async getUserAgentSkills(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/user/agent-skills/${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/user/agent-skills/' + encodeURIComponent(uid));
     }
 
     async getAgentControllerStatus() {
@@ -365,47 +377,53 @@ class BackendConnector {
      * GAME SYSTEM APIs
      */
     async getPlayerLevel(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/game/hunters/level?user_id=${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/game/hunters/level?user_id=' + encodeURIComponent(uid));
     }
 
     async getXPHistory(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/game/hunters/xp-history?user_id=${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/game/hunters/xp-history?user_id=' + encodeURIComponent(uid));
     }
 
     async getDailyActivities(userId = null) {
-        const uid = userId || await this.getUserId();
-        // This would need a backend endpoint
-        return await this.fetchAPI(`/game/daily-activities?user_id=${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/game/daily-activities?user_id=' + encodeURIComponent(uid));
     }
 
     /**
      * SHOP APIs
      */
     async getShopCurrency(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/shop/currency?user_id=${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/shop/currency?user_id=' + encodeURIComponent(uid));
     }
 
     /**
      * POINTS APIs
      */
     async getAllPoints(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/points/all?user_id=${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/points/all?user_id=' + encodeURIComponent(uid));
     }
 
     /**
      * REWARDS APIs
      */
     async getRewards(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/game/hunters/rewards?user_id=${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/game/hunters/rewards?user_id=' + encodeURIComponent(uid));
     }
 
     async claimReward(rewardId, userId = null) {
-        const uid = userId || await this.getUserId();
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
         return await this.fetchAPI('/game/hunters/rewards/claim', {
             method: 'POST',
             body: JSON.stringify({
@@ -419,9 +437,9 @@ class BackendConnector {
      * STATS APIs
      */
     async getStats(userId = null) {
-        const uid = userId || await this.getUserId();
-        // Try profile stats endpoint first, then fallback to profile display
-        const result = await this.fetchAPI(`/user/profile/${uid}/stats`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        const result = await this.fetchAPI('/user/profile/' + encodeURIComponent(uid) + '/stats');
         if (result && result.success) {
             return result;
         }
@@ -440,16 +458,18 @@ class BackendConnector {
      * SOCIAL APIs
      */
     async getSocialData(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/social/user/${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/social/user/' + encodeURIComponent(uid));
     }
 
     /**
      * ANALYTICS APIs
      */
     async getAnalytics(userId = null) {
-        const uid = userId || await this.getUserId();
-        return await this.fetchAPI(`/analytics/user/${uid}`);
+        const uid = await this._requireUserId(userId);
+        if (!uid) return this._skippedUser();
+        return await this.fetchAPI('/analytics/user/' + encodeURIComponent(uid));
     }
 
     /**

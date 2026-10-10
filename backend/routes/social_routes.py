@@ -9,6 +9,8 @@ import hashlib
 from datetime import datetime
 from flask import Blueprint, jsonify, request
 
+from backend.services.user_id_policy import rejection_for
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SOCIAL_DATA_PATH = os.path.join(BASE_DIR, "data", "social_structure.json")
 SOCIAL_NETWORKS_PATH = os.path.join(BASE_DIR, "data", "social_networks.json")
@@ -1105,6 +1107,33 @@ def social_networks_list():
         with open(SOCIAL_NETWORKS_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
         return jsonify({"success": True, **data}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@social_bp.route("/api/social/user/<user_id>", methods=["GET"])
+def social_user(user_id):
+    """GET /api/social/user/<user_id> — profile card data for the social page loader."""
+    rejected = rejection_for(user_id)
+    if rejected:
+        body, status = rejected
+        return jsonify(body), status
+    try:
+        social = _load_social()
+        friends = (social.get("friends") or {}).get(user_id, [])
+        my_crew_id = (social.get("user_crews") or {}).get(user_id)
+        crew = next((c for c in social.get("crews", []) if c.get("id") == my_crew_id), None)
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "friends_count": len(friends),
+            "crew": {
+                "id": my_crew_id,
+                "name": crew.get("name") if crew else None,
+                "member_count": len(crew.get("member_ids", [])) if crew else 0,
+            },
+            "notifications": _notification_counts(social, user_id),
+        }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
