@@ -102,7 +102,8 @@ def test_sync_ping_targets_returns_status(monkeypatch):
         "get_service_status",
         lambda fresh=False: {
             "hosted_count": 32,
-            "daemon": {"platform_enabled_on_chain": 1, "enabled_with_activetime": 5},
+            "platform_enabled_on_chain": 1,
+            "daemon": {"enabled_with_activetime": 5},
         },
     )
     out = mn.sync_ping_targets()

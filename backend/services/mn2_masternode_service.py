@@ -1522,9 +1522,7 @@ def sync_ping_targets() -> Dict[str, Any]:
         "success": reg_err is None,
         "error": reg_err,
         "multi_ping_enabled": True,
-        "platform_enabled_on_chain": (
-            daemon.get("platform_enabled_on_chain") if isinstance(daemon, dict) else None
-        ),
+        "platform_enabled_on_chain": snap.get("platform_enabled_on_chain") if isinstance(snap, dict) else None,
         "enabled_with_activetime": (
             daemon.get("enabled_with_activetime") if isinstance(daemon, dict) else None
         ),
