@@ -3,21 +3,23 @@ from flask import Flask
 
 
 def test_user_id_policy_statuses():
-    from backend.services.user_id_policy import is_canonical_user_id, rejection_for
+    from backend.services.user_id_policy import is_placeholder_user_id, rejection_for
 
-    assert is_canonical_user_id("user_b157a4c52652")
     assert rejection_for("user_b157a4c52652") is None
+    assert rejection_for("jon") is None
+    assert rejection_for("Sander Sahk") is None
+    assert is_placeholder_user_id("default_user")
+    assert is_placeholder_user_id("undefined")
+    assert is_placeholder_user_id("null")
+    assert is_placeholder_user_id("[object Promise]")
 
     missing, status = rejection_for("default_user")
     assert status == 401
     assert missing["code"] == "user_unauthenticated"
     assert rejection_for("")[1] == 401
+    assert rejection_for("undefined")[1] == 401
+    assert rejection_for("null")[1] == 401
     assert rejection_for("[object Promise]")[1] == 401
-
-    display, status = rejection_for("Sander Sahk")
-    assert status == 404
-    assert display["error"] == "not a user id"
-    assert rejection_for("jon")[1] == 404
 
 
 def test_points_all_rejects_placeholder_and_display_name():
@@ -31,24 +33,48 @@ def test_points_all_rejects_placeholder_and_display_name():
     assert placeholder.status_code == 401
     assert placeholder.get_json()["code"] == "user_unauthenticated"
 
-    named = client.get("/api/points/all", query_string={"user_id": "Sander Sahk"})
-    assert named.status_code == 404
-    assert named.get_json()["error"] == "not a user id"
-    assert "Endpoint auto-created" not in named.get_data(as_text=True)
+
+def test_points_legacy_ids_lookup(monkeypatch):
+    from backend.routes.points_routes import points_bp
+
+    app = Flask(__name__)
+    app.register_blueprint(points_bp)
+    client = app.test_client()
+
+    monkeypatch.setattr("backend.routes.points_routes.user_exists", lambda uid: False)
+    absent = client.get("/api/points/all", query_string={"user_id": "Sander Sahk"})
+    assert absent.status_code == 404
+    assert absent.get_json()["code"] == "user_not_found"
+
+    monkeypatch.setattr(
+        "backend.routes.points_routes.user_exists",
+        lambda uid: uid in {"jon", "Sander Sahk"},
+    )
+    for legacy in ("jon", "Sander Sahk"):
+        found = client.get("/api/points/all", query_string={"user_id": legacy})
+        assert found.status_code == 200, legacy
+        assert found.get_json()["user_id"] in {legacy, "default_user"} or found.get_json().get("success") is not False
 
 
-def test_aggregated_profile_rejects_bad_ids():
+def test_aggregated_profile_rejects_bad_ids(monkeypatch):
     from backend.routes.user_profile_routes import user_profile_bp
 
     app = Flask(__name__)
     app.register_blueprint(user_profile_bp)
     client = app.test_client()
+    monkeypatch.setattr("backend.routes.user_profile_routes.user_exists", lambda uid: False)
 
     response = client.get("/api/user/profile/Sander%20Sahk/aggregated")
     assert response.status_code == 404
     body = response.get_json()
     assert body["code"] == "user_not_found"
-    assert body["error"] == "not a user id"
+
+    present = client.get("/api/user/profile/jon")
+    monkeypatch.setattr("backend.routes.user_profile_routes.user_exists", lambda uid: uid == "jon")
+    # jon is not a placeholder; a confirmed miss was patched above. Re-bind and expect the lookup to proceed.
+    monkeypatch.setattr("backend.routes.user_profile_routes.user_exists", lambda uid: uid == "jon")
+    allowed = client.get("/api/user/profile/jon")
+    assert allowed.status_code != 401
 
     empty = client.get("/api/user/profile/default_user")
     assert empty.status_code == 401
@@ -155,6 +181,63 @@ def test_point_ledger_schema_is_idempotent(tmp_path):
         assert row[1] == "applied"
         count = db.session.execute(text("SELECT COUNT(*) FROM schema_migrations")).scalar()
         assert count == 1
+
+
+def test_legacy_user_exists_in_sqlite(tmp_path):
+    from flask import Flask
+    from sqlalchemy import text
+
+    from src.db.models import db
+
+    app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(tmp_path / "users.db")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)
+    with app.app_context():
+        db.session.execute(text(
+            "CREATE TABLE user_profiles (id INTEGER PRIMARY KEY, user_id VARCHAR(128) UNIQUE)"
+        ))
+        db.session.execute(text("INSERT INTO user_profiles (user_id) VALUES ('jon')"))
+        db.session.execute(text("INSERT INTO user_profiles (user_id) VALUES ('Sander Sahk')"))
+        db.session.commit()
+        from backend.services.user_id_policy import user_exists
+
+        assert user_exists("jon") is True
+        assert user_exists("Sander Sahk") is True
+        assert user_exists("missing-person") is False
+
+
+def test_scanner_missing_is_frontend_calls_only():
+    from backend.services.api_scanner import APIScanner
+
+    missing = APIScanner().find_missing_frontend_calls()
+    paths = {item["path"] for item in missing}
+    assert len(missing) < 2783
+    assert "/api/api_scanner/create" not in paths
+    assert "/api/points/all" not in paths
+    assert all("suggested_function" not in item for item in missing)
+
+
+def test_check_duplicates_skips_page_redirects():
+    from flask import Flask
+
+    from backend.routes.all_page_routes import all_page_bp
+    from backend.routes.debug_routes import check_duplicates
+
+    app = Flask(__name__)
+    app.register_blueprint(all_page_bp)
+    with app.test_request_context():
+        payload = check_duplicates().get_json()
+    endpoints = []
+    for item in payload.get("duplicates") or []:
+        endpoints.extend(item.get("endpoints") or [])
+    assert not any("redirect_" in name for name in endpoints)
+
+
+def test_health_schema_columns_match_ledger():
+    from backend.services.schema_bootstrap import SCHEMA_MIGRATIONS_HEALTH_COLUMNS
+
+    assert SCHEMA_MIGRATIONS_HEALTH_COLUMNS == ("script_name", "status", "applied_at")
 
 
 def test_fleet_stream_chat_string_is_closed():

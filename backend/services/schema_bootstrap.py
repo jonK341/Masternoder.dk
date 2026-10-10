@@ -5,10 +5,17 @@ any columns the write path expects, and records the run. Safe to call on every
 app start. Failures are logged and do not stop the process.
 """
 import logging
+import os
+import tempfile
 from typing import Optional
 
 from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - non-Unix
+    fcntl = None
 
 logger = logging.getLogger(__name__)
 
@@ -37,19 +44,31 @@ _SCHEMA_MIGRATION_COLUMNS = (
     ("notes", "TEXT"),
 )
 
+# Columns /api/health/data-schema reads. Keep the SELECT in lockstep with the table.
+SCHEMA_MIGRATIONS_HEALTH_COLUMNS = ("script_name", "status", "applied_at")
+
 
 def ensure_point_ledger_schema(engine: Optional[Engine] = None) -> bool:
-    """Create or repair point_transactions and schema_migrations. Returns True on success."""
+    """Create or repair the ledger once per database, even when several workers boot."""
     try:
         if engine is None:
             from src.db.models import db
             engine = db.engine
-        _create_tables(engine)
-        _add_missing_columns(engine, "point_transactions", _POINT_TRANSACTION_COLUMNS)
-        _add_missing_columns(engine, "schema_migrations", _SCHEMA_MIGRATION_COLUMNS)
-        _ensure_indexes(engine)
-        _record_migration(engine)
-        return True
+        lock_path = _lock_path(engine)
+        os.makedirs(os.path.dirname(lock_path) or ".", exist_ok=True)
+        with open(lock_path, "a+", encoding="utf-8") as handle:
+            _acquire_lock(handle)
+            try:
+                if _migration_recorded(engine):
+                    return True
+                _create_tables(engine)
+                _add_missing_columns(engine, "point_transactions", _POINT_TRANSACTION_COLUMNS)
+                _add_missing_columns(engine, "schema_migrations", _SCHEMA_MIGRATION_COLUMNS)
+                _ensure_indexes(engine)
+                _record_migration(engine)
+                return True
+            finally:
+                _release_lock(handle)
     except Exception:
         logger.exception("point ledger schema bootstrap failed")
         try:
@@ -57,6 +76,40 @@ def ensure_point_ledger_schema(engine: Optional[Engine] = None) -> bool:
             db.session.rollback()
         except Exception:
             pass
+        return False
+
+
+def _lock_path(engine: Engine) -> str:
+    database = getattr(engine.url, "database", None)
+    if database and database != ":memory:":
+        return database + ".point_ledger.lock"
+    return os.path.join(tempfile.gettempdir(), "masternoder_point_ledger.lock")
+
+
+def _acquire_lock(handle) -> None:
+    if fcntl is None:
+        return
+    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+
+
+def _release_lock(handle) -> None:
+    if fcntl is None:
+        return
+    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _migration_recorded(engine: Engine) -> bool:
+    try:
+        inspector = inspect(engine)
+        if "schema_migrations" not in inspector.get_table_names():
+            return False
+        with engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT 1 FROM schema_migrations WHERE version = :version LIMIT 1"),
+                {"version": MIGRATION_VERSION},
+            ).first()
+        return row is not None
+    except Exception:
         return False
 
 

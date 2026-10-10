@@ -10,6 +10,8 @@ from datetime import datetime
 from sqlalchemy import text
 from src.db.models import db
 
+from backend.services.schema_bootstrap import SCHEMA_MIGRATIONS_HEALTH_COLUMNS
+
 health_bp = Blueprint('health', __name__)
 
 # App version for cache busting - bump on deploy to force client reload
@@ -127,9 +129,10 @@ def data_schema_health():
             out['tables'][t] = {'present': False, 'error': str(e)[:200]}
 
     try:
+        columns = ", ".join(SCHEMA_MIGRATIONS_HEALTH_COLUMNS)
         rows = db.session.execute(
             text(
-                'SELECT script_name, status, applied_at FROM schema_migrations ORDER BY applied_at DESC LIMIT 8'
+                f"SELECT {columns} FROM schema_migrations ORDER BY applied_at DESC LIMIT 8"
             )
         ).fetchall()
         out['schema_migrations_recent'] = [
