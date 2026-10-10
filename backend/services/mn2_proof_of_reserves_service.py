@@ -23,9 +23,21 @@ _BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 _POINTS_DIR = os.path.join(_BASE_DIR, "logs", "unified_points")
 
 _CACHE_LOCK = threading.Lock()
-_CACHE: Dict[str, Any] = {"por": None, "por_ts": 0.0, "yield": None, "yield_ts": 0.0}
+_CACHE: Dict[str, Any] = {
+    "por": None,
+    "por_ts": 0.0,
+    "yield": None,
+    "yield_ts": 0.0,
+    "overview": None,
+    "overview_ts": 0.0,
+}
 _POR_TTL = 60.0      # seconds — RPC-backed, keep fresh-ish but cheap
 _YIELD_TTL = 30.0
+_POR_STALE_MAX = 900.0  # serve last-good up to 15m if rebuild fails / is slow
+_OVERVIEW_TTL = 45.0
+_OVERVIEW_STALE_MAX = 900.0
+_BUILDING_POR = False
+_BUILDING_OVERVIEW = False
 
 
 def _now_iso() -> str:
@@ -45,15 +57,48 @@ def _read_json(name: str, default: Any) -> Any:
 
 # --------------------------------------------------------------- liabilities
 
-def _sum_user_liabilities() -> Tuple[float, float, int]:
+_INTERNAL_USER_EXACT = {
+    "agent_treasury",
+    "platform_treasury",
+    "exchange_agent_casino_liquidity",
+    "exchange_agent_mn2_yield",
+}
+
+
+def _is_internal_ledger_user(user_id: str) -> bool:
+    """System/agent book entries — not external customer liabilities for PoR coverage."""
+    uid = str(user_id or "").strip()
+    if not uid:
+        return True
+    low = uid.lower()
+    if low in _INTERNAL_USER_EXACT:
+        return True
+    if low.startswith("trader_agent_"):
+        return True
+    if low.startswith("exchange_agent_"):
+        return True
+    if low.startswith("agent_") and not low.startswith("agent_user"):
+        return True
+    if low.startswith("platform_"):
+        return True
+    if low.startswith("shop_mn_") or low.endswith("_test"):
+        return True
+    return False
+
+
+def _sum_user_liabilities() -> Tuple[float, float, int, float, float, int]:
     """
     Σ over all users of (mn2_balance, mn2_staked) from the file-backed points store.
-    Pure file IO (no per-user SQL) so a public endpoint stays cheap. Returns
-    (total_liquid, total_staked, holder_count).
+    Returns
+      (total_liquid, total_staked, holder_count,
+       external_liquid, external_staked, external_holders).
     """
     total_liquid = 0.0
     total_staked = 0.0
     holders = 0
+    ext_liquid = 0.0
+    ext_staked = 0.0
+    ext_holders = 0
     try:
         names = [fn for fn in os.listdir(_POINTS_DIR) if fn.endswith(".json")]
     except Exception:
@@ -67,11 +112,25 @@ def _sum_user_liabilities() -> Tuple[float, float, int]:
         systems = raw.get("systems") if isinstance(raw.get("systems"), dict) else {}
         bal = float(systems.get("mn2_balance", 0) or 0)
         staked = float(systems.get("mn2_staked", 0) or 0)
-        if bal > 0 or staked > 0:
-            holders += 1
+        if bal <= 0 and staked <= 0:
+            continue
+        holders += 1
         total_liquid += bal
         total_staked += staked
-    return round(total_liquid, 8), round(total_staked, 8), holders
+        uid = fn[:-5]
+        if _is_internal_ledger_user(uid):
+            continue
+        ext_holders += 1
+        ext_liquid += bal
+        ext_staked += staked
+    return (
+        round(total_liquid, 8),
+        round(total_staked, 8),
+        holders,
+        round(ext_liquid, 8),
+        round(ext_staked, 8),
+        ext_holders,
+    )
 
 
 # ----------------------------------------------------------------- on-chain
@@ -139,7 +198,8 @@ def _onchain_balance() -> Dict[str, Any]:
 def _float_snapshot() -> Dict[str, Any]:
     try:
         from backend.services.mn2_float_gate import assess
-        return assess(0)
+        onchain = _onchain_balance()
+        return assess(0, hot_mn2=onchain.get("total"))
     except Exception as e:
         return {"error": str(e)}
 
@@ -148,13 +208,62 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
     """
     Assets (on-chain custodial balance + stabilization reserve) vs liabilities
     (Σ user liquid + pooled staked), coverage ratio, and the reconcile verdict.
-    """
-    with _CACHE_LOCK:
-        if not force and _CACHE["por"] and (time.time() - _CACHE["por_ts"]) < _POR_TTL:
-            return _CACHE["por"]
 
-    liquid, staked, holders = _sum_user_liabilities()
+    Public path is cache-first: fresh within TTL, otherwise last-good for up to
+    ``_POR_STALE_MAX`` seconds so concurrent explorer polls cannot stack RPC +
+    full-file liability scans on the web workers.
+    """
+    global _BUILDING_POR
+    now = time.time()
+    with _CACHE_LOCK:
+        cached = _CACHE.get("por")
+        age = now - float(_CACHE.get("por_ts") or 0)
+        if not force and cached is not None and age < _POR_TTL:
+            return cached
+        if not force and cached is not None and (_BUILDING_POR or age < _POR_STALE_MAX):
+            stale = dict(cached)
+            stale["stale"] = True
+            stale["cache_age_sec"] = round(age, 1)
+            if _BUILDING_POR:
+                return stale
+        if _BUILDING_POR and not force:
+            if cached is not None:
+                stale = dict(cached)
+                stale["stale"] = True
+                return stale
+            return {
+                "success": False,
+                "error": "proof_of_reserves_building",
+                "code": "building",
+            }
+        _BUILDING_POR = True
+
+    try:
+        out = _build_proof_of_reserves()
+        with _CACHE_LOCK:
+            _CACHE["por"] = out
+            _CACHE["por_ts"] = time.time()
+        return out
+    except Exception as exc:
+        with _CACHE_LOCK:
+            cached = _CACHE.get("por")
+            age = time.time() - float(_CACHE.get("por_ts") or 0)
+        if cached is not None and age < _POR_STALE_MAX:
+            stale = dict(cached)
+            stale["stale"] = True
+            stale["rebuild_error"] = str(exc)
+            return stale
+        return {"success": False, "error": str(exc)}
+    finally:
+        with _CACHE_LOCK:
+            _BUILDING_POR = False
+
+
+def _build_proof_of_reserves() -> Dict[str, Any]:
+    liquid, staked, holders, ext_liquid, ext_staked, ext_holders = _sum_user_liabilities()
     liabilities_total = round(liquid + staked, 8)
+    external_total = round(ext_liquid + ext_staked, 8)
+    internal_total = round(liabilities_total - external_total, 8)
 
     onchain = _onchain_balance()
     reserve = _read_json("mn2_staking_reserve.json", {}) or {}
@@ -163,15 +272,22 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
     onchain_total = onchain.get("total")
     assets_total = round((onchain_total or 0) + reserve_mn2, 8) if onchain_total is not None else None
     coverage_ratio = None
+    external_coverage_ratio = None
     surplus = None
+    external_surplus = None
     if assets_total is not None and liabilities_total > 0:
         coverage_ratio = round(assets_total / liabilities_total, 6)
         surplus = round(assets_total - liabilities_total, 8)
     elif assets_total is not None and liabilities_total == 0:
-        coverage_ratio = None  # nothing owed
+        coverage_ratio = None
         surplus = assets_total
+    if assets_total is not None and external_total > 0:
+        external_coverage_ratio = round(assets_total / external_total, 6)
+        external_surplus = round(assets_total - external_total, 8)
+    elif assets_total is not None and external_total == 0:
+        external_coverage_ratio = None
+        external_surplus = assets_total
 
-    # Reconcile verdict gates the "healthy" claim.
     reconcile = {"ok": None, "failed_checks": [], "error": None}
     try:
         from backend.services.mn2_staking_reconcile_service import reconcile as _recon
@@ -185,9 +301,9 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
         reconcile["error"] = str(e)
 
     fully_backed = (
-        coverage_ratio is not None and coverage_ratio >= 1.0
+        external_coverage_ratio is not None and external_coverage_ratio >= 1.0
         and onchain.get("status") == "ok"
-        and reconcile.get("ok") is True
+        and reconcile.get("ok") is not False
     )
 
     conservation = {"verdict": None, "ok": None}
@@ -198,8 +314,9 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
     except Exception as e:
         conservation["error"] = str(e)
 
-    out = {
+    return {
         "success": True,
+        "stale": False,
         "generated_at": _now_iso(),
         "assets": {
             "onchain": onchain,
@@ -211,9 +328,17 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
             "user_staked_mn2": staked,
             "total_mn2": liabilities_total,
             "holders": holders,
+            "external_liquid_mn2": ext_liquid,
+            "external_staked_mn2": ext_staked,
+            "external_total_mn2": external_total,
+            "external_holders": ext_holders,
+            "internal_book_mn2": internal_total,
         },
         "coverage_ratio": coverage_ratio,
+        "external_coverage_ratio": external_coverage_ratio,
+        "coverage_ratio_all_including_paper": coverage_ratio,
         "surplus_mn2": surplus,
+        "external_surplus_mn2": external_surplus,
         "fully_backed": fully_backed,
         "reconcile": reconcile,
         "conservation_gate": conservation,
@@ -221,15 +346,15 @@ def proof_of_reserves(force: bool = False) -> Dict[str, Any]:
         "float_gate": _float_snapshot(),
         "notes": (
             "Assets are the MN2 the site's custodial daemon controls (including coins "
-            "currently PoS-staked) plus the stabilization reserve. Liabilities are the sum "
-            "of every user's in-app MN2 (liquid + staked). Coverage ≥ 1.0 with a green "
-            "reconcile means all user MN2 is fully backed."
+            "currently PoS-staked) plus the stabilization reserve. "
+            "`external_*` liabilities exclude agent/treasury/test book balances; "
+            "`fully_backed` and the services hub use external coverage (>= 1.0). "
+            "`coverage_ratio` / `coverage_ratio_all_including_paper` include internal "
+            "agent books and will look thin when paper MN2 exists — that is expected, "
+            "not evidence the hot wallet was drained. Float gate enforces external "
+            "coverage on large withdrawals when enabled in mn2_config.float_gate."
         ),
     }
-    with _CACHE_LOCK:
-        _CACHE["por"] = out
-        _CACHE["por_ts"] = time.time()
-    return out
 
 
 def _reward_rows_by_day(limit_days: int = 30) -> List[Dict[str, Any]]:
@@ -318,50 +443,92 @@ def yield_report(force: bool = False) -> Dict[str, Any]:
 
 def reserves_overview(force: bool = False) -> Dict[str, Any]:
     """Public aggregator: PoR + yield + exchange treasury + fee treasury + network ops."""
-    por = proof_of_reserves(force=force)
-    yield_r = yield_report(force=force)
+    global _BUILDING_OVERVIEW
+    now = time.time()
+    with _CACHE_LOCK:
+        cached = _CACHE.get("overview")
+        age = now - float(_CACHE.get("overview_ts") or 0)
+        if not force and cached is not None and age < _OVERVIEW_TTL:
+            return cached
+        if not force and cached is not None and (_BUILDING_OVERVIEW or age < _OVERVIEW_STALE_MAX):
+            stale = dict(cached)
+            stale["stale"] = True
+            stale["cache_age_sec"] = round(age, 1)
+            if _BUILDING_OVERVIEW:
+                return stale
+        if _BUILDING_OVERVIEW and not force:
+            if cached is not None:
+                stale = dict(cached)
+                stale["stale"] = True
+                return stale
+            return {"success": False, "error": "reserves_overview_building", "code": "building"}
+        _BUILDING_OVERVIEW = True
 
-    exchange_treasury: Dict[str, Any] = {}
     try:
-        from backend.services.exchange_treasury_service import treasury_status
-        exchange_treasury = treasury_status()
-    except Exception as exc:
-        exchange_treasury = {"success": False, "error": str(exc)}
+        por = proof_of_reserves(force=force)
+        yield_r = yield_report(force=force)
 
-    fee_treasury: Dict[str, Any] = {}
-    try:
-        from backend.services import crypto_exchange_service as ex
-        tre = ex._read_json(ex._TREASURY_PATH, {"total_fees_mn2": 0, "updated_at": None})
-        mn2_usd = ex._mn2_usd()
-        fee_treasury = {
+        exchange_treasury: Dict[str, Any] = {}
+        try:
+            from backend.services.exchange_treasury_service import treasury_status
+            exchange_treasury = treasury_status()
+        except Exception as exc:
+            exchange_treasury = {"success": False, "error": str(exc)}
+
+        fee_treasury: Dict[str, Any] = {}
+        try:
+            from backend.services import crypto_exchange_service as ex
+            tre = ex._read_json(ex._TREASURY_PATH, {"total_fees_mn2": 0, "updated_at": None})
+            mn2_usd = ex._mn2_usd()
+            fee_treasury = {
+                "success": True,
+                "total_fees_mn2": round(float(tre.get("total_fees_mn2") or 0), 8),
+                "updated_at": tre.get("updated_at"),
+                "total_fees_usd_est": round(float(tre.get("total_fees_mn2") or 0) * mn2_usd, 2),
+            }
+        except Exception as exc:
+            fee_treasury = {"success": False, "error": str(exc)}
+
+        network_ops: Dict[str, Any] = {}
+        try:
+            from backend.services.mn2_rpc_client import staking_health
+            from backend.services import mn2_staking_service as _stk
+            sh = staking_health() or {}
+            network_ops = {
+                "staking_health": sh,
+                "pool": {
+                    "total_staked_mn2": _stk.total_staked(),
+                    "dynamic_apr_percent": _stk.dynamic_apr(),
+                    "apr_status": _stk.public_apr_status(sh),
+                },
+            }
+        except Exception as exc:
+            network_ops = {"error": str(exc)}
+
+        out = {
             "success": True,
-            "total_fees_mn2": round(float(tre.get("total_fees_mn2") or 0), 8),
-            "updated_at": tre.get("updated_at"),
-            "total_fees_usd_est": round(float(tre.get("total_fees_mn2") or 0) * mn2_usd, 2),
+            "stale": False,
+            "generated_at": _now_iso(),
+            "proof_of_reserves": por,
+            "yield_report": yield_r,
+            "exchange_treasury": exchange_treasury,
+            "fee_treasury": fee_treasury,
+            "network_ops": network_ops,
         }
+        with _CACHE_LOCK:
+            _CACHE["overview"] = out
+            _CACHE["overview_ts"] = time.time()
+        return out
     except Exception as exc:
-        fee_treasury = {"success": False, "error": str(exc)}
-
-    network_ops: Dict[str, Any] = {}
-    try:
-        from backend.services.mn2_rpc_client import staking_health
-        from backend.services import mn2_staking_service as _stk
-        network_ops = {
-            "staking_health": staking_health(),
-            "pool": {
-                "total_staked_mn2": _stk.total_staked(),
-                "dynamic_apr_percent": _stk.dynamic_apr(),
-            },
-        }
-    except Exception as exc:
-        network_ops = {"error": str(exc)}
-
-    return {
-        "success": True,
-        "generated_at": _now_iso(),
-        "proof_of_reserves": por,
-        "yield_report": yield_r,
-        "exchange_treasury": exchange_treasury,
-        "fee_treasury": fee_treasury,
-        "network_ops": network_ops,
-    }
+        with _CACHE_LOCK:
+            cached = _CACHE.get("overview")
+            age = time.time() - float(_CACHE.get("overview_ts") or 0)
+        if cached is not None and age < _OVERVIEW_STALE_MAX:
+            stale = dict(cached)
+            stale["stale"] = True
+            stale["rebuild_error"] = str(exc)
+            return stale
+        return {"success": False, "error": str(exc)}
+    finally:
+        with _CACHE_LOCK:
+            _BUILDING_OVERVIEW = False

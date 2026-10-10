@@ -19,7 +19,7 @@
 <body>
     <div class="market-page">
         <h1>📈 MN2 Market</h1>
-        <p class="subtitle">Peer-to-peer MN2 trades — list, buy, and sell with PayPal settlement (Model B)</p>
+        <p class="subtitle">NFT editions (PayPal or coins) plus peer-to-peer MN2 trades with PayPal settlement (Model B)</p>
 
         <section class="mn2-page-strip" data-mn2-auto data-balance-id="market-mn2-balance" data-rate-id="market-mn2-rate" aria-labelledby="market-mn2-title">
             <h2 id="market-mn2-title">🪙 Your MN2 wallet</h2>
@@ -35,6 +35,19 @@
                 <a href="/explorer" class="secondary">Explorer</a>
             </div>
         </section>
+
+        <div class="market-card" id="nft-market-panel">
+            <h2><i class="fas fa-gem"></i> NFT editions</h2>
+            <p style="font-size:0.88rem;opacity:0.8;">Numbered site editions. PayPal or coins on the first sale. Resale is a coin book on this page; the house keeps 5%.</p>
+            <p id="nft-deals" style="font-size:0.85rem;color:#c08cff;">Loading deals…</p>
+            <h3 style="margin:14px 0 6px;font-size:1rem;">Primary</h3>
+            <div id="nft-catalog" style="font-size:0.88rem;">Loading catalog…</div>
+            <h3 style="margin:14px 0 6px;font-size:1rem;">Your editions</h3>
+            <div id="nft-holdings" style="font-size:0.85rem;">Loading holdings…</div>
+            <h3 style="margin:14px 0 6px;font-size:1rem;">Resale book</h3>
+            <div id="nft-listings" style="max-height:240px;overflow-y:auto;font-size:0.85rem;">Loading asks…</div>
+            <p id="nft-market-msg" style="font-size:0.85rem;color:#c08cff;min-height:1.2em;"></p>
+        </div>
 
         <div class="market-card">
             <div id="market-disabled" class="market-disabled" style="display:none;">
@@ -60,6 +73,7 @@
     <script src="/static/js/mn2-site-bridge.js?v=20260614d"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260614d"></script>
     <script src="/static/js/mn2-p2p.js?v=20260614d"></script>
+    <script src="/static/js/nft-market.js?v=20261001b"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         fetch('/api/mn2/p2p/config').then(function (r) { return r.json(); }).then(function (cfg) {

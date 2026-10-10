@@ -76,7 +76,7 @@
             { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
             { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'MN2 wallet portal: deposit, withdraw, trusted addresses, and downloads' },
             { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
-            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
+            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'NFT editions + P2P MN2 marketplace' },
             { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', title: 'MN2 staking leaderboard' },
             { name: 'Staking Teams', icon: '🤝', url: APP_BASE + '/staking-teams', id: 'staking_teams', title: 'MN2 staking team leaderboard' },
             { name: 'Profit Daemon', icon: '⚡', url: APP_BASE + '/profit/', id: 'profit', title: '24/7 live profit daemon monitor, news, rentals' },

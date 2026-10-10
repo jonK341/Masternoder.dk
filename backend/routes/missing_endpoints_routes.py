@@ -204,6 +204,16 @@ def trophies_list_fallback():
         }), 200
 
 
+@missing_endpoints_bp.route('/api/emblems/<user_id>', methods=['GET'])
+def emblems_for_user_api(user_id: str):
+    try:
+        from backend.services import nft_exchange_service as nft_svc
+
+        return jsonify(nft_svc.emblems_for_user(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc), "emblems": []}), 500
+
+
 @missing_endpoints_bp.route('/api/user/identity', methods=['GET'])
 def user_identity_fallback():
     """User identity for profile. Delegates to user_account_routes when available."""
