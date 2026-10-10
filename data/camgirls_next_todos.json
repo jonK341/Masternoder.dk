@@ -2,28 +2,10 @@
   "updated_at": "2026-10-10",
   "items": [
     {
-      "id": "payout_addresses",
-      "priority": "P1",
-      "title": "Provision payout addresses",
-      "detail": "On server: bash scripts/camgirls_py.sh scripts/camgirls_onboard_performers.py --provision-addresses"
-    },
-    {
-      "id": "livekit_e2e",
-      "priority": "P2",
-      "title": "LiveKit voice end-to-end",
-      "detail": "Confirm LIVEKIT_* on prod and voice token flow from unlocked rooms."
-    },
-    {
-      "id": "catalog_db",
-      "priority": "P2",
-      "title": "DB source of truth",
-      "detail": "Promote performers via 009_camgirls migration; reads from SQLite with JSON fallback."
-    },
-    {
-      "id": "stream_chat",
-      "priority": "P3",
-      "title": "Streaming chat SSE",
-      "detail": "Low-latency token stream for studio chat replies."
+      "id": "ops_payout_run",
+      "priority": "ops",
+      "title": "Run payout provision on server",
+      "detail": "SSH: cd /var/www/html && bash scripts/camgirls_py.sh scripts/camgirls_provision_payout_addresses.py (needs MN2 RPC)."
     }
   ]
 }

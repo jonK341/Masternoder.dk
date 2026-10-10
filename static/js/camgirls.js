@@ -155,7 +155,8 @@
           infobarPill(d.voice_live ? 'LiveKit live' : 'LiveKit preview', true) +
           infobarPill(d.paypal_configured ? 'PayPal on' : 'PayPal off', !!d.paypal_configured) +
           infobarPill('MN2 wallet', true) +
-          infobarPill((pays.join(' + ') || 'mn2').toUpperCase(), true);
+          infobarPill((pays.join(' + ') || 'mn2').toUpperCase(), true) +
+          infobarPill('Catalog: ' + (d.catalog_source || 'json'), true);
         text.textContent = d.note || 'AI studio ready';
         if (todos) {
           var items = d.next_todos || [];

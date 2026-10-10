@@ -10,6 +10,16 @@
     performer_sage: { rate: 0.88, pitch: 0.95 },
     performer_ember: { rate: 1.12, pitch: 1.2 },
     performer_iris: { rate: 1.0, pitch: 1.1 },
+    performer_aurora: { rate: 0.95, pitch: 1.08 },
+    performer_jade: { rate: 0.86, pitch: 0.98 },
+    performer_velvet: { rate: 0.82, pitch: 0.92 },
+    performer_skylar: { rate: 1.02, pitch: 1.12 },
+    performer_rio: { rate: 1.08, pitch: 1.05 },
+    performer_mist: { rate: 0.84, pitch: 0.9 },
+    performer_honey: { rate: 0.98, pitch: 1.14 },
+    performer_storm: { rate: 1.14, pitch: 1.18 },
+    performer_pixie: { rate: 1.1, pitch: 1.22 },
+    performer_venus: { rate: 0.92, pitch: 1.06 },
   };
 
   var state = {

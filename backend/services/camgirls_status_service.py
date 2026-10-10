@@ -151,9 +151,17 @@ def platform_status() -> Dict[str, Any]:
     agents_linked = sum(1 for r in roster if r.get("agent_id"))
     next_todos = _load_next_todos()
 
+    try:
+        from backend.services.camgirls_catalog_db_service import catalog_source_label
+
+        catalog_source = catalog_source_label()
+    except Exception:
+        catalog_source = "json"
+
     return {
         "success": True,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "catalog_source": catalog_source,
         "studio_mode": "ai_always_on",
         "performers_count": len(roster),
         "performers_online": len(roster),

@@ -45,12 +45,28 @@ def _points():
     return unified_points_db
 
 
-def _load_performers_raw() -> List[Dict[str, Any]]:
+def _load_performers_from_json() -> List[Dict[str, Any]]:
     data = _read_json(_PERFORMERS_FILE, {"performers": []})
     rows = data.get("performers") if isinstance(data, dict) else data
     if not isinstance(rows, list):
         return []
     return [p for p in rows if isinstance(p, dict) and p.get("active", True)]
+
+
+def _load_performers_raw() -> List[Dict[str, Any]]:
+    from backend.services.camgirls_catalog_db_service import catalog_source_mode, load_performers_from_db
+
+    json_rows = _load_performers_from_json()
+    mode = catalog_source_mode()
+    if mode == "json":
+        return json_rows
+    if mode == "db":
+        db_rows = load_performers_from_db() or []
+        return [p for p in db_rows if isinstance(p, dict) and p.get("active", True)] or json_rows
+    if json_rows:
+        return json_rows
+    db_rows = load_performers_from_db() or []
+    return [p for p in db_rows if isinstance(p, dict) and p.get("active", True)]
 
 
 def _get_performer(performer_id: str) -> Optional[Dict[str, Any]]:
@@ -251,6 +267,23 @@ def chat_with_performer(user_id: str, performer_id: str, message: str) -> Dict[s
         "created_at": _iso(),
     })
     return {"success": True, "reply": reply, "amount_mn2": price}
+
+
+def iter_chat_stream(user_id: str, performer_id: str, message: str):
+    """SSE-friendly chunks after a single billed chat_with_performer call."""
+    result = chat_with_performer(user_id, performer_id, message)
+    if not result.get("success"):
+        yield {
+            "type": "error",
+            "error": result.get("error"),
+            "code": result.get("code"),
+        }
+        return
+    reply = str(result.get("reply") or "")
+    yield {"type": "start", "amount_mn2": result.get("amount_mn2")}
+    for part in reply.split():
+        yield {"type": "token", "text": part + " "}
+    yield {"type": "done", "reply": reply, "amount_mn2": result.get("amount_mn2")}
 
 
 def get_chat_history(user_id: str, performer_id: str, limit: int = 30) -> Dict[str, Any]:

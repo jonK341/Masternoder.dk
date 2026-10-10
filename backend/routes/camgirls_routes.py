@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import os
 
-from flask import Blueprint, jsonify, request, session
+import json
+
+from flask import Blueprint, Response, jsonify, request, session
 
 camgirls_bp = Blueprint("camgirls", __name__)
 
@@ -277,6 +279,25 @@ def performer_mood(performer_id: str):
         return jsonify({"success": False, "error": "unlock_required", "code": "unlock_required"}), 403
     lingo = pick_mood_lingo(row, mood_id)
     return jsonify({"success": True, "mood_id": mood_id, "lingo": lingo}), 200
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/chat/stream", methods=["POST"])
+def performer_chat_stream(performer_id: str):
+    from backend.services.camgirls_service import iter_chat_stream
+
+    body = request.get_json(silent=True) or {}
+    message = str(body.get("message") or body.get("text") or "")
+    uid = _resolve_user_id(from_body=True)
+
+    def generate():
+        for evt in iter_chat_stream(uid, performer_id, message):
+            yield f"data: {json.dumps(evt)}\n\n"
+
+    return Response(
+        generate(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @camgirls_bp.route("/api/camgirls/chat", methods=["POST"])

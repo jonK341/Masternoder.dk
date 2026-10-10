@@ -202,17 +202,21 @@
 
     }
 
-    sendBtn.addEventListener('click', function () {
-
-      var text = (input.value || '').trim();
-
-      if (!text) return;
+    function sendChatMessage(text) {
 
       append(text, 'cg-chat-user');
 
       input.value = '';
 
-      fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat', {
+      var botLine = document.createElement('div');
+
+      botLine.className = 'cg-chat-line cg-chat-bot';
+
+      botLine.textContent = '';
+
+      log.appendChild(botLine);
+
+      fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/stream', {
 
         method: 'POST',
 
@@ -224,15 +228,95 @@
 
         .then(function (r) {
 
-          return r.json();
+          if (!r.ok || !r.body) {
+
+            return fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat', {
+
+              method: 'POST',
+
+              headers: { 'Content-Type': 'application/json' },
+
+              body: JSON.stringify({ user_id: uid(), message: text }),
+
+            }).then(function (r2) {
+
+              return r2.json();
+
+            }).then(function (d) {
+
+              botLine.textContent = d.reply || d.error || '…';
+
+            });
+
+          }
+
+          var reader = r.body.getReader();
+
+          var decoder = new TextDecoder();
+
+          var buf = '';
+
+          function pump() {
+
+            return reader.read().then(function (chunk) {
+
+              if (chunk.done) return;
+
+              buf += decoder.decode(chunk.value, { stream: true });
+
+              var parts = buf.split('\n\n');
+
+              buf = parts.pop() || '';
+
+              parts.forEach(function (block) {
+
+                var line = block.split('\n').find(function (l) {
+
+                  return l.indexOf('data:') === 0;
+
+                });
+
+                if (!line) return;
+
+                try {
+
+                  var evt = JSON.parse(line.slice(5).trim());
+
+                  if (evt.type === 'token') botLine.textContent += evt.text || '';
+
+                  if (evt.type === 'error') botLine.textContent = evt.error || 'Error';
+
+                  if (evt.type === 'done' && !botLine.textContent) botLine.textContent = evt.reply || '';
+
+                } catch (e) {}
+
+              });
+
+              return pump();
+
+            });
+
+          }
+
+          return pump();
 
         })
 
-        .then(function (d) {
+        .catch(function () {
 
-          append(d.reply || d.error || '…', 'cg-chat-bot');
+          botLine.textContent = 'Chat unavailable';
 
         });
+
+    }
+
+    sendBtn.addEventListener('click', function () {
+
+      var text = (input.value || '').trim();
+
+      if (!text) return;
+
+      sendChatMessage(text);
 
     });
 

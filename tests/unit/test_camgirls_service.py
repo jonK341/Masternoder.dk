@@ -96,6 +96,38 @@ def test_tip_performer():
         t.tearDown()
 
 
+def test_chat_stream_yields_tokens(monkeypatch):
+    t = CamgirlsTestBase()
+    t.setUp()
+    try:
+        from backend.services import agent_ai_router
+        from backend.services.camgirls_service import (
+            iter_chat_stream,
+            record_age_verification,
+            unlock_performer,
+        )
+
+        class _MockResp:
+            success = True
+            content = "Hello stream world"
+
+        monkeypatch.setattr(
+            agent_ai_router,
+            "routed_chat",
+            lambda messages, task_kind, user_id, **kwargs: (_MockResp(), {}),
+        )
+        t._credit("buyer", 50.0)
+        record_age_verification("buyer", birth_year=1990)
+        unlock_performer("buyer", "p1")
+        events = list(iter_chat_stream("buyer", "p1", "Hi"))
+        types = [e.get("type") for e in events]
+        assert "start" in types
+        assert "token" in types
+        assert events[-1].get("type") == "done"
+    finally:
+        t.tearDown()
+
+
 def test_chat_requires_unlock_then_debits(monkeypatch):
     t = CamgirlsTestBase()
     t.setUp()
