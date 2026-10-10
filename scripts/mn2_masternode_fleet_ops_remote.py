@@ -418,7 +418,7 @@ def main() -> int:
     pw = require_deploy_pass(force_prompt=args.ask_pass)
     ssh, auth_method, _ = connect_deploy_ssh(pw)
     print(f"== Connected {deploy_user()}@{deploy_host()} ({auth_method}) ==\n")
-    timeout = 900 if watch else 300
+    timeout = 900 if (watch or args.status_only) else 600
     out = sh(ssh, remote, timeout=timeout)
     print(out)
     ssh.close()

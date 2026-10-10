@@ -1,0 +1,106 @@
+/* Monitor Size Fix - Fixed 1.5x size */
+.matrix-monitor {
+    transform: scale(1.5) !important;
+    transform-origin: top center !important;
+    max-width: 66.67% !important; /* 100% / 1.5 = 66.67% to maintain visual size */
+    margin: 0 auto !important;
+    position: relative !important;
+}
+
+.matrix-monitor-container {
+    max-height: 400px !important; /* Fixed height */
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Process Caption Under Monitor */
+.monitor-process-caption {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 4px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    color: #00ff00;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.monitor-process-caption .caption-title {
+    font-weight: bold;
+    color: #00c8ff;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.monitor-process-caption .caption-text {
+    color: #00ff00;
+    opacity: 0.9;
+}
+
+.monitor-process-caption .caption-phase {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 3px;
+    margin: 0.25rem;
+    font-size: 0.85rem;
+}
+
+/* Additional Captions */
+.monitor-caption-section {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-left: 3px solid rgba(0, 255, 0, 0.5);
+    font-size: 0.85rem;
+}
+
+.monitor-caption-section .caption-label {
+    color: #00c8ff;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.monitor-caption-section .caption-value {
+    color: #00ff00;
+}
+
+/* STRONGER MONITOR SIZE FIX - Prevent ANY growth */
+.matrix-monitor {
+    transform: scale(1.5) !important;
+    transform-origin: top center !important;
+    max-width: 66.67% !important;
+    width: 66.67% !important;
+    margin: 0 auto !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+.matrix-monitor * {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+}
+
+.matrix-monitor-container {
+    max-height: 400px !important;
+    height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Prevent any child from growing */
+.matrix-monitor .matrix-line,
+.matrix-monitor .matrix-char,
+.matrix-monitor .matrix-content,
+.matrix-monitor .matrix-stats {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+

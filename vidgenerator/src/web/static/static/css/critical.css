@@ -1,0 +1,109 @@
+/**
+ * Critical CSS - Above the fold content
+ * This CSS is inlined in the <head> for faster initial render
+ * Only includes styles needed for first paint
+ */
+
+/* Reset and Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0a0a0a;
+    color: #00ff00;
+    overflow-x: hidden;
+}
+
+/* Top Menu Bar - Critical (visible immediately) */
+.top-menu-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom: 2px solid rgba(0, 200, 255, 0.5);
+    z-index: 3000;
+}
+
+.top-menu-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 2rem;
+}
+
+/* Main Container - Critical */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    padding-top: 100px; /* Space for fixed menu */
+}
+
+/* Form Elements - Critical */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #00ff00;
+    font-weight: 500;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(0, 255, 0, 0.1);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    color: #00ff00;
+    border-radius: 4px;
+}
+
+/* Generate Button - Critical */
+.btn-generate {
+    background: linear-gradient(135deg, #00ff00, #00cc00);
+    color: #000;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-generate:hover {
+    transform: scale(1.05);
+}
+
+.btn-generate:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Loading skeleton - Critical */
+.progress-container {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 8px;
+}
+
+/* Hide non-critical elements initially */
+.matrix-rain-background,
+.matrix-processing-display,
+.sidebar,
+.chat-panel,
+.settings-panel {
+    display: none;
+}
+

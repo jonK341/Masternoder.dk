@@ -1,0 +1,419 @@
+/**
+ * Hub Pages UX — shared loading, empty states, status bar, mobile tweaks
+ * Used by Explorer, Profile, Command Center, Game, Quests, Battle
+ */
+
+/* Map page-specific aliases to design-system tokens */
+.hub-ux-page {
+    --hub-accent: var(--primary, #00ff88);
+    --hub-accent-2: var(--secondary, #00d4ff);
+    --hub-surface: var(--bg-card, rgba(40, 40, 55, 0.95));
+    --hub-border: var(--border-secondary, rgba(0, 255, 136, 0.5));
+    --hub-text-muted: var(--text-muted, rgba(255, 255, 255, 0.7));
+    --hub-radius: var(--radius-lg, 12px);
+    --hub-spacing: var(--spacing-sm, 1rem);
+}
+
+.hub-ux-page[data-hub-page="battle"] {
+    --hub-accent: var(--battle-primary, var(--primary, #00ff88));
+    --hub-accent-2: var(--battle-secondary, var(--secondary, #00d4ff));
+    --hub-border: var(--battle-border, rgba(0, 255, 136, 0.2));
+}
+
+/* Status bar — profit/exchange links, badge, refresh */
+.hub-ux-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 14px;
+    margin: 0 0 var(--hub-spacing);
+    padding: 10px 14px;
+    background: var(--hub-surface);
+    border: 1px solid var(--hub-border);
+    border-radius: var(--hub-radius);
+    font-size: var(--font-size-xs, 0.875rem);
+}
+
+.hub-ux-bar-left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    min-width: 0;
+}
+
+.hub-ux-bar-title {
+    font-weight: 700;
+    color: var(--hub-accent);
+    white-space: nowrap;
+}
+
+.hub-ux-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.hub-ux-quick-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 212, 255, 0.35);
+    background: rgba(0, 212, 255, 0.08);
+    color: var(--hub-accent-2);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.hub-ux-quick-link:hover {
+    background: rgba(0, 212, 255, 0.18);
+    border-color: var(--hub-accent-2);
+}
+
+.hub-ux-quick-link--profit {
+    border-color: rgba(0, 255, 136, 0.4);
+    background: rgba(0, 255, 136, 0.1);
+    color: var(--hub-accent);
+}
+
+.hub-ux-quick-link--profit:hover {
+    background: rgba(0, 255, 136, 0.2);
+}
+
+.hub-ux-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.hub-ux-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid transparent;
+}
+
+.hub-ux-status-badge::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.hub-ux-status-badge--loading {
+    color: var(--hub-accent-2);
+    background: rgba(0, 212, 255, 0.12);
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
+.hub-ux-status-badge--ok {
+    color: var(--hub-accent);
+    background: rgba(0, 255, 136, 0.12);
+    border-color: rgba(0, 255, 136, 0.35);
+}
+
+.hub-ux-status-badge--warn {
+    color: var(--warning, #ffaa00);
+    background: rgba(255, 170, 0, 0.12);
+    border-color: rgba(255, 170, 0, 0.35);
+}
+
+.hub-ux-status-badge--error {
+    color: var(--error, #ff3366);
+    background: rgba(255, 51, 102, 0.12);
+    border-color: rgba(255, 51, 102, 0.35);
+}
+
+.hub-ux-status-badge--empty {
+    color: var(--hub-text-muted);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.hub-ux-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--hub-border);
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--text-primary, #fff);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.hub-ux-refresh-btn:hover:not(:disabled) {
+    background: rgba(0, 255, 136, 0.12);
+    color: var(--hub-accent);
+}
+
+.hub-ux-refresh-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.hub-ux-refresh-btn.is-spinning span.hub-ux-refresh-icon {
+    display: inline-block;
+    animation: hub-ux-spin 0.8s linear infinite;
+}
+
+@keyframes hub-ux-spin {
+    to { transform: rotate(360deg); }
+}
+
+.hub-ux-sync-time {
+    font-size: 0.75rem;
+    color: var(--hub-text-muted);
+    white-space: nowrap;
+}
+
+/* Loading skeleton */
+.hub-ux-skeleton .ex-tile .value,
+.hub-ux-skeleton .ex-tile .sub,
+.hub-ux-skeleton #game-overview-level,
+.hub-ux-skeleton #game-overview-xp,
+.hub-ux-skeleton #game-overview-coins,
+.hub-ux-skeleton #battle-overview-level,
+.hub-ux-skeleton #battle-overview-bp,
+.hub-ux-skeleton #battle-overview-xp {
+    color: transparent !important;
+    background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.06) 25%,
+        rgba(255, 255, 255, 0.14) 50%,
+        rgba(255, 255, 255, 0.06) 75%);
+    background-size: 200% 100%;
+    animation: hub-ux-shimmer 1.4s ease-in-out infinite;
+    border-radius: 4px;
+    min-width: 3ch;
+    display: inline-block;
+}
+
+@keyframes hub-ux-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.hub-ux-loading-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm, 1rem);
+    padding: var(--spacing-xl, 3rem) var(--spacing-md, 1.5rem);
+    color: var(--hub-text-muted);
+    text-align: center;
+}
+
+.hub-ux-loading-block .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--hub-accent);
+    border-radius: 50%;
+    animation: hub-ux-spin 0.9s linear infinite;
+}
+
+/* Empty state */
+.hub-ux-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: var(--spacing-xl, 3rem) var(--spacing-md, 1.5rem);
+    text-align: center;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: var(--hub-radius);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--hub-text-muted);
+}
+
+.hub-ux-empty-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+    opacity: 0.85;
+}
+
+.hub-ux-empty-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary, #fff);
+    font-weight: 700;
+}
+
+.hub-ux-empty-desc {
+    margin: 0;
+    font-size: 0.9rem;
+    max-width: 36ch;
+}
+
+.hub-ux-empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+.hub-ux-empty-actions a {
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 1px solid var(--hub-border);
+    color: var(--hub-accent);
+    background: rgba(0, 255, 136, 0.08);
+}
+
+.hub-ux-empty-actions a.secondary {
+    border-color: rgba(0, 212, 255, 0.35);
+    color: var(--hub-accent-2);
+    background: rgba(0, 212, 255, 0.08);
+}
+
+/* Mobile responsive tweaks per page */
+@media (max-width: 768px) {
+    .hub-ux-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hub-ux-bar-right {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .hub-ux-quick-links {
+        width: 100%;
+    }
+
+    .mn2-hub-nav,
+    .cc-hub-nav {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start !important;
+        padding-bottom: 6px;
+        scrollbar-width: thin;
+    }
+
+    .mn2-hub-tab,
+    .cc-tab {
+        flex-shrink: 0;
+    }
+
+    .profile-header {
+        flex-direction: column !important;
+        text-align: center;
+        padding: 24px 16px !important;
+    }
+
+    .profile-header .avatar-section {
+        margin: 0 auto;
+    }
+
+    .profile-badges {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    #game-at-a-glance,
+    #battle-at-a-glance {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    #game-at-a-glance > div:first-child,
+    #battle-at-a-glance > div:first-child {
+        grid-column: 1 / -1;
+    }
+
+    .stats-dashboard {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .quests-container {
+        grid-template-columns: 1fr !important;
+    }
+
+    .cc-page {
+        padding: 16px 10px 48px !important;
+    }
+
+    .ex-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+    .ex-tiles {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .ex-tiles {
+        grid-template-columns: 1fr !important;
+    }
+
+    .stats-dashboard {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Command center — CSS variable consistency overrides */
+.cc-page {
+    --cc-accent: var(--primary, #00ff88);
+    --cc-accent-2: var(--secondary, #00d4ff);
+    --cc-surface: var(--bg-card, rgba(0, 0, 0, 0.28));
+    --cc-border: var(--border-primary, rgba(255, 255, 255, 0.12));
+}
+
+.cc-header h1 {
+    background: linear-gradient(135deg, var(--cc-accent-2), var(--cc-accent)) !important;
+}
+
+.cc-tab {
+    border-color: rgba(0, 212, 255, 0.35) !important;
+    color: var(--text-primary, #fff) !important;
+}
+
+.cc-tab.active {
+    border-color: var(--cc-accent) !important;
+    background: rgba(0, 255, 136, 0.15) !important;
+    color: var(--cc-accent) !important;
+}
+
+.cc-card h3 {
+    color: var(--cc-accent-2) !important;
+}
+
+.cc-reward {
+    color: var(--cc-accent) !important;
+}
+
+.cc-monitor {
+    border-color: rgba(0, 255, 136, 0.25) !important;
+    background: rgba(0, 255, 136, 0.06) !important;
+}
+
+.cc-monitor-fill,
+.hub-ux-page .cc-monitor-fill {
+    background: linear-gradient(90deg, var(--cc-accent), var(--cc-accent-2)) !important;
+}

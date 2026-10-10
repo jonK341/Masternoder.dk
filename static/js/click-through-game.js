@@ -5,7 +5,7 @@
 
 class ClickThroughGame {
     constructor(userId, baseUrl = '') {
-        this.userId = userId || 'default_user';
+        this.userId = userId || (window.MnUserId ? window.MnUserId.read() : '');
         this.baseUrl = baseUrl || window.location.origin;
         this.currentLevel = 1;
         this.currentMission = 0;

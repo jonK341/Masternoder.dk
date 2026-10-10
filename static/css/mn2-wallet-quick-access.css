@@ -1,0 +1,316 @@
+/**
+ * MN2 Wallet Quick Access — chip, FAB, sticky bar, dropdown
+ * Green/cyan cyber aesthetic matching navigation-toolbar
+ */
+
+/* ===== Nav toolbar MN2 wallet chip ===== */
+.nav-toolbar-mn2-wallet {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.14), rgba(0, 255, 136, 0.12));
+    border: 1px solid rgba(0, 212, 255, 0.45);
+    border-radius: 999px;
+    color: #00d4ff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.nav-toolbar-mn2-wallet:hover,
+.nav-toolbar-mn2-wallet.is-open {
+    border-color: rgba(0, 255, 136, 0.65);
+    box-shadow: 0 0 16px rgba(0, 212, 255, 0.28);
+    color: #00ff88;
+    transform: translateY(-1px);
+}
+
+.nav-toolbar-mn2-wallet:focus-visible {
+    outline: 2px solid rgba(0, 255, 136, 0.6);
+    outline-offset: 2px;
+}
+
+.nav-toolbar-mn2-icon {
+    font-size: 1rem;
+    filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.5));
+}
+
+.nav-toolbar-mn2-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    opacity: 0.85;
+    text-transform: uppercase;
+}
+
+#navToolbarMn2Balance {
+    color: #39ff14;
+    font-size: 0.88rem;
+    min-width: 2ch;
+}
+
+.nav-toolbar-mn2-chevron {
+    font-size: 0.65rem;
+    opacity: 0.7;
+    margin-left: 2px;
+}
+
+.nav-toolbar-mn2-wallet.is-loading #navToolbarMn2Balance {
+    opacity: 0.5;
+}
+
+.nav-toolbar-mn2-wallet.is-anonymous #navToolbarMn2Balance {
+    font-size: 0.78rem;
+    color: #00d4ff;
+}
+
+/* Quick actions dropdown */
+.mn2-wallet-dropdown {
+    position: fixed;
+    z-index: 10001;
+    min-width: 210px;
+    background: linear-gradient(135deg, #1a2840 0%, #0d1520 100%);
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(0, 212, 255, 0.08);
+    padding: 6px 0;
+    animation: mn2WalletDrop 0.2s ease;
+}
+
+@keyframes mn2WalletDrop {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.mn2-wallet-dropdown-header {
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.15);
+    color: #00ff88;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.mn2-wallet-dropdown-balance {
+    display: block;
+    font-size: 1.05rem;
+    color: #39ff14;
+    margin-top: 2px;
+}
+
+.mn2-wallet-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    color: rgba(255, 255, 255, 0.88);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: background 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+}
+
+.mn2-wallet-dropdown-item:hover {
+    background: rgba(0, 212, 255, 0.12);
+    color: #00ff88;
+}
+
+.mn2-wallet-dropdown-item span:first-child {
+    width: 22px;
+    text-align: center;
+    font-size: 1.05rem;
+}
+
+.mn2-wallet-dropdown-hint {
+    padding: 6px 14px 8px;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.45);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ===== Mobile FAB ===== */
+.mn2-wallet-fab {
+    display: none;
+    position: fixed;
+    right: 16px;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    z-index: 10040;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 14px;
+    min-width: 64px;
+    background: linear-gradient(145deg, rgba(0, 212, 255, 0.22), rgba(0, 255, 136, 0.18));
+    border: 2px solid rgba(0, 255, 136, 0.55);
+    border-radius: 16px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 20px rgba(0, 212, 255, 0.2);
+    color: #00ff88;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.mn2-wallet-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5), 0 0 28px rgba(0, 255, 136, 0.25);
+    color: #39ff14;
+}
+
+.mn2-wallet-fab-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.mn2-wallet-fab-balance {
+    font-size: 0.78rem;
+    color: #00d4ff;
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 968px) {
+    .mn2-wallet-fab {
+        display: flex;
+    }
+
+    .nav-toolbar-mn2-wallet {
+        padding: 5px 10px;
+        font-size: 0.78rem;
+    }
+
+    .nav-toolbar-mn2-label {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-toolbar-mn2-chevron {
+        display: none;
+    }
+}
+
+/* When install banner visible, lift FAB */
+body.mn-install-banner-visible .mn2-wallet-fab {
+    bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ===== Sticky mini wallet bar (shop / casino / exchange) ===== */
+.mn2-wallet-sticky-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9990;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, rgba(10, 18, 28, 0.92), rgba(6, 12, 20, 0.98));
+    border-top: 2px solid rgba(0, 212, 255, 0.35);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.4);
+    font-size: 0.85rem;
+    backdrop-filter: blur(12px);
+}
+
+.mn2-wallet-sticky-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.mn2-wallet-sticky-bar-left strong {
+    color: #39ff14;
+    font-size: 1rem;
+}
+
+.mn2-wallet-sticky-bar-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.mn2-wallet-sticky-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.mn2-wallet-sticky-btn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    background: rgba(0, 212, 255, 0.1);
+    color: #00d4ff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.mn2-wallet-sticky-btn:hover {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: rgba(0, 255, 136, 0.5);
+    color: #00ff88;
+}
+
+.mn2-wallet-sticky-btn--primary {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 212, 255, 0.15));
+    border-color: rgba(0, 255, 136, 0.5);
+    color: #39ff14;
+}
+
+body.mn2-wallet-sticky-active {
+    padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 769px) {
+    .mn2-wallet-sticky-bar {
+        left: auto;
+        right: 16px;
+        bottom: 16px;
+        max-width: 420px;
+        border-radius: 14px;
+        border: 1px solid rgba(0, 212, 255, 0.35);
+        padding: 10px 14px;
+    }
+
+    body.mn2-wallet-sticky-active {
+        padding-bottom: 0;
+    }
+}
+
+/* Hero wallet ticker — clickable */
+.fp-ticker-balance.is-clickable {
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fp-ticker-balance.is-clickable:hover {
+    background: rgba(0, 212, 255, 0.12);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+}
+
+.fp-ticker-balance.is-identified strong {
+    color: #39ff14;
+}

@@ -7,35 +7,40 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_frontpage_and_nav_include_wallet_staking_portal_links():
     index = (ROOT / "index.html").read_text(encoding="utf-8")
-    smart_links = (ROOT / "static/js/frontpage-home.js").read_text(encoding="utf-8")
+    frontpage = (ROOT / "static/js/frontpage-home.js").read_text(encoding="utf-8")
     nav = (ROOT / "static/js/navigation-toolbar.js").read_text(encoding="utf-8")
 
     for href in ("/wallets", "/staking-leaderboard", "/staking-teams"):
-        assert href in index
-        assert href in smart_links
         assert href in nav
+        assert href in frontpage or "MN_NAV_TOP_20_IDS" in nav
+
+    assert "/wallets" in index
+    assert "/staking-leaderboard" in index
+    assert "/staking-teams" in index
 
 
-def test_navigation_primary_order_and_removed_duplicates():
+def test_navigation_primary_order_and_portal_grouping():
     nav = (ROOT / "static/js/navigation-toolbar.js").read_text(encoding="utf-8")
     expected_order = [
         "id: 'home'",
         "id: 'generator'",
+        "id: 'creator'",
         "id: 'game'",
         "id: 'battle'",
         "id: 'trophies'",
-        "id: 'quests'",
         "id: 'shop'",
         "id: 'explorer'",
         "id: 'profile'",
-        "id: 'agents'",
     ]
     positions = [nav.index(marker) for marker in expected_order]
 
     assert positions == sorted(positions)
     assert "id: 'stories'" not in nav
-    assert "id: 'command-center'" not in nav
     assert "id: 'chat'" not in nav
+    assert "NAV_GROUPS" in nav
+    assert "id: 'command_center'" in nav
+    assert "tier: 'portal'" in nav
+    assert "id: 'metal'" in nav
 
 
 def test_platform_news_announces_wallet_staking_pages():

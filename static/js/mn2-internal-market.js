@@ -11,8 +11,12 @@
   var pollTimer = null;
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    try {
+      if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
+      var raw = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
+      if (!raw || /^(default_user|undefined|null)$/i.test(raw) || raw === '[object Promise]') return '';
+      return String(raw).trim();
+    } catch (e) { return ''; }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -144,13 +148,27 @@
   }
 
   function refresh() {
-    var u = encodeURIComponent(uid());
+    var user = uid();
+    if (!user) {
+      msg('Sign in to load your market balances.');
+      return Promise.all([
+        fetchJson('/api/market/ticker'),
+        fetchJson('/api/market/orders?side=sell&limit=20'),
+        fetchJson('/api/market/trades?limit=8'),
+      ]).then(function (res) {
+        renderTicker(res[0]);
+        renderOrders((res[1] && res[1].orders) || []);
+        renderTrades((res[2] && res[2].trades) || []);
+      }).catch(function () {
+        msg('Could not refresh market data.');
+      });
+    }
     return Promise.all([
       fetchJson('/api/market/ticker'),
       fetchJson('/api/market/orders?side=sell&limit=20'),
       fetchJson('/api/market/trades?limit=8'),
-      fetchJson('/api/agents/trader-staking/status?user_id=' + u),
-      fetchJson('/api/points/all?user_id=' + u),
+      fetchJson('/api/agents/trader-staking/status?user_id=' + encodeURIComponent(user)),
+      fetchJson('/api/points/all?user_id=' + encodeURIComponent(user)),
     ]).then(function (res) {
       renderTicker(res[0]);
       renderOrders((res[1] && res[1].orders) || []);

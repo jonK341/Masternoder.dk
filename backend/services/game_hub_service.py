@@ -5,7 +5,24 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+try:
+    import fcntl
+except ImportError:  # Windows dev
+    fcntl = None  # type: ignore
+
+_OVERVIEW_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+_OVERVIEW_CACHE_TTL_SEC = float(os.environ.get("GAME_HUB_OVERVIEW_CACHE_TTL", "45"))
+_OVERVIEW_MAX = 256
+
+
+def _overview_shared_cache_path() -> str:
+    override = (os.environ.get("GAME_HUB_OVERVIEW_CACHE_FILE") or "").strip()
+    if override:
+        return override
+    return os.path.join(_base_dir(), "logs", "game_hub_overview_cache.json")
 
 
 def _resolve_uid_fallback(user_id: str) -> str:
@@ -55,9 +72,105 @@ def _active_mission(quests: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     return None
 
 
+def _read_shared_overview_cache(user_id: str) -> Optional[Dict[str, Any]]:
+    if fcntl is None:
+        return None
+    path = _overview_shared_cache_path()
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            try:
+                store = json.load(f) or {}
+            finally:
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+        entry = store.get(user_id)
+        if not entry or not isinstance(entry, dict):
+            return None
+        ts = float(entry.get("ts") or 0)
+        payload = entry.get("payload")
+        if not isinstance(payload, dict):
+            return None
+        if (time.time() - ts) >= _OVERVIEW_CACHE_TTL_SEC:
+            return None
+        return payload
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return None
+
+
+def _write_shared_overview_cache(user_id: str, payload: Dict[str, Any]) -> None:
+    if fcntl is None:
+        return
+    path = _overview_shared_cache_path()
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    now = time.time()
+    store: Dict[str, Any] = {}
+    try:
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+                try:
+                    store = json.load(f) or {}
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+    except (OSError, json.JSONDecodeError):
+        store = {}
+    store[user_id] = {"ts": now, "payload": payload}
+    cutoff = now - (_OVERVIEW_CACHE_TTL_SEC * 2)
+    store = {
+        k: v
+        for k, v in store.items()
+        if isinstance(v, dict) and float(v.get("ts") or 0) >= cutoff
+    }
+    tmp = f"{path}.tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            try:
+                json.dump(store, f)
+                f.flush()
+                os.fsync(f.fileno())
+            finally:
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+        os.replace(tmp, path)
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
+def warm_overview_cache(user_id: str = "default_user") -> None:
+    """Pre-build overview (uWSGI postfork / ops warm-up)."""
+    get_overview(user_id)
+
+
 def get_overview(user_id: str) -> Dict[str, Any]:
     user_id = _resolve_uid_fallback(user_id)
+    now = time.time()
+    cached = _OVERVIEW_CACHE.get(user_id)
+    if cached and (now - cached[0]) < _OVERVIEW_CACHE_TTL_SEC:
+        payload = dict(cached[1])
+        payload["cached"] = True
+        return payload
+    shared = _read_shared_overview_cache(user_id)
+    if shared is not None:
+        _OVERVIEW_CACHE[user_id] = (now, shared)
+        shared_out = dict(shared)
+        shared_out["cached"] = True
+        return shared_out
+    payload = _build_overview(user_id)
+    if len(_OVERVIEW_CACHE) >= _OVERVIEW_MAX:
+        _OVERVIEW_CACHE.clear()
+    _OVERVIEW_CACHE[user_id] = (now, payload)
+    _write_shared_overview_cache(user_id, payload)
+    return payload
+
+
+def _build_overview(user_id: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {'success': True, 'user_id': user_id, 'tabs': {}, 'summary': {}}
+    points_payload = _overview_points(user_id)
 
     unified_quests: List[Dict[str, Any]] = []
     claim_streak = {'days': 0, 'bonus_at_day': 7, 'bonus_mn2': 0.007}
@@ -112,12 +225,8 @@ def get_overview(user_id: str) -> Dict[str, Any]:
 
     # Game — hunter level + active mission (#22)
     try:
-        from backend.services.unified_points_database import unified_points_db
         from backend.routes.hunters_game import get_user_level_info
-        pts = {}
-        if unified_points_db:
-            raw = unified_points_db.get_all_points(user_id) or {}
-            pts = raw.get('points', raw) if isinstance(raw, dict) else {}
+        pts = points_payload
         hunter = get_user_level_info(user_id) or {}
         mission = _active_mission(unified_quests)
         out['tabs']['game'] = {
@@ -136,13 +245,8 @@ def get_overview(user_id: str) -> Dict[str, Any]:
 
     # Battle — last 3 matches (#20)
     try:
-        from backend.services.unified_points_database import unified_points_db
         from backend.services.battle_db_service import get_battle_history
-        bp = 0
-        if unified_points_db:
-            raw = unified_points_db.get_all_points(user_id) or {}
-            pts = raw.get('points', raw) if isinstance(raw, dict) else {}
-            bp = float(pts.get('battle_points', 0) or 0)
+        bp = float(points_payload.get('battle_points', 0) or 0)
         recent = get_battle_history(user_id, limit=3) or []
         out['tabs']['battle'] = {
             'battle_points': bp,
@@ -181,3 +285,15 @@ def get_overview(user_id: str) -> Dict[str, Any]:
     out['summary']['has_notifications'] = out['summary']['claimable'] > 0
 
     return out
+
+
+def _overview_points(user_id: str) -> Dict[str, Any]:
+    try:
+        from backend.services.unified_points_database import unified_points_db
+        if not unified_points_db:
+            return {}
+        raw = unified_points_db.get_all_points(user_id) or {}
+        pts = raw.get('points', raw) if isinstance(raw, dict) else {}
+        return pts if isinstance(pts, dict) else {}
+    except Exception:
+        return {}

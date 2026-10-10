@@ -1,0 +1,1584 @@
+{% extends "base.html" %}
+
+{% block title %}Documentary Generator - Create AI Videos{% endblock %}
+{% block meta_description %}Create AI-powered documentary videos with text prompts, automatic script generation, and multi-AI video generation.{% endblock %}
+{% block meta_keywords %}documentary generator, AI video creation, automated video, video AI, documentary maker{% endblock %}
+
+{% block og_title %}Documentary Generator - Create AI Videos{% endblock %}
+{% block og_description %}Create AI-powered documentary videos with text prompts{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Oldnordisk mytrologisk font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Uncial+Antiqua&family=MedievalSharp&display=swap" rel="stylesheet">
+<style>
+    /* Interactive Theme Background Video Container - ENHANCED */
+    .theme-background-video {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: -2 !important;
+        pointer-events: none !important;
+        overflow: hidden !important;
+        opacity: 0.18 !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    .theme-background-video video {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        min-width: 100% !important;
+        min-height: 100% !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: cover !important;
+        filter: blur(3px) brightness(0.35) contrast(1.1) !important;
+        opacity: 1 !important;
+    }
+    
+    /* IR/UV Decorations - 17% opacity */
+    .ir-uv-decorations {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0.17;
+        mix-blend-mode: screen;
+    }
+    
+    .ir-decoration {
+        position: absolute;
+        background: linear-gradient(45deg, #ff0080, #ff00ff);
+        border-radius: 50%;
+        filter: blur(40px);
+        animation: irPulse 8s infinite ease-in-out;
+    }
+    
+    .uv-decoration {
+        position: absolute;
+        background: linear-gradient(45deg, #0080ff, #00ffff);
+        border-radius: 50%;
+        filter: blur(40px);
+        animation: uvPulse 8s infinite ease-in-out;
+    }
+    
+    @keyframes irPulse {
+        0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.17; }
+        50% { transform: scale(1.5) translate(100px, -100px); opacity: 0.25; }
+    }
+    
+    @keyframes uvPulse {
+        0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.17; }
+        50% { transform: scale(1.3) translate(-100px, 100px); opacity: 0.25; }
+    }
+    
+    /* MasterNoder2 Crypto Commercial - Left Side */
+    .masternoder2-commercial {
+        position: fixed;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 100px;
+        height: 90vh;
+        z-index: 1000;
+        pointer-events: auto;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 40, 0.95) 100%);
+        border-right: 3px solid rgba(0, 200, 255, 0.8);
+        box-shadow: 5px 0 30px rgba(0, 200, 255, 0.6), inset -5px 0 20px rgba(0, 150, 255, 0.3);
+        animation: masternoder2Pulse 3s ease-in-out infinite;
+        overflow: hidden;
+    }
+    
+    @keyframes masternoder2Pulse {
+        0%, 100% { 
+            box-shadow: 5px 0 30px rgba(0, 200, 255, 0.6), inset -5px 0 20px rgba(0, 150, 255, 0.3);
+            border-right-color: rgba(0, 200, 255, 0.8);
+        }
+        50% { 
+            box-shadow: 5px 0 50px rgba(0, 255, 150, 0.8), inset -5px 0 30px rgba(0, 255, 200, 0.5);
+            border-right-color: rgba(0, 255, 150, 1);
+        }
+    }
+    
+    .masternoder2-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 10px 5px;
+        position: relative;
+    }
+    
+    .masternoder2-header {
+        text-align: center;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(0, 200, 255, 0.4);
+        margin-bottom: 10px;
+    }
+    
+    .masternoder2-logo {
+        font-size: 0.65rem;
+        font-weight: bold;
+        color: #00c8ff;
+        text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        letter-spacing: 2px;
+        animation: masternoder2Glow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes masternoder2Glow {
+        0% { text-shadow: 0 0 10px rgba(0, 200, 255, 0.8); }
+        100% { text-shadow: 0 0 20px rgba(0, 255, 150, 1), 0 0 30px rgba(0, 200, 255, 0.8); }
+    }
+    
+    .masternoder2-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .masternoder2-title {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        font-size: 0.6rem;
+        font-weight: bold;
+        color: #00ff96;
+        text-shadow: 0 0 8px rgba(0, 255, 150, 0.8);
+        letter-spacing: 1px;
+        animation: masternoder2Float 3s ease-in-out infinite;
+    }
+    
+    @keyframes masternoder2Float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+    
+    .masternoder2-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .masternoder2-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .masternoder2-stat .stat-label {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        font-size: 0.45rem;
+        color: rgba(0, 200, 255, 0.7);
+        letter-spacing: 1px;
+    }
+    
+    .masternoder2-stat .stat-value {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        font-size: 0.55rem;
+        font-weight: bold;
+        color: #00ff96;
+        text-shadow: 0 0 8px rgba(0, 255, 150, 0.8);
+        animation: masternoder2PulseValue 2s ease-in-out infinite;
+    }
+    
+    @keyframes masternoder2PulseValue {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.1); }
+    }
+    
+    .masternoder2-teleport {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border: 2px solid rgba(0, 255, 150, 0.6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: masternoder2Teleport 4s ease-in-out infinite;
+        overflow: hidden;
+    }
+    
+    @keyframes masternoder2Teleport {
+        0%, 100% { 
+            transform: scale(1) rotate(0deg);
+            border-color: rgba(0, 255, 150, 0.6);
+            box-shadow: 0 0 20px rgba(0, 255, 150, 0.4);
+        }
+        25% { 
+            transform: scale(1.1) rotate(90deg);
+            border-color: rgba(0, 200, 255, 0.8);
+            box-shadow: 0 0 30px rgba(0, 200, 255, 0.6);
+        }
+        50% { 
+            transform: scale(1.2) rotate(180deg);
+            border-color: rgba(0, 255, 200, 1);
+            box-shadow: 0 0 40px rgba(0, 255, 200, 0.8);
+        }
+        75% { 
+            transform: scale(1.1) rotate(270deg);
+            border-color: rgba(0, 200, 255, 0.8);
+            box-shadow: 0 0 30px rgba(0, 200, 255, 0.6);
+        }
+    }
+    
+    .teleport-particles {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+    }
+    
+    .teleport-text {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        font-size: 0.5rem;
+        color: #00ff96;
+        text-shadow: 0 0 8px rgba(0, 255, 150, 0.8);
+        animation: masternoder2TextBlink 1s ease-in-out infinite;
+    }
+    
+    @keyframes masternoder2TextBlink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+    
+    .masternoder2-footer {
+        text-align: center;
+        padding: 8px 0;
+        border-top: 1px solid rgba(0, 200, 255, 0.4);
+        margin-top: 10px;
+    }
+    
+    .crypto-badge {
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        font-size: 0.45rem;
+        color: rgba(0, 200, 255, 0.8);
+        text-shadow: 0 0 8px rgba(0, 200, 255, 0.6);
+        letter-spacing: 1px;
+        animation: masternoder2BadgePulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes masternoder2BadgePulse {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; }
+    }
+    
+    /* Theme Background Images (Fallback for videos) - ENHANCED */
+    .theme-background-image {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: -3 !important;
+        pointer-events: none !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        opacity: 0.15 !important;
+        filter: blur(4px) brightness(0.35) !important;
+        display: block !important;
+        visibility: visible !important;
+        transition: opacity 1s ease, filter 1s ease !important;
+    }
+
+    /* Interactive Theme Particles */
+    .theme-particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    
+    .theme-particle {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: auto;
+        cursor: pointer;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        animation: themeFloat 20s infinite ease-in-out;
+    }
+    
+    .theme-particle:hover {
+        transform: scale(2);
+        opacity: 1 !important;
+    }
+    
+    @keyframes themeFloat {
+        0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.3; }
+        25% { transform: translateY(-25vh) translateX(10vw) rotate(90deg); opacity: 0.6; }
+        50% { transform: translateY(-50vh) translateX(-10vw) rotate(180deg); opacity: 0.4; }
+        75% { transform: translateY(-75vh) translateX(5vw) rotate(270deg); opacity: 0.5; }
+        100% { transform: translateY(-100vh) translateX(0) rotate(360deg); opacity: 0.3; }
+    }
+    
+    /* Old particles-bg for backward compatibility */
+    .particles-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    .particle {
+        position: absolute;
+        background: rgba(162, 155, 254, 0.3);
+        border-radius: 50%;
+        animation: float 15s infinite ease-in-out;
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="particles-bg" id="particles-bg"></div>
+
+<!-- Matrix Rain Background Canvas - Full Page Falling Rain -->
+<canvas id="matrix-rain-background" class="matrix-rain-background"></canvas>
+
+<!-- Matrix Rain Left Panel (65px bred) -->
+<div id="matrix-rain-left-panel" class="matrix-rain-left-panel">
+    <canvas id="matrix-rain-left-canvas" class="matrix-rain-left-canvas"></canvas>
+</div>
+
+<!-- MasterNoder2 Advertisement Right Panel (60px bred) -->
+<div id="masternoder2-ad-right" class="masternoder2-ad-right">
+    <div class="mn2-ad-content">
+        <div class="mn2-logo-small">MN2</div>
+        <div class="mn2-explorer-link">
+            <a href="https://masternoder2.dk" target="_blank" class="mn2-link">
+                <span class="mn2-link-text">Explorer</span>
+                <i class="fas fa-external-link-alt mn2-link-icon"></i>
+            </a>
+        </div>
+        <div class="mn2-stats-mini">
+            <div class="mn2-stat-mini">
+                <span class="mn2-label-mini">Price</span>
+                <span id="mn2-price-mini" class="mn2-value-mini">--</span>
+            </div>
+            <div class="mn2-stat-mini">
+                <span class="mn2-label-mini">24h</span>
+                <span id="mn2-change-mini" class="mn2-value-mini">--</span>
+            </div>
+        </div>
+        <div class="mn2-badge-mini">CRYPTO</div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Top Menu Bar (Tabs as Menu) -->
+    <div class="top-menu-bar">
+        <div class="top-menu-container">
+            <div class="top-menu-logo">
+                <!-- Animated GIF Header - MasterNoder2 Sword -->
+                <div class="gif-header-container">
+                    <img src="{{ url_for('static', filename='img/masternoder2_sword.gif') }}" alt="MasterNoder2 Sword" class="sword-gif-header" id="header-gif" onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/masternoder2_sword.gif') }}'; this.style.display='block';">
+                    <div class="gif-header-overlay">
+                        <span class="gif-header-text">MasterNoder2</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="top-menu-nav">
+                <button class="top-menu-item active" data-tab="generator"><i class="fas fa-video"></i> Generator</button>
+                <a href="{{ url_for('gallery') }}" class="top-menu-item" data-tab="gallery"><i class="fas fa-images"></i> Gallery</a>
+                <a href="{{ url_for('gallery') }}" class="top-menu-item" data-tab="videos"><i class="fas fa-photo-video"></i> Videos</a>
+                <button class="top-menu-item" data-tab="chatroom"><i class="fas fa-comments"></i> Chat</button>
+                <button class="top-menu-item" data-tab="discord"><i class="fab fa-discord"></i> Discord</button>
+                <button class="top-menu-item" data-tab="network"><i class="fas fa-network-wired"></i> Network</button>
+                <button class="top-menu-item" data-tab="utilities"><i class="fas fa-tools"></i> Utilities</button>
+                <button class="top-menu-item" data-tab="settings"><i class="fas fa-cog"></i> Settings</button>
+            </nav>
+            <div class="top-menu-actions">
+                <button class="top-menu-action" id="chat-toggle-top" title="Chat"><i class="fas fa-comments"></i></button>
+                <button class="top-menu-action" id="theme-toggle-top" title="Theme"><i class="fas fa-palette"></i></button>
+                <div class="network-indicator" id="network-indicator">
+                    <span class="status-dot online"></span>
+                    <span class="status-label">Online</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="fancy-header">
+        <div class="header-content">
+            <h1 class="fancy-title oldnordic-title">
+                <span class="title-icon">🎬</span>
+                <span class="title-text animated-title">Documentary Generator</span>
+                <span class="title-badge">AI Powered</span>
+            </h1>
+            <p class="subtitle">Transform your ideas into stunning documentary videos with AI</p>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <i class="fas fa-video"></i>
+                    <span class="stat-value" id="total-generations">0</span>
+                    <span class="stat-label">Videos Created</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-magic"></i>
+                    <span class="stat-value">100%</span>
+                    <span class="stat-label">AI Powered</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <span class="stat-value">~3 min</span>
+                    <span class="stat-label">Avg Generation</span>
+                </div>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <a href="/vidgenerator/" class="nav-link"><i class="fas fa-home"></i> Home</a>
+            <a href="{{ url_for('gallery') }}" class="nav-link"><i class="fas fa-images"></i> Gallery</a>
+            <a href="{{ url_for('gallery') }}" class="nav-link"><i class="fas fa-photo-video"></i> Videos</a>
+            <button class="nav-link chat-toggle" id="chat-toggle" title="Chat">
+                <i class="fas fa-comments"></i> Chat
+            </button>
+            <button class="nav-link theme-toggle" id="theme-toggle" title="Switch Theme">
+                <i class="fas fa-palette"></i> Theme
+            </button>
+            <button class="nav-link settings-toggle" id="settings-toggle" title="Settings">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Success Toast -->
+        <div id="success-toast" class="toast toast-success" style="display: none;">
+            <i class="fas fa-check-circle"></i>
+            <span class="toast-message"></span>
+        </div>
+
+        <!-- Left Sidebar -->
+        <div id="left-sidebar" class="sidebar left-sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-bars"></i> Tools</h3>
+                <button class="sidebar-toggle" id="left-sidebar-toggle"><i class="fas fa-chevron-left"></i></button>
+            </div>
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-tools"></i> Quick Actions</h4>
+                    <button class="sidebar-btn" id="quick-generate"><i class="fas fa-play"></i> Quick Generate</button>
+                    <button class="sidebar-btn" id="quick-save"><i class="fas fa-save"></i> Save Draft</button>
+                    <button class="sidebar-btn" id="quick-export"><i class="fas fa-download"></i> Export</button>
+                </div>
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-history"></i> Recent</h4>
+                    <div id="recent-items" class="recent-items"></div>
+                </div>
+                <!-- Advertisement Panel - Left Sidebar -->
+                <div class="sidebar-section sidebar-ad">
+                    <div class="ad-container">
+                        <div class="ad-label">Sponsored</div>
+                        <div class="ad-content">
+                            <h5>MasterNoder2 Blockchain</h5>
+                            <p>Next-gen computational staking</p>
+                            <a href="https://masternoder.dk" target="_blank" class="ad-link">Learn More →</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-coins"></i> MasterNoder2 Network</h4>
+                    <div class="crypto-card">
+                        <div class="crypto-metric">
+                            <span class="label">MN2 Nodes</span>
+                            <span class="value" id="mn2-nodes">5,842</span>
+                        </div>
+                        <div class="crypto-metric">
+                            <span class="label">Latest Block</span>
+                            <span class="value" id="mn2-block">--</span>
+                        </div>
+                        <div class="crypto-metric">
+                            <span class="label">Difficulty</span>
+                            <span class="value" id="mn2-difficulty">--</span>
+                        </div>
+                        <div class="crypto-metric">
+                            <span class="label">Masternodes Online</span>
+                            <span class="value" id="mn2-masternodes">--</span>
+                        </div>
+                        <div class="crypto-metric">
+                            <span class="label">Latency</span>
+                            <span class="value" id="mn2-latency">42 ms</span>
+                        </div>
+                        <div class="crypto-metric">
+                            <span class="label">Throughput</span>
+                            <span class="value" id="mn2-throughput">3.2 Gb/s</span>
+                        </div>
+                        <div class="crypto-status">
+                            <span class="status-dot online"></span>
+                            <span id="mn2-status-text">Operational</span>
+                        </div>
+                        <small class="crypto-source">Source: <a href="https://chainz.cryptoid.info/mn2/" target="_blank" rel="noopener">chainz.cryptoid.info/mn2</a></small>
+                        <button class="crypto-refresh" id="mn2-refresh-btn"><i class="fas fa-sync"></i> Refresh Telemetry</button>
+                    </div>
+                    <div class="masternoder2-commercial">
+                        <div class="masternoder2-logo">MN2</div>
+                        <div class="masternoder2-info">
+                            <p>MasterNoder2 Crypto Grid</p>
+                            <small>Secure computational staking nodes powering real-time generation.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div id="right-sidebar" class="sidebar right-sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-info-circle"></i> Info</h3>
+                <button class="sidebar-toggle" id="right-sidebar-toggle"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-chart-line"></i> Statistics</h4>
+                    <div id="sidebar-stats" class="sidebar-stats">
+                        <div class="stat-item"><span class="stat-label">Total Videos:</span> <span id="stat-total-videos">0</span></div>
+                        <div class="stat-item"><span class="stat-label">Today:</span> <span id="stat-today">0</span></div>
+                        <div class="stat-item"><span class="stat-label">Storage:</span> <span id="stat-storage">0 GB</span></div>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-bell"></i> Notifications</h4>
+                    <div id="sidebar-notifications" class="sidebar-notifications"></div>
+                </div>
+                <!-- Advertisement Panel - Right Sidebar -->
+                <div class="sidebar-section sidebar-ad">
+                    <div class="ad-container">
+                        <div class="ad-label">Advertisement</div>
+                        <div class="ad-content">
+                            <h5>Documentary Generator Pro</h5>
+                            <p>Unlock advanced features</p>
+                            <a href="#" class="ad-link">Upgrade Now →</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section sidebar-ad">
+                    <div class="ad-container ad-banner">
+                        <div class="ad-label">Partner</div>
+                        <div class="ad-content">
+                            <h5>AI Video Tools</h5>
+                            <p>Professional video editing suite</p>
+                            <a href="#" class="ad-link">Try Free →</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-shield-alt"></i> Service Worker Status</h4>
+                    <div class="sw-card" id="sw-card">
+                        <div class="sw-status-row">
+                            <span>Status:</span>
+                            <span id="sw-status" class="status-pill">Unknown</span>
+                        </div>
+                        <div class="sw-status-row">
+                            <span>Version:</span>
+                            <span id="sw-version">–</span>
+                        </div>
+                        <div class="sw-status-row">
+                            <span>Cache Size:</span>
+                            <span id="sw-cache-size">–</span>
+                        </div>
+                        <div class="sw-actions">
+                            <button id="sw-refresh-btn"><i class="fas fa-sync-alt"></i></button>
+                            <button id="sw-clear-cache-btn"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-flask"></i> Research Telemetry</h4>
+                    <div class="research-stats" id="research-stats">
+                        <div class="research-item">
+                            <span class="label">Offline Sessions</span>
+                            <span class="value" id="research-offline">0</span>
+                        </div>
+                        <div class="research-item">
+                            <span class="label">Cache Hits</span>
+                            <span class="value" id="research-cache-hits">0</span>
+                        </div>
+                        <div class="research-item">
+                            <span class="label">Verifications</span>
+                            <span class="value" id="research-verifications">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Panel (Floating) -->
+        <div id="chat-panel" class="chat-panel">
+            <div class="chat-header">
+                <h3><i class="fas fa-comments"></i> Chat</h3>
+                <button class="chat-close" id="chat-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="chat-content">
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input-wrapper">
+                    <input type="text" id="chat-input" class="chat-input" placeholder="Type a message...">
+                    <button id="chat-send" class="chat-send"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatroom Tab Content -->
+        <div id="chatroom-tab-content" class="tab-content hidden">
+            <div class="chatroom-container">
+                <div class="chatroom-header">
+                    <h2><i class="fas fa-comments"></i> MasterNoder2 Chatroom</h2>
+                    <div class="chatroom-status">
+                        <span id="chatroom-status-indicator" class="status-indicator online"></span>
+                        <span id="chatroom-status-text">Connected</span>
+                    </div>
+                </div>
+                <div class="chatroom-main">
+                    <div class="chatroom-sidebar">
+                        <div class="chatroom-section">
+                            <h3><i class="fas fa-users"></i> Online Users</h3>
+                            <div id="chatroom-users" class="chatroom-users">
+                                <div class="user-item">
+                                    <span class="user-avatar">MN2</span>
+                                    <span class="user-name">MasterNoder2</span>
+                                    <span class="user-status online"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chatroom-section">
+                            <h3><i class="fas fa-hashtag"></i> Channels</h3>
+                            <div id="chatroom-channels" class="chatroom-channels">
+                                <div class="channel-item active" data-channel="general">
+                                    <i class="fas fa-hashtag"></i> General
+                                </div>
+                                <div class="channel-item" data-channel="support">
+                                    <i class="fas fa-hashtag"></i> Support
+                                </div>
+                                <div class="channel-item" data-channel="development">
+                                    <i class="fas fa-hashtag"></i> Development
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chatroom-messages-area">
+                        <div id="chatroom-messages" class="chatroom-messages"></div>
+                        <div class="chatroom-input-area">
+                            <div class="chatroom-input-wrapper">
+                                <input type="text" id="chatroom-input" class="chatroom-input" placeholder="Type a message in #general...">
+                                <button id="chatroom-send" class="chatroom-send"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                            <div class="chatroom-actions">
+                                <button class="chatroom-action-btn" id="chatroom-emoji" title="Emoji"><i class="fas fa-smile"></i></button>
+                                <button class="chatroom-action-btn" id="chatroom-attach" title="Attach File"><i class="fas fa-paperclip"></i></button>
+                                <button class="chatroom-action-btn" id="chatroom-mention" title="Mention User"><i class="fas fa-at"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discord Tab Content -->
+        <div id="discord-tab-content" class="tab-content hidden">
+            <div class="discord-container">
+                <div class="discord-header">
+                    <h2><i class="fab fa-discord"></i> Discord Integration</h2>
+                    <div class="discord-status">
+                        <span id="discord-status-indicator" class="status-indicator offline"></span>
+                        <span id="discord-status-text">Not Connected</span>
+                    </div>
+                </div>
+                <div class="discord-content">
+                    <div class="discord-section">
+                        <h3><i class="fas fa-link"></i> Connect Discord Server</h3>
+                        <p>Connect your Discord server to MasterNoder2 for real-time notifications and community integration.</p>
+                        <div class="discord-connection-form">
+                            <input type="text" id="discord-webhook-url" class="discord-input" placeholder="Discord Webhook URL">
+                            <button id="discord-connect-btn" class="discord-btn"><i class="fab fa-discord"></i> Connect</button>
+                        </div>
+                        <div class="discord-info">
+                            <p><strong>How to get a Discord Webhook:</strong></p>
+                            <ol>
+                                <li>Go to your Discord server settings</li>
+                                <li>Navigate to Integrations → Webhooks</li>
+                                <li>Create a new webhook</li>
+                                <li>Copy the webhook URL and paste it above</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="discord-section">
+                        <h3><i class="fas fa-bell"></i> Notification Settings</h3>
+                        <div class="discord-settings">
+                            <label class="discord-setting-item">
+                                <input type="checkbox" id="discord-notify-generation" checked>
+                                <span>Notify when video generation completes</span>
+                            </label>
+                            <label class="discord-setting-item">
+                                <input type="checkbox" id="discord-notify-errors" checked>
+                                <span>Notify on errors</span>
+                            </label>
+                            <label class="discord-setting-item">
+                                <input type="checkbox" id="discord-notify-daily-stats">
+                                <span>Send daily statistics</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="discord-section">
+                        <h3><i class="fas fa-history"></i> Recent Discord Activity</h3>
+                        <div id="discord-activity" class="discord-activity">
+                            <p class="no-activity">No Discord activity yet. Connect your webhook to start receiving notifications.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="settings-panel">
+            <div class="settings-header">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <button class="settings-close" id="settings-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="generator"><i class="fas fa-cog"></i> Generator</button>
+                <button class="settings-tab" data-tab="discord"><i class="fab fa-discord"></i> Discord</button>
+                <button class="settings-tab" data-tab="network"><i class="fas fa-network-wired"></i> Network</button>
+                <button class="settings-tab" data-tab="utilities"><i class="fas fa-tools"></i> Utilities</button>
+            </div>
+            <div class="settings-content">
+                <!-- Generator Tab -->
+                <div id="settings-tab-generator" class="settings-tab-content active">
+                <div class="setting-group">
+                    <label for="duration-setting">
+                        <i class="fas fa-clock"></i> Video Duration (minutes)
+                        <span class="tooltip-icon" data-tooltip="Select the desired length of your documentary">ℹ️</span>
+                    </label>
+                    <select id="duration-setting" class="setting-input">
+                        <option value="3">3 minutes (Quick)</option>
+                        <option value="5">5 minutes (Standard)</option>
+                        <option value="10">10 minutes (Extended)</option>
+                        <option value="15">15 minutes (Full)</option>
+                        <option value="45" selected>45 minutes (Documentary)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="quality-setting">
+                        <i class="fas fa-hd-video"></i> Video Quality
+                        <span class="tooltip-icon" data-tooltip="Higher quality takes longer but produces better results">ℹ️</span>
+                    </label>
+                    <select id="quality-setting" class="setting-input">
+                        <option value="720p">720p HD (Fast)</option>
+                        <option value="1080p" selected>1080p Full HD (Recommended)</option>
+                        <option value="4k">4K Ultra HD (Best)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="style-setting">
+                        <i class="fas fa-palette"></i> Visual Style
+                        <span class="tooltip-icon" data-tooltip="Choose the artistic style for your documentary">ℹ️</span>
+                    </label>
+                    <select id="style-setting" class="setting-input">
+                        <option value="cinematic" selected>Cinematic</option>
+                        <option value="documentary">Documentary</option>
+                        <option value="modern">Modern</option>
+                        <option value="vintage">Vintage</option>
+                        <option value="artistic">Artistic</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="provider-setting">
+                        <i class="fas fa-robot"></i> AI Provider Preference
+                        <span class="tooltip-icon" data-tooltip="Preferred AI provider (auto-fallback available)">ℹ️</span>
+                    </label>
+                    <select id="provider-setting" class="setting-input">
+                        <option value="auto" selected>Auto (Best Available)</option>
+                        <option value="runwayml">RunwayML Gen-3</option>
+                        <option value="pika">Pika Labs</option>
+                        <option value="stable">Stable Video Diffusion</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-title" checked>
+                        <span><i class="fas fa-magic"></i> Auto-generate title from prompt</span>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-thumbnail" checked>
+                        <span><i class="fas fa-image"></i> Auto-generate thumbnail</span>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-save-draft">
+                        <span><i class="fas fa-save"></i> Auto-save draft every 30 seconds</span>
+                    </label>
+                </div>
+                </div>
+                
+                <!-- Network Tab -->
+                <div id="settings-tab-network" class="settings-tab-content">
+                    <div class="setting-group">
+                        <h4><i class="fas fa-network-wired"></i> Network Configuration</h4>
+                        <div class="network-status">
+                            <div class="status-item">
+                                <span class="status-label">API Status:</span>
+                                <span id="network-api-status" class="status-value">Checking...</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Connection:</span>
+                                <span id="network-connection" class="status-value">--</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Latency:</span>
+                                <span id="network-latency" class="status-value">-- ms</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <label for="network-timeout">
+                            <i class="fas fa-clock"></i> Request Timeout (seconds)
+                        </label>
+                        <input type="number" id="network-timeout" class="setting-input" value="30" min="5" max="300">
+                    </div>
+                    <div class="setting-group">
+                        <label for="network-retry">
+                            <i class="fas fa-redo"></i> Retry Attempts
+                        </label>
+                        <input type="number" id="network-retry" class="setting-input" value="3" min="1" max="10">
+                    </div>
+                    <div class="setting-group">
+                        <button class="btn-primary" id="network-test"><i class="fas fa-plug"></i> Test Connection</button>
+                        <button class="btn-secondary" id="network-refresh"><i class="fas fa-sync"></i> Refresh Status</button>
+                    </div>
+                </div>
+                
+                <!-- Utilities Tab -->
+                <div id="settings-tab-utilities" class="settings-tab-content">
+                    <div class="setting-group">
+                        <h4><i class="fas fa-tools"></i> Utility Tools</h4>
+                        <div class="utilities-grid">
+                            <button class="utility-btn" id="util-clear-cache">
+                                <i class="fas fa-broom"></i>
+                                <span>Clear Cache</span>
+                            </button>
+                            <button class="utility-btn" id="util-export-data">
+                                <i class="fas fa-file-export"></i>
+                                <span>Export Data</span>
+                            </button>
+                            <button class="utility-btn" id="util-import-data">
+                                <i class="fas fa-file-import"></i>
+                                <span>Import Data</span>
+                            </button>
+                            <button class="utility-btn" id="util-backup">
+                                <i class="fas fa-database"></i>
+                                <span>Backup</span>
+                            </button>
+                            <button class="utility-btn" id="util-logs">
+                                <i class="fas fa-file-alt"></i>
+                                <span>View Logs</span>
+                            </button>
+                            <button class="utility-btn" id="util-system-info">
+                                <i class="fas fa-info-circle"></i>
+                                <span>System Info</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <h4><i class="fas fa-cog"></i> Maintenance</h4>
+                        <button class="btn-primary" id="util-optimize"><i class="fas fa-tachometer-alt"></i> Optimize Database</button>
+                        <button class="btn-secondary" id="util-cleanup"><i class="fas fa-trash-alt"></i> Cleanup Old Files</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="generator-panel glass-panel">
+            <!-- Templates Section -->
+            <div class="templates-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-layer-group"></i> Quick Start Templates</h3>
+                    <button class="collapse-toggle" id="templates-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="templates-grid" id="templates-grid">
+                    <div class="template-card" data-template="space">
+                        <i class="fas fa-rocket"></i>
+                        <h4>Space Exploration</h4>
+                        <p>Journey through the cosmos</p>
+                    </div>
+                    <div class="template-card" data-template="nature">
+                        <i class="fas fa-mountain"></i>
+                        <h4>Nature Documentary</h4>
+                        <p>Wildlife and ecosystems</p>
+                    </div>
+                    <div class="template-card" data-template="history">
+                        <i class="fas fa-landmark"></i>
+                        <h4>Historical Events</h4>
+                        <p>Past civilizations</p>
+                    </div>
+                    <div class="template-card" data-template="science">
+                        <i class="fas fa-flask"></i>
+                        <h4>Scientific Discovery</h4>
+                        <p>Breakthroughs in science</p>
+                    </div>
+                    <div class="template-card" data-template="culture">
+                        <i class="fas fa-theater-masks"></i>
+                        <h4>Cultural Heritage</h4>
+                        <p>Arts and traditions</p>
+                    </div>
+                    <div class="template-card" data-template="technology">
+                        <i class="fas fa-microchip"></i>
+                        <h4>Technology Evolution</h4>
+                        <p>Innovation timeline</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt Section -->
+            <div class="prompt-section section-card">
+                <div class="section-header">
+                    <label for="prompt-input">
+                        <i class="fas fa-edit"></i> Documentary Prompt
+                        <span class="required-badge">Required</span>
+                    </label>
+                    <div class="char-counter">
+                        <span id="prompt-counter">0</span> / <span id="prompt-max">2000</span>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="prompt-input" 
+                            class="form-control"
+                            placeholder="Describe your documentary idea in detail... (e.g., 'A comprehensive documentary about the history of space exploration, from the first satellites to Mars missions, featuring interviews, archival footage, and stunning visuals of our solar system')"
+                            rows="6"
+                            maxlength="2000"
+                            spellcheck="true"
+                        ></textarea>
+                        <div class="input-actions">
+                            <button class="input-action-btn" id="clear-prompt" title="Clear prompt">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="input-action-btn" id="expand-prompt" title="Expand text area">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="prompt-suggestions" id="prompt-suggestions">
+                        <span class="suggestions-label"><i class="fas fa-history"></i> Recent Prompts:</span>
+                        <div class="suggestions-loading" id="suggestions-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Loading suggestions...
+                        </div>
+                        <div class="suggestions-buttons" id="suggestions-buttons">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Options Section -->
+            <div class="options-section section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-sliders-h"></i> Additional Details</h3>
+                    <button class="collapse-toggle" id="options-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="section-body options-content" id="options-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="title-input">
+                                <i class="fas fa-heading"></i> Title
+                                <span class="optional-badge">Optional</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input type="text" id="title-input" class="form-control" placeholder="Enter a catchy title..." maxlength="200">
+                                <div class="char-counter-small">
+                                    <span id="title-counter">0</span>/200
+                                </div>
+                            </div>
+                            <button class="generate-title-btn" id="generate-title-btn" title="Generate title from prompt">
+                                <i class="fas fa-magic"></i> Auto-generate
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="description-input">
+                                <i class="fas fa-align-left"></i> Description
+                                <span class="optional-badge">Optional</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <textarea 
+                                    id="description-input" 
+                                    class="form-control"
+                                    placeholder="Provide additional context, specify themes, tone, target audience, or any special requirements..."
+                                    rows="4"
+                                    maxlength="1000"
+                                ></textarea>
+                                <div class="char-counter-small">
+                                    <span id="description-counter">0</span>/1000
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tags-input">
+                                <i class="fas fa-tags"></i> Tags
+                                <span class="optional-badge">Optional</span>
+                            </label>
+                            <input type="text" id="tags-input" class="form-control" placeholder="Enter tags separated by commas..." maxlength="200">
+                            <div class="tags-container" id="tags-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="upload-section section-card">
+                <div class="section-header">
+                    <h3><i class="fas fa-cloud-upload-alt"></i> Reference Files</h3>
+                    <button class="collapse-toggle" id="upload-toggle">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="section-body upload-content" id="upload-content">
+                    <div class="upload-zone" id="upload-zone">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <p class="upload-text">Drag & drop files here or <span class="upload-link">browse</span></p>
+                        <p class="upload-hint">Supports images, text files, and PDFs (Max 10MB per file)</p>
+                        <input type="file" id="file-upload" multiple accept="image/*,text/*,.pdf" style="display: none;">
+                    </div>
+                    <div class="upload-files" id="upload-files"></div>
+                </div>
+            </div>
+
+            <!-- Generation Button -->
+            <div class="generate-section">
+                <button id="generate-btn" class="btn btn-primary generate-btn">
+                    <span class="btn-content">
+                        <i class="fas fa-magic btn-icon"></i>
+                        <span class="btn-text">Generate Documentary</span>
+                    </span>
+                    <span class="btn-loader" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </span>
+                </button>
+                <div class="generate-hints">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Tip: Use detailed prompts for better results. Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to generate.</span>
+                </div>
+            </div>
+
+            <!-- Progress Container -->
+            <div id="progress-container" class="progress-container glass-panel" style="display: none;">
+                <div class="progress-header">
+                    <h3><i class="fas fa-cog fa-spin"></i> Generation Progress</h3>
+                    <div class="progress-percentage" id="progress-percentage">0%</div>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                        <div class="progress-glow"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span class="stat-item" id="progress-time">
+                            <i class="fas fa-clock"></i> <span id="elapsed-time">0s</span>
+                        </span>
+                        <span class="stat-item" id="progress-eta">
+                            <i class="fas fa-hourglass-half"></i> <span id="eta-time">calculating...</span>
+                        </span>
+                        <span class="stat-item" id="progress-rate">
+                            <i class="fas fa-tachometer-alt"></i> <span id="progress-rate-value">0%/s</span>
+                        </span>
+                    </div>
+                </div>
+                <div id="progress-textbox" class="progress-textbox">
+                    <div id="progress-icon" class="progress-icon">🚀</div>
+                    <div id="progress-text" class="progress-text">🚀 Starting generation process...</div>
+                </div>
+                
+                <!-- Matrix-Themed Processing Display -->
+                <div id="matrix-processing-display" class="matrix-processing-display">
+                    <!-- Code Rain Canvas in Border Frame -->
+                    <canvas id="matrix-canvas-border" class="matrix-canvas-border"></canvas>
+                    
+                    <div class="matrix-header">
+                        <h3><span class="matrix-title">> MATRIX_PROCESSING_MODE_ACTIVE</span></h3>
+                        <div class="matrix-status">
+                            <span class="matrix-blink">█</span> <span id="matrix-status-text">INITIALIZING</span>
+                        </div>
+                    </div>
+                    <div class="matrix-container">
+                        <div class="matrix-overlay-scan"></div>
+                        <div id="matrix-text-field" class="matrix-text-field">
+                            <pre id="matrix-code-display" class="matrix-code-display"></pre>
+                        </div>
+                    </div>
+                    <div class="matrix-stats">
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> ENCODER:</span>
+                            <span id="matrix-encoder" class="matrix-value">H.264/AVC</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> BITRATE:</span>
+                            <span id="matrix-bitrate" class="matrix-value">Calculating...</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> FRAMES:</span>
+                            <span id="matrix-frames" class="matrix-value">0/0</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> FPS:</span>
+                            <span id="matrix-fps" class="matrix-value">30</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> RESOLUTION:</span>
+                            <span id="matrix-resolution" class="matrix-value">1920x1080</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> CODEC:</span>
+                            <span id="matrix-codec" class="matrix-value">libx264</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> BUFFER_SIZE:</span>
+                            <span id="matrix-buffer" class="matrix-value">0 MB</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> CPU_USAGE:</span>
+                            <span id="matrix-cpu" class="matrix-value">--%</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> ELAPSED:</span>
+                            <span id="matrix-elapsed" class="matrix-value">00:00</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> ETA:</span>
+                            <span id="matrix-eta" class="matrix-value">Calculating...</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> SPEED:</span>
+                            <span id="matrix-speed" class="matrix-value">--x</span>
+                        </div>
+                        <div class="matrix-stat-row">
+                            <span class="matrix-label">> PROGRESS:</span>
+                            <span id="matrix-progress" class="matrix-value">0.00%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="cancel-btn" id="cancel-generation" style="display: none;">
+                    <i class="fas fa-times"></i> Cancel Generation
+                </button>
+            </div>
+
+            <!-- MasterNoder2 Crypto Commercial - Left Side -->
+            <div id="masternoder2-commercial" class="masternoder2-commercial" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+                <div class="masternoder2-container">
+                    <div class="masternoder2-header">
+                        <span class="masternoder2-logo">⚡ MasterNoder2</span>
+                    </div>
+                    <div class="masternoder2-content">
+                        <div class="masternoder2-title">CRYPTO REVOLUTION</div>
+                        <div class="masternoder2-stats">
+                            <div class="masternoder2-stat">
+                                <span class="stat-label">NODES</span>
+                                <span class="stat-value" id="mn2-nodes">∞</span>
+                            </div>
+                            <div class="masternoder2-stat">
+                                <span class="stat-label">CONNECTED</span>
+                                <span class="stat-value" id="mn2-connected">GLOBAL</span>
+                            </div>
+                        </div>
+                        <div class="masternoder2-teleport" id="masternoder2-teleport">
+                            <div class="teleport-particles" id="teleport-particles"></div>
+                            <div class="teleport-text">TELEPORTING...</div>
+                        </div>
+                        <div class="masternoder2-footer">
+                            <span class="crypto-badge">🚀 NEXT GEN BLOCKCHAIN</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme Background Video -->
+            <div id="theme-background-video" class="theme-background-video" style="display: block !important; visibility: visible !important; opacity: 0.18 !important;">
+                <video id="theme-video" autoplay muted loop playsinline>
+                    <!-- Video source will be set dynamically based on theme -->
+                </video>
+            </div>
+            
+            <!-- Theme Background Images (Fallback) -->
+            <div id="theme-background-image" class="theme-background-image" style="display: block !important; visibility: visible !important; opacity: 0.15 !important;">
+                <!-- Background image will be set dynamically based on theme -->
+            </div>
+            
+            <!-- IR/UV Decorations -->
+            <div id="ir-uv-decorations" class="ir-uv-decorations">
+                <!-- Decorations will be generated dynamically -->
+            </div>
+            
+            <!-- Interactive Theme Particles -->
+            <div id="theme-particles" class="theme-particles">
+                <!-- Particles will be generated dynamically -->
+            </div>
+
+            <!-- Futuristic Monitor - Year 3025 Technology (1000 Years Ahead) -->
+            <div id="matrix-monitor" class="matrix-monitor glass-panel matrix-active futuristic-monitor-3025" data-matrix-active="true" data-era="3025">
+                <div class="matrix-monitor-header">
+                    <h3><span class="matrix-title futuristic-title-3025" style="text-align: center; width: 100%; display: block;">> QUANTUM_HOLOGRAPHIC_INTERFACE_V3025</span></h3>
+                    <div class="matrix-status futuristic-status-3025">
+                        <span class="matrix-blink quantum-blink-3025">█</span> 
+                        <span id="monitor-status-text" class="neural-text-3025">NEURAL_LINK_ACTIVE</span>
+                        <span class="quantum-indicator-3025">⚛</span>
+                        <span class="holographic-badge-3025">3D</span>
+                    </div>
+                    
+                    <!-- Futuristic Monitor Controls (3025 Technology) -->
+                    <div class="futuristic-controls-3025">
+                        <div class="quantum-controls-3025">
+                            <button class="quantum-btn-3025" id="quantum-entangle-btn" title="Quantum Entanglement">
+                                <span class="quantum-icon">⚛</span> <span class="btn-text">QUANTUM</span>
+                            </button>
+                            <button class="holographic-btn-3025" id="holographic-toggle-btn" title="Toggle Holographic 3D">
+                                <span class="holographic-icon">3D</span> <span class="btn-text">HOLO</span>
+                            </button>
+                            <button class="neural-btn-3025" id="neural-sync-btn" title="Neural Interface Sync">
+                                <span class="neural-icon">🧠</span> <span class="btn-text">NEURAL</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Temporal Controls -->
+                        <div class="temporal-controls-3025">
+                            <button class="temporal-btn-3025" id="time-dilation-btn" title="Time Dilation">
+                                <span class="temporal-icon">⏱</span> <span class="btn-text">TIME</span>
+                            </button>
+                            <button class="parallel-btn-3025" id="parallel-reality-btn" title="Parallel Reality View">
+                                <span class="parallel-icon">∞</span> <span class="btn-text">PARALLEL</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Monitor Controls - Simplified & Better Organized -->
+                    <div id="monitor-controls-panel" class="monitor-controls-panel">
+                        <!-- Primary Action Buttons (Compact) -->
+                        <div class="monitor-controls-primary">
+                            <button id="monitor-record-btn" class="monitor-control-btn monitor-btn-record" title="Record Session">
+                                <i class="fas fa-circle"></i>
+                                <span>REC</span>
+                            </button>
+                            <button id="monitor-audio-btn" class="monitor-control-btn monitor-btn-audio" title="Toggle Audio">
+                                <i class="fas fa-microphone"></i>
+                                <span>MIC</span>
+                            </button>
+                            <button id="monitor-push-talk-btn" class="monitor-control-btn monitor-btn-ptt" title="Push to Talk">
+                                <i class="fas fa-hand-pointer"></i>
+                                <span>PTT</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Quick Settings (Collapsible) -->
+                        <div class="monitor-controls-quick">
+                            <button class="monitor-toggle-settings" id="monitor-toggle-settings" title="Toggle Settings">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Advanced Settings (Hidden by default) -->
+                        <div id="monitor-advanced-settings" class="monitor-advanced-settings" style="display: none;">
+                            <div class="monitor-setting-group">
+                                <label><i class="fas fa-volume-up"></i> Volume</label>
+                                <input type="range" id="monitor-volume-slider" class="monitor-slider" min="0" max="100" value="50">
+                                <span id="monitor-volume-value" class="monitor-setting-value">50%</span>
+                            </div>
+                            <div class="monitor-setting-group">
+                                <label><i class="fas fa-tachometer-alt"></i> Speed</label>
+                                <input type="range" id="monitor-speed-slider" class="monitor-slider" min="0.1" max="2" step="0.1" value="1.0">
+                                <span id="monitor-speed-value" class="monitor-setting-value">1.0x</span>
+                            </div>
+                            <div class="monitor-setting-group">
+                                <label><i class="fas fa-text-height"></i> Text Speed</label>
+                                <input type="range" id="monitor-text-speed-slider" class="monitor-slider" min="0.3" max="3" step="0.1" value="1.0">
+                                <span id="monitor-text-speed-value" class="monitor-setting-value">1.0x</span>
+                            </div>
+                            <div class="monitor-setting-group">
+                                <label><i class="fas fa-sun"></i> Brightness</label>
+                                <input type="range" id="monitor-brightness-slider" class="monitor-slider" min="50" max="100" value="85">
+                                <span id="monitor-brightness-value" class="monitor-setting-value">85%</span>
+                            </div>
+                            <div class="monitor-setting-group">
+                                <label>
+                                    <input type="checkbox" id="monitor-auto-scroll" class="monitor-checkbox" checked>
+                                    <i class="fas fa-arrows-alt-v"></i> Auto-scroll
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="matrix-monitor-container">
+                    <!-- Clip Background Display (0-30 sec clips) -->
+                    <div id="monitor-clip-background" class="monitor-clip-background">
+                        <div class="clip-background-overlay"></div>
+                        <div id="clip-preview-container" class="clip-preview-container">
+                            <!-- Clips will be dynamically added here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Requirements Section -->
+                    <div id="monitor-requirements" class="monitor-requirements">
+                        <h4 class="monitor-section-title">> GENERATION_REQUIREMENTS</h4>
+                        <div id="monitor-prompt-display" class="monitor-prompt-display">
+                            <span class="monitor-label">> PROMPT:</span>
+                            <span id="monitor-prompt" class="monitor-value">--</span>
+                        </div>
+                        <div id="monitor-title-display" class="monitor-prompt-display">
+                            <span class="monitor-label">> TITLE:</span>
+                            <span id="monitor-title" class="monitor-value">--</span>
+                        </div>
+                        <div id="monitor-theme-display" class="monitor-prompt-display">
+                            <span class="monitor-label">> ACTIVE_THEME:</span>
+                            <span id="monitor-theme" class="monitor-value">--</span>
+                        </div>
+                        <div id="monitor-emotion-display" class="monitor-prompt-display">
+                            <span class="monitor-label">> EMOTIONAL_CONTEXT:</span>
+                            <span id="monitor-emotion" class="monitor-value">--</span>
+                        </div>
+                    </div>
+                    <div id="monitor-data-display" class="monitor-data-display">
+                        <pre id="monitor-text" class="monitor-text"></pre>
+                    </div>
+                </div>
+                <div class="matrix-monitor-stats">
+                    <div class="monitor-stat-section">
+                        <h4 class="monitor-section-title">> CLIP_INFORMATION</h4>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> TOTAL_CLIPS:</span>
+                            <span id="monitor-total-clips" class="monitor-value">0</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> CURRENT_CLIP:</span>
+                            <span id="monitor-current-clip" class="monitor-value">0/0</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> CLIP_DURATION:</span>
+                            <span id="monitor-clip-duration" class="monitor-value">0.00s</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> CLIP_SIZE:</span>
+                            <span id="monitor-clip-size" class="monitor-value">0 MB</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> CLIP_RESOLUTION:</span>
+                            <span id="monitor-clip-resolution" class="monitor-value">--x--</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> CLIP_FPS:</span>
+                            <span id="monitor-clip-fps" class="monitor-value">--</span>
+                        </div>
+                    </div>
+                    <div class="monitor-stat-section">
+                        <h4 class="monitor-section-title">> COMBINED_VIDEO</h4>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> OUTPUT_FILE:</span>
+                            <span id="monitor-output-file" class="monitor-value">--</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> TOTAL_DURATION:</span>
+                            <span id="monitor-total-duration" class="monitor-value">0.00s</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> TOTAL_SIZE:</span>
+                            <span id="monitor-total-size" class="monitor-value">0 MB</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> COMBINED_RESOLUTION:</span>
+                            <span id="monitor-combined-resolution" class="monitor-value">--x--</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> COMBINED_FPS:</span>
+                            <span id="monitor-combined-fps" class="monitor-value">--</span>
+                        </div>
+                        <div class="monitor-stat-row">
+                            <span class="monitor-label">> ENCODING_STATUS:</span>
+                            <span id="monitor-encoding-status" class="monitor-value">PENDING</span>
+                        </div>
+                    </div>
+                    <div class="monitor-stat-section">
+                        <h4 class="monitor-section-title">> CLIP_PROCESS_STATUS</h4>
+                        <div id="monitor-clip-process" class="monitor-clip-process">
+                            <div class="monitor-process-item">
+                                <span class="monitor-label">> PROCESSING:</span>
+                                <span id="monitor-process-status" class="monitor-value">IDLE</span>
+                            </div>
+                            <div class="monitor-process-item">
+                                <span class="monitor-label">> CLIP_GENERATION:</span>
+                                <span id="monitor-clip-generation" class="monitor-value">0/0</span>
+                            </div>
+                            <div class="monitor-process-item">
+                                <span class="monitor-label">> COMBINING:</span>
+                                <span id="monitor-combining-status" class="monitor-value">PENDING</span>
+                            </div>
+                        </div>
+                        <h4 class="monitor-section-title">> CLIP_LIST</h4>
+                        <div id="monitor-clip-list" class="monitor-clip-list">
+                            <pre id="monitor-clip-details" class="monitor-clip-details">No clips loaded yet...</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="monitor-awareness">
+                    <div class="mp4-status-card" id="mp4-status-card">
+                        <div class="mp4-status-header">
+                            <h4><i class="fas fa-film"></i> MP4 Integrity Monitor</h4>
+                            <span id="mp4-status-text" class="mp4-status-value status-warning">UNKNOWN</span>
+                        </div>
+                        <div class="mp4-status-grid">
+                            <div>
+                                <span class="label">Confidence</span>
+                                <span id="mp4-confidence" class="value">0%</span>
+                            </div>
+                            <div>
+                                <span class="label">Duration</span>
+                                <span id="mp4-duration" class="value">--</span>
+                            </div>
+                            <div>
+                                <span class="label">File Size</span>
+                                <span id="mp4-size" class="value">--</span>
+                            </div>
+                        </div>
+                    <div class="mp4-status-actions">
+                        <button id="mp4-verify-btn" class="btn btn-secondary"><i class="fas fa-shield-alt"></i> Verify</button>
+                        <button id="mp4-download-btn" class="btn btn-ghost" disabled><i class="fas fa-download"></i> Download</button>
+                        </div>
+                        <p class="mp4-status-note">Fuld længde og filintegritet overvåges automatisk. Tryk “Verify” for manuelt check.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="error-message" class="error-message glass-panel" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="error-text"></span>
+                <button class="error-close" id="error-close"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Success Message -->
+            <div id="success-message" class="success-message glass-panel" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <span class="success-text"></span>
+                <div class="confetti-container" id="confetti-container"></div>
+            </div>
+        </div>
+
+        <!-- Video Panel -->
+        <div class="video-panel glass-panel" id="video-panel" style="display: none;">
+            <div class="video-header">
+                <h2><i class="fas fa-video"></i> Generated Documentary</h2>
+                <div class="video-meta" id="video-meta">
+                    <span class="meta-item"><i class="fas fa-calendar"></i> <span id="video-date"></span></span>
+                    <span class="meta-item"><i class="fas fa-clock"></i> <span id="video-duration"></span></span>
+                    <span class="meta-item"><i class="fas fa-hdd"></i> <span id="video-size"></span></span>
+                </div>
+            </div>
+            <div class="video-wrapper">
+                <video id="video-player" controls poster="" preload="metadata">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-overlay" id="video-overlay">
+                    <button class="play-overlay-btn" id="play-overlay-btn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="video-controls-custom">
+                <button id="record-btn-main" class="record-btn" title="Record video and audio">
+                    <span class="record-icon">🔴</span>
+                    <span class="record-text">Record</span>
+                </button>
+                <div id="recording-indicator-main" class="recording-indicator" style="display: none;">
+                    <span class="recording-dot"></span>
+                    <span>Recording...</span>
+                </div>
+                <button id="fullscreen-btn" class="action-btn" title="Toggle fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button id="picture-in-picture-btn" class="action-btn" title="Picture-in-Picture">
+                    <i class="fas fa-window-restore"></i>
+                </button>
+                <button id="share-btn" class="action-btn" title="Share video">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </div>
+            <div class="video-actions">
+                <button id="download-btn" class="btn btn-secondary download-btn">
+                    <i class="fas fa-download"></i> Download Video
+                </button>
+                <button id="embed-btn" class="btn btn-secondary embed-btn">
+                    <i class="fas fa-code"></i> Get Embed Code
+                </button>
+                <button id="regenerate-btn" class="btn btn-ghost regenerate-btn">
+                    <i class="fas fa-redo"></i> Regenerate
+                </button>
+            </div>
+            <div id="embed-code-container" class="embed-code-container glass-panel" style="display: none;">
+                    <div class="embed-header">
+                    <label><i class="fas fa-code"></i> Embed Code</label>
+                        <button class="btn btn-ghost copy-btn" id="copy-embed-btn" title="Copy to clipboard">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <textarea id="embed-code" readonly rows="4"></textarea>
+                <div class="embed-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="embed-autoplay">
+                        <span>Autoplay</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="embed-controls" checked>
+                        <span>Show controls</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="embed-loop">
+                        <span>Loop</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Tooltip Container -->
+<div id="tooltip-container" class="tooltip"></div>
+{% endblock %}
+

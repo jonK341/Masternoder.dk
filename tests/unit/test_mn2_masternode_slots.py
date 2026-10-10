@@ -37,6 +37,15 @@ def _write_hosts(path, hosts):
     path.write_text(json.dumps({"hosts": hosts}), encoding="utf-8")
 
 
+def test_count_slots_includes_collateral_missing(hosts_file):
+    _write_hosts(hosts_file, [
+        {"id": "platform-mn-1", "label": "A", "status": "active"},
+        {"id": "platform-mn-2", "label": "B", "status": "collateral_missing", "collateral_txid": "abc", "collateral_vout": 0},
+    ])
+    hosts = mn.list_hosts(include_internal=True)
+    assert mn._count_slots_used(hosts) == 2
+
+
 def test_count_slots_excludes_stuck_provisioning(hosts_file):
     _write_hosts(hosts_file, [
         {"id": "platform-mn-1", "label": "A", "status": "active"},

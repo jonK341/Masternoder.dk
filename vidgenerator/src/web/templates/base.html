@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="version" content="{{ cache_bust() }}">
+    <meta name="description" content="{% block meta_description %}Automated Documentary Generator - Create AI-powered documentary videos{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}documentary, AI video, video generation, documentary generator{% endblock %}">
+    <meta name="author" content="Documentary Generator">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ request.url }}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="{% block og_title %}Documentary Generator{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Create AI-powered documentary videos{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='img/og-image.png', _external=True) }}{% endblock %}">
+    <meta property="og:site_name" content="Documentary Generator">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ request.url }}">
+    <meta name="twitter:title" content="{% block twitter_title %}Documentary Generator{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Create AI-powered documentary videos{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='img/og-image.png', _external=True) }}{% endblock %}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
+    
+    <title>{% block title %}Documentary Generator{% endblock %}</title>
+    <!-- Critical CSS - Inline for faster first paint -->
+    <style>
+        /* Critical CSS - Above the fold */
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#0a0a0a;color:#00ff00;overflow-x:hidden}.top-menu-bar{position:fixed;top:0;left:0;right:0;width:100%;background:rgba(0,0,0,0.95);border-bottom:2px solid rgba(0,200,255,0.5);z-index:3000}.top-menu-container{display:flex;align-items:center;justify-content:space-between;padding:0.75rem 2rem}.container{max-width:1200px;margin:0 auto;padding:2rem;padding-top:100px}.form-group{margin-bottom:1.5rem}.form-label{display:block;margin-bottom:0.5rem;color:#00ff00;font-weight:500}.form-input,.form-textarea{width:100%;padding:0.75rem;background:rgba(0,255,0,0.1);border:1px solid rgba(0,255,0,0.3);color:#00ff00;border-radius:4px}.btn-generate{background:linear-gradient(135deg,#00ff00,#00cc00);color:#000;border:none;padding:1rem 2rem;font-size:1.1rem;font-weight:bold;border-radius:8px;cursor:pointer;transition:transform 0.2s}.btn-generate:hover{transform:scale(1.05)}.btn-generate:disabled{opacity:0.5;cursor:not-allowed}.progress-container{margin-top:2rem;padding:1.5rem;background:rgba(0,0,0,0.8);border:1px solid rgba(0,255,0,0.3);border-radius:8px}.matrix-rain-background,.matrix-processing-display,.sidebar,.chat-panel,.settings-panel{display:none}
+    </style>
+    <!-- Non-critical CSS - Load asynchronously -->
+    <link rel="preload" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust() }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust() }}"></noscript>
+    <!-- Modern Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}?v={{ cache_bust() }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    
+    <!-- Critical JS - Load immediately -->
+    <script src="{{ url_for('static', filename='js/utils.js') }}?v={{ cache_bust() }}"></script>
+    <!-- Non-critical JS - Defer loading -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v={{ cache_bust() }}" defer></script>
+    <script src="{{ url_for('static', filename='js/additional_themes.js') }}?v={{ cache_bust() }}" defer></script>
+    <script src="{{ url_for('static', filename='js/theme_model.js') }}?v={{ cache_bust() }}" defer></script>
+    <script>
+        (function registerServiceWorker() {
+            if (!('serviceWorker' in navigator)) {
+                console.warn('[SW] Service Worker not supported in this browser.');
+                return;
+            }
+
+            const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            if (!isSecure) {
+                console.warn('[SW] Service Worker requires HTTPS or localhost. Skipping registration.');
+                return;
+            }
+
+            // SERVICE WORKER COMPLETELY DISABLED
+            // Do not register service worker at all
+            console.log('[SW] Service Worker registration disabled');
+            return;
+                
+                // Determine the correct service worker URL based on current path
+                const currentPath = window.location.pathname;
+                let swUrl = '/service-worker.js';
+                let swScope = '/';
+                
+                // If we're in /vidgenerator/, use that scope
+                if (currentPath.startsWith('/vidgenerator/')) {
+                    swUrl = '/vidgenerator/service-worker.js';
+                    swScope = '/vidgenerator/';
+                } else {
+                    swUrl = '{{ url_for("service_worker_file") }}';
+                }
+
+                navigator.serviceWorker.register(swUrl, { scope: swScope })
+                    .then(function (registration) {
+                        console.log('[SW] ✓ Registered successfully:', registration.scope);
+                        console.log('[SW] ✓ Service Worker version:', registration.active?.scriptURL || 'pending');
+                        
+                        // Listen for service worker messages
+                        navigator.serviceWorker.addEventListener('message', function(event) {
+                            if (event.data && event.data.type === 'SW_ACTIVATED') {
+                                console.log('[SW] ✓ New version activated:', event.data.version);
+                                // Optionally show a notification to the user
+                                if (window.initializeServiceWorkerWidget) {
+                                    setTimeout(window.initializeServiceWorkerWidget, 1000);
+                                }
+                            }
+                        });
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', function() {
+                            console.log('[SW] ⚠ New service worker found, updating...');
+                            const newWorker = registration.installing;
+                            
+                            newWorker.addEventListener('statechange', function() {
+                                console.log('[SW] State changed:', newWorker.state);
+                                if (newWorker.state === 'activated') {
+                                    console.log('[SW] ✓ New service worker activated');
+                                    // Reload page to use new service worker
+                                    if (registration.waiting) {
+                                        console.log('[SW] Reloading page to use new service worker...');
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                        
+                        // Periodic update check (every 30 minutes)
+                        setInterval(function() {
+                            registration.update().catch(function(err) {
+                                console.warn('[SW] Update check failed:', err);
+                            });
+                        }, 1800000);
+                        
+                        // Initial update check after 5 seconds
+                        setTimeout(function() {
+                            registration.update().catch(function(err) {
+                                console.warn('[SW] Initial update check failed:', err);
+                            });
+                        }, 5000);
+                    })
+                    .catch(function (error) {
+                        console.error('[SW] ✗ Registration failed:', error);
+                        console.error('[SW] ✗ URL attempted:', swUrl);
+                        console.error('[SW] ✗ Scope attempted:', swScope);
+                        console.error('[SW] ✗ Error details:', error.message, error.stack);
+                    });
+            });
+        })();
+    </script>
+    {% block extra_js %}{% endblock %}
+    <script>
+    // Cache clearing on page load - NO AUTO REFRESH
+    (function() {
+        const version = '{{ page_version }}';
+        console.log('[Cache] Current page version:', version);
+        
+        // Unregister ALL service workers immediately (silently)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister().catch(function() {
+                        // Silent fail
+                    });
+                }
+            });
+        }
+        
+        // Clear ALL caches (silently)
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                for (let name of names) {
+                    caches.delete(name).catch(function() {
+                        // Silent fail
+                    });
+                }
+            });
+        }
+        
+        // Store version in sessionStorage (for tracking, not for refresh)
+        sessionStorage.setItem('page_version', version);
+        
+        // Add version to URL silently (no refresh)
+        if (!window.location.search.includes('v=')) {
+            const url = new URL(window.location);
+            url.searchParams.set('v', version);
+            if (url.toString() !== window.location.href) {
+                window.history.replaceState({}, '', url);
+            }
+        }
+    })();
+    </script>
+    <script src="/vidgenerator/static/js/error-manager.js"></script>
+</body>
+</html>
+
