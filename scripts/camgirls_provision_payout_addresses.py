@@ -112,41 +112,53 @@ def provision_local(performer_id: str | None) -> int:
 
         pass  # warn only unless --check-rpc handled in main
 
-    from backend.services.camgirls_payout_service import list_payout_addresses, provision_payout_addresses
-
-
+    from backend.services.camgirls_payout_service import list_payout_addresses, provision_payout_rails
 
     ids = [performer_id] if performer_id else None
 
-    result = provision_payout_addresses(performer_ids=ids)
+    result = provision_payout_rails(performer_ids=ids)
 
     print(json.dumps(result, indent=2))
 
     auth_fail = False
 
-    if result.get("results"):
+    mn2 = result.get("mn2") or {}
 
-        for row in result["results"]:
+    paypal = result.get("paypal") or {}
+
+    if mn2.get("results"):
+
+        for row in mn2["results"]:
 
             if row.get("success"):
 
                 flag = " (cached)" if not row.get("created") else " (new)"
 
-                print(f"  {row.get('performer_id')}: {row.get('payout_address')}{flag}")
+                print(f"  MN2 {row.get('performer_id')}: {row.get('payout_address')}{flag}")
 
             else:
 
                 err = row.get("error") or "failed"
 
-                print(f"  FAIL {row.get('performer_id')}: {err}", file=sys.stderr)
+                print(f"  MN2 FAIL {row.get('performer_id')}: {err}", file=sys.stderr)
 
                 if "authentication" in str(err).lower() or "401" in str(err):
 
                     auth_fail = True
 
+    if paypal.get("results"):
+
+        for row in paypal["results"]:
+
+            pe = row.get("paypal_email") or "—"
+
+            pc = "on" if row.get("paypal_checkout_enabled") else "off"
+
+            print(f"  PayPal {row.get('performer_id')}: checkout {pc} · {pe}")
+
     listing = list_payout_addresses()
 
-    print(f"\nTotal payout addresses: {listing.get('count', 0)}")
+    print(f"\nTotal payout rows: {listing.get('count', 0)}")
 
     if auth_fail:
 
@@ -162,7 +174,7 @@ def provision_local(performer_id: str | None) -> int:
 
         )
 
-    return 0 if result.get("success") else 1
+    return 0 if result.get("success") and mn2.get("success") else 1
 
 
 

@@ -583,6 +583,18 @@ def sitemap_xml():
         lines.append(f'    <changefreq>weekly</changefreq>')
         lines.append(f'    <priority>{priority}</priority>')
         lines.append('  </url>')
+    try:
+        from backend.services.camgirls_service import list_active_performer_ids
+
+        for pid in list_active_performer_ids():
+            loc = f'{base}/camgirls/p/{pid}/'
+            lines.append('  <url>')
+            lines.append(f'    <loc>{loc}</loc>')
+            lines.append('    <changefreq>weekly</changefreq>')
+            lines.append('    <priority>0.75</priority>')
+            lines.append('  </url>')
+    except Exception:
+        pass
     lines.append('</urlset>')
     body = '\n'.join(lines)
     resp = make_response(body, 200)

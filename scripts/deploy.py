@@ -854,6 +854,9 @@ MANIFESTS = {
         "backend/services/camgirls_agents_service.py",
         "backend/services/camgirls_studio_service.py",
         "backend/services/camgirls_social_service.py",
+        "backend/services/camgirls_status_service.py",
+        "backend/services/camgirls_catalog_db_service.py",
+        "backend/services/camgirls_paypal_service.py",
         "backend/services/mn2_wallet_service.py",
         "backend/services/mn2_rpc_client.py",
         "backend/services/platform_news_publish.py",
@@ -867,6 +870,7 @@ MANIFESTS = {
         "backend/services/agent_cron_service.py",
         "backend/routes/agent_cron_routes.py",
         "backend/routes/all_page_routes.py",
+        "backend/routes/monetization_expansion_routes.py",
         "backend/register_blueprints.py",
         "backend/middleware/error_logging_middleware.py",
         "backend/services/mn2_chainz.py",
@@ -883,17 +887,32 @@ MANIFESTS = {
         "scripts/camgirls_py.sh",
         "scripts/project_env.py",
         "scripts/camgirls_post_deploy_verify.py",
+        "scripts/camgirls_prod_fast_sync.sh",
         "scripts/camgirls_discord_spotlight.py",
         "scripts/camgirls_remote_diag.py",
         "docs/CAMGIRLS_PHASE4_NGINX.md",
+        "data/camgirls_next_todos.json",
         "camgirls/index.html",
+        "camgirls/performer.html",
         "static/js/camgirls.js",
         "static/js/camgirls-studio.js",
+        "static/js/camgirls-stream-voice.js",
+        "static/js/command-center-hub.js",
         "scripts/camgirls_py.sh",
         "static/camgirls/avatar-demo.svg",
         "static/camgirls/avatar-sage.svg",
         "static/camgirls/avatar-ember.svg",
         "static/camgirls/avatar-iris.svg",
+        "static/camgirls/avatar-aurora.svg",
+        "static/camgirls/avatar-jade.svg",
+        "static/camgirls/avatar-velvet.svg",
+        "static/camgirls/avatar-skylar.svg",
+        "static/camgirls/avatar-rio.svg",
+        "static/camgirls/avatar-mist.svg",
+        "static/camgirls/avatar-honey.svg",
+        "static/camgirls/avatar-storm.svg",
+        "static/camgirls/avatar-pixie.svg",
+        "static/camgirls/avatar-venus.svg",
         "static/camgirls/preview-demo.svg",
     ],
     # Reporter agent: knowledge-sharing ingredients cron (daily); set KNOWLEDGE_REPORT_SECRET in .env
@@ -1398,15 +1417,14 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 print(f"  [WARN] pip install requests: {err[:200]}")
             else:
                 print("  [OK] .venv requests (MN2 payout RPC)")
-            onboard_cmd = (
+            provision_cmd = (
                 f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
-                "scripts/camgirls_onboard_performers.py "
-                "--file data/camgirls_performers_production.json 2>&1 | tail -8"
+                "scripts/camgirls_provision_payout_addresses.py 2>&1 | tail -12"
             )
-            _, ob_out, _ = ssh.exec_command(onboard_cmd, timeout=120)
-            ob_text = (ob_out.read() or b"").decode(errors="replace").strip()
-            if ob_text:
-                print(f"  [onboard] {ob_text.split(chr(10))[-1][:120]}")
+            _, prov_out, _ = ssh.exec_command(provision_cmd, timeout=180)
+            prov_text = (prov_out.read() or b"").decode(errors="replace").strip()
+            if prov_text:
+                print(f"  [payout] {prov_text.split(chr(10))[-1][:120]}")
             print()
 
         if upload_only:

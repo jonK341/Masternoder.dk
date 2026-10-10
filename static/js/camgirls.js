@@ -110,6 +110,32 @@
       .catch(function () {});
   }
 
+  function infobarPill(label, on) {
+    return (
+      '<span class="cg-infobar-pill' +
+      (on ? ' cg-infobar-on' : '') +
+      '">' +
+      esc(label) +
+      '</span>'
+    );
+  }
+
+  function performerInfobar(p) {
+    var t = p.tech || {};
+    var voice = t.voice_mode === 'live' ? 'Voice live' : 'Voice preview';
+    var pay = (t.payments && t.payments.length ? t.payments.join(' + ') : 'MN2').toUpperCase();
+    var agent = t.task_kind ? 'Agent · ' + t.task_kind : 'Agent';
+    return (
+      '<div class="cg-infobar">' +
+      infobarPill('Live AI', !!t.online) +
+      infobarPill(voice, true) +
+      infobarPill(agent, !!t.agent_id) +
+      infobarPill(pay, true) +
+      infobarPill('Chat·Gifts·Dance', !!(t.features && t.features.length)) +
+      '</div>'
+    );
+  }
+
   function loadStatus() {
     fetch('/api/camgirls/status')
       .then(function (r) {
@@ -117,36 +143,113 @@
       })
       .then(function (d) {
         var strip = document.getElementById('cg-status-strip');
+        var chips = document.getElementById('cg-info-chips');
         var text = document.getElementById('cg-status-text');
-        if (!strip || !text || !d.success) return;
+        var todos = document.getElementById('cg-next-todos');
+        if (!strip || !chips || !text || !d.success) return;
         strip.style.display = 'block';
-        var voice = d.voice_live ? 'voice live' : 'voice preview';
-        text.textContent =
-          (d.performers_online || 0) +
-          ' performers online · ' +
-          voice +
-          ' · ' +
-          (d.note || 'AI studio ready');
+        var pays = (d.platform_tech && d.platform_tech.payments) || [];
+        chips.innerHTML =
+          infobarPill((d.performers_online || 0) + ' performers', true) +
+          infobarPill((d.agents_linked || 0) + ' agents linked', true) +
+          infobarPill(d.voice_live ? 'LiveKit live' : 'LiveKit preview', true) +
+          infobarPill(d.paypal_configured ? 'PayPal on' : 'PayPal off', !!d.paypal_configured) +
+          infobarPill('MN2 wallet', true) +
+          infobarPill((pays.join(' + ') || 'mn2').toUpperCase(), true) +
+          infobarPill('Catalog: ' + (d.catalog_source || 'json'), true);
+        text.textContent = d.note || 'AI studio ready';
+        if (todos) {
+          var items = d.next_todos || [];
+          if (!items.length) {
+            todos.innerHTML = '<li>All Phase 0 items shipped — see MN2_TODO for ops.</li>';
+          } else {
+            todos.innerHTML = items
+              .map(function (item) {
+                return (
+                  '<li><span class="cg-todo-pri">' +
+                  esc(item.priority || '—') +
+                  '</span><strong>' +
+                  esc(item.title || '') +
+                  '</strong> — ' +
+                  esc(item.detail || '') +
+                  '</li>'
+                );
+              })
+              .join('');
+          }
+        }
       })
       .catch(function () {});
   }
 
-  function paypalUnlock(id) {
+  function paypalCheckout(action, performerId, extra) {
+    var body = { user_id: uid(), action: action || 'unlock', performer_id: performerId };
+    extra = extra || {};
+    if (extra.amount_mn2 != null) body.amount_mn2 = extra.amount_mn2;
+    if (extra.gift_id) body.gift_id = extra.gift_id;
+    if (extra.minutes != null) body.minutes = extra.minutes;
     fetch('/api/camgirls/paypal/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: uid(), action: 'unlock', performer_id: id }),
+      body: JSON.stringify(body),
     })
       .then(function (r) {
         return r.json();
       })
       .then(function (d) {
+        if (d.code === 'age_verification_required') {
+          showAgeGate(true);
+          msg('18+ verification required', true);
+          return;
+        }
         if (d.approve_url) {
           try {
             sessionStorage.setItem('cg_paypal_order', d.order_id || '');
+            sessionStorage.setItem(
+              'cg_paypal_ctx',
+              JSON.stringify({
+                action: action,
+                performer_id: performerId,
+                gift_id: extra.gift_id || '',
+                minutes: extra.minutes || 0,
+              })
+            );
           } catch (e) {}
           window.location.href = d.approve_url;
         } else msg(d.error || 'PayPal unavailable', true);
+      });
+  }
+
+  function paypalUnlock(id) {
+    paypalCheckout('unlock', id);
+  }
+
+  window.CamgirlsPaypal = { checkout: paypalCheckout };
+
+  function startPrivateShow(id, minutes) {
+    var mins = parseInt(minutes, 10) || 5;
+    fetch('/api/camgirls/performers/' + encodeURIComponent(id) + '/private-show', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: uid(), minutes: mins }),
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (d) {
+        if (d.code === 'age_verification_required') {
+          showAgeGate(true);
+          msg('18+ verification required', true);
+          return;
+        }
+        if (d.code === 'unlock_required') {
+          msg('Unlock the room first', true);
+          return;
+        }
+        msg(
+          d.success ? 'Private show active for ' + mins + ' min!' : d.error || 'Private show failed',
+          !d.success
+        );
       });
   }
 
@@ -177,7 +280,10 @@
   function handlePayPalReturn() {
     var params = new URLSearchParams(window.location.search);
     if (params.get('paypal') === 'cancel') {
-      try { sessionStorage.removeItem('cg_paypal_order'); } catch (e) {}
+      try {
+        sessionStorage.removeItem('cg_paypal_order');
+        sessionStorage.removeItem('cg_paypal_ctx');
+      } catch (e) {}
       if (window.history && window.history.replaceState) {
         window.history.replaceState({}, '', '/camgirls/');
       }
@@ -188,6 +294,13 @@
       orderId = orderId || sessionStorage.getItem('cg_paypal_order') || '';
       sessionStorage.removeItem('cg_paypal_order');
     } catch (e) {}
+    var paypalCtx = {};
+    try {
+      paypalCtx = JSON.parse(sessionStorage.getItem('cg_paypal_ctx') || '{}');
+      sessionStorage.removeItem('cg_paypal_ctx');
+    } catch (e2) {
+      paypalCtx = {};
+    }
     var approved = params.get('paypal') === 'success' || !!(params.get('PayerID') || params.get('PayerId'));
     if (!orderId || !approved) {
       if (params.get('paypal') === 'success' && !orderId) {
@@ -204,7 +317,15 @@
         return r.json();
       })
       .then(function (d) {
-        msg(d.success ? 'PayPal payment complete!' : d.error || 'Capture failed', !d.success);
+        var doneMsg = 'PayPal payment complete!';
+        if (d.success) {
+          if (paypalCtx.action === 'unlock') doneMsg = 'Room unlocked via PayPal!';
+          else if (paypalCtx.action === 'tip') doneMsg = 'Tip sent via PayPal — thank you!';
+          else if (paypalCtx.action === 'gift') doneMsg = 'Gift sent via PayPal!';
+          else if (paypalCtx.action === 'fan_club') doneMsg = 'Fan club joined via PayPal!';
+          else if (paypalCtx.action === 'private_show') doneMsg = 'Private show started via PayPal!';
+        }
+        msg(d.success ? doneMsg : d.error || 'Capture failed', !d.success);
         if (d.success) loadPerformers();
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, '', '/camgirls/');
@@ -226,6 +347,18 @@
           return;
         }
         performers = d.performers || [];
+        if (window.CG_SINGLE_PERFORMER) {
+          performers = performers.filter(function (p) {
+            return p.id === window.CG_SINGLE_PERFORMER;
+          });
+        } else {
+          var deep = new URLSearchParams(window.location.search).get('performer');
+          if (deep) {
+            performers = performers.filter(function (p) {
+              return p.id === deep;
+            });
+          }
+        }
         if (!performers.length) {
           if (grid) grid.innerHTML = '<p>No performers available.</p>';
           return;
@@ -261,9 +394,12 @@
         var fanBadge = p.fan_club ? ' <span class="cg-fc-badge">Fan club</span>' : '';
         return (
           '<article class="cg-card" data-id="' + esc(p.id) + '">' +
+          performerInfobar(p) +
           '<div style="display:flex;gap:12px;align-items:center;">' +
           '<img class="cg-card-thumb" src="' + esc(avatar) + '" alt="">' +
-          '<div><strong>' + esc(p.display_name) + '</strong> <span class="cg-ai-badge">AI</span>' +
+          '<div><strong><a href="/camgirls/p/' + esc(p.id) + '/" style="color:inherit;text-decoration:none;">' +
+          esc(p.display_name) +
+          '</a></strong> <span class="cg-ai-badge">AI</span>' +
           unlocked +
           fanBadge +
           '<p style="font-size:0.85rem;opacity:0.8;margin:6px 0 0;">' + esc(p.bio || p.tagline || '') + '</p></div>' +
@@ -272,11 +408,25 @@
           '</button></div>' +
           '<div class="cg-actions">' +
           (p.unlocked
-            ? '<button type="button" class="cg-tip" data-tip="' + esc(p.id) + '">Tip ' + esc(p.tip_min_mn2) + '+ MN2</button>'
+            ? '<button type="button" class="cg-tip" data-tip="' + esc(p.id) + '">Tip ' + esc(p.tip_min_mn2) + '+ MN2</button>' +
+              '<button type="button" class="cg-studio-btn" data-paypal-tip="' + esc(p.id) + '">PayPal tip</button>'
             : '<button type="button" class="cg-unlock" data-unlock="' + esc(p.id) + '">Unlock ' + esc(p.unlock_price_mn2) + ' MN2</button>' +
               '<button type="button" class="cg-studio-btn" data-paypal-unlock="' + esc(p.id) + '">PayPal unlock</button>') +
           (p.unlocked && !p.fan_club
-            ? '<button type="button" class="cg-studio-btn" data-fanclub="' + esc(p.id) + '">Join fan club</button>'
+            ? '<button type="button" class="cg-studio-btn" data-fanclub="' +
+              esc(p.id) +
+              '">Fan club MN2</button>' +
+              '<button type="button" class="cg-studio-btn" data-paypal-fanclub="' +
+              esc(p.id) +
+              '">Fan club PayPal</button>'
+            : '') +
+          (p.unlocked
+            ? '<button type="button" class="cg-studio-btn" data-private="' +
+              esc(p.id) +
+              '">Private 5m</button>' +
+              '<button type="button" class="cg-studio-btn" data-paypal-private="' +
+              esc(p.id) +
+              '">Private PayPal</button>'
             : '') +
           '<button type="button" class="cg-chat-toggle" data-chat="' + esc(p.id) + '">Chat</button>' +
           '</div>' +
@@ -316,9 +466,38 @@
       });
     });
 
+    grid.querySelectorAll('[data-paypal-tip]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-paypal-tip');
+        var p = performers.find(function (x) {
+          return x.id === id;
+        });
+        var amt = (p && p.tip_min_mn2) || 5;
+        paypalCheckout('tip', id, { amount_mn2: amt });
+      });
+    });
+
     grid.querySelectorAll('[data-fanclub]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         joinFanClub(btn.getAttribute('data-fanclub'));
+      });
+    });
+
+    grid.querySelectorAll('[data-paypal-fanclub]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        paypalCheckout('fan_club', btn.getAttribute('data-paypal-fanclub'));
+      });
+    });
+
+    grid.querySelectorAll('[data-private]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        startPrivateShow(btn.getAttribute('data-private'), 5);
+      });
+    });
+
+    grid.querySelectorAll('[data-paypal-private]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        paypalCheckout('private_show', btn.getAttribute('data-paypal-private'), { minutes: 5 });
       });
     });
 

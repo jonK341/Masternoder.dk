@@ -7,10 +7,15 @@ Usage:
   python scripts/camgirls_onboard_performers.py --deactivate-demos
   python scripts/camgirls_onboard_performers.py --provision-addresses
 
-Payout addresses are created by the MN2 daemon (getnewaddress), not stored in performer JSON.
+Payout addresses are created by the MN2 daemon (getnewaddress). PayPal checkout rails are
+enabled per performer when PAYPAL_CLIENT_ID/SECRET are set (optional CAMGIRLS_PAYOUT_PAYPAL_EMAIL).
 
 On server (production has no ./venv — use python3 or camgirls_py.sh):
-  cd /var/www/html && bash scripts/camgirls_py.sh scripts/camgirls_onboard_performers.py --provision-addresses
+  cd /var/www/html
+  curl -fsSL -o backend/services/camgirls_payout_service.py \\
+    'https://raw.githubusercontent.com/jonK341/Masternoder.dk/pr/camgirls-studio-expansion/backend/services/camgirls_payout_service.py'
+  bash scripts/camgirls_py.sh scripts/camgirls_provision_payout_addresses.py --check-rpc
+  bash scripts/camgirls_py.sh scripts/camgirls_onboard_performers.py --provision-addresses
 """
 from __future__ import annotations
 
@@ -48,14 +53,27 @@ def main() -> int:
         if args.dry_run:
             print("[dry-run] would provision daemon payout addresses for active performers")
             return 0
-        from backend.services.camgirls_payout_service import provision_payout_addresses
-        result = provision_payout_addresses()
-        print(f"Provisioned {result.get('provisioned')}/{result.get('total')} performers")
-        for row in result.get("results") or []:
+        from backend.services.camgirls_payout_service import provision_payout_rails
+
+        result = provision_payout_rails()
+        mn2 = result.get("mn2") or {}
+        paypal = result.get("paypal") or {}
+        print(
+            f"MN2 addresses: {result.get('provisioned_mn2')}/{result.get('total')} · "
+            f"PayPal rails: {result.get('provisioned_paypal')}/{result.get('total')} "
+            f"(checkout={'on' if paypal.get('paypal_checkout_enabled') else 'off'})"
+        )
+        for row in mn2.get("results") or []:
             if row.get("success"):
-                print(f"  {row.get('performer_id')}: {row.get('payout_address')}")
+                flag = " (cached)" if not row.get("created") else " (new)"
+                print(f"  MN2 {row.get('performer_id')}: {row.get('payout_address')}{flag}")
             else:
-                print(f"  FAIL {row.get('performer_id')}: {row.get('error')}", file=sys.stderr)
+                print(f"  MN2 FAIL {row.get('performer_id')}: {row.get('error')}", file=sys.stderr)
+        for row in paypal.get("results") or []:
+            if row.get("success"):
+                pe = row.get("paypal_email") or "—"
+                pc = "checkout on" if row.get("paypal_checkout_enabled") else "checkout off"
+                print(f"  PayPal {row.get('performer_id')}: {pc} · email={pe}")
         return 0 if result.get("success") else 1
 
     if args.deactivate_demos:

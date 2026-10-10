@@ -1,0 +1,35 @@
+{
+  "updated_at": "2026-10-10",
+  "items": [
+    {
+      "id": "merge_pr_126",
+      "priority": "P0",
+      "title": "Merge PR #126 to main",
+      "detail": "GitHub: merge camgirls studio expansion; CI build-linux is green."
+    },
+    {
+      "id": "prod_fast_sync",
+      "priority": "P0",
+      "title": "Server fast sync + restart",
+      "detail": "SSH: cd /var/www/html && bash scripts/camgirls_prod_fast_sync.sh && sudo systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001"
+    },
+    {
+      "id": "provision_rails",
+      "priority": "P1",
+      "title": "MN2 + PayPal payout rails",
+      "detail": "bash scripts/camgirls_py.sh scripts/camgirls_provision_payout_addresses.py — expect 15 performers after sync."
+    },
+    {
+      "id": "verify_15",
+      "priority": "P1",
+      "title": "Post-deploy verify",
+      "detail": "bash scripts/camgirls_py.sh scripts/camgirls_post_deploy_verify.py --remote-only"
+    },
+    {
+      "id": "livekit_optional",
+      "priority": "P2",
+      "title": "LiveKit voice (optional)",
+      "detail": "Set LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET in .env; test voice button on unlocked room."
+    }
+  ]
+}
