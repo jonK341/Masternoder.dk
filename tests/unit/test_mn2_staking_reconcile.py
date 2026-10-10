@@ -140,7 +140,17 @@ class TestDrift(ReconcileTestBase):
         uid = "customer_delta"
         self._ledger([{"type": "staking_reward", "amount": 2.0, "user_id": uid}])
         self._write("mn2_staking_rewards.jsonl", [{"user_id": uid, "reward_mn2": 5.0}])
-        rep = recon.reconcile()
+        pts = os.path.join(self.tmp, "logs", "unified_points")
+        os.makedirs(pts, exist_ok=True)
+        with open(os.path.join(pts, f"{uid}.json"), "w", encoding="utf-8") as f:
+            json.dump({"systems": {"mn2_staked": 0, "mn2_balance": 1.0}}, f)
+        import backend.services.mn2_proof_of_reserves_service as por
+        old = por._POINTS_DIR
+        por._POINTS_DIR = pts
+        try:
+            rep = recon.reconcile()
+        finally:
+            por._POINTS_DIR = old
         self.assertFalse(rep["ok"])
         self.assertIn("rewards_rows_match_ledger", rep["failed_checks"])
 
@@ -150,7 +160,17 @@ class TestDrift(ReconcileTestBase):
         self._write("mn2_p2p_listings.json", {
             "l1": {"status": "open", "seller_id": uid, "mn2_available": 1.0, "mn2_reserved": 0.0},
         })
-        rep = recon.reconcile()
+        pts = os.path.join(self.tmp, "logs", "unified_points")
+        os.makedirs(pts, exist_ok=True)
+        with open(os.path.join(pts, f"{uid}.json"), "w", encoding="utf-8") as f:
+            json.dump({"systems": {"mn2_staked": 0, "mn2_balance": 1.0}}, f)
+        import backend.services.mn2_proof_of_reserves_service as por
+        old = por._POINTS_DIR
+        por._POINTS_DIR = pts
+        try:
+            rep = recon.reconcile()
+        finally:
+            por._POINTS_DIR = old
         self.assertFalse(rep["ok"])
         self.assertIn("p2p_escrow_conservation", rep["failed_checks"])
 
