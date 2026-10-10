@@ -418,7 +418,7 @@
                     currencyElement.textContent = amount.toLocaleString();
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'navigation-toolbar.js', context: 'catch' }); }
             console.error('Error loading currency:', error);
         }
     }
@@ -447,7 +447,7 @@
                             page_id: pageId,
                             url: this.href
                         });
-                    } catch (err) {
+                    } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'navigation-toolbar.js', context: 'catch' }); }
                         console.error('Referral tracking error:', err);
                     }
                 }
@@ -589,7 +589,7 @@
             const displayName = data?.profile?.display_name || data?.profile?.username || userId;
             const headerEl = document.getElementById('userMenuHeaderText');
             if (headerEl) headerEl.textContent = `👤 ${displayName}`;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'navigation-toolbar.js', context: 'catch' }); }
             // Keep fallback userId already rendered in the header.
         }
     }
@@ -693,7 +693,7 @@
                     badge.style.display = 'none';
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'navigation-toolbar.js', context: 'catch' }); }
             console.error('Error loading notifications count:', error);
         }
     }
@@ -710,7 +710,7 @@
                 const data = await response.json();
                 return data.notifications || [];
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'navigation-toolbar.js', context: 'catch' }); }
             console.error('Error loading notifications:', error);
         }
         return [];
@@ -742,7 +742,7 @@
     
     window.logout = function() {
         if (confirm('Logout?')) {
-            fetch('/api/user/logout', { method: 'POST', credentials: 'same-origin' }).catch(function() {});
+            fetch('/api/user/logout', { method: 'POST', credentials: 'same-origin' }).catch(function() { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'navigation-toolbar.js', context: 'catch' }); }});
             localStorage.removeItem('game_user_id');
             localStorage.removeItem('user_id');
             localStorage.removeItem('user_token');
@@ -786,3 +786,13 @@
 
 })();
 
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'navigation-toolbar.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

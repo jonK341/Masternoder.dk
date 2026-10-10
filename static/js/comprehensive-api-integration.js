@@ -46,7 +46,8 @@ class ComprehensiveAPI {
 
             const result = await response.json();
             return { success: true, data: result };
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-api-integration.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-api-integration.js', context: 'console.error' }); }
             console.error(`API Error [${endpoint}]:`, error);
             this.handleError(error, endpoint);
             return { success: false, error: error.message };
@@ -58,7 +59,8 @@ class ComprehensiveAPI {
         this.errorHandlers.forEach(handler => {
             try {
                 handler(error, endpoint);
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'comprehensive-api-integration.js', context: 'catch' }); }
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-api-integration.js', context: 'console.error' }); }
                 console.error('Error handler failed:', e);
             }
         });
@@ -301,6 +303,7 @@ window.comprehensiveAPI = new ComprehensiveAPI();
 
 // Add default error handler
 window.comprehensiveAPI.onError((error, endpoint) => {
+    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-api-integration.js', context: 'console.error' }); }
     console.error(`API call failed: ${endpoint}`, error);
     // You can add toast notifications here
     if (window.showToast) {

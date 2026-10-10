@@ -352,7 +352,8 @@ class AgentSkillSets {
             });
 
             return summary;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-skill-sets.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'agent-skill-sets.js', context: 'console.error' }); }
             console.error('Error getting agent skill summary:', error);
             return null;
         }

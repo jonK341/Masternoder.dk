@@ -35,7 +35,8 @@ class TemplateServices {
                     const response = await fetch(`${this.baseUrl}/api/points/all?user_id=${userId}`);
                     const data = await response.json();
                     return data.points || {};
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error fetching points:', error);
                     return {};
                 }
@@ -48,7 +49,8 @@ class TemplateServices {
                         body: JSON.stringify({ user_id: userId, point_type: pointType, amount, source })
                     });
                     return await response.json();
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error adding points:', error);
                     return { success: false, error: error.message };
                 }
@@ -63,7 +65,8 @@ class TemplateServices {
                 try {
                     const response = await fetch(`${this.baseUrl}/api/leaderboard/${systemId}?limit=${limit}`);
                     return await response.json();
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error fetching leaderboard:', error);
                     return { success: false, leaderboard: [] };
                 }
@@ -72,7 +75,8 @@ class TemplateServices {
                 try {
                     const response = await fetch(`${this.baseUrl}/api/leaderboard/${systemId}/rank?user_id=${userId}`);
                     return await response.json();
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error fetching user rank:', error);
                     return { rank: null, points: 0 };
                 }
@@ -87,7 +91,8 @@ class TemplateServices {
                 try {
                     const response = await fetch(`${this.baseUrl}/api/stats/summary?user_id=${userId}`);
                     return await response.json();
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error fetching stats:', error);
                     return {};
                 }
@@ -96,7 +101,8 @@ class TemplateServices {
                 try {
                     const response = await fetch(`${this.baseUrl}/api/stats/activity?user_id=${userId}`);
                     return await response.json();
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error fetching activity stats:', error);
                     return {};
                 }
@@ -112,7 +118,8 @@ class TemplateServices {
                     const response = await fetch(`${this.baseUrl}/api/agent/get-all?user_id=${userId}`);
                     const data = await response.json();
                     return data.agents || [];
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error fetching agents:', error);
                     return [];
                 }
@@ -121,7 +128,8 @@ class TemplateServices {
                 try {
                     const response = await fetch(`${this.baseUrl}/api/agent/${agentId}`);
                     return await response.json();
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error fetching agent details:', error);
                     return {};
                 }
@@ -136,7 +144,8 @@ class TemplateServices {
                 try {
                     const response = await fetch(`${this.baseUrl}/api/game/battle/history?user_id=${userId}&limit=${limit}`);
                     return await response.json();
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error fetching battle history:', error);
                     return { success: false, history: [] };
                 }
@@ -149,7 +158,8 @@ class TemplateServices {
                         body: JSON.stringify({ user_id: userId, battle_type: battleType })
                     });
                     return await response.json();
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                     console.error('Error starting battle:', error);
                     return { success: false, error: error.message };
                 }
@@ -198,7 +208,8 @@ class TemplateServices {
             try {
                 const data = await this.callService(serviceName, method, ...args);
                 this.dispatchServiceUpdate(serviceName, method, data);
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-services.js', context: 'console.error' }); }
                 console.error(`Auto-update error for ${serviceName}.${method}:`, error);
             }
         };

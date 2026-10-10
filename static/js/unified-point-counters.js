@@ -40,7 +40,8 @@ class UnifiedPointCounters {
             } else {
                 throw new Error('Invalid response format');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'unified-point-counters.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'unified-point-counters.js', context: 'console.error' }); }
             console.error('[UnifiedPointCounters] Error loading points:', error);
             // Return default values on error
             return this.getDefaultPoints();
@@ -289,7 +290,7 @@ class UnifiedPointCounters {
             document.dispatchEvent(new CustomEvent('serviceUpdate', {
                 detail: { serviceName: 'points', data: points, source: 'unified-point-counters' }
             }));
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'unified-point-counters.js', context: 'catch' }); }
             console.warn('[UnifiedPointCounters] Could not dispatch point events:', error);
         }
     }
