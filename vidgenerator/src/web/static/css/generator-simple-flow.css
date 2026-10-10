@@ -1,0 +1,170 @@
+/* Generator Simple Flow UI Panel */
+.generator-simple-flow-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    max-height: 500px;
+    background: rgba(0, 20, 0, 0.95);
+    border: 2px solid rgba(0, 255, 136, 0.5);
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 10000;
+    box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    color: #00ff88;
+    overflow-y: auto;
+    display: none;
+}
+
+.generator-simple-flow-panel.active {
+    display: block;
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.generator-simple-flow-panel h3 {
+    margin: 0 0 15px 0;
+    color: #00ff88;
+    font-size: 1.2em;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+    padding-bottom: 10px;
+}
+
+.flow-status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.flow-status {
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.flow-status.state-ready {
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid rgba(0, 255, 136, 0.5);
+    color: #00ff88;
+}
+
+.flow-status.state-running {
+    background: rgba(255, 200, 0, 0.2);
+    border: 1px solid rgba(255, 200, 0, 0.5);
+    color: #ffc800;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.flow-status.state-error {
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid rgba(255, 0, 0, 0.5);
+    color: #ff0000;
+}
+
+.flow-status.state-waiting {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.flow-attempts {
+    margin-bottom: 15px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.flow-log {
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 0.8em;
+}
+
+.flow-log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+}
+
+.flow-log-entry:last-child {
+    border-bottom: none;
+}
+
+.flow-log-entry span {
+    color: rgba(0, 255, 136, 0.6);
+    margin-right: 8px;
+    font-weight: 600;
+}
+
+.flow-log-entry.error {
+    color: #ff0000;
+}
+
+.flow-log-entry.error span {
+    color: rgba(255, 0, 0, 0.6);
+}
+
+/* Toggle button */
+.flow-panel-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #00ff88, #00d4ff);
+    border: none;
+    border-radius: 50%;
+    color: #000;
+    font-size: 1.5em;
+    cursor: pointer;
+    z-index: 10001;
+    box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+    transition: transform 0.2s;
+}
+
+.flow-panel-toggle:hover {
+    transform: scale(1.1);
+}
+
+.flow-panel-toggle.active {
+    background: linear-gradient(135deg, #ff0000, #ff8800);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .generator-simple-flow-panel {
+        width: calc(100% - 40px);
+        right: 20px;
+        left: 20px;
+        max-height: 400px;
+    }
+}
+

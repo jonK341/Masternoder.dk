@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Documentary Gallery - Browse Generated Videos{% endblock %}
+{% block meta_description %}Browse and watch all generated documentary videos. Search, filter, and discover AI-generated documentaries.{% endblock %}
+{% block meta_keywords %}documentary gallery, video gallery, AI videos, documentary collection, video browser{% endblock %}
+
+{% block og_title %}Documentary Gallery{% endblock %}
+{% block og_description %}Browse and watch all generated documentary videos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="gallery-container">
+        <header class="gallery-header">
+            <h1>🎬 Documentary Gallery</h1>
+            <p class="subtitle">Browse and watch generated documentaries</p>
+        </header>
+        
+        <!-- Gallery Tabs Navigation -->
+        <nav class="gallery-tabs" id="gallery-tabs">
+            <button class="gallery-tab active" data-tab="gallery-main" aria-label="Gallery">
+                <i class="fas fa-images"></i> Gallery
+            </button>
+            <button class="gallery-tab" data-tab="chatroom" aria-label="Chatroom">
+                <i class="fas fa-comments"></i> Chatroom
+            </button>
+            <button class="gallery-tab" data-tab="network" aria-label="Network">
+                <i class="fas fa-network-wired"></i> Network
+            </button>
+            <button class="gallery-tab" data-tab="analytics" aria-label="Analytics">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </button>
+            <button class="gallery-tab" data-tab="perspectives" aria-label="Perspectives">
+                <i class="fas fa-eye"></i> Perspectives
+            </button>
+        </nav>
+
+        <!-- Enhanced Search and Filter Section -->
+        <div class="gallery-controls">
+            <form method="GET" action="{{ url_for('gallery') }}" class="search-form" id="gallery-search-form">
+                <div class="search-input-wrapper">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        id="gallery-search-input"
+                        placeholder="🔍 Search titles, prompts, descriptions, dates..." 
+                        value="{{ search_query }}"
+                        class="search-input"
+                        autocomplete="off"
+                        aria-label="Search documentaries"
+                    >
+                    <button type="button" class="search-clear-btn" id="search-clear-btn" style="display: none;" aria-label="Clear search">✕</button>
+                </div>
+                <select name="status" class="status-filter" aria-label="Filter by status">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="generating" {% if status_filter == 'generating' %}selected{% endif %}>Generating</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                </select>
+                <select name="sort" class="sort-filter" aria-label="Sort by">
+                    <option value="newest" {% if sort_by|default('newest') == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if sort_by|default('newest') == 'oldest' %}selected{% endif %}>Oldest First</option>
+                    <option value="title" {% if sort_by|default('newest') == 'title' %}selected{% endif %}>Title A-Z</option>
+                    <option value="duration" {% if sort_by|default('newest') == 'duration' %}selected{% endif %}>Longest First</option>
+                </select>
+                <button type="submit" class="search-btn" aria-label="Search">Search</button>
+                <a href="{{ url_for('gallery') }}" class="reset-btn" aria-label="Reset filters">Reset</a>
+            </form>
+            <div class="search-suggestions" id="search-suggestions" style="display: none;"></div>
+        </div>
+
+        <!-- Gallery Stats -->
+        <div class="gallery-stats" id="gallery-stats">
+            <span class="stat-item">📊 <span id="total-count">{{ pagination.total if pagination else 0 }}</span> documentaries</span>
+            {% if search_query %}
+            <span class="stat-item">🔍 Showing results for "{{ search_query }}"</span>
+            {% endif %}
+        </div>
+
+        <!-- Gallery Grid -->
+        {% if documentaries %}
+        <div class="gallery-grid" id="gallery-grid" data-page="{{ pagination.page if pagination else 1 }}">
+            {% for doc in documentaries %}
+            <div class="gallery-item" data-status="{{ doc.status }}" data-id="{{ doc.id }}" data-title="{{ doc.title|lower }}" data-prompt="{{ doc.prompt|lower }}" data-description="{{ (doc.description or '')|lower }}">
+                <a href="{{ url_for('index', watch=doc.id) }}" class="doc-link" aria-label="View {{ doc.title }}">
+                    <div class="doc-thumbnail">
+                        {% if doc.thumbnail_path and doc.status == 'completed' %}
+                        <img 
+                            src="{{ url_for('static', filename='../' + doc.thumbnail_path) }}" 
+                            alt="{{ doc.title }}" 
+                            loading="lazy"
+                            class="doc-thumbnail-img"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        >
+                        {% endif %}
+                        <div class="placeholder-thumbnail" style="display: {% if doc.thumbnail_path and doc.status == 'completed' %}none{% else %}flex{% endif %};">
+                            <span class="thumbnail-icon">🎬</span>
+                        </div>
+                        {% if doc.status == 'generating' %}
+                        <div class="generating-overlay">
+                            <div class="spinner"></div>
+                            <span>Generating...</span>
+                        </div>
+                        {% endif %}
+                        <div class="status-badge status-{{ doc.status }}" aria-label="Status: {{ doc.status }}">
+                            {{ doc.status.title() }}
+                        </div>
+                        {% if doc.duration %}
+                        <div class="duration-badge" aria-label="Duration: {{ (doc.duration // 60) }} minutes">
+                            ⏱️ {{ (doc.duration // 60) }}m
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="doc-info">
+                        <h3 class="doc-title">{{ doc.title }}</h3>
+                        <p class="doc-description" title="{{ doc.prompt }}">{{ doc.prompt[:80] }}{% if doc.prompt|length > 80 %}...{% endif %}</p>
+                        <div class="doc-meta">
+                            <span class="meta-item" title="{{ doc.created_at.strftime('%Y-%m-%d %H:%M') if doc.created_at else 'N/A' }}">
+                                📅 {{ doc.created_at.strftime('%Y-%m-%d') if doc.created_at else 'N/A' }}
+                            </span>
+                            {% if doc.duration %}
+                            <span class="meta-item">⏱️ {{ (doc.duration // 60) }}m {{ doc.duration % 60 }}s</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('gallery', page=pagination.prev_num, status=status_filter if status_filter != 'all' else None, search=search_query if search_query else None) }}" class="page-link">« Previous</a>
+            {% endif %}
+            
+            <span class="page-info">
+                Page {{ pagination.page }} of {{ pagination.pages }}
+            </span>
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('gallery', page=pagination.next_num, status=status_filter if status_filter != 'all' else None, search=search_query if search_query else None) }}" class="page-link">Next »</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-gallery">
+            <div class="empty-icon">📭</div>
+            <h2>No documentaries found</h2>
+            <p>{% if search_query %}Try adjusting your search or filters{% else %}Create your first documentary to get started!{% endif %}</p>
+            <a href="{{ url_for('index') }}" class="cta-button">Create Documentary</a>
+        </div>
+        {% endif %}
+    </div>
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gallery.js') }}"></script>
+{% endblock %}
+{% endblock %}
+

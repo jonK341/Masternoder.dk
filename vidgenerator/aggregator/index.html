@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="cache-version" content="20260114100145">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta name="description" content="Aggregator Dashboard - Unified view of all videos, social content, and statistics">
+    <title>Aggregator Dashboard - MasterNoder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <style>
+        /* ============================================
+           AGGREGATOR DASHBOARD UI
+           ============================================ */
+        
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 100, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .page-content {
+            position: relative;
+            z-index: 2;
+            padding: 100px 20px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dashboard-header .subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        /* Tabs */
+        .dashboard-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 212, 255, 0.2));
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(20px);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ff88;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+        }
+
+        .stat-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .content-card {
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(20px);
+        }
+
+        .content-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ff88;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.2);
+        }
+
+        .content-card .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .content-card .title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #00ff88;
+        }
+
+        .content-card .meta {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .content-card .body {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .content-card .footer {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .content-card .footer span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* User Selector */
+        .user-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .user-selector input {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            width: 300px;
+            max-width: 100%;
+        }
+
+        .user-selector input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .user-selector button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            border: none;
+            border-radius: 12px;
+            color: #0a0a0a;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .user-selector button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+        }
+
+        /* Refresh Button */
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            border: none;
+            border-radius: 50%;
+            color: #0a0a0a;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg) scale(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-header h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/template-effects.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css?v=20260304154115">
+</head>
+<body>
+    <div class="bg-animated"></div>
+    
+    <!-- Navigation -->
+    <div id="navigation-container"></div>
+
+    <div class="page-content">
+        <div class="dashboard-header">
+            <h1><i class="fas fa-chart-line"></i> Aggregator Dashboard</h1>
+            <div class="subtitle">Unified View of All Content</div>
+        </div>
+
+        <!-- User Selector -->
+        <div class="user-selector">
+            <input type="text" id="userIdInput" placeholder="Enter User ID (leave empty for all)" value="">
+            <button onclick="loadDashboard()">
+                <i class="fas fa-search"></i> Load Dashboard
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="dashboard-tabs">
+            <button class="tab-button active" onclick="switchTab('overview')">
+                <i class="fas fa-th"></i> Overview
+            </button>
+            <button class="tab-button" onclick="switchTab('videos')">
+                <i class="fas fa-video"></i> Videos
+            </button>
+            <button class="tab-button" onclick="switchTab('social')">
+                <i class="fas fa-users"></i> Social
+            </button>
+            <button class="tab-button" onclick="switchTab('stats')">
+                <i class="fas fa-chart-bar"></i> Statistics
+            </button>
+            <button class="tab-button" onclick="switchTab('trending')">
+                <i class="fas fa-fire"></i> Trending
+            </button>
+            <button class="tab-button" onclick="switchTab('intelligence')">
+                <i class="fas fa-brain"></i> Intelligence
+            </button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content active">
+            <div id="overview-content">
+                <!-- Agent Data Section -->
+                <div class="content-section" style="margin-bottom: 30px;">
+                    <h2 style="color: #00ff88; margin-bottom: 20px;">
+                        <i class="fas fa-robot"></i> Agent Data Overview
+                    </h2>
+                    <div id="agent-data-content" class="content-grid">
+                        <div class="loading"><i class="fas fa-spinner"></i><p>Loading agent data...</p></div>
+                    </div>
+                </div>
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading overview...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Videos Tab -->
+        <div id="videos-tab" class="tab-content">
+            <div id="videos-content">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading videos...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Tab -->
+        <div id="social-tab" class="tab-content">
+            <div id="social-content">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading social content...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div id="stats-tab" class="tab-content">
+            <div id="stats-content">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading statistics...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trending Tab -->
+        <div id="trending-tab" class="tab-content">
+            <div id="trending-content">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading trending content...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Intelligence Tab: Research, News, Trending (connects aggregator to intelligence API) -->
+        <div id="intelligence-tab" class="tab-content">
+            <div id="intelligence-content">
+                <p class="hub-links" style="text-align:center;margin-bottom:16px;opacity:0.9;"><a href="/profile" style="color:#00ff88;text-decoration:none;">Profile</a> &middot; <a href="/generator" style="color:#00ff88;text-decoration:none;">Generator</a> &middot; <a href="/agents" style="color:#00ff88;text-decoration:none;">Agents</a> &middot; <a href="/gallery" style="color:#00d4ff;text-decoration:none;">Gallery</a> &middot; <strong>Aggregator</strong> &middot; <a href="/theme_premium" style="color:#00d4ff;text-decoration:none;">Themes</a></p>
+                <div class="intelligence-subtabs" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;justify-content:center;">
+                    <button type="button" class="tab-button intel-tab active" data-intel="research" style="padding:8px 16px;"><i class="fas fa-book"></i> Research</button>
+                    <button type="button" class="tab-button intel-tab" data-intel="news" style="padding:8px 16px;"><i class="fas fa-newspaper"></i> News</button>
+                    <button type="button" class="tab-button intel-tab" data-intel="trending" style="padding:8px 16px;"><i class="fas fa-chart-line"></i> Trending</button>
+                </div>
+                <div id="intelligence-panels"></div>
+                <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refresh Button -->
+    <button class="refresh-btn" onclick="refreshAll()" title="Refresh All Data">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+        <script src="/static/js/error-manager.js?v=20260304154115"></script>
+    
+    
+    <script src="/static/js/progression-display.js?v=20260304154115"></script>
+    <script src="/static/js/navigation-toolbar.js?v=20260304154115"></script>
+    <script src="/static/js/toast-notifications.js?v=20260304154115"></script>
+    <script src="/static/js/agent-dashboard-data.js?v=20260304154115"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+        // Initialize navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof createNavigationToolbar === 'function') {
+                createNavigationToolbar('aggregator');
+            }
+            
+            // Use unified point counters for A+ accuracy
+            if (window.unifiedPointCounters) {
+                unifiedPointCounters.updateAllCounters();
+                unifiedPointCounters.startAutoUpdate(30000);
+            }
+        });
+
+        let currentUserId = '';
+        let currentTab = 'overview';
+
+        // Tab Switching
+        function switchTab(tabName) {
+            currentTab = tabName;
+            var tabEl = document.getElementById(tabName + '-tab');
+            if (!tabEl) return;
+
+            // Update tab buttons (match by onclick content)
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + tabName + "'") !== -1) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            tabEl.classList.add('active');
+
+            // Load tab data
+            loadTabData(tabName);
+        }
+
+        // Load Dashboard
+        async function loadDashboard() {
+            const userId = document.getElementById('userIdInput').value.trim();
+            currentUserId = userId;
+            
+            if (userId) {
+                // Load unified dashboard for user
+                await loadUnifiedDashboard(userId);
+            } else {
+                // Load public aggregated data
+                await loadPublicData();
+            }
+        }
+
+        // Load Agent Data
+        async function loadAgentData(userId) {
+            const container = document.getElementById('agent-data-content');
+            if (!container) return;
+            
+            try {
+                if (window.agentDashboardData) {
+                    await window.agentDashboardData.loadAndRender('agent-data-content', userId);
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-robot"></i><p>Agent dashboard utility not loaded</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading agent data:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading agent data</p></div>';
+            }
+        }
+
+        // Load Unified Dashboard
+        async function loadUnifiedDashboard(userId) {
+            try {
+                // Load agent data in parallel
+                loadAgentData(userId);
+                
+                const response = await fetch(`/api/aggregators/unified/dashboard/${userId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderUnifiedDashboard(data);
+                } else {
+                    showError('Failed to load dashboard');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError('Error loading dashboard');
+            }
+        }
+
+        // Load Public Data
+        async function loadPublicData() {
+            await Promise.all([
+                loadVideos(),
+                loadSocialTrending(),
+                loadStats()
+            ]);
+        }
+
+        // Load Tab Data
+        async function loadTabData(tabName) {
+            switch(tabName) {
+                case 'overview':
+                    if (currentUserId) {
+                        await loadUnifiedDashboard(currentUserId);
+                    } else {
+                        await loadPublicData();
+                    }
+                    break;
+                case 'videos':
+                    await loadVideos();
+                    break;
+                case 'social':
+                    await loadSocial();
+                    break;
+                case 'stats':
+                    await loadStats();
+                    break;
+                case 'trending':
+                    await loadTrending();
+                    break;
+                case 'intelligence':
+                    await loadIntelligence();
+                    break;
+            }
+        }
+
+        // Load Intelligence (uses shared widget when available; fallback inline)
+        async function loadIntelligence() {
+            if (window.IntelligenceWidget && typeof window.IntelligenceWidget.load === 'function') {
+                window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+                window.IntelligenceWidget.startAutoRefresh({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+                return;
+            }
+            const container = document.getElementById('intelligence-panels');
+            if (!container) return;
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>';
+            try {
+                const url = '/api/aggregators/intelligence/all?research_limit=5&news_limit=5&trending_limit=5';
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.success !== false && (data.research || data.news || data.trending)) {
+                    var loadingEl = document.querySelector('#intelligence-content .intel-loading');
+                    if (loadingEl) loadingEl.style.display = 'none';
+                    renderIntelligence(data);
+                    wireIntelSubtabs();
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-brain"></i><p>No intelligence data available</p><p style="font-size:0.9em;opacity:0.7;">' + (data.error || '') + '</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading intelligence:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading intelligence</p></div>';
+            }
+        }
+
+        function renderIntelligence(data) {
+            const container = document.getElementById('intelligence-panels');
+            if (!container) return;
+            const research = data.research || [];
+            const news = data.news || [];
+            const trending = data.trending || [];
+            const summary = data.summary || {};
+            const html = '<div id="intel-research-panel" class="intel-panel">' +
+                '<h3 style="color:#00ff88;margin-bottom:12px;"><i class="fas fa-book"></i> Research</h3>' +
+                (research.length ? research.map(function(p) {
+                    return '<div class="content-card" style="margin-bottom:12px;"><div class="header"><div class="title">' + (p.title || '').replace(/</g, '&lt;') + '</div><div class="meta">' + (p.source || '') + '</div></div><div class="body">' + (p.abstract || '').substring(0, 180) + '...</div>' + (p.url ? '<div class="footer"><a href="' + p.url + '" target="_blank" rel="noopener">Read</a></div>' : '') + '</div>';
+                }).join('') : '<p>No research papers</p>') +
+                '</div><div id="intel-news-panel" class="intel-panel" style="display:none;">' +
+                '<h3 style="color:#00ff88;margin-bottom:12px;"><i class="fas fa-newspaper"></i> News</h3>' +
+                (news.length ? news.map(function(n) {
+                    return '<div class="content-card" style="margin-bottom:12px;"><div class="header"><div class="title">' + (n.title || '').replace(/</g, '&lt;') + '</div><div class="meta">' + (n.source || '') + '</div></div><div class="body">' + (n.summary || '').substring(0, 120) + '...</div>' + (n.url ? '<div class="footer"><a href="' + n.url + '" target="_blank" rel="noopener">Read</a></div>' : '') + '</div>';
+                }).join('') : '<p>No news</p>') +
+                '</div><div id="intel-trending-panel" class="intel-panel" style="display:none;">' +
+                '<h3 style="color:#00ff88;margin-bottom:12px;"><i class="fas fa-chart-line"></i> Trending</h3>' +
+                (trending.length ? trending.map(function(t) {
+                    return '<div class="content-card" style="margin-bottom:12px;"><div class="header"><div class="title">' + (t.topic || '').replace(/</g, '&lt;') + '</div><div class="meta">' + (t.growth || '') + ' ' + (t.category || '') + '</div></div><div class="body">Score: ' + (t.trend_score || 0) + '</div></div>';
+                }).join('') : '<p>No trending topics</p>') +
+                '</div>';
+            container.innerHTML = html;
+        }
+
+        function wireIntelSubtabs() {
+            document.querySelectorAll('.intel-tab').forEach(function(btn) {
+                btn.onclick = function() {
+                    document.querySelectorAll('.intel-tab').forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    var which = btn.getAttribute('data-intel');
+                    document.querySelectorAll('.intel-panel').forEach(function(p) { p.style.display = 'none'; });
+                    var panel = document.getElementById('intel-' + which + '-panel');
+                    if (panel) panel.style.display = 'block';
+                };
+            });
+        }
+
+        // Load Videos
+        async function loadVideos() {
+            const container = document.getElementById('videos-content');
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading videos...</p></div>';
+            
+            try {
+                const url = currentUserId 
+                    ? `/api/aggregators/videos/user/${currentUserId}`
+                    : '/api/aggregators/videos/all';
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderVideos(data.data || [], data.pagination || {});
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-video"></i><p>No videos found</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading videos:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading videos</p></div>';
+            }
+        }
+
+        // Load Social
+        async function loadSocial() {
+            const container = document.getElementById('social-content');
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading social content...</p></div>';
+            
+            try {
+                if (currentUserId) {
+                    const response = await fetch(`/api/aggregators/social/feed/${currentUserId}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        renderSocialFeed(data.feed || []);
+                    } else {
+                        container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No social content found</p></div>';
+                    }
+                } else {
+                    const response = await fetch('/api/aggregators/social/popular?limit=20');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        renderSocialFeed(data.popular || []);
+                    } else {
+                        container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No social content found</p></div>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading social:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading social content</p></div>';
+            }
+        }
+
+        // Load Stats
+        async function loadStats() {
+            const container = document.getElementById('stats-content');
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading statistics...</p></div>';
+            
+            try {
+                if (currentUserId) {
+                    const response = await fetch(`/api/aggregators/stats/user/${currentUserId}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        renderStats(data.stats || {});
+                    } else {
+                        container.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>No statistics found</p></div>';
+                    }
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-info-circle"></i><p>Enter a User ID to view statistics</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading statistics</p></div>';
+            }
+        }
+
+        // Load Trending
+        async function loadTrending() {
+            const container = document.getElementById('trending-content');
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading trending content...</p></div>';
+            
+            try {
+                const [trendingResponse, popularResponse] = await Promise.all([
+                    fetch('/api/aggregators/social/trending?limit=10'),
+                    fetch('/api/aggregators/social/popular?limit=10')
+                ]);
+                
+                const trendingData = await trendingResponse.json();
+                const popularData = await popularResponse.json();
+                
+                renderTrending(trendingData.trending || [], popularData.popular || []);
+            } catch (error) {
+                console.error('Error loading trending:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading trending content</p></div>';
+            }
+        }
+
+        // Load Social Trending (for overview)
+        async function loadSocialTrending() {
+            try {
+                const response = await fetch('/api/aggregators/social/trending?limit=5');
+                const data = await response.json();
+                return data.trending || [];
+            } catch (error) {
+                console.error('Error loading social trending:', error);
+                return [];
+            }
+        }
+
+        // Render Functions
+        function renderUnifiedDashboard(data) {
+            const container = document.getElementById('overview-content');
+            
+            const html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon">📹</div>
+                        <div class="value">${data.video_total || 0}</div>
+                        <div class="label">Total Videos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">👥</div>
+                        <div class="value">${data.social_total || 0}</div>
+                        <div class="label">Social Activities</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">📊</div>
+                        <div class="value">${data.stats?.level || 'N/A'}</div>
+                        <div class="label">User Level</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">⭐</div>
+                        <div class="value">${data.stats?.total_xp || 0}</div>
+                        <div class="label">Total XP</div>
+                    </div>
+                </div>
+                
+                <h2 style="margin-top: 40px; margin-bottom: 20px;">Recent Videos</h2>
+                <div class="content-grid">
+                    ${(data.videos || []).slice(0, 6).map(video => `
+                        <div class="content-card">
+                            <div class="header">
+                                <div class="title">${video.prompt || 'Untitled'}</div>
+                                <div class="meta">${video.theme || 'N/A'}</div>
+                            </div>
+                            <div class="body">${(video.enhanced_prompt || video.prompt || '').substring(0, 100)}...</div>
+                            <div class="footer">
+                                <span><i class="fas fa-clock"></i> ${formatDate(video.created_at)}</span>
+                                <span><i class="fas fa-tag"></i> ${video.provider || 'N/A'}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <h2 style="margin-top: 40px; margin-bottom: 20px;">Recent Activities</h2>
+                <div class="content-grid">
+                    ${(data.social_activities || []).slice(0, 6).map(activity => `
+                        <div class="content-card">
+                            <div class="header">
+                                <div class="title">${activity.type || 'Activity'}</div>
+                                <div class="meta">${formatDate(activity.created_at)}</div>
+                            </div>
+                            <div class="body">${activity.content || 'No content'}</div>
+                            ${activity.engagement ? `
+                                <div class="footer">
+                                    <span><i class="fas fa-heart"></i> ${activity.engagement.likes || 0}</span>
+                                    <span><i class="fas fa-comment"></i> ${activity.engagement.comments || 0}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function renderVideos(videos, pagination) {
+            const container = document.getElementById('videos-content');
+            
+            if (videos.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-video"></i><p>No videos found</p></div>';
+                return;
+            }
+            
+            const html = `
+                <div class="stats-grid" style="margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="icon">📹</div>
+                        <div class="value">${pagination.total || videos.length}</div>
+                        <div class="label">Total Videos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">📄</div>
+                        <div class="value">${pagination.page || 1}</div>
+                        <div class="label">Current Page</div>
+                    </div>
+                </div>
+                
+                <div class="content-grid">
+                    ${videos.map(video => `
+                        <div class="content-card">
+                            <div class="header">
+                                <div class="title">${video.prompt || 'Untitled'}</div>
+                                <div class="meta">${video.theme || 'N/A'}</div>
+                            </div>
+                            <div class="body">${(video.enhanced_prompt || video.prompt || '').substring(0, 150)}...</div>
+                            <div class="footer">
+                                <span><i class="fas fa-clock"></i> ${formatDate(video.created_at)}</span>
+                                <span><i class="fas fa-tag"></i> ${video.provider || 'N/A'}</span>
+                                ${video.status ? `<span><i class="fas fa-circle" style="color: ${getStatusColor(video.status)}"></i> ${video.status}</span>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function renderSocialFeed(feed) {
+            const container = document.getElementById('social-content');
+            
+            if (feed.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No social content found</p></div>';
+                return;
+            }
+            
+            const html = `
+                <div class="content-grid">
+                    ${feed.map(post => `
+                        <div class="content-card">
+                            <div class="header">
+                                <div class="title">${post.user_id || 'Unknown User'}</div>
+                                <div class="meta">${formatDate(post.created_at)}</div>
+                            </div>
+                            <div class="body">${(post.content || '').substring(0, 200)}</div>
+                            <div class="footer">
+                                <span><i class="fas fa-heart"></i> ${post.likes_count || 0}</span>
+                                <span><i class="fas fa-comment"></i> ${post.comments_count || 0}</span>
+                                ${post.post_type ? `<span><i class="fas fa-tag"></i> ${post.post_type}</span>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function renderStats(stats) {
+            const container = document.getElementById('stats-content');
+            
+            const html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon">📊</div>
+                        <div class="value">${stats.level || 1}</div>
+                        <div class="label">Level</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">⭐</div>
+                        <div class="value">${stats.total_xp || 0}</div>
+                        <div class="label">Total XP</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">📹</div>
+                        <div class="value">${stats.video_stats?.total_videos || 0}</div>
+                        <div class="label">Videos Created</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">👥</div>
+                        <div class="value">${stats.social_stats?.total_activities || 0}</div>
+                        <div class="label">Social Activities</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">🏆</div>
+                        <div class="value">${stats.battle_stats?.wins || 0}</div>
+                        <div class="label">Battle Wins</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">🎖️</div>
+                        <div class="value">${stats.achievements?.length || 0}</div>
+                        <div class="label">Achievements</div>
+                    </div>
+                </div>
+                
+                ${stats.video_stats ? `
+                    <h2 style="margin-top: 40px; margin-bottom: 20px;">Video Statistics</h2>
+                    <div class="content-grid">
+                        <div class="content-card">
+                            <div class="title">By Provider</div>
+                            <div class="body">
+                                ${Object.entries(stats.video_stats.by_provider || {}).map(([provider, count]) => 
+                                    `<div>${provider}: ${count}</div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        <div class="content-card">
+                            <div class="title">By Theme</div>
+                            <div class="body">
+                                ${Object.entries(stats.video_stats.by_theme || {}).map(([theme, count]) => 
+                                    `<div>${theme}: ${count}</div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function renderTrending(trending, popular) {
+            const container = document.getElementById('trending-content');
+            
+            const html = `
+                <h2 style="margin-bottom: 20px;">🔥 Trending Posts</h2>
+                <div class="content-grid">
+                    ${trending.map(post => `
+                        <div class="content-card">
+                            <div class="header">
+                                <div class="title">${post.user_id || 'Unknown'}</div>
+                                <div class="meta">Score: ${post.engagement_score || 0}</div>
+                            </div>
+                            <div class="body">${(post.content || '').substring(0, 200)}</div>
+                            <div class="footer">
+                                <span><i class="fas fa-heart"></i> ${post.likes_count || 0}</span>
+                                <span><i class="fas fa-comment"></i> ${post.comments_count || 0}</span>
+                                <span><i class="fas fa-fire"></i> ${post.engagement_score || 0}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <h2 style="margin-top: 40px; margin-bottom: 20px;">⭐ Popular Posts</h2>
+                <div class="content-grid">
+                    ${popular.map(post => `
+                        <div class="content-card">
+                            <div class="header">
+                                <div class="title">${post.user_id || 'Unknown'}</div>
+                                <div class="meta">${post.likes_count || 0} likes</div>
+                            </div>
+                            <div class="body">${(post.content || '').substring(0, 200)}</div>
+                            <div class="footer">
+                                <span><i class="fas fa-heart"></i> ${post.likes_count || 0}</span>
+                                <span><i class="fas fa-comment"></i> ${post.comments_count || 0}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Utility Functions
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('da-DK', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch {
+                return dateString;
+            }
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'completed': '#00ff88',
+                'processing': '#00d4ff',
+                'failed': '#ff4444',
+                'pending': '#ffaa00'
+            };
+            return colors[status] || '#ffffff';
+        }
+
+        function showError(message) {
+            if (typeof toast !== 'undefined') {
+                toast.error(message);
+            } else {
+                alert(message);
+            }
+        }
+
+        function refreshAll() {
+            loadTabData(currentTab);
+            if (typeof toast !== 'undefined') {
+                toast.success('Data refreshed');
+            }
+        }
+
+        // Auto-load on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTabData('overview');
+        });
+    </script>
+    <script src="/static/js/image-support.js?v=20260304154115"></script>
+    <script src="/static/js/template-effects.js?v=20260304154115"></script>
+    <script src="/static/js/template-services.js?v=20260304154115"></script>
+    <script src="/static/js/agent-skill-sets.js?v=20260304154115"></script>
+    <script src="/static/js/template-engine-core.js?v=20260304154115"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js?v=20260304154115"></script>
+    <script src="/static/js/comprehensive-api-integration.js?v=20260304154115"></script>
+
+    <!-- System Aggregator Integration -->
+    <script>
+        const AGGREGATOR_API = '/api/aggregator';
+        
+        // Unified data loader using aggregator
+        async function loadAllSystemData(userId) {
+            try {
+                const response = await fetch(`${AGGREGATOR_API}/frontend?user_id=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return data.data;
+                    }
+                }
+            } catch (error) {
+                console.warn('Aggregator API failed, falling back to individual endpoints:', error);
+            }
+            return null;
+        }
+        
+        // Update page-specific data
+        async function updatePageData(userId) {
+            const allData = await loadAllSystemData(userId);
+            if (!allData) return;
+            
+            // Update based on page type
+            if (allData.dashboard) {
+                updateDashboardData(allData.dashboard);
+            }
+            if (allData.battle) {
+                updateBattleData(allData.battle);
+            }
+            if (allData.shop) {
+                updateShopData(allData.shop);
+            }
+            if (allData.quest) {
+                updateQuestData(allData.quest);
+            }
+            if (allData.points) {
+                updatePointsData(allData.points);
+            }
+        }
+        
+        // Helper functions for each page type
+        function updateDashboardData(data) {
+            if (data.points && data.points.total !== undefined) {
+                const pointsEl = document.getElementById('total-points');
+                if (pointsEl) pointsEl.textContent = data.points.total;
+            }
+        }
+        
+        function updateBattleData(data) {
+            if (data.battles && Array.isArray(data.battles)) {
+                const battlesEl = document.getElementById('battle-list');
+                if (battlesEl) {
+                    battlesEl.innerHTML = data.battles.map(b => 
+                        `<div class="battle-item">${b.name || 'Battle'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateShopData(data) {
+            if (data.items && Array.isArray(data.items)) {
+                const itemsEl = document.getElementById('shop-items');
+                if (itemsEl) {
+                    itemsEl.innerHTML = data.items.map(item => 
+                        `<div class="shop-item">${item.name || 'Item'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateQuestData(data) {
+            if (data.active_quests && Array.isArray(data.active_quests)) {
+                const questsEl = document.getElementById('active-quests');
+                if (questsEl) {
+                    questsEl.innerHTML = data.active_quests.map(q => 
+                        `<div class="quest-item">${q.name || 'Quest'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updatePointsData(data) {
+            // Update points displays across the page
+            const pointsElements = document.querySelectorAll('[data-points]');
+            pointsElements.forEach(el => {
+                const pointType = el.getAttribute('data-points');
+                if (data[pointType] !== undefined) {
+                    el.textContent = data[pointType];
+                }
+            });
+        }
+        
+        // Auto-update on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            updatePageData(userId);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => updatePageData(userId), 30000);
+        });
+    </script>
+    
+
+    <!-- Production Debugger Integration -->
+    <script>
+        const DEBUGGER_API = '/api/debug';
+        
+        // Debug function (only in development)
+        function debugSystem(systemName) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                fetch(`${DEBUGGER_API}/system/${systemName}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log(`[Debug] ${systemName}:`, data);
+                    })
+                    .catch(e => console.error(`[Debug] Error debugging ${systemName}:`, e));
+            }
+        }
+        
+        // Auto-debug on errors (development only)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.addEventListener('error', (event) => {
+                console.error('[Debug] Page error detected:', event.error);
+                // Optionally send to debugger API
+            });
+        }
+    </script>
+    
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+</body>
+</html>
+

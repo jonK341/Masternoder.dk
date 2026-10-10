@@ -39,9 +39,13 @@
         return r.json();
       }).catch(function (err) {
         clearTimeout(timer);
-        if (attempt < retries) {
+        var aborted = err && (err.name === 'AbortError' || /aborted/i.test(String(err && err.message || '')));
+        if (!aborted && attempt < retries) {
           attempt += 1;
           return run();
+        }
+        if (aborted) {
+          return { success: false, aborted: true };
         }
         throw err;
       });
@@ -143,6 +147,8 @@
     }
     var note = q('cex-route-note');
     if (note) note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Data loads when you open each tab.';
+    var hubLabel = q('cex-hub-tab-label');
+    if (hubLabel) hubLabel.textContent = TAB_LABELS[tabId] || tabId;
     try {
       var url = new URL(window.location.href);
       if (tabId === 'trade') url.searchParams.delete('hub');

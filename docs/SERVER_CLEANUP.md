@@ -58,7 +58,7 @@ python scripts/server_cleanup_scan.py --full --yes --clear-all-videos
 
 ## Requirements
 
-- **Local:** `paramiko`, and `DEPLOY_PASS` in the environment for SSH to `root@masternoder.dk` (no password is embedded in scripts).
+- **Local:** `paramiko`, and `DEPLOY_PASS` (or the default password in the script) for SSH to `root@masternoder.dk`.
 - **Server:** Repo at `/var/www/html`; for video cleanup, `scripts/cleanup_videos_keep_top10.py` must be present (e.g. under `/var/www/html` or `/var/www/html/vidgenerator`).
 
 ## Optional: manual cleanup on server

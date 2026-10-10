@@ -9,9 +9,6 @@ Endpoints:
   GET  /api/ai/video-providers        — status of video generation providers (RunwayML, ModelsLab, etc.)
   POST /api/ai/video-providers/test   — generate a short test clip via RunwayML
 """
-import json
-import traceback
-
 from flask import Blueprint, jsonify, request
 
 from backend.services.llm_service import (
@@ -28,15 +25,6 @@ ai_providers_bp = Blueprint("ai_providers", __name__)
 _TEST_PING = [{"role": "user", "content": "Reply with just the word: ok"}]
 
 
-def _json_safe(obj):
-    """Ensure payload is JSON-serializable (avoids 500 from jsonify on odd types)."""
-    try:
-        json.dumps(obj, default=str)
-        return obj
-    except Exception:
-        return json.loads(json.dumps(obj, default=str))
-
-
 # ---------------------------------------------------------------------------
 # GET /api/ai/providers
 # ---------------------------------------------------------------------------
@@ -47,25 +35,18 @@ def provider_status():
         statuses = get_provider_status()
         configured = [s for s in statuses if s["configured"]]
         available = [s for s in statuses if s["available"]]
-        # Plain dict so jsonify never sees non-JSON types from TASK_ROUTES / env
-        task_routes_plain = {k: list(v) for k, v in TASK_ROUTES.items()}
-        payload = {
+        return jsonify({
             "success": True,
             "summary": {
                 "total_providers": len(statuses),
                 "configured": len(configured),
                 "available": len(available),
-                "task_routes": task_routes_plain,
+                "task_routes": TASK_ROUTES,
             },
             "providers": statuses,
-        }
-        return jsonify(_json_safe(payload)), 200
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "trace": traceback.format_exc()[-4000:],
         }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -78,77 +59,33 @@ def test_providers():
     Optional query param: ?provider=groq  to test a single provider only.
     Warning: this makes real API calls and counts against rate limits.
     """
-    try:
-        target = (request.args.get("provider") or "").strip()
-        if target and target not in PROVIDERS:
-            return jsonify({
-                "success": False,
-                "error": f"Unknown provider: {target!r}. Valid: {', '.join(sorted(PROVIDERS.keys()))}",
-                "tested": 0,
-                "passed": 0,
-                "failed": 0,
-                "results": [],
-            }), 200
+    target = request.args.get("provider")
+    providers_to_test = [target] if target and target in PROVIDERS else configured_providers()
 
-        providers_to_test = [target] if target else configured_providers()
+    results = []
+    for pname in providers_to_test:
+        import time as _t
+        t0 = _t.monotonic()
+        resp = chat(_TEST_PING, provider=pname, max_tokens=10, timeout=15)
+        elapsed_ms = int((_t.monotonic() - t0) * 1000)
+        results.append({
+            "provider": pname,
+            "label": PROVIDERS[pname]["label"],
+            "success": resp.success,
+            "response": resp.content if resp.success else None,
+            "error": resp.error if not resp.success else None,
+            "model_used": resp.model,
+            "elapsed_ms": elapsed_ms,
+        })
 
-        if not providers_to_test:
-            return jsonify({
-                "success": False,
-                "error": "No LLM providers configured. Set at least one API key in .env (e.g. GROQ_API_KEY or OPENAI_API_KEY).",
-                "tested": 0,
-                "passed": 0,
-                "failed": 0,
-                "results": [],
-            }), 200
-
-        results = []
-        for pname in providers_to_test:
-            import time as _t
-            t0 = _t.monotonic()
-            try:
-                resp = chat(_TEST_PING, provider=pname, max_tokens=10, timeout=15)
-            except Exception as ex:
-                elapsed_ms = int((_t.monotonic() - t0) * 1000)
-                results.append({
-                    "provider": pname,
-                    "label": PROVIDERS.get(pname, {}).get("label", pname),
-                    "success": False,
-                    "response": None,
-                    "error": f"{type(ex).__name__}: {ex}",
-                    "model_used": None,
-                    "elapsed_ms": elapsed_ms,
-                })
-                continue
-            elapsed_ms = int((_t.monotonic() - t0) * 1000)
-            results.append({
-                "provider": pname,
-                "label": PROVIDERS[pname]["label"],
-                "success": bool(resp.success),
-                "response": (resp.content or "")[:2000] if resp.success else None,
-                "error": (resp.error or "")[:2000] if not resp.success else None,
-                "model_used": resp.model,
-                "elapsed_ms": elapsed_ms,
-            })
-
-        passed = sum(1 for r in results if r["success"])
-        return jsonify(_json_safe({
-            "success": True,
-            "tested": len(results),
-            "passed": passed,
-            "failed": len(results) - passed,
-            "results": results,
-        })), 200
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "trace": traceback.format_exc()[-4000:],
-            "tested": 0,
-            "passed": 0,
-            "failed": 0,
-            "results": [],
-        }), 200
+    passed = sum(1 for r in results if r["success"])
+    return jsonify({
+        "success": True,
+        "tested": len(results),
+        "passed": passed,
+        "failed": len(results) - passed,
+        "results": results,
+    }), 200
 
 
 # ---------------------------------------------------------------------------

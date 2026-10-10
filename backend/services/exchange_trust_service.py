@@ -292,3 +292,142 @@ def refresh_agent_trust_fields(user_id: str, agent: Dict[str, Any]) -> Dict[str,
     agent["composite_iq"] = prof["composite_iq"]
     agent["trust_edge_bps"] = prof["trust_edge_bps"]
     return prof
+
+
+# ---------------------------------------------------------------------------
+# Trust alerts — Discord webhook + email (opt-in via user controls)
+# ---------------------------------------------------------------------------
+
+_TIER_ORDER = ["Unverified", "Bronze", "Silver", "Gold", "Platinum"]
+
+
+def _tier_index(tier_name: str) -> int:
+    try:
+        return _TIER_ORDER.index(tier_name)
+    except ValueError:
+        return -1
+
+
+def _send_discord_trust_alert(user_id: str, old_tier: str, new_tier: str, score: float) -> bool:
+    """Post a trust-tier change notification to the Discord webhook (if configured)."""
+    webhook_url = os.environ.get("DISCORD_WEBHOOK_URL") or os.environ.get("DISCORD_MARKET_WEBHOOK")
+    if not webhook_url:
+        return False
+    try:
+        import json as _json
+        import urllib.request as _req
+        direction = "⬆️ upgraded" if _tier_index(new_tier) > _tier_index(old_tier) else "⬇️ downgraded"
+        payload = _json.dumps({
+            "username": "MasterNoder Trust",
+            "embeds": [{
+                "title": f"Trust tier {direction}",
+                "description": (
+                    f"**User:** `{user_id}`\n"
+                    f"**{old_tier}** → **{new_tier}** (score: {score:.0f})"
+                ),
+                "color": 0x00d4ff if _tier_index(new_tier) > _tier_index(old_tier) else 0xff4444,
+                "footer": {"text": "MasterNoder Exchange · Trust System"},
+            }],
+        }).encode()
+        r = _req.urlopen(
+            _req.Request(webhook_url, data=payload, headers={"Content-Type": "application/json"}, method="POST"),
+            timeout=5,
+        )
+        return r.status in (200, 204)
+    except Exception:
+        return False
+
+
+def _send_email_trust_alert(user_id: str, old_tier: str, new_tier: str, score: float) -> bool:
+    """Send an email trust-tier notification (if SMTP env vars are set)."""
+    admin_email = os.environ.get("NOTIFY_ADMIN_EMAIL")
+    smtp_host = os.environ.get("NOTIFY_SMTP_HOST")
+    smtp_port = int(os.environ.get("NOTIFY_SMTP_PORT", "587"))
+    smtp_user = os.environ.get("NOTIFY_SMTP_USER")
+    smtp_pass = os.environ.get("NOTIFY_SMTP_PASS")
+    if not (admin_email and smtp_host):
+        return False
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        direction = "upgraded" if _tier_index(new_tier) > _tier_index(old_tier) else "downgraded"
+        msg = MIMEText(
+            f"Trust tier {direction} for user {user_id}:\n"
+            f"  {old_tier} → {new_tier} (score: {score:.0f})\n\n"
+            f"Review at: /exchange/#cex-trust"
+        )
+        msg["Subject"] = f"[MasterNoder] Trust tier {direction}: {user_id}"
+        msg["From"] = smtp_user or admin_email
+        msg["To"] = admin_email
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=8) as s:
+            s.ehlo()
+            if smtp_user and smtp_pass:
+                s.starttls()
+                s.login(smtp_user, smtp_pass)
+            s.send_message(msg)
+        return True
+    except Exception:
+        return False
+
+
+def check_and_emit_trust_alerts(user_id: str, previous_tier: Optional[str] = None) -> Dict[str, Any]:
+    """Compute current trust, compare to *previous_tier*, and fire alerts if the tier changed.
+
+    Call after any action that may move the trust score (e.g. on level-up, new crypto buy,
+    agent purchase, or daily login).  Returns the current trust profile.
+    """
+    ut = compute_user_trust(user_id)
+    new_tier = (ut.get("tier") or {}).get("name", "Unverified")
+    alerted = False
+    if previous_tier and previous_tier != new_tier:
+        discord_ok = _send_discord_trust_alert(user_id, previous_tier, new_tier, ut["score"])
+        email_ok = _send_email_trust_alert(user_id, previous_tier, new_tier, ut["score"])
+        alerted = discord_ok or email_ok
+        ex._audit(
+            "trust_tier_changed",
+            user_id=user_id,
+            old_tier=previous_tier,
+            new_tier=new_tier,
+            score=ut["score"],
+            discord_notified=discord_ok,
+            email_notified=email_ok,
+        )
+    return {
+        "success": True,
+        "trust_score": ut["score"],
+        "tier": new_tier,
+        "tier_changed": previous_tier is not None and previous_tier != new_tier,
+        "alerted": alerted,
+    }
+
+
+def auto_activate_gold(user_id: str) -> Dict[str, Any]:
+    """Automatically activate all pending agents for users who reach Gold tier or above,
+    when the policy ``require_manual_activation`` is True but the user is trusted enough.
+
+    Returns a dict with how many agents were auto-activated.
+    """
+    ut = compute_user_trust(user_id)
+    tier_name = (ut.get("tier") or {}).get("name", "Unverified")
+    if _tier_index(tier_name) < _tier_index("Gold"):
+        return {"success": True, "auto_activated": 0, "reason": "tier_below_gold"}
+    try:
+        from backend.services import agent_marketplace_service as mkt
+        data = mkt._read_user_agents(user_id)
+        activated = 0
+        for agent_id, agent in (data.get("agents") or {}).items():
+            if agent.get("activation") != "pending":
+                continue
+            chk = check_activation(user_id, "run_bots", agent=agent)
+            if not chk["allowed"]:
+                continue
+            agent["activation"] = "active"
+            agent["activation_at"] = _iso()
+            agent["auto_activated_reason"] = "gold_tier"
+            activated += 1
+        if activated:
+            mkt._write_user_agents(user_id, data)
+            ex._audit("trust_auto_activated_gold", user_id=user_id, count=activated, tier=tier_name)
+        return {"success": True, "auto_activated": activated, "tier": tier_name}
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}

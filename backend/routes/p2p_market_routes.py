@@ -1,4 +1,6 @@
-"""Internal MN2 ↔ coins order book API (Phase 3)."""
+"""P2P MN2↔coins market API."""
+from __future__ import annotations
+
 from flask import Blueprint, jsonify, request
 
 from backend.services.account_resolution_service import resolve_user_id
@@ -23,10 +25,11 @@ def _ticker() -> dict:
     sell_depth = sum(float(o.get("remaining_mn2") or o.get("mn2_amount") or 0) for o in sells)
     trades = market.list_recent_trades(limit=1).get("trades") or []
     last = None
+    last_trade = None
     if trades:
-        t = trades[0]
-        mn2 = float(t.get("mn2") or 0)
-        coins = float(t.get("coins") or 0)
+        last_trade = trades[0]
+        mn2 = float(last_trade.get("mn2") or 0)
+        coins = float(last_trade.get("coins") or 0)
         if mn2 > 0:
             last = coins / mn2
     return {
@@ -34,26 +37,44 @@ def _ticker() -> dict:
         "best_ask": best_ask,
         "best_bid": best_bid,
         "sell_depth": sell_depth,
+        "buy_depth": len(buys),
+        "last_trade": last_trade,
         "last_price_coins_per_mn2": last,
     }
 
 
 @p2p_market_bp.route("/api/market/config", methods=["GET"])
 def market_config():
-    import json
-    import os
-    path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "mn2_config.json")
-    cfg = {}
-    if os.path.isfile(path):
-        with open(path, encoding="utf-8") as f:
-            cfg = json.load(f)
-    ref = float(cfg.get("coins_per_mn2") or 100)
-    return jsonify({
-        "success": True,
-        "enabled": True,
-        "reference_price_coins_per_mn2": ref,
-        "pair": "MN2/COINS",
-    })
+    """Public config for internal MN2 ↔ coins order book (trader agent liquidity)."""
+    try:
+        from backend.services.agent_trader_service import _market_cfg, list_strategies, trader_agent_ids
+        cfg = _market_cfg()
+        ref = cfg.get("reference_price_coins_per_mn2")
+        if ref is None:
+            import json
+            import os
+            path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                "data",
+                "mn2_config.json",
+            )
+            if os.path.isfile(path):
+                with open(path, encoding="utf-8") as f:
+                    mn2_cfg = json.load(f)
+                ref = float(mn2_cfg.get("coins_per_mn2") or 100)
+        return jsonify({
+            "success": True,
+            "enabled": bool(cfg.get("enabled")),
+            "quote_unit": "coins",
+            "price_label": "coins per MN2",
+            "pair": "MN2/COINS",
+            "trader_agent_count": len(trader_agent_ids()),
+            "strategies": list_strategies(),
+            "reference_price_coins_per_mn2": ref,
+            "note": "Trader agents post sells and cross-buy on a schedule; users trade with unified coins.",
+        }), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @p2p_market_bp.route("/api/market/ticker", methods=["GET"])
@@ -78,12 +99,14 @@ def market_trades():
 def market_create_order():
     data = request.get_json(silent=True) or {}
     uid = _uid(from_body=True)
-    return jsonify(market.create_order(
+    result = market.create_order(
         uid,
         data.get("side"),
         float(data.get("mn2_amount") or 0),
         float(data.get("price_coins_per_mn2") or 0),
-    ))
+    )
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
 
 
 @p2p_market_bp.route("/api/market/fill", methods=["POST"])
@@ -91,11 +114,15 @@ def market_fill():
     data = request.get_json(silent=True) or {}
     uid = _uid(from_body=True)
     amt = data.get("mn2_amount")
-    return jsonify(market.fill_order(uid, data.get("order_id"), float(amt) if amt is not None else None))
+    result = market.fill_order(uid, data.get("order_id"), float(amt) if amt is not None else None)
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
 
 
 @p2p_market_bp.route("/api/market/cancel", methods=["POST"])
 def market_cancel():
     data = request.get_json(silent=True) or {}
     uid = _uid(from_body=True)
-    return jsonify(market.cancel_order(uid, data.get("order_id")))
+    result = market.cancel_order(uid, data.get("order_id"))
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code

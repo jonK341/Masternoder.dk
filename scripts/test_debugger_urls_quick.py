@@ -15,14 +15,14 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BASE_URL = "https://masternoder.dk"
 
 ENDPOINTS = [
-    {'url': '/api/debug/all-systems', 'method': 'GET'},
-    {'url': '/api/debug/all-routes', 'method': 'GET'},
-    {'url': '/api/debug/check-duplicates', 'method': 'GET'},
-    {'url': '/api/debugger/scanner/scan', 'method': 'GET'},
-    {'url': '/api/debugger/agent/fix-personality', 'method': 'POST'},
-    {'url': '/api/agent/master-fix/personality', 'method': 'GET'},
-    {'url': '/api/debugger/profile/points?user_id=default_user', 'method': 'GET'},
-    {'url': '/api/debugger/tasks/list', 'method': 'GET'},
+    {'url': '/vidgenerator/api/debug/all-systems', 'method': 'GET'},
+    {'url': '/vidgenerator/api/debug/all-routes', 'method': 'GET'},
+    {'url': '/vidgenerator/api/debug/check-duplicates', 'method': 'GET'},
+    {'url': '/vidgenerator/api/debugger/scanner/scan', 'method': 'GET'},
+    {'url': '/vidgenerator/api/debugger/agent/fix-personality', 'method': 'POST'},
+    {'url': '/vidgenerator/api/agent/master-fix/personality', 'method': 'GET'},
+    {'url': '/vidgenerator/api/debugger/profile/points?user_id=default_user', 'method': 'GET'},
+    {'url': '/vidgenerator/api/debugger/tasks/list', 'method': 'GET'},
 ]
 
 def test_endpoint(endpoint):

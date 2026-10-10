@@ -20,8 +20,8 @@ Usage:
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
 
-SSH password: set DEPLOY_PASS, or use --ask-pass to prompt (ignores .env), or run from an
-interactive terminal to be prompted twice when DEPLOY_PASS is unset.
+SSH password: set DEPLOY_PASS, or use --ask-pass to prompt fresh (ignores .env and
+environment), or run from an interactive terminal to be prompted once when DEPLOY_PASS is unset.
 """
 import os
 import sys
@@ -578,6 +578,13 @@ MANIFESTS = {
         "backend/services/agent_skillset.py",
         "backend/routes/missing_endpoints_routes.py",
         "profile/index.html",
+        "static/css/frontpage-home.css",
+        "static/css/profile-hub.css",
+        "static/js/profile-hub.js",
+        "shop/index.html",
+        "static/css/shop.css",
+        "static/js/shop-hub.js",
+        "static/js/shop-profile-manager.js",
         "generator/index.html",
         "theme_premium/index.html",
         "agents/index.html",
@@ -597,12 +604,19 @@ MANIFESTS = {
         "systemd/masternoder2d.service.example",
         "scripts/run_masternoder2d.sh",
         "scripts/run_masternoder2d.ps1",
+        "scripts/mn2_clear_daemon_lock.sh",
+        "scripts/mn2_repair_daemon.sh",
         "cron/mn2_scan_deposits.sh",
         "cron/masternoder-mn2-scan.cron.d",
         "cron/mn2_accrue_rewards.sh",
         "cron/masternoder-mn2-accrue.cron.d",
         "cron/mn2_masternode_provision.sh",
+        "cron/mn2_ops_watchdog.sh",
         "cron/masternoder-mn2-masternode-provision.cron.d",
+        "cron/masternoder-mn2-watchdogs.cron.d",
+        "scripts/mn2_staking_watchdog.py",
+        "scripts/mn2_restore_staking_and_market_remote.py",
+        "scripts/mn2_install_watchdogs_remote.py",
         "scripts/mn2_patch_rpc_retries.sh",
     ],
     # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
@@ -638,14 +652,17 @@ MANIFESTS = {
         "backend/services/mn2_masternode_service.py",
         "backend/services/mn2_masternode_hosting_service.py",
         "backend/services/mn2_services_hub.py",
+        "backend/services/mn2_proof_of_reserves_service.py",
         "backend/services/discord_service.py",
         "backend/services/discord_m8_streams.py",
         "backend/services/casino_discord_fanout.py",
+        "backend/services/casino_service.py",
         "backend/services/market_discord_fanout.py",
         "backend/services/game_discord_fanout.py",
         "backend/services/compendium_milestone_service.py",
         "backend/services/compendium_access_service.py",
         "backend/services/generator_api_key_service.py",
+        "backend/services/battle_pass_service.py",
         "backend/services/camgirls_livekit_service.py",
         "backend/services/mobile_iap_service.py",
         "backend/services/shop_auction_service.py",
@@ -675,6 +692,7 @@ MANIFESTS = {
         "backend/routes/generator_routes.py",
         "backend/routes/camgirls_routes.py",
         "backend/routes/monetization_expansion_routes.py",
+        "backend/routes/casino_routes.py",
         "backend/routes/monetization_routes.py",
         "backend/routes/ai_assist_routes.py",
         "backend/routes/cogs_routes.py",
@@ -705,6 +723,7 @@ MANIFESTS = {
         "data/mn2_staking_terms.json",
         "data/mn2_masternode_config.json",
         "data/monetization_config.json",
+        "data/casino_config.json",
         "data/monetization_streams.json",
         "data/monetization_revenue_tracks.json",
         "monetization/index.html",
@@ -728,6 +747,11 @@ MANIFESTS = {
         "scripts/mn2_unlock_collateral.sh",
         "scripts/mn2_repair_masternode_conf.sh",
         "scripts/mn2_fleet_autostart.sh",
+        "scripts/mn2_staking_watchdog.py",
+        "scripts/mn2_restore_staking_and_market_remote.py",
+        "scripts/mn2_install_watchdogs_remote.py",
+        "cron/mn2_ops_watchdog.sh",
+        "cron/masternoder-mn2-watchdogs.cron.d",
         "scripts/mn2_masternode_fleet_ops_remote.py",
         "scripts/mn2_check_activetime_public.py",
         "scripts/mn2_test_ping_live.py",
@@ -760,6 +784,32 @@ MANIFESTS = {
         "cron/masternoder-margin-report.cron.d",
         "cron/discord_activity_funnel.sh",
         "cron/mn2_read_ops_secret.sh",
+    ],
+    "nft_market": [
+        "backend/services/nft_exchange_service.py",
+        "backend/services/agent_wallet_service.py",
+        "backend/routes/nft_routes.py",
+        "backend/routes/agent_treasury_routes.py",
+        "backend/routes/crypto_exchange_routes.py",
+        "backend/routes/trophies_routes.py",
+        "backend/routes/missing_endpoints_routes.py",
+        "backend/routes/paypal_routes.py",
+        "backend/services/paypal_service.py",
+        "backend/routes/shop_routes.py",
+        "backend/register_blueprints.py",
+        "data/nft_catalog.json",
+        "data/trophy_definitions.json",
+        "market/index.html",
+        "shop/index.html",
+        "exchange/index.html",
+        "profile/index.html",
+        "static/js/nft-market.js",
+        "static/js/cex-nft-market.js",
+        "static/js/profile-mn2-wallet.js",
+        "static/img/nft/license-plate.svg",
+        "static/img/nft/block-smile.svg",
+        "static/img/nft/vault-holo.svg",
+        "scripts/nft_market_smoke.py",
     ],
     "camgirls": [
         "backend/services/camgirls_service.py",
@@ -1408,7 +1458,7 @@ def main():
     if not args:
         print("Usage: python scripts/deploy.py <manifest> [manifest ...] [--ask-pass] [--upload-only] [--list-files]")
         print("       python scripts/deploy.py --files path1 path2 [--ask-pass] [--upload-only] [--list-files]")
-        print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env)")
+        print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env and environment)")
         print("  --upload-only  SFTP files to the server only (no cache clear, no systemd/cron hooks, no service restart).")
         print("  --list-files   Print the merged file list and exit (no SSH).")
         print("Manifests:", ", ".join(MANIFESTS))

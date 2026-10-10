@@ -10,9 +10,9 @@
 
   function uid() {
     try {
-      return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+      return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
     } catch (e) {
-      return 'default_user';
+      return (window.MnUserId ? window.MnUserId.read() : '');
     }
   }
 

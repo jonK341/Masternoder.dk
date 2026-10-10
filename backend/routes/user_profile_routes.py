@@ -2,7 +2,13 @@
 User Profile Routes
 API endpoints for user profiles, onboarding, and agent skills
 """
+import logging
+
 from flask import Blueprint, jsonify, request, session
+
+from backend.services.user_id_policy import missing_user_response, rejection_for, user_exists
+
+logger = logging.getLogger(__name__)
 
 
 # Lazy proxy: defer importing the user_onboarding singleton until first use so a
@@ -22,6 +28,26 @@ from backend.services.user_profile import user_profile
 from backend.services.user_location_service import user_location_service
 
 user_profile_bp = Blueprint('user_profile', __name__)
+
+
+def _rejected_user_response(user_id):
+    rejected = rejection_for(user_id)
+    if not rejected:
+        return None
+    body, status = rejected
+    return jsonify(body), status
+
+
+def _gate_existing_user(user_id):
+    """401 for placeholders. 404 only when the database confirms the id is absent."""
+    rejected = _rejected_user_response(user_id)
+    if rejected:
+        return rejected
+    found = user_exists(user_id)
+    if found is False:
+        body, status = missing_user_response(user_id)
+        return jsonify(body), status
+    return None
 
 
 def _resolve_user_id_for_request():
@@ -221,6 +247,7 @@ def bind_session():
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id required'}), 400
 
+        # Gate on login password OR bind-session setting (main), using shared verify path.
         needs_password = login_requires_password(user_id) or bind_session_requires_password(user_id)
         if needs_password:
             if not password:
@@ -254,6 +281,9 @@ def bind_session():
 @user_profile_bp.route('/api/user/profile/<user_id>', methods=['GET'])
 def get_user_profile(user_id):
     """Get user profile"""
+    rejected = _gate_existing_user(user_id)
+    if rejected:
+        return rejected
     try:
         profile = user_onboarding.get_user_profile(user_id)
         
@@ -262,13 +292,16 @@ def get_user_profile(user_id):
                 'success': True,
                 'profile': profile
             }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'User not found'
-            }), 404
+        logger.info("user profile not found user_id=%s", user_id)
+        return jsonify({
+            'success': False,
+            'error': 'user not found',
+            'code': 'user_not_found',
+            'user_id': user_id,
+        }), 404
             
     except Exception as e:
+        logger.exception("user profile failed user_id=%s", user_id)
         return jsonify({
             'success': False,
             'error': str(e)
@@ -277,6 +310,9 @@ def get_user_profile(user_id):
 @user_profile_bp.route('/api/user/profile/<user_id>/display', methods=['GET'])
 def get_profile_display(user_id):
     """Get profile data formatted for display"""
+    rejected = _gate_existing_user(user_id)
+    if rejected:
+        return rejected
     try:
         result = user_profile.get_profile_display(user_id)
         
@@ -314,6 +350,9 @@ def get_profile_display(user_id):
 @user_profile_bp.route('/api/user/profile/<user_id>/aggregated', methods=['GET'])
 def get_profile_aggregated(user_id):
     """Single-call profile: display + activity + agents + achievements + trophies. One request, one loading state."""
+    rejected = _gate_existing_user(user_id)
+    if rejected:
+        return rejected
     try:
         result = user_profile.get_profile_display(user_id)
         if not result.get('success'):
@@ -414,7 +453,8 @@ def get_profile_aggregated(user_id):
 
         return jsonify(result), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        logger.exception("aggregated profile failed user_id=%s", user_id)
+        return jsonify({'success': False, 'error': str(e), 'code': 'profile_unavailable'}), 500
 
 
 @user_profile_bp.route('/api/user/profile/<user_id>/stats', methods=['GET'])

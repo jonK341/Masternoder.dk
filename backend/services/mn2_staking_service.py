@@ -342,6 +342,33 @@ def dynamic_apr() -> float:
     return max(mn, min(mx, apr))
 
 
+def public_apr_status(staking_health_snap: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Public APR presentation: never advertise live yield when daemon is not minting."""
+    estimated = float(dynamic_apr())
+    sh = staking_health_snap
+    if sh is None:
+        try:
+            from backend.services.mn2_rpc_client import staking_health
+            sh = staking_health() or {}
+        except Exception:
+            sh = {}
+    active = sh.get("staking_active") is True or sh.get("status") == "active"
+    status = "live" if active else "inactive"
+    if sh.get("status") == "unreachable":
+        status = "unreachable"
+    elif sh.get("status") == "unsupported":
+        status = "unknown"
+    return {
+        "apr_status": status,
+        "staking_active": bool(active),
+        "estimated_apr_percent": estimated,
+        # Live APR only when daemon is minting; otherwise null so UI cannot claim 8%.
+        "apr_percent": estimated if active else None,
+        "mnsync": sh.get("mnsync"),
+        "walletunlocked": sh.get("walletunlocked"),
+    }
+
+
 def total_staked() -> float:
     return round(sum(float(r.get("staked", 0) or 0) for r in _load_stakes().values()), 8)
 

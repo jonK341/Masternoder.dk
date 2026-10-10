@@ -49,7 +49,16 @@ def enabled() -> bool:
 
 def _venue_search_eligible(venue_id: str) -> bool:
     """Execution-eligible venue: creds + exchange_venue_api_config entry (excludes scan-only bingx)."""
-    return vapi.venue_execution_eligible(venue_id)
+    fn = getattr(vapi, "venue_execution_eligible", None)
+    if callable(fn):
+        return bool(fn(venue_id))
+    vid = str(venue_id or "").lower()
+    if not vid:
+        return False
+    if not vapi.venue_has_credentials(vid):
+        return False
+    entry = (vapi.load_api_config().get("venues") or {}).get(vid)
+    return isinstance(entry, dict)
 
 
 def _execution_eligible_route(buy_venue: str, sell_venue: str) -> bool:
