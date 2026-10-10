@@ -225,3 +225,33 @@ class UserStorage(db.Model):
     __table_args__ = (
         Index("ix_user_storage_key", "user_id", "storage_key", unique=True),
     )
+
+
+class PointTransaction(db.Model):
+    """Ledger row for a point credit or debit. Column names match the INSERT paths."""
+    __tablename__ = "point_transactions"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.String(100), nullable=False, index=True)
+    system_name = db.Column(db.String(100), nullable=False, index=True)
+    transaction_type = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Numeric(15, 2), nullable=False)
+    balance_before = db.Column(db.Numeric(15, 2), default=0)
+    balance_after = db.Column(db.Numeric(15, 2), default=0)
+    source = db.Column(db.String(100), nullable=True)
+    reference_id = db.Column(db.String(100), nullable=True)
+    txn_metadata = db.Column("metadata", db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), index=True)
+
+
+class SchemaMigration(db.Model):
+    """Applied migration ledger. Read by /api/health/data-schema."""
+    __tablename__ = "schema_migrations"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    version = db.Column(db.String(64), unique=True, nullable=False)
+    script_name = db.Column(db.String(255), nullable=False)
+    checksum = db.Column(db.String(128), nullable=True)
+    status = db.Column(db.String(32), nullable=False, default="applied")
+    applied_at = db.Column(db.DateTime, server_default=db.func.now(), index=True)
+    notes = db.Column(db.Text, nullable=True)

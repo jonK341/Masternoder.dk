@@ -187,6 +187,11 @@ def _create_app_impl(config_name=None):
             db.create_all()
         except Exception as e:
             print(f"Warning: Could not create database tables: {e}")
+        try:
+            from backend.services.schema_bootstrap import ensure_point_ledger_schema
+            ensure_point_ledger_schema()
+        except Exception as e:
+            print(f"Warning: Could not ensure point ledger schema: {e}")
 
     # CRITICAL: Register unified/monetization/progression routes FIRST via explicit loader
     try:
