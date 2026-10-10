@@ -4,7 +4,7 @@
     <script>window._pageLoadStart = performance.now();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="cache-version" content="20260617b">
+    <meta name="cache-version" content="20261010a">
     <meta name="description" content="AI video generator on MasterNoder.dk — create clips with coins, generation credits, and Pro tiers. Themes, Runway-style jobs, and MN2 wallet pay.">
     <meta name="keywords" content="AI video generator, MasterNoder, text to video, generation credits, MN2">
     <link rel="canonical" href="https://masternoder.dk/generator/">
@@ -197,6 +197,29 @@
             margin-left: 6px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
             border: 1px solid rgba(0,212,255,0.4); background: rgba(0,212,255,0.15); color: #00d4ff; font-weight: 700;
         }
+        .gen-advanced-details {
+            margin: 0 0 14px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.18);
+        }
+        .gen-advanced-details > summary {
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: #00ff88;
+            list-style: none;
+        }
+        .gen-advanced-details > summary::-webkit-details-marker { display: none; }
+        .gen-advanced-details > summary::after {
+            content: ' ▾';
+            font-size: 0.85em;
+            opacity: 0.75;
+        }
+        .gen-advanced-details:not([open]) > summary::after { content: ' ▸'; }
+        .gen-advanced-details .gen-config-table { margin-top: 12px; margin-bottom: 0; }
+        .gen-advanced-details .gen-checklist { margin-bottom: 0; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -274,37 +297,43 @@
                 <span class="gen-badge">VIDEO</span><span class="gen-badge">CLIP</span>
             </div>
 
+            <details class="gen-advanced-details">
+                <summary><i class="fas fa-clipboard-check" aria-hidden="true"></i> Pre-flight checklist (optional)</summary>
+                <div class="gen-checklist" id="genChecklist">
+                    <div class="gen-checklist-row">
+                        <label><input type="checkbox" id="checkAi" disabled> LLM (script/planning)</label>
+                        <span class="check-status" id="checkLlmStatus">Tjekker...</span>
+                        <button type="button" class="gen-refresh-btn" id="btnRefreshChecklist" title="Opdater">↻</button>
+                    </div>
+                    <div class="gen-checklist-row">
+                        <label><input type="checkbox" id="checkVideo" disabled> Video AI (clips)</label>
+                        <span class="check-status" id="checkVideoStatus">—</span>
+                    </div>
+                    <div class="gen-checklist-row">
+                        <label><input type="checkbox" id="checkAgents" disabled> Agents (daily tasks)</label>
+                        <span class="check-status" id="checkAgentsStatus">Kør &quot;Assign 25&quot; under Agents-fanen ved behov.</span>
+                    </div>
+                    <div style="margin-top:10px; font-size:0.85rem;"><a href="/agent_support" style="color:#00d4ff;" target="_blank">Agent Support → Resources</a> for API keys</div>
+                </div>
+            </details>
+
             <table class="gen-config-table" style="margin-bottom:0;">
                 <tbody>
-                <tr><td colspan="2" style="padding:0; border: none; vertical-align: top;">
-                    <div class="gen-checklist" id="genChecklist">
-                        <div class="gen-mission-title"><i class="fas fa-clipboard-check"></i> Pre-flight checklist</div>
-                        <div class="gen-checklist-row">
-                            <label><input type="checkbox" id="checkAi" disabled> LLM (script/planning)</label>
-                            <span class="check-status" id="checkLlmStatus">Tjekker...</span>
-                            <button type="button" class="gen-refresh-btn" id="btnRefreshChecklist" title="Opdater">↻</button>
-                        </div>
-                        <div class="gen-checklist-row">
-                            <label><input type="checkbox" id="checkVideo" disabled> Video AI (clips)</label>
-                            <span class="check-status" id="checkVideoStatus">—</span>
-                        </div>
-                        <div class="gen-checklist-row">
-                            <label><input type="checkbox" id="checkAgents" disabled> Agents (daily tasks)</label>
-                            <span class="check-status" id="checkAgentsStatus">Kør &quot;Assign 25&quot; under Agents-fanen ved behov.</span>
-                        </div>
-                        <div style="margin-top:10px; font-size:0.85rem;"><a href="/agent_support" style="color:#00d4ff;" target="_blank">Agent Support → Resources</a> for API keys</div>
-                    </div>
-                </td></tr>
-                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
                 <tr><th scope="row" style="width:38%;">Titel</th><td>
                     <input type="text" id="videoTitle" class="gen-input" placeholder="Fx: Min dokumentar om natur" style="margin-bottom:8px;">
                     <button type="button" class="gen-btn gen-btn-inline" id="btnAiIdeas" title="AI prompt forslag"><i class="fas fa-lightbulb"></i> AI idéer</button>
                     <span id="aiIdeasStatus" style="font-size:0.82rem;color:rgba(255,255,255,0.55);display:block;margin-top:4px;"></span>
                 </td></tr>
-                <tr><th scope="row">Beskrivelse</th><td><textarea id="videoDesc" class="gen-textarea" placeholder="Beskriv videoens indhold..." style="min-height:80px; margin-bottom:0;"></textarea></td></tr>
+                <tr><th scope="row">Beskrivelse</th><td><textarea id="videoDesc" class="gen-textarea" placeholder="Beskriv videoens indhold..." style="min-height:72px; margin-bottom:0;"></textarea></td></tr>
                 <tr><th scope="row">Kategori</th><td><select id="configCategory"><option value="general">General</option></select></td></tr>
                 <tr><th scope="row">Tema</th><td><div id="theme-timeline-container"></div><input type="hidden" id="videoTheme" value="default"></td></tr>
-                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
+                </tbody>
+            </table>
+
+            <details class="gen-advanced-details">
+                <summary><i class="fas fa-sliders-h" aria-hidden="true"></i> Advanced video settings</summary>
+                <table class="gen-config-table">
+                <tbody>
                 <tr><th scope="row">Varighed (sek)</th><td><input type="number" id="configDuration" min="30" max="300" value="60" title="30–300 sek"></td></tr>
                 <tr><th scope="row">Kort klip</th><td><label><input type="checkbox" id="configShortClip" checked> Ja (hurtigere)</label></td></tr>
                 <tr><th scope="row">Profil &amp; agents</th><td><label><input type="checkbox" id="configUseContext" checked> Inkluder min profil, agents og point i klippet</label></td></tr>
@@ -321,12 +350,12 @@
                         <div class="gen-provider-grid gen-collapse-content collapsed" id="genProviderGrid"></div>
                     </div>
                 </td></tr>
-                <tr class="gen-table-sep"><td colspan="2" style="height:8px; padding:0;"></td></tr>
                 <tr><th scope="row">Style</th><td><select id="configStyle"><option value="">Auto</option><option value="cinematic">Cinematic</option><option value="documentary">Documentary</option><option value="dramatic">Dramatic</option><option value="educational">Educational</option></select></td></tr>
                 <tr><th scope="row">Tone</th><td><select id="configTone"><option value="">Auto</option><option value="mysterious">Mysterious</option><option value="inspiring">Inspiring</option><option value="calm">Calm</option><option value="energetic">Energetic</option></select></td></tr>
                 <tr><th scope="row">Creative twist</th><td><input type="text" id="configTwist" placeholder="Fx: Start med et overraskende spørgsmål"></td></tr>
                 </tbody>
-            </table>
+                </table>
+            </details>
 
             <hr class="gen-section-row">
             <div class="gen-tabs" id="genTabs">
