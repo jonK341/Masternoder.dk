@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Block Smile NFT">
+  <rect width="128" height="128" rx="16" fill="#0d1f33"/>
+  <circle cx="64" cy="64" r="44" fill="#ffd54f"/>
+  <circle cx="48" cy="56" r="6" fill="#1a1030"/>
+  <circle cx="80" cy="56" r="6" fill="#1a1030"/>
+  <path d="M44 78 Q64 96 84 78" stroke="#1a1030" stroke-width="4" fill="none" stroke-linecap="round"/>
+</svg>

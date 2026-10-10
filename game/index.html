@@ -5046,7 +5046,8 @@
            }, 30000);
         });
     </script>
-        <script src="/static/js/error-manager.js"></script>
+        <script src="/static/js/user-id.js?v=20261010b"></script>
+<script src="/static/js/error-manager.js"></script>
     <script src="/static/js/toast-notifications.js"></script>
     <script src="/static/js/social-mn2-rewards.js?v=20260618f"></script>
     <script src="/static/js/theme-toggle.js"></script>
@@ -5148,10 +5149,13 @@
                         }
                     }
                     
-                    // Update click reward display
+                    // Update click reward display (points + instant MN2)
                     const clickRewardEl = document.getElementById('click-reward-display');
                     if (clickRewardEl) {
                         let displayText = `+${pointsEarned} points (Level ${clickGame.currentLevel})`;
+                        if (result.mn2 && result.mn2.success && result.mn2.amount_mn2) {
+                            displayText += ` · ⚡ +${result.mn2.amount_mn2} MN2 instant`;
+                        }
                         if (result.critical) displayText += ' 💥';
                         if (result.combo > 1) displayText += ` (${result.combo}x Combo)`;
                         clickRewardEl.textContent = displayText;

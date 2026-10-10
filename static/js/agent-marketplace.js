@@ -698,9 +698,14 @@
 
   function handleControllerPayPalReturn() {
     var params = new URLSearchParams(window.location.search);
-    if (params.get("controller_paypal") !== "success") return;
-    var orderId = params.get("token") || "";
-    try { orderId = orderId || sessionStorage.getItem("cex_ctrl_paypal_order") || ""; } catch (e) { /* ignore */ }
+    if (params.get("controller_paypal") === "cancel" || params.get("paypal") === "cancel") return;
+    var orderId = params.get("token") || params.get("order_id") || "";
+    var storedOrder = "";
+    try { storedOrder = sessionStorage.getItem("cex_ctrl_paypal_order") || ""; orderId = orderId || storedOrder; } catch (e) { /* ignore */ }
+    var payerId = params.get("PayerID") || params.get("PayerId");
+    var flagged = params.get("controller_paypal") === "success";
+    var approved = flagged || params.get("paypal") === "success" || !!payerId;
+    if (!approved && !storedOrder) return;
     if (!orderId) return;
     ctrlMsg("Confirming PayPal…", true);
     api("/api/exchange/controller/paypal/capture", { method: "POST", body: { order_id: orderId } }).then(function (res) {

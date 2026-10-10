@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hunters Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        .stat-card p {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .game-content {
+            padding: 30px;
+        }
+        .theme-selector {
+            margin-bottom: 30px;
+        }
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .theme-card {
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            border: 3px solid transparent;
+        }
+        .theme-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        .theme-card.active {
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+        .hunt-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .hunt-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .hunt-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .xp-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            color: #28a745;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 1000;
+            animation: xpPop 1s ease-out;
+        }
+        @keyframes xpPop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1) translateY(-100px); opacity: 0; }
+        }
+        .leaderboard {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .leaderboard-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Hunters Game</h1>
+            <p>Theme-based XP hunting game</p>
+        </div>
+        
+        <div class="game-stats" id="game-stats">
+            <div class="stat-card">
+                <h3 id="level">1</h3>
+                <p>Level</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="xp">0</h3>
+                <p>XP</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="total-xp">0</h3>
+                <p>Total XP</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="hunts">0</h3>
+                <p>Hunts Completed</p>
+            </div>
+        </div>
+        
+        <div class="game-content">
+            <div class="theme-selector">
+                <h2>Select Theme</h2>
+                <div class="theme-grid" id="theme-grid">
+                    <!-- Themes will be loaded here -->
+                </div>
+            </div>
+            
+            <button class="hunt-button" id="hunt-button" onclick="startHunt()">
+                🎯 Start Hunt
+            </button>
+            
+            <div class="leaderboard">
+                <h2>Leaderboard</h2>
+                <div id="leaderboard">
+                    <!-- Leaderboard will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        let currentTheme = 'matrix';
+        let gameState = null;
+        let userId = localStorage.getItem('game_user_id') || 'user_' + Date.now();
+        localStorage.setItem('game_user_id', userId);
+        
+        async function loadThemes() {
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/game/hunters/themes`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const themeGrid = document.getElementById('theme-grid');
+                    themeGrid.innerHTML = '';
+                    
+                    for (const [themeName, themeData] of Object.entries(data.themes)) {
+                        const card = document.createElement('div');
+                        card.className = 'theme-card';
+                        card.style.borderColor = themeData.color;
+                        card.style.background = themeData.color + '20';
+                        card.innerHTML = `
+                            <h3>${themeName}</h3>
+                            <p>XP: ${themeData.xp_multiplier}x</p>
+                            <p>${themeData.difficulty}</p>
+                        `;
+                        card.onclick = () => selectTheme(themeName);
+                        if (themeName === currentTheme) {
+                            card.classList.add('active');
+                        }
+                        themeGrid.appendChild(card);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading themes:', error);
+            }
+        }
+        
+        function selectTheme(theme) {
+            currentTheme = theme;
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.target.closest('.theme-card').classList.add('active');
+            
+            // Restart game with new theme
+            startGame();
+        }
+        
+        async function startGame() {
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/game/hunters/start`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: userId,
+                        theme: currentTheme
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    gameState = data.game_state;
+                    updateStats();
+                }
+            } catch (error) {
+                console.error('Error starting game:', error);
+            }
+        }
+        
+        async function startHunt() {
+            const button = document.getElementById('hunt-button');
+            button.disabled = true;
+            button.textContent = 'Hunting...';
+            
+            try {
+                // Simulate hunt (in real game, this would be actual gameplay)
+                const baseXP = Math.floor(Math.random() * 100) + 50;
+                const success = Math.random() > 0.2; // 80% success rate
+                
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/game/hunters/complete-hunt`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: userId,
+                        base_xp: baseXP,
+                        success: success
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    gameState = data.game_state;
+                    updateStats();
+                    
+                    // Show XP animation
+                    showXPAnimation(data.xp_earned);
+                    
+                    if (data.leveled_up) {
+                        alert(`🎉 Level Up! You are now level ${data.level}!`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error completing hunt:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = '🎯 Start Hunt';
+            }
+        }
+        
+        function showXPAnimation(xp) {
+            const anim = document.createElement('div');
+            anim.className = 'xp-animation';
+            anim.textContent = `+${xp} XP`;
+            document.body.appendChild(anim);
+            
+            setTimeout(() => {
+                anim.remove();
+            }, 1000);
+        }
+        
+        function updateStats() {
+            if (gameState) {
+                document.getElementById('level').textContent = gameState.level;
+                document.getElementById('xp').textContent = gameState.xp;
+                document.getElementById('total-xp').textContent = gameState.total_xp;
+                document.getElementById('hunts').textContent = gameState.hunts_completed;
+            }
+        }
+        
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/game/hunters/leaderboard`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const leaderboard = document.getElementById('leaderboard');
+                    leaderboard.innerHTML = '';
+                    
+                    data.leaderboard.forEach((entry, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'leaderboard-item';
+                        item.innerHTML = `
+                            <span>#${index + 1} ${entry.user_id}</span>
+                            <span>Level ${entry.level} - ${entry.total_xp} XP</span>
+                        `;
+                        leaderboard.appendChild(item);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('load', function() {
+            loadThemes();
+            startGame();
+            loadLeaderboard();
+            setInterval(loadLeaderboard, 30000); // Refresh every 30 seconds
+        });
+    </script>
+    <script src="/vidgenerator/static/js/error-manager.js"></script>
+</body>
+</html>
+

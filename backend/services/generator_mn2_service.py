@@ -226,6 +226,34 @@ def charge_if_requested(
     if tier == "standard" or price <= 0:
         return {"success": True, "charged": False, "tier": tier, "price_mn2": 0}
 
+    try:
+        from backend.services.encoder_order_service import create_balance_order, encoder_orders_enabled
+
+        if encoder_orders_enabled():
+            order_res = create_balance_order(
+                user_id,
+                "generator_encode",
+                {"doc_id": doc_id, "tier": tier, **config},
+                auto_fulfill=True,
+            )
+            if not order_res.get("success"):
+                return order_res
+            config["mn2_charge"] = {
+                "tier": tier,
+                "price_mn2": price,
+                "doc_id": doc_id,
+                "encoder_order_id": (order_res.get("order") or {}).get("order_id"),
+            }
+            return {
+                "success": True,
+                "charged": True,
+                "tier": tier,
+                "price_mn2": price,
+                "encoder_order": order_res.get("order"),
+            }
+    except Exception:
+        pass
+
     meta = {
         "doc_id": doc_id,
         "tier": tier,

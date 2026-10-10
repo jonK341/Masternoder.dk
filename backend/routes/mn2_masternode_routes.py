@@ -278,6 +278,22 @@ def masternode_maintain_ping():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/refresh-collateral", methods=["POST"])
+def masternode_refresh_collateral():
+    """Ops: mark hosts whose collateral UTXO is spent/missing."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        limit = request.args.get("limit") or (_body().get("limit") if isinstance(_body(), dict) else None) or 500
+        try:
+            limit_i = int(limit)
+        except (TypeError, ValueError):
+            limit_i = 500
+        return jsonify(mn_service.refresh_collateral_liveness(limit=limit_i)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/provision-pending", methods=["POST"])
 def masternode_provision_pending():
     if not _ops_authorized():

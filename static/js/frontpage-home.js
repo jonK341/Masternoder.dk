@@ -219,6 +219,26 @@
         }
     }
 
+    const SOUND_VOL_KEY = 'mn_sound_analog_volume_v1';
+
+    function volumeToDb(linear) {
+        const v = Math.max(0.0001, Math.min(1, linear));
+        return 20 * Math.log10(v);
+    }
+
+    function analogGain(linear) {
+        return Math.pow(Math.max(0, Math.min(1, linear)), 1.35);
+    }
+
+    function updateSoundbarUI(linear) {
+        const dbEl = document.getElementById('themeSoundDb');
+        const pctEl = document.getElementById('themeSoundPct');
+        const pct = Math.round(linear * 100);
+        const analog = analogGain(linear);
+        if (dbEl) dbEl.textContent = volumeToDb(analog * 0.85).toFixed(1) + ' dB';
+        if (pctEl) pctEl.textContent = pct + '%';
+    }
+
     function wireSoundSystem() {
         const primaryToggle = document.getElementById('themeSoundToggle');
         const floatToggle = document.getElementById('themeSoundFloatToggle');
@@ -228,6 +248,13 @@
         if (!primaryToggle && !floatToggle) return;
 
         const sound = new FrontpageSoundSystem();
+        try {
+            const saved = parseInt(localStorage.getItem(SOUND_VOL_KEY), 10);
+            if (!Number.isNaN(saved) && saved >= 0 && saved <= 100 && volume) {
+                volume.value = String(saved);
+                sound.setVolume(saved / 100);
+            }
+        } catch (_) {}
 
         const render = () => {
             const mode = SOUND_MODES[sound.mode] || SOUND_MODES.focus;
@@ -240,8 +267,11 @@
                 floatToggle.textContent = sound.isActive ? `${mode.label} on` : 'Sound offline';
             }
             if (status) {
-                status.textContent = sound.isActive ? mode.status : 'Sound offline. Klik start for at aktivere.';
+                status.textContent = sound.isActive
+                    ? mode.status + ' · Soundbar analog: ' + Math.round(sound.volume * 100) + '%'
+                    : 'Sound offline. Klik start for at aktivere.';
             }
+            updateSoundbarUI(sound.volume);
             modeButtons.forEach((button) => {
                 const active = button.dataset.soundMode === sound.mode;
                 button.classList.toggle('is-active', active);
@@ -267,10 +297,25 @@
         if (primaryToggle) primaryToggle.addEventListener('click', toggle);
         if (floatToggle) floatToggle.addEventListener('click', toggle);
         if (volume) {
-            sound.setVolume(parseInt(volume.value, 10) / 100);
-            volume.addEventListener('input', () => {
-                sound.setVolume(parseInt(volume.value, 10) / 100);
-                if (sound.isActive) sound.playPing(620 + sound.volume * 420, 0.015);
+            const applyVol = () => {
+                const lin = parseInt(volume.value, 10) / 100;
+                sound.setVolume(lin);
+                try { localStorage.setItem(SOUND_VOL_KEY, String(volume.value)); } catch (_) {}
+                volume.setAttribute('aria-valuetext', volume.value + ' procent');
+                updateSoundbarUI(lin);
+                if (sound.isActive) sound.playPing(620 + lin * 420, 0.015);
+            };
+            applyVol();
+            volume.addEventListener('input', applyVol);
+        }
+
+        const pwaDl = document.getElementById('fp-download-pwa');
+        if (pwaDl) {
+            pwaDl.addEventListener('click', (ev) => {
+                if (window.__mnInstallPwa) {
+                    ev.preventDefault();
+                    window.__mnInstallPwa();
+                }
             });
         }
         modeButtons.forEach((button) => {

@@ -124,6 +124,20 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP lab: {e}")
     try:
+        from backend.routes.create_app_routes import create_app_bp
+        app.register_blueprint(create_app_bp)
+        n += 1
+        print("  [OK] Registered create_app blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP create_app: {e}")
+    try:
+        from backend.routes.click_game_routes import click_game_bp
+        app.register_blueprint(click_game_bp)
+        n += 1
+        print("  [OK] Registered click_game blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP click_game: {e}")
+    try:
         from backend.routes.trophies_routes import trophies_bp
         app.register_blueprint(trophies_bp)
         n += 1
@@ -169,6 +183,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_staking: {e}")
     try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if "mn2_masternode" not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            n += 1
+            print("  [OK] Registered mn2_masternode blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP mn2_masternode: {e}")
+    try:
         from backend.routes.agent_staking_routes import agent_staking_bp
         if 'agent_staking' not in app.blueprints:
             app.register_blueprint(agent_staking_bp)
@@ -192,6 +214,22 @@ def register_lite_blueprints(app):
             print("  [OK] Registered mn2_p2p blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP mn2_p2p: {e}")
+    try:
+        from backend.routes.nft_routes import nft_bp
+        if "nft" not in app.blueprints:
+            app.register_blueprint(nft_bp)
+            n += 1
+            print("  [OK] Registered nft blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP nft: {e}")
+    try:
+        from backend.routes.p2p_market_routes import p2p_market_bp
+        if "p2p_market" not in app.blueprints:
+            app.register_blueprint(p2p_market_bp)
+            n += 1
+            print("  [OK] Registered p2p_market blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP p2p_market: {e}")
     try:
         from backend.routes.ptc_ads_routes import ptc_ads_bp
         app.register_blueprint(ptc_ads_bp)
@@ -291,6 +329,24 @@ def register_lite_blueprints(app):
         print("  [OK] Registered shop blueprint")
     except Exception as e:
         print(f"  [WARN] LITE_APP shop: {e}")
+
+    try:
+        from backend.routes.shop_monetization_routes import shop_monetization_bp
+        if 'shop_monetization' not in app.blueprints:
+            app.register_blueprint(shop_monetization_bp)
+            n += 1
+            print("  [OK] Registered shop_monetization blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP shop_monetization: {e}")
+    try:
+        from backend.routes.shop_monetization_routes import shop_monetization_bp
+        if 'shop_monetization' not in app.blueprints:
+            app.register_blueprint(shop_monetization_bp)
+            n += 1
+            print("  [OK] Registered shop_monetization blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP shop_monetization: {e}")
+
     try:
         from backend.routes.social_auth_routes import social_auth_bp
         app.register_blueprint(social_auth_bp)
@@ -688,6 +744,26 @@ def _register_all_blueprints_impl(app):
     except Exception as e:
         print(f"  [ERROR] Error registering lab: {e}")
 
+    try:
+        from backend.routes.create_app_routes import create_app_bp
+        app.register_blueprint(create_app_bp)
+        registered_count += 1
+        print("  [OK] Registered create_app blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import create_app: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering create_app: {e}")
+
+    try:
+        from backend.routes.click_game_routes import click_game_bp
+        app.register_blueprint(click_game_bp)
+        registered_count += 1
+        print("  [OK] Registered click_game blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import click_game: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering click_game: {e}")
+
     # Social structure (friends, crews, activity feed, challenges)
     try:
         from backend.routes.social_routes import social_bp
@@ -962,6 +1038,16 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import mn2_staking: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering mn2_staking: {e}")
+    try:
+        from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+        if "mn2_masternode" not in app.blueprints:
+            app.register_blueprint(mn2_masternode_bp)
+            registered_count += 1
+            print("  [OK] Registered mn2_masternode blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import mn2_masternode: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering mn2_masternode: {e}")
     try:
         from backend.routes.agent_staking_routes import agent_staking_bp
         if 'agent_staking' not in app.blueprints:

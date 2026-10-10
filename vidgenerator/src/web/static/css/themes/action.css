@@ -1,0 +1,55 @@
+/**
+ * Action Theme
+ * Auto-generated theme CSS
+ */
+
+.theme-action {
+    --theme-primary: #ff4500;
+    --theme-secondary: #ff6347;
+    --theme-background: #1a0a0a;
+    --theme-accent: #ff0000;
+}
+
+.theme-action .generator-container {
+    background: #1a0a0a;
+    color: #ff4500;
+}
+
+.theme-action .module-card {
+    border-color: #ff4500;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.theme-action .module-card:hover {
+    border-color: #ff0000;
+    box-shadow: 0 0 20px #ff000040;
+}
+
+.theme-action .btn-primary {
+    background: linear-gradient(135deg, #ff4500, #ff6347);
+    border-color: #ff4500;
+}
+
+.theme-action .btn-primary:hover {
+    background: linear-gradient(135deg, #ff6347, #ff0000);
+    box-shadow: 0 0 15px #ff450060;
+}
+
+.theme-action h1, .theme-action h2, .theme-action h3 {
+    color: #ff4500;
+    text-shadow: 0 0 10px #ff450080;
+}
+
+.theme-action .progress-bar .progress-fill {
+    background: linear-gradient(90deg, #ff4500, #ff6347);
+}
+
+.theme-action .status-display {
+    border-color: #ff4500;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.theme-action .phase-frame.active {
+    border-color: #ff4500;
+    box-shadow: 0 0 20px #ff450040;
+}

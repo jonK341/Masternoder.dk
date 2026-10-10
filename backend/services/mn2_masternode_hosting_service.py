@@ -91,7 +91,7 @@ def get_paypal_config() -> Dict[str, Any]:
         "max_slots_per_order": int(pp.get("max_slots_per_order") or 5),
         "return_path": pp.get("return_path") or "/explorer?tab=masternodes",
         "collateral_mn2": float(cfg.get("collateral_mn2") or 5000),
-        "max_hosted_nodes": int(cfg.get("max_hosted_nodes") or 50),
+        "max_hosted_nodes": int(cfg.get("max_hosted_nodes") or 350),
         "auto_provision": bool(cfg.get("auto_provision", True)),
         "shop_payments": {
             "enabled": bool(shop.get("enabled", True)),
@@ -194,12 +194,35 @@ def get_quote(slots: int, user_id: str) -> Dict[str, Any]:
 
     from backend.services import mn2_masternode_service as mn
     st = mn.get_service_status()
+    if st.get("checkout_open") is False:
+        return {
+            "success": False,
+            "error": "Masternode hosting checkout is temporarily closed (no free collateral UTXOs).",
+            "code": "checkout_closed",
+            "slots_available": int(st.get("slots_available") or 0),
+            "collateral_outputs_available": int(st.get("collateral_outputs_available") or 0),
+            "collateral_missing_count": int(st.get("collateral_missing_count") or 0),
+        }
     avail = int(st.get("slots_available") or 0)
     if avail < slots:
+        collateral_left = int(st.get("collateral_outputs_available") or 0)
+        by_cap = int(st.get("slots_by_capacity") or avail)
+        if collateral_left < slots and collateral_left <= by_cap:
+            return {
+                "success": False,
+                "error": (
+                    f"Only {collateral_left} collateral UTXO(s) available for new hosts "
+                    f"(need {slots}). Ops must create 5,000 MN2 outputs before checkout."
+                ),
+                "code": "collateral_exhausted",
+                "slots_available": avail,
+                "collateral_outputs_available": collateral_left,
+            }
         return {
             "success": False,
             "error": f"Only {avail} slot(s) available (max {pp['max_hosted_nodes']})",
             "slots_available": avail,
+            "collateral_outputs_available": collateral_left,
         }
 
     price = float(pp["price_usd_per_slot"])
@@ -891,3 +914,20 @@ def hosting_stats() -> Dict[str, Any]:
     paid = sum(1 for o in orders.values() if isinstance(o, dict) and o.get("status") == "paid")
     pending = sum(1 for o in orders.values() if isinstance(o, dict) and o.get("status") == "pending_payment")
     return {"paid_orders": paid, "pending_orders": pending, "paypal": get_paypal_config()}
+
+
+def list_pending_paypal_payments() -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for order in _load_orders().values():
+        if not isinstance(order, dict):
+            continue
+        ppid = str(order.get("paypal_order_id") or "").strip()
+        if order.get("status") != "pending_payment" or not ppid:
+            continue
+        out.append({
+            "rail": "hosting",
+            "local_id": order.get("order_id"),
+            "paypal_order_id": ppid,
+            "user_id": order.get("user_id"),
+        })
+    return out

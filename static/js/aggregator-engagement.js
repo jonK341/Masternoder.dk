@@ -7,15 +7,9 @@
 
   function getUserId() {
     try {
-      return (
-        localStorage.getItem('user_id') ||
-        localStorage.getItem('vidgenerator_user_id') ||
-        localStorage.getItem('game_user_id') ||
-        'default_user'
-      );
-    } catch (e) {
-      return 'default_user';
-    }
+      if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
+    } catch (e) {}
+    return '';
   }
 
   var sessionAwarded = 0;

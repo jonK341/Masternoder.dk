@@ -58,9 +58,9 @@ def get_routes():
 
 @api_scanner_bp.route('/api/debugger/scanner/missing', methods=['GET'])
 def get_missing_methods():
-    """Get missing API methods"""
+    """Frontend API calls that no backend route serves. Not generated CRUD guesses."""
     try:
-        missing = api_scanner.find_missing_methods()
+        missing = api_scanner.find_missing_frontend_calls()
         return jsonify({
             'success': True,
             'missing': missing,

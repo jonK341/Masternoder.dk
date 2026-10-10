@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}{{ documentary.title }} - Documentary Generator{% endblock %}
+{% block meta_description %}{{ documentary.description or documentary.prompt[:200] }}{% endblock %}
+{% block meta_keywords %}documentary, {{ documentary.title }}, video, AI generated{% endblock %}
+
+{% block og_title %}{{ documentary.title }}{% endblock %}
+{% block og_description %}{{ documentary.description or documentary.prompt[:200] }}{% endblock %}
+{% block og_image %}{% if documentary.thumbnail_path %}{{ url_for('static', filename='../' + documentary.thumbnail_path, _external=True) }}{% else %}{{ url_for('static', filename='img/og-image.png', _external=True) }}{% endif %}{% endblock %}
+
+{% block twitter_title %}{{ documentary.title }}{% endblock %}
+{% block twitter_description %}{{ documentary.description or documentary.prompt[:200] }}{% endblock %}
+{% block twitter_image %}{% if documentary.thumbnail_path %}{{ url_for('static', filename='../' + documentary.thumbnail_path, _external=True) }}{% else %}{{ url_for('static', filename='img/og-image.png', _external=True) }}{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery.css') }}">
+<style>
+.documentary-view {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.documentary-header {
+    margin-bottom: 30px;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.documentary-header h1 {
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.documentary-header .meta {
+    display: flex;
+    gap: 20px;
+    color: #666;
+    margin-top: 15px;
+}
+
+.documentary-player {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.documentary-player video {
+    width: 100%;
+    border-radius: 8px;
+}
+
+.video-controls-custom {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.record-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.record-btn:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+.record-btn:active {
+    transform: translateY(0);
+}
+
+.record-btn.recording {
+    background: #27ae60;
+    animation: pulse-record 1.5s infinite;
+}
+
+.record-btn.recording:hover {
+    background: #229954;
+}
+
+.record-icon {
+    font-size: 18px;
+}
+
+.recording-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e74c3c;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.recording-dot {
+    width: 12px;
+    height: 12px;
+    background: #e74c3c;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+}
+
+@keyframes pulse-record {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+    }
+    50% {
+        box-shadow: 0 2px 20px rgba(39, 174, 96, 0.6);
+    }
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.documentary-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .documentary-header .meta {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .documentary-actions {
+        flex-direction: column;
+    }
+    
+    .video-controls-custom {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .record-btn {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="documentary-view">
+    <div class="documentary-header">
+        <h1>{{ documentary.title }}</h1>
+        {% if documentary.description %}
+        <p class="description">{{ documentary.description }}</p>
+        {% endif %}
+        <div class="meta">
+            <span>📅 {{ documentary.created_at.strftime('%Y-%m-%d') if documentary.created_at else 'N/A' }}</span>
+            {% if documentary.duration %}
+            <span>⏱️ {{ (documentary.duration // 60) }} minutes</span>
+            {% endif %}
+            <span>Status: {{ documentary.status }}</span>
+        </div>
+    </div>
+
+    {% if documentary.video_path and documentary.status == 'completed' %}
+    <div class="documentary-player">
+        <video id="documentary-video" controls autoplay>
+            <source src="/api/documentary/{{ documentary.id }}/video" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="video-controls-custom">
+            <button id="record-btn" class="record-btn" title="Record video and audio">
+                <span class="record-icon">🔴</span>
+                <span class="record-text">Record</span>
+            </button>
+            <div id="recording-indicator" class="recording-indicator" style="display: none;">
+                <span class="recording-dot"></span>
+                <span>Recording...</span>
+            </div>
+        </div>
+        <div class="documentary-actions">
+            <a href="/api/documentary/{{ documentary.id }}/video" download class="download-btn">Download Video</a>
+            <button onclick="copyEmbedCode()" class="embed-btn">Copy Embed Code</button>
+        </div>
+        <div id="embed-code-display" style="display: none; margin-top: 15px;">
+            <textarea id="embed-code" readonly rows="3" style="width: 100%; font-family: monospace;"></textarea>
+        </div>
+    </div>
+    {% elif documentary.status == 'generating' %}
+    <div class="documentary-player">
+        <div style="text-align: center; padding: 60px 20px; background: #f5f5f5; border-radius: 8px;">
+            <div class="spinner" style="margin: 0 auto 20px;"></div>
+            <h3>Documentary is being generated...</h3>
+            <p>Progress: {{ documentary.progress }}%</p>
+            <p>Please check back soon!</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="documentary-player">
+        <div style="text-align: center; padding: 60px 20px; background: #fee; border-radius: 8px;">
+            <h3>⚠️ Documentary not available</h3>
+            <p>Status: {{ documentary.status }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="documentary-info">
+        <h2>About this Documentary</h2>
+        <p>{{ documentary.prompt }}</p>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('gallery') }}" class="cta-button">← Back to Gallery</a>
+    </div>
+</div>
+
+<script>
+function copyEmbedCode() {
+    const embedCode = `<iframe src="{{ request.url_root }}embed/documentary/{{ documentary.id }}" width="640" height="360" frameborder="0" allowfullscreen></iframe>`;
+    const display = document.getElementById('embed-code-display');
+    const textarea = document.getElementById('embed-code');
+    textarea.value = embedCode;
+    display.style.display = 'block';
+    textarea.select();
+    document.execCommand('copy');
+    alert('Embed code copied to clipboard!');
+}
+
+// Video recording functionality
+(function() {
+    const videoElement = document.getElementById('documentary-video');
+    const recordBtn = document.getElementById('record-btn');
+    const recordingIndicator = document.getElementById('recording-indicator');
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isRecording = false;
+    
+    if (!videoElement || !recordBtn) return;
+    
+    recordBtn.addEventListener('click', async function() {
+        if (!isRecording) {
+            // Start recording
+            try {
+                // Get video stream (with audio)
+                const stream = await captureVideoWithAudio(videoElement);
+                
+                // Create MediaRecorder
+                const options = {
+                    mimeType: 'video/webm;codecs=vp9,opus',
+                    videoBitsPerSecond: 5000000
+                };
+                
+                // Fallback to other codecs if vp9 not supported
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'video/webm;codecs=vp8,opus';
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'video/webm';
+                }
+                
+                mediaRecorder = new MediaRecorder(stream, options);
+                
+                recordedChunks = [];
+                
+                mediaRecorder.ondataavailable = function(event) {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = function() {
+                    // Create blob from recorded chunks
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Create download link
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'documentary-recording-' + Date.now() + '.webm';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    // Clean up
+                    URL.revokeObjectURL(url);
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    isRecording = false;
+                    recordBtn.classList.remove('recording');
+                    recordBtn.querySelector('.record-text').textContent = 'Record';
+                    recordBtn.querySelector('.record-icon').textContent = '🔴';
+                    recordingIndicator.style.display = 'none';
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                recordBtn.classList.add('recording');
+                recordBtn.querySelector('.record-text').textContent = 'Stop Recording';
+                recordBtn.querySelector('.record-icon').textContent = '⏹️';
+                recordingIndicator.style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Recording error:', error);
+                alert('Failed to start recording: ' + error.message);
+            }
+        } else {
+            // Stop recording
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+    });
+    
+    async function captureVideoWithAudio(videoElement) {
+        try {
+            // Try to capture from canvas (video element) with audio context
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth || 1280;
+            canvas.height = videoElement.videoHeight || 720;
+            const ctx = canvas.getContext('2d');
+            
+            // Create audio context to capture audio from video
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioContext.createMediaElementSource(videoElement);
+            const destination = audioContext.createMediaStreamDestination();
+            source.connect(destination);
+            source.connect(audioContext.destination); // Keep audio playing
+            
+            // Create video track from canvas
+            const videoStream = canvas.captureStream(30); // 30 fps
+            const audioStream = destination.stream;
+            
+            // Combine video and audio streams
+            const combinedStream = new MediaStream();
+            videoStream.getVideoTracks().forEach(track => combinedStream.addTrack(track));
+            audioStream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+            
+            // Draw video frame to canvas periodically
+            const drawFrame = () => {
+                if (videoElement.readyState >= 2) {
+                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                }
+                if (isRecording) {
+                    requestAnimationFrame(drawFrame);
+                }
+            };
+            drawFrame();
+            
+            return combinedStream;
+        } catch (error) {
+            console.error('Capture error:', error);
+            // Fallback: use screen capture API if available
+            if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                return await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+            }
+            throw error;
+        }
+    }
+})();
+</script>
+{% endblock %}
+

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MasterNoder.dk - AI-drevet videogenerering platform. Opret professionelle dokumentarfilm med kunstig intelligens.">
+    <meta name="keywords" content="AI video, dokumentarfilm, videogenerering, MasterNoder, kunstig intelligens">
+    <title>MasterNoder.dk - AI Videogenerering Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            color: #00ff00;
+        }
+        
+        /* Matrix-style background */
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            padding: 60px 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.3);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            border: 2px solid rgba(0, 255, 0, 0.3);
+            animation: fadeIn 0.8s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo {
+            font-size: 5em;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            }
+            50% {
+                transform: scale(1.1);
+                text-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+            }
+        }
+        
+        h1 {
+            color: #00ff00;
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .subtitle {
+            color: rgba(0, 255, 0, 0.8);
+            font-size: 1.5em;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .main-cta {
+            margin: 40px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            margin: 15px;
+            padding: 25px 60px;
+            background: linear-gradient(135deg, #00ff00, #00cc00);
+            color: #000;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.4em;
+            transition: all 0.3s;
+            box-shadow: 0 5px 30px rgba(0, 255, 0, 0.4);
+            border: 2px solid #00ff00;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .cta-button:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 40px rgba(0, 255, 0, 0.6);
+            background: linear-gradient(135deg, #00ff00, #00ff88);
+        }
+        
+        .cta-button.primary {
+            font-size: 1.6em;
+            padding: 30px 70px;
+            background: linear-gradient(135deg, #00ff00, #00cc00);
+            box-shadow: 0 8px 40px rgba(0, 255, 0, 0.5);
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 50px 0;
+        }
+        
+        .feature-card {
+            background: rgba(0, 255, 0, 0.05);
+            padding: 30px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 255, 0, 0.6);
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.3);
+            background: rgba(0, 255, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .feature-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+        
+        .feature-description {
+            color: rgba(0, 255, 0, 0.7);
+            font-size: 1em;
+            line-height: 1.6;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 40px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            min-width: 150px;
+        }
+        
+        .stat-value {
+            font-size: 3em;
+            font-weight: 700;
+            color: #00ff00;
+            display: block;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .stat-label {
+            color: rgba(0, 255, 0, 0.7);
+            font-size: 1em;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(0, 255, 0, 0.3);
+            color: rgba(0, 255, 0, 0.7);
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .footer-link {
+            color: #00ff00;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+        
+        .footer-link:hover {
+            color: #000;
+            background: #00ff00;
+            text-shadow: none;
+        }
+        
+        .verification-badge {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            border-radius: 25px;
+            color: #00ff00;
+            font-size: 1em;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+            
+            .subtitle {
+                font-size: 1.2em;
+            }
+            
+            .cta-button {
+                padding: 20px 40px;
+                font-size: 1.2em;
+            }
+            
+            .cta-button.primary {
+                font-size: 1.4em;
+                padding: 25px 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    
+    <div class="container">
+        <div class="logo">🎬</div>
+        <h1>MasterNoder.dk</h1>
+        <p class="subtitle">AI-Drevet Videogenerering Platform</p>
+        <p class="subtitle" style="font-size: 1.2em; color: rgba(0, 255, 0, 0.6);">
+            Opret professionelle dokumentarfilm med kunstig intelligens
+        </p>
+        
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-value" id="stat-videos">0</span>
+                <span class="stat-label">Videos</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-users">0</span>
+                <span class="stat-label">Brugere</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">12</span>
+                <span class="stat-label">Temaer</span>
+            </div>
+        </div>
+        
+        <!-- Main CTA -->
+        <div class="main-cta">
+            <a href="/vidgenerator/generator" class="cta-button primary" id="generator-link" onclick="trackAction('generator_click')">
+                <i class="fas fa-rocket"></i> Start Video Generator
+            </a>
+        </div>
+        
+        <!-- Features -->
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <div class="feature-title">AI-Drevet</div>
+                <div class="feature-description">
+                    Avanceret kunstig intelligens skaber professionelle dokumentarfilm fra tekstprompter
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <div class="feature-title">12 Unikke Temaer</div>
+                <div class="feature-description">
+                    Matrix, WWII, Space, Nature og mange flere temaer til dine videoer
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Hurtig Generering</div>
+                <div class="feature-description">
+                    Få dine videoer genereret på få minutter med optimerede AI-systemer
+                </div>
+            </div>
+        </div>
+        
+        <!-- Secondary Links -->
+        <div style="margin-top: 40px;">
+            <a href="/vidgenerator" class="cta-button" onclick="trackAction('platform_click')">
+                <i class="fas fa-home"></i> Platform
+            </a>
+            <a href="/vidgenerator/gallery" class="cta-button" onclick="trackAction('gallery_click')">
+                <i class="fas fa-images"></i> Galleri
+            </a>
+            <a href="/vidgenerator/stats" class="cta-button" onclick="trackAction('stats_click')">
+                <i class="fas fa-chart-line"></i> Statistikker
+            </a>
+        </div>
+        
+        <!-- Verification Badge -->
+        <div class="verification-badge" id="verification-badge">
+            <i class="fas fa-check-circle"></i> Platform Aktiv
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; 2024 MasterNoder.dk</p>
+            <div class="footer-links">
+                <a href="/vidgenerator/generator" class="footer-link">Generator</a>
+                <a href="/vidgenerator/gallery" class="footer-link">Galleri</a>
+                <a href="/vidgenerator/stats" class="footer-link">Statistikker</a>
+                <a href="/vidgenerator/debugger" class="footer-link">Debugger</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Track user actions
+        function trackAction(action) {
+            console.log('[Landing] Action tracked:', action);
+            fetch('/vidgenerator/api/landing/track-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: action,
+                    timestamp: new Date().toISOString(),
+                    page: 'landing'
+                })
+            }).catch(err => console.log('[Landing] Tracking failed:', err));
+        }
+        
+        // Load dynamic stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/vidgenerator/api/stats/summary');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.stats) {
+                        document.getElementById('stat-videos').textContent = data.stats.total_videos || 0;
+                        document.getElementById('stat-users').textContent = data.stats.total_users || 0;
+                    }
+                }
+            } catch (error) {
+                console.log('[Landing] Stats loading failed:', error);
+            }
+        }
+        
+        // Verify platform
+        async function verifyPlatform() {
+            try {
+                const response = await fetch('/vidgenerator/api/health');
+                if (response.ok) {
+                    const badge = document.getElementById('verification-badge');
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Platform Aktiv';
+                    badge.style.borderColor = '#00ff00';
+                }
+            } catch (error) {
+                console.log('[Landing] Verification failed:', error);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            verifyPlatform();
+            trackAction('page_view');
+        });
+    </script>
+    <script src="/vidgenerator/static/js/error-manager.js"></script>
+</body>
+</html>
+

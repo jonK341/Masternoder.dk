@@ -1,0 +1,98 @@
+/* Chat Points Notification Styles */
+
+.chat-points-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    min-width: 250px;
+}
+
+.chat-points-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.chat-points-notification .points-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.chat-points-notification .points-icon {
+    font-size: 24px;
+}
+
+.chat-points-notification .points-amount {
+    font-size: 24px;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.chat-points-notification .points-label {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.chat-points-notification .points-bonuses {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.chat-points-notification .bonus {
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 3px 8px;
+    border-radius: 5px;
+}
+
+/* Chat Points Display */
+#chat-points-display {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    z-index: 9999;
+    font-size: 14px;
+}
+
+.chat-points-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chat-points-info .points-total {
+    font-size: 20px;
+    font-weight: bold;
+    color: #4ade80;
+}
+
+.chat-points-info .points-label {
+    opacity: 0.8;
+}
+
+.chat-points-info .streak {
+    background: rgba(255, 69, 0, 0.3);
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+

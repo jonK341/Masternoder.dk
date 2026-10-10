@@ -1,0 +1,44 @@
+/* NATURE Theme - Nature documentary theme */
+
+.theme-nature {
+    --theme-primary: rgb(74, 124, 89);
+    --theme-secondary: rgb(143, 188, 143);
+    --theme-bg: rgb(26, 42, 26);
+    --theme-accent: rgb(144, 238, 144);
+}
+
+.theme-nature .generator-frame {
+    background: linear-gradient(135deg, var(--theme-bg) 0%, var(--theme-primary) 100%);
+    border: 2px solid var(--theme-primary);
+    box-shadow: 0 0 30px rgba(74, 124, 89, 0.3);
+}
+
+.theme-nature .matrix-monitor {
+    color: var(--theme-primary);
+    text-shadow: 0 0 10px var(--theme-primary), 0 0 20px var(--theme-primary);
+}
+
+.theme-nature button {
+    background: var(--theme-primary);
+    color: var(--theme-bg);
+    border: 2px solid var(--theme-secondary);
+    box-shadow: 0 0 15px rgba(74, 124, 89, 0.5);
+}
+
+.theme-nature button:hover {
+    background: var(--theme-secondary);
+    box-shadow: 0 0 25px var(--theme-primary), 0 0 40px var(--theme-primary);
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.theme-nature input, .theme-nature textarea {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background: rgba(26, 42, 26, 0.8);
+}
+
+.theme-nature input:focus, .theme-nature textarea:focus {
+    border-color: var(--theme-secondary);
+    box-shadow: 0 0 10px rgba(74, 124, 89, 0.5);
+}

@@ -2,7 +2,13 @@
 User Profile Routes
 API endpoints for user profiles, onboarding, and agent skills
 """
+import logging
+
 from flask import Blueprint, jsonify, request, session
+
+from backend.services.user_id_policy import missing_user_response, rejection_for, user_exists
+
+logger = logging.getLogger(__name__)
 
 
 # Lazy proxy: defer importing the user_onboarding singleton until first use so a
@@ -15,37 +21,33 @@ class _LazyUserOnboarding:
 
 
 user_onboarding = _LazyUserOnboarding()
-from backend.services.account_resolution_service import resolve_user_id, set_session_user
+from backend.services.account_resolution_service import set_session_user
 from backend.services.user_agent_skills import user_agent_skills
 from backend.services.user_info_scraper import user_info_scraper
 from backend.services.user_profile import user_profile
 from backend.services.user_location_service import user_location_service
-from backend.services.profile_access_service import (
-    is_owner,
-    profile_services_health,
-    require_profile_owner,
-    require_profile_read,
-    sanitize_display_payload,
-    sanitize_profile_record,
-    sanitize_scraped_info,
-    validate_profile_update,
-)
 
 user_profile_bp = Blueprint('user_profile', __name__)
 
 
-def _access_denied(err):
-    if err:
-        return jsonify(err[0]), err[1]
+def _rejected_user_response(user_id):
+    rejected = rejection_for(user_id)
+    if not rejected:
+        return None
+    body, status = rejected
+    return jsonify(body), status
+
+
+def _gate_existing_user(user_id):
+    """401 for placeholders. 404 only when the database confirms the id is absent."""
+    rejected = _rejected_user_response(user_id)
+    if rejected:
+        return rejected
+    found = user_exists(user_id)
+    if found is False:
+        body, status = missing_user_response(user_id)
+        return jsonify(body), status
     return None
-
-
-@user_profile_bp.route('/api/user/profile/health', methods=['GET'])
-def profile_health():
-    """Readiness check for profile services and storage."""
-    result = profile_services_health()
-    status = 200 if result.get('success') else 503
-    return jsonify(result), status
 
 
 def _resolve_user_id_for_request():
@@ -220,25 +222,38 @@ def login_user():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@user_profile_bp.route('/api/user/logout', methods=['POST'])
+def logout_user():
+    """Clear server session (pair with client localStorage clear)."""
+    try:
+        from backend.services.account_resolution_service import clear_session_user
+        clear_session_user()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @user_profile_bp.route('/api/user/bind-session', methods=['POST'])
 def bind_session():
     """Bind user_id to server session (e.g. when user sets ID via 'Use ID')."""
     try:
+        from backend.services.account_security_service import bind_session_requires_password
         from backend.services.login_security_service import login_requires_password
         from backend.services.password_protection_service import verify_password
 
         data = request.get_json() or {}
         user_id = (data.get('user_id') or '').strip()
+        password = (data.get('password') or '').strip()
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id required'}), 400
 
-        profile = user_onboarding.get_user_profile(user_id)
-        if profile and login_requires_password(user_id):
-            password = (data.get('password') or '').strip()
+        # Gate on login password OR bind-session setting (main), using shared verify path.
+        needs_password = login_requires_password(user_id) or bind_session_requires_password(user_id)
+        if needs_password:
             if not password:
                 return jsonify({
                     'success': False,
-                    'error': 'Password required for this account',
+                    'error': 'Password required to bind this account',
                     'requires_password': True,
                 }), 401
             verified = verify_password(user_id, password)
@@ -266,26 +281,27 @@ def bind_session():
 @user_profile_bp.route('/api/user/profile/<user_id>', methods=['GET'])
 def get_user_profile(user_id):
     """Get user profile"""
+    rejected = _gate_existing_user(user_id)
+    if rejected:
+        return rejected
     try:
-        denied = _access_denied(require_profile_read(user_id))
-        if denied:
-            return denied
-
         profile = user_onboarding.get_user_profile(user_id)
         
         if profile:
-            owner = is_owner(user_id)
             return jsonify({
                 'success': True,
-                'profile': sanitize_profile_record(profile, is_owner_view=owner),
+                'profile': profile
             }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'User not found'
-            }), 404
+        logger.info("user profile not found user_id=%s", user_id)
+        return jsonify({
+            'success': False,
+            'error': 'user not found',
+            'code': 'user_not_found',
+            'user_id': user_id,
+        }), 404
             
     except Exception as e:
+        logger.exception("user profile failed user_id=%s", user_id)
         return jsonify({
             'success': False,
             'error': str(e)
@@ -294,19 +310,14 @@ def get_user_profile(user_id):
 @user_profile_bp.route('/api/user/profile/<user_id>/display', methods=['GET'])
 def get_profile_display(user_id):
     """Get profile data formatted for display"""
+    rejected = _gate_existing_user(user_id)
+    if rejected:
+        return rejected
     try:
-        denied = _access_denied(require_profile_read(user_id))
-        if denied:
-            return denied
-        denied = _access_denied(require_profile_owner(user_id, allow_default_guest=True))
-        if denied:
-            return denied
-
         result = user_profile.get_profile_display(user_id)
         
         if result.get('success'):
-            owner = is_owner(user_id)
-            return jsonify(sanitize_display_payload(result, is_owner_view=owner)), 200
+            return jsonify(result), 200
         else:
             # If user not found, try to create a default profile
             if result.get('error') == 'User not found':
@@ -339,12 +350,10 @@ def get_profile_display(user_id):
 @user_profile_bp.route('/api/user/profile/<user_id>/aggregated', methods=['GET'])
 def get_profile_aggregated(user_id):
     """Single-call profile: display + activity + agents + achievements + trophies. One request, one loading state."""
+    rejected = _gate_existing_user(user_id)
+    if rejected:
+        return rejected
     try:
-        if str(user_id or "").strip().lower() != "default_user":
-            denied = _access_denied(require_profile_owner(user_id, allow_default_guest=True))
-            if denied:
-                return denied
-
         result = user_profile.get_profile_display(user_id)
         if not result.get('success'):
             if result.get('error') == 'User not found':
@@ -444,17 +453,14 @@ def get_profile_aggregated(user_id):
 
         return jsonify(result), 200
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        logger.exception("aggregated profile failed user_id=%s", user_id)
+        return jsonify({'success': False, 'error': str(e), 'code': 'profile_unavailable'}), 500
 
 
 @user_profile_bp.route('/api/user/profile/<user_id>/stats', methods=['GET'])
 def get_profile_stats(user_id):
     """Get profile statistics"""
     try:
-        denied = _access_denied(require_profile_read(user_id))
-        if denied:
-            return denied
-
         result = user_profile.calculate_profile_stats(user_id)
         
         if result.get('success'):
@@ -507,9 +513,6 @@ def enrich_profile():
                 'success': False,
                 'error': 'user_id is required'
             }), 400
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
         
         # Prepare additional data
         additional_data = {
@@ -537,9 +540,6 @@ def get_user_location():
     """Get current user's GPS location (new system: file-backed, optional DB sync)."""
     try:
         user_id = _resolve_user_id_for_request()
-        denied = _access_denied(require_profile_owner(user_id, allow_default_guest=True))
-        if denied:
-            return denied
         location = user_location_service.get_location(user_id)
         return jsonify({
             'success': True,
@@ -555,9 +555,6 @@ def update_user_location():
     """Update current user's GPS location. Accepts latitude, longitude, geo_ref, accuracy, source (browser|manual|api)."""
     try:
         user_id = _resolve_user_id_for_request()
-        denied = _access_denied(require_profile_owner(user_id, allow_default_guest=True))
-        if denied:
-            return denied
         data = request.get_json() or {}
         latitude = data.get('latitude')
         longitude = data.get('longitude')
@@ -599,14 +596,16 @@ def update_profile():
 
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id is required'}), 400
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
-        validation_error = validate_profile_update(update_data)
-        if validation_error:
-            return jsonify({'success': False, 'error': validation_error}), 400
+        if not isinstance(update_data, dict) or not update_data:
+            return jsonify({'success': False, 'error': 'update_data must be a non-empty object'}), 400
 
         result = user_onboarding.update_user_profile(user_id, update_data)
+        if result.get('success'):
+            try:
+                from backend.services.generator_context_cache import invalidate_user
+                result['context_cache_invalidated'] = invalidate_user(str(user_id))
+            except Exception:
+                pass
         return jsonify(result), 200 if result.get('success') else 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -620,9 +619,6 @@ def provision_full_access():
         user_id = data.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'user_id is required'}), 400
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
 
         profile = user_onboarding.get_user_profile(user_id)
         if not profile:
@@ -657,9 +653,6 @@ def start_onboarding():
                 'success': False,
                 'error': 'user_id is required'
             }), 400
-        denied = _access_denied(require_profile_owner(user_id, allow_default_guest=True))
-        if denied:
-            return denied
         
         progress = user_onboarding.start_onboarding(user_id)
         
@@ -687,9 +680,6 @@ def complete_onboarding_step():
                 'success': False,
                 'error': 'user_id and step_id are required'
             }), 400
-        denied = _access_denied(require_profile_owner(user_id, allow_default_guest=True))
-        if denied:
-            return denied
         
         progress = user_onboarding.complete_step(user_id, step_id)
         
@@ -717,9 +707,6 @@ def skip_onboarding_step():
                 'success': False,
                 'error': 'user_id and step_id are required'
             }), 400
-        denied = _access_denied(require_profile_owner(user_id, allow_default_guest=True))
-        if denied:
-            return denied
         
         result = user_onboarding.skip_step(user_id, step_id)
         
@@ -838,9 +825,6 @@ def assign_skill():
                 'success': False,
                 'error': 'user_id, agent_id, and skill_name are required'
             }), 400
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
         
         success = user_agent_skills.add_skill(user_id, agent_id, skill_name, level)
         
@@ -875,9 +859,6 @@ def level_up_skill():
                 'success': False,
                 'error': 'user_id and skill_name are required'
             }), 400
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
         
         result = user_agent_skills.level_up_skill(user_id, skill_name, experience)
         
@@ -919,9 +900,6 @@ def recommend_skills():
                 'success': False,
                 'error': 'user_id is required'
             }), 400
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
         
         recommendations = user_agent_skills.recommend_skills(user_id, user_behavior)
         
@@ -942,17 +920,13 @@ def recommend_skills():
 def get_scraped_info(user_id):
     """Get scraped information for user"""
     try:
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
-
         info_type = request.args.get('info_type')  # Optional filter
         
         scraped_info = user_info_scraper.get_scraped_info(user_id, info_type)
         
         return jsonify({
             'success': True,
-            'scraped_info': sanitize_scraped_info(scraped_info),
+            'scraped_info': scraped_info
         }), 200
         
     except Exception as e:
@@ -974,9 +948,6 @@ def scrape_info():
                 'success': False,
                 'error': 'user_id is required'
             }), 400
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
         
         # Prepare request data
         request_data = {
@@ -1051,10 +1022,7 @@ def ai_profile_analysis():
         focus   = (data.get('focus') or 'full').strip()
 
         if not user_id:
-            return jsonify({'success': False, 'error': 'user_id required'}), 400
-        denied = _access_denied(require_profile_owner(user_id))
-        if denied:
-            return denied
+            return jsonify({'success': False, 'error': 'user_id required'}), 200
 
         context_parts = []
 

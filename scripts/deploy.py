@@ -13,12 +13,15 @@ Usage:
   python scripts/deploy.py compendium    # rulebook readers V1–V16, pages API, view tracker
   python scripts/deploy.py static_pages --upload-only   # upload only (no restart)
   python scripts/deploy.py battle_hunter_quick   # battle RPS/queue + Hunter XP + battle/profile UI + tournaments JS
+  python scripts/deploy.py create_app_release static_pages --ask-pass
+    # Create App super encoder, instant MN2 click rewards, compact frontpage (PR #81).
+    # Laptop deploy: merge PR #81, pull branch, run command above, then test_url_timing per DEPLOY_PREP.md.
   python scripts/deploy.py service_check_backend --upload-only   # leaderboard/agents/service_check files; no uwsgi restart
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
 
-SSH password: set DEPLOY_PASS, or use --ask-pass to prompt (ignores .env), or run from an
-interactive terminal to be prompted twice when DEPLOY_PASS is unset.
+SSH password: set DEPLOY_PASS, or use --ask-pass to prompt fresh (ignores .env and
+environment), or run from an interactive terminal to be prompted once when DEPLOY_PASS is unset.
 """
 import os
 import sys
@@ -356,6 +359,52 @@ MANIFESTS = {
         "scripts/generate_rulebook_images.py",
         "docs/RULEBOOK_READERS.md",
     ],
+    # Create App super encoder, instant MN2 click rewards, frontpage compact layout (PR #81)
+    "create_app_release": [
+        "index.html",
+        "create-app/index.html",
+        "lab/index.html",
+        "podcast/index.html",
+        "game/index.html",
+        "static/css/frontpage-home.css",
+        "static/js/frontpage-home.js",
+        "static/js/game-hub-panel.js",
+        "static/js/navigation-toolbar.js",
+        "static/js/click-through-game.js",
+        "static/js/mobile-install.js",
+        "backend/register_blueprints.py",
+        "backend/routes/all_page_routes.py",
+        "backend/routes/click_game_routes.py",
+        "backend/routes/create_app_routes.py",
+        "backend/routes/lab_routes.py",
+        "backend/services/agent_leaderboard_rewards_service.py",
+        "backend/services/click_mn2_rewards_service.py",
+        "backend/services/create_app_finish_checks.py",
+        "backend/services/create_app_service.py",
+        "backend/services/create_app_encode_service.py",
+        "backend/services/super_encoder_service.py",
+        "backend/services/encoder_v2_service.py",
+        "backend/services/encoder_upgrade_service.py",
+        "backend/services/encoder_order_service.py",
+        "backend/services/discord_customer_ingest_service.py",
+        "data/encoder_orders.json",
+        "data/discord_customer_index.json",
+        "data/encoder_v2_catalog.json",
+        "data/encoder_v2_progress.json",
+        "scripts/build_encoder_v2_catalog.py",
+        "data/agent_leaderboard_rewards.json",
+        "data/create_apps.json",
+        "data/lab_projects_seed.json",
+        "data/mn2_config.json",
+        "data/podcast_episodes.json",
+        "mobile/podcast-twa/PLAY_STORE_LISTING.md",
+        "mobile/podcast-twa/README.md",
+        "mobile/podcast-twa/twa-manifest.json",
+        "mobile/podcast-app/README.md",
+        "mobile/podcast-app/package.json",
+        "mobile/podcast-app/capacitor.config.ts",
+        "scripts/audit_deploy_manifest.py",
+    ],
     # Unified Game Hub: frontpage tabs + quest unification (Option C)
     "game_hub": [
         "index.html",
@@ -508,6 +557,13 @@ MANIFESTS = {
         "backend/services/agent_skillset.py",
         "backend/routes/missing_endpoints_routes.py",
         "profile/index.html",
+        "static/css/frontpage-home.css",
+        "static/css/profile-hub.css",
+        "static/js/profile-hub.js",
+        "shop/index.html",
+        "static/css/shop.css",
+        "static/js/shop-hub.js",
+        "static/js/shop-profile-manager.js",
         "generator/index.html",
         "theme_premium/index.html",
         "agents/index.html",
@@ -532,7 +588,12 @@ MANIFESTS = {
         "cron/mn2_accrue_rewards.sh",
         "cron/masternoder-mn2-accrue.cron.d",
         "cron/mn2_masternode_provision.sh",
+        "cron/mn2_ops_watchdog.sh",
         "cron/masternoder-mn2-masternode-provision.cron.d",
+        "cron/masternoder-mn2-watchdogs.cron.d",
+        "scripts/mn2_staking_watchdog.py",
+        "scripts/mn2_restore_staking_and_market_remote.py",
+        "scripts/mn2_install_watchdogs_remote.py",
         "scripts/mn2_patch_rpc_retries.sh",
     ],
     # MN2 staking system backend: services + routes + blueprint registration + config + ops script.
@@ -568,14 +629,17 @@ MANIFESTS = {
         "backend/services/mn2_masternode_service.py",
         "backend/services/mn2_masternode_hosting_service.py",
         "backend/services/mn2_services_hub.py",
+        "backend/services/mn2_proof_of_reserves_service.py",
         "backend/services/discord_service.py",
         "backend/services/discord_m8_streams.py",
         "backend/services/casino_discord_fanout.py",
+        "backend/services/casino_service.py",
         "backend/services/market_discord_fanout.py",
         "backend/services/game_discord_fanout.py",
         "backend/services/compendium_milestone_service.py",
         "backend/services/compendium_access_service.py",
         "backend/services/generator_api_key_service.py",
+        "backend/services/battle_pass_service.py",
         "backend/services/camgirls_livekit_service.py",
         "backend/services/mobile_iap_service.py",
         "backend/services/shop_auction_service.py",
@@ -605,6 +669,7 @@ MANIFESTS = {
         "backend/routes/generator_routes.py",
         "backend/routes/camgirls_routes.py",
         "backend/routes/monetization_expansion_routes.py",
+        "backend/routes/casino_routes.py",
         "backend/routes/monetization_routes.py",
         "backend/routes/ai_assist_routes.py",
         "backend/routes/cogs_routes.py",
@@ -635,6 +700,7 @@ MANIFESTS = {
         "data/mn2_staking_terms.json",
         "data/mn2_masternode_config.json",
         "data/monetization_config.json",
+        "data/casino_config.json",
         "data/monetization_streams.json",
         "data/monetization_revenue_tracks.json",
         "monetization/index.html",
@@ -658,6 +724,11 @@ MANIFESTS = {
         "scripts/mn2_unlock_collateral.sh",
         "scripts/mn2_repair_masternode_conf.sh",
         "scripts/mn2_fleet_autostart.sh",
+        "scripts/mn2_staking_watchdog.py",
+        "scripts/mn2_restore_staking_and_market_remote.py",
+        "scripts/mn2_install_watchdogs_remote.py",
+        "cron/mn2_ops_watchdog.sh",
+        "cron/masternoder-mn2-watchdogs.cron.d",
         "scripts/mn2_masternode_fleet_ops_remote.py",
         "scripts/mn2_check_activetime_public.py",
         "scripts/mn2_test_ping_live.py",
@@ -665,6 +736,10 @@ MANIFESTS = {
         "scripts/fix_explorer_subdomains_remote.py",
         "systemd/mn2-fleet-autostart.service.example",
         "scripts/treasury_signoff.py",
+        "scripts/treasury_signoff_post.py",
+        "scripts/treasury_signoff_post_ssh.py",
+        "scripts/treasury_signoff_remote.py",
+        "cron/agents_treasury_distribute.sh",
         "scripts/trader_staking_join_server.sh",
         "explorer/index.html",
         "static/js/mn2-explorer-overview.js",
@@ -686,6 +761,32 @@ MANIFESTS = {
         "cron/masternoder-margin-report.cron.d",
         "cron/discord_activity_funnel.sh",
         "cron/mn2_read_ops_secret.sh",
+    ],
+    "nft_market": [
+        "backend/services/nft_exchange_service.py",
+        "backend/services/agent_wallet_service.py",
+        "backend/routes/nft_routes.py",
+        "backend/routes/agent_treasury_routes.py",
+        "backend/routes/crypto_exchange_routes.py",
+        "backend/routes/trophies_routes.py",
+        "backend/routes/missing_endpoints_routes.py",
+        "backend/routes/paypal_routes.py",
+        "backend/services/paypal_service.py",
+        "backend/routes/shop_routes.py",
+        "backend/register_blueprints.py",
+        "data/nft_catalog.json",
+        "data/trophy_definitions.json",
+        "market/index.html",
+        "shop/index.html",
+        "exchange/index.html",
+        "profile/index.html",
+        "static/js/nft-market.js",
+        "static/js/cex-nft-market.js",
+        "static/js/profile-mn2-wallet.js",
+        "static/img/nft/license-plate.svg",
+        "static/img/nft/block-smile.svg",
+        "static/img/nft/vault-holo.svg",
+        "scripts/nft_market_smoke.py",
     ],
     "camgirls": [
         "backend/services/camgirls_service.py",
@@ -794,6 +895,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "camgirls",
     "trophies",
     "compendium",
+    "create_app_release",
     "game_hub",
     "casino",
     "config",
@@ -979,6 +1081,21 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
         if _needs_well_known_webroot_sync(files, _manifests):
             print("[2a] Well-known web root sync...")
             _sync_well_known_webroot(ssh)
+            print()
+
+        if "create_app_release" in _manifests and not upload_only:
+            print("[2aa] Create App writable data permissions...")
+            for rel in (
+                "data/encoder_v2_progress.json",
+                "data/encoder_orders.json",
+                "data/discord_customer_index.json",
+            ):
+                ssh.exec_command(
+                    f"chown www-data:www-data {REMOTE_BASE}/{rel} "
+                    f"&& chmod 664 {REMOTE_BASE}/{rel} 2>/dev/null || true",
+                    timeout=10,
+                )
+            print("  [OK] encoder/discord writable data -> www-data")
             print()
 
         # If we uploaded systemd units, install them so EnvironmentFile=.env is used
@@ -1308,7 +1425,7 @@ def main():
     if not args:
         print("Usage: python scripts/deploy.py <manifest> [manifest ...] [--ask-pass] [--upload-only] [--list-files]")
         print("       python scripts/deploy.py --files path1 path2 [--ask-pass] [--upload-only] [--list-files]")
-        print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env)")
+        print("  --ask-pass     Prompt for SSH password (ignores DEPLOY_PASS in .env and environment)")
         print("  --upload-only  SFTP files to the server only (no cache clear, no systemd/cron hooks, no service restart).")
         print("  --list-files   Print the merged file list and exit (no SSH).")
         print("Manifests:", ", ".join(MANIFESTS))

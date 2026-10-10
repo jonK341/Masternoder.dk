@@ -3,7 +3,7 @@
  * Smooth shop links and functionality for battle page
  */
 class BattleShopIntegration {
-    constructor(baseUrl = '', userId = 'default_user') {
+    constructor(baseUrl = '', userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         this.BASE_URL = baseUrl;
         this.userId = userId;
         this.init();
@@ -156,13 +156,13 @@ class BattleShopIntegration {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         if (window.location.pathname.includes('/battle')) {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             window.battleShopIntegration = new BattleShopIntegration('', userId);
         }
     });
 } else {
     if (window.location.pathname.includes('/battle')) {
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         window.battleShopIntegration = new BattleShopIntegration('', userId);
     }
 }

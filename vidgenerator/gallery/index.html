@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Browse and watch all generated documentary videos. Search, filter, and discover AI-generated documentaries.">
+    <title>Documentary Gallery - Browse Generated Videos</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <style>
+        /* ============================================
+           A+ GALLERY PAGE UI - SAME GRAPHICS AS GENERATOR
+           ============================================ */
+        
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background - Same as Generator */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 100, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating Particles - Same as Generator */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(0, 255, 136, 0.6);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Gallery uses shared nav-toolbar (navigation-toolbar.js); no duplicate .page-nav */
+        body.gallery-page-body { padding-top: 48px; }
+        body.gallery-page-body #top50-monetization-frame-container { display: none; }
+
+        /* Gallery Page — content not blocked by toolbar */
+        .gallery-page {
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+            padding-top: 0;
+        }
+
+        .gallery-header {
+            text-align: center;
+            margin-bottom: 28px;
+            padding: 20px 20px 16px;
+            position: relative;
+        }
+
+        .gallery-header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.3), transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: pulseGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .gallery-header h1 {
+            font-size: 2.8rem;
+            font-weight: 900;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #00ff88, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            text-shadow: 0 0 60px rgba(0, 255, 136, 0.5);
+            position: relative;
+            display: inline-block;
+        }
+
+        .gallery-header h1::after {
+            content: '✨';
+            position: absolute;
+            right: -50px;
+            top: 0;
+            font-size: 0.5em;
+            animation: sparkle 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+        }
+
+        @keyframes sparkle {
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1) rotate(0deg); 
+            }
+            50% { 
+                opacity: 0.6; 
+                transform: scale(1.3) rotate(180deg); 
+            }
+        }
+
+        .gallery-service-status {
+            font-size: 0.88rem;
+            color: rgba(255, 255, 255, 0.55);
+            margin-top: 10px;
+            min-height: 1.2em;
+        }
+
+        .gallery-header .subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+            margin-top: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tabs */
+        .gallery-tabs {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+            flex-wrap: wrap;
+        }
+
+        .gallery-tab {
+            padding: 14px 28px;
+            background: rgba(40, 40, 55, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-size: 0.95rem;
+        }
+
+        .gallery-tab:hover {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            color: #00ff88;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.3);
+        }
+
+        .gallery-tab.active {
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            color: #000;
+            border-color: #00ff88;
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Tab Content */
+        .gallery-tab-content {
+            display: none;
+        }
+
+        .gallery-tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Search and Filters */
+        .gallery-controls {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .search-form {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            align-items: center;
+            background: var(--bg-card);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-primary);
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(20, 20, 30, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #00ff88;
+            background: rgba(20, 20, 30, 1);
+            box-shadow: 
+                0 0 0 4px rgba(0, 255, 136, 0.2),
+                0 8px 24px rgba(0, 255, 136, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            padding: 5px;
+            font-size: 18px;
+        }
+
+        .search-clear-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .status-filter,
+        .sort-filter {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
+            cursor: pointer;
+        }
+
+        .search-btn,
+        .reset-btn {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            text-decoration: none;
+            transition: all var(--transition-base);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+            border: none;
+            cursor: pointer;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .reset-btn {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+        }
+
+        .reset-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-secondary);
+        }
+
+        /* Video Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .gallery-item {
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .gallery-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-8px);
+            border-color: #00ff88;
+            box-shadow: 
+                0 16px 48px rgba(0, 255, 136, 0.4),
+                0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .gallery-item:hover::before {
+            opacity: 1;
+        }
+
+        .gallery-item-thumbnail {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gallery-item-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-item-thumbnail .play-icon {
+            position: absolute;
+            font-size: 3em;
+            color: var(--primary);
+            opacity: 0.8;
+            transition: all var(--transition-base);
+        }
+
+        .gallery-item:hover .play-icon {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .gallery-item-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .gallery-item:hover .gallery-item-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all var(--transition-base);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-btn:hover {
+            background: var(--primary);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        /* Video Preview Modal */
+        .video-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .video-modal.active {
+            display: flex;
+        }
+
+        .video-modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-primary);
+            box-shadow: var(--shadow-glow);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .video-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .video-modal-title {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .video-modal-close {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-base);
+        }
+
+        .video-modal-close:hover {
+            background: var(--primary);
+            color: #000;
+            transform: rotate(90deg);
+        }
+
+        .video-modal-player {
+            width: 100%;
+            margin-bottom: var(--spacing-md);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .video-modal-player video {
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+            background: #000;
+        }
+
+        .video-modal-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .video-modal-meta {
+            background: var(--bg-secondary);
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-primary);
+        }
+
+        .video-modal-meta-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .video-modal-meta-value {
+            font-size: var(--font-size-base);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .video-modal-description {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-primary);
+        }
+
+        .video-modal-description h3 {
+            font-size: var(--font-size-lg);
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+
+        .video-modal-description p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .quality-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .quality-ultra {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #000;
+        }
+
+        .quality-premium {
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: #000;
+        }
+
+        .quality-high {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000;
+        }
+
+        .quality-medium {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: #fff;
+        }
+
+        .quality-low {
+            background: linear-gradient(135deg, #666, #888);
+            color: #fff;
+        }
+
+        .gallery-item-content {
+            padding: var(--spacing-md);
+        }
+
+        .gallery-item-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .gallery-item-description {
+            font-size: var(--font-size-sm);
+            color: var(--text-tertiary);
+            margin-bottom: var(--spacing-sm);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .gallery-item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+        }
+
+        .gallery-item-status {
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: var(--font-size-xs);
+        }
+
+        .status-completed {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--primary);
+        }
+
+        .status-generating {
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--secondary);
+        }
+
+        .status-pending {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+
+        /* Empty State */
+        .empty-gallery {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+        }
+
+        .empty-icon {
+            font-size: 5em;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .empty-gallery h2 {
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .empty-gallery p {
+            color: var(--text-tertiary);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        /* Stats Tab */
+        .gallery-stats-container {
+            padding: var(--spacing-lg);
+        }
+
+        .gallery-stats-container h2 {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(40, 40, 55, 0.95), rgba(30, 30, 45, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            border-color: #00ff88;
+            box-shadow: 
+                0 16px 64px rgba(0, 255, 136, 0.3),
+                0 0 40px rgba(0, 255, 136, 0.2);
+            background: linear-gradient(135deg, rgba(50, 50, 65, 1), rgba(40, 40, 55, 1));
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-icon {
+            font-size: 3em;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #00ff88;
+            margin-bottom: 12px;
+            line-height: 1.1;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-tertiary);
+            font-size: var(--font-size-sm);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Calendar Tab */
+        .calendar-container {
+            padding: var(--spacing-lg);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+        }
+
+        /* Loading State */
+        .loading-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-tertiary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Profile strip (aligned with /profile identity) */
+        .gallery-profile-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(22, 33, 62, 0.92), rgba(15, 20, 40, 0.95));
+            border: 1px solid rgba(0, 255, 136, 0.22);
+            border-radius: 16px;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+        .gallery-profile-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+        .gallery-profile-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            background: rgba(0, 0, 0, 0.4);
+            flex-shrink: 0;
+        }
+        .gallery-profile-text { min-width: 0; }
+        .gallery-profile-text .name {
+            font-weight: 800;
+            font-size: 1.05rem;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 280px;
+        }
+        .gallery-profile-text .sub {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.55);
+            margin-top: 2px;
+        }
+        .gallery-profile-actions a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            color: #000;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+        }
+        .gallery-profile-actions a.secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.35);
+        }
+        .gallery-results-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.95rem;
+        }
+        .gallery-recent-strip {
+            margin-bottom: 20px;
+            padding: 14px 16px;
+            background: rgba(30, 40, 70, 0.55);
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            border-radius: 14px;
+        }
+        .gallery-recent-strip h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.95rem;
+            color: #00d4ff;
+            font-weight: 700;
+        }
+        .gallery-recent-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+        }
+        .gallery-recent-chip {
+            flex: 0 0 auto;
+            width: 160px;
+            cursor: pointer;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #0d0d12;
+        }
+        .gallery-recent-chip video {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            display: block;
+            background: #000;
+        }
+        .gallery-recent-chip .cap {
+            padding: 8px;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.85);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .gallery-recent-chip .timer {
+            font-size: 0.72rem;
+            color: #ffb347;
+            padding: 0 8px 8px;
+        }
+        .gallery-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 24px 0 32px;
+            padding: 14px;
+            background: rgba(25, 30, 50, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+        }
+        .gallery-pagination button {
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            background: rgba(0, 255, 136, 0.12);
+            color: #00ff88;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .gallery-pagination button:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .gallery-pagination .page-info {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.95rem;
+        }
+        .gallery-admin-panel {
+            margin: 0 0 28px;
+            padding: 16px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 180, 80, 0.35);
+            background: rgba(40, 30, 20, 0.55);
+        }
+        .gallery-admin-panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: #ffb347;
+        }
+        .gallery-admin-panel .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .gallery-admin-panel input[type="password"],
+        .gallery-admin-panel input[type="number"] {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            min-width: 220px;
+        }
+        .gallery-admin-panel input[type="number"] { min-width: 80px; width: 100px; }
+        .gallery-admin-panel .hint {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.65);
+            margin: 0;
+        }
+        .gallery-admin-panel .status {
+            font-size: 0.88rem;
+            color: #00d4ff;
+            min-height: 1.2em;
+        }
+        .gallery-thumb-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #000;
+        }
+
+        @media (max-width: 768px) {
+            body.gallery-page-body { padding-top: 44px; }
+            .gallery-page {
+                padding: 16px 15px 40px;
+            }
+            
+            .gallery-header h1 {
+                font-size: 2rem;
+            }
+            
+            .gallery-header .subtitle {
+                font-size: 1rem;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .search-input-wrapper {
+                width: 100%;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/static/css/template-effects.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/static/css/page-layout-metrics.css" media="print" onload="this.media='all'">
+</head>
+<body class="layout-standard gallery-page-body">
+    <div class="bg-animated"></div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container gallery-page">
+        <div class="gallery-profile-strip" id="gallery-profile-strip">
+            <div class="gallery-profile-left">
+                <img class="gallery-profile-avatar" id="gallery-profile-avatar" src="" alt="" width="48" height="48" style="display:none;" />
+                <div class="gallery-profile-avatar" id="gallery-profile-avatar-fallback" style="display:flex;align-items:center;justify-content:center;font-size:1.4rem;">👤</div>
+                <div class="gallery-profile-text">
+                    <div class="name" id="gallery-profile-name">Loading profile…</div>
+                    <div class="sub" id="gallery-profile-sub">Connecting gallery to your account</div>
+                </div>
+            </div>
+            <div class="gallery-profile-actions">
+                <a href="/profile" id="gallery-profile-link">Open profile</a>
+                <a href="/generator" class="secondary" id="gallery-generator-link">New video</a>
+            </div>
+        </div>
+
+        <header class="gallery-header">
+            <h1>Gallery</h1>
+            <p class="subtitle">Search the API, preview every generated documentary on disk, and jump back to your profile</p>
+            <p class="hub-links" style="text-align:center;margin-top:12px;font-size:0.9rem;opacity:0.9;"><a href="/profile" style="color:#00ff88;text-decoration:none;">Profile</a> · <a href="/generator" style="color:#00ff88;text-decoration:none;">Generator</a> · <a href="/agents" style="color:#00ff88;text-decoration:none;">Agents</a> · <strong>Gallery</strong> · <a href="/aggregator" style="color:#00d4ff;text-decoration:none;">Aggregator</a> · <a href="/theme_premium" style="color:#00d4ff;text-decoration:none;">Themes</a></p>
+            <p id="gallery-service-status" class="gallery-service-status" aria-live="polite"></p>
+        </header>
+        
+        <!-- Gallery Tabs Navigation -->
+        <div class="gallery-tabs">
+            <button class="gallery-tab active" data-tab="videos">Videos</button>
+            <button class="gallery-tab" data-tab="calendar">Calendar</button>
+            <button class="gallery-tab" data-tab="stats">Stats</button>
+        </div>
+        
+        <!-- Videos Tab Content -->
+        <div class="gallery-tab-content active" id="tab-videos">
+            <!-- Search and Filter Section -->
+            <div class="gallery-controls">
+                <form method="GET" action="/gallery" class="search-form" id="gallery-search-form">
+                    <div class="search-input-wrapper">
+                        <input 
+                            type="text" 
+                            name="search" 
+                            id="gallery-search-input"
+                            placeholder="🔍 Search titles, prompts, descriptions..." 
+                            value=""
+                            class="search-input"
+                            autocomplete="off"
+                            aria-label="Search documentaries"
+                        >
+                        <button type="button" class="search-clear-btn" id="search-clear-btn" style="display: none;" aria-label="Clear search">✕</button>
+                    </div>
+                    <select name="status" class="status-filter" aria-label="Filter by status" id="status-filter">
+                        <option value="all" selected>All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="generating">Generating</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                    <select name="category" class="category-filter" aria-label="Filter by category" id="category-filter">
+                        <option value="" selected>All Categories</option>
+                        <!-- Categories will be loaded dynamically -->
+                    </select>
+                    <select name="quality" class="quality-filter" aria-label="Filter by quality" id="quality-filter">
+                        <option value="" selected>All Quality</option>
+                        <option value="ultra">Ultra</option>
+                        <option value="premium">Premium</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <select name="sort" class="sort-filter" aria-label="Sort by" id="sort-filter">
+                        <option value="newest" selected>Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="title">Title A-Z</option>
+                        <option value="duration">Longest First</option>
+                        <option value="quality_score">Best file size (retention rank)</option>
+                        <option value="quality">Quality tier (A–Z)</option>
+                    </select>
+                    <button type="button" class="advanced-filter-btn" id="advanced-filter-btn" title="Advanced Filters">
+                        <i class="fas fa-sliders-h"></i> Advanced
+                    </button>
+                    <button type="submit" class="search-btn" aria-label="Search">Search</button>
+                    <a href="/gallery" class="reset-btn" aria-label="Reset filters">Reset</a>
+                </form>
+            </div>
+
+            <div class="gallery-results-row">
+                <span id="results-count">Loading…</span>
+                <button type="button" class="reset-btn" id="gallery-refresh-btn" title="Reload from API" style="cursor:pointer;">Refresh</button>
+            </div>
+
+            <div class="gallery-recent-strip" id="gallery-recent-strip" style="display: none;">
+                <h3><i class="fas fa-bolt"></i> Recent renders (5 min download window)</h3>
+                <div class="gallery-recent-scroll" id="gallery-recent-scroll"></div>
+            </div>
+
+            <!-- My Downloads (when gallery migration run) -->
+            <div class="my-downloads-wrap" id="my-downloads-wrap" style="margin-bottom: var(--spacing-lg);">
+                <button type="button" class="my-downloads-toggle-btn" id="my-downloads-toggle" aria-expanded="false" style="margin-bottom: 0.5rem;padding: 14px 28px;background: rgba(40, 40, 55, 0.8);border: 2px solid rgba(255, 255, 255, 0.2);border-radius: 50px;color: rgba(255, 255, 255, 0.9);font-weight: 700;cursor: pointer;">
+                    <i class="fas fa-download"></i> My downloads <span id="my-downloads-count">(0)</span>
+                </button>
+                <div id="my-downloads-list" class="my-downloads-list" style="display: none; padding: 1rem; background: rgba(40,40,55,0.8); border-radius: var(--radius-lg); border: 1px solid var(--border-primary); max-height: 200px; overflow-y: auto;">
+                    <p id="my-downloads-empty" class="xp-item-label" style="margin: 0; color: var(--text-tertiary);">No downloads yet. Download videos to see them here.</p>
+                    <ul id="my-downloads-ul" style="list-style: none; padding: 0; margin: 0; display: none;"></ul>
+                </div>
+            </div>
+
+            <!-- Gallery Grid -->
+            <div class="gallery-grid" id="gallery-grid">
+                <!-- Videos will be loaded here -->
+                <!-- Skeleton screens shown while loading -->
+            </div>
+
+            <div class="gallery-pagination" id="gallery-pagination" style="display: none;" aria-label="Gallery pagination">
+                <button type="button" id="gallery-prev-page" aria-label="Previous page">← Previous</button>
+                <span class="page-info" id="gallery-page-info"></span>
+                <button type="button" id="gallery-next-page" aria-label="Next page">Next →</button>
+            </div>
+
+            <div class="gallery-admin-panel" id="gallery-admin-panel" style="display: none;">
+                <h3><i class="fas fa-shield-alt"></i> Admin · LLM metadata</h3>
+                <p class="hint">Server must set <code style="color:#ffb347;">GALLERY_ADMIN_TOKEN</code>. Paste the same token here; it is only sent in the request header, not stored.</p>
+                <div class="row">
+                    <input type="password" id="gallery-admin-token" placeholder="Admin token" autocomplete="off" />
+                    <label style="color:rgba(255,255,255,0.8);font-size:0.9rem;">Max videos</label>
+                    <input type="number" id="gallery-admin-max" min="1" max="20" value="5" />
+                    <button type="button" class="search-btn" id="gallery-admin-run" style="margin:0;">Enhance weak descriptions</button>
+                </div>
+                <p class="status" id="gallery-admin-status" aria-live="polite"></p>
+            </div>
+            
+            <!-- Empty State -->
+            <div class="empty-gallery" id="empty-gallery" style="display: none;">
+                <div class="empty-icon">📭</div>
+                <h2>No documentaries found</h2>
+                <p>Create your first documentary to get started!</p>
+                <a href="/generator" class="btn btn-primary">Create Documentary</a>
+            </div>
+            
+            <!-- Loading State -->
+            <div class="loading-state" id="loading-state">
+                <div class="loading"></div>
+                <p style="margin-top: var(--spacing-md);">Loading videos...</p>
+            </div>
+        </div>
+        
+        <!-- Calendar Tab Content -->
+        <div class="gallery-tab-content" id="tab-calendar">
+            <div class="calendar-container">
+                <div id="calendar-widget"></div>
+            </div>
+        </div>
+        
+        <!-- Stats Tab Content -->
+        <div class="gallery-tab-content" id="tab-stats">
+            <div class="gallery-stats-container">
+                <h2>Gallery Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎬</div>
+                        <div class="stat-value" id="gallery-total-docs">--</div>
+                        <div class="stat-label">Total Documentaries</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-value" id="gallery-total-duration">--</div>
+                        <div class="stat-label">Total Duration</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value" id="gallery-avg-quality">--</div>
+                        <div class="stat-label">Average Quality</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-value" id="gallery-this-month">--</div>
+                        <div class="stat-label">This Month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/user-identification.js?v=20260122020000"></script>
+    <script src="/static/js/backend-connector.js?v=20260122020000"></script>
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+            const count = 50;
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // My Downloads (from /api/gallery/downloads when migration run)
+        async function galleryUserId() {
+            try {
+                if (typeof backendConnector !== 'undefined' && backendConnector.getUserId) {
+                    return await backendConnector.getUserId();
+                }
+            } catch (e) {}
+            return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+        }
+
+        async function loadGalleryProfile() {
+            const nameEl = document.getElementById('gallery-profile-name');
+            const subEl = document.getElementById('gallery-profile-sub');
+            const imgEl = document.getElementById('gallery-profile-avatar');
+            const fbEl = document.getElementById('gallery-profile-avatar-fallback');
+            try {
+                const uid = await galleryUserId();
+                if (subEl) subEl.textContent = 'User ID: ' + uid;
+                fetch('/api/user/bind-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: uid })
+                }).catch(function() {});
+                if (typeof backendConnector === 'undefined' || !backendConnector.getUserProfileAggregated) {
+                    if (nameEl) nameEl.textContent = 'Player';
+                    return;
+                }
+                const data = await backendConnector.getUserProfileAggregated(uid);
+                if (data && data.success && data.profile) {
+                    const p = data.profile;
+                    const display = (p.display_name || p.username || p.name || '').trim() || 'Player';
+                    if (nameEl) nameEl.textContent = display;
+                    if (subEl) {
+                        var pts = (data.stats && (data.stats.generation_points != null)) ? data.stats.generation_points : null;
+                        subEl.textContent = pts != null
+                            ? ('Generation points: ' + pts + ' · ' + uid)
+                            : ('User ID: ' + uid);
+                    }
+                    var av = (p.avatar_url || p.avatar || '').trim();
+                    if (av && imgEl) {
+                        imgEl.src = av;
+                        imgEl.alt = display;
+                        imgEl.style.display = 'block';
+                        if (fbEl) fbEl.style.display = 'none';
+                    }
+                } else {
+                    if (nameEl) nameEl.textContent = 'Player';
+                }
+            } catch (e) {
+                console.warn('Gallery profile:', e);
+                if (nameEl) nameEl.textContent = 'Player';
+            }
+        }
+
+        let _gallerySearchTimer = null;
+        function scheduleGallerySearch() {
+            clearTimeout(_gallerySearchTimer);
+            _gallerySearchTimer = setTimeout(function() { loadVideos(true); }, 380);
+        }
+
+        function getGalleryFilterParams() {
+            const search = (document.getElementById('gallery-search-input') && document.getElementById('gallery-search-input').value || '').trim();
+            const status = (document.getElementById('status-filter') && document.getElementById('status-filter').value) || 'all';
+            const category = (document.getElementById('category-filter') && document.getElementById('category-filter').value) || '';
+            const quality = (document.getElementById('quality-filter') && document.getElementById('quality-filter').value) || '';
+            const sort = (document.getElementById('sort-filter') && document.getElementById('sort-filter').value) || 'newest';
+            return { search: search, status: status, category: category, quality: quality, sort: sort };
+        }
+
+        var GALLERY_PAGE_SIZE = 24;
+        window._galleryPage = 1;
+
+        function syncGalleryUrl() {
+            const p = getGalleryFilterParams();
+            const q = new URLSearchParams();
+            if (p.search) q.set('search', p.search);
+            if (p.status && p.status !== 'all') q.set('status', p.status);
+            if (p.category) q.set('category', p.category);
+            if (p.quality) q.set('quality', p.quality);
+            if (p.sort && p.sort !== 'newest') q.set('sort', p.sort);
+            if (window._galleryPage && window._galleryPage > 1) {
+                q.set('page', String(window._galleryPage));
+            }
+            const qs = q.toString();
+            var path = window.location.pathname + (qs ? ('?' + qs) : '');
+            if (window.location.href.split('#')[0] !== window.location.origin + path) {
+                window.history.replaceState({}, '', path);
+            }
+        }
+
+        function updateGalleryPaginationUi(data) {
+            var bar = document.getElementById('gallery-pagination');
+            var prev = document.getElementById('gallery-prev-page');
+            var next = document.getElementById('gallery-next-page');
+            var info = document.getElementById('gallery-page-info');
+            if (!bar || !prev || !next || !info) return;
+            var total = typeof data.total === 'number' ? data.total : 0;
+            var offset = typeof data.offset === 'number' ? data.offset : 0;
+            var count = typeof data.count === 'number' ? data.count : 0;
+            var hasMore = !!data.has_more;
+            if (total <= 0) {
+                bar.style.display = 'none';
+                return;
+            }
+            bar.style.display = 'flex';
+            var start = total === 0 ? 0 : offset + 1;
+            var end = offset + count;
+            var totalPages = Math.max(1, Math.ceil(total / GALLERY_PAGE_SIZE));
+            var curPage = Math.min(totalPages, Math.floor(offset / GALLERY_PAGE_SIZE) + 1);
+            window._galleryPage = curPage;
+            info.textContent = 'Showing ' + start + '–' + end + ' of ' + total + ' · Page ' + curPage + ' / ' + totalPages;
+            prev.disabled = offset <= 0;
+            next.disabled = !hasMore;
+        }
+
+        async function loadRecentTemp() {
+            const wrap = document.getElementById('gallery-recent-strip');
+            const scroll = document.getElementById('gallery-recent-scroll');
+            if (!wrap || !scroll) return;
+            try {
+                const res = await fetch('/api/gallery/recent-temp');
+                const data = await res.json();
+                if (!data.success || !data.videos || !data.videos.length) {
+                    wrap.style.display = 'none';
+                    scroll.innerHTML = '';
+                    return;
+                }
+                wrap.style.display = 'block';
+                scroll.innerHTML = data.videos.map(function(v) {
+                    var url = v.video_url || ('/api/documentary/video/' + encodeURIComponent(v.id));
+                    var sec = typeof v.seconds_left === 'number' ? v.seconds_left : 0;
+                    var title = (v.title || v.id || 'Video').replace(/</g, '&lt;');
+                    return '<div class="gallery-recent-chip" data-id="' + String(v.id).replace(/"/g, '') + '">' +
+                        '<video class="gallery-thumb-video" muted playsinline preload="metadata" src="' + url + '#t=0.3"></video>' +
+                        '<div class="cap">' + title + '</div>' +
+                        '<div class="timer">' + Math.floor(sec / 60) + 'm ' + (sec % 60) + 's left</div></div>';
+                }).join('');
+                scroll.querySelectorAll('.gallery-recent-chip').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        var id = el.getAttribute('data-id');
+                        if (id) openVideoPreview(id);
+                    });
+                });
+            } catch (e) {
+                wrap.style.display = 'none';
+            }
+        }
+
+        async function loadMyDownloads() {
+            const listEl = document.getElementById('my-downloads-list');
+            const ulEl = document.getElementById('my-downloads-ul');
+            const emptyEl = document.getElementById('my-downloads-empty');
+            const countEl = document.getElementById('my-downloads-count');
+            if (!listEl || !ulEl) return;
+            try {
+                const uid = await galleryUserId();
+                const res = await fetch(`/api/gallery/downloads?user_id=${encodeURIComponent(uid)}`);
+                const data = await res.json();
+                if (data.status === 'success' && data.downloads && data.downloads.length > 0) {
+                    ulEl.style.display = 'block';
+                    if (emptyEl) emptyEl.style.display = 'none';
+                    ulEl.innerHTML = data.downloads.slice(0, 50).map(d => {
+                        const date = d.downloaded_at ? new Date(d.downloaded_at).toLocaleDateString() : '';
+                        return `<li style="padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
+                            <a href="#" onclick="openVideoPreview('${d.item_id}'); return false;" style="color: var(--primary);">${(d.item_id || '').replace(/-/g, ' ')}</a>
+                            <span style="font-size: 0.85em; color: var(--text-tertiary);">${date}</span>
+                        </li>`;
+                    }).join('');
+                    if (countEl) countEl.textContent = `(${data.downloads.length})`;
+                } else {
+                    ulEl.style.display = 'none';
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    if (countEl) countEl.textContent = '(0)';
+                }
+            } catch (e) {
+                if (emptyEl) { emptyEl.textContent = 'Could not load downloads.'; emptyEl.style.display = 'block'; }
+                if (countEl) countEl.textContent = '(0)';
+            }
+        }
+        function initMyDownloadsToggle() {
+            const toggle = document.getElementById('my-downloads-toggle');
+            const list = document.getElementById('my-downloads-list');
+            if (!toggle || !list) return;
+            toggle.addEventListener('click', function() {
+                const open = list.style.display !== 'none';
+                list.style.display = open ? 'none' : 'block';
+                toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+            });
+        }
+
+        // Load videos from API (uses form controls + optional URL on first paint)
+        // resetPage: true = go to page 1 (default); false = keep window._galleryPage (next/prev)
+        async function loadVideos(resetPage) {
+            const grid = document.getElementById('gallery-grid');
+            const emptyState = document.getElementById('empty-gallery');
+            const loadingState = document.getElementById('loading-state');
+            
+            if (loadingState) loadingState.style.display = 'block';
+            if (emptyState) emptyState.style.display = 'none';
+            if (grid) grid.innerHTML = '';
+            
+            try {
+                var urlParams = new URLSearchParams(window.location.search);
+                var first = !window._galleryHydratedFromUrl;
+                if (first) {
+                    if (urlParams.toString()) {
+                        var s = urlParams.get('search');
+                        if (s != null && document.getElementById('gallery-search-input')) document.getElementById('gallery-search-input').value = s;
+                        if (urlParams.get('status') && document.getElementById('status-filter')) document.getElementById('status-filter').value = urlParams.get('status');
+                        if (urlParams.get('category') && document.getElementById('category-filter')) document.getElementById('category-filter').value = urlParams.get('category');
+                        if (urlParams.get('quality') && document.getElementById('quality-filter')) document.getElementById('quality-filter').value = urlParams.get('quality');
+                        if (urlParams.get('sort') && document.getElementById('sort-filter')) document.getElementById('sort-filter').value = urlParams.get('sort');
+                    }
+                    var pageP = urlParams.get('page');
+                    if (pageP) {
+                        var pi = parseInt(pageP, 10);
+                        if (pi > 0) window._galleryPage = pi;
+                    }
+                    window._galleryHydratedFromUrl = true;
+                } else if (resetPage !== false) {
+                    window._galleryPage = 1;
+                }
+                const p = getGalleryFilterParams();
+                var offset = Math.max(0, (window._galleryPage - 1) * GALLERY_PAGE_SIZE);
+                syncGalleryUrl();
+                let apiUrl = '/api/gallery/list?limit=' + GALLERY_PAGE_SIZE + '&offset=' + offset +
+                    '&search=' + encodeURIComponent(p.search) +
+                    '&status=' + encodeURIComponent(p.status) + '&sort=' + encodeURIComponent(p.sort);
+                if (p.category) apiUrl += '&category=' + encodeURIComponent(p.category);
+                if (p.quality) apiUrl += '&quality=' + encodeURIComponent(p.quality);
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                
+                const data = await response.json();
+                
+                if (loadingState) loadingState.style.display = 'none';
+                
+                if (data.status === 'success' && typeof data.total === 'number' && data.total > 0 && (!data.videos || data.videos.length === 0) && (typeof data.offset === 'number' ? data.offset : 0) > 0) {
+                    window._galleryPage = 1;
+                    return loadVideos(false);
+                }
+                
+                if (data.status === 'success' && data.videos && data.videos.length > 0) {
+                    let filteredVideos = applyAdvancedFilters(data.videos);
+                    const total = typeof data.total === 'number' ? data.total : filteredVideos.length;
+                    const resultsCount = document.getElementById('results-count');
+                    if (resultsCount) {
+                        resultsCount.textContent = filteredVideos.length + ' on this page' + (typeof data.total === 'number' ? ' · ' + data.total + ' total' : '') + ' · /api/gallery/list';
+                    }
+                    updateGalleryPaginationUi(data);
+                    
+                    if (grid) {
+                        grid.innerHTML = '';
+                        filteredVideos.forEach(function(video) {
+                            grid.appendChild(createVideoCard(video));
+                        });
+                    }
+                    if (emptyState) emptyState.style.display = 'none';
+                } else {
+                    if (data.status === 'success' && typeof data.total === 'number' && data.total > 0) {
+                        updateGalleryPaginationUi(data);
+                    } else {
+                        updateGalleryPaginationUi({ total: 0, offset: 0, count: 0, has_more: false });
+                    }
+                    if (emptyState) emptyState.style.display = 'block';
+                    const resultsCount = document.getElementById('results-count');
+                    if (resultsCount) {
+                        resultsCount.textContent = (data.status === 'success' && data.total === 0) ? '0 videos · /api/gallery/list' : 'No matches on this page · /api/gallery/list';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading videos:', error);
+                if (loadingState) loadingState.style.display = 'none';
+                if (emptyState) emptyState.style.display = 'block';
+                var rc = document.getElementById('results-count');
+                if (rc) rc.textContent = 'Load failed — check network';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load videos. Please try again.');
+                }
+            }
+        }
+
+        // Create video card element
+        function createVideoCard(video) {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.dataset.id = video.id;
+            item.dataset.title = video.title;
+            item.dataset.status = video.status;
+            
+            const thumbnail = video.thumbnail_path || '';
+            const vidUrl = (video.video_url || ('/api/documentary/video/' + encodeURIComponent(video.id))).replace(/"/g, '&quot;');
+            const duration = video.duration ? formatDuration(video.duration) : 'N/A';
+            const statusClass = `status-${video.status || 'pending'}`;
+            
+            const qualityLevel = video.quality_level || 'medium';
+            const qualityBadge = qualityLevel ? `<span class="quality-badge quality-${qualityLevel.toLowerCase()}" title="Quality: ${qualityLevel}">${qualityLevel}</span>` : '';
+            const createdDate = video.created_at ? new Date(video.created_at).toLocaleDateString() : 'N/A';
+            
+            // Category badge
+            const categoryName = video.category_name || '';
+            const categoryBadge = categoryName ? `<span class="category-badge category-${categoryName.toLowerCase()}" title="Category: ${categoryName}">
+                <i class="fas fa-tag"></i> ${categoryName}
+            </span>` : '';
+            
+            // Quality score display
+            const qualityScore = video.quality_score ? (video.quality_score * 100).toFixed(0) + '%' : '';
+            const qualityScoreBadge = qualityScore ? `<span class="quality-score-badge" title="Quality Score: ${qualityScore}">
+                <i class="fas fa-star"></i> ${qualityScore}
+            </span>` : '';
+            
+            var thumbBlock = thumbnail
+                ? `<img src="${thumbnail}" alt="${(video.title || '').replace(/"/g, '&quot;')}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div class="play-icon" style="display: none;"><i class="fas fa-play-circle"></i></div>`
+                : `<video class="gallery-thumb-video" muted playsinline preload="metadata" src="${vidUrl}#t=0.4"></video><div class="play-icon" style="pointer-events:none;"><i class="fas fa-play-circle"></i></div>`;
+            
+            item.innerHTML = `
+                <div class="gallery-item-thumbnail">
+                    ${thumbBlock}
+                    <div class="gallery-item-actions">
+                        <button class="action-btn preview-btn" onclick="event.stopPropagation(); openVideoPreview('${video.id}')" title="Preview">
+                            <i class="fas fa-play"></i> Preview
+                        </button>
+                        <button class="action-btn edit-btn" onclick="event.stopPropagation(); openVideoEditor('${video.id}')" title="Edit">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="action-btn download-btn" onclick="event.stopPropagation(); downloadVideo('${video.id}', '${(video.title || 'video').replace(/'/g, "\\'")}')" title="Download">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                        <button class="action-btn share-btn" onclick="event.stopPropagation(); shareGalleryItem('${video.id}', '${(video.title || 'My video').replace(/'/g, "\\'")}')" title="Share on social networks">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+                <div class="gallery-item-content">
+                    <div class="gallery-item-title">${video.title || 'Untitled'}</div>
+                    <div class="gallery-item-description">${(video.description || video.prompt || '').substring(0, 100)}${(video.description || video.prompt || '').length > 100 ? '...' : ''}</div>
+                    <div class="gallery-item-meta">
+                        <div class="gallery-item-meta-row">
+                            <span class="meta-item"><i class="fas fa-clock"></i> ${duration}</span>
+                            <span class="meta-item"><i class="fas fa-calendar"></i> ${createdDate}</span>
+                        </div>
+                        <div class="gallery-item-badges">
+                            ${categoryBadge}
+                            ${qualityBadge}
+                            ${qualityScoreBadge}
+                            <span class="gallery-item-status ${statusClass}">${video.status || 'pending'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            item.addEventListener('click', (e) => {
+                // Don't open preview if clicking action buttons
+                if (!e.target.closest('.action-btn')) {
+                    openVideoPreview(video.id);
+                }
+            });
+            
+            return item;
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+
+        // Tab switching (only tabs with data-tab; excludes other controls)
+        function initTabs() {
+            document.querySelectorAll('.gallery-tab[data-tab]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    
+                    // Update active tab
+                    document.querySelectorAll('.gallery-tab[data-tab]').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Update active content
+                    document.querySelectorAll('.gallery-tab-content').forEach(c => c.classList.remove('active'));
+                    const content = document.getElementById(`tab-${tabName}`);
+                    if (content) content.classList.add('active');
+                    
+                    // Load data for active tab
+                    if (tabName === 'stats') {
+                        loadGalleryStats();
+                    } else if (tabName === 'calendar' && typeof EnhancedCalendar !== 'undefined') {
+                        const calendar = new EnhancedCalendar('calendar-widget');
+                        calendar.loadAppointments();
+                    }
+                });
+            });
+        }
+
+        // Video Preview Modal Functions
+        function openVideoEditor(videoId) {
+            // Navigate to video editor page
+            window.location.href = `/editor/?video_id=${videoId}`;
+        }
+
+        function openVideoPreview(videoId) {
+            let modal = document.getElementById('video-preview-modal');
+            if (!modal) {
+                createVideoModal();
+                modal = document.getElementById('video-preview-modal');
+            }
+            if (modal) {
+                loadVideoPreview(videoId);
+            }
+        }
+
+        function createVideoModal() {
+            const modal = document.createElement('div');
+            modal.id = 'video-preview-modal';
+            modal.className = 'video-modal';
+            modal.innerHTML = `
+                <div class="video-modal-content">
+                    <div class="video-modal-header">
+                        <h2 class="video-modal-title">Video Preview</h2>
+                        <button class="video-modal-close" onclick="closeVideoPreview()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="video-modal-player">
+                        <div id="custom-video-player-container"></div>
+                        <video id="preview-video-player" controls style="display: none;">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-modal-info" id="video-modal-info">
+                        <!-- Video metadata will be loaded here -->
+                    </div>
+                    <div class="video-modal-description" id="video-modal-description">
+                        <!-- Description will be loaded here -->
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Close on backdrop click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeVideoPreview();
+                }
+            });
+            
+            // Close on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    closeVideoPreview();
+                }
+            });
+        }
+
+        async function loadVideoPreview(videoId) {
+            const modal = document.getElementById('video-preview-modal');
+            const player = document.getElementById('preview-video-player');
+            const customPlayerContainer = document.getElementById('custom-video-player-container');
+            const infoDiv = document.getElementById('video-modal-info');
+            const descDiv = document.getElementById('video-modal-description');
+            
+            if (!modal) return;
+            
+            // Show loading state
+            modal.classList.add('active');
+            if (infoDiv) infoDiv.innerHTML = '<div style="text-align: center; padding: 2rem;"><div class="skeleton-loader" style="height: 100px;"></div><p>Loading video...</p></div>';
+            if (descDiv) descDiv.innerHTML = '<div class="skeleton-loader" style="height: 50px;"></div>';
+            
+            try {
+                const uid = await galleryUserId();
+                const response = await fetch('/api/gallery/video/' + encodeURIComponent(videoId) + '?user_id=' + encodeURIComponent(uid));
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.video) {
+                    const video = data.video;
+                    
+                    // Check if video is completed
+                    if (video.status !== 'completed') {
+                        if (infoDiv) infoDiv.innerHTML = '<p style="color: #ffaa00; text-align: center; padding: 2rem;">Video is still being generated. Status: ' + video.status + '</p>';
+                        if (descDiv) descDiv.innerHTML = '<p>Please wait for the video to complete before previewing.</p>';
+                        return;
+                    }
+                    
+                    const videoUrl = video.video_url || ('/api/documentary/video/' + encodeURIComponent(videoId));
+                    
+                    // Try to use custom player if available
+                    if (customPlayerContainer && typeof CustomVideoPlayer !== 'undefined') {
+                        try {
+                            // Destroy existing player
+                            if (window.currentCustomPlayer) {
+                                window.currentCustomPlayer.destroy();
+                            }
+                            
+                            // Create new custom player
+                            window.currentCustomPlayer = new CustomVideoPlayer('custom-video-player-container', {
+                                autoplay: false,
+                                playbackSpeeds: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+                                defaultSpeed: 1
+                            });
+                            
+                            // Set video source
+                            window.currentCustomPlayer.setSource(videoUrl);
+                            
+                            // Hide default player
+                            if (player) player.style.display = 'none';
+                        } catch (playerError) {
+                            console.warn('Custom player failed, using default:', playerError);
+                            // Fallback to default player
+                            if (player) {
+                                player.src = videoUrl;
+                                player.load();
+                                player.style.display = 'block';
+                            }
+                        }
+                    } else {
+                        // Fallback to default player
+                        if (player) {
+                            player.src = videoUrl;
+                            player.load();
+                            player.style.display = 'block';
+                            
+                            // Add error handling
+                            player.addEventListener('error', (e) => {
+                                console.error('Video playback error:', e);
+                                if (infoDiv) {
+                                    infoDiv.innerHTML = '<p style="color: #ff4444; text-align: center; padding: 2rem;">Error loading video. The file may be missing or corrupted.</p>';
+                                }
+                            });
+                            
+                            // Add loading state
+                            player.addEventListener('loadstart', () => {
+                                if (infoDiv) {
+                                    const loadingHtml = infoDiv.innerHTML;
+                                    if (!loadingHtml.includes('Loading')) {
+                                        infoDiv.innerHTML = '<p style="text-align: center; padding: 1rem;">Loading video...</p>' + loadingHtml;
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Load metadata
+                    const duration = video.duration ? formatDuration(video.duration) : 'N/A';
+                    const createdDate = video.created_at ? new Date(video.created_at).toLocaleDateString() : 'N/A';
+                    const qualityLevel = video.quality_level || 'N/A';
+                    const qualityScore = video.quality_score ? (video.quality_score * 100).toFixed(1) + '%' : 'N/A';
+                    
+                    const categoryName = video.category_name || 'N/A';
+                    const categoryBadge = categoryName !== 'N/A' ? `<span class="category-badge category-${categoryName.toLowerCase()}">
+                        <i class="fas fa-tag"></i> ${categoryName}
+                    </span>` : '<span>N/A</span>';
+                    
+                    infoDiv.innerHTML = `
+                        <div class="video-modal-meta">
+                            <div class="video-modal-meta-label">Duration</div>
+                            <div class="video-modal-meta-value"><i class="fas fa-clock"></i> ${duration}</div>
+                        </div>
+                        <div class="video-modal-meta">
+                            <div class="video-modal-meta-label">Created</div>
+                            <div class="video-modal-meta-value"><i class="fas fa-calendar"></i> ${createdDate}</div>
+                        </div>
+                        <div class="video-modal-meta">
+                            <div class="video-modal-meta-label">Category</div>
+                            <div class="video-modal-meta-value">${categoryBadge}</div>
+                        </div>
+                        <div class="video-modal-meta">
+                            <div class="video-modal-meta-label">Quality Level</div>
+                            <div class="video-modal-meta-value">
+                                <span class="quality-badge quality-${qualityLevel.toLowerCase()}">${qualityLevel}</span>
+                            </div>
+                        </div>
+                        <div class="video-modal-meta">
+                            <div class="video-modal-meta-label">Quality Score</div>
+                            <div class="video-modal-meta-value"><i class="fas fa-star"></i> ${qualityScore}</div>
+                        </div>
+                        <div class="video-modal-meta">
+                            <div class="video-modal-meta-label">Status</div>
+                            <div class="video-modal-meta-value"><i class="fas fa-check-circle"></i> ${video.status || 'unknown'}</div>
+                        </div>
+                    `;
+                    
+                    descDiv.innerHTML = `
+                        <h3>${video.title || 'Untitled'}</h3>
+                        <p>${video.description || video.prompt || 'No description available.'}</p>
+                        ${video.prompt && video.prompt !== video.description ? `<p><strong>Prompt:</strong> ${video.prompt}</p>` : ''}
+                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="action-btn" onclick="downloadVideo('${video.id}', '${(video.title || 'video').replace(/'/g, "\\'")}')" style="margin: 0;">
+                                <i class="fas fa-download"></i> Download Video
+                            </button>
+                            <button class="action-btn" onclick="shareGalleryItem('${video.id}', '${(video.title || 'My video').replace(/'/g, "\\'")}')" style="margin: 0;">
+                                <i class="fas fa-share-alt"></i> Share
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // Fallback: use video URL directly
+                    player.src = '/api/documentary/video/' + encodeURIComponent(videoId);
+                    player.load();
+                    infoDiv.innerHTML = '<p>Loading video metadata...</p>';
+                    descDiv.innerHTML = '<p>Video preview</p>';
+                }
+            } catch (error) {
+                console.error('Error loading video preview:', error);
+                // Still try to play video
+                player.src = '/api/documentary/video/' + encodeURIComponent(videoId);
+                player.load();
+                infoDiv.innerHTML = '<p>Error loading video details</p>';
+                descDiv.innerHTML = '<p>Video preview</p>';
+            }
+        }
+
+        function closeVideoPreview() {
+            const modal = document.getElementById('video-preview-modal');
+            const player = document.getElementById('preview-video-player');
+            
+            // Destroy custom player if exists
+            if (window.currentCustomPlayer) {
+                window.currentCustomPlayer.destroy();
+                window.currentCustomPlayer = null;
+            }
+            
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            
+            if (player) {
+                player.pause();
+                player.src = '';
+                player.style.display = 'none';
+            }
+        }
+
+        // Download via gallery route (records user_id when DB migration present)
+        async function downloadVideo(videoId, videoTitle) {
+            try {
+                if (typeof toast !== 'undefined') {
+                    toast.info('Preparing download...');
+                }
+                const uid = await galleryUserId();
+                const videoResponse = await fetch('/api/gallery/video/' + encodeURIComponent(videoId) + '?user_id=' + encodeURIComponent(uid));
+                const videoData = await videoResponse.json();
+                
+                if (videoData.status !== 'success' || !videoData.video) {
+                    if (typeof toast !== 'undefined') {
+                        toast.error('Video not found or not available for download');
+                    }
+                    return;
+                }
+                
+                const video = videoData.video;
+                
+                if (video.status !== 'completed') {
+                    if (typeof toast !== 'undefined') {
+                        toast.error('Video is still being generated. Please wait for completion.');
+                    }
+                    return;
+                }
+                
+                const downloadUrl = '/api/gallery/video/' + encodeURIComponent(videoId) + '/download?user_id=' + encodeURIComponent(uid);
+                
+                const sanitizedTitle = (videoTitle || video.title || 'video')
+                    .replace(/[<>:"/\\|?*]/g, '_')
+                    .replace(/\s+/g, '_')
+                    .substring(0, 100);
+                
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = sanitizedTitle + '.mp4';
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                
+                setTimeout(function() {
+                    try { document.body.removeChild(link); } catch (e) {}
+                }, 100);
+                
+                if (typeof toast !== 'undefined') {
+                    toast.success('Downloading: ' + sanitizedTitle + '.mp4');
+                }
+                
+            } catch (error) {
+                console.error('Error downloading video:', error);
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to download video. Please try again.');
+                }
+            }
+        }
+
+        function shareGalleryItem(videoId, videoTitle) {
+            const origin = window.location.origin || 'https://masternoder.dk';
+            const shareUrl = origin + '/gallery' + (videoId ? '?video=' + encodeURIComponent(videoId) : '');
+            const shareUrlEnc = encodeURIComponent(shareUrl);
+            const text = (videoTitle ? 'Check out my video: ' + videoTitle + ' — ' : 'My gallery on ') + 'MasterNoder';
+            const shareTextEnc = encodeURIComponent(text);
+            const twUrl = 'https://twitter.com/intent/tweet?text=' + shareTextEnc + '&url=' + shareUrlEnc + '&hashtags=MasterNoder,AIvideo';
+            window.open(twUrl, 'share', 'width=550,height=420,scrollbars=no');
+        }
+
+        // Load gallery stats
+        async function loadGalleryStats() {
+            try {
+                const response = await fetch('/api/statistics');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.statistics) {
+                        const stats = data.statistics;
+                        const totalDocs = document.getElementById('gallery-total-docs');
+                        const totalDuration = document.getElementById('gallery-total-duration');
+                        const avgQuality = document.getElementById('gallery-avg-quality');
+                        
+                        if (totalDocs) totalDocs.textContent = stats.total_documentaries || 0;
+                        if (totalDuration) totalDuration.textContent = formatDuration(stats.total_duration || 0);
+                        if (avgQuality) avgQuality.textContent = (stats.avg_quality || 0).toFixed(1);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load gallery stats:', error);
+            }
+        }
+
+        // Search form handling — API calls use live form values (search debounced)
+        function initSearchForm() {
+            const form = document.getElementById('gallery-search-form');
+            const searchInput = document.getElementById('gallery-search-input');
+            const clearBtn = document.getElementById('search-clear-btn');
+            const refreshBtn = document.getElementById('gallery-refresh-btn');
+            ['status-filter', 'category-filter', 'quality-filter', 'sort-filter'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('change', function() { loadVideos(true); });
+            });
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    loadVideos(false);
+                    loadRecentTemp();
+                });
+            }
+            
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    loadVideos(true);
+                });
+            }
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    if (clearBtn) {
+                        clearBtn.style.display = searchInput.value ? 'block' : 'none';
+                    }
+                    scheduleGallerySearch();
+                });
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    if (searchInput) {
+                        searchInput.value = '';
+                        clearBtn.style.display = 'none';
+                        loadVideos(true);
+                    }
+                });
+            }
+        }
+
+        function initGalleryPagination() {
+            var prev = document.getElementById('gallery-prev-page');
+            var next = document.getElementById('gallery-next-page');
+            if (prev) {
+                prev.addEventListener('click', function() {
+                    if ((window._galleryPage || 1) <= 1) return;
+                    window._galleryPage = (window._galleryPage || 1) - 1;
+                    loadVideos(false);
+                    var g = document.getElementById('gallery-grid');
+                    if (g) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            }
+            if (next) {
+                next.addEventListener('click', function() {
+                    window._galleryPage = (window._galleryPage || 1) + 1;
+                    loadVideos(false);
+                    var g = document.getElementById('gallery-grid');
+                    if (g) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            }
+        }
+
+        async function initGalleryAdminPanel() {
+            var panel = document.getElementById('gallery-admin-panel');
+            if (!panel) return;
+            try {
+                var r = await fetch('/api/gallery/admin/status');
+                var d = await r.json();
+                if (d && d.enhance_metadata_configured) {
+                    panel.style.display = 'block';
+                }
+            } catch (e) {}
+            var run = document.getElementById('gallery-admin-run');
+            var st = document.getElementById('gallery-admin-status');
+            if (run) {
+                run.addEventListener('click', async function() {
+                    var tokEl = document.getElementById('gallery-admin-token');
+                    var maxEl = document.getElementById('gallery-admin-max');
+                    var tok = (tokEl && tokEl.value) ? tokEl.value.trim() : '';
+                    var max = maxEl ? parseInt(maxEl.value, 10) : 5;
+                    if (!tok) {
+                        if (st) st.textContent = 'Enter the admin token (same as GALLERY_ADMIN_TOKEN on the server).';
+                        return;
+                    }
+                    if (st) st.textContent = 'Running…';
+                    try {
+                        var res = await fetch('/api/gallery/enhance-metadata', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Gallery-Admin-Token': tok },
+                            body: JSON.stringify({ max_videos: Math.min(20, Math.max(1, isNaN(max) ? 5 : max)) })
+                        });
+                        var out = await res.json().catch(function() { return {}; });
+                        if (res.ok && out.success) {
+                            if (st) st.textContent = 'Enhanced ' + (out.enhanced != null ? out.enhanced : 0) + ' video(s). ' + (out.message || '');
+                            loadVideos(false);
+                        } else {
+                            if (st) st.textContent = (out.error || 'Request failed') + (res.status ? ' (HTTP ' + res.status + ')' : '');
+                        }
+                    } catch (err) {
+                        if (st) st.textContent = String(err && err.message ? err.message : err);
+                    }
+                });
+            }
+        }
+
+        // Apply advanced filters
+        function applyAdvancedFilters(videos) {
+            const dateFrom = document.getElementById('date-from')?.value;
+            const dateTo = document.getElementById('date-to')?.value;
+            const qualityMin = parseFloat(document.getElementById('quality-min')?.value) || 0;
+            const qualityMax = parseFloat(document.getElementById('quality-max')?.value) || 100;
+            const durationMin = parseFloat(document.getElementById('duration-min')?.value) || 0;
+            const durationMax = parseFloat(document.getElementById('duration-max')?.value) || Infinity;
+            
+            return videos.filter(video => {
+                // Date range filter
+                if (dateFrom || dateTo) {
+                    const videoDate = video.created_at ? new Date(video.created_at) : null;
+                    if (videoDate) {
+                        if (dateFrom && videoDate < new Date(dateFrom)) return false;
+                        if (dateTo && videoDate > new Date(dateTo + 'T23:59:59')) return false;
+                    } else {
+                        return false;
+                    }
+                }
+                
+                // Quality score filter
+                const qualityScore = video.quality_score ? video.quality_score * 100 : 0;
+                if (qualityScore < qualityMin || qualityScore > qualityMax) return false;
+                
+                // Duration filter
+                const durationMinutes = video.duration ? video.duration / 60 : 0;
+                if (durationMinutes < durationMin || durationMinutes > durationMax) return false;
+                
+                return true;
+            });
+        }
+
+        // Load categories for filter dropdown
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/categories/list');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.categories) {
+                        const categoryFilter = document.getElementById('category-filter');
+                        if (categoryFilter) {
+                            data.categories.forEach(cat => {
+                                const option = document.createElement('option');
+                                option.value = cat.name || cat;
+                                option.textContent = cat.name || cat;
+                                categoryFilter.appendChild(option);
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // Initialize advanced filters
+        function initAdvancedFilters() {
+            const advancedBtn = document.getElementById('advanced-filter-btn');
+            const advancedPanel = document.getElementById('advanced-filters-panel');
+            const applyBtn = document.getElementById('apply-advanced-filters');
+            const clearBtn = document.getElementById('clear-advanced-filters');
+            
+            if (advancedBtn && advancedPanel) {
+                advancedBtn.addEventListener('click', () => {
+                    const isActive = advancedPanel.style.display !== 'none';
+                    advancedPanel.style.display = isActive ? 'none' : 'block';
+                    advancedBtn.classList.toggle('active', !isActive);
+                });
+            }
+            
+            if (applyBtn) {
+                applyBtn.addEventListener('click', () => {
+                    loadVideos(true);
+                });
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    document.getElementById('date-from').value = '';
+                    document.getElementById('date-to').value = '';
+                    document.getElementById('quality-min').value = '';
+                    document.getElementById('quality-max').value = '';
+                    document.getElementById('duration-min').value = '';
+                    document.getElementById('duration-max').value = '';
+                    loadVideos(true);
+                });
+            }
+        }
+
+        // Initialize view options
+        function initViewOptions() {
+            const gridBtn = document.getElementById('view-grid');
+            const listBtn = document.getElementById('view-list');
+            const galleryGrid = document.getElementById('gallery-grid');
+            
+            if (gridBtn && listBtn && galleryGrid) {
+                gridBtn.addEventListener('click', () => {
+                    galleryGrid.classList.remove('list-view');
+                    gridBtn.classList.add('active');
+                    listBtn.classList.remove('active');
+                });
+                
+                listBtn.addEventListener('click', () => {
+                    galleryGrid.classList.add('list-view');
+                    listBtn.classList.add('active');
+                    gridBtn.classList.remove('active');
+                });
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            initTabs();
+            initSearchForm();
+            initAdvancedFilters();
+            initViewOptions();
+            initMyDownloadsToggle();
+            initGalleryPagination();
+            loadGalleryProfile();
+            loadMyDownloads();
+            
+            if (window.unifiedPointCounters) {
+                unifiedPointCounters.updateAllCounters();
+                unifiedPointCounters.startAutoUpdate(30000);
+            }
+            
+            loadCategories().then(function() {
+                initGalleryAdminPanel();
+                loadVideos();
+                return loadRecentTemp();
+            }).catch(function() {
+                initGalleryAdminPanel();
+                loadVideos();
+                loadRecentTemp();
+            });
+            
+            (function galleryApiHealth() {
+                const el = document.getElementById('gallery-service-status');
+                if (!el) return;
+                el.textContent = 'Checking gallery API…';
+                fetch('/api/gallery/list?limit=1')
+                    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(function () { el.textContent = 'Gallery API: OK · /api/gallery/list · /api/gallery/recent-temp · /api/gallery/downloads'; el.style.color = '#00ff88'; })
+                    .catch(function () { el.textContent = 'Gallery API: check failed — list may be empty or server unreachable'; el.style.color = '#ffb347'; });
+            })();
+            
+            var paramsOpen = new URLSearchParams(window.location.search);
+            var vidOpen = paramsOpen.get('video');
+            if (vidOpen) {
+                setTimeout(function() { openVideoPreview(vidOpen); }, 400);
+            }
+        });
+    </script>
+    <script src="/static/js/error-manager.js" defer></script>
+    <script src="/static/js/video-player.js" defer></script>
+    <script src="/static/js/theme-toggle.js" defer></script>
+    <script src="/static/js/progression-display.js" defer></script>
+    <script src="/static/js/navigation-toolbar.js" defer></script>
+    <script src="/static/js/universal-auto-save-status.js" defer></script>
+    <script src="/static/js/connect-all-point-counters.js" defer></script>
+    <script src="/static/js/image-support.js" defer></script>
+    <script src="/static/js/template-effects.js" defer></script>
+    <script src="/static/js/template-services.js" defer></script>
+    <script src="/static/js/agent-skill-sets.js" defer></script>
+    <script src="/static/js/template-engine-core.js" defer></script>
+    <script src="/static/js/unified-point-counters.js" defer></script>
+    <script src="/static/js/comprehensive-api-integration.js" defer></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>
