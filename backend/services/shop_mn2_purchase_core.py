@@ -9,6 +9,51 @@ import os
 from typing import Any, Dict, Optional, Tuple
 
 
+def _purchase_onchain(
+    uid: str,
+    iid: str,
+    item: Dict[str, Any],
+    qty: int,
+    price_mn2: float,
+    total_cost: int,
+    agent_id: Optional[str],
+) -> Tuple[Dict[str, Any], int]:
+    """Pay the shop revenue address from the user's UTXOs. The site pays the miner fee."""
+    from backend.routes.shop_routes import _apply_shop_item_effects
+    from backend.services.mn2_onchain_wallet import fee_payer_config, load_mn2_config, send_from_user_site_pays_fee
+
+    revenue = str(load_mn2_config().get("shop_revenue_address") or "").strip()
+    if not revenue:
+        return {"success": False, "error": "shop_revenue_address is not configured", "code": "shop_revenue_unconfigured"}, 400
+    if not fee_payer_config().get("address"):
+        return {
+            "success": False,
+            "error": "onchain_fee_payer.address is not configured",
+            "code": "fee_payer_unconfigured",
+        }, 400
+    sent = send_from_user_site_pays_fee(uid, revenue, price_mn2, kind="shop_payment")
+    if not sent.get("success"):
+        status = 501 if sent.get("code") == "per_address_send_unsupported" else 400
+        return {"success": False, **sent, "wallet_mode": "onchain"}, status
+    _apply_shop_item_effects(uid, iid, item, qty, purchase_ref=sent.get("txid"))
+    return {
+        "success": True,
+        "message": f"Purchased {qty}x {item.get('name')} with on-chain MN2",
+        "item": item,
+        "item_id": iid,
+        "user_id": uid,
+        "quantity": qty,
+        "payment_method": "mn2",
+        "wallet_mode": "onchain",
+        "price_paid_mn2": price_mn2,
+        "price_coins_equivalent": total_cost,
+        "txid": sent.get("txid"),
+        "network_fee_mn2": sent.get("network_fee_mn2"),
+        "fee_paid_by": sent.get("fee_paid_by"),
+        "agent_id": agent_id,
+    }, 200
+
+
 def purchase_with_mn2_balance(
     user_id: str,
     item_id: str,
@@ -51,6 +96,11 @@ def purchase_with_mn2_balance(
     if coins_per_mn2 <= 0:
         return {"success": False, "error": "MN2 price not configured"}, 400
     price_mn2 = total_cost / coins_per_mn2
+
+    from backend.services.mn2_onchain_wallet import wallet_mode
+
+    if wallet_mode() == "onchain":
+        return _purchase_onchain(uid, iid, item, qty, price_mn2, total_cost, agent_id)
 
     from backend.services.unified_points_database import unified_points_db
     from backend.services.mn2_ledger import append_entry

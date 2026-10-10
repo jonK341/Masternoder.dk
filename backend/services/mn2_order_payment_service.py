@@ -87,7 +87,7 @@ def create_order_payment(
     product: str = "shop",
     hosting_quote_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Register a new order payment (address already from RPC getnewaddress). Returns order record with payment_ref, expires_at."""
+    """Register a new order payment. ``address`` comes from mn2_wallet_service.generate_daemon_address (the site daemon wallet). Returns order record with payment_ref, expires_at."""
     payment_ref = str(uuid.uuid4())[:12]
     now = datetime.utcnow()
     expires_at = (now + timedelta(hours=_expiry_hours())).isoformat() + "Z"

@@ -110,6 +110,9 @@ class AutoFixEndpoints:
     
     def should_auto_fix(self, path: str, method: str = 'GET') -> bool:
         """Determine if endpoint should be auto-fixed"""
+        normalized = path or ""
+        if normalized.startswith("/api/mn2/") or normalized.startswith("/vidgenerator/api/mn2/"):
+            return False
         # Check if already fixed
         if path in self.fixed_endpoints:
             return False

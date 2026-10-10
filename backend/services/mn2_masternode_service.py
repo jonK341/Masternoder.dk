@@ -1062,10 +1062,11 @@ def _lock_wallet_collateral_utxos() -> None:
 def _send_collateral_utxo(collateral: float) -> Dict[str, Any]:
     from backend.services import mn2_rpc_client as rpc
     _lock_wallet_collateral_utxos()
-    addr_r = rpc.getnewaddress()
-    if addr_r.get("error"):
-        return {"success": False, "error": addr_r["error"]}
-    addr = addr_r.get("result")
+    from backend.services.mn2_wallet_service import generate_daemon_address
+    addr_r = generate_daemon_address()
+    if not addr_r.get("success"):
+        return {"success": False, "error": addr_r.get("error") or "getnewaddress failed"}
+    addr = addr_r.get("deposit_address")
     send_r = rpc.sendtoaddress(str(addr), float(collateral))
     if send_r.get("error"):
         return {"success": False, "error": send_r["error"]}

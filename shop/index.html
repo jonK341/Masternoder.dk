@@ -820,6 +820,7 @@
                 <div style="margin-bottom: var(--spacing-lg);">
                     <strong style="color: var(--secondary);">Balance:</strong>
                     <span id="mn2-wallet-balance" style="font-size: 1.2rem; font-weight: 700;">--</span> MN2
+                    <div id="mn2-wallet-onchain" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;"></div>
                 </div>
                 <div style="margin-bottom: var(--spacing-lg);">
                     <strong style="color: var(--secondary);">Deposit address:</strong>
@@ -3091,6 +3092,7 @@
                 const usd = (balData.mn2_usd_price != null && mn2Balance != null && mn2Balance > 0) ? (mn2Balance * balData.mn2_usd_price).toFixed(2) : null;
                 if (badge) badge.textContent = (mn2Balance != null ? mn2Balance.toFixed(4) : '--') + ' MN2' + (usd ? ' ≈ $' + usd + ' USD' : '');
                 if (balanceEl) balanceEl.textContent = mn2Balance != null ? mn2Balance.toFixed(8) : '--';
+                if (window.Mn2Wallet) window.Mn2Wallet.renderOnchain(document.getElementById('mn2-wallet-onchain'), balData);
                 if (balanceEl && usd) balanceEl.title = '≈ $' + usd + ' USD';
                 const verificationMsg = document.getElementById('mn2-withdraw-verification-msg');
                 const withdrawBtn = document.getElementById('mn2-withdraw-btn');
@@ -3665,6 +3667,7 @@
     </div>
     <script src="/static/js/navigation-toolbar.js" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="shop" defer></script>
+    <script src="/static/js/mn2-wallet.js?v=20261010" defer></script>
     <script src="/static/js/mn2-withdrawal-security.js?v=20260614d" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
     <script src="/static/js/progression-display.js" defer></script>

@@ -11,7 +11,12 @@ from flask import Blueprint, jsonify, request
 _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
-from backend.services.mn2_wallet_service import get_balance, get_or_create_deposit_address
+from backend.services.mn2_wallet_service import (
+    generate_daemon_address,
+    get_balance,
+    get_or_create_deposit_address,
+    refresh_deposit_address,
+)
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
 
 
@@ -68,7 +73,16 @@ def mn2_balance():
         "coins_per_mn2": coins_per_mn2,
         "shop_revenue_address": shop_revenue_address or None,
         "shop_revenue_explorer_url": shop_revenue_explorer_url or None,
+        "wallet_mode": str(config.get("wallet_mode") or "ledger"),
     }
+    try:
+        from backend.services.mn2_onchain_wallet import chain_balance_for_user, reconcile_user
+
+        payload["onchain"] = chain_balance_for_user(result.get("user_id") or user_id)
+        payload["reconcile"] = reconcile_user(result.get("user_id") or user_id, payload["mn2_balance"])
+    except Exception:
+        payload["onchain"] = None
+        payload["reconcile"] = None
     if config.get("withdrawal_requires_verification"):
         try:
             from backend.services.mn2_verification import is_verified
@@ -125,6 +139,8 @@ def _user_facing_rpc_error(rpc_error: str) -> str:
         return "Wallet RPC access forbidden. Check RPC user/password."
     if "connection" in err.lower() or "refused" in err.lower() or "timeout" in err.lower():
         return "Wallet RPC unreachable. Ensure the MN2 wallet node is running and MN2_RPC_URL is correct."
+    if "passphrase" in err.lower() or "wallet is locked" in err.lower() or "unlock" in err.lower():
+        return "Wallet is locked. The server needs MN2_WALLET_PASSPHRASE to create a new address."
     if len(err) > 120:
         return err[:117] + "..."
     return err
@@ -152,6 +168,113 @@ def mn2_deposit_address():
         "deposit_address": addr,
         "explorer_address_url": explorer_address_url,
     }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])
+def mn2_wallet_refresh():
+    """Rotate the user's deposit address on the site daemon wallet."""
+    user_id = resolve_user_id(from_body=True, from_query=True)
+    result = refresh_deposit_address(user_id)
+    if not result.get("success"):
+        return jsonify({
+            "success": False,
+            "error": _user_facing_rpc_error(result.get("error") or "Could not create address"),
+            "code": result.get("code"),
+            "user_id": user_id,
+            "deposit_address": None,
+        }), 200
+    addr = result.get("deposit_address") or ""
+    base = _explorer_base_url().rstrip("/")
+    return jsonify({
+        "success": True,
+        "user_id": result.get("user_id") or user_id,
+        "deposit_address": addr,
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+    }), 200
+
+
+@mn2_bp.route("/api/mn2/address-book", methods=["GET", "POST"])
+def mn2_address_book():
+    user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "Sign in to manage trusted addresses.", "code": "auth_required"}), 401
+    from backend.services.mn2_address_book import add_address, list_addresses
+
+    if request.method == "GET":
+        return jsonify({"success": True, "user_id": user_id, "addresses": list_addresses(user_id)}), 200
+    data = request.get_json(silent=True) or {}
+    try:
+        from backend.services.account_security_service import check_real_money_action
+        token = (data.get("verification_token") or data.get("password") or "").strip() or None
+        blocked = check_real_money_action(user_id, token)
+        if blocked:
+            return jsonify({"success": False, "error": blocked, "code": "password_verification_required"}), 403
+    except ImportError:
+        pass
+    saved = add_address(user_id, data.get("address") or "", data.get("label") or "")
+    status = 200 if saved.get("success") else 400
+    return jsonify(saved), status
+
+
+@mn2_bp.route("/api/mn2/transfer", methods=["POST"])
+def mn2_transfer():
+    """User-to-user send is an on-chain payment to their deposit address.
+
+    The site fee payer covers the miner fee. An external MN2 address uses the
+    withdrawal path (user pays withdrawal_fee unless onchain_fee_payer.pay_external_withdrawal_fee).
+    """
+    user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
+    if not user_id or user_id == "default_user":
+        return jsonify({"success": False, "error": "You must be signed in to transfer.", "code": "auth_required"}), 401
+    data = request.get_json(silent=True) or {}
+    target = str(data.get("to") or data.get("recipient") or data.get("address") or "").strip()
+    try:
+        amount = float(data.get("amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    if not target:
+        return jsonify({"success": False, "error": "to is required"}), 400
+    if amount <= 0:
+        return jsonify({"success": False, "error": "amount must be positive"}), 400
+    try:
+        from backend.services.account_security_service import check_real_money_action
+        token = (data.get("verification_token") or data.get("verify_token") or "").strip() or None
+        blocked = check_real_money_action(user_id, token)
+        if blocked:
+            return jsonify({"success": False, "error": blocked, "code": "password_verification_required"}), 403
+    except ImportError:
+        pass
+
+    from backend.services.mn2_gift_service import looks_like_chain_address
+    from backend.services.mn2_onchain_wallet import ensure_user_address, send_from_user_site_pays_fee
+    from backend.services.mn2_wallet_service import get_address_to_user_map
+
+    mapped = (get_address_to_user_map().get(target) or "").strip()
+    internal = bool(mapped) or not looks_like_chain_address(target)
+    if internal:
+        recipient = mapped or target
+        if recipient == user_id:
+            return jsonify({"success": False, "error": "Cannot send to yourself.", "code": "self_transfer"}), 400
+        dest = ensure_user_address(recipient)
+        if not dest.get("success"):
+            return jsonify({"success": False, "error": dest.get("error"), "code": dest.get("code")}), 400
+        sent = send_from_user_site_pays_fee(user_id, dest["deposit_address"], amount, kind="user_transfer")
+        if sent.get("success"):
+            sent["to_user"] = recipient
+            sent["mode"] = "on_chain"
+            sent["explorer_tx_url"] = _explorer_tx_url(sent.get("txid") or "")
+            return jsonify(sent), 200
+        status = 501 if sent.get("code") == "per_address_send_unsupported" else 400
+        return jsonify(sent), status
+
+    payload = {
+        "address": target,
+        "amount": amount,
+        "verification_token": data.get("verification_token") or data.get("verify_token"),
+        "totp_code": data.get("totp_code") or data.get("otp"),
+    }
+    request.get_json = lambda *args, **kwargs: payload
+    return mn2_withdraw()
 
 
 @mn2_bp.route("/api/mn2/transactions", methods=["GET"])
@@ -316,15 +439,18 @@ def mn2_create_order_payment():
         return jsonify({"success": False, "error": "MN2 price not configured"}), 400
     price_mn2 = total_coins / coins_per_mn2
     try:
-        from backend.services.mn2_rpc_client import getnewaddress
-        r = getnewaddress()
-        if r.get("error"):
-            return jsonify({"success": False, "error": r.get("error", "Could not get address")}), 200
-        address = (r.get("result") or "").strip()
+        generated = generate_daemon_address()
+        if not generated.get("success"):
+            return jsonify({
+                "success": False,
+                "error": _user_facing_rpc_error(generated.get("error") or "Could not get address"),
+                "code": generated.get("code"),
+            }), 200
+        address = (generated.get("deposit_address") or "").strip()
         if not address:
-            return jsonify({"success": False, "error": "RPC did not return address"}), 200
+            return jsonify({"success": False, "error": "RPC did not return address", "code": "no_address"}), 200
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 200
+        return jsonify({"success": False, "error": str(e), "code": "rpc_error"}), 200
     from backend.services.mn2_order_payment_service import create_order_payment
     order = create_order_payment(
         user_id=user_id,
@@ -401,6 +527,25 @@ def _ops_authorized() -> bool:
         return True
     token = (request.headers.get("X-Scanner-Token") or request.headers.get("X-Ops-Token") or request.args.get("token") or "").strip()
     return token == secret
+
+
+@mn2_bp.route("/api/mn2/ops/backfill-addresses", methods=["POST"])
+def mn2_ops_backfill_addresses():
+    """Idempotent address backfill. Default dry-run. Body apply=true creates the next batch."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.get_json(silent=True) or {}
+    try:
+        batch_size = int(data.get("batch_size") or request.args.get("batch_size") or 100)
+    except (TypeError, ValueError):
+        batch_size = 100
+    apply = data.get("apply") is True or str(request.args.get("apply") or "").lower() in ("1", "true", "yes")
+    from backend.services.mn2_onchain_wallet import apply_address_backfill, plan_address_backfill
+    if apply:
+        result = apply_address_backfill(batch_size=batch_size)
+    else:
+        result = plan_address_backfill(batch_size=batch_size)
+    return jsonify(result), 200
 
 
 @mn2_bp.route("/api/mn2/ops/create-addresses", methods=["POST", "GET"])
@@ -498,12 +643,11 @@ def mn2_ops_treasury_address():
         return jsonify({"success": False, "error": "Unauthorized"}), 403
     try:
         from datetime import datetime, timezone
-        from backend.services import mn2_rpc_client as rpc
-        r = rpc.getnewaddress()
-        addr = r.get("result") if isinstance(r, dict) else None
+        generated = generate_daemon_address()
+        addr = generated.get("deposit_address") if generated.get("success") else None
         if not addr:
-            err = (r.get("error") if isinstance(r, dict) else None) or "getnewaddress returned no address"
-            return jsonify({"success": False, "error": str(err)}), 502
+            err = generated.get("error") or "getnewaddress returned no address"
+            return jsonify({"success": False, "error": str(err), "code": generated.get("code")}), 502
         base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         path = os.path.join(base, "data", "mn2_treasury_addresses.json")
         try:
@@ -908,6 +1052,10 @@ def mn2_withdraw():
         return jsonify({"success": False, "error": f"Maximum withdrawal is {max_w} MN2"}), 400
 
     fee = float(config.get("withdrawal_fee") or 0.001)
+    from backend.services.mn2_onchain_wallet import site_pays_external_withdrawal_fee
+    site_pays_fee = site_pays_external_withdrawal_fee(config)
+    if site_pays_fee:
+        fee = 0.0
     amount_sent = amount - fee
     if amount_sent <= 0:
         return jsonify({"success": False, "error": f"Amount must be greater than withdrawal fee ({fee} MN2)"}), 400
@@ -1048,7 +1196,15 @@ def mn2_withdraw():
 
     import time
     t0 = time.perf_counter()
-    send_r = sendtoaddress(address, amount_sent)
+    if site_pays_fee:
+        from backend.services.mn2_onchain_wallet import send_from_user_site_pays_fee
+        sent = send_from_user_site_pays_fee(user_id, address, amount_sent, kind="external_withdrawal")
+        send_r = {
+            "result": sent.get("txid"),
+            "error": None if sent.get("success") else (sent.get("error") or sent.get("code")),
+        }
+    else:
+        send_r = sendtoaddress(address, amount_sent)
     duration_ms = round((time.perf_counter() - t0) * 1000, 2)
     if send_r.get("error"):
         if commit_id:

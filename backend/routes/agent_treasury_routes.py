@@ -43,9 +43,9 @@ def treasury_address():
         }), 200
 
     try:
-        from backend.services.mn2_rpc_client import getnewaddress
-        r = getnewaddress()
-        addr = (r.get("result") or "").strip() if isinstance(r, dict) else None
+        from backend.services.mn2_wallet_service import generate_daemon_address
+        r = generate_daemon_address()
+        addr = (r.get("deposit_address") or "").strip() if r.get("success") else ""
         if addr:
             from backend.services.agent_wallet_service import set_treasury_address
             saved = set_treasury_address(addr)

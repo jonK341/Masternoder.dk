@@ -74,6 +74,9 @@
     }
     var balNum = Number(balData.mn2_balance) || 0;
     if (balanceEl) balanceEl.textContent = balNum.toFixed(8);
+    if (global.Mn2Wallet) {
+      global.Mn2Wallet.renderOnchain(document.getElementById('profile-mn2-onchain'), balData);
+    }
     var showcase = document.getElementById('profile-mn2-showcase-balance');
     if (showcase) showcase.textContent = balNum.toFixed(4) + ' MN2';
     if (fiatEl && localStorage.getItem('mn2_fiat_display') === '1') {
