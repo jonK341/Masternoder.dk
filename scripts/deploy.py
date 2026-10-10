@@ -892,6 +892,7 @@ MANIFESTS = {
         "data/camgirls_performers_production.template.json",
         "scripts/camgirls_onboard_performers.py",
         "scripts/camgirls_batch_onboard.py",
+        "scripts/camgirls_batch_onboard.sh",
         "scripts/camgirls_provision_payout_addresses.py",
         "scripts/camgirls_py.sh",
         "scripts/project_env.py",

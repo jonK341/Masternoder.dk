@@ -14,14 +14,19 @@ Brand colors for generated gallery/icon assets live under `media: { slug, initia
 
 ## Batch onboard
 
+**Do not** run `bash scripts/camgirls_batch_onboard.py` — that file is Python. On the server use `camgirls_py.sh` or `camgirls_batch_onboard.sh`.
+
 ```bash
-# Plan only
+# Local — plan only
 .venv/bin/python scripts/camgirls_batch_onboard.py \
   --file data/camgirls_performers_wave.template.json --dry-run
 
-# Wave 2 — upsert JSON, media meta, DB per row, payout rails, raster assets
-.venv/bin/python scripts/camgirls_batch_onboard.py \
-  --file waves/wave2.json --batch 2 --wave-size 25 \
+# Server — plan only (forward slashes for paths)
+cd /var/www/html
+bash scripts/camgirls_batch_onboard.sh --file waves/wave2.json --batch 2 --wave-size 25 --dry-run
+
+# Wave 2 apply — upsert JSON, media meta, DB, payout rails, raster assets
+bash scripts/camgirls_batch_onboard.sh --file waves/wave2.json --batch 2 --wave-size 25 \
   --provision-addresses --generate-media --full-catalog-sync
 ```
 

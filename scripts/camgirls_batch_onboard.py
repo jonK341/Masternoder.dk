@@ -5,9 +5,13 @@ Reads JSON or CSV wave stubs (15–50 rows per wave), upserts data/camgirls_perf
 registers brand media meta, optionally syncs DB, provisions MN2/PayPal payout rails, and
 runs the media generator for new slugs.
 
-Examples:
+Examples (local):
   python scripts/camgirls_batch_onboard.py --file data/camgirls_performers_wave.template.json --dry-run
   python scripts/camgirls_batch_onboard.py --file waves/wave2.json --batch 2 --wave-size 25
+
+On production server (Python script — never run with bash):
+  cd /var/www/html && bash scripts/camgirls_py.sh scripts/camgirls_batch_onboard.py --file waves/wave2.json --batch 2 --dry-run
+  # or: bash scripts/camgirls_batch_onboard.sh --file waves/wave2.json --batch 2 --dry-run
   python scripts/camgirls_batch_onboard.py --file waves/wave2.csv --batch 2 \\
     --provision-addresses --generate-media
 

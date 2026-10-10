@@ -125,7 +125,7 @@
     if (i >= 0) favs.splice(i, 1);
     else favs.push(id);
     saveFavorites(favs);
-    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/favorite', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/favorite'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() }),
@@ -144,7 +144,7 @@
       msg('Enter birth year', true);
       return;
     }
-    fetch(apiUrl('/api/camgirls/age-verify', {
+    fetch(apiUrl('/api/camgirls/age-verify'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid(), birth_year: year }),
@@ -162,7 +162,7 @@
   }
 
   function loadAgents() {
-    fetch(apiUrl('/api/camgirls/agents')
+    fetch(apiUrl('/api/camgirls/agents'))
       .then(function (r) {
         return r.json();
       })
@@ -275,7 +275,7 @@
   }
 
   function loadStatus() {
-    fetch(apiUrl('/api/camgirls/status')
+    fetch(apiUrl('/api/camgirls/status'))
       .then(function (r) {
         return r.json();
       })
@@ -343,7 +343,7 @@
     if (extra.amount_mn2 != null) body.amount_mn2 = extra.amount_mn2;
     if (extra.gift_id) body.gift_id = extra.gift_id;
     if (extra.minutes != null) body.minutes = extra.minutes;
-    fetch(apiUrl('/api/camgirls/paypal/create-order', {
+    fetch(apiUrl('/api/camgirls/paypal/create-order'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -383,7 +383,7 @@
 
   function startPrivateShow(id, minutes) {
     var mins = parseInt(minutes, 10) || 5;
-    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/private-show', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/private-show'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid(), minutes: mins }),
@@ -409,7 +409,7 @@
   }
 
   function joinFanClub(id) {
-    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/fan-club', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/fan-club'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() }),
@@ -463,7 +463,7 @@
       }
       return;
     }
-    fetch(apiUrl('/api/camgirls/paypal/capture', {
+    fetch(apiUrl('/api/camgirls/paypal/capture'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() || params.get('user_id') || '', order_id: orderId }),
@@ -648,7 +648,7 @@
     grid.querySelectorAll('[data-unlock]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-unlock');
-        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/unlock', {
+        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/unlock'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: uid() }),
@@ -716,7 +716,7 @@
           return x.id === id;
         });
         var amt = (p && p.tip_min_mn2) || 5;
-        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/tip', {
+        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/tip'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: uid(), amount: amt }),
