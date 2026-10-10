@@ -1,0 +1,55 @@
+/**
+ * Romance Theme
+ * Auto-generated theme CSS
+ */
+
+.theme-romance {
+    --theme-primary: #ff69b4;
+    --theme-secondary: #ffb6c1;
+    --theme-background: #1a0a1a;
+    --theme-accent: #ff1493;
+}
+
+.theme-romance .generator-container {
+    background: #1a0a1a;
+    color: #ff69b4;
+}
+
+.theme-romance .module-card {
+    border-color: #ff69b4;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.theme-romance .module-card:hover {
+    border-color: #ff1493;
+    box-shadow: 0 0 20px #ff149340;
+}
+
+.theme-romance .btn-primary {
+    background: linear-gradient(135deg, #ff69b4, #ffb6c1);
+    border-color: #ff69b4;
+}
+
+.theme-romance .btn-primary:hover {
+    background: linear-gradient(135deg, #ffb6c1, #ff1493);
+    box-shadow: 0 0 15px #ff69b460;
+}
+
+.theme-romance h1, .theme-romance h2, .theme-romance h3 {
+    color: #ff69b4;
+    text-shadow: 0 0 10px #ff69b480;
+}
+
+.theme-romance .progress-bar .progress-fill {
+    background: linear-gradient(90deg, #ff69b4, #ffb6c1);
+}
+
+.theme-romance .status-display {
+    border-color: #ff69b4;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.theme-romance .phase-frame.active {
+    border-color: #ff69b4;
+    box-shadow: 0 0 20px #ff69b440;
+}

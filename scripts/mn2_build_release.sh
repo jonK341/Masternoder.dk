@@ -191,16 +191,33 @@ require_build_tools() {
   fi
 }
 
+ensure_boost_system_link_symlink() {
+  # Ubuntu 24+/Boost 1.88+: only versioned .so may be present; ./configure links -lboost_system.
+  local libdir="/usr/lib/x86_64-linux-gnu"
+  [[ -d "${libdir}" ]] || return 0
+  if [[ -e "${libdir}/libboost_system.so" ]]; then
+    return 0
+  fi
+  local ver
+  ver="$(ls -1 "${libdir}"/libboost_system.so.* 2>/dev/null | head -1 || true)"
+  if [[ -n "${ver}" ]]; then
+    ln -sf "$(basename "${ver}")" "${libdir}/libboost_system.so"
+    echo "Created ${libdir}/libboost_system.so -> $(basename "${ver}")"
+  fi
+}
+
 ensure_build_deps() {
   if [[ "${INSTALL_BUILD_DEPS}" == "1" ]] && [[ "$(id -u)" -eq 0 ]] && command -v apt-get >/dev/null; then
     echo "=== Installing MN2 build dependencies (apt) ==="
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -qq
     apt-get install -y -qq "${APT_BUILD_PACKAGES[@]}"
+    ensure_boost_system_link_symlink
     return 0
   fi
   require_build_tools
   if [[ "${USE_DEPENDS}" != "1" ]]; then
+    ensure_boost_system_link_symlink
     for cmd in pkg-config; do
       command -v "${cmd}" >/dev/null || {
         echo "System-lib build needs ${cmd}. Set INSTALL_BUILD_DEPS=1 or install libboost-all-dev libssl-dev libgmp-dev libbsd-dev." >&2
