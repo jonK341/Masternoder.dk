@@ -23,6 +23,7 @@ def payout_env(tmp_path, monkeypatch):
     monkeypatch.setattr(pay, "_PAYOUT_PATH", str(data / "payout_config.json"))
     monkeypatch.setattr(pay, "_SWEEPS_PATH", str(data / "payout_sweeps.jsonl"))
     monkeypatch.setattr(pay, "_realized_total_usd", lambda: 200.0)
+    monkeypatch.setattr(pay, "_treasury_stashed_usd_by_mode", lambda mode: 200.0)
     monkeypatch.setattr(pay, "_live_enabled", lambda: False)
     monkeypatch.delenv("BINANCE_API_KEY", raising=False)
     monkeypatch.delenv("BINANCE_API_SECRET", raising=False)

@@ -13,7 +13,7 @@ class GameTimeline {
         }
         
         this.options = {
-            userId: options.userId || 'default_user',
+            userId: options.userId || (window.MnUserId ? window.MnUserId.read() : ''),
             baseUrl: options.baseUrl || window.location.origin,
             ...options
         };

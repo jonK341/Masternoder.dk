@@ -48,7 +48,7 @@ PAGES = [
     'compendium', 'starmap25',
     'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams',
     'social-monitor', 'explorer', 'proof-of-reserves',
-    'market', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
+    'market', 'nft', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
     'wallets', 'podcast', 'create-app', 'business-control',
 ]
@@ -583,6 +583,24 @@ def sitemap_xml():
         lines.append(f'    <changefreq>weekly</changefreq>')
         lines.append(f'    <priority>{priority}</priority>')
         lines.append('  </url>')
+    try:
+        from backend.services.camgirls_service import list_active_performer_ids
+
+        app_base = (os.environ.get('CAMGIRLS_APP_BASE_URL') or 'https://camgirls.masternoder.dk/app').rstrip('/')
+        lines.append('  <url>')
+        lines.append(f'    <loc>{app_base}/</loc>')
+        lines.append('    <changefreq>daily</changefreq>')
+        lines.append('    <priority>0.92</priority>')
+        lines.append('  </url>')
+        for pid in list_active_performer_ids():
+            for loc in (f'{base}/camgirls/p/{pid}/', f'{app_base}/p/{pid}/'):
+                lines.append('  <url>')
+                lines.append(f'    <loc>{loc}</loc>')
+                lines.append('    <changefreq>weekly</changefreq>')
+                lines.append('    <priority>0.75</priority>')
+                lines.append('  </url>')
+    except Exception:
+        pass
     lines.append('</urlset>')
     body = '\n'.join(lines)
     resp = make_response(body, 200)

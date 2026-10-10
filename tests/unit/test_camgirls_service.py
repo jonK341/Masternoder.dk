@@ -96,6 +96,38 @@ def test_tip_performer():
         t.tearDown()
 
 
+def test_chat_stream_yields_tokens(monkeypatch):
+    t = CamgirlsTestBase()
+    t.setUp()
+    try:
+        from backend.services import agent_ai_router
+        from backend.services.camgirls_service import (
+            iter_chat_stream,
+            record_age_verification,
+            unlock_performer,
+        )
+
+        class _MockResp:
+            success = True
+            content = "Hello stream world"
+
+        monkeypatch.setattr(
+            agent_ai_router,
+            "routed_chat",
+            lambda messages, task_kind, user_id, **kwargs: (_MockResp(), {}),
+        )
+        t._credit("buyer", 50.0)
+        record_age_verification("buyer", birth_year=1990)
+        unlock_performer("buyer", "p1")
+        events = list(iter_chat_stream("buyer", "p1", "Hi"))
+        types = [e.get("type") for e in events]
+        assert "start" in types
+        assert "token" in types
+        assert events[-1].get("type") == "done"
+    finally:
+        t.tearDown()
+
+
 def test_chat_requires_unlock_then_debits(monkeypatch):
     t = CamgirlsTestBase()
     t.setUp()
@@ -122,6 +154,21 @@ def test_chat_requires_unlock_then_debits(monkeypatch):
         assert ok.get("reply") == "Hey there!"
         assert ok.get("amount_mn2") == 2
         assert os.path.isfile(t._chat)
+    finally:
+        t.tearDown()
+
+
+def test_get_performer_detail():
+    t = CamgirlsTestBase()
+    t.setUp()
+    try:
+        from backend.services.camgirls_service import get_performer_detail
+
+        ok = get_performer_detail("p1", user_id="u1")
+        assert ok.get("success") is True
+        assert (ok.get("performer") or {}).get("id") == "p1"
+        missing = get_performer_detail("missing", user_id="u1")
+        assert missing.get("success") is False
     finally:
         t.tearDown()
 

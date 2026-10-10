@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import os
 
-from flask import Blueprint, jsonify, request, session
+import json
+
+from flask import Blueprint, Response, jsonify, request, session
 
 camgirls_bp = Blueprint("camgirls", __name__)
 
@@ -67,6 +69,32 @@ def performer_detail(performer_id: str):
     result = get_performer_detail(performer_id, user_id=uid)
     code = 200 if result.get("success") else 404
     return jsonify(result), code
+
+
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/media", methods=["GET"])
+def performer_media(performer_id: str):
+    from backend.services.camgirls_media_service import (
+        load_resell_manifest_file,
+        media_paths_for_performer,
+        resell_pack_for_performer,
+    )
+    from backend.services.camgirls_service import get_performer_row
+
+    p = get_performer_row(performer_id)
+    if not p:
+        return jsonify({"success": False, "error": "performer_not_found"}), 404
+    manifest = load_resell_manifest_file(performer_id)
+    pack = manifest or resell_pack_for_performer(
+        performer_id, str(p.get("display_name") or "")
+    )
+    return jsonify(
+        {
+            "success": True,
+            "performer_id": performer_id,
+            "media": media_paths_for_performer(performer_id),
+            "resell_pack": pack,
+        }
+    ), 200
 
 
 @camgirls_bp.route("/api/camgirls/performers/<performer_id>/unlock", methods=["POST"])
@@ -279,6 +307,25 @@ def performer_mood(performer_id: str):
     return jsonify({"success": True, "mood_id": mood_id, "lingo": lingo}), 200
 
 
+@camgirls_bp.route("/api/camgirls/performers/<performer_id>/chat/stream", methods=["POST"])
+def performer_chat_stream(performer_id: str):
+    from backend.services.camgirls_service import iter_chat_stream
+
+    body = request.get_json(silent=True) or {}
+    message = str(body.get("message") or body.get("text") or "")
+    uid = _resolve_user_id(from_body=True)
+
+    def generate():
+        for evt in iter_chat_stream(uid, performer_id, message):
+            yield f"data: {json.dumps(evt)}\n\n"
+
+    return Response(
+        generate(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @camgirls_bp.route("/api/camgirls/chat", methods=["POST"])
 def camgirls_chat():
     from backend.services.camgirls_service import chat_with_performer
@@ -402,3 +449,59 @@ def camgirls_livekit_token():
         return jsonify(out), code
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+def _camgirls_public_base(req) -> str:
+    """Prefer /app/ when studio is served on camgirls subdomain."""
+    host = (req.host or "").split(":")[0].lower()
+    if host == "camgirls.masternoder.dk":
+        return "/app"
+    if (req.headers.get("X-Forwarded-Prefix") or "").rstrip("/") == "/app":
+        return "/app"
+    return "/camgirls"
+
+
+@camgirls_bp.route("/camgirls/p/<performer_id>", methods=["GET"])
+@camgirls_bp.route("/camgirls/p/<performer_id>/", methods=["GET"])
+def performer_landing_page(performer_id: str):
+    """Per-performer SEO landing with server-injected meta."""
+    import html as html_module
+
+    from flask import redirect
+
+    from backend.services.camgirls_service import get_performer
+
+    pub = _camgirls_public_base(request)
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    row = get_performer((performer_id or "").strip())
+    if not row:
+        return redirect(pub + "/", code=302)
+    page_path = os.path.join(base, "camgirls", "performer.html")
+    if not os.path.isfile(page_path):
+        return redirect(pub + "/?performer=" + html_module.escape(performer_id), code=302)
+    with open(page_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    pid = html_module.escape(str(row.get("id") or performer_id))
+    name = html_module.escape(str(row.get("display_name") or performer_id))
+    bio = html_module.escape(str(row.get("bio") or row.get("tagline") or ""))
+    avatar = html_module.escape(str(row.get("avatar_url") or "/static/camgirls/avatar-demo.svg"))
+    host = (request.host or "").split(":")[0].lower()
+    if host == "camgirls.masternoder.dk":
+        origin = "https://camgirls.masternoder.dk"
+        canonical = f"{origin}{pub}/p/{pid}/"
+    else:
+        origin = (os.environ.get("BASE_URL") or "https://masternoder.dk").rstrip("/")
+        canonical = f"{origin}/camgirls/p/{pid}/"
+    for key, val in (
+        ("PERFORMER_ID", pid),
+        ("DISPLAY_NAME", name),
+        ("BIO", bio),
+        ("AVATAR_URL", avatar),
+        ("CANONICAL_URL", html_module.escape(canonical)),
+        ("SITE_ORIGIN", html_module.escape(origin)),
+    ):
+        content = content.replace("{{" + key + "}}", val)
+    return content, 200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
+    }

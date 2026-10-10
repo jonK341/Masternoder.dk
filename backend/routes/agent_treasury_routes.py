@@ -43,9 +43,9 @@ def treasury_address():
         }), 200
 
     try:
-        from backend.services.mn2_rpc_client import getnewaddress
-        r = getnewaddress()
-        addr = (r.get("result") or "").strip() if isinstance(r, dict) else None
+        from backend.services.mn2_wallet_service import generate_daemon_address
+        r = generate_daemon_address()
+        addr = (r.get("deposit_address") or "").strip() if r.get("success") else ""
         if addr:
             from backend.services.agent_wallet_service import set_treasury_address
             saved = set_treasury_address(addr)
@@ -116,3 +116,17 @@ def treasury_distribute():
 def get_balance_safe(agent_id: str) -> float:
     from backend.services.agent_wallet_service import get_balance
     return get_balance(agent_id)
+
+
+@agent_treasury_bp.route("/api/agents/nft-wallets", methods=["GET"])
+def agents_nft_wallets():
+    from backend.services import nft_exchange_service as nft_svc
+
+    return jsonify(nft_svc.list_agent_nft_wallets()), 200
+
+
+@agent_treasury_bp.route("/api/agents/<agent_id>/nft-wallet", methods=["GET"])
+def agent_nft_wallet(agent_id: str):
+    from backend.services import nft_exchange_service as nft_svc
+
+    return jsonify(nft_svc.agent_nft_wallet(agent_id)), 200

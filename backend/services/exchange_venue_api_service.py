@@ -11,9 +11,9 @@ Live gate: ``EXCHANGE_ARBITRAGE_LIVE=1`` + per-venue ``{venue_id}_api_key`` / ``
 from __future__ import annotations
 
 import hashlib
+import os
 import hmac
 import json
-import os
 import time
 import urllib.parse
 from datetime import datetime, timezone
@@ -33,12 +33,6 @@ def _iso() -> str:
 
 def load_api_config() -> Dict[str, Any]:
     cfg = ex._read_json(_API_CFG_PATH, {})
-    if not cfg and os.path.isfile(_API_CFG_PATH):
-        try:
-            with open(_API_CFG_PATH, "r", encoding="utf-8") as f:
-                json.load(f)
-        except json.JSONDecodeError as exc:
-            print(f"[venue-api] invalid JSON in {_API_CFG_PATH}: {exc}")
     return cfg if isinstance(cfg, dict) else {}
 
 
@@ -122,9 +116,7 @@ def venue_execution_eligible(venue_id: str) -> bool:
 
 
 def venue_credentials(venue_id: str) -> Dict[str, Optional[str]]:
-    """Resolve venue API creds from the encrypted vault, falling back to env vars
-    ``{VENUE}_API_KEY`` / ``_API_SECRET`` / ``_API_PASSPHRASE`` (so keys can live in .env or the
-    app config.json, e.g. NONKYC_API_KEY, and not only the vault)."""
+    """Resolve venue API creds from the vault, then ``{VENUE}_API_KEY`` env vars."""
     from backend.services import exchange_secrets_vault_service as vault
     key_name, sec_name, pass_name = _secret_names(venue_id)
     vu = str(venue_id or "").upper()
@@ -234,9 +226,8 @@ def venue_api_request(
     if use_paper or not vcfg.get("live_supported", True):
         return _simulate_response(venue_id, endpoint_key, params)
 
-    # Explicit dry_run=False (balance reads / bots with their own live gate) skips the
-    # shared arb/spork gate. Enforce it only when the caller left dry_run as None.
-    if not gate_ok and dry_run is None:
+    # dry_run=False is an explicit live read and is not blocked by the arb gate.
+    if dry_run is not False and not gate_ok:
         hint = "Set EXCHANGE_ROTATION_LIVE=1" if rotation else "Set EXCHANGE_ARBITRAGE_LIVE=1"
         return {"success": False, "error": "live_gated", "hint": hint}
 
@@ -443,7 +434,7 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             return cached
         return {"ok": False, "error": "symbol_not_found", "market": pair}
 
-    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0, "tick_size": 0.0}
+    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0}
     for filt in row.get("filters") or []:
         if not isinstance(filt, dict):
             continue
@@ -452,8 +443,6 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             filters["step_size"] = float(filt.get("stepSize") or 0)
             filters["min_qty"] = float(filt.get("minQty") or 0)
             filters["max_qty"] = float(filt.get("maxQty") or 0)
-        elif ftype == "PRICE_FILTER":
-            filters["tick_size"] = float(filt.get("tickSize") or 0)
         elif ftype in ("MIN_NOTIONAL", "NOTIONAL"):
             filters["min_notional"] = float(filt.get("minNotional") or filt.get("notional") or 0)
 
@@ -490,10 +479,19 @@ def normalize_order_qty(
 
     filt = fetch_binance_symbol_filters(pair)
     if not filt.get("ok"):
-        return {"ok": False, "error": filt.get("error") or "filter_fetch_failed", "venue_id": venue, "market": pair}
+        # Exchange info is optional for sizing. A geo-block or timeout must not
+        # reject paper ticks; live orders still fail later if the venue rejects qty.
+        return {
+            "ok": True,
+            "venue_id": venue,
+            "market": pair,
+            "quantity": round(raw_qty, 8),
+            "adjusted": False,
+            "filters_unavailable": True,
+            "filter_error": filt.get("error"),
+        }
 
     step = float(filt.get("step_size") or 0)
-    tick_size = float(filt.get("tick_size") or 0)
     min_qty = float(filt.get("min_qty") or 0)
     max_qty = float(filt.get("max_qty") or 0)
     min_notional = float(filt.get("min_notional") or 0)
@@ -719,158 +717,6 @@ def place_market_order(
     return res
 
 
-def place_limit_order(
-    venue_id: str,
-    symbol: str,
-    side: str,
-    quantity: float,
-    price: float,
-    *,
-    dry_run: Optional[bool] = None,
-    quote: Optional[str] = None,
-    market: Optional[str] = None,
-    client_order_id: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Place a spot LIMIT (maker) order on a venue (paper-simulated unless live + credentialed)."""
-    resolved = resolve_market(venue_id, symbol.upper(), quote)
-    if not resolved.get("ok"):
-        return {"success": False, "error": resolved.get("error"), "venue_id": venue_id}
-    pair = str(market or resolved.get("market") or "")
-    side_u = str(side or "buy").upper()
-    side_l = side_u.lower()
-    qty = round(max(0.0, float(quantity or 0)), 8)
-    px = round(max(0.0, float(price or 0)), 8)
-    if qty <= 0 or px <= 0:
-        return {"success": False, "error": "invalid_quantity_or_price"}
-    coid = client_order_id or f"grid-{int(time.time()*1000)}"
-
-    if venue_id == "binance":
-        norm = normalize_order_qty(
-            venue_id, symbol.upper(), side_l, qty,
-            price=px, market=pair, quote=resolved.get("quote"),
-        )
-        if not norm.get("ok"):
-            return {
-                "success": False,
-                "error": norm.get("error"),
-                "venue_id": venue_id,
-                "symbol": symbol.upper(),
-                "pair": pair,
-                "normalize": norm,
-            }
-        qty = float(norm["quantity"])
-        tick = float((norm.get("filters") or {}).get("tick_size") or 0)
-        if tick > 0:
-            px = _quantize_down(px, tick)
-        params: Dict[str, Any] = {
-            "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": "GTC",
-            "quantity": qty, "price": px, "newClientOrderId": coid,
-        }
-    elif venue_id in ("nonkyc", "xeggex"):
-        params = {
-            "symbol": pair, "side": side_u.lower(), "type": "limit",
-            "quantity": str(qty), "price": str(px), "userProvidedId": coid, "strictValidate": False,
-        }
-    else:
-        params = {"symbol": pair, "side": side_u.lower(), "type": "limit",
-                  "quantity": str(qty), "price": str(px)}
-
-    res = venue_api_request(venue_id, "order_limit", params, dry_run=dry_run)
-    res.setdefault("venue_id", venue_id)
-    res.setdefault("symbol", symbol.upper())
-    res.setdefault("side", side_u.lower())
-    res.setdefault("quantity", qty)
-    res.setdefault("price", px)
-    res.setdefault("pair", pair)
-    res.setdefault("client_order_id", coid)
-    if res.get("simulated"):
-        res.setdefault("order_id", f"paper-{venue_id}-{coid}")
-    else:
-        body = res.get("body")
-        if isinstance(body, dict):
-            res["order_id"] = body.get("orderId") or body.get("id") or body.get("_id")
-        if res.get("success"):
-            res.setdefault("mode", "live")
-        elif not res.get("error"):
-            res["error"] = extract_order_error(res) or "limit_order_failed"
-    return res
-
-
-def cancel_order(venue_id: str, symbol: str, order_id: str, *,
-                 dry_run: Optional[bool] = None, market: Optional[str] = None,
-                 quote: Optional[str] = None) -> Dict[str, Any]:
-    """Cancel an open order by id."""
-    pair = str(market or "")
-    if not pair:
-        resolved = resolve_market(venue_id, symbol.upper(), quote)
-        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
-    if venue_id == "binance":
-        params: Dict[str, Any] = {"symbol": pair, "orderId": order_id}
-    else:
-        params = {"symbol": pair, "id": order_id}
-    res = venue_api_request(venue_id, "cancel_order", params, dry_run=dry_run)
-    res.setdefault("venue_id", venue_id)
-    res.setdefault("order_id", order_id)
-    return res
-
-
-def get_open_orders(venue_id: str, symbol: str = "", *,
-                    dry_run: Optional[bool] = None, market: Optional[str] = None,
-                    quote: Optional[str] = None) -> Dict[str, Any]:
-    """List open orders for a venue/symbol."""
-    pair = str(market or "")
-    if not pair and symbol:
-        resolved = resolve_market(venue_id, symbol.upper(), quote)
-        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
-    params: Dict[str, Any] = {}
-    if pair:
-        params["symbol"] = pair
-    res = venue_api_request(venue_id, "open_orders", params, dry_run=dry_run)
-    res.setdefault("venue_id", venue_id)
-    if res.get("simulated"):
-        res.setdefault("orders", [])
-    return res
-
-
-def get_order_status(venue_id: str, symbol: str, order_id: Any, *,
-                     dry_run: Optional[bool] = None, market: Optional[str] = None,
-                     quote: Optional[str] = None) -> Dict[str, Any]:
-    """Look up a single order and normalize its state."""
-    pair = str(market or "")
-    if not pair and symbol:
-        resolved = resolve_market(venue_id, symbol.upper(), quote)
-        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
-    if venue_id == "binance":
-        params: Dict[str, Any] = {"symbol": pair, "orderId": order_id}
-    else:
-        params = {"id": order_id}
-        if pair:
-            params["symbol"] = pair
-    res = venue_api_request(venue_id, "order_status", params, dry_run=dry_run)
-    res.setdefault("venue_id", venue_id)
-    res.setdefault("order_id", order_id)
-    body = res.get("body") if isinstance(res.get("body"), dict) else {}
-    status = str(body.get("status") or body.get("state") or "").upper()
-    try:
-        exec_qty = float(body.get("executedQty") or body.get("executedQuantity")
-                         or body.get("cumQty") or body.get("filledQuantity") or 0)
-    except (TypeError, ValueError):
-        exec_qty = 0.0
-    try:
-        orig_qty = float(body.get("origQty") or body.get("quantity")
-                         or body.get("origQuantity") or 0)
-    except (TypeError, ValueError):
-        orig_qty = 0.0
-    is_filled = status in ("FILLED",) or (orig_qty > 0 and exec_qty >= orig_qty * 0.999)
-    is_resting = status in ("NEW", "OPEN", "ACTIVE", "PARTIALLY_FILLED", "PARTIALLYFILLED", "PENDING")
-    ok = bool(res.get("success"))
-    res["order_status"] = status
-    res["executed_qty"] = exec_qty
-    res["filled"] = ok and is_filled
-    res["resting"] = ok and is_resting
-    return res
-
-
 def get_account_balance(venue_id: str, asset: str = "", *, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     params: Dict[str, Any] = {}
     if venue_id == "bybit":
@@ -886,11 +732,59 @@ def venue_quote_asset(venue_id: str) -> str:
     return conn.venue_quote(venue_id)
 
 
-def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dict[str, float]:
+_BALANCE_CACHE: Dict[str, Dict[str, float]] = {}
+_BALANCE_CACHE_TS: Dict[str, float] = {}
+_BALANCE_CACHE_TTL_SEC = 45.0
+
+
+def invalidate_venue_balance_cache(venue_id: Optional[str] = None) -> None:
+    if venue_id:
+        vid = str(venue_id).lower()
+        _BALANCE_CACHE.pop(vid, None)
+        _BALANCE_CACHE_TS.pop(vid, None)
+        return
+    _BALANCE_CACHE.clear()
+    _BALANCE_CACHE_TS.clear()
+
+
+def balance_cache_age_sec(venue_id: str) -> Optional[float]:
+    vid = str(venue_id or "").lower()
+    ts = _BALANCE_CACHE_TS.get(vid)
+    if ts is None:
+        return None
+    return round(max(0.0, time.time() - ts), 3)
+
+
+def refresh_venue_balances(venue_ids: List[str], *, force: bool = False) -> Dict[str, Any]:
+    """Prefetch spot balances for credentialed venues before a live tick."""
+    refreshed: List[str] = []
+    for raw in venue_ids or []:
+        vid = str(raw or "").lower()
+        if not vid or vid == "internal" or not venue_has_credentials(vid):
+            continue
+        if force:
+            invalidate_venue_balance_cache(vid)
+        parse_spot_balances(vid, dry_run=False, force_refresh=force)
+        refreshed.append(vid)
+    return {"success": True, "refreshed": refreshed}
+
+
+def parse_spot_balances(
+    venue_id: str,
+    *,
+    dry_run: Optional[bool] = None,
+    force_refresh: bool = False,
+) -> Dict[str, float]:
     """Return asset -> free spot balance for a credentialed venue."""
-    if not venue_has_credentials(venue_id):
+    vid = str(venue_id or "").lower()
+    if not venue_has_credentials(vid):
         return {}
-    res = get_account_balance(venue_id, dry_run=dry_run)
+    if dry_run is False and not force_refresh:
+        cached = _BALANCE_CACHE.get(vid)
+        ts = _BALANCE_CACHE_TS.get(vid)
+        if cached is not None and ts is not None and (time.time() - ts) < _BALANCE_CACHE_TTL_SEC:
+            return dict(cached)
+    res = get_account_balance(vid, dry_run=dry_run)
     if not res.get("success"):
         return {}
     body = res.get("body")
@@ -906,6 +800,9 @@ def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dic
                 free = 0.0
             if sym and free > 0:
                 out[sym] = free
+        if dry_run is False:
+            _BALANCE_CACHE[vid] = dict(out)
+            _BALANCE_CACHE_TS[vid] = time.time()
         return out
     items: List[Any] = []
     if isinstance(body, list):
@@ -925,6 +822,9 @@ def parse_spot_balances(venue_id: str, *, dry_run: Optional[bool] = None) -> Dic
             free = 0.0
         if sym and free > 0:
             out[sym] = free
+    if dry_run is False:
+        _BALANCE_CACHE[vid] = dict(out)
+        _BALANCE_CACHE_TS[vid] = time.time()
     return out
 
 
@@ -1090,3 +990,157 @@ def list_venue_capabilities() -> Dict[str, Any]:
             "credentials_configured": venue_has_credentials(vid),
         })
     return {"success": True, "live_allowed": live_allowed(), "venues": venues}
+
+
+# Restored from pre-merge branch so both APIs stay callable.
+def place_limit_order(
+    venue_id: str,
+    symbol: str,
+    side: str,
+    quantity: float,
+    price: float,
+    *,
+    dry_run: Optional[bool] = None,
+    quote: Optional[str] = None,
+    market: Optional[str] = None,
+    client_order_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Place a spot LIMIT (maker) order on a venue (paper-simulated unless live + credentialed)."""
+    resolved = resolve_market(venue_id, symbol.upper(), quote)
+    if not resolved.get("ok"):
+        return {"success": False, "error": resolved.get("error"), "venue_id": venue_id}
+    pair = str(market or resolved.get("market") or "")
+    side_u = str(side or "buy").upper()
+    side_l = side_u.lower()
+    qty = round(max(0.0, float(quantity or 0)), 8)
+    px = round(max(0.0, float(price or 0)), 8)
+    if qty <= 0 or px <= 0:
+        return {"success": False, "error": "invalid_quantity_or_price"}
+    coid = client_order_id or f"grid-{int(time.time()*1000)}"
+
+    if venue_id == "binance":
+        norm = normalize_order_qty(
+            venue_id, symbol.upper(), side_l, qty,
+            price=px, market=pair, quote=resolved.get("quote"),
+        )
+        if not norm.get("ok"):
+            return {
+                "success": False,
+                "error": norm.get("error"),
+                "venue_id": venue_id,
+                "symbol": symbol.upper(),
+                "pair": pair,
+                "normalize": norm,
+            }
+        qty = float(norm["quantity"])
+        tick = float((norm.get("filters") or {}).get("tick_size") or 0)
+        if tick > 0:
+            px = _quantize_down(px, tick)
+        params: Dict[str, Any] = {
+            "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": "GTC",
+            "quantity": qty, "price": px, "newClientOrderId": coid,
+        }
+    elif venue_id in ("nonkyc", "xeggex"):
+        params = {
+            "symbol": pair, "side": side_u.lower(), "type": "limit",
+            "quantity": str(qty), "price": str(px), "userProvidedId": coid, "strictValidate": False,
+        }
+    else:
+        params = {"symbol": pair, "side": side_u.lower(), "type": "limit",
+                  "quantity": str(qty), "price": str(px)}
+
+    res = venue_api_request(venue_id, "order_limit", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("symbol", symbol.upper())
+    res.setdefault("side", side_u.lower())
+    res.setdefault("quantity", qty)
+    res.setdefault("price", px)
+    res.setdefault("pair", pair)
+    res.setdefault("client_order_id", coid)
+    if res.get("simulated"):
+        res.setdefault("order_id", f"paper-{venue_id}-{coid}")
+    else:
+        body = res.get("body")
+        if isinstance(body, dict):
+            res["order_id"] = body.get("orderId") or body.get("id") or body.get("_id")
+        if res.get("success"):
+            res.setdefault("mode", "live")
+        elif not res.get("error"):
+            res["error"] = extract_order_error(res) or "limit_order_failed"
+    return res
+
+
+def cancel_order(venue_id: str, symbol: str, order_id: str, *,
+                 dry_run: Optional[bool] = None, market: Optional[str] = None,
+                 quote: Optional[str] = None) -> Dict[str, Any]:
+    """Cancel an open order by id."""
+    pair = str(market or "")
+    if not pair:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    if venue_id == "binance":
+        params: Dict[str, Any] = {"symbol": pair, "orderId": order_id}
+    else:
+        params = {"symbol": pair, "id": order_id}
+    res = venue_api_request(venue_id, "cancel_order", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("order_id", order_id)
+    return res
+
+
+def get_open_orders(venue_id: str, symbol: str = "", *,
+                    dry_run: Optional[bool] = None, market: Optional[str] = None,
+                    quote: Optional[str] = None) -> Dict[str, Any]:
+    """List open orders for a venue/symbol."""
+    pair = str(market or "")
+    if not pair and symbol:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    params: Dict[str, Any] = {}
+    if pair:
+        params["symbol"] = pair
+    res = venue_api_request(venue_id, "open_orders", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    if res.get("simulated"):
+        res.setdefault("orders", [])
+    return res
+
+
+def get_order_status(venue_id: str, symbol: str, order_id: Any, *,
+                     dry_run: Optional[bool] = None, market: Optional[str] = None,
+                     quote: Optional[str] = None) -> Dict[str, Any]:
+    """Look up a single order and normalize its state."""
+    pair = str(market or "")
+    if not pair and symbol:
+        resolved = resolve_market(venue_id, symbol.upper(), quote)
+        pair = str(resolved.get("market") or "") if resolved.get("ok") else ""
+    if venue_id == "binance":
+        params: Dict[str, Any] = {"symbol": pair, "orderId": order_id}
+    else:
+        params = {"id": order_id}
+        if pair:
+            params["symbol"] = pair
+    res = venue_api_request(venue_id, "order_status", params, dry_run=dry_run)
+    res.setdefault("venue_id", venue_id)
+    res.setdefault("order_id", order_id)
+    body = res.get("body") if isinstance(res.get("body"), dict) else {}
+    status = str(body.get("status") or body.get("state") or "").upper()
+    try:
+        exec_qty = float(body.get("executedQty") or body.get("executedQuantity")
+                         or body.get("cumQty") or body.get("filledQuantity") or 0)
+    except (TypeError, ValueError):
+        exec_qty = 0.0
+    try:
+        orig_qty = float(body.get("origQty") or body.get("quantity")
+                         or body.get("origQuantity") or 0)
+    except (TypeError, ValueError):
+        orig_qty = 0.0
+    is_filled = status in ("FILLED",) or (orig_qty > 0 and exec_qty >= orig_qty * 0.999)
+    is_resting = status in ("NEW", "OPEN", "ACTIVE", "PARTIALLY_FILLED", "PARTIALLYFILLED", "PENDING")
+    ok = bool(res.get("success"))
+    res["order_status"] = status
+    res["executed_qty"] = exec_qty
+    res["filled"] = ok and is_filled
+    res["resting"] = ok and is_resting
+    return res
+

@@ -160,3 +160,8 @@ Slow page loads are usually a combination of:
 ## Generator progress (cross-worker)
 
 The documentary progress endpoint (`GET /api/documentary/progress/<doc_id>`) is safe for multi-worker uWSGI: it **prefers the sidecar file** (and DB when used) over in-memory job state, so any worker can serve progress for a job started on another worker. Progress is written to a `.status.json` sidecar next to the video output; the API reads that first so polling works regardless of which worker handles the request.
+
+## Health endpoints (ops P0)
+
+- `GET /api/health/system` always returns **HTTP 200** with `overall: healthy|degraded` (never 503 solely because MN2 RPC is down). MN2 probe uses a **short timeout** (`MN2_RPC_SYSTEM_HEALTH_TIMEOUT`, default **3s**; no Chainz fallback on this path).
+- `GET /api/health/database` returns **503** only when `SELECT 1` fails. Missing **optional** tables (e.g. `battle_matches`) yields **200** with `status: degraded` and `missing_optional_tables` — run `python scripts/battle_migration.py --standalone` if you need durable battle history.

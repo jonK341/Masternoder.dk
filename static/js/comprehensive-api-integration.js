@@ -18,7 +18,7 @@ class ComprehensiveAPI {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('user_id')) return urlParams.get('user_id');
         
-        return 'default_user';
+        return (window.MnUserId ? window.MnUserId.read() : '');
     }
 
     /**

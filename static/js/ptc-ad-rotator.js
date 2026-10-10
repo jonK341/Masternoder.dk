@@ -9,7 +9,7 @@
     'use strict';
 
     const BASE = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : '';
-    const USER_ID = () => localStorage.getItem('game_user_id') || localStorage.getItem('mn_user_id') || 'default_user';
+    const USER_ID = () => localStorage.getItem('game_user_id') || localStorage.getItem('mn_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
 
     function escapeHtml(value) {
         return String(value == null ? '' : value)

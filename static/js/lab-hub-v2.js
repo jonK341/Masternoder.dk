@@ -46,7 +46,7 @@
         if (btn) { btn.disabled = true; btn.textContent = '⏳ Checking…'; }
         if (out) out.innerHTML = '<p class="lab-muted">Running systems audit…</p>';
         try {
-            const uid = global.userId || localStorage.getItem('game_user_id') || 'default_user';
+            const uid = global.userId || localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const r = await fetch('/api/lab/systems-check?user_id=' + encodeURIComponent(uid));
             const d = await r.json();
             const checks = (d && d.checks) || [];
@@ -73,7 +73,7 @@
     async function loadIdeaBoard() {
         const list = document.getElementById('lab-idea-list');
         const cdEl = document.getElementById('lab-idea-pin-cooldown');
-        const uid = global.userId || localStorage.getItem('game_user_id') || 'default_user';
+        const uid = global.userId || localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         try {
             const r = await fetch('/api/lab/idea-board?user_id=' + encodeURIComponent(uid));
             const d = await r.json();
@@ -120,7 +120,7 @@
         const bodyEl = document.getElementById('lab-idea-body');
         const trackEl = document.getElementById('lab-idea-track');
         const statusEl = document.getElementById('lab-idea-form-status');
-        const uid = global.userId || localStorage.getItem('game_user_id') || 'default_user';
+        const uid = global.userId || localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         const title = (titleEl && titleEl.value || '').trim();
         const body = (bodyEl && bodyEl.value || '').trim();
         const track = (trackEl && trackEl.value) || 'general';
@@ -144,7 +144,7 @@
     async function loadLabV2Status() {
         const panel = document.getElementById('lab-v2-status-panel');
         const aiPanel = document.getElementById('lab-ai-recommendations');
-        const uid = global.userId || localStorage.getItem('game_user_id') || 'default_user';
+        const uid = global.userId || localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         try {
             const r = await fetch('/api/lab/v2/status?user_id=' + encodeURIComponent(uid));
             const d = await r.json();
@@ -179,7 +179,7 @@
         const shopEl = document.getElementById('lab-rewards-shop');
         const trophyEl = document.getElementById('lab-rewards-trophies');
         const mn2El = document.getElementById('lab-rewards-mn2');
-        const uid = global.userId || localStorage.getItem('game_user_id') || 'default_user';
+        const uid = global.userId || localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         try {
             const [shopR, trophyR, mn2R] = await Promise.all([
                 fetch('/api/game/shop/items').then(function (x) { return x.json(); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'lab-hub-v2.js', context: 'catch' }); } return {}; }),

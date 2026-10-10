@@ -194,12 +194,35 @@ def get_quote(slots: int, user_id: str) -> Dict[str, Any]:
 
     from backend.services import mn2_masternode_service as mn
     st = mn.get_service_status()
+    if st.get("checkout_open") is False:
+        return {
+            "success": False,
+            "error": "Masternode hosting checkout is temporarily closed (no free collateral UTXOs).",
+            "code": "checkout_closed",
+            "slots_available": int(st.get("slots_available") or 0),
+            "collateral_outputs_available": int(st.get("collateral_outputs_available") or 0),
+            "collateral_missing_count": int(st.get("collateral_missing_count") or 0),
+        }
     avail = int(st.get("slots_available") or 0)
     if avail < slots:
+        collateral_left = int(st.get("collateral_outputs_available") or 0)
+        by_cap = int(st.get("slots_by_capacity") or avail)
+        if collateral_left < slots and collateral_left <= by_cap:
+            return {
+                "success": False,
+                "error": (
+                    f"Only {collateral_left} collateral UTXO(s) available for new hosts "
+                    f"(need {slots}). Ops must create 5,000 MN2 outputs before checkout."
+                ),
+                "code": "collateral_exhausted",
+                "slots_available": avail,
+                "collateral_outputs_available": collateral_left,
+            }
         return {
             "success": False,
             "error": f"Only {avail} slot(s) available (max {pp['max_hosted_nodes']})",
             "slots_available": avail,
+            "collateral_outputs_available": collateral_left,
         }
 
     price = float(pp["price_usd_per_slot"])
@@ -663,13 +686,13 @@ def create_onchain_payment(quote_id: str, user_id: str) -> Dict[str, Any]:
         coins_total = int(shop_prices["coins_total"])
 
     try:
-        from backend.services.mn2_rpc_client import getnewaddress
-        r = getnewaddress()
-        if r.get("error"):
-            return {"success": False, "error": r.get("error", "Could not get address")}
-        address = (r.get("result") or "").strip()
+        from backend.services.mn2_wallet_service import generate_daemon_address
+        r = generate_daemon_address()
+        if not r.get("success"):
+            return {"success": False, "error": r.get("error") or "Could not get address", "code": r.get("code")}
+        address = (r.get("deposit_address") or "").strip()
         if not address:
-            return {"success": False, "error": "RPC did not return address"}
+            return {"success": False, "error": "RPC did not return address", "code": "no_address"}
     except Exception as exc:
         return {"success": False, "error": str(exc)}
 

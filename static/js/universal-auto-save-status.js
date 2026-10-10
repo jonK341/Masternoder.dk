@@ -129,7 +129,7 @@ class UniversalAutoSaveStatus {
 
     async checkStatus() {
         try {
-            const _uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+            const _uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`/api/auto-save/status?user_id=${_uid}`);
             if (response.ok) {
                 const data = await response.json();

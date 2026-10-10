@@ -8,8 +8,8 @@
   if (!card) return;
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking-agents.js', context: 'catch' }); } return 'default_user'; }
+    try { return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''); }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking-agents.js', context: 'catch' }); } return (window.MnUserId ? window.MnUserId.read() : ''); }
   }
 
   function q(id) { return document.getElementById(id); }

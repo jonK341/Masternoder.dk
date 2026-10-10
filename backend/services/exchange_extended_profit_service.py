@@ -16,7 +16,6 @@ from backend.services import exchange_arbitrage_service as arb
 from backend.services import external_exchange_connector_service as conn
 
 _CFG_PATH = os.path.join(ex._BASE, "data", "exchange_extended_profit_config.json")
-_THRESHOLD_STATE_PATH = os.path.join(ex._DATA_DIR, "arb_threshold_state.json")
 
 
 def _iso() -> str:
@@ -30,38 +29,6 @@ def load_config() -> Dict[str, Any]:
 
 def _strategy_cfg(name: str) -> Dict[str, Any]:
     return dict((load_config().get("strategies") or {}).get(name) or {})
-
-
-def read_arb_threshold_state() -> Dict[str, Any]:
-    state = ex._read_json(_THRESHOLD_STATE_PATH, {})
-    return state if isinstance(state, dict) else {}
-
-
-def write_arb_threshold_state(
-    *,
-    best: Optional[Dict[str, Any]],
-    threshold_bps: float,
-    source: str,
-    hot_symbols: Optional[List[str]] = None,
-) -> Dict[str, Any]:
-    best_net_bps = float(best.get("net_bps") or 0) if best else 0.0
-    est_profit = float(best.get("est_profit_usd") or 0) if best else 0.0
-    ready = bool(best and best_net_bps >= threshold_bps and est_profit > 0)
-    state = {
-        "best_net_bps": round(best_net_bps, 2) if best else None,
-        "threshold_bps": threshold_bps,
-        "ready": ready,
-        "top_symbol": best.get("symbol") if best else None,
-        "buy_venue": best.get("buy_venue") if best else None,
-        "sell_venue": best.get("sell_venue") if best else None,
-        "est_profit_usd": round(est_profit, 4) if best else None,
-        "updated_at": _iso(),
-        "source": source,
-    }
-    if hot_symbols:
-        state["hot_symbols"] = list(dict.fromkeys(str(s).upper() for s in hot_symbols if s))
-    ex._write_json(_THRESHOLD_STATE_PATH, state)
-    return state
 
 
 def _book(agent_id: str, profit_usd: float, action: Dict[str, Any]) -> Dict[str, Any]:
@@ -368,3 +335,40 @@ def run_extended_profit_tick(*, profile: str = "standard") -> Dict[str, Any]:
             results[name] = {"success": False, "error": str(exc)}
     executed = sum(1 for r in results.values() if isinstance(r, dict) and r.get("executed"))
     return {"success": True, "profile": profile, "ran_at": _iso(), "strategy_count": len(names), "executed_count": executed, "results": results}
+
+
+# Restored from pre-merge branch so both APIs stay callable.
+_THRESHOLD_STATE_PATH = os.path.join(ex._DATA_DIR, "arb_threshold_state.json")
+
+
+def read_arb_threshold_state() -> Dict[str, Any]:
+    state = ex._read_json(_THRESHOLD_STATE_PATH, {})
+    return state if isinstance(state, dict) else {}
+
+
+def write_arb_threshold_state(
+    *,
+    best: Optional[Dict[str, Any]],
+    threshold_bps: float,
+    source: str,
+    hot_symbols: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    best_net_bps = float(best.get("net_bps") or 0) if best else 0.0
+    est_profit = float(best.get("est_profit_usd") or 0) if best else 0.0
+    ready = bool(best and best_net_bps >= threshold_bps and est_profit > 0)
+    state = {
+        "best_net_bps": round(best_net_bps, 2) if best else None,
+        "threshold_bps": threshold_bps,
+        "ready": ready,
+        "top_symbol": best.get("symbol") if best else None,
+        "buy_venue": best.get("buy_venue") if best else None,
+        "sell_venue": best.get("sell_venue") if best else None,
+        "est_profit_usd": round(est_profit, 4) if best else None,
+        "updated_at": _iso(),
+        "source": source,
+    }
+    if hot_symbols:
+        state["hot_symbols"] = list(dict.fromkeys(str(s).upper() for s in hot_symbols if s))
+    ex._write_json(_THRESHOLD_STATE_PATH, state)
+    return state
+

@@ -269,22 +269,18 @@ def get_withdraw_address_list(coin: str = "USDT", *, dry_run: Optional[bool] = N
     return res
 
 
-def _coin_network_withdraw_fee(coin: str, network_code: str,
-                               capital_config: Optional[Dict[str, Any]] = None) -> float:
-    """Withdraw fee (in units of ``coin``) for a coin/network from Binance capital config."""
-    coin_u = str(coin or "USDT").upper()
+def _network_withdraw_fee(network_code: str, capital_config: Optional[Dict[str, Any]] = None) -> float:
     net = binance_network_code(network_code)
-    default = _DEFAULT_TRC20_FEE_USDT if (coin_u == "USDT" and net == "TRX") else 0.0
     cfg = capital_config
     if cfg is None:
         cfg = get_capital_config(skip_live_gate=True)
     if cfg.get("simulated") or not cfg.get("success"):
-        return default
+        return _DEFAULT_TRC20_FEE_USDT if net == "TRX" else 0.0
     body = cfg.get("body")
     if not isinstance(body, list):
-        return default
+        return _DEFAULT_TRC20_FEE_USDT if net == "TRX" else 0.0
     for coin_row in body:
-        if str(coin_row.get("coin") or "").upper() != coin_u:
+        if str(coin_row.get("coin") or "").upper() != "USDT":
             continue
         for net_row in coin_row.get("networkList") or []:
             if str(net_row.get("network") or "").upper() != net:
@@ -293,11 +289,7 @@ def _coin_network_withdraw_fee(coin: str, network_code: str,
                 return max(0.0, float(net_row.get("withdrawFee") or 0))
             except (TypeError, ValueError):
                 pass
-    return default
-
-
-def _network_withdraw_fee(network_code: str, capital_config: Optional[Dict[str, Any]] = None) -> float:
-    return _coin_network_withdraw_fee("USDT", network_code, capital_config)
+    return _DEFAULT_TRC20_FEE_USDT if net == "TRX" else 0.0
 
 
 def _address_whitelisted(address: str, network_code: str, rows: List[Dict[str, Any]]) -> bool:
@@ -403,6 +395,73 @@ def preflight_withdraw_usdt(amount: float, address: str, network: str, *,
         "required_spot_usdt": required,
         "sales_pool_usdt": sales_pool_usdt,
     }
+
+
+def withdraw_usdt(amount: float, address: str, network: str, *,
+                  dry_run: Optional[bool] = None,
+                  withdraw_order_id: Optional[str] = None) -> Dict[str, Any]:
+    """POST /sapi/v1/capital/withdraw/apply for USDT."""
+    addr = (address or "").strip()
+    if not addr:
+        return {"success": False, "error": "missing_address"}
+    amt = round(max(0.0, float(amount or 0)), 8)
+    if amt <= 0:
+        return {"success": False, "error": "invalid_amount"}
+
+    net = binance_network_code(network)
+    params: Dict[str, Any] = {
+        "coin": "USDT",
+        "network": net,
+        "address": addr,
+        "amount": amt,
+    }
+    if withdraw_order_id:
+        params["withdrawOrderId"] = withdraw_order_id
+
+    res = _signed_sapi_request("POST", "/sapi/v1/capital/withdraw/apply", params, dry_run=dry_run)
+    if res.get("simulated"):
+        res.setdefault("amount", amt)
+        res.setdefault("network", net)
+        res.setdefault("address_masked", mask_address(addr))
+        return res
+
+    body = res.get("body")
+    if res.get("success") and isinstance(body, dict):
+        res["withdraw_id"] = body.get("id")
+    else:
+        res.setdefault("error", "binance_withdraw_failed")
+    res.setdefault("amount", amt)
+    res.setdefault("network", net)
+    res.setdefault("address_masked", mask_address(addr))
+    return res
+
+
+# Restored from pre-merge branch so both APIs stay callable.
+def _coin_network_withdraw_fee(coin: str, network_code: str,
+                               capital_config: Optional[Dict[str, Any]] = None) -> float:
+    """Withdraw fee (in units of ``coin``) for a coin/network from Binance capital config."""
+    coin_u = str(coin or "USDT").upper()
+    net = binance_network_code(network_code)
+    default = _DEFAULT_TRC20_FEE_USDT if (coin_u == "USDT" and net == "TRX") else 0.0
+    cfg = capital_config
+    if cfg is None:
+        cfg = get_capital_config(skip_live_gate=True)
+    if cfg.get("simulated") or not cfg.get("success"):
+        return default
+    body = cfg.get("body")
+    if not isinstance(body, list):
+        return default
+    for coin_row in body:
+        if str(coin_row.get("coin") or "").upper() != coin_u:
+            continue
+        for net_row in coin_row.get("networkList") or []:
+            if str(net_row.get("network") or "").upper() != net:
+                continue
+            try:
+                return max(0.0, float(net_row.get("withdrawFee") or 0))
+            except (TypeError, ValueError):
+                pass
+    return default
 
 
 def preflight_withdraw_asset(coin: str, amount: float, address: str, network: str, *,
@@ -546,10 +605,3 @@ def withdraw_asset(coin: str, amount: float, address: str, network: str, *,
     res.setdefault("address_masked", mask_address(addr))
     return res
 
-
-def withdraw_usdt(amount: float, address: str, network: str, *,
-                  dry_run: Optional[bool] = None,
-                  withdraw_order_id: Optional[str] = None) -> Dict[str, Any]:
-    """POST /sapi/v1/capital/withdraw/apply for USDT (thin wrapper over withdraw_asset)."""
-    return withdraw_asset("USDT", amount, address, network,
-                          dry_run=dry_run, withdraw_order_id=withdraw_order_id)

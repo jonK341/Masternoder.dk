@@ -4,11 +4,11 @@
  */
 
 const API_BASE = '/api';
-const userId = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+const userId = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
 
 // Game Mechanics API
 const GameMechanicsAPI = {
-    async getSubjects(userId = 'default_user') {
+    async getSubjects(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/game-mechanics/subjects?user_id=${userId}`);
             const data = await response.json();
@@ -70,7 +70,7 @@ const GameMechanicsAPI = {
         }
     },
     
-    async getProgress(userId = 'default_user') {
+    async getProgress(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/game-mechanics/progress?user_id=${userId}`);
             return await response.json();
@@ -84,7 +84,7 @@ const GameMechanicsAPI = {
 
 // Ultra Resource API
 const UltraResourceAPI = {
-    async getEnergy(userId = 'default_user') {
+    async getEnergy(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/ultra-resource/energy?user_id=${userId}`);
             return await response.json();
@@ -129,7 +129,7 @@ const UltraResourceAPI = {
         }
     },
     
-    async getSummary(userId = 'default_user') {
+    async getSummary(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/ultra-resource/summary?user_id=${userId}`);
             return await response.json();
@@ -143,7 +143,7 @@ const UltraResourceAPI = {
 
 // Enhanced Systems API
 const EnhancedSystemsAPI = {
-    async getAbilities(userId = 'default_user') {
+    async getAbilities(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/skills/abilities?user_id=${userId}`);
             return await response.json();
@@ -154,7 +154,7 @@ const EnhancedSystemsAPI = {
         }
     },
     
-    async getPoints(userId = 'default_user') {
+    async getPoints(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/points/json/get?user_id=${userId}`);
             return await response.json();
@@ -168,7 +168,7 @@ const EnhancedSystemsAPI = {
 
 // New Systems API
 const NewSystemsAPI = {
-    async getCalendarEvents(userId = 'default_user') {
+    async getCalendarEvents(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/calendar/events?user_id=${userId}`);
             return await response.json();
@@ -179,7 +179,7 @@ const NewSystemsAPI = {
         }
     },
     
-    async listTodos(userId = 'default_user') {
+    async listTodos(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/todos/list?user_id=${userId}`);
             return await response.json();
@@ -190,7 +190,7 @@ const NewSystemsAPI = {
         }
     },
     
-    async getUserGroups(userId = 'default_user') {
+    async getUserGroups(userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         try {
             const response = await fetch(`${API_BASE}/groups/user?user_id=${userId}`);
             return await response.json();

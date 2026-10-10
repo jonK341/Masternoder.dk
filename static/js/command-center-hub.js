@@ -2,7 +2,7 @@
   'use strict';
 
   var uid = function () {
-    return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+    return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
   };
 
   var LINKS = {
@@ -44,7 +44,7 @@
     ],
     generator: [
       { title: 'Generator', href: '/generator/', desc: 'Video pipeline', reward: 'Gen MN2' },
-      { title: 'Camgirls studio', href: '/camgirls/', desc: 'Actor integration', reward: 'Studio MN2' },
+      { title: 'Camgirls studio', href: '/camgirls/', desc: 'AI hosts · MN2 or PayPal unlock, tips, gifts', reward: 'Studio MN2 + PayPal' },
     ],
     exchange: [
       { title: 'Buy MN2 with PayPal', href: '/exchange?tab=onramp', desc: 'Fiat redirect through PayPal, MN2 wallet credit', reward: 'MN2 liquidity' },
@@ -58,7 +58,7 @@
     casino: [
       { title: 'Casino cockpit', href: '/casino/#casino-cockpit', desc: 'Table of contents + live monitors', reward: 'House income' },
       { title: 'Contest table', href: '/casino/#casino-tab-leaderboard', desc: 'Leaderboards, tournaments, streak quests', reward: 'Competition' },
-      { title: 'Camgirls lounge', href: '/camgirls/', desc: 'MN2 unlocks, tips, fan clubs', reward: 'Premium spend' },
+      { title: 'Camgirls lounge', href: '/camgirls/', desc: 'PayPal or MN2 unlocks, tips, fan club, private', reward: 'Premium spend' },
       { title: 'Social casino', href: '/casino/#casino-tab-social', desc: 'Share wins, referrals, Discord', reward: 'Viral loop' },
     ],
     agents: [

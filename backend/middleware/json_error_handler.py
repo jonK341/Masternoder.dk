@@ -70,20 +70,6 @@ def register_json_error_handlers(app):
             return jsonify(payload), 500
         return error
     
-    @app.errorhandler(TypeError)
-    def view_returned_none(error):
-        """Handle view functions that returned None (no valid response)."""
-        msg = str(error) if error else ''
-        if 'did not return a valid response' in msg or 'returned None' in msg:
-            if request and request.path.startswith('/api/'):
-                return jsonify({
-                    'success': False,
-                    'error': 'Internal Server Error',
-                    'message': 'The request could not be completed.',
-                    'path': request.path
-                }), 500
-        raise error
-
     @app.errorhandler(Exception)
     def handle_exception(error):
         """Handle all unhandled exceptions"""

@@ -66,6 +66,30 @@ TASK_ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
         "task_type": "reason",
         "description": "Casino bet sizing and game selection",
     },
+    "log_triage": {
+        "agent_id": "analytics_agent",
+        "skill_name": "track_metrics",
+        "task_type": "speed",
+        "description": "Triage logs and error clusters",
+    },
+    "support_copilot": {
+        "agent_id": "learning_agent",
+        "skill_name": "ai_nice_and_easy",
+        "task_type": "default",
+        "description": "Support copilot reply",
+    },
+    "pricing_brain": {
+        "agent_id": "content_generator_agent",
+        "skill_name": "ai_assist_task",
+        "task_type": "reason",
+        "description": "Pricing suggestion",
+    },
+    "debugger_challenge": {
+        "agent_id": "learning_agent",
+        "skill_name": "ai_follow_user_action",
+        "task_type": "reason",
+        "description": "Debugger challenge grading",
+    },
 }
 
 

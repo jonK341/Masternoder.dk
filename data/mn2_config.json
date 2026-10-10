@@ -22,7 +22,9 @@
   "float_gate": {
     "enabled": true,
     "min_hours_coverage": 24,
-    "large_withdrawal_mn2": 50000
+    "large_withdrawal_mn2": 50000,
+    "require_external_coverage": true,
+    "min_external_coverage_ratio": 1.0
   },
   "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
   "coins_per_mn2": 100,
@@ -46,15 +48,41 @@
   },
   "discord_customers": {
     "enabled": true,
+    "label": "MasterNoder chat channel",
     "channel_id": "",
-    "guild_id": ""
+    "guild_id": "",
+    "channel_url": ""
+  },
+  "encoder_customer_fulfillment": {
+    "enabled": true,
+    "batch_limit": 50,
+    "aggregator_action": "discord_welcome",
+    "micro_rewards": [
+      "discord_welcome",
+      "link_encode",
+      "interaction",
+      "encoder_fulfillment"
+    ],
+    "bonus_mn2": 0.0005,
+    "attach_bonus_mn2": true,
+    "grant_encoder_v2_starters": true
+  },
+  "ledger_customer_control": {
+    "enabled": true,
+    "default_controller": "ai",
+    "auto_assign_agent": true,
+    "default_agent_id": "master_fix",
+    "buy_potential": {
+      "high_spender_mn2": 0.5,
+      "min_spendable_mn2": 0.01
+    }
   },
   "click_rewards": {
     "enabled": true,
     "instant": true,
     "base_per_click_mn2": 0.0001,
     "critical_multiplier": 3.0,
-    "combo_bonus_per_level_mn2": 0.00002,
+    "combo_bonus_per_level_mn2": 2e-05,
     "mission_win_mn2": 0.002,
     "quest_win_mn2": 0.003,
     "achievement_win_mn2": 0.005,
@@ -73,9 +101,9 @@
   "aggregator": {
     "enabled": true,
     "daily_cap_mn2": 0.25,
-    "default_reward_mn2": 0.00005,
+    "default_reward_mn2": 5e-05,
     "action_rewards_mn2": {
-      "monitor_move": 0.00005,
+      "monitor_move": 5e-05,
       "monitor_battle_complete": 0.002,
       "battle_overlay_enter": 0.0003,
       "link_encode": 0.0005,
@@ -83,7 +111,10 @@
       "intel_loaded": 0.0002,
       "progress_refresh": 0.0001,
       "explorer_chat": 0.0004,
-      "interaction": 0.00005
+      "interaction": 0.00005,
+      "discord_welcome": 0.001,
+      "encoder_fulfillment": 0.0005,
+      "customer_onboard": 0.0003
     }
   },
   "callbacks": {
@@ -92,10 +123,19 @@
   },
   "order_payment_expiry_hours": 1,
   "order_payment_grace_hours": 24,
-  "order_payment_match_tolerance": 0.00000001,
+  "order_payment_match_tolerance": 1e-08,
   "order_payment_overpay_credit": true,
   "order_payment_underpay_credit": true,
   "order_payment_combined_fulfill": true,
   "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
-  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)"
+  "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)",
+  "wallet_mode": "ledger",
+  "onchain_fee_payer": {
+    "address": "",
+    "account": "",
+    "user_id": "@site_fee_payer",
+    "network_fee_mn2": 0.001,
+    "low_balance_mn2": 5,
+    "pay_external_withdrawal_fee": false
+  }
 }

@@ -32,7 +32,7 @@ class TemplateServices {
         return {
             async getAllPoints(userId) {
                 try {
-                    const response = await fetch(`${this.baseUrl}/api/points/all?user_id=${userId}`);
+                    const response = await fetch(`${this.baseUrl}/api/points/all?user_id=${encodeURIComponent(userId)}`);
                     const data = await response.json();
                     return data.points || {};
                 } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-services.js', context: 'catch' }); }

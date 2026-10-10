@@ -328,6 +328,12 @@ def _get_paypal_shop_items():
             result[booster_id] = {"price_usd": booster_price, "name": booster_name}
     except Exception:
         pass
+    try:
+        from backend.services.nft_exchange_service import paypal_item_map
+
+        result.update(paypal_item_map())
+    except Exception:
+        pass
     return result
 
 
@@ -377,7 +383,8 @@ def _digital_goods_shop_items():
             "price_usd": float(good.get("price_usd") or 0),
             "icon": "💎" if str(good.get("line") or "").lower() == "exclusive" else "📦",
             "rarity": "legendary" if str(good.get("line") or "").lower() == "exclusive" else ("rare" if price_coins else "common"),
-            "tags": ["digital_good", good.get("delivery") or "download", f"line_{str(good.get('line') or 'x').lower()}"],
+            "tags": ["digital_good", good.get("delivery") or "download", f"line_{str(good.get('line') or 'x').lower()}"]
+            + list(good.get("tags_extra") or []),
             "payment_rails": good.get("payment_rails") or ["credits"],
             "delivery": good.get("delivery") or "download",
             "license": good.get("license") or "",
@@ -583,10 +590,13 @@ def _artifact_abs_path(good: dict) -> str:
         return ""
     root = os.path.realpath(_project_root())
     path = os.path.realpath(os.path.join(root, rel))
-    allowed_root = os.path.realpath(os.path.join(root, "content", "digital_goods"))
-    if not (path == allowed_root or path.startswith(allowed_root + os.sep)):
-        return ""
-    return path
+    allowed_roots = [
+        os.path.realpath(os.path.join(root, "content", "digital_goods")),
+    ]
+    for allowed_root in allowed_roots:
+        if path == allowed_root or path.startswith(allowed_root + os.sep):
+            return path
+    return ""
 
 
 def _seed_shop_items():
@@ -1538,7 +1548,18 @@ def get_mn2_packs_route():
 def get_paypal_shop_items():
     """Get shop items that can be purchased directly with PayPal (price_usd)."""
     items = _get_paypal_shop_items()
-    return jsonify({'success': True, 'paypal_items': items}), 200
+    nft_editions = []
+    try:
+        from backend.services import nft_exchange_service as nft
+
+        nft_editions = nft.catalog().get("skus") or []
+    except Exception:
+        pass
+    return jsonify({
+        'success': True,
+        'paypal_items': items,
+        'nft_editions': nft_editions,
+    }), 200
 
 
 @shop_bp.route('/api/shop/digital-goods', methods=['GET'])
@@ -1600,11 +1621,13 @@ def download_digital_good(item_id):
         if not path or not os.path.isfile(path):
             return jsonify({'success': False, 'error': 'Artifact file missing', 'item_id': item_id}), 404
 
+        ext = os.path.splitext(path)[1].lower()
+        mime = "application/zip" if ext == ".zip" else "text/markdown"
         return send_file(
             path,
             as_attachment=True,
             download_name=good.get("download_filename") or os.path.basename(path),
-            mimetype="text/markdown",
+            mimetype=mime,
             max_age=0,
         )
     except Exception as e:

@@ -112,6 +112,6 @@
       "shop_linked": true,
       "image": "/static/img/exchange/shop-scan.svg",
       "description": "Unlock featured profit news + 35 XP. Follow live daemon ticks on /profit/."
-    },
+    }
   ]
 }

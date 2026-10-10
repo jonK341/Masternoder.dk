@@ -129,3 +129,55 @@ def test_camgirls_fulfill_uses_pending_user_when_default(tmp_path, monkeypatch):
         out = cg.fulfill_capture("PP-CG-2", user_id="default_user")
     assert out.get("success") is True
     assert fulfill.call_args[0][0] == "real_buyer"
+
+
+def test_quote_fan_club_and_private_show():
+    from backend.services.camgirls_paypal_service import quote_action
+
+    fc = quote_action("fan_club", "performer_nova")
+    assert fc.get("success") is True
+    assert fc.get("amount_mn2") == 25
+
+    ps = quote_action("private_show", "performer_nova", minutes=5)
+    assert ps.get("success") is True
+    assert ps.get("amount_mn2") == 25
+
+
+def test_quote_tip_and_gift_actions():
+    from backend.services.camgirls_paypal_service import quote_action
+
+    tip = quote_action("tip", "performer_nova", amount_mn2=10)
+    assert tip.get("success") is True
+    assert tip.get("action") == "tip"
+    assert tip.get("amount_mn2") == 10
+
+    gift = quote_action("gift", "performer_nova", gift_id="rose")
+    assert gift.get("success") is True
+    assert gift.get("action") == "gift"
+    assert gift.get("gift_id") == "rose"
+    assert gift.get("amount_mn2") == 5
+
+
+def test_fulfill_external_payment_gift_records_gift_id(tmp_path, monkeypatch):
+    from backend.services import camgirls_service as svc
+
+    age = tmp_path / "age.json"
+    perf = tmp_path / "perf.json"
+    tips = tmp_path / "tips.jsonl"
+    monkeypatch.setattr(svc, "_AGE_FILE", str(age))
+    monkeypatch.setattr(svc, "_PERFORMERS_FILE", str(perf))
+    monkeypatch.setattr(svc, "_TIPS_FILE", str(tips))
+    import json
+
+    with open(perf, "w", encoding="utf-8") as f:
+        json.dump({"performers": [{"id": "p1", "display_name": "T", "active": True, "tip_min_mn2": 5}]}, f)
+    with open(age, "w", encoding="utf-8") as f:
+        json.dump({"u1": {"verified_at": "2026-01-01"}}, f)
+
+    out = svc.fulfill_external_payment("u1", "p1", "gift", 5, payment_ref="PP-X", gift_id="rose")
+    assert out.get("success") is True
+    assert tips.is_file()
+    line = tips.read_text(encoding="utf-8").strip()
+    row = json.loads(line)
+    assert row.get("gift_id") == "rose"
+    assert row.get("payment_method") == "paypal"

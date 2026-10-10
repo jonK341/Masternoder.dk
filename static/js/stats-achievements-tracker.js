@@ -15,11 +15,10 @@ class StatsAchievementsTracker {
     }
 
     getUserId() {
-        const stored = localStorage.getItem('game_user_id') || localStorage.getItem('user_id');
-        if (stored) return stored;
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('user_id')) return urlParams.get('user_id');
-        return 'default_user';
+        if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
+        const stored = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
+        if (!stored || /^(default_user|undefined|null)$/i.test(stored) || stored === '[object Promise]') return '';
+        return stored.trim();
     }
 
     /**

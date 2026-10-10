@@ -154,6 +154,16 @@ def test_execute_rotation_external_requires_live_flag(rotation_env, monkeypatch)
     rot = rotation_env["rot"]
 
     monkeypatch.setattr(rot, "rotation_live_enabled", lambda: False)
+    # Pair checks call the public ticker. Stub it so paper mode does not depend
+    # on Binance being reachable (this network returns HTTP 451).
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.conn.fetch_ticker",
+        lambda vid, sym, timeout=6.0: {"bid": 50000.0, "ask": 50010.0, "last": 50005.0},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.fetch_binance_symbol_filters",
+        lambda market, force_refresh=False: {"ok": False, "error": "exchange_info_failed", "market": market},
+    )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.place_market_order",
         lambda venue, sym, side, qty, dry_run=None, **kw: {"success": True, "mode": "paper", "simulated": True},

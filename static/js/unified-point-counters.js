@@ -23,7 +23,8 @@ class UnifiedPointCounters {
                 return cached.data;
             }
 
-            const userId = typeof localStorage !== 'undefined' ? (localStorage.getItem('game_user_id') || 'default_user') : 'default_user';
+            const userId = (window.MnUserId ? window.MnUserId.read() : '') || '';
+            if (!userId) return null;
             const response = await fetch(`${this.baseUrl}/api/points/all?user_id=${encodeURIComponent(userId)}&refresh=${forceRefresh}`);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);

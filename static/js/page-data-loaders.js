@@ -6,10 +6,11 @@
 // Profile Page Loader
 class ProfilePageLoader {
     constructor() {
-        this.userId = backendConnector.getUserId();
+        this.userId = null;
     }
 
     async loadAll() {
+        this.userId = await backendConnector.getUserId();
         const [profile, skills, stats, activity] = await Promise.allSettled([
             backendConnector.getUserProfileDisplay(this.userId),
             backendConnector.getUserAgentSkills(this.userId),
@@ -35,10 +36,11 @@ class ProfilePageLoader {
 // Stats Page Loader
 class StatsPageLoader {
     constructor() {
-        this.userId = backendConnector.getUserId();
+        this.userId = null;
     }
 
     async loadAll() {
+        this.userId = await backendConnector.getUserId();
         const [stats, level, xpHistory, dailyActivities] = await Promise.allSettled([
             backendConnector.getStats(this.userId),
             backendConnector.getPlayerLevel(this.userId),
@@ -58,10 +60,11 @@ class StatsPageLoader {
 // Social Page Loader
 class SocialPageLoader {
     constructor() {
-        this.userId = backendConnector.getUserId();
+        this.userId = null;
     }
 
     async loadAll() {
+        this.userId = await backendConnector.getUserId();
         const [socialData, profile] = await Promise.allSettled([
             backendConnector.getSocialData(this.userId),
             backendConnector.getUserProfile(this.userId)
@@ -77,10 +80,11 @@ class SocialPageLoader {
 // Points Page Loader
 class PointsPageLoader {
     constructor() {
-        this.userId = backendConnector.getUserId();
+        this.userId = null;
     }
 
     async loadAll() {
+        this.userId = await backendConnector.getUserId();
         const [points, level, rewards] = await Promise.allSettled([
             backendConnector.getAllPoints(this.userId),
             backendConnector.getPlayerLevel(this.userId),
@@ -98,10 +102,11 @@ class PointsPageLoader {
 // Analytics Page Loader
 class AnalyticsPageLoader {
     constructor() {
-        this.userId = backendConnector.getUserId();
+        this.userId = null;
     }
 
     async loadAll() {
+        this.userId = await backendConnector.getUserId();
         const [analytics, stats, xpHistory] = await Promise.allSettled([
             backendConnector.getAnalytics(this.userId),
             backendConnector.getStats(this.userId),
@@ -119,10 +124,11 @@ class AnalyticsPageLoader {
 // Dashboard Page Loader
 class DashboardPageLoader {
     constructor() {
-        this.userId = backendConnector.getUserId();
+        this.userId = null;
     }
 
     async loadAll() {
+        this.userId = await backendConnector.getUserId();
         const [profile, points, level, agentStatus, agentSkills] = await Promise.allSettled([
             backendConnector.getUserProfile(this.userId),
             backendConnector.getAllPoints(this.userId),

@@ -1,0 +1,132 @@
+/* GPS + GPRS livestream panel */
+.f5-geo-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.f5-geo-hud-inline {
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(93, 255, 176, 0.85);
+  margin-left: auto;
+}
+
+.f5-geo-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.f5-geo-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.f5-geo-pill.gps {
+  background: rgba(93, 255, 176, 0.2);
+  color: #5dffb0;
+  border: 1px solid rgba(93, 255, 176, 0.35);
+}
+
+.f5-geo-pill.gprs {
+  background: rgba(0, 212, 255, 0.15);
+  color: #67e8f9;
+  border: 1px solid rgba(0, 212, 255, 0.35);
+}
+
+.f5-geo-coords {
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: rgba(232, 238, 252, 0.65);
+}
+
+.f5-geo-map-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.f5-geo-map-tab {
+  flex: 1;
+  font-size: 10px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: #e8eefc;
+  cursor: pointer;
+}
+
+.f5-geo-map-tab.is-active {
+  border-color: rgba(93, 255, 176, 0.45);
+  background: rgba(93, 255, 176, 0.12);
+  color: #5dffb0;
+}
+
+.f5-geo-map-frame {
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0a0f18;
+  margin-bottom: 8px;
+}
+
+.f5-geo-map-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.f5-geo-marker-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10px;
+  line-height: 1.45;
+  max-height: 88px;
+  overflow: auto;
+}
+
+.f5-geo-marker-list li {
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.f5-geo-kind {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+
+.f5-geo-kind.gps {
+  background: rgba(93, 255, 176, 0.25);
+  color: #5dffb0;
+}
+
+.f5-geo-kind.gprs {
+  background: rgba(0, 212, 255, 0.2);
+  color: #67e8f9;
+}
+
+.f5-geo-muted {
+  padding: 12px;
+  text-align: center;
+  color: rgba(232, 238, 252, 0.5);
+  font-size: 11px;
+}
+
+.f5-hud-geo {
+  font-size: 10px;
+  color: rgba(157, 255, 212, 0.75);
+  margin-top: 4px;
+  font-family: ui-monospace, monospace;
+}

@@ -13,6 +13,9 @@
     "wave": { "label": "Wave", "price_mn2": 9 },
     "vip": { "label": "VIP combo", "price_mn2": 30 }
   },
+  "fan_club": { "label": "Fan club", "price_mn2": 25 },
+  "private_show": { "mn2_per_minute": 5, "default_minutes": 5, "max_minutes": 60 },
+  "offline_message": { "price_mn2": 3 },
   "tip_menu": [
     { "label": "Wave hello", "amount_mn2": 5 },
     { "label": "Request dance", "amount_mn2": 15 },

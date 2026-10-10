@@ -8,9 +8,9 @@
 
   function uid() {
     try {
-      return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+      return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
     } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-hub-v2.js', context: 'catch' }); }
-      return 'default_user';
+      return (window.MnUserId ? window.MnUserId.read() : '');
     }
   }
 

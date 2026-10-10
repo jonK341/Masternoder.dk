@@ -367,6 +367,8 @@
         { href: '/staking-leaderboard', label: 'Staking Rank', icon: '🌱', tags: ['economy', 'progress'] },
         { href: '/staking-teams', label: 'Staking Teams', icon: '🤝', tags: ['economy', 'progress'] },
         { href: '/shop', label: 'Shop', icon: '🛒', tags: ['economy'] },
+        { href: '/nft', label: 'NFT Hub', icon: '💎', tags: ['economy', 'collect'] },
+        { href: '/exchange', label: 'Exchange', icon: '💱', tags: ['economy'] },
         { href: '/explorer', label: 'Explorer', icon: '🔎', tags: ['economy', 'explore'] },
         { href: '/profile', label: 'Profile', icon: '👤', tags: ['account'] },
         { href: '/quests', label: 'Quests', icon: '📜', tags: ['progress'] },
@@ -659,10 +661,19 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         buildSmartLinks();
-        loadNews();
         wireVisitTracking();
         wireSoundSystem();
-        const sm = new StarMap4D('fp-starmap4d');
-        sm.load();
+        const runWhenIdle = (fn) => {
+            if (typeof requestIdleCallback !== 'undefined') {
+                requestIdleCallback(fn, { timeout: 4000 });
+            } else {
+                setTimeout(fn, 300);
+            }
+        };
+        runWhenIdle(() => {
+            loadNews();
+            const sm = new StarMap4D('fp-starmap4d');
+            sm.load();
+        });
     });
 })();

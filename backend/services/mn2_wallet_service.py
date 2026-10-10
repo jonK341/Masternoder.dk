@@ -77,25 +77,116 @@ def _address_validity(addr: str) -> Optional[bool]:
     return True
 
 
-def _generate_valid_address(max_attempts: int = 3) -> Dict[str, Any]:
-    """Generate a fresh address via getnewaddress, skipping any the daemon rejects."""
+_UNLOCK_MARKERS = (
+    "wallet is locked",
+    "wallet locked",
+    "please enter the wallet passphrase",
+    "walletpassphrase",
+    "unlock needed",
+    "wallet unlock",
+)
+
+
+def _rpc_needs_unlock(err: str) -> bool:
+    text = (err or "").lower()
+    return any(marker in text for marker in _UNLOCK_MARKERS)
+
+
+def _extract_rpc_address(result: Any) -> Optional[str]:
+    if isinstance(result, str):
+        return result.strip() or None
+    if isinstance(result, dict):
+        for key in ("address", "addr"):
+            value = result.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    return None
+
+
+def _unlock_daemon_wallet_for_keys() -> Dict[str, Any]:
+    """Full unlock (not staking-only) so getnewaddress can refill the keypool."""
+    passphrase = (os.environ.get("MN2_WALLET_PASSPHRASE") or "").strip()
+    if not passphrase:
+        return {
+            "success": False,
+            "code": "wallet_unlock_needed",
+            "error": "Wallet is locked. Set MN2_WALLET_PASSPHRASE so a new address can be created.",
+        }
+    from backend.services.mn2_rpc_client import walletpassphrase
+
+    unlocked = walletpassphrase(passphrase, 120, False)
+    if unlocked.get("error"):
+        return {"success": False, "code": "wallet_unlock_failed", "error": unlocked["error"]}
+    return {"success": True}
+
+
+def generate_daemon_address() -> Dict[str, Any]:
+    """Create one receive address on the site daemon wallet.
+
+    This is the only application path that calls RPC ``getnewaddress``.
+    Deposit addresses, shop revenue labels, order payments, encoder orders,
+    masternode collateral, hosting quotes, and the agent treasury all use it.
+    """
     from backend.services.mn2_rpc_client import getnewaddress
+
     last_err = None
-    for _ in range(max(1, max_attempts)):
-        r = getnewaddress()
-        if r.get("error"):
-            last_err = r["error"]
-            break
-        addr = r.get("result")
-        if not addr or not isinstance(addr, str):
-            last_err = "RPC getnewaddress returned no address"
+    code = "address_failed"
+    tried_unlock = False
+    for _ in range(3):
+        try:
+            rpc_result = getnewaddress()
+        except Exception as exc:
+            return {
+                "success": False,
+                "error": str(exc),
+                "code": "rpc_error",
+                "deposit_address": None,
+                "address": None,
+            }
+        if not isinstance(rpc_result, dict):
+            last_err = "RPC getnewaddress returned an unexpected payload"
+            code = "rpc_error"
             continue
-        addr = addr.strip()
+        err = rpc_result.get("error")
+        if err:
+            last_err = str(err)
+            code = "rpc_error"
+            if not tried_unlock and _rpc_needs_unlock(last_err):
+                tried_unlock = True
+                unlock = _unlock_daemon_wallet_for_keys()
+                if not unlock.get("success"):
+                    return {
+                        "success": False,
+                        "error": unlock.get("error"),
+                        "code": unlock.get("code") or "wallet_unlock_needed",
+                        "deposit_address": None,
+                        "address": None,
+                    }
+                continue
+            break
+        addr = _extract_rpc_address(rpc_result.get("result"))
+        if not addr:
+            last_err = "RPC getnewaddress returned no address"
+            code = "no_address"
+            continue
         if _address_validity(addr) is False:
             last_err = "getnewaddress returned an address the daemon rejected"
+            code = "address_rejected"
             continue
-        return {"success": True, "deposit_address": addr}
-    return {"success": False, "error": last_err or "could not generate a valid address"}
+        return {"success": True, "deposit_address": addr, "address": addr, "code": None}
+    return {
+        "success": False,
+        "error": last_err or "could not generate a valid address",
+        "code": code,
+        "deposit_address": None,
+        "address": None,
+    }
+
+
+def _generate_valid_address(max_attempts: int = 3) -> Dict[str, Any]:
+    """Generate a fresh address via getnewaddress, skipping any the daemon rejects."""
+    del max_attempts  # retries and unlock live in generate_daemon_address
+    return generate_daemon_address()
 
 
 def _first_pool_key(addresses: Dict[str, str]) -> Optional[str]:
@@ -166,7 +257,6 @@ def create_deposit_addresses(count: int) -> Dict[str, Any]:
     Returns created addresses. Thread-safe. Use for pre-creating addresses (e.g. ops endpoint).
     """
     count = max(1, min(int(count), 100))
-    from backend.services.mn2_rpc_client import getnewaddress
     addresses = _load_addresses()
     existing_pool = [k for k in addresses if isinstance(k, str) and k.startswith("pool_")]
     next_n = 1
@@ -180,16 +270,12 @@ def create_deposit_addresses(count: int) -> Dict[str, Any]:
     created = []
     errors = []
     for i in range(count):
-        r = getnewaddress()
-        if r.get("error"):
-            errors.append(r["error"])
-            break
-        addr = r.get("result")
-        if not addr or not isinstance(addr, str):
-            errors.append("RPC returned no address")
+        generated = generate_daemon_address()
+        if not generated.get("success"):
+            errors.append(generated.get("error") or "RPC returned no address")
             break
         key = f"pool_{next_n + i}"
-        addresses[key] = addr.strip()
+        addresses[key] = generated["deposit_address"]
         created.append({"user_id": key, "deposit_address": addresses[key]})
     if created:
         _save_addresses(addresses)

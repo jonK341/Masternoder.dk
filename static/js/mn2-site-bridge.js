@@ -7,15 +7,24 @@
     var BASE = global.location ? global.location.origin : '';
 
     function uid() {
-        return global.localStorage.getItem('game_user_id')
+        if (global.MnUserId && typeof global.MnUserId.read === 'function') return global.MnUserId.read();
+        var raw = global.localStorage.getItem('game_user_id')
             || global.localStorage.getItem('user_id')
-            || 'default_user';
+            || '';
+        if (!raw || raw === '[object Promise]') return '';
+        var lowered = String(raw).toLowerCase();
+        if (lowered === 'default_user' || lowered === 'undefined' || lowered === 'null') return '';
+        return String(raw).trim();
     }
 
     function fetchJson(url) {
         return fetch(url).then(function (r) {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
+            if (!r.ok) {
+                return { success: false, unavailable: true, status: r.status };
+            }
             return r.json();
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-site-bridge.js', context: 'catch' }); }
+            return { success: false, unavailable: true, status: 0 };
         });
     }
 

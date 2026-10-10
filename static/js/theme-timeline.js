@@ -33,7 +33,7 @@ class ThemeTimeline {
     
     async loadUserThemes() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`${this.apiBase}/api/themes/user?user_id=${userId}`);
             const data = await response.json();
             if (data.success && data.themes) {

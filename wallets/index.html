@@ -8,6 +8,7 @@
     <title>Wallets - MasterNoder</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
+    <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <style>
         body { min-height: 100vh; margin: 0; background: radial-gradient(circle at top, rgba(0,212,255,0.18), transparent 34%), #080b12; color: #fff; }
@@ -33,7 +34,7 @@
             <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, exchange wallet actions, and daemon downloads.</p>
             <div class="wallet-actions">
                 <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Open profile wallet</a>
-                <a class="wallet-btn secondary" href="/exchange">Open exchange wallet</a>
+                <a class="wallet-btn secondary" href="/exchange#cex-account-bridge">Open exchange hub</a>
                 <a class="wallet-btn secondary" href="/explorer">Explorer</a>
             </div>
         </section>
@@ -49,12 +50,19 @@
                 <a class="wallet-btn secondary" href="/shop#shop-mn2">Shop with MN2</a>
             </article>
             <article class="wallet-card">
+                <h2>NFT wallet v2</h2>
+                <p class="wallet-muted">Numbered editions, PayPal primary sales, coin resale, and profile avatar equip — separate from MN2 chain balance.</p>
+                <a class="wallet-btn secondary" href="/nft">Open NFT hub</a>
+            </article>
+            <article class="wallet-card">
                 <h2>Daemon & Qt wallet</h2>
                 <p class="wallet-muted">Daemon setup is tracked in the MN2 daemon setup guide. Use the explorer and profile wallet for live app operations.</p>
                 <a class="wallet-btn secondary" href="/news">Read wallet updates</a>
             </article>
         </section>
     </main>
+    <script src="/static/js/user-id.js?v=20261010b"></script>
+    <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
 </body>
 </html>

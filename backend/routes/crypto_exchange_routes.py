@@ -423,15 +423,6 @@ def exchange_daemon_mesh_run():
     return jsonify(run_mesh_tick())
 
 
-@crypto_exchange_bp.route("/api/exchange/grid/status", methods=["GET"])
-def exchange_grid_status():
-    if not _admin_authorized():
-        return jsonify({"success": False, "error": "unauthorized"}), 401
-    from backend.services.exchange_grid_bot_service import grid_status
-
-    return jsonify(grid_status())
-
-
 @crypto_exchange_bp.route("/api/exchange/control-board/overview", methods=["GET"])
 def exchange_control_board_overview():
     if not _admin_authorized():
@@ -523,6 +514,14 @@ def exchange_calculator_cross_trade():
         cycles_per_day=float(data.get("cycles_per_day") or 24),
         risk_level=str(data.get("risk_level") or "medium"),
     ))
+
+
+@crypto_exchange_bp.route("/api/exchange/nft/market", methods=["GET"])
+def exchange_nft_market():
+    from backend.services import nft_exchange_service as nft_svc
+
+    limit = int(request.args.get("limit") or 30)
+    return jsonify(nft_svc.exchange_market_payload(limit=limit))
 
 
 @crypto_exchange_bp.route("/api/exchange/marketplace/catalog", methods=["GET"])
@@ -1451,15 +1450,6 @@ def exchange_balances_agg():
     vs = request.args.get("venues")
     venues = [s.strip() for s in vs.split(",")] if vs else None
     return jsonify(account_balances(venues))
-
-
-@crypto_exchange_bp.route("/api/exchange/grid/status", methods=["GET"])
-def exchange_grid_status():
-    if not _admin_authorized():
-        return jsonify({"success": False, "error": "unauthorized"}), 401
-    from backend.services.exchange_grid_bot_service import grid_status
-
-    return jsonify(grid_status())
 
 
 @crypto_exchange_bp.route("/api/exchange/grid/profit", methods=["GET"])

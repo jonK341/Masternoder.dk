@@ -3,7 +3,7 @@
  * Makes both systems work together seamlessly
  */
 class UnifiedGeneratorBattle {
-    constructor(baseUrl = '', userId = 'default_user') {
+    constructor(baseUrl = '', userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         this.BASE_URL = baseUrl;
         this.userId = userId;
         this.init();
@@ -203,10 +203,10 @@ class UnifiedGeneratorBattle {
 // Auto-initialize
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         window.unifiedGeneratorBattle = new UnifiedGeneratorBattle('', userId);
     });
 } else {
-    const userId = localStorage.getItem('game_user_id') || 'default_user';
+    const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
     window.unifiedGeneratorBattle = new UnifiedGeneratorBattle('', userId);
 }

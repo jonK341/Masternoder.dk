@@ -1,0 +1,41 @@
+{
+  "updated_at": "2026-10-10",
+  "items": [
+    {
+      "id": "links_p4",
+      "priority": "done",
+      "title": "Phase 4 link fix",
+      "detail": "Studio host: /app/shop, performer paths, nav toolbar → masternoder.dk or /app/*."
+    },
+    {
+      "id": "phase1_shop",
+      "priority": "P1",
+      "title": "Brand packs in shop",
+      "detail": "16 SKUs dg-camgirls-brand-* — filter digital_goods + tag camgirls on /app/shop/."
+    },
+    {
+      "id": "phase2_media_real",
+      "priority": "done",
+      "title": "Phase 2 raster + preview video",
+      "detail": "WebP gallery defaults + preview.webm/mp4 from stills; drop real photos as gallery-*.webp|png|jpg then re-run scripts/camgirls_generate_performer_media.py."
+    },
+    {
+      "id": "phase3_livekit",
+      "priority": "P2",
+      "title": "LiveKit voice E2E",
+      "detail": "Unlock → voice; mode=live on prod."
+    },
+    {
+      "id": "phase4_db_catalog",
+      "priority": "P2",
+      "title": "DB catalog",
+      "detail": "CAMGIRLS_CATALOG_SOURCE=db after onboard migration."
+    },
+    {
+      "id": "phase5_scale",
+      "priority": "P3",
+      "title": "250-scale roster ops",
+      "detail": "Batch onboard script + payout rails template for next performer waves."
+    }
+  ]
+}

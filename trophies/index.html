@@ -4,14 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trophies - MasterNoder</title>
-    <meta name="cache-version" content="20260607b">
+    <meta name="cache-version" content="20261010a">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+    <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/trophies-page-tema.css?v=20261002a">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
-    <link rel="stylesheet" href="/static/css/trophies-ww2-theme.css?v=20260618a">
+    <link rel="stylesheet" href="/static/css/trophies-ww2-theme.css?v=20261002a">
     <style>
         :root {
             --trophy-primary: #FFD700;
@@ -27,8 +29,6 @@
         body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
-            background-attachment: fixed;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
@@ -658,21 +658,46 @@
             .income-tier { grid-template-columns: 40px 1fr; }
             .income-tier-income, .income-tier-lvl { grid-column: 2; }
         }
+        .trophies-hub-tabs-wrap {
+            margin: 0 0 20px;
+            padding: 12px 14px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.28);
+            background: rgba(21, 21, 32, 0.72);
+        }
+        .trophies-hub-tabs-wrap .fp-kicker {
+            margin: 0;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.55);
+            display: flex;
+            gap: 10px;
+        }
+        .trophies-hub-heading {
+            margin: 4px 0 10px;
+            font-size: 1.05rem;
+            color: var(--trophy-primary);
+        }
+        .trophies-hub-tabs-wrap .tabs { margin-bottom: 0; }
+        .trophies-hub-route-note {
+            margin: 10px 0 0;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
     </style>
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
 </head>
-<body class="layout-standard">
-    <div id="navigation-toolbar"></div>
+<body class="layout-standard mn-no-hypnotic trophies-tema-match trophy-theme-gold">
+    <div class="trophies-tema-bg" aria-hidden="true"></div>
 
     <div class="trophies-container">
         <div class="trophies-header">
             <h1>🏆 Trophy Collection</h1>
             <div class="trophy-theme-switcher" role="group" aria-label="Trophy page theme">
-                <button type="button" id="trophy-theme-ww2" class="active">WW2 War Room</button>
-                <button type="button" id="trophy-theme-gold">Gold Classic</button>
+                <button type="button" id="trophy-theme-ww2">WW2 War Room</button>
+                <button type="button" id="trophy-theme-gold" class="active">Gold Classic</button>
             </div>
             <p>Unlock trophies by completing achievements and milestones</p>
         </div>
@@ -750,6 +775,9 @@
         </div>
 
         <!-- Tabs: Table view first, then categories, then extras -->
+        <section class="trophies-hub-tabs-wrap" aria-label="Trophy sections">
+            <p class="fp-kicker"><span>Sections</span><span id="trophies-tab-status">Table</span></p>
+            <h2 class="trophies-hub-heading">Browse trophies &amp; income</h2>
         <div class="tabs" id="trophies-tabs">
             <button type="button" class="tab active" data-tab="table">Table</button>
             <button type="button" class="tab" data-tab="unlocked">Unlocked</button>
@@ -779,6 +807,8 @@
             <button type="button" class="tab" data-tab="effect-clusters">Effect Clusters</button>
             <button type="button" class="tab" data-tab="stories">📜 Stories</button>
         </div>
+            <p class="trophies-hub-route-note" id="trophies-hub-route-note">Income &amp; MN2 collect live in the 💰 Income tab — shop unlocks stay in Shop.</p>
+        </section>
 
         <!-- Main content: table view (same layout as Game / Points tables) -->
         <div class="tab-content active" id="content-table">
@@ -970,7 +1000,9 @@
     <!-- Toast stack for unlock notifications -->
     <div id="trophy-toast-stack" aria-live="polite"></div>
 
-        <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/user-id.js?v=20261010b"></script>
+    <script src="/static/js/error-manager.js"></script>
+    <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js"></script>
     <script>
         const API_BASE = '/api';
@@ -1642,6 +1674,12 @@
         }
 
         // Tab switching: table view shows all/unlocked/locked; extras load their own content
+        var TROPHY_TAB_LABELS = {
+            table: 'Table', unlocked: 'Unlocked', locked: 'Locked', sets: 'Sets', quests: 'Quests',
+            seasonal: 'Seasonal', leaderboard: 'Leaderboard', compare: 'Compare', activity: 'Activity',
+            income: 'Income', 'star-map': 'Star Map', 'comm-psych': 'Comm. Psych', rulebook: 'Rulebook',
+            compendium: 'Compendium', 'effect-clusters': 'Effect Clusters', stories: 'Stories'
+        };
         function showView(tabName) {
             document.querySelectorAll('.tab[data-tab]').forEach(t => {
                 t.classList.remove('active');
@@ -1653,6 +1691,14 @@
                 tabBtn.classList.add('active');
                 tabBtn.setAttribute('aria-selected', 'true');
                 tabBtn.setAttribute('tabindex', '0');
+            }
+            var statusEl = document.getElementById('trophies-tab-status');
+            if (statusEl) statusEl.textContent = TROPHY_TAB_LABELS[tabName] || tabName;
+            var routeNote = document.getElementById('trophies-hub-route-note');
+            if (routeNote) {
+                routeNote.textContent = tabName === 'income'
+                    ? 'Collect passive trophy points & MN2 here — unlocks and story packs are in Shop.'
+                    : 'Income & MN2 collect live in the 💰 Income tab — shop unlocks stay in Shop.';
             }
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
@@ -2698,10 +2744,9 @@
     <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.body.classList.add('trophy-theme-ww2');
         var ww2 = document.getElementById('trophy-theme-ww2');
         var gold = document.getElementById('trophy-theme-gold');
-        function setTheme(name) {
+        function setTrophyPageTheme(name) {
             document.body.classList.remove('trophy-theme-ww2', 'trophy-theme-gold');
             document.body.classList.add(name === 'gold' ? 'trophy-theme-gold' : 'trophy-theme-ww2');
             if (ww2) ww2.classList.toggle('active', name !== 'gold');
@@ -2710,10 +2755,13 @@
         }
         try {
             var saved = localStorage.getItem('trophy_page_theme');
-            if (saved === 'gold') setTheme('gold');
-        } catch (e) {}
-        if (ww2) ww2.addEventListener('click', function() { setTheme('ww2'); });
-        if (gold) gold.addEventListener('click', function() { setTheme('gold'); });
+            if (saved === 'ww2') setTrophyPageTheme('ww2');
+            else setTrophyPageTheme('gold');
+        } catch (e) {
+            setTrophyPageTheme('gold');
+        }
+        if (ww2) ww2.addEventListener('click', function() { setTrophyPageTheme('ww2'); });
+        if (gold) gold.addEventListener('click', function() { setTrophyPageTheme('gold'); });
         if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
             window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
         }

@@ -173,6 +173,12 @@ def log_error():
         }), 500
 
 
+@error_logging_bp.route('/api/errors', methods=['GET'])
+def errors_index():
+    """Real error list. Same payload as /api/errors/list, not an auto-created stub."""
+    return list_errors()
+
+
 @error_logging_bp.route('/api/errors/list', methods=['GET'])
 def list_errors():
     """

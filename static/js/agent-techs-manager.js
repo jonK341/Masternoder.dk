@@ -87,7 +87,7 @@ class AgentTechsManager {
     /**
      * Execute improvement function on a tech
      */
-    async executeImprovement(techId, functionName, userId = 'default_user', params = {}) {
+    async executeImprovement(techId, functionName, userId = (window.MnUserId ? window.MnUserId.read() : ''), params = {}) {
         try {
             const response = await fetch(
                 `${this.baseUrl}/api/agent-tech/${techId}/${functionName}`,
@@ -174,7 +174,7 @@ class AgentTechsManager {
     /**
      * Execute all 12 improvements for a tech
      */
-    async executeAllImprovements(techId, userId = 'default_user') {
+    async executeAllImprovements(techId, userId = (window.MnUserId ? window.MnUserId.read() : '')) {
         const improvements = [
             'optimize_performance',
             'enhance_security',

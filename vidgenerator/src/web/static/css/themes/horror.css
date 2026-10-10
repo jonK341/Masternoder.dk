@@ -1,0 +1,55 @@
+/**
+ * Horror Theme
+ * Auto-generated theme CSS
+ */
+
+.theme-horror {
+    --theme-primary: #8b0000;
+    --theme-secondary: #000000;
+    --theme-background: #0a0a0a;
+    --theme-accent: #ff0000;
+}
+
+.theme-horror .generator-container {
+    background: #0a0a0a;
+    color: #8b0000;
+}
+
+.theme-horror .module-card {
+    border-color: #8b0000;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.theme-horror .module-card:hover {
+    border-color: #ff0000;
+    box-shadow: 0 0 20px #ff000040;
+}
+
+.theme-horror .btn-primary {
+    background: linear-gradient(135deg, #8b0000, #000000);
+    border-color: #8b0000;
+}
+
+.theme-horror .btn-primary:hover {
+    background: linear-gradient(135deg, #000000, #ff0000);
+    box-shadow: 0 0 15px #8b000060;
+}
+
+.theme-horror h1, .theme-horror h2, .theme-horror h3 {
+    color: #8b0000;
+    text-shadow: 0 0 10px #8b000080;
+}
+
+.theme-horror .progress-bar .progress-fill {
+    background: linear-gradient(90deg, #8b0000, #000000);
+}
+
+.theme-horror .status-display {
+    border-color: #8b0000;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.theme-horror .phase-frame.active {
+    border-color: #8b0000;
+    box-shadow: 0 0 20px #8b000040;
+}

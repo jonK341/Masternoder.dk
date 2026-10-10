@@ -39,10 +39,10 @@ def _verify_discord_signature(raw_body: bytes) -> tuple[bool, str | None]:
 
 
 def _ops_ok() -> bool:
-    secret = os.environ.get("DISCORD_OPS_SECRET", "")
-    if not secret:
-        return False
-    return request.headers.get("X-Ops-Secret") == secret or request.args.get("ops_secret") == secret
+    from backend.services.ops_secret_service import ops_auth_ok
+
+    hdr = request.headers.get("X-Ops-Secret") or request.args.get("ops_secret")
+    return ops_auth_ok(hdr, remote_addr=request.environ.get("REMOTE_ADDR", ""))
 
 
 @discord_bp.route("/api/discord/interactions", methods=["POST"])
@@ -272,3 +272,25 @@ def staking_advisor_refresh():
         return jsonify({"success": False, "error": "user_id required"}), 400
     from backend.services.ai_staking_advisor_service import refresh_advice
     return jsonify(refresh_advice(user_id)), 200
+
+
+@discord_bp.route("/api/discord/m8/partner-spotlight", methods=["POST"])
+def discord_m8_partner_spotlight():
+    """M8 #54 — ops POST to publish platform_news + #market embed (camgirls/affiliate spotlights)."""
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "unauthorized"}), 403
+    body = request.get_json(silent=True) or {}
+    title = (body.get("title") or "").strip()
+    summary = (body.get("summary") or "").strip()
+    if not title or not summary:
+        return jsonify({"success": False, "error": "title_and_summary_required"}), 400
+    from backend.services.discord_m8_streams import publish_partner_spotlight
+
+    result = publish_partner_spotlight(
+        title=title,
+        summary=summary,
+        href=(body.get("href") or "/shop/").strip(),
+        partner_id=(body.get("partner_id") or None),
+    )
+    code = 200 if result.get("success") else 502
+    return jsonify(result), code

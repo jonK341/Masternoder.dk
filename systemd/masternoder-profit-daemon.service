@@ -11,6 +11,7 @@ Environment=DAEMON_QUIET=1
 Environment=LITE_APP=1
 Environment=EXCHANGE_DAEMON_MODE=live
 Environment=EXCHANGE_PROFIT_PROFILE=max
+Environment=PROFIT_DAEMON_HEARTBEAT_PATH=/var/www/html/logs/daemon_all_profit_heartbeat.json
 ExecStart=/var/www/html/scripts/run_profit_daemon_server.sh
 Restart=always
 RestartSec=15

@@ -47,7 +47,14 @@ def _mn2_to_usd(amount_mn2: float) -> float:
     return round(max(float(amount_mn2), 0) * _mn2_usd(), 2)
 
 
-def _resolve_mn2_amount(action: str, performer_id: str, *, amount_mn2: Optional[float] = None, gift_id: Optional[str] = None) -> Dict[str, Any]:
+def _resolve_mn2_amount(
+    action: str,
+    performer_id: str,
+    *,
+    amount_mn2: Optional[float] = None,
+    gift_id: Optional[str] = None,
+    minutes: Optional[int] = None,
+) -> Dict[str, Any]:
     from backend.services.camgirls_service import _get_performer
     from backend.services.camgirls_studio_service import studio_catalog
 
@@ -68,6 +75,15 @@ def _resolve_mn2_amount(action: str, performer_id: str, *, amount_mn2: Optional[
         if not gift:
             return {"success": False, "error": "gift_not_found"}
         mn2 = float(gift.get("price_mn2") or 5)
+    elif action == "fan_club":
+        from backend.services.camgirls_social_service import fan_club_price_mn2
+
+        mn2 = fan_club_price_mn2()
+    elif action in ("private_show", "private"):
+        from backend.services.camgirls_social_service import private_show_price_mn2
+
+        action = "private_show"
+        mn2 = private_show_price_mn2(int(minutes or 5))
     else:
         return {"success": False, "error": "invalid_action"}
     usd = _mn2_to_usd(mn2)
@@ -80,6 +96,7 @@ def _resolve_mn2_amount(action: str, performer_id: str, *, amount_mn2: Optional[
         "amount_mn2": mn2,
         "amount_usd": usd,
         "gift_id": gift_id,
+        "minutes": int(minutes or 0) or None,
     }
 
 
@@ -89,8 +106,11 @@ def quote_action(
     *,
     amount_mn2: Optional[float] = None,
     gift_id: Optional[str] = None,
+    minutes: Optional[int] = None,
 ) -> Dict[str, Any]:
-    out = _resolve_mn2_amount(action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id)
+    out = _resolve_mn2_amount(
+        action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id, minutes=minutes
+    )
     if not out.get("success"):
         return out
     return {
@@ -111,13 +131,16 @@ def create_paypal_order(
     *,
     amount_mn2: Optional[float] = None,
     gift_id: Optional[str] = None,
+    minutes: Optional[int] = None,
 ) -> Dict[str, Any]:
     from backend.services.camgirls_service import _is_age_verified
 
     user_id = (user_id or "").strip() or "default_user"
     if not _is_age_verified(user_id):
         return {"success": False, "code": "age_verification_required", "error": "18+ required"}
-    quote = _resolve_mn2_amount(action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id)
+    quote = _resolve_mn2_amount(
+        action, performer_id, amount_mn2=amount_mn2, gift_id=gift_id, minutes=minutes
+    )
     if not quote.get("success"):
         return quote
 
@@ -125,31 +148,24 @@ def create_paypal_order(
     item_name = f"camgirls_{quote['action']}_{performer_id}"
     if quote.get("gift_id"):
         item_name += f"_{quote['gift_id']}"
+    if quote.get("minutes"):
+        item_name += f"_{quote['minutes']}m"
 
     from backend.services.paypal_service import create_order as pp_create
-    import urllib.parse
 
-    if base_url.endswith("/vidgenerator"):
-        base_url = base_url.rsplit("/vidgenerator", 1)[0]
-    return_url = (
-        f"{base_url}/camgirls/?paypal=success"
-        f"&user_id={urllib.parse.quote(str(user_id))}"
-        f"&performer_id={urllib.parse.quote(str(performer_id))}"
-    )
     result = pp_create(
         quote["amount_usd"],
         currency="USD",
         item_name=item_name,
-        return_url=return_url,
+        return_url=f"{base_url}/camgirls/?paypal=success",
         cancel_url=f"{base_url}/camgirls/?paypal=cancel",
         metadata={
-            "item_id": item_name[:127],
-            "user_id": user_id,
             "product": "camgirls",
             "action": quote["action"],
             "performer_id": performer_id,
             "amount_mn2": quote["amount_mn2"],
             "gift_id": gift_id,
+            "minutes": quote.get("minutes"),
         },
     )
     if not result.get("success"):
@@ -165,6 +181,7 @@ def create_paypal_order(
         "amount_mn2": quote["amount_mn2"],
         "amount_usd": quote["amount_usd"],
         "gift_id": gift_id,
+        "minutes": quote.get("minutes"),
         "approve_url": result.get("approve_url") or "",
         "created_at": _iso(),
         "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=20)).isoformat().replace("+00:00", "Z"),
@@ -189,6 +206,7 @@ def _fulfill_action(user_id: str, pending: Dict[str, Any], order_id: str) -> Dic
         float(pending.get("amount_mn2") or 0),
         payment_ref=order_id,
         gift_id=pending.get("gift_id"),
+        minutes=pending.get("minutes"),
     )
 
 
@@ -205,12 +223,13 @@ def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
     if not pending:
         return {"success": False, "error": "order_not_found"}
 
-    uid = (user_id or pending.get("user_id") or "").strip()
+    uid = (user_id or "").strip() or str(pending.get("user_id") or "").strip()
     pending_uid = str(pending.get("user_id") or "").strip()
-    if not uid or uid.lower() == "default_user":
-        uid = pending_uid or uid
-    elif pending_uid and pending_uid != uid:
-        return {"success": False, "error": "user_mismatch"}
+    if pending_uid and uid != pending_uid:
+        if uid in ("", "default_user"):
+            uid = pending_uid
+        else:
+            return {"success": False, "error": "user_mismatch"}
 
     from backend.services.paypal_service import capture_order
 
@@ -251,6 +270,7 @@ def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
     return {"success": True, **cap}
 
 
+# Restored from pre-merge branch so both APIs stay callable.
 def list_pending_paypal_payments() -> list:
     out = []
     for oid, row in (_read_orders().get("pending") or {}).items():
@@ -300,3 +320,4 @@ def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
     if event_type in ("CHECKOUT.ORDER.APPROVED", "CHECKOUT.ORDER.COMPLETED", "PAYMENT.CAPTURE.COMPLETED"):
         return fulfill_capture(oid, user_id=str(pending.get("user_id") or ""))
     return {"success": True, "ignored": True, "event_type": event_type}
+

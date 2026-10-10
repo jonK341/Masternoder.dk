@@ -191,6 +191,10 @@ class TestMN2Withdraw(unittest.TestCase):
         self.app = get_app()
         self.client = self.app.test_client()
 
+    @patch("backend.services.account_security_service.check_real_money_action", return_value=None)
+    @patch("backend.services.mn2_withdrawal_security.check_totp_gate", return_value={"allowed": True})
+    @patch("backend.services.mn2_withdrawal_security.check_whitelist_gate", return_value={"allowed": True})
+    @patch("backend.routes.mn2_routes.resolve_user_id", return_value="test_user")
     @patch("backend.routes.mn2_routes.append_entry")
     @patch("backend.services.unified_points_database.unified_points_db")
     @patch("backend.services.mn2_rpc_client.sendtoaddress")
@@ -209,6 +213,10 @@ class TestMN2Withdraw(unittest.TestCase):
         mock_send,
         mock_db,
         mock_append,
+        mock_resolve,
+        mock_whitelist,
+        mock_totp,
+        mock_password,
     ):
         mock_config.return_value = {
             "withdrawal_requires_verification": False,
@@ -379,18 +387,20 @@ class TestMN2BalanceWithVerification(unittest.TestCase):
 class TestMN2DepositAddressSelfHeal(unittest.TestCase):
     """get_or_create_deposit_address validates cached addresses and self-heals."""
 
+    @patch("backend.services.mn2_rpc_client.getwalletinfo")
     @patch("backend.services.mn2_rpc_client.getnewaddress")
     @patch("backend.services.mn2_rpc_client.validateaddress")
     @patch("backend.services.mn2_wallet_service._save_addresses")
     @patch("backend.services.mn2_wallet_service._load_addresses")
     def test_invalid_cached_address_is_regenerated(
-        self, mock_load, mock_save, mock_validate, mock_getnew
+        self, mock_load, mock_save, mock_validate, mock_getnew, mock_walletinfo
     ):
         from backend.services import mn2_wallet_service as w
         mock_load.return_value = {"u1": "BADADDR"}
         saved = {}
         mock_save.side_effect = lambda d: saved.update(d)
-        mock_validate.side_effect = lambda a: (
+        mock_walletinfo.return_value = {"result": {"walletversion": 1}}
+        mock_validate.side_effect = lambda a, timeout_sec=None: (
             {"result": {"isvalid": False}} if a == "BADADDR" else {"result": {"isvalid": True}}
         )
         mock_getnew.return_value = {"result": "MxFreshValidAddress"}
@@ -419,6 +429,25 @@ class TestMN2DepositAddressSelfHeal(unittest.TestCase):
         res = w.get_or_create_deposit_address("u1")
         self.assertTrue(res.get("success"))
         self.assertEqual(res.get("deposit_address"), "MxExisting")
+        mock_getnew.assert_not_called()
+
+    @patch("backend.services.mn2_rpc_client.getwalletinfo")
+    @patch("backend.services.mn2_rpc_client.getnewaddress")
+    @patch("backend.services.mn2_rpc_client.validateaddress")
+    @patch("backend.services.mn2_wallet_service._save_addresses")
+    @patch("backend.services.mn2_wallet_service._load_addresses")
+    def test_not_mine_keeps_address_when_wallet_not_ready(
+        self, mock_load, mock_save, mock_validate, mock_getnew, mock_walletinfo
+    ):
+        from backend.services import mn2_wallet_service as w
+        mock_load.return_value = {"u1": "MxOldNotMine"}
+        mock_validate.return_value = {"result": {"isvalid": True, "ismine": False}}
+        mock_walletinfo.return_value = {"error": "Method not found (disabled)"}
+
+        res = w.get_or_create_deposit_address("u1")
+        self.assertTrue(res.get("success"))
+        self.assertEqual(res.get("deposit_address"), "MxOldNotMine")
+        self.assertIn("address_warning", res)
         mock_getnew.assert_not_called()
 
 

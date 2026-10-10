@@ -7,15 +7,9 @@
 
   function getUserId() {
     try {
-      return (
-        localStorage.getItem('user_id') ||
-        localStorage.getItem('vidgenerator_user_id') ||
-        localStorage.getItem('game_user_id') ||
-        'default_user'
-      );
-    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-engagement.js', context: 'catch' }); }
-      return 'default_user';
-    }
+      if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-engagement.js', context: 'catch' }); }}
+    return '';
   }
 
   var sessionAwarded = 0;

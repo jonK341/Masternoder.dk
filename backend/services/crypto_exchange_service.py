@@ -89,6 +89,12 @@ def _asset_map(cfg: Optional[Dict] = None) -> Dict[str, dict]:
     return {a["symbol"]: a for a in (cfg.get("assets") or []) if a.get("symbol")}
 
 
+def _quote_currencies(cfg: Optional[Dict] = None) -> List[str]:
+    cfg = cfg or load_config()
+    quotes = [str(q).strip().upper() for q in (cfg.get("quote_currencies") or ["MN2", "COINS"])]
+    return [q for q in quotes if q] or ["MN2", "COINS"]
+
+
 def _mn2_usd() -> float:
     try:
         from backend.services.mn2_chainz import chainz_ticker_usd
@@ -146,10 +152,16 @@ def get_wallet(user_id: str) -> Dict[str, Any]:
         return {"success": False, "error": "user_id required"}
     data = _read_json(_wallet_path(uid), {"assets": {}, "staking": {}, "bonus": {}, "volume_usd_30d": 0})
     assets = data.get("assets") if isinstance(data.get("assets"), dict) else {}
+    for stable in _STABLE_QUOTES:
+        assets.setdefault(stable, 0.0)
+    mn2_balance = _get_quote_balance(uid, "MN2")
+    coins_balance = _get_quote_balance(uid, "COINS")
     return {
         "success": True,
         "user_id": uid,
         "assets": assets,
+        "mn2_balance": round(mn2_balance, 8),
+        "coins_balance": round(coins_balance, 8),
         "staking": data.get("staking") or {},
         "bonus": data.get("bonus") or {},
         "volume_usd_30d": float(data.get("volume_usd_30d") or 0),
@@ -215,6 +227,23 @@ def _adjust_quote_balance(user_id: str, quote: str, delta: float, source: str, m
         raise ValueError("invalid_quote")
     from backend.services.unified_points_database import unified_points_db
     unified_points_db.add_points(user_id, field, float(delta), source=source, metadata=meta)
+
+
+def _is_mn2_symbol(symbol: str) -> bool:
+    return (symbol or "").strip().upper() == "MN2"
+
+
+def _get_symbol_balance(user_id: str, symbol: str) -> float:
+    if _is_mn2_symbol(symbol):
+        return _get_quote_balance(user_id, "MN2")
+    return _get_balance(user_id, symbol)
+
+
+def _adjust_symbol_balance(user_id: str, symbol: str, delta: float, source: str, meta: dict) -> None:
+    if _is_mn2_symbol(symbol):
+        _adjust_quote_balance(user_id, "MN2", delta, source, meta)
+        return
+    _adjust_balance(user_id, symbol, delta)
 
 
 def _fee_quote_to_mn2(fee_quote: float, quote: str, cfg: Optional[Dict] = None) -> float:
@@ -395,37 +424,6 @@ def _parse_iso(ts: str) -> Optional[datetime]:
         return None
 
 
-def paypal_buyer_id(requested: str, pending_user: str) -> Tuple[str, str]:
-    """Resolve the paying user. Empty/default_user falls back to the stored buyer."""
-    req = str(requested or "").strip()
-    pending = str(pending_user or "").strip()
-    if not req or req.lower() == "default_user":
-        uid = pending or req
-        if not uid or uid.lower() == "default_user":
-            return "", "user_id required"
-        return uid, ""
-    if pending and pending != req:
-        return "", "user_mismatch"
-    return req, ""
-
-
-def _paypal_event_order_id(event: Dict[str, Any]) -> str:
-    resource = event.get("resource") if isinstance(event.get("resource"), dict) else {}
-    related = ((resource.get("supplementary_data") or {}).get("related_ids") or {})
-    if not isinstance(related, dict):
-        related = {}
-    event_type = str(event.get("event_type") or "")
-    for candidate in (
-        related.get("order_id"),
-        resource.get("id") if event_type.upper().startswith("CHECKOUT.ORDER.") else None,
-        resource.get("custom_id"),
-    ):
-        val = str(candidate or "").strip()
-        if val:
-            return val
-    return ""
-
-
 def _validate_paypal_capture(capture: Dict[str, Any], expected_usd: float, *, expected_currency: str = "USD") -> Optional[str]:
     if not capture.get("success"):
         return capture.get("error") or "PayPal capture failed"
@@ -452,14 +450,17 @@ def get_catalog() -> Dict[str, Any]:
             "price_usd": _price_usd(sym, cfg),
             "price_mn2": _price_in_quote(sym, "MN2", cfg),
             "price_coins": _price_in_quote(sym, "COINS", cfg),
+            "price_usdt": _price_in_quote(sym, "USDT", cfg),
+            "price_usdc": _price_in_quote(sym, "USDC", cfg),
         })
+    quotes = _quote_currencies(cfg)
     return {
         "success": True,
         "enabled": bool(cfg.get("enabled", True)),
         "name": cfg.get("name"),
         "jurisdiction": cfg.get("jurisdiction"),
         "legal_notice": cfg.get("legal_notice"),
-        "quote_currencies": cfg.get("quote_currencies") or ["MN2", "COINS"],
+        "quote_currencies": quotes,
         "default_quote": cfg.get("default_quote") or "MN2",
         "fees": cfg.get("platform_fees"),
         "tax": cfg.get("tax"),
@@ -483,6 +484,8 @@ def get_ticker(symbol: str) -> Dict[str, Any]:
         "price_usd": _price_usd(sym, cfg),
         "price_mn2": _price_in_quote(sym, "MN2", cfg),
         "price_coins": _price_in_quote(sym, "COINS", cfg),
+        "price_usdt": _price_in_quote(sym, "USDT", cfg),
+        "price_usdc": _price_in_quote(sym, "USDC", cfg),
         "change_24h_pct": 0.0,
         "volume_24h_usd": 0.0,
     }
@@ -571,7 +574,10 @@ def record_paypal_crypto_order(order_id: str, quote: Dict[str, Any], *, approve_
 
 
 def fulfill_paypal_crypto_order(user_id: str, order_id: str, capture: Dict[str, Any]) -> Dict[str, Any]:
+    uid = (user_id or "").strip()
     order_id = (order_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "user_id required"}
     if not order_id:
         return {"success": False, "error": "order_id required"}
     if not capture.get("success"):
@@ -586,16 +592,16 @@ def fulfill_paypal_crypto_order(user_id: str, order_id: str, capture: Dict[str, 
         if not pending:
             return {"success": False, "error": "pending_order_not_found"}
         quote = pending.get("quote") or {}
-        uid, buyer_err = paypal_buyer_id(user_id, str(quote.get("user_id") or ""))
-        if buyer_err:
-            return {
-                "success": False,
-                "error": "order_user_mismatch" if buyer_err == "user_mismatch" else buyer_err,
-            }
         sym = quote.get("symbol")
         amount = float(quote.get("asset_amount") or 0)
         usd_value = float(quote.get("usd_amount") or 0)
         fee_usd = float(quote.get("fee_usd") or 0)
+        quote_user = str(quote.get("user_id") or "").strip()
+        if quote_user and quote_user != uid:
+            return {"success": False, "error": "order_user_mismatch"}
+        expires = _parse_iso(quote.get("expires_at"))
+        if expires and expires < datetime.now(timezone.utc):
+            return {"success": False, "error": "quote_expired"}
         capture_error = _validate_paypal_capture(capture, usd_value)
         if capture_error:
             return {"success": False, "error": capture_error}
@@ -690,7 +696,10 @@ def record_paypal_mn2_order(order_id: str, user_id: str, pack: Dict[str, Any], *
 
 
 def fulfill_paypal_mn2_order(user_id: str, order_id: str, capture: Dict[str, Any]) -> Dict[str, Any]:
+    uid = (user_id or "").strip()
     order_id = (order_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "user_id required"}
     if not order_id:
         return {"success": False, "error": "order_id required"}
     with _LOCK:
@@ -701,14 +710,10 @@ def fulfill_paypal_mn2_order(user_id: str, order_id: str, capture: Dict[str, Any
         pending = (rows.get("pending") or {}).get(order_id)
         if not pending:
             return {"success": False, "error": "pending_order_not_found"}
-        uid, buyer_err = paypal_buyer_id(user_id, str(pending.get("user_id") or ""))
-        if buyer_err:
-            return {
-                "success": False,
-                "error": "order_user_mismatch" if buyer_err == "user_mismatch" else buyer_err,
-            }
+        if str(pending.get("user_id") or "").strip() != uid:
+            return {"success": False, "error": "order_user_mismatch"}
         expires = _parse_iso(pending.get("expires_at"))
-        if expires and expires < datetime.now(timezone.utc) and not capture.get("success"):
+        if expires and expires < datetime.now(timezone.utc):
             return {"success": False, "error": "order_expired"}
         pack = pending.get("pack") or {}
         capture_error = _validate_paypal_capture(capture, float(pack.get("price_usd") or 0))
@@ -768,72 +773,6 @@ def fulfill_paypal_mn2_order(user_id: str, order_id: str, capture: Dict[str, Any
     return {"success": True, "order_id": order_id, **captured}
 
 
-def list_pending_paypal_payments() -> List[Dict[str, Any]]:
-    """Pending exchange MN2 packs and crypto buys that still need capture/fulfill."""
-    out: List[Dict[str, Any]] = []
-    mn2 = _read_json(_PAYPAL_MN2_ORDERS_PATH, {"pending": {}, "captured": {}})
-    for oid, row in (mn2.get("pending") or {}).items():
-        if not isinstance(row, dict):
-            continue
-        out.append({
-            "rail": "exchange_mn2",
-            "local_id": oid,
-            "paypal_order_id": str(row.get("order_id") or oid),
-            "user_id": row.get("user_id"),
-            "item_id": ((row.get("pack") or {}).get("id") or ""),
-        })
-    crypto = _read_json(_PAYPAL_CRYPTO_ORDERS_PATH, {"pending": {}, "captured": {}})
-    for oid, row in (crypto.get("pending") or {}).items():
-        if not isinstance(row, dict):
-            continue
-        quote = row.get("quote") if isinstance(row.get("quote"), dict) else {}
-        out.append({
-            "rail": "exchange_crypto",
-            "local_id": oid,
-            "paypal_order_id": str(row.get("order_id") or oid),
-            "user_id": quote.get("user_id") or row.get("user_id"),
-            "item_id": f"crypto:{quote.get('symbol') or ''}",
-        })
-    return out
-
-
-def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
-    """Capture APPROVED exchange checkouts without browser return or pack_id."""
-    if not signature_ok:
-        return {"success": False, "error": "Webhook signature not verified"}
-    event_type = str((event or {}).get("event_type") or "").upper()
-    if event_type not in (
-        "CHECKOUT.ORDER.APPROVED",
-        "CHECKOUT.ORDER.COMPLETED",
-        "PAYMENT.CAPTURE.COMPLETED",
-    ):
-        return {"success": True, "ignored": True, "event_type": event_type}
-    oid = _paypal_event_order_id(event or {})
-    if not oid:
-        return {"success": True, "ignored": True, "reason": "no_order_id"}
-    mn2 = _read_json(_PAYPAL_MN2_ORDERS_PATH, {"pending": {}, "captured": {}})
-    crypto = _read_json(_PAYPAL_CRYPTO_ORDERS_PATH, {"pending": {}, "captured": {}})
-    if oid in (mn2.get("captured") or {}) or oid in (crypto.get("captured") or {}):
-        return {"success": True, "already_fulfilled": True, "order_id": oid}
-    rail = None
-    pending_user = ""
-    if isinstance((mn2.get("pending") or {}).get(oid), dict):
-        rail = "exchange_mn2"
-        pending_user = str(((mn2["pending"][oid] or {}).get("user_id") or ""))
-    elif isinstance((crypto.get("pending") or {}).get(oid), dict):
-        rail = "exchange_crypto"
-        quote = (crypto["pending"][oid] or {}).get("quote") or {}
-        pending_user = str(quote.get("user_id") or "")
-    if not rail:
-        return {"success": True, "ignored": True, "reason": "no matching exchange order"}
-    from backend.services.paypal_service import finish_checkout_order
-
-    cap = finish_checkout_order(oid)
-    if rail == "exchange_mn2":
-        return fulfill_paypal_mn2_order(pending_user, oid, cap)
-    return fulfill_paypal_crypto_order(pending_user, oid, cap)
-
-
 def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str = "MN2") -> Dict[str, Any]:
     """side=buy: spend quote to receive symbol. side=sell: spend symbol to receive quote."""
     cfg = load_config()
@@ -846,6 +785,10 @@ def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str =
         return {"success": False, "error": "unknown_asset"}
     if side not in ("buy", "sell"):
         return {"success": False, "error": "invalid_side"}
+    if quote not in _quote_currencies(cfg):
+        return {"success": False, "error": "invalid_quote"}
+    if sym == quote:
+        return {"success": False, "error": "same_asset"}
     amt = float(amount or 0)
     asset = _asset_map(cfg)[sym]
     if amt < float(asset.get("min_trade") or 0):
@@ -887,6 +830,22 @@ def quote_swap(user_id: str, symbol: str, side: str, amount: float, quote: str =
         payload["quote_cost"] = round(quote_cost, 8)
     else:
         payload["quote_received"] = round(quote_out, 8)
+
+    try:
+        from backend.services.exchange_mn2_pool_service import (
+            apply_pool_reserve_to_quote,
+            check_pool_liquidity,
+            is_pool_swap,
+        )
+
+        if is_pool_swap(sym, quote):
+            payload["pool_backed"] = True
+            payload = apply_pool_reserve_to_quote(payload)
+            pool_err = check_pool_liquidity(sym, side, quote, payload)
+            if pool_err:
+                return {"success": False, "error": pool_err, "pool_backed": True}
+    except Exception:
+        pass
     return payload
 
 
@@ -909,19 +868,57 @@ def execute_swap(user_id: str, quote_id: str, symbol: str, side: str, amount: fl
 
     try:
         with _LOCK:
+            try:
+                from backend.services.exchange_mn2_pool_service import (
+                    check_pool_liquidity,
+                    is_pool_swap,
+                    pool_user_id,
+                )
+
+                if uid != pool_user_id() and is_pool_swap(sym, quote_cur):
+                    pool_err = check_pool_liquidity(sym, side, quote_cur, q)
+                    if pool_err:
+                        return {"success": False, "error": pool_err, "pool_backed": True}
+            except ImportError:
+                pass
+
             if side == "buy":
                 cost = float(q.get("quote_cost") or 0)
                 bal = _get_quote_balance(uid, quote_cur)
                 if bal < cost:
                     return {"success": False, "error": f"insufficient_{quote_cur.lower()}"}
                 _adjust_quote_balance(uid, quote_cur, -cost, "exchange_buy", meta)
-                _adjust_balance(uid, sym, amt)
+                _adjust_symbol_balance(uid, sym, amt, "exchange_buy", meta)
             else:
-                if _get_balance(uid, sym) < amt:
+                if _get_symbol_balance(uid, sym) < amt:
                     return {"success": False, "error": f"insufficient_{sym.lower()}"}
                 received = float(q.get("quote_received") or 0)
-                _adjust_balance(uid, sym, -amt)
+                _adjust_symbol_balance(uid, sym, -amt, "exchange_sell", meta)
                 _adjust_quote_balance(uid, quote_cur, received, "exchange_sell", meta)
+
+            try:
+                from backend.services.exchange_mn2_pool_service import apply_pool_leg, pool_user_id
+
+                if uid != pool_user_id():
+                    pool_res = apply_pool_leg(sym, side, quote_cur, q)
+                    if not pool_res.get("success") and not pool_res.get("skipped"):
+                        raise ValueError(pool_res.get("error") or "pool_leg_failed")
+            except ValueError:
+                raise
+            except ImportError:
+                pass
+
+            try:
+                from backend.services.exchange_mn2_pool_service import pool_user_id, stash_swap_reserve
+
+                if uid != pool_user_id() and float(q.get("pool_reserve_quote") or 0) > 0:
+                    reserve_res = stash_swap_reserve(q, ref)
+                    if not reserve_res.get("success") and not reserve_res.get("skipped"):
+                        raise ValueError(reserve_res.get("error") or "pool_reserve_failed")
+            except ValueError:
+                raise
+            except ImportError:
+                pass
 
             fee_mn2 = _fee_quote_to_mn2(float(q.get("fee_quote") or 0), quote_cur, load_config())
             _collect_fee(fee_mn2)
@@ -932,6 +929,8 @@ def execute_swap(user_id: str, quote_id: str, symbol: str, side: str, amount: fl
                 "ts": _iso(), "trade_id": ref, "user_id": uid, "type": "swap",
                 "symbol": sym, "side": side, "amount": amt, "quote": quote_cur,
                 "usd_value": q.get("usd_value"), "fee_bps": q.get("fee_bps"),
+                "pool_reserve_quote": q.get("pool_reserve_quote"),
+                "pool_reserve_bps": q.get("pool_reserve_bps"),
             }
             _append_jsonl(_TRADES_PATH, trade)
     except ValueError as e:
@@ -973,15 +972,17 @@ def create_limit_order(user_id: str, symbol: str, side: str, amount: float, limi
     quote = (quote or "MN2").upper()
     amt = float(amount or 0)
     price = float(limit_price or 0)
+    if quote not in _quote_currencies(cfg) or sym == quote:
+        return {"success": False, "error": "invalid_order"}
     if sym not in _asset_map(cfg) or side not in ("buy", "sell") or amt <= 0 or price <= 0:
         return {"success": False, "error": "invalid_order"}
 
     with _LOCK:
         ref = f"ex-order:{uuid.uuid4().hex[:12]}"
         if side == "sell":
-            if _get_balance(uid, sym) < amt:
+            if _get_symbol_balance(uid, sym) < amt:
                 return {"success": False, "error": f"insufficient_{sym.lower()}"}
-            _adjust_balance(uid, sym, -amt)
+            _adjust_symbol_balance(uid, sym, -amt, "exchange_order_lock", {"reference": ref})
         else:
             cost = amt * price
             if _get_quote_balance(uid, quote) < cost:
@@ -1399,11 +1400,119 @@ def deposit_from_mn2(user_id: str, symbol: str, mn2_amount: float) -> Dict[str, 
 def health() -> Dict[str, Any]:
     cfg = load_config()
     tre = _read_json(_TREASURY_PATH, {})
+    pool_summary = None
+    try:
+        from backend.services.exchange_mn2_pool_service import mn2_pool_status
+
+        pool_summary = mn2_pool_status()
+    except Exception:
+        pass
     return {
         "success": True,
         "service": "crypto_exchange",
         "status": "healthy" if cfg.get("enabled", True) else "disabled",
         "asset_count": len(cfg.get("assets") or []),
+        "quote_currencies": _quote_currencies(cfg),
         "treasury_fees_mn2": tre.get("total_fees_mn2"),
+        "mn2_pool": pool_summary,
         "timestamp": _iso(),
     }
+
+
+# Restored from pre-merge branch so both APIs stay callable.
+def paypal_buyer_id(requested: str, pending_user: str) -> Tuple[str, str]:
+    """Resolve the paying user. Empty/default_user falls back to the stored buyer."""
+    req = str(requested or "").strip()
+    pending = str(pending_user or "").strip()
+    if not req or req.lower() == "default_user":
+        uid = pending or req
+        if not uid or uid.lower() == "default_user":
+            return "", "user_id required"
+        return uid, ""
+    if pending and pending != req:
+        return "", "user_mismatch"
+    return req, ""
+
+
+def _paypal_event_order_id(event: Dict[str, Any]) -> str:
+    resource = event.get("resource") if isinstance(event.get("resource"), dict) else {}
+    related = ((resource.get("supplementary_data") or {}).get("related_ids") or {})
+    if not isinstance(related, dict):
+        related = {}
+    event_type = str(event.get("event_type") or "")
+    for candidate in (
+        related.get("order_id"),
+        resource.get("id") if event_type.upper().startswith("CHECKOUT.ORDER.") else None,
+        resource.get("custom_id"),
+    ):
+        val = str(candidate or "").strip()
+        if val:
+            return val
+    return ""
+
+
+def list_pending_paypal_payments() -> List[Dict[str, Any]]:
+    """Pending exchange MN2 packs and crypto buys that still need capture/fulfill."""
+    out: List[Dict[str, Any]] = []
+    mn2 = _read_json(_PAYPAL_MN2_ORDERS_PATH, {"pending": {}, "captured": {}})
+    for oid, row in (mn2.get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        out.append({
+            "rail": "exchange_mn2",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": row.get("user_id"),
+            "item_id": ((row.get("pack") or {}).get("id") or ""),
+        })
+    crypto = _read_json(_PAYPAL_CRYPTO_ORDERS_PATH, {"pending": {}, "captured": {}})
+    for oid, row in (crypto.get("pending") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        quote = row.get("quote") if isinstance(row.get("quote"), dict) else {}
+        out.append({
+            "rail": "exchange_crypto",
+            "local_id": oid,
+            "paypal_order_id": str(row.get("order_id") or oid),
+            "user_id": quote.get("user_id") or row.get("user_id"),
+            "item_id": f"crypto:{quote.get('symbol') or ''}",
+        })
+    return out
+
+
+def handle_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[str, Any]:
+    """Capture APPROVED exchange checkouts without browser return or pack_id."""
+    if not signature_ok:
+        return {"success": False, "error": "Webhook signature not verified"}
+    event_type = str((event or {}).get("event_type") or "").upper()
+    if event_type not in (
+        "CHECKOUT.ORDER.APPROVED",
+        "CHECKOUT.ORDER.COMPLETED",
+        "PAYMENT.CAPTURE.COMPLETED",
+    ):
+        return {"success": True, "ignored": True, "event_type": event_type}
+    oid = _paypal_event_order_id(event or {})
+    if not oid:
+        return {"success": True, "ignored": True, "reason": "no_order_id"}
+    mn2 = _read_json(_PAYPAL_MN2_ORDERS_PATH, {"pending": {}, "captured": {}})
+    crypto = _read_json(_PAYPAL_CRYPTO_ORDERS_PATH, {"pending": {}, "captured": {}})
+    if oid in (mn2.get("captured") or {}) or oid in (crypto.get("captured") or {}):
+        return {"success": True, "already_fulfilled": True, "order_id": oid}
+    rail = None
+    pending_user = ""
+    if isinstance((mn2.get("pending") or {}).get(oid), dict):
+        rail = "exchange_mn2"
+        pending_user = str(((mn2["pending"][oid] or {}).get("user_id") or ""))
+    elif isinstance((crypto.get("pending") or {}).get(oid), dict):
+        rail = "exchange_crypto"
+        quote = (crypto["pending"][oid] or {}).get("quote") or {}
+        pending_user = str(quote.get("user_id") or "")
+    if not rail:
+        return {"success": True, "ignored": True, "reason": "no matching exchange order"}
+    from backend.services.paypal_service import finish_checkout_order
+
+    cap = finish_checkout_order(oid)
+    if rail == "exchange_mn2":
+        return fulfill_paypal_mn2_order(pending_user, oid, cap)
+    return fulfill_paypal_crypto_order(pending_user, oid, cap)
+

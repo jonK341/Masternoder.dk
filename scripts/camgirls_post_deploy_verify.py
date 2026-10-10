@@ -1,0 +1,289 @@
+#!/usr/bin/env python3
+"""Post-deploy smoke checks for camgirls catalog, agents, and page route."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+WEB = "/var/www/html"
+
+
+def _default_base() -> str:
+    explicit = (os.environ.get("POST_DEPLOY_BASE_URL") or "").strip().rstrip("/")
+    if explicit:
+        return explicit
+    # On the server, hit uWSGI directly — avoids slow/hanging public HTTPS from localhost.
+    if os.path.isdir(WEB) and os.path.abspath(ROOT).startswith(WEB):
+        return "http://127.0.0.1:5000"
+    return "https://masternoder.dk"
+
+
+def _ops_secret_prefix(web: str = WEB) -> str:
+    return (
+        f"source {web}/cron/mn2_read_ops_secret.sh 2>/dev/null; "
+        "SECRET=$(mn2_read_ops_secret 2>/dev/null || true)"
+    )
+
+
+def _fetch(url: str, *, timeout: int | None = None) -> tuple[int, str]:
+    if timeout is None:
+        timeout = 25 if "127.0.0.1" in url or "localhost" in url else 60
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "camgirls-post-deploy-verify/1.0", "Connection": "close"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status, resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.read().decode("utf-8", errors="replace")
+    except Exception as exc:
+        return 0, str(exc)
+
+
+def _json_success(body: str) -> bool:
+    try:
+        data = json.loads(body)
+        return bool(data.get("success"))
+    except json.JSONDecodeError:
+        return False
+
+
+def _curl_json_ok(body: str) -> bool:
+    line = body.split("HTTP:")[0].strip()
+    return _json_success(line)
+
+
+def _performer_count_minimum() -> int:
+    try:
+        return max(5, int(os.environ.get("CAMGIRLS_MIN_PERFORMERS", "15")))
+    except (TypeError, ValueError):
+        return 15
+
+
+def _performer_count_ok(body: str, minimum: int | None = None) -> bool:
+    if minimum is None:
+        minimum = _performer_count_minimum()
+    line = body.split("HTTP:")[0].strip() if "HTTP:" in body else body.strip()
+    try:
+        data = json.loads(line)
+        return int(data.get("count") or 0) >= minimum
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return False
+
+
+def _check_json(label: str, url: str, *, expect_keys: list[str]) -> bool:
+    status, body = _fetch(url)
+    ok = True
+    print(f"\n=== {label} ===")
+    print(f"GET {url}")
+    print(f"HTTP {status}")
+    if status != 200:
+        print(body[:500])
+        return False
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        print("Invalid JSON")
+        return False
+    for key in expect_keys:
+        if key not in data:
+            print(f"Missing key: {key}")
+            ok = False
+    if data.get("success") is False:
+        print(f"success=false error={data.get('error')}")
+        ok = False
+    print(json.dumps({k: data.get(k) for k in expect_keys if k in data}, indent=2)[:800])
+    return ok
+
+
+def verify_public(base: str) -> int:
+    base = base.rstrip("/")
+    checks = [
+        ("performers", f"{base}/api/camgirls/performers?user_id=post_deploy_verify", ["success", "performers"]),
+        ("agents", f"{base}/api/camgirls/agents", ["success", "agents"]),
+        ("agent-tools", f"{base}/api/camgirls/agent-tools", ["success", "tools"]),
+    ]
+    page_status, page_body = _fetch(f"{base}/camgirls/")
+    print("\n=== page /camgirls/ ===")
+    print(f"GET {base}/camgirls/")
+    print(f"HTTP {page_status}")
+    page_ok = page_status == 200 and "Camgirls" in page_body
+
+    results = [page_ok]
+    for label, url, keys in checks:
+        results.append(_check_json(label, url, expect_keys=keys))
+
+    passed = sum(results)
+    total = len(results)
+    print(f"\nResult: {passed}/{total} checks passed")
+    return 0 if passed == total else 1
+
+
+def verify_remote(*, force_prompt: bool = False) -> int:
+    try:
+        import paramiko
+    except ImportError:
+        print("paramiko required for --remote", file=sys.stderr)
+        return 1
+
+    try:
+        import dotenv
+
+        dotenv.load_dotenv(os.path.join(ROOT, ".env"))
+    except Exception:
+        pass
+
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    from deploy_ssh_env import connect_deploy_ssh
+
+    if force_prompt:
+        os.environ.pop("DEPLOY_PASS", None)
+        os.environ["_DEPLOY_ASK_PASS"] = "1"
+    ssh, auth_method, _pw = connect_deploy_ssh()
+    print(f"[verify] SSH via {auth_method}")
+
+    secret = _ops_secret_prefix()
+
+    def sh(cmd: str, timeout: int = 90) -> tuple[int, str]:
+        _, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)
+        code = stdout.channel.recv_exit_status()
+        text = (stdout.read() + stderr.read()).decode(errors="replace").strip()
+        return code, text
+
+    # HTTP-only checks — uwsgi already proves routes; no Flask import on system python3.
+    checks: list[tuple[str, str, object]] = [
+        (
+            "local performers",
+            "curl -s -w '\\nHTTP:%{http_code}' 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'",
+            lambda body: _curl_json_ok(body),
+        ),
+        (
+            "local agents",
+            "curl -s -w '\\nHTTP:%{http_code}' http://127.0.0.1:5000/api/camgirls/agents",
+            lambda body: _curl_json_ok(body),
+        ),
+        (
+            "local page",
+            "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/camgirls/",
+            lambda body: body.strip() == "200",
+        ),
+        (
+            "agent-tools route",
+            "curl -s http://127.0.0.1:5000/api/camgirls/agent-tools",
+            _json_success,
+        ),
+        (
+            "chat route",
+            "curl -s -o /dev/null -w '%{http_code}' -X POST "
+            "http://127.0.0.1:5000/api/camgirls/chat -H 'Content-Type: application/json' -d '{}'",
+            lambda body: body.strip() in ("400", "403", "200"),
+        ),
+        (
+            "blueprint registered",
+            f"grep -q camgirls {WEB}/backend/register_blueprints.py && echo registered",
+            lambda body: "registered" in body,
+        ),
+        (
+            "payout addresses",
+            f"{secret}; curl -s -H \"X-Ops-Secret: $SECRET\" "
+            "http://127.0.0.1:5000/api/camgirls/ops/payout-addresses",
+            _json_success,
+        ),
+        (
+            "payout provision",
+            f"{secret}; curl -s -X POST -H \"X-Ops-Secret: $SECRET\" "
+            "http://127.0.0.1:5000/api/camgirls/ops/payout-addresses",
+            _json_success,
+        ),
+        (
+            "studio catalog",
+            "curl -s http://127.0.0.1:5000/api/camgirls/studio/catalog",
+            lambda body: _json_success(body) and '"gifts"' in body,
+        ),
+        (
+            "platform status",
+            "curl -s http://127.0.0.1:5000/api/camgirls/status",
+            lambda body: _json_success(body) and '"catalog_source"' in body,
+        ),
+        (
+            "performer landing",
+            "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/camgirls/p/performer_nova/",
+            lambda body: body.strip() == "200",
+        ),
+        (
+            "livekit status",
+            "curl -s http://127.0.0.1:5000/api/camgirls/livekit/status",
+            lambda body: _json_success(body) and '"mode"' in body and '"live"' in body,
+        ),
+        (
+            "livekit token gate",
+            "curl -s -w '\\nHTTP:%{http_code}' -X POST "
+            "http://127.0.0.1:5000/api/camgirls/livekit/token "
+            "-H 'Content-Type: application/json' "
+            "-d '{\"user_id\":\"post_deploy_verify\",\"performer_id\":\"performer_nova\"}'",
+            lambda body: "unlock_required" in body or "HTTP:403" in body or "HTTP:200" in body,
+        ),
+        (
+            "performer count",
+            "curl -s 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'",
+            lambda body: _performer_count_ok(body),
+        ),
+        (
+            "favorite route",
+            "curl -s -o /dev/null -w '%{http_code}' -X POST "
+            "http://127.0.0.1:5000/api/camgirls/performers/performer_nova/favorite "
+            "-H 'Content-Type: application/json' -d '{}'",
+            lambda body: body.strip() == "200",
+        ),
+    ]
+
+    passed = 0
+    for label, cmd, ok_fn in checks:
+        print(f"\n=== remote {label} ===")
+        code, body = sh(cmd)
+        print(body)
+        ok = ok_fn(body) if label in (
+            "chat route",
+            "blueprint registered",
+            "local page",
+            "favorite route",
+            "performer landing",
+        ) else (code == 0 and ok_fn(body))
+        print(f"{'PASS' if ok else 'FAIL'} (exit {code})")
+        if ok:
+            passed += 1
+
+    ssh.close()
+    total = len(checks)
+    print(f"\nRemote result: {passed}/{total} checks passed")
+    return 0 if passed == total else 1
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Verify camgirls deploy")
+    parser.add_argument("--base-url", default=_default_base(), help="API origin (auto 127.0.0.1:5000 on server)")
+    parser.add_argument("--remote", action="store_true", help="SSH curl checks on server :5000")
+    parser.add_argument("--remote-only", action="store_true", help="Skip public HTTPS checks")
+    parser.add_argument("--ask-pass", action="store_true", help="Prompt for SSH password (remote checks)")
+    args = parser.parse_args()
+
+    codes = []
+    if not args.remote_only:
+        codes.append(verify_public(args.base_url))
+    if args.remote or args.remote_only:
+        codes.append(verify_remote(force_prompt=args.ask_pass))
+    return 0 if all(c == 0 for c in codes) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

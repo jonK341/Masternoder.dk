@@ -69,7 +69,7 @@ PYTHON_SCRIPT"""
         print("=" * 70)
         print()
         
-        cmd2 = "journalctl -u uwsgi-vidgenerator.service -n 20 --no-pager 2>/dev/null | grep -i 'api_debugger\|template\|error' | tail -10"
+        cmd2 = r"journalctl -u uwsgi-vidgenerator.service -n 20 --no-pager 2>/dev/null | grep -i 'api_debugger\|template\|error' | tail -10"
         stdin2, stdout2, stderr2 = ssh_client.exec_command(cmd2)
         logs = stdout2.read().decode()
         if logs:

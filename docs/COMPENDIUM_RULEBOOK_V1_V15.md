@@ -1,27 +1,7 @@
 # MasterNoder Compendium — Rulebook V1–V15
 
 **Full rulebook collection.** Complete rules for galaxy-oriented intelligence, Hunters game, unified points, and platform systems.  
-Index version: **V15** · Last updated: 2026-04-20
-
----
-
-## Canonical Compendium URLs (web)
-
-Rulebooks and Communication Psychology pages are served at **`/compendium/...`** on the site root (not under `/vidgenerator/`). Both trailing `.html` and extensionless URLs work where the Flask routes define them.
-
-| Version | Viewer / page URL |
-|---------|---------------------|
-| V1 | `/compendium/rulebook-v1` |
-| V2 Hunters | `/compendium/hunters-rulebook` |
-| V3 (25 theories) | `/compendium/page-1.html` … `/compendium/page-10.html` |
-| V3.2 | `/compendium/rulebook-v3-2` |
-| V4–V14 | `/compendium/rulebook-v4` … `/compendium/rulebook-v14` |
-| V15 Master index | `/compendium/` |
-| V16 Sync | `/compendium/rulebook-v16` |
-
-**API (unchanged):** `GET /api/rulebooks/index` returns each entry’s `url_path` aligned with the table above.
-
-**Cross-rulebook routing** (shop, monthly themes, MN2, which volume owns which prose) is defined in `data/rulebook_v9_shop.json` under `cross_rulebook_routing` and summarized for humans in `docs/RULEBOOK_CANON.md`.
+Index version: **V15** · Last updated: 2026-02-27
 
 ---
 

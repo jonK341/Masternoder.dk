@@ -68,6 +68,43 @@ def _sum_ledger(entries: List[Dict[str, Any]], entry_type: str) -> float:
     return round(sum(float(e.get("amount", 0) or 0) for e in entries if e.get("type") == entry_type), 8)
 
 
+def _external_user_ids() -> frozenset[str]:
+    from backend.services.mn2_proof_of_reserves_service import external_liability_user_ids
+
+    return external_liability_user_ids()
+
+
+def _sum_ledger_external(entries: List[Dict[str, Any]], entry_type: str) -> float:
+    ext = _external_user_ids()
+    return round(
+        sum(
+            float(e.get("amount", 0) or 0)
+            for e in entries
+            if e.get("type") == entry_type and e.get("user_id") in ext
+        ),
+        8,
+    )
+
+
+def _external_live_staked() -> float:
+    from backend.services.mn2_proof_of_reserves_service import _sum_user_liabilities_split
+
+    return float(_sum_user_liabilities_split()["users"]["staked"])
+
+
+def _sum_reward_rows_external() -> float:
+    ext = _external_user_ids()
+    reward_rows = _read_jsonl("mn2_staking_rewards.jsonl")
+    return round(
+        sum(
+            float(r.get("reward_mn2", 0) or 0)
+            for r in reward_rows
+            if r.get("user_id") in ext
+        ),
+        8,
+    )
+
+
 def _check(name: str, expected: float, actual: float, hard: bool = True, note: str = "") -> Dict[str, Any]:
     drift = round(actual - expected, 8)
     return {
@@ -85,19 +122,37 @@ def reconcile() -> Dict[str, Any]:
     entries = _ledger_entries()
     checks: List[Dict[str, Any]] = []
 
-    # 1. Reward rows == staking_reward ledger
-    reward_rows = _read_jsonl("mn2_staking_rewards.jsonl")
-    rows_sum = round(sum(float(r.get("reward_mn2", 0) or 0) for r in reward_rows), 8)
-    ledger_reward = _sum_ledger(entries, "staking_reward")
-    checks.append(_check("rewards_rows_match_ledger", ledger_reward, rows_sum,
-                         note="Σ reward rows vs Σ staking_reward ledger entries"))
+    # 1. Reward rows == staking_reward ledger (external / customer users only — same basis as PoR)
+    rows_sum = _sum_reward_rows_external()
+    ledger_reward = _sum_ledger_external(entries, "staking_reward")
+    reserve = _read_json("mn2_staking_reserve.json", {})
+    lifetime_paid = float(reserve.get("lifetime_paid", 0) or 0) if isinstance(reserve, dict) else 0.0
+    checks.append(_check(
+        "rewards_rows_match_ledger",
+        ledger_reward,
+        rows_sum,
+        note="Σ external reward rows vs Σ external staking_reward ledger entries",
+    ))
+    checks.append(_check(
+        "rewards_rows_match_reserve_lifetime",
+        lifetime_paid,
+        rows_sum,
+        hard=False,
+        note="reserve.lifetime_paid vs external reward rows (informational)",
+    ))
 
-    # 2. Live staked == Σ stake − Σ unstake
-    stakes = _read_json("mn2_stakes.json", {})
-    live_staked = round(sum(float((r or {}).get("staked", 0) or 0) for r in stakes.values()), 8) if isinstance(stakes, dict) else 0.0
-    ledger_staked = round(_sum_ledger(entries, "stake") - _sum_ledger(entries, "unstake"), 8)
-    checks.append(_check("staked_matches_ledger", ledger_staked, live_staked,
-                         note="Σ live staked vs (Σ stake − Σ unstake) ledger"))
+    # 2. Live staked == Σ stake − Σ unstake (external users; points store is source of truth)
+    live_staked = round(_external_live_staked(), 8)
+    ledger_staked = round(
+        _sum_ledger_external(entries, "stake") - _sum_ledger_external(entries, "unstake"),
+        8,
+    )
+    checks.append(_check(
+        "staked_matches_ledger",
+        ledger_staked,
+        live_staked,
+        note="Σ external live staked (points) vs external (Σ stake − Σ unstake) ledger",
+    ))
 
     # 3. On-ramp: funded MN2 == onramp_purchase ledger; clawbacks match
     onramp_orders = _read_json("mn2_onramp_orders.json", {})
@@ -113,11 +168,18 @@ def reconcile() -> Dict[str, Any]:
     checks.append(_check("onramp_clawback_match_ledger", _sum_ledger(entries, "onramp_clawback"), clawed,
                          note="Σ on-ramp clawed-back MN2 vs onramp_clawback ledger"))
 
-    # 4. P2P escrow conservation
+    # 4. P2P escrow conservation (external sellers only)
     listings = _read_json("mn2_p2p_listings.json", {})
     if isinstance(listings, dict):
-        outstanding_escrow = round(sum(float(l.get("mn2_available", 0) or 0) + float(l.get("mn2_reserved", 0) or 0)
-                                       for l in listings.values() if l.get("status") in ("open", "sold_out")), 8)
+        outstanding_escrow = round(
+            sum(
+                float(l.get("mn2_available", 0) or 0) + float(l.get("mn2_reserved", 0) or 0)
+                for l in listings.values()
+                if l.get("status") in ("open", "sold_out")
+                and (l.get("seller_id") or l.get("user_id") or "") in _external_user_ids()
+            ),
+            8,
+        )
     else:
         outstanding_escrow = 0.0
     escrowed = _sum_ledger(entries, "p2p_sell_escrow")
@@ -128,8 +190,6 @@ def reconcile() -> Dict[str, Any]:
                          note="outstanding listing escrow vs (escrowed − returned − delivered to buyers)"))
 
     # 5. No-pay-over-yield (informational unless realized-yield mode with realized data)
-    reserve = _read_json("mn2_staking_reserve.json", {})
-    lifetime_paid = float(reserve.get("lifetime_paid", 0) or 0) if isinstance(reserve, dict) else 0.0
     lifetime_yield = float(reserve.get("lifetime_realized_yield", 0) or 0) if isinstance(reserve, dict) else 0.0
     try:
         from backend.services.mn2_staking_service import get_config
@@ -151,6 +211,7 @@ def reconcile() -> Dict[str, Any]:
     return {
         "success": True,
         "ok": len(hard_fail) == 0,
+        "basis": "external_users_exclude_paper_mn2",
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "tolerance": _TOLERANCE,
         "checks": checks,

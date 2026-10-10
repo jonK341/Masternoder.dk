@@ -232,6 +232,7 @@ def run_ai_tick(
     *,
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     force_execute: bool = False,
+    hot_symbols: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Full AI trading cycle: analyze → pick best → execute → book P&L."""
     cfg = load_ai_config()
@@ -239,8 +240,39 @@ def run_ai_tick(
         return {"success": False, "error": "ai_trading_disabled"}
 
     agent_id = str(cfg.get("agent_id") or "ai_market_trader")
-    analysis = analyze_market(injected=injected, probe_venues=False)
-    ranked = analysis.get("ranked_opportunities") or []
+    base_symbols = [str(s).upper() for s in (cfg.get("symbols") or [])]
+    symbols = base_symbols
+    if hot_symbols:
+        try:
+            from backend.services.exchange_profit_pair_search_service import resolve_agent_symbols
+
+            symbols = resolve_agent_symbols(base_symbols, hot_symbols=hot_symbols)
+        except Exception:
+            symbols = list(dict.fromkeys([*(hot_symbols or []), *base_symbols]))[:16]
+    analysis = analyze_market(injected=injected, symbols=symbols or None, probe_venues=False)
+    ranked = list(analysis.get("ranked_opportunities") or [])
+    if not ranked:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+            state = read_arb_threshold_state() or {}
+            best_bps = float(state.get("best_net_bps") or 0)
+            threshold = float(state.get("threshold_bps") or 0)
+            if state.get("ready") and best_bps >= threshold and state.get("top_symbol"):
+                ranked.append({
+                    "symbol": state.get("top_symbol"),
+                    "buy_venue": state.get("buy_venue"),
+                    "sell_venue": state.get("sell_venue"),
+                    "net_bps": best_bps,
+                    "est_profit_usd": float(state.get("est_profit_usd") or 0),
+                    "profitable": True,
+                    "actionable": True,
+                    "ai_score": 80,
+                    "sized_notional_usd": 75,
+                    "notional_usd": 75,
+                    "source": "arb_threshold_state",
+                })
+        except Exception:
+            pass
     min_score = float(cfg.get("min_ai_score") or 42)
     min_net = float(cfg.get("min_net_bps") or 14)
     hot_bps = float(cfg.get("hot_spread_bps") or os.environ.get("EXCHANGE_AI_HOT_BPS") or 20)
@@ -343,7 +375,7 @@ def run_ai_tick(
     acct["last_action"] = action
     arb.write_account(acct)
 
-    return {
+    out: Dict[str, Any] = {
         "success": True,
         "executed": action["executed"],
         "ticked_at": _iso(),
@@ -353,6 +385,9 @@ def run_ai_tick(
         "action": action,
         "account": acct,
     }
+    if hot_symbols:
+        out["hot_symbols"] = hot_symbols
+    return out
 
 
 def ai_trading_status() -> Dict[str, Any]:

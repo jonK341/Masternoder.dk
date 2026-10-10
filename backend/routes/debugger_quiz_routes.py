@@ -1,60 +1,127 @@
-"""Debugger quiz reward. Anonymous sessions are rejected; a passing score credits MN2."""
+"""Debugger Top-50 Q&A quiz — server-side MN2 rewards."""
+from __future__ import annotations
+
 from datetime import datetime, timezone
+from typing import Any, Dict, Optional, Tuple
 
 from flask import Blueprint, jsonify, request
 
 debugger_quiz_bp = Blueprint("debugger_quiz", __name__)
 
-_ANONYMOUS = {"", "default_user", "anonymous"}
-_PASS_RATIO = 0.8
-_MAX_MN2 = 0.01
+_MIN_CORRECT = 30
+_MAX_DAILY_MN2 = 0.05
+_REWARD_TIERS = (
+    (90, 0.05),
+    (70, 0.02),
+    (50, 0.01),
+)
+
+
+def _iso_day(day: Optional[str] = None) -> str:
+    if day and str(day).strip():
+        return str(day).strip()[:10]
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _tier_reward(pct: float) -> float:
+    for threshold, amt in _REWARD_TIERS:
+        if pct >= threshold:
+            return amt
+    return 0.0
+
+
+def _score_reward(correct: int, total: int) -> float:
+    total = max(int(total or 0), 1)
+    correct = max(0, min(int(correct or 0), total))
+    ratio = correct / total
+    if correct < _MIN_CORRECT or ratio < 0.6:
+        return 0.0
+    formula = round(min(_MAX_DAILY_MN2, 0.01 + ratio * 0.04), 8)
+    tier = _tier_reward(ratio * 100.0)
+    return round(min(_MAX_DAILY_MN2, max(formula, tier)), 8)
+
+
+def submit_quiz(
+    user_id: str,
+    *,
+    correct: int,
+    total: int,
+    day: Optional[str] = None,
+) -> Tuple[Dict[str, Any], int]:
+    from backend.services.mn2_earn_auth import require_earn_user
+
+    ok, uid_or_err = require_earn_user(user_id)
+    if not ok:
+        return {"success": False, "error": uid_or_err}, 403
+
+    user_id = uid_or_err
+    quiz_day = _iso_day(day)
+    total_n = max(int(total or 0), 1)
+    correct_n = max(0, min(int(correct or 0), total_n))
+    pct = round((correct_n / total_n) * 100.0, 1)
+    amount = _score_reward(correct_n, total_n)
+    if amount <= 0:
+        return {
+            "success": False,
+            "error": "score_too_low",
+            "correct": correct_n,
+            "total": total_n,
+            "score_percent": pct,
+        }, 400
+
+    reference = f"debugger_quiz:{user_id}:{quiz_day}"
+    from backend.services.game_mn2_rewards import credit_mn2
+
+    result = credit_mn2(
+        user_id,
+        amount,
+        source="debugger_quiz",
+        reference=reference,
+        metadata={"correct": correct_n, "total": total_n, "day": quiz_day, "pct": pct},
+    )
+    if result.get("duplicate"):
+        return {
+            "success": False,
+            "error": "already_rewarded_today",
+            "day": quiz_day,
+            "score_percent": pct,
+        }, 429
+    if not result.get("success"):
+        return result, 500
+
+    try:
+        from backend.services.admin_audit_service import log_action
+
+        log_action(
+            "debugger_quiz_submit",
+            actor=user_id,
+            payload={"correct": correct_n, "total": total_n, "mn2_awarded": amount, "day": quiz_day},
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "mn2_awarded": amount,
+        "amount_mn2": amount,
+        "reward_mn2": amount,
+        "correct": correct_n,
+        "total": total_n,
+        "score_percent": pct,
+        "day": quiz_day,
+    }, 200
 
 
 @debugger_quiz_bp.route("/api/debugger/quiz/submit", methods=["POST"])
-def submit_debugger_quiz():
+def quiz_submit():
     data = request.get_json(silent=True) or {}
-    user_id = (data.get("user_id") or "").strip()
-    if user_id in _ANONYMOUS:
-        return jsonify({"success": False, "error": "sign_in_required"}), 403
-    try:
-        correct = int(data.get("correct"))
-        total = int(data.get("total"))
-    except (TypeError, ValueError):
-        return jsonify({"success": False, "error": "invalid_score"}), 400
-    if total <= 0 or correct < 0 or correct > total:
-        return jsonify({"success": False, "error": "invalid_score"}), 400
-
-    ratio = correct / total
-    amount = round(_MAX_MN2 * ratio, 6) if ratio >= _PASS_RATIO else 0.0
-    day = (data.get("day") or datetime.now(timezone.utc).strftime("%Y-%m-%d")).strip()
-    awarded = 0.0
-    duplicate = False
-    if amount > 0:
-        from backend.services.unified_points_database import unified_points_db
-
-        result = unified_points_db.add_points(
-            user_id,
-            "mn2_balance",
-            amount,
-            "debugger_quiz",
-            {
-                "reference": f"debugger-quiz:{user_id}:{day}",
-                "correct": correct,
-                "total": total,
-            },
-        )
-        if not result.get("success"):
-            return jsonify({"success": False, "error": result.get("error") or "award_failed", "mn2_awarded": 0.0}), 200
-        duplicate = bool(result.get("duplicate"))
-        awarded = 0.0 if duplicate else amount
-
-    return jsonify({
-        "success": True,
-        "user_id": user_id,
-        "correct": correct,
-        "total": total,
-        "day": day,
-        "duplicate": duplicate,
-        "mn2_awarded": awarded,
-        "amount_mn2": awarded,
-    }), 200
+    total = int(data.get("total") or 50)
+    if total <= 0:
+        total = 50
+    body, status = submit_quiz(
+        str(data.get("user_id") or ""),
+        correct=int(data.get("correct") or 0),
+        total=total,
+        day=data.get("day"),
+    )
+    return jsonify(body), status

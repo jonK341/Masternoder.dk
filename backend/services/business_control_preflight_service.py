@@ -11,8 +11,22 @@ def _check(checks: List[Dict[str, Any]], cid: str, ok: bool, detail: str = "", *
     return bool(ok)
 
 
+_IN_PREFLIGHT = False
+
+
 def run_preflight(*, light_overview: bool = True) -> Dict[str, Any]:
     """Run local preflight checks. Does not mutate runtime state."""
+    global _IN_PREFLIGHT
+    if _IN_PREFLIGHT:
+        # pipeline_status asks for preflight while preflight is building the overview.
+        return {
+            "success": True,
+            "checks": [],
+            "check_count": 0,
+            "failed": [],
+            "skipped": "reentrant",
+        }
+    _IN_PREFLIGHT = True
     checks: List[Dict[str, Any]] = []
     all_ok = True
 
@@ -40,8 +54,8 @@ def run_preflight(*, light_overview: bool = True) -> Dict[str, Any]:
             f"{len(fleet_bots)} fleet bots (expected 23)",
         )
         all_ok &= _check(
-            checks, "fleet_mechanics", int(sf.get("mechanics_count") or 0) == 25,
-            "M01–M25 registry",
+            checks, "fleet_mechanics", int(sf.get("mechanics_count") or 0) == 27,
+            "M01–M27 registry",
         )
         health = sf.get("health") or {}
         all_ok &= _check(
@@ -63,6 +77,8 @@ def run_preflight(*, light_overview: bool = True) -> Dict[str, Any]:
     except Exception as exc:
         all_ok = False
         _check(checks, "preflight_exception", False, str(exc)[:240])
+    finally:
+        _IN_PREFLIGHT = False
 
     hard_fail = any(not c.get("ok") for c in checks if not c.get("optional"))
     return {

@@ -4,7 +4,7 @@
  */
 class ProgressionTriggersFrontend {
     constructor() {
-        this.userId = localStorage.getItem('game_user_id') || 'default_user';
+        this.userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         this.observers = [];
         this.triggers = new Map();
         

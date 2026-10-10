@@ -48,7 +48,12 @@ class UserIdentification:
         
         # Save identifier mapping
         self._save_identifier_mapping(new_user_id, identifiers)
-        
+        try:
+            from backend.services.mn2_onchain_wallet import ensure_user_address
+            ensure_user_address(new_user_id)
+        except Exception:
+            pass
+
         return {
             'success': True,
             'user_id': new_user_id,

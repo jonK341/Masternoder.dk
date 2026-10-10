@@ -1,0 +1,689 @@
+{% extends "base.html" %}
+
+{% block title %}MasterNoder - Documentary Generator Platform{% endblock %}
+{% block meta_description %}AI-powered documentary video generation, gallery, chat, and statistics dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}?v={{ cache_bust() }}">
+<style>
+    /* Home Page Styles */
+    .home-container {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .home-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        opacity: 0.1;
+        background: url('{{ url_for("static", filename="img/masternoder2_sword.gif") }}') center/cover no-repeat;
+    }
+    
+    .home-content {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        width: 100%;
+        text-align: center;
+    }
+    
+    .home-header {
+        margin-bottom: 4rem;
+    }
+    
+    .home-title {
+        font-size: 4rem;
+        font-weight: 700;
+        color: #00ff00;
+        text-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+        margin-bottom: 1rem;
+        animation: titleGlow 3s ease-in-out infinite;
+    }
+    
+    @keyframes titleGlow {
+        0%, 100% { text-shadow: 0 0 30px rgba(0, 255, 0, 0.8); }
+        50% { text-shadow: 0 0 50px rgba(0, 255, 150, 1), 0 0 70px rgba(0, 255, 0, 0.8); }
+    }
+    
+    .home-subtitle {
+        font-size: 1.5rem;
+        color: rgba(0, 255, 0, 0.8);
+        margin-bottom: 2rem;
+    }
+    
+    .modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+    
+    .module-card {
+        background: rgba(0, 20, 0, 0.9);
+        border: 2px solid rgba(0, 255, 0, 0.5);
+        border-radius: 20px;
+        padding: 2.5rem 2rem;
+        transition: all 0.4s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 255, 0, 0.2);
+    }
+    
+    .module-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(0, 255, 0, 0.1), transparent);
+        transform: rotate(45deg);
+        transition: all 0.6s;
+        opacity: 0;
+    }
+    
+    .module-card:hover::before {
+        animation: shimmer 1s ease-in-out;
+        opacity: 1;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+    
+    .module-card:hover {
+        transform: translateY(-10px) scale(1.05);
+        border-color: rgba(0, 255, 150, 1);
+        box-shadow: 0 20px 60px rgba(0, 255, 150, 0.4);
+        background: rgba(0, 30, 0, 0.95);
+    }
+    
+    .module-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        display: block;
+        animation: iconFloat 3s ease-in-out infinite;
+    }
+    
+    @keyframes iconFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .module-card:hover .module-icon {
+        animation: iconPulse 0.5s ease-in-out;
+    }
+    
+    @keyframes iconPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2) rotate(5deg); }
+    }
+    
+    .module-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #00ff88;
+        margin-bottom: 1rem;
+        text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+    }
+    
+    .module-description {
+        font-size: 1rem;
+        color: rgba(0, 255, 0, 0.7);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .module-features {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+        text-align: left;
+    }
+    
+    .module-features li {
+        padding: 0.5rem 0;
+        color: rgba(0, 255, 0, 0.6);
+        font-size: 0.9rem;
+    }
+    
+    .module-features li::before {
+        content: '▸ ';
+        color: #00ff88;
+        font-weight: bold;
+        margin-right: 0.5rem;
+    }
+    
+    .module-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        background: rgba(0, 255, 0, 0.2);
+        border: 1px solid rgba(0, 255, 0, 0.5);
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: #00ff88;
+        margin-top: 1rem;
+    }
+    
+    .home-footer {
+        margin-top: 4rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(0, 255, 0, 0.3);
+        color: rgba(0, 255, 0, 0.6);
+        font-size: 0.9rem;
+    }
+    
+    /* Navigation styles */
+    nav a:hover {
+        background: rgba(0, 255, 0, 0.1) !important;
+        color: #00ff00 !important;
+    }
+    
+    /* Footer styles */
+    footer a:hover {
+        color: #00ff00 !important;
+        text-decoration: underline;
+    }
+    
+    /* Interactive animations */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .module-card:active {
+        transform: translateY(-5px) scale(0.98) !important;
+    }
+    
+    @media (max-width: 768px) {
+        .home-title { font-size: 2.5rem; }
+        .home-subtitle { font-size: 1.2rem; }
+        .modules-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+        .module-card { padding: 2rem 1.5rem; }
+        nav ul { flex-direction: column; gap: 10px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<nav style="background: rgba(0, 20, 0, 0.95); padding: 15px 30px; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid rgba(0, 255, 0, 0.3);">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 1.5em; font-weight: bold; color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);">🎬 MasterNoder</div>
+        <ul style="display: flex; gap: 20px; list-style: none; margin: 0; padding: 0;">
+            <li><a href="/vidgenerator" style="color: rgba(0, 255, 0, 0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; transition: all 0.3s;">Home</a></li>
+            <li><a href="/vidgenerator/generator" style="color: rgba(0, 255, 0, 0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; transition: all 0.3s;">Generator</a></li>
+            <li><a href="/vidgenerator/gallery" style="color: rgba(0, 255, 0, 0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; transition: all 0.3s;">Gallery</a></li>
+            <li><a href="/vidgenerator/game" style="color: rgba(0, 255, 0, 0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; transition: all 0.3s;">Game</a></li>
+            <li><a href="/vidgenerator/war-plan" style="color: rgba(255, 68, 68, 0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; transition: all 0.3s;">⚔️ War Plan</a></li>
+            <li><a href="/vidgenerator/stats" style="color: rgba(0, 255, 0, 0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; transition: all 0.3s;">Stats</a></li>
+            <li><a href="/vidgenerator/debugger" style="color: rgba(0, 255, 0, 0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; transition: all 0.3s;">Debugger</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="home-container">
+    <div class="home-background"></div>
+    
+    <div class="home-content">
+        <div class="home-header">
+            <h1 class="home-title">🎬 MasterNoder</h1>
+            <p class="home-subtitle">AI-Powered Documentary Generator Platform</p>
+            
+            <!-- Dynamic Stats Banner -->
+            <div id="dynamic-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin: 30px auto; max-width: 800px;">
+                <div style="background: rgba(0, 255, 0, 0.1); border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 10px; padding: 15px; text-align: center;">
+                    <div style="font-size: 2em; color: #00ff00; font-weight: bold;" id="stat-videos">-</div>
+                    <div style="color: rgba(0, 255, 0, 0.7); font-size: 0.9em;">Videos</div>
+                </div>
+                <div style="background: rgba(0, 255, 0, 0.1); border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 10px; padding: 15px; text-align: center;">
+                    <div style="font-size: 2em; color: #00ff00; font-weight: bold;" id="stat-users">-</div>
+                    <div style="color: rgba(0, 255, 0, 0.7); font-size: 0.9em;">Users</div>
+                </div>
+                <div style="background: rgba(0, 255, 0, 0.1); border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 10px; padding: 15px; text-align: center;">
+                    <div style="font-size: 2em; color: #00ff00; font-weight: bold;" id="stat-success">-</div>
+                    <div style="color: rgba(0, 255, 0, 0.7); font-size: 0.9em;">Success</div>
+                </div>
+                <div style="background: rgba(0, 255, 0, 0.1); border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 10px; padding: 15px; text-align: center;">
+                    <div style="font-size: 2em; color: #00ff00; font-weight: bold;">12</div>
+                    <div style="color: rgba(0, 255, 0, 0.7); font-size: 0.9em;">Themes</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modules-grid">
+            <!-- Generator Module -->
+            <a href="/vidgenerator/generator" class="module-card">
+                <span class="module-icon">🎥</span>
+                <h2 class="module-title">Video Generator</h2>
+                <p class="module-description">
+                    Create stunning AI-powered documentary videos from text prompts. 
+                    Transform your ideas into professional videos in minutes.
+                </p>
+                <ul class="module-features">
+                    <li>AI script generation</li>
+                    <li>Automatic video creation</li>
+                    <li>Multi-AI video generation</li>
+                    <li>Real-time progress tracking</li>
+                </ul>
+                <span class="module-badge">⚡ Active</span>
+            </a>
+            
+            <!-- Gallery Module -->
+            <a href="/vidgenerator/gallery" class="module-card">
+                <span class="module-icon">🖼️</span>
+                <h2 class="module-title">Gallery</h2>
+                <p class="module-description">
+                    Browse and watch all generated documentaries. 
+                    Search, filter, and discover amazing AI-generated content.
+                </p>
+                <ul class="module-features">
+                    <li>Browse all videos</li>
+                    <li>Search & filter</li>
+                    <li>Embed codes</li>
+                    <li>Share videos</li>
+                </ul>
+                <span class="module-badge">📚 Library</span>
+            </a>
+            
+            <!-- Chat Module -->
+            <a href="/vidgenerator/chat" class="module-card">
+                <span class="module-icon">💬</span>
+                <h2 class="module-title">Chat Room</h2>
+                <p class="module-description">
+                    Real-time chat with fancy graphics and animations. 
+                    Connect with other users and share ideas.
+                </p>
+                <ul class="module-features">
+                    <li>Real-time messaging</li>
+                    <li>Fancy animations</li>
+                    <li>User presence</li>
+                    <li>Channels & rooms</li>
+                </ul>
+                <span class="module-badge">🔮 New</span>
+            </a>
+            
+            <!-- Stats Module -->
+            <a href="/vidgenerator/stats" class="module-card">
+                <span class="module-icon">📊</span>
+                <h2 class="module-title">Statistics</h2>
+                <p class="module-description">
+                    Comprehensive statistics dashboard. 
+                    Track generation metrics, resource usage, and system performance.
+                </p>
+                <ul class="module-features">
+                    <li>Generation metrics</li>
+                    <li>Resource usage</li>
+                    <li>Performance stats</li>
+                    <li>Quality metrics</li>
+                </ul>
+                <span class="module-badge">📈 Analytics</span>
+            </a>
+            
+            <!-- Monitor & Scanner Module -->
+            <a href="/vidgenerator/monitor-scanner" class="module-card">
+                <span class="module-icon">🖥️</span>
+                <h2 class="module-title">Monitor & Scanner</h2>
+                <p class="module-description">
+                    Real-time generation monitoring and system scanning. 
+                    Track active generations, service worker stats, and system health.
+                </p>
+                <ul class="module-features">
+                    <li>Real-time monitoring</li>
+                    <li>System scanning</li>
+                    <li>Service worker stats</li>
+                    <li>User statistics</li>
+                </ul>
+                <span class="module-badge">🔍 Live</span>
+            </a>
+            
+            <!-- Game Module -->
+            <a href="/vidgenerator/game" class="module-card">
+                <span class="module-icon">🎮</span>
+                <h2 class="module-title">Hunters Game</h2>
+                <p class="module-description">
+                    Theme-based XP hunting game. Earn experience points, level up, 
+                    and compete on the leaderboard with 12 different themes.
+                </p>
+                <ul class="module-features">
+                    <li>12 theme multipliers</li>
+                    <li>XP & leveling system</li>
+                    <li>Leaderboard competition</li>
+                    <li>Real-time stats</li>
+                </ul>
+                <span class="module-badge">🎯 New</span>
+            </a>
+            
+            <!-- Debugger Module -->
+            <a href="/vidgenerator/debugger" class="module-card">
+                <span class="module-icon">🔧</span>
+                <h2 class="module-title">System Debugger</h2>
+                <p class="module-description">
+                    Comprehensive debugging and auto-fix tools. 
+                    Fix organizational structures, permissions, database, and errors automatically.
+                </p>
+                <ul class="module-features">
+                    <li>Auto-fix system</li>
+                    <li>Comprehensive logging</li>
+                    <li>System analysis</li>
+                    <li>Error tracking</li>
+                    <li>🛡️ Download Fixer Tools (Resistant Links)</li>
+                </ul>
+                <span class="module-badge">🛠️ Tools</span>
+            </a>
+            
+            <!-- Fixer Tools Download Module -->
+            <a href="/vidgenerator/debugger#download" class="module-card" style="border-color: rgba(255, 215, 0, 0.7);">
+                <span class="module-icon">🛡️</span>
+                <h2 class="module-title">Fixer Tools Download</h2>
+                <p class="module-description">
+                    Download standalone fixer tools with resistant download links. 
+                    Multiple paths ensure downloads work even if some links are blocked.
+                </p>
+                <ul class="module-features">
+                    <li>🛡️ Resistant download links</li>
+                    <li>Multiple download paths</li>
+                    <li>Python, Bash, PowerShell, Batch</li>
+                    <li>Complete package available</li>
+                    <li>Works offline after download</li>
+                </ul>
+                <span class="module-badge" style="background: rgba(255, 215, 0, 0.3); color: #ffd700;">🛡️ Immune</span>
+            </a>
+            
+            <!-- Enemy War Plan Module -->
+            <a href="/vidgenerator/war-plan" class="module-card" style="border-color: rgba(255, 0, 0, 0.7);">
+                <span class="module-icon">⚔️</span>
+                <h2 class="module-title">Enemy War Plan</h2>
+                <p class="module-description">
+                    Strategic defense system against enemy attacks. 
+                    Generate enemy war plans, execute defenses, and earn XP by defeating threats.
+                </p>
+                <ul class="module-features">
+                    <li>Generate enemy plans</li>
+                    <li>Execute defense tactics</li>
+                    <li>Earn XP rewards</li>
+                    <li>Intelligence gathering</li>
+                    <li>Integrated with Hunters Game</li>
+                </ul>
+                <span class="module-badge" style="background: rgba(255, 0, 0, 0.3); color: #ff4444;">⚔️ Battle</span>
+            </a>
+        </div>
+        
+        <div class="home-footer">
+            <p>MasterNoder Platform v4.0 | AI-Powered Video Generation</p>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer style="background: rgba(0, 20, 0, 0.95); padding: 40px 20px; border-top: 2px solid rgba(0, 255, 0, 0.3); margin-top: 60px;">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; margin-bottom: 30px;">
+            <div>
+                <h3 style="color: #00ff00; margin-bottom: 15px; font-size: 1.2em;">Navigation</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin: 8px 0;"><a href="/vidgenerator" style="color: rgba(0, 255, 0, 0.7); text-decoration: none;">Home</a></li>
+                    <li style="margin: 8px 0;"><a href="/vidgenerator/generator" style="color: rgba(0, 255, 0, 0.7); text-decoration: none;">Generator</a></li>
+                    <li style="margin: 8px 0;"><a href="/vidgenerator/gallery" style="color: rgba(0, 255, 0, 0.7); text-decoration: none;">Gallery</a></li>
+                    <li style="margin: 8px 0;"><a href="/vidgenerator/game" style="color: rgba(0, 255, 0, 0.7); text-decoration: none;">Game</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="color: #00ff00; margin-bottom: 15px; font-size: 1.2em;">Tools</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin: 8px 0;"><a href="/vidgenerator/stats" style="color: rgba(0, 255, 0, 0.7); text-decoration: none;">Statistics</a></li>
+                    <li style="margin: 8px 0;"><a href="/vidgenerator/debugger" style="color: rgba(0, 255, 0, 0.7); text-decoration: none;">Debugger</a></li>
+                    <li style="margin: 8px 0;"><a href="/vidgenerator/debugger#download" style="color: rgba(255, 215, 0, 0.8); text-decoration: none;">🛡️ Download Fixer Tools</a></li>
+                    <li style="margin: 8px 0;"><a href="/vidgenerator/war-plan" style="color: rgba(255, 68, 68, 0.8); text-decoration: none;">⚔️ Enemy War Plan</a></li>
+                    <li style="margin: 8px 0;"><a href="/vidgenerator/debug-report" style="color: rgba(0, 255, 0, 0.7); text-decoration: none;">Debug Report</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="color: #00ff00; margin-bottom: 15px; font-size: 1.2em;">About</h3>
+                <p style="color: rgba(0, 255, 0, 0.7); line-height: 1.6; font-size: 0.9em;">
+                    AI-powered video generation platform. Create stunning documentaries and videos with artificial intelligence.
+                </p>
+            </div>
+        </div>
+        <div style="text-align: center; padding-top: 20px; border-top: 1px solid rgba(0, 255, 0, 0.2); color: rgba(0, 255, 0, 0.6);">
+            <p>&copy; 2024 Masternoder.dk - AI Video Generator Platform | All Rights Reserved</p>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add smooth entrance animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.module-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 150);
+        });
+        
+        // Add hover effects to navigation
+        const navLinks = document.querySelectorAll('nav a');
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.background = 'rgba(0, 255, 0, 0.1)';
+                this.style.color = '#00ff00';
+            });
+            link.addEventListener('mouseleave', function() {
+                this.style.background = 'transparent';
+                this.style.color = 'rgba(0, 255, 0, 0.8)';
+            });
+        });
+        
+        // Load dynamic stats
+        loadDynamicStats();
+        
+        // Add interactive card animations
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-15px) scale(1.05)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    });
+    
+    // Load dynamic statistics
+    async function loadDynamicStats() {
+        try {
+            const response = await fetch('/vidgenerator/api/stats/summary');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.stats) {
+                    // Animate numbers
+                    animateNumber('stat-videos', data.stats.total_videos || 0);
+                    animateNumber('stat-users', data.stats.total_users || 0);
+                    animateNumber('stat-success', (data.stats.success_rate || 0) + '%');
+                } else {
+                    // Set defaults
+                    document.getElementById('stat-videos').textContent = '0';
+                    document.getElementById('stat-users').textContent = '0';
+                    document.getElementById('stat-success').textContent = '95%';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error);
+            // Set defaults on error
+            document.getElementById('stat-videos').textContent = '0';
+            document.getElementById('stat-users').textContent = '0';
+            document.getElementById('stat-success').textContent = '95%';
+        }
+    }
+    
+    // Animate number counting
+    function animateNumber(elementId, targetValue) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        const isPercentage = typeof targetValue === 'string' && targetValue.includes('%');
+        const target = isPercentage ? parseInt(targetValue) : targetValue;
+        const duration = 1000;
+        const steps = 30;
+        const increment = target / steps;
+        let current = 0;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = isPercentage ? target + '%' : Math.round(target);
+                clearInterval(timer);
+            } else {
+                element.textContent = isPercentage ? Math.round(current) + '%' : Math.round(current);
+            }
+        }, duration / steps);
+    }
+    
+    // Refresh stats every 30 seconds
+    setInterval(loadDynamicStats, 30000);
+    
+    // Add gamification - random confetti on card click
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.module-card')) {
+            createConfetti(e.target.closest('.module-card'));
+        }
+    });
+    
+    function createConfetti(element) {
+        const colors = ['#00ff00', '#00ff88', '#00ffaa', '#88ff00'];
+        for (let i = 0; i < 10; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.position = 'absolute';
+            confetti.style.width = '8px';
+            confetti.style.height = '8px';
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.borderRadius = '50%';
+            confetti.style.left = element.offsetLeft + element.offsetWidth / 2 + 'px';
+            confetti.style.top = element.offsetTop + element.offsetHeight / 2 + 'px';
+            confetti.style.pointerEvents = 'none';
+            confetti.style.zIndex = '10000';
+            confetti.style.transition = 'all 1s ease-out';
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => {
+                confetti.style.transform = `translate(${(Math.random() - 0.5) * 200}px, ${(Math.random() - 0.5) * 200}px)`;
+                confetti.style.opacity = '0';
+            }, 10);
+            
+            setTimeout(() => confetti.remove(), 1000);
+        }
+    }
+    
+    // Connect all modules together
+    function connectAllModules() {
+        // Track module clicks for analytics
+        document.querySelectorAll('.module-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href) {
+                    // Track navigation
+                    trackNavigation(href);
+                    
+                    // Update user activity
+                    updateUserActivity(href);
+                }
+            });
+        });
+        
+        // Connect stats updates (already done above)
+        // Connect XP display
+        loadXPDisplay();
+    }
+    
+    async function trackNavigation(path) {
+        try {
+            await fetch('/vidgenerator/api/user/time-tracking', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    activity_type: getActivityTypeFromPath(path),
+                    duration: 0
+                })
+            });
+        } catch (error) {
+            console.error('Error tracking navigation:', error);
+        }
+    }
+    
+    function getActivityTypeFromPath(path) {
+        if (path.includes('generator')) return 'generating';
+        if (path.includes('gallery')) return 'watching';
+        if (path.includes('chat')) return 'chat';
+        if (path.includes('stats')) return 'stats';
+        return 'browsing';
+    }
+    
+    async function updateUserActivity(path) {
+        try {
+            // Update last active time
+            await fetch('/vidgenerator/api/user/profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    last_active: new Date().toISOString()
+                })
+            });
+        } catch (error) {
+            console.error('Error updating activity:', error);
+        }
+    }
+    
+    async function loadXPDisplay() {
+        try {
+            const response = await fetch('/vidgenerator/api/stats/profile');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Add XP to stats banner if not already there
+                    const statsBanner = document.getElementById('dynamic-stats');
+                    if (statsBanner && !document.getElementById('stat-xp')) {
+                        const xpStat = document.createElement('div');
+                        xpStat.id = 'stat-xp';
+                        xpStat.style.cssText = 'background: rgba(0, 255, 0, 0.1); border: 1px solid rgba(0, 255, 0, 0.3); border-radius: 10px; padding: 15px; text-align: center;';
+                        xpStat.innerHTML = `
+                            <div style="font-size: 2em; color: #00ff00; font-weight: bold;" id="xp-value">${data.xp || 0}</div>
+                            <div style="color: rgba(0, 255, 0, 0.7); font-size: 0.9em;">XP</div>
+                            <div style="color: rgba(0, 255, 0, 0.5); font-size: 0.8em;">Level ${data.level || 1}</div>
+                        `;
+                        statsBanner.appendChild(xpStat);
+                    } else if (document.getElementById('xp-value')) {
+                        document.getElementById('xp-value').textContent = data.xp || 0;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading XP:', error);
+        }
+    }
+    
+    // Initialize connections
+    connectAllModules();
+</script>
+{% endblock %}
+

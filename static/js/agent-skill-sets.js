@@ -308,7 +308,7 @@ class AgentSkillSets {
     async getAgentSkillSummary(userId) {
         try {
             // Get all points for user
-            const response = await fetch(`${this.baseUrl}/api/points/all?user_id=${userId}`);
+            const response = await fetch(`${this.baseUrl}/api/points/all?user_id=${encodeURIComponent(userId)}`);
             const data = await response.json();
             const points = data.points || {};
 

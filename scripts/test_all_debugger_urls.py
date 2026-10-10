@@ -18,63 +18,56 @@ if sys.platform == 'win32':
 
 BASE_URL = "https://masternoder.dk"
 
-# Some debugger endpoints do heavy work (full route/blueprint scans, diagnostics)
-# and uWSGI workers pay a one-time import cost on first hit, so use a generous
-# timeout and retry once on timeout before declaring a problem.
-REQUEST_TIMEOUT = 20
-MAX_ATTEMPTS = 2
-
 # Test endpoints
-# Production serves API at https://masternoder.dk/api/ — /vidgenerator/api returns 410 (disabled).
 ENDPOINTS = [
     # Debug endpoints
-    {'url': '/api/debug/all-systems', 'method': 'GET', 'name': 'Debug All Systems'},
-    {'url': '/api/debug/all-routes', 'method': 'GET', 'name': 'Debug All Routes'},
-    {'url': '/api/debug/check-duplicates', 'method': 'GET', 'name': 'Check Duplicates'},
-    {'url': '/api/debug/report', 'method': 'GET', 'name': 'Generate Report'},
+    {'url': '/vidgenerator/api/debug/all-systems', 'method': 'GET', 'name': 'Debug All Systems'},
+    {'url': '/vidgenerator/api/debug/all-routes', 'method': 'GET', 'name': 'Debug All Routes'},
+    {'url': '/vidgenerator/api/debug/check-duplicates', 'method': 'GET', 'name': 'Check Duplicates'},
+    {'url': '/vidgenerator/api/debug/report', 'method': 'GET', 'name': 'Generate Report'},
     
     # Scanner endpoints
-    {'url': '/api/debugger/scanner/scan', 'method': 'GET', 'name': 'Scanner Scan All'},
-    {'url': '/api/debugger/scanner/blueprints', 'method': 'GET', 'name': 'Scanner Blueprints'},
-    {'url': '/api/debugger/scanner/routes', 'method': 'GET', 'name': 'Scanner Routes'},
-    {'url': '/api/debugger/scanner/missing', 'method': 'GET', 'name': 'Scanner Missing'},
-    {'url': '/api/debugger/scanner/suggestions', 'method': 'GET', 'name': 'Scanner Suggestions'},
-    {'url': '/api/debugger/scanner/registration-code', 'method': 'GET', 'name': 'Scanner Registration Code'},
-    {'url': '/api/debugger/scanner/services', 'method': 'GET', 'name': 'Scanner Services'},
+    {'url': '/vidgenerator/api/debugger/scanner/scan', 'method': 'GET', 'name': 'Scanner Scan All'},
+    {'url': '/vidgenerator/api/debugger/scanner/blueprints', 'method': 'GET', 'name': 'Scanner Blueprints'},
+    {'url': '/vidgenerator/api/debugger/scanner/routes', 'method': 'GET', 'name': 'Scanner Routes'},
+    {'url': '/vidgenerator/api/debugger/scanner/missing', 'method': 'GET', 'name': 'Scanner Missing'},
+    {'url': '/vidgenerator/api/debugger/scanner/suggestions', 'method': 'GET', 'name': 'Scanner Suggestions'},
+    {'url': '/vidgenerator/api/debugger/scanner/registration-code', 'method': 'GET', 'name': 'Scanner Registration Code'},
+    {'url': '/vidgenerator/api/debugger/scanner/services', 'method': 'GET', 'name': 'Scanner Services'},
     
     # Agent fix endpoints
-    {'url': '/api/debugger/agent/fix-personality', 'method': 'POST', 'name': 'Fix Personality'},
-    {'url': '/api/debugger/agent/fix-missions', 'method': 'POST', 'name': 'Fix Missions'},
-    {'url': '/api/debugger/agent/fix-quests', 'method': 'POST', 'name': 'Fix Quests'},
-    {'url': '/api/debugger/agent/fix-history', 'method': 'POST', 'name': 'Fix History'},
-    {'url': '/api/debugger/agent/fix-behavior', 'method': 'POST', 'name': 'Fix Behavior'},
-    {'url': '/api/debugger/agent/fix-all', 'method': 'POST', 'name': 'Fix All'},
+    {'url': '/vidgenerator/api/debugger/agent/fix-personality', 'method': 'POST', 'name': 'Fix Personality'},
+    {'url': '/vidgenerator/api/debugger/agent/fix-missions', 'method': 'POST', 'name': 'Fix Missions'},
+    {'url': '/vidgenerator/api/debugger/agent/fix-quests', 'method': 'POST', 'name': 'Fix Quests'},
+    {'url': '/vidgenerator/api/debugger/agent/fix-history', 'method': 'POST', 'name': 'Fix History'},
+    {'url': '/vidgenerator/api/debugger/agent/fix-behavior', 'method': 'POST', 'name': 'Fix Behavior'},
+    {'url': '/vidgenerator/api/debugger/agent/fix-all', 'method': 'POST', 'name': 'Fix All'},
     
     # Agent get endpoints
-    {'url': '/api/agent/master-fix/personality', 'method': 'GET', 'name': 'Get Personality'},
-    {'url': '/api/agent/master-fix/missions', 'method': 'GET', 'name': 'Get Missions'},
-    {'url': '/api/agent/master-fix/quests', 'method': 'GET', 'name': 'Get Quests'},
-    {'url': '/api/agent/master-fix/history', 'method': 'GET', 'name': 'Get History'},
-    {'url': '/api/agent/master-fix/statistics', 'method': 'GET', 'name': 'Get Statistics'},
-    {'url': '/api/agent/master-fix/behavior-pattern', 'method': 'GET', 'name': 'Get Behavior'},
-    {'url': '/api/agent/master-fix/run-full-diagnostic', 'method': 'POST', 'name': 'Run Diagnostic'},
-    {'url': '/api/agent/master-fix/diagnostic', 'method': 'POST', 'name': 'Diagnostic'},
+    {'url': '/vidgenerator/api/agent/master-fix/personality', 'method': 'GET', 'name': 'Get Personality'},
+    {'url': '/vidgenerator/api/agent/master-fix/missions', 'method': 'GET', 'name': 'Get Missions'},
+    {'url': '/vidgenerator/api/agent/master-fix/quests', 'method': 'GET', 'name': 'Get Quests'},
+    {'url': '/vidgenerator/api/agent/master-fix/history', 'method': 'GET', 'name': 'Get History'},
+    {'url': '/vidgenerator/api/agent/master-fix/statistics', 'method': 'GET', 'name': 'Get Statistics'},
+    {'url': '/vidgenerator/api/agent/master-fix/behavior-pattern', 'method': 'GET', 'name': 'Get Behavior'},
+    {'url': '/vidgenerator/api/agent/master-fix/run-full-diagnostic', 'method': 'POST', 'name': 'Run Diagnostic'},
+    {'url': '/vidgenerator/api/agent/master-fix/diagnostic', 'method': 'POST', 'name': 'Diagnostic'},
     
     # Profile endpoints
-    {'url': '/api/debugger/profile/points?user_id=default_user', 'method': 'GET', 'name': 'Profile Points'},
-    {'url': '/api/debugger/profile/stats?user_id=default_user', 'method': 'GET', 'name': 'Profile Stats'},
-    {'url': '/api/debugger/profile/agent-points?agent_id=agent_manager', 'method': 'GET', 'name': 'Agent Points'},
+    {'url': '/vidgenerator/api/debugger/profile/points?user_id=default_user', 'method': 'GET', 'name': 'Profile Points'},
+    {'url': '/vidgenerator/api/debugger/profile/stats?user_id=default_user', 'method': 'GET', 'name': 'Profile Stats'},
+    {'url': '/vidgenerator/api/debugger/profile/agent-points?agent_id=agent_manager', 'method': 'GET', 'name': 'Agent Points'},
     
     # Task endpoints
-    {'url': '/api/debugger/tasks/list', 'method': 'GET', 'name': 'List Tasks'},
-    {'url': '/api/debugger/tasks/stats', 'method': 'GET', 'name': 'Task Stats'},
-    {'url': '/api/errors/tasks/list', 'method': 'GET', 'name': 'Error Tasks List'},
-    {'url': '/api/errors/tasks/stats', 'method': 'GET', 'name': 'Error Tasks Stats'},
+    {'url': '/vidgenerator/api/debugger/tasks/list', 'method': 'GET', 'name': 'List Tasks'},
+    {'url': '/vidgenerator/api/debugger/tasks/stats', 'method': 'GET', 'name': 'Task Stats'},
+    {'url': '/vidgenerator/api/errors/tasks/list', 'method': 'GET', 'name': 'Error Tasks List'},
+    {'url': '/vidgenerator/api/errors/tasks/stats', 'method': 'GET', 'name': 'Error Tasks Stats'},
     
     # Error endpoints
-    {'url': '/api/errors/stats?days=7', 'method': 'GET', 'name': 'Error Stats'},
-    {'url': '/api/errors/list?limit=10', 'method': 'GET', 'name': 'Error List'},
-    {'url': '/api/errors/handler-status/analyze', 'method': 'GET', 'name': 'Error Handler Status'},
+    {'url': '/vidgenerator/api/errors/stats?days=7', 'method': 'GET', 'name': 'Error Stats'},
+    {'url': '/vidgenerator/api/errors/list?limit=10', 'method': 'GET', 'name': 'Error List'},
+    {'url': '/vidgenerator/api/errors/handler-status', 'method': 'GET', 'name': 'Error Handler Status'},
 ]
 
 
@@ -95,26 +88,16 @@ def test_endpoint(endpoint: Dict) -> Dict:
         'error': None
     }
     
-    if method not in ('GET', 'POST'):
-        result['error'] = f'Unsupported method: {method}'
-        return result
-
     try:
         start_time = datetime.now()
-
-        response = None
-        last_timeout = None
-        for attempt in range(1, MAX_ATTEMPTS + 1):
-            try:
-                if method == 'GET':
-                    response = requests.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
-                else:
-                    response = requests.post(url, json={}, timeout=REQUEST_TIMEOUT, allow_redirects=True)
-                break
-            except requests.exceptions.Timeout as te:
-                last_timeout = te
-                if attempt >= MAX_ATTEMPTS:
-                    raise
+        
+        if method == 'GET':
+            response = requests.get(url, timeout=5, allow_redirects=True)
+        elif method == 'POST':
+            response = requests.post(url, json={}, timeout=5, allow_redirects=True)
+        else:
+            result['error'] = f'Unsupported method: {method}'
+            return result
         
         end_time = datetime.now()
         result['response_time'] = (end_time - start_time).total_seconds()

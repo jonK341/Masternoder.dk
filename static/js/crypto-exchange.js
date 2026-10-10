@@ -10,8 +10,8 @@
   var termsVersion = '2026-06-v1';
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); } return 'default_user'; }
+    try { return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''); }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); } return (window.MnUserId ? window.MnUserId.read() : ''); }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -79,6 +79,9 @@
   }
 
   function renderWallet(w) {
+    if (window.CexAccountBridge && window.CexAccountBridge.onExchangeWallet) {
+      window.CexAccountBridge.onExchangeWallet(w);
+    }
     var el = q('cex-wallet-balances');
     if (!el || !w || !w.success) return;
     var assets = w.assets || {};
@@ -298,11 +301,25 @@
     }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); } msg('Could not load exchange data.'); });
   }
 
+  function loadMn2Packs() {
+    function withPacks(data) {
+      var packs = (data && (data.packs || data.mn2_packs)) || [];
+      return Object.assign({}, data || {}, { packs: packs });
+    }
+    return getJson('/api/exchange/paypal/mn2-packs').then(function (data) {
+      if (data && (data.packs || data.mn2_packs)) return withPacks(data);
+      return getJson('/api/shop/mn2-packs').then(withPacks);
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); }
+      return getJson('/api/shop/mn2-packs').then(withPacks).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); }
+        return { packs: [] };
+      });
+    });
+  }
+
   function refreshTradeExtras() {
-    var u = encodeURIComponent(uid());
     return Promise.all([
-      getJson('/api/exchange/orders?limit=20'),
-      getJson('/api/exchange/paypal/mn2-packs'),
+      getJson('/api/exchange/orders?limit=20').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); } return { orders: [] }; }),
+      loadMn2Packs(),
     ]).then(function (res) {
       renderOrders(res[0]);
       renderPayPalMn2Packs(res[1]);

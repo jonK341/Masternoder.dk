@@ -314,7 +314,8 @@ class IntelligentPointMiddlewareFrontend {
      */
     async syncWithBackend(userId) {
         try {
-            const response = await fetch(`${this.baseUrl}/api/points/sync-all?user_id=${userId}`);
+            if (!userId) return;
+            const response = await fetch(`${this.baseUrl}/api/points/sync-all?user_id=${encodeURIComponent(userId)}`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const data = await response.json();

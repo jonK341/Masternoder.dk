@@ -31,7 +31,7 @@ class UserIdentification {
         const storedUserId = localStorage.getItem('game_user_id') || 
                             localStorage.getItem('user_id');
         
-        if (storedUserId && storedUserId !== 'default_user') {
+        if (this._isUsableUserId(storedUserId)) {
             // Verify user exists
             try {
                 const verifyResponse = await fetch(`${this.apiBase}/user/profile/${storedUserId}/display`);
@@ -75,12 +75,12 @@ class UserIdentification {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.success && data.user_id) {
-                    this.userId = data.user_id;
+                if (data.success && this._isUsableUserId(data.user_id)) {
+                    this.userId = String(data.user_id).trim();
                     
                     // Store in localStorage
-                    localStorage.setItem('game_user_id', data.user_id);
-                    localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('game_user_id', this.userId);
+                    localStorage.setItem('user_id', this.userId);
                     
                     // Store identification timestamp
                     localStorage.setItem('user_identified_at', new Date().toISOString());
@@ -89,13 +89,22 @@ class UserIdentification {
                 }
             }
         } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'user-identification.js', context: 'catch' }); }
-            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'user-identification.js', context: 'console.error' }); }
-            console.error('Error identifying user:', error);
+            console.warn('Error identifying user:', error);
         }
 
-        // Fallback to default_user only if identification completely fails
-        this.userId = 'default_user';
-        return 'default_user';
+        this.userId = null;
+        return null;
+    }
+
+    _isUsableUserId(id) {
+        if (window.MnUserId && typeof window.MnUserId.isUsable === 'function') {
+            return window.MnUserId.isUsable(id);
+        }
+        if (typeof id !== 'string') return false;
+        const value = id.trim();
+        if (!value || value === '[object Promise]') return false;
+        const lowered = value.toLowerCase();
+        return lowered !== 'default_user' && lowered !== 'undefined' && lowered !== 'null';
     }
 
     /**
@@ -110,8 +119,8 @@ class UserIdentification {
         const stored = localStorage.getItem('game_user_id') || 
                       localStorage.getItem('user_id');
         
-        if (stored && stored !== 'default_user') {
-            return stored;
+        if (this._isUsableUserId(stored)) {
+            return stored.trim();
         }
         
         return null;
@@ -121,12 +130,12 @@ class UserIdentification {
      * Get current user ID (async - ensures identification)
      */
     async getUserId() {
-        if (this.userId) {
-            return this.userId;
+        if (this._isUsableUserId(this.userId)) {
+            return this.userId.trim();
         }
 
         await this.initialize();
-        return this.userId;
+        return this._isUsableUserId(this.userId) ? this.userId.trim() : null;
     }
 
     /**

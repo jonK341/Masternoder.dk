@@ -9,7 +9,7 @@
         if (explicit) return explicit;
         return global.localStorage.getItem('game_user_id')
             || global.localStorage.getItem('user_id')
-            || 'default_user';
+            || (window.MnUserId ? window.MnUserId.read() : '');
     }
 
     function esc(text) {

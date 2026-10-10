@@ -113,6 +113,12 @@
                 </div>
             </div>
         </section>
+        <details class="game-mn2-hub-fold" id="game-mn2-hub-fold" style="max-width:1200px;margin:0 auto 20px;padding:0 8px;">
+            <summary style="cursor:pointer;font-weight:700;color:#00d4ff;padding:12px 16px;border-radius:12px;border:1px solid rgba(0,212,255,0.35);background:rgba(0,0,0,0.35);list-style:none;">
+                <span class="champion-eyebrow" style="display:inline;margin-right:8px;">MN2 &amp; season</span>
+                Crypto Relay claims &amp; season loop (tap to expand)
+            </summary>
+            <div style="padding-top:12px;">
         <section class="season-loop-panel" aria-labelledby="season-loop-title">
             <div>
                 <span class="champion-eyebrow">Competitive loop</span>
@@ -152,7 +158,10 @@
                 <summary>Recent MN2 claims</summary>
                 <div id="crypto-claim-history-list">No claims loaded yet.</div>
             </details>
+            <p style="margin:12px 0 0;font-size:0.85rem;"><a href="/shop" style="color:var(--primary);">Shop checkout</a> · <a href="/profile#mn2-wallet" style="color:#00d4ff;">Wallet deposit</a></p>
         </section>
+            </div>
+        </details>
         <div style="max-width:1200px;margin:0 auto 16px;padding:0 8px;" id="game-cooldown-wrap" aria-label="Action cooldown">
             <div
                 id="game-cooldown-timer"
@@ -210,6 +219,10 @@
             </aside>
 
             <main class="hunter-game-main">
+                <section class="game-hub-tabs-intro" aria-label="Game sections" style="margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(0,255,136,0.22);background:rgba(0,0,0,0.35);">
+                    <p class="fp-kicker" style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.55);display:flex;gap:10px;"><span>Sections</span><span id="game-tab-status">Trophy Hunt</span></p>
+                    <p style="margin:6px 0 0;font-size:0.82rem;color:rgba(255,255,255,0.55);">Pick a tab — long content scrolls inside the panel (max ~3 screens).</p>
+                </section>
                 <!-- Mobile: horizontal tabs (same targets) -->
                 <div class="hunter-game-tabs-row" aria-hidden="true">
                     <button class="game-tab active" data-tab="overview">🏆 Trophy Hunt</button>
@@ -1741,6 +1754,14 @@
                     document.querySelectorAll('.game-tab-content').forEach(c => c.classList.remove('active'));
                     const content = document.getElementById('tab-' + tabName);
                     if (content) content.classList.add('active');
+                    const tabStatus = document.getElementById('game-tab-status');
+                    if (tabStatus) {
+                        const label = (tab.textContent || tabName).replace(/\s+/g, ' ').trim();
+                        tabStatus.textContent = label || tabName;
+                    }
+                    if (window.PageLengthGuard && window.PageLengthGuard.rescan) {
+                        window.PageLengthGuard.rescan();
+                    }
                     
                     // Load tab-specific content
                     if (tabName === 'stats') {
@@ -5046,7 +5067,8 @@
            }, 30000);
         });
     </script>
-        <script src="/static/js/error-manager.js"></script>
+        <script src="/static/js/user-id.js?v=20261010b"></script>
+<script src="/static/js/error-manager.js"></script>
     <script src="/static/js/toast-notifications.js"></script>
     <script src="/static/js/social-mn2-rewards.js?v=20260618f"></script>
     <script src="/static/js/theme-toggle.js"></script>

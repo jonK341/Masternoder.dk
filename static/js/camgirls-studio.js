@@ -8,7 +8,9 @@
 
   'use strict';
 
-
+  function apiUrl(path) {
+    return typeof global.cgApi === 'function' ? global.cgApi(path) : path;
+  }
 
   var catalog = null;
 
@@ -18,11 +20,11 @@
 
     try {
 
-      return global.localStorage.getItem('game_user_id') || global.localStorage.getItem('user_id') || 'default_user';
+      return global.localStorage.getItem('game_user_id') || global.localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
 
     } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls-studio.js', context: 'catch' }); }
 
-      return 'default_user';
+      return (window.MnUserId ? window.MnUserId.read() : '');
 
     }
 
@@ -48,7 +50,7 @@
 
     if (catalog) return Promise.resolve(catalog);
 
-    return fetch('/api/camgirls/studio/catalog')
+    return fetch(apiUrl('/api/camgirls/studio/catalog')
 
       .then(function (r) {
 
@@ -76,7 +78,7 @@
 
   function loadChatHistory(performerId, log) {
 
-    fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/history?user_id=' + encodeURIComponent(uid()))
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/history?user_id=' + encodeURIComponent(uid()))
 
       .then(function (r) {
 
@@ -202,17 +204,21 @@
 
     }
 
-    sendBtn.addEventListener('click', function () {
-
-      var text = (input.value || '').trim();
-
-      if (!text) return;
+    function sendChatMessage(text) {
 
       append(text, 'cg-chat-user');
 
       input.value = '';
 
-      fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat', {
+      var botLine = document.createElement('div');
+
+      botLine.className = 'cg-chat-line cg-chat-bot';
+
+      botLine.textContent = '';
+
+      log.appendChild(botLine);
+
+      fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/stream', {
 
         method: 'POST',
 
@@ -224,15 +230,95 @@
 
         .then(function (r) {
 
-          return r.json();
+          if (!r.ok || !r.body) {
+
+            return fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat', {
+
+              method: 'POST',
+
+              headers: { 'Content-Type': 'application/json' },
+
+              body: JSON.stringify({ user_id: uid(), message: text }),
+
+            }).then(function (r2) {
+
+              return r2.json();
+
+            }).then(function (d) {
+
+              botLine.textContent = d.reply || d.error || '…';
+
+            });
+
+          }
+
+          var reader = r.body.getReader();
+
+          var decoder = new TextDecoder();
+
+          var buf = '';
+
+          function pump() {
+
+            return reader.read().then(function (chunk) {
+
+              if (chunk.done) return;
+
+              buf += decoder.decode(chunk.value, { stream: true });
+
+              var parts = buf.split('\n\n');
+
+              buf = parts.pop() || '';
+
+              parts.forEach(function (block) {
+
+                var line = block.split('\n').find(function (l) {
+
+                  return l.indexOf('data:') === 0;
+
+                });
+
+                if (!line) return;
+
+                try {
+
+                  var evt = JSON.parse(line.slice(5).trim());
+
+                  if (evt.type === 'token') botLine.textContent += evt.text || '';
+
+                  if (evt.type === 'error') botLine.textContent = evt.error || 'Error';
+
+                  if (evt.type === 'done' && !botLine.textContent) botLine.textContent = evt.reply || '';
+
+                } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls-studio.js', context: 'catch' }); }}
+
+              });
+
+              return pump();
+
+            });
+
+          }
+
+          return pump();
 
         })
 
-        .then(function (d) {
+        .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-studio.js', context: 'catch' }); }
 
-          append(d.reply || d.error || '…', 'cg-chat-bot');
+          botLine.textContent = 'Chat unavailable';
 
         });
+
+    }
+
+    sendBtn.addEventListener('click', function () {
+
+      var text = (input.value || '').trim();
+
+      if (!text) return;
+
+      sendChatMessage(text);
 
     });
 
@@ -258,13 +344,13 @@
 
           btn.addEventListener('click', function () {
 
-            fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/tip', {
+            fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/gift', {
 
               method: 'POST',
 
               headers: { 'Content-Type': 'application/json' },
 
-              body: JSON.stringify({ user_id: uid(), amount: g.price_mn2 || 5 }),
+              body: JSON.stringify({ user_id: uid(), gift_id: key }),
 
             })
 
@@ -278,11 +364,35 @@
 
                 if (d.success) append('Gift sent: ' + (g.label || key), 'cg-chat-bot');
 
+                else append(d.error || 'Gift failed', 'cg-chat-bot');
+
               });
 
           });
 
           host.appendChild(btn);
+
+          var ppGift = document.createElement('button');
+
+          ppGift.type = 'button';
+
+          ppGift.className = 'cg-studio-btn';
+
+          ppGift.title = 'Pay with PayPal';
+
+          ppGift.textContent = 'PP ' + (g.label || key);
+
+          ppGift.addEventListener('click', function () {
+
+            if (window.CamgirlsPaypal && window.CamgirlsPaypal.checkout) {
+
+              window.CamgirlsPaypal.checkout('gift', performerId, { gift_id: key });
+
+            }
+
+          });
+
+          host.appendChild(ppGift);
 
         });
 
@@ -304,13 +414,13 @@
 
           btn.addEventListener('click', function () {
 
-            fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/tip', {
+            fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/dance', {
 
               method: 'POST',
 
               headers: { 'Content-Type': 'application/json' },
 
-              body: JSON.stringify({ user_id: uid(), amount: d.price_mn2 || 8 }),
+              body: JSON.stringify({ user_id: uid(), dance_id: key }),
 
             })
 
@@ -350,7 +460,7 @@
 
       voiceBtn.addEventListener('click', function () {
 
-        fetch('/api/camgirls/livekit/token', {
+        fetch(apiUrl('/api/camgirls/livekit/token', {
 
           method: 'POST',
 
@@ -388,7 +498,7 @@
 
     performers.forEach(function (p) {
 
-      fetch('/api/camgirls/performers/' + encodeURIComponent(p.id) + '/goal')
+      fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(p.id) + '/goal')
 
         .then(function (r) {
 

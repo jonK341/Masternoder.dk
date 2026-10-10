@@ -125,6 +125,16 @@ def analyze_error_handlers():
 
 
 @error_handler_status_bp.route('/api/errors/handler-status', methods=['GET'])
+def handler_status():
+    """Live handler census. Replaces the catch-all 'Endpoint auto-created' stub."""
+    result = analyze_error_handlers()
+    result['endpoint'] = '/api/errors/handler-status'
+    if result.get('success'):
+        result['message'] = 'handler status'
+        return jsonify(result), 200
+    return jsonify(result), 500
+
+
 @error_handler_status_bp.route('/api/errors/handler-status/analyze', methods=['GET'])
 def analyze_error_handlers_route():
     """

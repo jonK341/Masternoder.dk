@@ -269,7 +269,7 @@ class QuickBattleFrontend {
     async updatePoints() {
         try {
             // Get points from unified system
-            const response = await fetch(`/api/points/all?user_id=${this.userId}`);
+            const response = await fetch(`/api/points/all?user_id=${encodeURIComponent(this.userId)}`);
             const data = await response.json();
             
             if (data.success && data.points) {

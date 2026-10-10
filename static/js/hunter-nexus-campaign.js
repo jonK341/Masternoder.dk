@@ -35,11 +35,11 @@
 
   function userId() {
     try {
-      const u = localStorage.getItem("game_user_id") || "default_user";
+      const u = localStorage.getItem("game_user_id") || (window.MnUserId ? window.MnUserId.read() : '');
       localStorage.setItem("game_user_id", u);
       return u;
     } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hunter-nexus-campaign.js', context: 'catch' }); }
-      return "default_user";
+      return (window.MnUserId ? window.MnUserId.read() : '');
     }
   }
 

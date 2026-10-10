@@ -75,6 +75,24 @@ def test_goal_status_from_tips():
         t.tearDown()
 
 
+def test_private_show_after_unlock():
+    t = SocialTestBase()
+    t.setUp()
+    try:
+        from backend.services.camgirls_social_service import get_private_show_status, start_private_show
+        from backend.services.camgirls_service import record_age_verification, unlock_performer
+
+        t._credit("buyer", 100.0)
+        record_age_verification("buyer", birth_year=1990)
+        unlock_performer("buyer", "p1")
+        ok = start_private_show("buyer", "p1", 5)
+        assert ok.get("success") is True
+        st = get_private_show_status("buyer", "p1")
+        assert st.get("active") is True
+    finally:
+        t.tearDown()
+
+
 def test_chat_history_route():
     from flask import Flask
 

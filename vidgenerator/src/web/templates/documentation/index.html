@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - MasterNoder{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/documentation.css') }}?v={{ cache_bust() }}">
+{% endblock %}
+
+{% block content %}
+<div class="documentation-container">
+    <div class="docs-header">
+        <h1>📚 Documentation</h1>
+        <p>Comprehensive documentation for fixes, improvements, and system knowledge</p>
+    </div>
+    
+    <div class="docs-stats" id="docs-stats">
+        <div class="stat-card">
+            <div class="stat-value" id="stat-total">-</div>
+            <div class="stat-label">Total Entries</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-fixes">-</div>
+            <div class="stat-label">Fixes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-improvements">-</div>
+            <div class="stat-label">Improvements</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-categories">-</div>
+            <div class="stat-label">Categories</div>
+        </div>
+    </div>
+    
+    <div class="docs-controls">
+        <div class="search-box">
+            <input type="text" id="search-input" class="input" placeholder="Search documentation...">
+            <button class="btn btn-primary" onclick="searchDocs()">🔍 Search</button>
+        </div>
+        <div class="filter-box">
+            <select id="category-filter" class="input">
+                <option value="">All Categories</option>
+            </select>
+            <select id="type-filter" class="input">
+                <option value="">All Types</option>
+                <option value="fix">Fixes</option>
+                <option value="improvement">Improvements</option>
+            </select>
+            <button class="btn btn-secondary" onclick="addDocumentation()">➕ Add Entry</button>
+        </div>
+    </div>
+    
+    <div class="docs-content">
+        <div class="docs-sidebar">
+            <h3>Categories</h3>
+            <div id="category-list" class="category-list"></div>
+        </div>
+        
+        <div class="docs-main">
+            <div id="docs-results" class="docs-results">
+                <div class="loading">Loading documentation...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Documentation Modal -->
+<div id="add-doc-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add Documentation Entry</h2>
+            <button class="btn-icon" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label class="input-label">Type</label>
+                <select id="doc-type" class="input">
+                    <option value="improvement">Improvement</option>
+                    <option value="fix">Fix</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Title *</label>
+                <input type="text" id="doc-title" class="input" placeholder="Enter title...">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Description</label>
+                <textarea id="doc-description" class="input" rows="5" placeholder="Enter description..."></textarea>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Category</label>
+                <select id="doc-category" class="input">
+                    <option value="general">General</option>
+                    <option value="backend">Backend</option>
+                    <option value="frontend">Frontend</option>
+                    <option value="system">System</option>
+                    <option value="features">Features</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Tags (comma-separated)</label>
+                <input type="text" id="doc-tags" class="input" placeholder="tag1, tag2, tag3">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveDocumentation()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/documentation.js') }}?v={{ cache_bust() }}"></script>
+{% endblock %}
