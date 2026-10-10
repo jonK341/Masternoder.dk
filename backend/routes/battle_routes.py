@@ -768,6 +768,20 @@ def battle_quick():
         except Exception:
             pass
 
+        try:
+            from backend.services.battle_news_service import notify_quick_battle
+            streak = 0
+            try:
+                from backend.services.unified_points_database import unified_points_db
+                all_pts = unified_points_db.get_all_points(user_id)
+                systems = (all_pts or {}).get("points", {}).get("systems", {}) or {}
+                streak = int(systems.get("battle_streak", 0) or 0)
+            except Exception:
+                pass
+            notify_quick_battle(user_id, result, points_delta=points_delta, streak=streak)
+        except Exception:
+            pass
+
         payload = {
             'success': True,
             'status': 'matched',
@@ -1263,6 +1277,16 @@ def battle_fantasy_tournaments_join(tournament_id):
         ok, detail, code = bss.join_tournament(tournament_id, user_id)
         if not ok:
             return jsonify({'success': False, 'error': detail}), code
+        try:
+            from backend.services.battle_news_service import notify_tournament_join
+            tour_name = tournament_id
+            for t in bss.get_tournaments_filtered():
+                if t.get("id") == tournament_id:
+                    tour_name = t.get("name") or tournament_id
+                    break
+            notify_tournament_join(user_id, tournament_id, tour_name, participants=detail)
+        except Exception:
+            pass
         return jsonify({
             'success': True,
             'tournament_id': tournament_id,

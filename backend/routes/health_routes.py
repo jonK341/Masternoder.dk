@@ -7,8 +7,16 @@ import os
 import re
 from flask import Blueprint, jsonify
 from datetime import datetime
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import text
 from src.db.models import db
+
+_DB_REQUIRED_TABLES = (
+    'user_accounts', 'user_profiles',
+    'player_levels', 'user_points', 'xp_history', 'system_point_snapshots',
+    'shop_items', 'user_inventory', 'shop_purchases',
+)
+_DB_OPTIONAL_TABLES = ('battle_matches', 'user_storage')
 
 from backend.services.schema_bootstrap import SCHEMA_MIGRATIONS_HEALTH_COLUMNS
 
@@ -43,38 +51,37 @@ def health_check():
 
 @health_bp.route('/api/health/database', methods=['GET'])
 def database_health():
-    """Database health check"""
+    """Database health check — fast metadata probe; 503 only when DB is unreachable."""
     try:
-        # Test database connection
         result = db.session.execute(text("SELECT 1"))
         result.fetchone()
-        
-        # Tables that db.create_all() creates from src.db.models (single source of truth).
-        # Do not list legacy names that have no SQLAlchemy model — they would always be "missing".
-        tables_to_check = [
-            'user_accounts', 'user_profiles',
-            'player_levels', 'user_points', 'xp_history', 'system_point_snapshots',
-            'shop_items', 'user_inventory', 'shop_purchases',
-            'battle_matches', 'user_storage',
-        ]
-        existing_tables = []
-        missing_tables = []
-        
-        for table in tables_to_check:
-            try:
-                db.session.execute(text(f"SELECT COUNT(*) FROM {table} LIMIT 1"))
-                existing_tables.append(table)
-            except Exception:
-                missing_tables.append(table)
-        
+
+        table_names = set()
+        try:
+            table_names = set(sa_inspect(db.engine).get_table_names())
+        except Exception:
+            pass
+
+        existing_required = [t for t in _DB_REQUIRED_TABLES if t in table_names]
+        missing_required = [t for t in _DB_REQUIRED_TABLES if t not in table_names]
+        existing_optional = [t for t in _DB_OPTIONAL_TABLES if t in table_names]
+        missing_optional = [t for t in _DB_OPTIONAL_TABLES if t not in table_names]
+        db_status = 'healthy' if not missing_required else 'degraded'
+
         return jsonify({
             'success': True,
-            'status': 'healthy',
+            'status': db_status,
             'database': {
                 'connected': True,
-                'tables_checked': len(tables_to_check),
-                'existing_tables': existing_tables,
-                'missing_tables': missing_tables
+                'required_tables': existing_required,
+                'missing_required_tables': missing_required,
+                'optional_tables': existing_optional,
+                'missing_optional_tables': missing_optional,
+                'apply_battle_migration': (
+                    'python scripts/battle_migration.py --standalone'
+                    if 'battle_matches' in missing_optional
+                    else None
+                ),
             },
             'timestamp': datetime.utcnow().isoformat()
         }), 200
@@ -175,6 +182,18 @@ def system_health():
     except Exception as e:
         health_status['components']['database'] = {'status': 'unhealthy', 'error': str(e)}
         health_status['overall'] = 'degraded'
+
+    # Battle durable history (optional until scripts/battle_migration.py is applied)
+    try:
+        from backend.services.battle_db_service import battle_tables_exist
+        battle_ok = battle_tables_exist()
+        health_status['components']['battle_matches'] = {
+            'status': 'healthy' if battle_ok else 'optional_missing',
+            'table_present': battle_ok,
+            'apply_migration': 'python scripts/battle_migration.py --standalone' if not battle_ok else None,
+        }
+    except Exception as e:
+        health_status['components']['battle_matches'] = {'status': 'unknown', 'error': str(e)}
     
     # Check unified points system
     try:
@@ -216,26 +235,20 @@ def system_health():
     except Exception as e:
         health_status['components']['rate_limiting'] = {'status': 'unhealthy', 'error': str(e)}
 
-    # MN2 RPC (Phase 1): optional; if unreachable, try Chainz fallback for block height (Phase 7)
+    # MN2 RPC: short timeout on this path (no Chainz fallback — keeps /api/health/system fast).
     try:
         from backend.services.mn2_rpc_client import health_check as mn2_health_check
-        mn2 = mn2_health_check()
-        block_height = mn2.get('block_height')
+        try:
+            sys_rpc_to = float((os.environ.get("MN2_RPC_SYSTEM_HEALTH_TIMEOUT") or "3").strip() or 3)
+        except (TypeError, ValueError):
+            sys_rpc_to = 3.0
+        mn2 = mn2_health_check(timeout_sec=sys_rpc_to)
         status = mn2.get('status', 'unknown')
-        # Only use Chainz when RPC is unreachable — not when auth_failed (would hide 401 misconfig)
-        if status == 'unreachable':
-            try:
-                from backend.services.mn2_chainz import chainz_getblockcount
-                chainz_height = chainz_getblockcount()
-                if chainz_height is not None:
-                    block_height = chainz_height
-                    status = 'degraded_fallback'  # RPC down but Chainz gave block height
-            except Exception:
-                pass
         health_status['components']['mn2_rpc'] = {
             'status': status,
-            'block_height': block_height,
+            'block_height': mn2.get('block_height'),
             'latency_ms': mn2.get('latency_ms'),
+            'timeout_sec': sys_rpc_to,
         }
         if mn2.get('credentials'):
             health_status['components']['mn2_rpc']['credentials'] = mn2['credentials']
@@ -256,12 +269,11 @@ def system_health():
     except Exception as e:
         health_status['components']['worker_pressure'] = {'status': 'unavailable', 'error': str(e)}
 
-    status_code = 200 if health_status['overall'] == 'healthy' else 503
-    
+    # Always HTTP 200 so nginx/load checks get a body; use overall=degraded for signal.
     return jsonify({
         'success': True,
         **health_status
-    }), status_code
+    }), 200
 
 
 @health_bp.route('/api/mn2/health', methods=['GET'])

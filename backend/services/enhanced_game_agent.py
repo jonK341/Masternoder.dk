@@ -411,9 +411,9 @@ class EnhancedGameAgent:
         """Join a tournament"""
         try:
             response = self.session.post(
-                f"{self.base_url}/api/battle/tournament/join",
-                json={'tournament_id': tournament_id, 'user_id': self.user_id},
-                timeout=10
+                f"{self.base_url}/api/battle/fantasy/tournaments/{tournament_id}/join",
+                json={'user_id': self.user_id},
+                timeout=10,
             )
             if response.status_code == 200:
                 data = response.json()

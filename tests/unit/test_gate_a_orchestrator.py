@@ -44,12 +44,15 @@ def test_themes_user_route():
     from flask import Flask
     app = Flask(__name__)
     app.config["TESTING"] = True
-    from backend.routes.missing_endpoints_routes import themes_user
-    app.add_url_rule("/api/themes/user", "themes_user", themes_user, methods=["GET"])
+    from backend.routes.missing_endpoints_routes import missing_endpoints_bp
+    app.register_blueprint(missing_endpoints_bp)
     with app.test_client() as c:
         r = c.get("/api/themes/user?user_id=default_user")
         assert r.status_code == 200
-        assert r.get_json().get("success") is True
+        data = r.get_json()
+        assert data.get("success") is True
+        assert isinstance(data.get("themes"), list)
+        assert any(t.get("theme_id") == "default" for t in data["themes"])
 
 
 def test_unified_points_idempotency(monkeypatch):

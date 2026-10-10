@@ -2,8 +2,12 @@
 Battle Database Service
 Read/write battle_matches for history and leaderboard. Safe when migration not run.
 """
-from typing import List, Dict, Any, Optional
+import time
+from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy import text, inspect
+
+_BATTLE_TABLE_CACHE: Tuple[float, bool] = (0.0, False)
+_BATTLE_TABLE_CACHE_TTL_SEC = 60.0
 
 
 def _get_db():
@@ -12,10 +16,17 @@ def _get_db():
 
 
 def battle_tables_exist() -> bool:
+    global _BATTLE_TABLE_CACHE
+    now = time.time()
+    if now - _BATTLE_TABLE_CACHE[0] < _BATTLE_TABLE_CACHE_TTL_SEC:
+        return _BATTLE_TABLE_CACHE[1]
+    ok = False
     try:
-        return 'battle_matches' in inspect(_get_db().engine).get_table_names()
+        ok = 'battle_matches' in inspect(_get_db().engine).get_table_names()
     except Exception:
-        return False
+        ok = False
+    _BATTLE_TABLE_CACHE = (now, ok)
+    return ok
 
 
 def record_battle(

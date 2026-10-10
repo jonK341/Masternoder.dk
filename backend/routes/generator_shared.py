@@ -30,17 +30,105 @@ video_jobs = {}
 video_jobs_lock = threading.Lock()
 
 
+def _parse_job_timestamp(value) -> float:
+    """Parse ISO updated_at for ordering; 0 if missing/invalid."""
+    if not value:
+        return 0.0
+    try:
+        raw = str(value).strip().replace('Z', '+00:00')
+        return datetime.fromisoformat(raw).timestamp()
+    except Exception:
+        return 0.0
+
+
+def _job_from_sidecar(job_id: str, sidecar: dict) -> dict:
+    sc_status = str(sidecar.get('status') or '').strip().lower()
+    return {
+        'id': job_id,
+        'job_id': job_id,
+        'status': sc_status,
+        'progress': int(sidecar.get('progress', 0) or 0),
+        'message': sidecar.get('message') or sidecar.get('error_message') or 'Processing',
+        'error_message': sidecar.get('error_message'),
+        'video_url': sidecar.get('video_url')
+        or (f'/api/documentary/video/{job_id}' if sc_status == 'completed' else None),
+        'updated_at': sidecar.get('updated_at') or datetime.utcnow().isoformat(),
+        'providers_used': sidecar.get('providers_used') or [],
+        'generation_run_id': sidecar.get('generation_run_id'),
+        'storyline_preview': sidecar.get('storyline_preview'),
+        'visual_seed': sidecar.get('visual_seed'),
+        'service_check': sidecar.get('service_check'),
+        'encode_stage': sidecar.get('stage'),
+    }
+
+
+def _merge_sidecar_over_job(base: dict, sidecar: dict) -> dict:
+    """Overlay shared sidecar fields; keep DB/memory-only fields (config, rewards)."""
+    merged = dict(base)
+    sc_status = str(sidecar.get('status') or '').strip().lower()
+    if not sc_status:
+        return merged
+    sc_ts = _parse_job_timestamp(sidecar.get('updated_at'))
+    base_ts = _parse_job_timestamp(merged.get('updated_at'))
+    base_status = str(merged.get('status') or '').strip().lower()
+    active = {'pending', 'processing'}
+    prefer_sidecar = (
+        base_status in active
+        or sc_status in active
+        or sc_ts >= base_ts
+        or base_status not in ('completed', 'failed', 'error')
+    )
+    if not prefer_sidecar and base_status in ('completed', 'failed', 'error') and sc_ts < base_ts:
+        return merged
+    merged['status'] = sc_status
+    merged['progress'] = int(sidecar.get('progress', merged.get('progress', 0)) or 0)
+    merged['message'] = sidecar.get('message') or merged.get('message') or 'Processing'
+    if sidecar.get('error_message'):
+        merged['error_message'] = sidecar.get('error_message')
+    if sidecar.get('video_url'):
+        merged['video_url'] = sidecar.get('video_url')
+    elif sc_status == 'completed':
+        merged['video_url'] = merged.get('video_url') or f'/api/documentary/video/{merged.get("id") or merged.get("job_id")}'
+    if sidecar.get('updated_at'):
+        merged['updated_at'] = sidecar.get('updated_at')
+    for key in (
+        'providers_used',
+        'generation_run_id',
+        'storyline_preview',
+        'visual_seed',
+        'service_check',
+        'stage',
+    ):
+        if sidecar.get(key) is not None:
+            if key == 'stage':
+                merged['encode_stage'] = sidecar.get(key)
+            else:
+                merged[key] = sidecar.get(key)
+    return merged
+
+
 def get_video_job(job_id: str):
+    """Resolve job state: sidecar (cross-worker) overlays DB, then in-memory fallback."""
+    sidecar = get_video_status_sidecar(job_id)
+    stored = None
     try:
         from backend.services.generator_db_service import generator_tables_exist, get_job
         if generator_tables_exist():
             row = get_job(job_id)
             if row is not None:
-                return row
+                stored = dict(row)
     except Exception:
         pass
-    with video_jobs_lock:
-        return video_jobs.get(job_id)
+    if stored is None:
+        with video_jobs_lock:
+            mem = video_jobs.get(job_id)
+            if mem is not None:
+                stored = dict(mem)
+    if isinstance(sidecar, dict) and sidecar.get('status'):
+        if stored is None:
+            return _job_from_sidecar(job_id, sidecar)
+        return _merge_sidecar_over_job(stored, sidecar)
+    return stored
 
 
 def set_video_job(job_id: str, data: dict):
