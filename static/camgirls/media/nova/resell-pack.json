@@ -1,0 +1,23 @@
+{
+  "performer_id": "performer_nova",
+  "slug": "nova",
+  "display_name": "Nova Star",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/nova/icon.webp",
+    "logo": "/static/camgirls/media/nova/logo.svg",
+    "avatar_hd": "/static/camgirls/media/nova/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/nova/gallery-1.webp",
+      "/static/camgirls/media/nova/gallery-2.webp",
+      "/static/camgirls/media/nova/gallery-3.webp"
+    ],
+    "preview_video": "/static/camgirls/media/nova/preview.webm",
+    "preview_poster": "/static/camgirls/media/nova/gallery-1.webp"
+  },
+  "initials": "NS",
+  "brand_colors": [
+    "#a855f7",
+    "#4c1d95"
+  ]
+}

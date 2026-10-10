@@ -8,7 +8,9 @@
 
   'use strict';
 
-
+  function apiUrl(path) {
+    return typeof global.cgApi === 'function' ? global.cgApi(path) : path;
+  }
 
   var catalog = null;
 
@@ -48,7 +50,7 @@
 
     if (catalog) return Promise.resolve(catalog);
 
-    return fetch('/api/camgirls/studio/catalog')
+    return fetch(apiUrl('/api/camgirls/studio/catalog')
 
       .then(function (r) {
 
@@ -76,7 +78,7 @@
 
   function loadChatHistory(performerId, log) {
 
-    fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/history?user_id=' + encodeURIComponent(uid()))
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/history?user_id=' + encodeURIComponent(uid()))
 
       .then(function (r) {
 
@@ -216,7 +218,7 @@
 
       log.appendChild(botLine);
 
-      fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/stream', {
+      fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat/stream', {
 
         method: 'POST',
 
@@ -230,7 +232,7 @@
 
           if (!r.ok || !r.body) {
 
-            return fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat', {
+            return fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/chat', {
 
               method: 'POST',
 
@@ -342,7 +344,7 @@
 
           btn.addEventListener('click', function () {
 
-            fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/gift', {
+            fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/gift', {
 
               method: 'POST',
 
@@ -412,7 +414,7 @@
 
           btn.addEventListener('click', function () {
 
-            fetch('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/dance', {
+            fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(performerId) + '/dance', {
 
               method: 'POST',
 
@@ -458,7 +460,7 @@
 
       voiceBtn.addEventListener('click', function () {
 
-        fetch('/api/camgirls/livekit/token', {
+        fetch(apiUrl('/api/camgirls/livekit/token', {
 
           method: 'POST',
 
@@ -496,7 +498,7 @@
 
     performers.forEach(function (p) {
 
-      fetch('/api/camgirls/performers/' + encodeURIComponent(p.id) + '/goal')
+      fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(p.id) + '/goal')
 
         .then(function (r) {
 

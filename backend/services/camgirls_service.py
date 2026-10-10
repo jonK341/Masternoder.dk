@@ -70,6 +70,10 @@ def _load_performers_raw() -> List[Dict[str, Any]]:
 
 
 def _get_performer(performer_id: str) -> Optional[Dict[str, Any]]:
+    return get_performer_row(performer_id)
+
+
+def get_performer_row(performer_id: str) -> Optional[Dict[str, Any]]:
     for p in _load_performers_raw():
         if str(p.get("id")) == performer_id:
             return p
@@ -130,11 +134,26 @@ def list_performers_catalog(user_id: str = "default_user", lite: bool = False) -
             row["chat_price_mn2"] = p.get("chat_price_mn2", 2)
             row["goal_mn2"] = p.get("goal_mn2", 100)
             row["ai_enabled"] = bool(p.get("ai_enabled", True))
+            try:
+                from backend.services.camgirls_media_service import card_avatar_url
+
+                row["avatar_url"] = card_avatar_url(
+                    str(p.get("id") or ""),
+                    str(p.get("avatar_url") or ""),
+                )
+            except Exception:
+                pass
             if tech_ctx:
                 livekit, paypal_on = tech_ctx
                 row["tech"] = studio_tech_for_performer(p, livekit=livekit, paypal_on=paypal_on)
             else:
                 row["tech"] = {"ai_enabled": row["ai_enabled"], "online": True}
+        try:
+            from backend.services.camgirls_media_service import attach_media_to_row
+
+            row = attach_media_to_row(row, lite=lite)
+        except Exception:
+            pass
         performers.append(row)
     return {"success": True, "performers": performers, "count": len(performers)}
 

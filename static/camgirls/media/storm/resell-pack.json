@@ -1,0 +1,23 @@
+{
+  "performer_id": "performer_storm",
+  "slug": "storm",
+  "display_name": "Storm Vega",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/storm/icon.webp",
+    "logo": "/static/camgirls/media/storm/logo.svg",
+    "avatar_hd": "/static/camgirls/media/storm/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/storm/gallery-1.webp",
+      "/static/camgirls/media/storm/gallery-2.webp",
+      "/static/camgirls/media/storm/gallery-3.webp"
+    ],
+    "preview_video": "/static/camgirls/media/storm/preview.webm",
+    "preview_poster": "/static/camgirls/media/storm/gallery-1.webp"
+  },
+  "initials": "SV",
+  "brand_colors": [
+    "#60a5fa",
+    "#1e3a8a"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "performer_id": "performer_sage",
+  "slug": "sage",
+  "display_name": "Sage Willow",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/sage/icon.webp",
+    "logo": "/static/camgirls/media/sage/logo.svg",
+    "avatar_hd": "/static/camgirls/media/sage/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/sage/gallery-1.webp",
+      "/static/camgirls/media/sage/gallery-2.webp",
+      "/static/camgirls/media/sage/gallery-3.webp"
+    ],
+    "preview_video": "/static/camgirls/media/sage/preview.webm",
+    "preview_poster": "/static/camgirls/media/sage/gallery-1.webp"
+  },
+  "initials": "SW",
+  "brand_colors": [
+    "#34d399",
+    "#065f46"
+  ]
+}

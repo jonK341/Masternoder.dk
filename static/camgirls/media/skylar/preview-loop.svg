@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <style>@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.75} }</style>
+  <rect width="320" height="180" fill="#0c4a6e"/>
+  <rect width="320" height="180" fill="#38bdf8" opacity="0.5" style="animation:pulse 2s ease-in-out infinite"/>
+  <text x="160" y="95" text-anchor="middle" fill="#fff" font-size="28" font-family="system-ui,sans-serif">SC</text>
+</svg>

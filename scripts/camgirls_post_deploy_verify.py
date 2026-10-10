@@ -142,13 +142,15 @@ def verify_remote(*, force_prompt: bool = False) -> int:
     except Exception:
         pass
 
-    sys.path.insert(0, os.path.join(ROOT, "scripts"))
-    from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    from deploy_ssh_env import connect_deploy_ssh
 
-    pw = require_deploy_pass(force_prompt=force_prompt)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
+    if force_prompt:
+        os.environ.pop("DEPLOY_PASS", None)
+        os.environ["_DEPLOY_ASK_PASS"] = "1"
+    ssh, auth_method, _pw = connect_deploy_ssh()
+    print(f"[verify] SSH via {auth_method}")
 
     secret = _ops_secret_prefix()
 
@@ -217,6 +219,19 @@ def verify_remote(*, force_prompt: bool = False) -> int:
             "performer landing",
             "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/camgirls/p/performer_nova/",
             lambda body: body.strip() == "200",
+        ),
+        (
+            "livekit status",
+            "curl -s http://127.0.0.1:5000/api/camgirls/livekit/status",
+            lambda body: _json_success(body) and '"mode"' in body and '"live"' in body,
+        ),
+        (
+            "livekit token gate",
+            "curl -s -w '\\nHTTP:%{http_code}' -X POST "
+            "http://127.0.0.1:5000/api/camgirls/livekit/token "
+            "-H 'Content-Type: application/json' "
+            "-d '{\"user_id\":\"post_deploy_verify\",\"performer_id\":\"performer_nova\"}'",
+            lambda body: "unlock_required" in body or "HTTP:403" in body or "HTTP:200" in body,
         ),
         (
             "performer count",

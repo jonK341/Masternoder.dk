@@ -857,10 +857,17 @@ MANIFESTS = {
         "backend/services/camgirls_status_service.py",
         "backend/services/camgirls_catalog_db_service.py",
         "backend/services/camgirls_paypal_service.py",
+        "backend/services/camgirls_media_service.py",
+        "backend/services/camgirls_media_paths.py",
+        "backend/services/camgirls_media_render.py",
+        "backend/services/camgirls_resell_shop_service.py",
+        "backend/services/monetization_config_service.py",
+        "backend/routes/shop_routes.py",
         "backend/services/mn2_wallet_service.py",
         "backend/services/mn2_rpc_client.py",
         "backend/services/platform_news_publish.py",
         "backend/services/discord_m8_streams.py",
+        "backend/routes/discord_routes.py",
         "backend/routes/camgirls_routes.py",
         "backend/services/mn2_earn_auth.py",
         "backend/services/mn2_ledger.py",
@@ -888,15 +895,21 @@ MANIFESTS = {
         "scripts/project_env.py",
         "scripts/camgirls_post_deploy_verify.py",
         "scripts/camgirls_prod_fast_sync.sh",
+        "scripts/camgirls_generate_performer_media.py",
+        "scripts/camgirls_phase4_nginx_remote.py",
+        "config/nginx/camgirls-phase4-app.conf.snippet",
         "scripts/camgirls_discord_spotlight.py",
         "scripts/camgirls_remote_diag.py",
         "docs/CAMGIRLS_PHASE4_NGINX.md",
         "data/camgirls_next_todos.json",
         "camgirls/index.html",
         "camgirls/performer.html",
+        "shop/index.html",
         "static/js/camgirls.js",
         "static/js/camgirls-studio.js",
         "static/js/camgirls-stream-voice.js",
+        "static/js/camgirls-api-base.js",
+        "static/js/camgirls-nav-fix.js",
         "static/js/command-center-hub.js",
         "scripts/camgirls_py.sh",
         "static/camgirls/avatar-demo.svg",
@@ -1111,6 +1124,21 @@ def _hub_rollout_nav_svgs():
     return out
 
 
+def _camgirls_media_manifest():
+    """All generated performer gallery/icon/logo assets under static/camgirls/media/."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    media_root = os.path.join(root, "static", "camgirls", "media")
+    out = []
+    if not os.path.isdir(media_root):
+        return out
+    for dirpath, _dirs, filenames in os.walk(media_root):
+        for fn in sorted(filenames):
+            full = os.path.join(dirpath, fn)
+            rel = os.path.relpath(full, root).replace("\\", "/")
+            out.append(rel)
+    return sorted(out)
+
+
 def _merge_manifest_files(manifest_names):
     """Merge file lists from multiple manifests, preserving order and deduplicating."""
     files = []
@@ -1120,6 +1148,24 @@ def _merge_manifest_files(manifest_names):
             if path not in seen:
                 seen.add(path)
                 files.append(path)
+    if "camgirls" in manifest_names:
+        for path in _camgirls_media_manifest():
+            if path not in seen:
+                seen.add(path)
+                files.append(path)
+        zip_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "content",
+            "digital_goods",
+            "camgirls",
+        )
+        if os.path.isdir(zip_dir):
+            for fn in sorted(os.listdir(zip_dir)):
+                if fn.endswith(".zip"):
+                    rel = f"content/digital_goods/camgirls/{fn}"
+                    if rel not in seen:
+                        seen.add(rel)
+                        files.append(rel)
     return files
 
 
@@ -1417,6 +1463,14 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 print(f"  [WARN] pip install requests: {err[:200]}")
             else:
                 print("  [OK] .venv requests (MN2 payout RPC)")
+            gen_cmd = (
+                f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
+                "scripts/camgirls_generate_performer_media.py 2>&1 | tail -5"
+            )
+            _, gen_out, _ = ssh.exec_command(gen_cmd, timeout=120)
+            gen_text = (gen_out.read() or b"").decode(errors="replace").strip()
+            if gen_text:
+                print(f"  [media] {gen_text.split(chr(10))[-1][:100]}")
             provision_cmd = (
                 f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
                 "scripts/camgirls_provision_payout_addresses.py 2>&1 | tail -12"

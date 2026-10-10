@@ -19,8 +19,20 @@ Use this guide only if the product moves to **`camgirls.masternoder.dk/app/`** l
 
 Add **above** the existing explorer `location /` block:
 
+Canonical snippet: `config/nginx/camgirls-phase4-app.conf.snippet`  
+Apply on server: `python scripts/camgirls_phase4_nginx_remote.py`
+
 ```nginx
 # Camgirls platform UI + API proxy (Phase 4)
+location /app/static/ {
+    proxy_pass http://127.0.0.1:5000/static/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
 location /app/ {
     proxy_pass http://127.0.0.1:5000/camgirls/;
     proxy_http_version 1.1;

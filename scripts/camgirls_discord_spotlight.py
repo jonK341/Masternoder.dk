@@ -15,8 +15,11 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from project_env import load_project_dotenv
 
 DEFAULT_PAYLOAD = {
-    "title": "Live AI performers",
-    "summary": "Nova, Luna, Sage, Ember, Iris — studio voice, gifts, fan club · /camgirls/",
+    "title": "Live AI performers (15)",
+    "summary": (
+        "15 AI studio hosts — MN2 + PayPal unlock, gifts, dances, fan club, private show · "
+        "/camgirls/"
+    ),
     "href": "/camgirls/",
 }
 
@@ -58,12 +61,15 @@ def spotlight_remote(*, force_prompt: bool) -> int:
         print("paramiko required", file=sys.stderr)
         return 1
     load_project_dotenv()
-    from deploy_ssh_env import deploy_host, deploy_user, require_deploy_pass
+    from deploy_ssh_env import connect_deploy_ssh
 
-    pw = require_deploy_pass(force_prompt=force_prompt)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(deploy_host(), username=deploy_user(), password=pw, timeout=30)
+    if force_prompt:
+        import os
+
+        os.environ.pop("DEPLOY_PASS", None)
+        os.environ["_DEPLOY_ASK_PASS"] = "1"
+    ssh, auth_method, _pw = connect_deploy_ssh()
+    print(f"[spotlight] SSH via {auth_method}", file=sys.stderr)
     payload = json.dumps(DEFAULT_PAYLOAD).replace("'", "'\\''")
     cmd = (
         "cd /var/www/html && source cron/mn2_read_ops_secret.sh 2>/dev/null || true; "

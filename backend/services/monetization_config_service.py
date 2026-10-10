@@ -136,11 +136,22 @@ def get_digital_goods() -> List[Dict[str, Any]]:
     raw = _load_raw()
     dg = raw.get("digital_goods")
     if not isinstance(dg, list):
-        return []
-    out: List[Dict[str, Any]] = []
-    for x in dg:
-        if isinstance(x, dict) and x.get("id"):
-            out.append(dict(x))
+        out: List[Dict[str, Any]] = []
+    else:
+        out: List[Dict[str, Any]] = []
+        for x in dg:
+            if isinstance(x, dict) and x.get("id"):
+                out.append(dict(x))
+    try:
+        from backend.services.camgirls_resell_shop_service import list_resell_digital_goods
+
+        seen = {g.get("id") for g in out}
+        for row in list_resell_digital_goods():
+            if row.get("id") and row["id"] not in seen:
+                out.append(dict(row))
+                seen.add(row["id"])
+    except Exception:
+        pass
     return out
 
 
