@@ -576,13 +576,18 @@
         </div>
     </div>
     
-        <script src="/static/js/error-manager.js"></script>
+        <script src="/static/js/user-id.js?v=20261010b"></script>
+<script src="/static/js/error-manager.js"></script>
     <script src="/static/js/toast-notifications.js"></script>
     <script>
         const BASE_URL = window.location.origin;
         function readSocialUserId() {
+            if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
             const raw = (localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '').trim();
-            return /^user_[A-Za-z0-9_]{4,120}$/.test(raw) ? raw : '';
+            if (!raw || raw === '[object Promise]') return '';
+            const lowered = raw.toLowerCase();
+            if (lowered === 'default_user' || lowered === 'undefined' || lowered === 'null') return '';
+            return raw;
         }
         const userId = readSocialUserId();
         const SOCIAL_TABS = ['friends', 'guilds', 'requests', 'mn2-rewards', 'chat', 'intelligence', 'resources'];

@@ -5,7 +5,7 @@
 class ProgressionDisplay {
     constructor() {
         this.baseUrl = window.location.origin;
-        this.userId = localStorage.getItem('game_user_id') || 'default_user';
+        this.userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         this.updateInterval = 30000; // 30 seconds
         this.progressionData = null;
     }

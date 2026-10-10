@@ -10,8 +10,12 @@
 
   function uid() {
     try {
+      if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
       var raw = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
-      return /^user_[A-Za-z0-9_]{4,120}$/.test(raw) ? raw : '';
+      if (!raw || raw === '[object Promise]') return '';
+      var lowered = String(raw).toLowerCase();
+      if (lowered === 'default_user' || lowered === 'undefined' || lowered === 'null') return '';
+      return String(raw).trim();
     }
     catch (e) { return ''; }
   }

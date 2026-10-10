@@ -49,7 +49,7 @@ class BackendConnector {
         const stored = localStorage.getItem('game_user_id') || 
                       localStorage.getItem('user_id');
         
-        if (this._isCanonicalUserId(stored)) {
+        if (this._isUsableUserId(stored)) {
             return stored.trim();
         }
 
@@ -70,7 +70,7 @@ class BackendConnector {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.success && this._isCanonicalUserId(data.user_id)) {
+                if (data.success && this._isUsableUserId(data.user_id)) {
                     const resolved = String(data.user_id).trim();
                     localStorage.setItem('game_user_id', resolved);
                     localStorage.setItem('user_id', resolved);
@@ -98,8 +98,15 @@ class BackendConnector {
     /**
      * Get user ID (async - ensures identification)
      */
-    _isCanonicalUserId(id) {
-        return typeof id === 'string' && /^user_[A-Za-z0-9_]{4,120}$/.test(id.trim());
+    _isUsableUserId(id) {
+        if (window.MnUserId && typeof window.MnUserId.isUsable === 'function') {
+            return window.MnUserId.isUsable(id);
+        }
+        if (typeof id !== 'string') return false;
+        const value = id.trim();
+        if (!value || value === '[object Promise]') return false;
+        const lowered = value.toLowerCase();
+        return lowered !== 'default_user' && lowered !== 'undefined' && lowered !== 'null';
     }
 
     async _requireUserId(userId) {
@@ -107,10 +114,10 @@ class BackendConnector {
         if (uid != null && typeof uid.then === 'function') {
             uid = await uid;
         }
-        if (!this._isCanonicalUserId(uid)) {
+        if (!this._isUsableUserId(uid)) {
             uid = await this.getUserId();
         }
-        if (!this._isCanonicalUserId(uid)) {
+        if (!this._isUsableUserId(uid)) {
             return null;
         }
         return String(uid).trim();
@@ -121,12 +128,12 @@ class BackendConnector {
     }
 
     async getUserId() {
-        if (this._isCanonicalUserId(this.userId)) {
+        if (this._isUsableUserId(this.userId)) {
             return this.userId.trim();
         }
         
         await this.initializeUser();
-        return this._isCanonicalUserId(this.userId) ? this.userId.trim() : null;
+        return this._isUsableUserId(this.userId) ? this.userId.trim() : null;
     }
 
     /**
@@ -140,7 +147,7 @@ class BackendConnector {
         const stored = localStorage.getItem('game_user_id') || 
                       localStorage.getItem('user_id');
         
-        return this._isCanonicalUserId(stored) ? stored.trim() : null;
+        return this._isUsableUserId(stored) ? stored.trim() : null;
     }
 
     /**

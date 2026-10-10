@@ -6,7 +6,7 @@ class TemplateEngineCore {
     constructor(pageId, baseUrl = '') {
         this.pageId = pageId;
         this.baseUrl = baseUrl || window.location.origin;
-        this.userId = localStorage.getItem('game_user_id') || 'default_user';
+        this.userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         this.activeTemplate = null;
         this.init();
     }

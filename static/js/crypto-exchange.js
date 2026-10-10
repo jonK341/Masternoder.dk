@@ -10,8 +10,8 @@
   var termsVersion = '2026-06-v1';
 
   function uid() {
-    try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    try { return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''); }
+    catch (e) { return (window.MnUserId ? window.MnUserId.read() : ''); }
   }
 
   function q(id) { return document.getElementById(id); }

@@ -18,11 +18,11 @@
 
     try {
 
-      return global.localStorage.getItem('game_user_id') || global.localStorage.getItem('user_id') || 'default_user';
+      return global.localStorage.getItem('game_user_id') || global.localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
 
     } catch (e) {
 
-      return 'default_user';
+      return (window.MnUserId ? window.MnUserId.read() : '');
 
     }
 

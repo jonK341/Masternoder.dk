@@ -108,10 +108,18 @@ class ErrorManager {
         if (/MetaMask|nkbihfbeogaeaoehlefnkodbefgpgknn|inpage\.js/i.test(blob)) {
             return true;
         }
-        if (/AbortError|signal is aborted|user aborted a request|Fetch is aborted/i.test(blob)) {
-            return true;
-        }
-        return false;
+        var initiated = errorData && (errorData.initiatedAbort || errorData.quietAbort);
+        if (initiated) return true;
+        var ourAbort = /exchange-hub\.js|profile-mn2-wallet\.js|casino\.js|business-control\.js/.test(stack)
+            && /AbortError|signal is aborted without reason/.test(blob);
+        return !!ourAbort;
+    }
+
+    isTimeout(errorData) {
+        const msg = String((errorData && errorData.error_message) || '');
+        const stack = String((errorData && errorData.error_stack) || '');
+        if (/AbortError|signal is aborted|aborted a request|Fetch is aborted/i.test(msg)) return false;
+        return /timeout|timed out/i.test(msg + '\n' + stack);
     }
 
     setupGlobalHandlers() {
@@ -161,6 +169,9 @@ class ErrorManager {
      */
     async handleError(errorData) {
         if (this.shouldIgnore(errorData)) return;
+        if (this.isTimeout(errorData)) {
+            errorData.error_level = 'warning';
+        }
         try {
             // Add default fields
             const fullErrorData = {
@@ -351,9 +362,24 @@ class ErrorManager {
      * Log API error
      */
     logApiError(endpoint, method, status, errorMessage, responseBody = null) {
+        var code = '';
+        if (responseBody) {
+            try {
+                var parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
+                code = parsed && parsed.code ? String(parsed.code) : '';
+            } catch (e) {}
+        }
+        if (status === 401 || (status === 404 && code === 'user_not_found')) {
+            console.warn('[ErrorManager] skipped user id response', method, endpoint, status, code);
+            return;
+        }
+        var level = status >= 500 ? 'critical' : status >= 400 ? 'error' : 'warning';
+        if (/timeout|timed out/i.test(String(errorMessage || '')) || status === 504) {
+            level = 'warning';
+        }
         return this.handleError({
             error_type: 'api',
-            error_level: status >= 500 ? 'critical' : status >= 400 ? 'error' : 'warning',
+            error_level: level,
             error_code: String(status),
             error_message: `API Error: ${method} ${endpoint} - ${errorMessage}`,
             request_method: method,

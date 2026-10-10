@@ -9,7 +9,7 @@ import hashlib
 from datetime import datetime
 from flask import Blueprint, jsonify, request
 
-from backend.services.user_id_policy import rejection_for
+from backend.services.user_id_policy import missing_user_response, rejection_for, user_exists
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SOCIAL_DATA_PATH = os.path.join(BASE_DIR, "data", "social_structure.json")
@@ -1117,6 +1117,9 @@ def social_user(user_id):
     rejected = rejection_for(user_id)
     if rejected:
         body, status = rejected
+        return jsonify(body), status
+    if user_exists(user_id) is False:
+        body, status = missing_user_response(user_id)
         return jsonify(body), status
     try:
         social = _load_social()

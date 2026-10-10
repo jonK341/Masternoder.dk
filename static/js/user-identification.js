@@ -31,7 +31,7 @@ class UserIdentification {
         const storedUserId = localStorage.getItem('game_user_id') || 
                             localStorage.getItem('user_id');
         
-        if (this._isCanonicalUserId(storedUserId)) {
+        if (this._isUsableUserId(storedUserId)) {
             // Verify user exists
             try {
                 const verifyResponse = await fetch(`${this.apiBase}/user/profile/${storedUserId}/display`);
@@ -75,7 +75,7 @@ class UserIdentification {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.success && this._isCanonicalUserId(data.user_id)) {
+                if (data.success && this._isUsableUserId(data.user_id)) {
                     this.userId = String(data.user_id).trim();
                     
                     // Store in localStorage
@@ -96,8 +96,15 @@ class UserIdentification {
         return null;
     }
 
-    _isCanonicalUserId(id) {
-        return typeof id === 'string' && /^user_[A-Za-z0-9_]{4,120}$/.test(id.trim());
+    _isUsableUserId(id) {
+        if (window.MnUserId && typeof window.MnUserId.isUsable === 'function') {
+            return window.MnUserId.isUsable(id);
+        }
+        if (typeof id !== 'string') return false;
+        const value = id.trim();
+        if (!value || value === '[object Promise]') return false;
+        const lowered = value.toLowerCase();
+        return lowered !== 'default_user' && lowered !== 'undefined' && lowered !== 'null';
     }
 
     /**
@@ -112,7 +119,7 @@ class UserIdentification {
         const stored = localStorage.getItem('game_user_id') || 
                       localStorage.getItem('user_id');
         
-        if (this._isCanonicalUserId(stored)) {
+        if (this._isUsableUserId(stored)) {
             return stored.trim();
         }
         
@@ -123,12 +130,12 @@ class UserIdentification {
      * Get current user ID (async - ensures identification)
      */
     async getUserId() {
-        if (this._isCanonicalUserId(this.userId)) {
+        if (this._isUsableUserId(this.userId)) {
             return this.userId.trim();
         }
 
         await this.initialize();
-        return this._isCanonicalUserId(this.userId) ? this.userId.trim() : null;
+        return this._isUsableUserId(this.userId) ? this.userId.trim() : null;
     }
 
     /**

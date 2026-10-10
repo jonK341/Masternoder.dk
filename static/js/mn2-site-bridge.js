@@ -7,10 +7,14 @@
     var BASE = global.location ? global.location.origin : '';
 
     function uid() {
+        if (global.MnUserId && typeof global.MnUserId.read === 'function') return global.MnUserId.read();
         var raw = global.localStorage.getItem('game_user_id')
             || global.localStorage.getItem('user_id')
             || '';
-        return /^user_[A-Za-z0-9_]{4,120}$/.test(raw) ? raw : '';
+        if (!raw || raw === '[object Promise]') return '';
+        var lowered = String(raw).toLowerCase();
+        if (lowered === 'default_user' || lowered === 'undefined' || lowered === 'null') return '';
+        return String(raw).trim();
     }
 
     function fetchJson(url) {

@@ -406,7 +406,7 @@
      */
     async function loadCurrency() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`${NAV_CONFIG.apiBase}/api/shop/currency?user_id=${userId}`);
             
             if (response.ok) {
@@ -549,7 +549,7 @@
      * Show user menu
      */
     function showUserMenu() {
-        const userId = localStorage.getItem('game_user_id') || 'default_user';
+        const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         const menu = `
             <div class="nav-toolbar-dropdown" id="userMenuDropdown">
                 <div class="nav-toolbar-dropdown-header">
@@ -681,7 +681,7 @@
      */
     async function loadNotificationsCount() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`${NAV_CONFIG.apiBase}/api/notifications/count?user_id=${userId}`);
             const count = response.ok ? ((await response.json()).count || 0) : 0;
             const badge = document.getElementById('navToolbarNotificationsBadge');
@@ -703,7 +703,7 @@
      */
     async function loadNotifications() {
         try {
-            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            const userId = localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
             const response = await fetch(`${NAV_CONFIG.apiBase}/api/notifications?user_id=${userId}`);
             
             if (response.ok) {

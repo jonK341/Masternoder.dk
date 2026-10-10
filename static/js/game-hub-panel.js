@@ -12,7 +12,7 @@
 
     const HUB = {
 
-        userId: localStorage.getItem('game_user_id') || 'default_user',
+        userId: localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''),
 
         data: null,
 
@@ -42,9 +42,17 @@
 
     function canonicalHubUserId() {
 
+        if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
+
         const raw = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
 
-        return /^user_[A-Za-z0-9_]{4,120}$/.test(raw) ? raw : '';
+        if (!raw || raw === '[object Promise]') return '';
+
+        const lowered = String(raw).toLowerCase();
+
+        if (lowered === 'default_user' || lowered === 'undefined' || lowered === 'null') return '';
+
+        return String(raw).trim();
 
     }
 

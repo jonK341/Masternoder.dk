@@ -6,7 +6,7 @@ import logging
 
 from flask import Blueprint, jsonify, request, session
 
-from backend.services.user_id_policy import rejection_for
+from backend.services.user_id_policy import missing_user_response, rejection_for, user_exists
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,18 @@ def _rejected_user_response(user_id):
         return None
     body, status = rejected
     return jsonify(body), status
+
+
+def _gate_existing_user(user_id):
+    """401 for placeholders. 404 only when the database confirms the id is absent."""
+    rejected = _rejected_user_response(user_id)
+    if rejected:
+        return rejected
+    found = user_exists(user_id)
+    if found is False:
+        body, status = missing_user_response(user_id)
+        return jsonify(body), status
+    return None
 
 
 def _resolve_user_id_for_request():
@@ -269,7 +281,7 @@ def bind_session():
 @user_profile_bp.route('/api/user/profile/<user_id>', methods=['GET'])
 def get_user_profile(user_id):
     """Get user profile"""
-    rejected = _rejected_user_response(user_id)
+    rejected = _gate_existing_user(user_id)
     if rejected:
         return rejected
     try:
@@ -298,7 +310,7 @@ def get_user_profile(user_id):
 @user_profile_bp.route('/api/user/profile/<user_id>/display', methods=['GET'])
 def get_profile_display(user_id):
     """Get profile data formatted for display"""
-    rejected = _rejected_user_response(user_id)
+    rejected = _gate_existing_user(user_id)
     if rejected:
         return rejected
     try:
@@ -338,7 +350,7 @@ def get_profile_display(user_id):
 @user_profile_bp.route('/api/user/profile/<user_id>/aggregated', methods=['GET'])
 def get_profile_aggregated(user_id):
     """Single-call profile: display + activity + agents + achievements + trophies. One request, one loading state."""
-    rejected = _rejected_user_response(user_id)
+    rejected = _gate_existing_user(user_id)
     if rejected:
         return rejected
     try:
