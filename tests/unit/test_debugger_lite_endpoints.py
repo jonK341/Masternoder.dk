@@ -8,26 +8,29 @@ import time
 
 import pytest
 
-os.environ["LITE_APP"] = "1"
-os.environ.pop("DAEMON_QUIET", None)
-
 from src.app import create_app  # noqa: E402
 
 _SLOW_BUDGET_S = 3.0
 
 
-def _client():
-    import src.app as appmod
-
-    appmod._daemon_cached_app = None
-    app = create_app()
-    app.config["TESTING"] = True
-    return app.test_client()
-
-
 @pytest.fixture(scope="module")
 def client():
-    return _client()
+    import src.app as appmod
+
+    previous = os.environ.get("LITE_APP")
+    os.environ["LITE_APP"] = "1"
+    os.environ.pop("DAEMON_QUIET", None)
+    appmod._daemon_cached_app = None
+    try:
+        app = create_app()
+        app.config["TESTING"] = True
+        yield app.test_client()
+    finally:
+        if previous is None:
+            os.environ.pop("LITE_APP", None)
+        else:
+            os.environ["LITE_APP"] = previous
+        appmod._daemon_cached_app = None
 
 
 GETS = [
@@ -182,7 +185,7 @@ def test_quiz_anonymous_is_forbidden_not_stub(client):
 def test_risk_panel_disabled_without_admin_key(client, monkeypatch):
     monkeypatch.delenv("COGS_ADMIN_REPORT_KEY", raising=False)
     response = client.get("/api/admin/risk/summary")
-    assert response.status_code == 200
+    assert response.status_code == 401
     body = response.get_json()
     assert body["success"] is False
     assert body["error"] == "admin_risk_disabled"

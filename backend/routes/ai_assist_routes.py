@@ -47,7 +47,7 @@ def _risk_disabled():
         "count": 0,
         "assessments": [],
         "clusters": [],
-    }), 200
+    }), 401
 
 
 @ai_assist_bp.route("/api/support/faq/topics", methods=["GET"])
