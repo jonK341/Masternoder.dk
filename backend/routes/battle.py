@@ -1,6 +1,7 @@
 """
 Battle System API Routes
 """
+import logging
 from flask import Blueprint, request, jsonify
 from backend.services.battle_system import battle_system
 from backend.services.battle_system_enhanced import enhanced_battle_system
@@ -39,6 +40,7 @@ try:
 except ImportError:
     battle_stats_service = None
 
+logger = logging.getLogger(__name__)
 battle_bp = Blueprint('battle', __name__)
 
 @battle_bp.route('/api/battle/status', methods=['GET'])
@@ -384,9 +386,10 @@ def create_quick_battle():
             from backend.services.quick_battle_system import quick_battle
             result = quick_battle.create_quick_battle(user_id, difficulty, 'ai')
             return jsonify(result), 200  # Always return 200, error info in response
-        except:
+        except Exception as quick_err:
             # Fallback to battle_system
-        result = battle_system.create_quick_battle(user_id, difficulty, battle_type)
+            logger.warning('quick_battle create failed, falling back to battle_system: %s', quick_err)
+            result = battle_system.create_quick_battle(user_id, difficulty, battle_type)
             return jsonify(result), 200  # Always return 200, error info in response
     except Exception as e:
         request_id = str(uuid.uuid4())[:8]
@@ -1021,7 +1024,7 @@ def get_battle_locations():
     """Get all battle locations"""
     try:
         if battle_gps:
-        locations = battle_gps.get_battle_locations()
+            locations = battle_gps.get_battle_locations()
         else:
             locations = []
         return jsonify({
@@ -1046,7 +1049,7 @@ def get_battle_news():
         limit = int(request.args.get('limit', 10))
         category = request.args.get('category')
         if battle_news:
-        news = battle_news.get_news(limit, category)
+            news = battle_news.get_news(limit, category)
         else:
             news = []
         return jsonify({
@@ -1070,7 +1073,7 @@ def get_peers():
     try:
         user_id = request.args.get('user_id', 'default_user')
         if battle_peer_network:
-        peers = battle_peer_network.get_peers(user_id)
+            peers = battle_peer_network.get_peers(user_id)
         else:
             peers = []
         return jsonify({
@@ -1096,7 +1099,7 @@ def connect_peer(peer_id: str):
         user_id = InputValidator.sanitize_string(data.get('user_id', 'default_user'))
         
         if battle_peer_network:
-        result = battle_peer_network.connect_peer(user_id, peer_id)
+            result = battle_peer_network.connect_peer(user_id, peer_id)
         else:
             result = {'success': False, 'error': 'Peer network system not available'}
         return jsonify(result), 200  # Always return 200, error info in response
@@ -1117,7 +1120,7 @@ def disconnect_peer(peer_id: str):
         user_id = InputValidator.sanitize_string(data.get('user_id', 'default_user'))
         
         if battle_peer_network:
-        result = battle_peer_network.disconnect_peer(user_id, peer_id)
+            result = battle_peer_network.disconnect_peer(user_id, peer_id)
         else:
             result = {'success': False, 'error': 'Peer network system not available'}
         return jsonify(result), 200  # Always return 200, error info in response
@@ -1136,7 +1139,7 @@ def get_network_topology():
     try:
         user_id = request.args.get('user_id', 'default_user')
         if battle_peer_network:
-        topology = battle_peer_network.get_network_topology(user_id)
+            topology = battle_peer_network.get_network_topology(user_id)
         else:
             topology = {}
         return jsonify({
@@ -1158,7 +1161,7 @@ def get_network_stats():
     try:
         user_id = request.args.get('user_id', 'default_user')
         if battle_peer_network:
-        stats = battle_peer_network.get_network_stats(user_id)
+            stats = battle_peer_network.get_network_stats(user_id)
         else:
             stats = {}
         return jsonify({
@@ -1218,7 +1221,7 @@ def get_trade_offers():
     try:
         user_id = request.args.get('user_id', 'default_user')
         if trophy_trading_system:
-        result = trophy_trading_system.get_trade_offers(user_id)
+            result = trophy_trading_system.get_trade_offers(user_id)
         else:
             result = {'success': True, 'offers': [], 'incoming': [], 'outgoing': []}
         return jsonify(result), 200
@@ -1235,7 +1238,7 @@ def accept_trade_offer(offer_id: str):
         data = InputValidator.get_json_safe(default={})
         user_id = InputValidator.sanitize_string(data.get('user_id', ''))
         if trophy_trading_system:
-        result = trophy_trading_system.accept_trade_offer(offer_id, user_id)
+            result = trophy_trading_system.accept_trade_offer(offer_id, user_id)
         else:
             result = {'success': False, 'error': 'Trophy trading system not available'}
         return jsonify(result), 200  # Always return 200, error info in response
@@ -1253,7 +1256,7 @@ def create_collectible_card():
         card_type = InputValidator.sanitize_string(data.get('card_type', ''))
         user_id = InputValidator.sanitize_string(data.get('user_id', ''))
         if collectible_card_system:
-        result = collectible_card_system.create_card(card_type, user_id)
+            result = collectible_card_system.create_card(card_type, user_id)
         else:
             result = {'success': False, 'error': 'Collectible card system not available'}
         return jsonify(result), 200  # Always return 200, error info in response
@@ -1269,7 +1272,7 @@ def get_collection():
     try:
         user_id = request.args.get('user_id', 'default_user')
         if collectible_card_system:
-        result = collectible_card_system.get_user_collection(user_id)
+            result = collectible_card_system.get_user_collection(user_id)
         else:
             result = {'success': True, 'collection': [], 'cards': []}
         return jsonify(result), 200

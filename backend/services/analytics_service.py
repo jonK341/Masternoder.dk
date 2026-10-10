@@ -11,11 +11,20 @@ try:
     from backend.services.unified_point_counter import unified_point_counter
     from backend.services.quick_battle_system import quick_battle
     from backend.services.ip_mac_user_manager import ip_mac_user_manager
-    from backend.services.178_systems_leaderboard import leaderboard_178_systems
 except ImportError:
     unified_point_counter = None
     quick_battle = None
     ip_mac_user_manager = None
+
+# Module name starts with a digit, so import it via importlib; fall back gracefully.
+try:
+    import importlib
+    leaderboard_178_systems = getattr(
+        importlib.import_module('backend.services.178_systems_leaderboard'),
+        'leaderboard_178_systems',
+        None,
+    )
+except Exception:
     leaderboard_178_systems = None
 
 
