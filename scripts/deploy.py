@@ -202,6 +202,9 @@ MANIFESTS = {
     # Minimal set for generator UI + routes + blueprint; only restarts uwsgi-vidgenerator
     "generator_recent": [
         "generator/index.html",
+        "static/js/page-length-guard.js",
+        "static/css/page-length-cap.css",
+        "static/js/navigation-toolbar.js",
         "backend/routes/missing_endpoints_routes.py",
         "backend/routes/generator_routes.py",
         "backend/routes/generator_shared.py",
@@ -289,6 +292,10 @@ MANIFESTS = {
     # Trophy system: collector levels, passive income (pts + MN2), social, agent tools
     "trophies": [
         "trophies/index.html",
+        "game/index.html",
+        "static/js/page-length-guard.js",
+        "static/css/page-length-cap.css",
+        "static/js/navigation-toolbar.js",
         "static/css/trophies-page-tema.css",
         "static/css/trophies-ww2-theme.css",
         "static/data/nav_portal_manifest.json",

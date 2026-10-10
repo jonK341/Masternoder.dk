@@ -189,6 +189,11 @@
         }
     }
 
+    window.PageLengthGuard = {
+        rescan: scan,
+        cap: capElement,
+    };
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 50); });
     } else {

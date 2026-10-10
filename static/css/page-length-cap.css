@@ -52,7 +52,8 @@ html.page-length-root-locked body {
 .tab-panel.page-length-capped,
 .tab-content.page-length-capped,
 .page-panel.page-length-capped,
-[role="tabpanel"].page-length-capped {
+[role="tabpanel"].page-length-capped,
+.gen-hub-panel.page-length-capped {
     padding-bottom: 1rem;
 }
 
