@@ -71,3 +71,31 @@ def _ensure_cwd():
         os.chdir(_ROOT)
     except OSError:
         pass
+
+
+# Live host credentials make unconfigured-path tests look configured.
+# A test that needs one of these sets it with monkeypatch after this fixture.
+_HOST_CREDENTIAL_ENV = (
+    "EXCHANGE_ARBITRAGE_LIVE",
+    "EXCHANGE_PAYOUT_BINANCE_LIVE",
+    "EXCHANGE_PAYOUT_PAYPAL_LIVE",
+    "EXCHANGE_AUTO_SWEEP_MIN_USD",
+    "EXCHANGE_AUTO_PAYPAL_SWEEP",
+    "EXCHANGE_VAULT_KEY",
+    "EXCHANGE_PAYOUT_BINANCE_ADDRESS",
+    "BINANCE_API_KEY",
+    "BINANCE_API_SECRET",
+    "NONKYC_API_KEY",
+    "NONKYC_API_SECRET",
+    "META_PIXEL_ID",
+    "PAYPAL_CLIENT_ID",
+    "PAYPAL_CLIENT_SECRET",
+    "PAYPAL_WEBHOOK_ID",
+    "PAYPAL_MODE",
+)
+
+
+@pytest.fixture(autouse=True)
+def _drop_host_live_credentials(monkeypatch):
+    for name in _HOST_CREDENTIAL_ENV:
+        monkeypatch.delenv(name, raising=False)

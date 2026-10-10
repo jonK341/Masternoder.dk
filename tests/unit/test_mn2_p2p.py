@@ -54,12 +54,16 @@ class P2PBase(unittest.TestCase):
             "daily_usd_cap": 10000.0, "daily_usd_cap_verified": 100000.0, "lifetime_usd_cap_unverified": 500.0,
         })
         self._cfg.start()
+        # Listing fixtures use $2. The live oracle corridor is intentional;
+        # pin the oracle to that fixture price so escrow tests are not network-dependent.
+        self._oracle = patch("backend.services.mn2_p2p_oracle._oracle_usd", return_value=2.0)
+        self._oracle.start()
 
     def tearDown(self):
         p2p._data_dir = self._orig_dir
         p2p._points = self._orig_points
         p2p._ledger = self._orig_ledger
-        self._verified.stop(); self._held.stop(); self._cfg.stop()
+        self._verified.stop(); self._held.stop(); self._cfg.stop(); self._oracle.stop()
 
     def _credit(self, uid, amt):
         self.fake.add_points(uid, "mn2_balance", amt)

@@ -313,8 +313,47 @@ def getnewaddress() -> Dict[str, Any]:
 
 
 def sendtoaddress(address: str, amount: float) -> Dict[str, Any]:
-    """Send MN2 to an address. amount in MN2 (e.g. 1.5)."""
+    """Send MN2 to an address. amount in MN2 (e.g. 1.5). Spends any wallet UTXO."""
     return _call("sendtoaddress", [address, amount])
+
+
+def rpc_help(command: str = "") -> Dict[str, Any]:
+    """Daemon help text. Used to see which optional RPCs this build actually exposes."""
+    if command:
+        return _call("help", [command])
+    return _call("help")
+
+
+def getreceivedbyaddress(address: str, minconf: int = 1) -> Dict[str, Any]:
+    return _call("getreceivedbyaddress", [address, int(minconf)])
+
+
+def setaccount(address: str, account: str) -> Dict[str, Any]:
+    return _call("setaccount", [address, account])
+
+
+def setlabel(address: str, label: str) -> Dict[str, Any]:
+    return _call("setlabel", [address, label])
+
+
+def sendfrom(account: str, address: str, amount: float) -> Dict[str, Any]:
+    return _call("sendfrom", [account, address, float(amount)])
+
+
+def createrawtransaction(inputs: List[Any], outputs: Dict[str, Any]) -> Dict[str, Any]:
+    return _call("createrawtransaction", [inputs, outputs])
+
+
+def signrawtransactionwithwallet(hex_tx: str) -> Dict[str, Any]:
+    return _call("signrawtransactionwithwallet", [hex_tx])
+
+
+def signrawtransaction(hex_tx: str) -> Dict[str, Any]:
+    return _call("signrawtransaction", [hex_tx])
+
+
+def sendrawtransaction(hex_tx: str) -> Dict[str, Any]:
+    return _call("sendrawtransaction", [hex_tx])
 
 
 def lockunspent(unlock: bool, outputs: list) -> Dict[str, Any]:

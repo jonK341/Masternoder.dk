@@ -111,9 +111,16 @@ class AutoFixEndpoints:
     def should_auto_fix(self, path: str, method: str = 'GET') -> bool:
         """Determine if endpoint should be auto-fixed.
 
-        Stub responses hide real 404s (including /api/errors). They stay off
-        unless AUTO_FIX_404_STUBS=1 is set for a local experiment.
+        Unknown API routes must 404. Stub responses hide real 404s (including
+        /api/errors). They stay off unless AUTO_FIX_404_STUBS=1 is set for a
+        local experiment, and /api/ paths are never stubbed.
         """
+        normalized = path or ""
+        if (
+            normalized.startswith("/api/")
+            or normalized.startswith("/vidgenerator/api/")
+        ):
+            return False
         flag = os.environ.get("AUTO_FIX_404_STUBS", "").strip().lower()
         if flag not in ("1", "true", "yes", "on"):
             return False

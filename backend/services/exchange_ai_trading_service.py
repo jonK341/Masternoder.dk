@@ -250,7 +250,29 @@ def run_ai_tick(
         except Exception:
             symbols = list(dict.fromkeys([*(hot_symbols or []), *base_symbols]))[:16]
     analysis = analyze_market(injected=injected, symbols=symbols or None, probe_venues=False)
-    ranked = analysis.get("ranked_opportunities") or []
+    ranked = list(analysis.get("ranked_opportunities") or [])
+    if not ranked:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+            state = read_arb_threshold_state() or {}
+            best_bps = float(state.get("best_net_bps") or 0)
+            threshold = float(state.get("threshold_bps") or 0)
+            if state.get("ready") and best_bps >= threshold and state.get("top_symbol"):
+                ranked.append({
+                    "symbol": state.get("top_symbol"),
+                    "buy_venue": state.get("buy_venue"),
+                    "sell_venue": state.get("sell_venue"),
+                    "net_bps": best_bps,
+                    "est_profit_usd": float(state.get("est_profit_usd") or 0),
+                    "profitable": True,
+                    "actionable": True,
+                    "ai_score": 80,
+                    "sized_notional_usd": 75,
+                    "notional_usd": 75,
+                    "source": "arb_threshold_state",
+                })
+        except Exception:
+            pass
     min_score = float(cfg.get("min_ai_score") or 42)
     min_net = float(cfg.get("min_net_bps") or 14)
     hot_bps = float(cfg.get("hot_spread_bps") or os.environ.get("EXCHANGE_AI_HOT_BPS") or 20)

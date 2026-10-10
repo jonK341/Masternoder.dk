@@ -108,6 +108,11 @@ def create_user():
                 except Exception:
                     pass
                 try:
+                    from backend.services.mn2_onchain_wallet import ensure_user_address
+                    result["mn2_deposit_address"] = ensure_user_address(uid)
+                except Exception:
+                    pass
+                try:
                     from backend.services.ai_user_controller import on_user_created
                     ai_result = on_user_created(uid, data.get('preferences', {}).get('username', ''))
                     result['ai_onboarding'] = ai_result

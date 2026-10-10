@@ -229,7 +229,10 @@ def create_order(
         cid = (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
         secret = (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
         if not cid or not secret:
-            return {"success": False, "error": "PayPal credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)"}
+            return {
+                "success": False,
+                "error": "PayPal authentication failed: credentials missing (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET)",
+            }
         return {"success": False, "error": "PayPal authentication failed", "mode": os.environ.get("PAYPAL_MODE") or "sandbox"}
 
     base_url = os.environ.get("BASE_URL", "https://masternoder.dk")

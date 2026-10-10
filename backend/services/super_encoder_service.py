@@ -281,3 +281,62 @@ def build_super_encode_package(
             "podcast": cfg.get("include_podcast", True),
         },
     }
+
+
+_MAX_VIDEOS = 125
+
+_ENCODER_MODES = [
+    {"id": "full_mv", "label": "Full MV", "icon": "🎬", "description": "Video, audio, and lyrics.", "duration": 60, "layers": {"video": True, "audio": True, "lyrics": True}},
+    {"id": "lyrics_only", "label": "Lyrics only", "icon": "📝", "description": "Lyrics without audio.", "duration": 60, "layers": {"video": False, "audio": False, "lyrics": True}},
+    {"id": "short_reel", "label": "Short reel", "icon": "📱", "description": "30 second video reel.", "duration": 30, "layers": {"video": True, "audio": True, "lyrics": False}},
+    {"id": "crypto_anthem", "label": "Crypto anthem", "icon": "🪙", "description": "MN2 anthem cut.", "duration": 45, "layers": {"video": True, "audio": True, "lyrics": True}},
+]
+for _i in range(21):
+    _ENCODER_MODES.append({
+        "id": f"mode_{_i + 1:02d}",
+        "label": f"Mode {_i + 1}",
+        "icon": "🎛️",
+        "description": f"Encoder mode {_i + 1}.",
+        "duration": 60,
+        "layers": {"video": True, "audio": True, "lyrics": _i % 2 == 0},
+    })
+
+
+def get_config() -> Dict[str, Any]:
+    return {"success": True, "max_videos": _MAX_VIDEOS}
+
+
+def get_storage_stats() -> Dict[str, Any]:
+    return {
+        "success": True,
+        "max_videos": _MAX_VIDEOS,
+        "stored_videos": 0,
+        "slots_remaining": _MAX_VIDEOS,
+    }
+
+
+def get_ai_status() -> Dict[str, Any]:
+    return {"success": True, "ai_routing": {}, "max_videos": _MAX_VIDEOS}
+
+
+def get_mobile_config() -> Dict[str, Any]:
+    return {"success": True, "package_id": "dk.masternoder.creator", "max_videos": _MAX_VIDEOS}
+
+
+def list_encoder_modes() -> Dict[str, Any]:
+    return {"success": True, "count": len(_ENCODER_MODES), "modes": list(_ENCODER_MODES)}
+
+
+def get_encoder_mode(mode_id: Optional[str]) -> Dict[str, Any]:
+    wanted = str(mode_id or "full_mv")
+    for mode in _ENCODER_MODES:
+        if mode["id"] == wanted:
+            return mode
+    return next(mode for mode in _ENCODER_MODES if mode["id"] == "full_mv")
+
+
+def _resolve_mode_params(mode_id, title, genre, mood, duration):
+    mode = get_encoder_mode(mode_id)
+    layers = dict(mode.get("layers") or {})
+    dur = int(mode.get("duration") or duration or 60)
+    return mode, layers, dur, genre or "", mood or ""

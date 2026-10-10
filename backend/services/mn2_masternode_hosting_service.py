@@ -686,13 +686,13 @@ def create_onchain_payment(quote_id: str, user_id: str) -> Dict[str, Any]:
         coins_total = int(shop_prices["coins_total"])
 
     try:
-        from backend.services.mn2_rpc_client import getnewaddress
-        r = getnewaddress()
-        if r.get("error"):
-            return {"success": False, "error": r.get("error", "Could not get address")}
-        address = (r.get("result") or "").strip()
+        from backend.services.mn2_wallet_service import generate_daemon_address
+        r = generate_daemon_address()
+        if not r.get("success"):
+            return {"success": False, "error": r.get("error") or "Could not get address", "code": r.get("code")}
+        address = (r.get("deposit_address") or "").strip()
         if not address:
-            return {"success": False, "error": "RPC did not return address"}
+            return {"success": False, "error": "RPC did not return address", "code": "no_address"}
     except Exception as exc:
         return {"success": False, "error": str(exc)}
 

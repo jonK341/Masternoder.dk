@@ -1016,6 +1016,45 @@ def lab_overview_get():
     }), 200
 
 
+@lab_bp.route("/api/lab/news", methods=["GET"])
+def lab_news():
+    """Lab-channel items for the V2.1 hub."""
+    try:
+        limit = int(request.args.get("limit") or 10)
+    except (TypeError, ValueError):
+        limit = 10
+    limit = max(1, min(limit, 50))
+    payload = _load_data_json("lab_news.json") or {}
+    items = payload.get("items") if isinstance(payload, dict) else []
+    if not isinstance(items, list):
+        items = []
+    news = []
+    for item in items:
+        if isinstance(item, dict):
+            row = dict(item)
+            row["channel"] = "lab"
+            news.append(row)
+    return jsonify({"success": True, "channel": "lab", "news": news[:limit]}), 200
+
+
+@lab_bp.route("/api/lab/systems-check", methods=["GET"])
+def lab_systems_check():
+    catalog = _load_lab_catalog()
+    checks = [
+        {"id": "catalog", "ok": len(catalog) > 0, "detail": f"{len(catalog)} nodes"},
+        {"id": "rulebook", "ok": bool(_load_lab_v2_rulebook()), "detail": "lab v2 rulebook"},
+        {"id": "routes", "ok": True, "detail": "news, systems-check, idea-board"},
+    ]
+    return jsonify({"success": True, "checks": checks, "total": len(checks), "user_id": _resolve_uid()}), 200
+
+
+@lab_bp.route("/api/lab/idea-board", methods=["GET"])
+def lab_idea_board():
+    if db is None:
+        return jsonify({"success": True, "ideas": [], "user_id": _resolve_uid()}), 200
+    return jsonify({"success": True, "ideas": [], "user_id": _resolve_uid()}), 200
+
+
 @lab_bp.route("/api/lab/v2/status", methods=["GET"])
 def lab_v2_status_get():
     """Read-only Lab V2.0 status contract for UI panels and agents."""
@@ -1044,7 +1083,7 @@ def lab_v2_status_get():
     )
     return jsonify({
         "success": True,
-        "version": "2.0-first-slice",
+        "version": "2.1-hub-upgrade",
         "user_id": user_id,
         "rulebook": {
             "id": "lab_v2",

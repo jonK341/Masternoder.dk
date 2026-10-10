@@ -48,6 +48,25 @@ def rotation_auto_execute_enabled() -> bool:
     return os.environ.get("EXCHANGE_ROTATION_AUTO", "").strip().lower() in ("1", "true", "yes", "on")
 
 
+def _venue_rotation_eligible(venue_id: str) -> bool:
+    """Venue must have vault creds and a private API config entry."""
+    vid = str(venue_id or "").lower()
+    if not vid or vid == "internal":
+        return bool(vid == "internal")
+    return vapi.venue_execution_eligible(vid)
+
+
+def _filter_rotation_actions(actions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Drop actions targeting scan-only venues (public ticker, no private API)."""
+    out: List[Dict[str, Any]] = []
+    for act in actions:
+        venue = str(act.get("venue_id") or act.get("wallet_user_id") or "").lower()
+        if venue and venue != "internal" and not _venue_rotation_eligible(venue):
+            continue
+        out.append(act)
+    return out
+
+
 def _min_sell_leg_usd() -> float:
     return float(load_config().get("min_sell_leg_usd") or 25)
 
@@ -142,13 +161,53 @@ def _venue_asset_key(action: Dict[str, Any]) -> str:
     return f"{venue}|{sym}|{side}|{market}"
 
 
-def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]:
+def _is_insufficient_balance_reason(reason: str) -> bool:
+    r = str(reason or "").lower()
+    return "insufficient balance" in r or "insufficient_balance" in r or "insufficient funds" in r
+
+
+def _is_permanent_rotation_failure(reason: str) -> bool:
+    """Failures that should block retries for the dedupe window."""
+    r = str(reason or "").lower()
+    return "pair_not_supported" in r
+
+
+def profit_first_enabled() -> bool:
+    cfg = load_config()
+    if cfg.get("rotation_profit_first") is True:
+        return True
+    flag = (os.environ.get("EXCHANGE_ROTATION_PROFIT_FIRST") or "").strip().lower()
+    return flag in ("1", "true", "yes", "on")
+
+
+def _hot_spread_ready(*_args: Any, **_kwargs: Any):
+    bps = _current_net_bps()
+    if bps is None:
+        return False, 0.0
+    return float(bps) >= 15.0, float(bps)
+
+
+def _refresh_rotation_balances() -> None:
+    try:
+        vapi.refresh_venue_balances(["binance", "nonkyc"], force=False)
+    except Exception:
+        return
+
+
+def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any], *, bypass_cooldown: bool = False) -> Optional[str]:
     """Return skip reason when action should not re-run yet."""
     now = datetime.now(timezone.utc)
     fp = _action_fingerprint(action)
     fail_hash = str(state.get("last_failure_hash") or "")
     fail_at = _parse_ts(str(state.get("last_failure_at") or ""))
-    if fail_hash == fp and fail_at and (now - fail_at) < timedelta(minutes=_DEDUPE_MINUTES):
+    fail_reason = str(state.get("last_failure_reason") or "")
+    if (
+        fail_hash == fp
+        and fail_at
+        and (now - fail_at) < timedelta(minutes=_DEDUPE_MINUTES)
+        and _is_permanent_rotation_failure(fail_reason)
+        and not _is_insufficient_balance_reason(fail_reason)
+    ):
         return "recent_failure_dedupe"
 
     amount = float(action.get("amount_usd") or action.get("amount") or action.get("suggested_notional_usd") or 0)
@@ -156,10 +215,14 @@ def _dedupe_skip(action: Dict[str, Any], state: Dict[str, Any]) -> Optional[str]
     for entry in reversed(state.get("recent") or []):
         if not isinstance(entry, dict):
             continue
+        if not entry.get("success"):
+            continue
         entry_at = _parse_ts(str(entry.get("ts") or ""))
         if not entry_at or (now - entry_at) >= timedelta(minutes=_DEDUPE_MINUTES):
             continue
         if str(entry.get("asset_key") or "") != asset_key:
+            continue
+        if bypass_cooldown:
             continue
         prev_amt = float(entry.get("amount_usd") or 0)
         if prev_amt > 0 and amount > 0:
@@ -200,9 +263,11 @@ def _record_rotation_attempt(action: Dict[str, Any], state: Dict[str, Any], *, s
     if success:
         state.pop("last_failure_hash", None)
         state.pop("last_failure_at", None)
+        state.pop("last_failure_reason", None)
     else:
         state["last_failure_hash"] = fp
         state["last_failure_at"] = _iso()
+        state["last_failure_reason"] = skip_reason
     _save_rotation_state(state)
 
 
@@ -334,6 +399,223 @@ def _rotation_log_fields(action: Dict[str, Any]) -> Dict[str, str]:
     return {"venue_id": venue, "symbol": sym, "market": market}
 
 
+def _quote_free_usd(venue_id: str, quote: Optional[str] = None) -> float:
+    quote_asset = str(quote or vapi.venue_quote_asset(venue_id)).upper()
+    return float(vapi.parse_spot_balances(venue_id, dry_run=False).get(quote_asset) or 0)
+
+
+def _fit_external_action_to_balance(action: Dict[str, Any], max_usd: float) -> Dict[str, Any]:
+    """Cap external buy/sell notional to quote balance and normalize qty."""
+    venue = str(action.get("venue_id") or "")
+    sym = str(action.get("symbol") or "")
+    side = str(action.get("side") or "buy")
+    usd = float(action.get("amount_usd") or 0)
+    quote = action.get("quote")
+    qty = float(action.get("quantity") or 0)
+
+    fund_cap = usd
+    if side == "buy":
+        free_q = _quote_free_usd(venue, quote)
+        if free_q > 0:
+            fund_cap = min(fund_cap, round(free_q * 0.95, 2))
+        try:
+            rows = search_paths(hours=6, limit=30).get("paths") or []
+            for row in reversed(rows):
+                if row.get("skip_reason") not in ("insufficient_venue_balance", "insufficient_balance"):
+                    continue
+                v = row.get("venues") or {}
+                if str(v.get("buy") or "").lower() != venue.lower():
+                    continue
+                if sym and str(row.get("symbol") or "").upper() != sym:
+                    continue
+                aid = str(row.get("agent_id") or "")
+                notion = float(row.get("notional_usd") or usd or 0)
+                if aid and notion > 0:
+                    gaps = analyze_funding_gaps(aid, sym or str(row.get("symbol") or ""), notion)
+                    max_f = float(gaps.get("max_funded_usd") or 0)
+                    if max_f > 10:
+                        fund_cap = min(fund_cap, round(max_f * 0.97, 2))
+                    break
+        except Exception:
+            pass
+
+    capped = _cap_action_amount(action, min(max_usd, fund_cap))
+    spec = vapi.market_order_for_leg(
+        venue, side, sym, float(capped.get("amount_usd") or 0),
+        quote=capped.get("quote"),
+        quantity=qty if qty > 0 else None,
+    )
+    if spec.get("ok"):
+        capped = {**capped, **{k: spec[k] for k in ("market", "quote", "quantity", "notional_usd") if k in spec}}
+    return capped
+
+
+def _prefund_action_for_short_leg(
+    gaps: Dict[str, Any],
+    leg: Dict[str, Any],
+    *,
+    score: float,
+    top25: Optional[List[str]] = None,
+) -> Optional[Dict[str, Any]]:
+    """Build one rotation action to cover a funding short leg."""
+    sym = str(gaps.get("symbol") or "").upper()
+    venue = str(leg.get("venue_id") or "")
+    side = str(leg.get("leg") or "")
+    asset = str(leg.get("asset") or "")
+    need = float(leg.get("need") or 0)
+    free = float(leg.get("free") or 0)
+    notion = float(gaps.get("notional_usd") or 0)
+    short_usd = max(0.0, need - free) if side == "buy" else max(
+        0.0, (need - free) * float(gaps.get("buy_ask") or ex._price_usd(sym) or 1),
+    )
+    if short_usd < 5 and side == "buy":
+        short_usd = max(5.0, need - free)
+    elif short_usd < 5:
+        short_usd = 5.0
+    if side == "buy" and venue != "internal":
+        quote = asset or vapi.venue_quote_asset(venue)
+        return _quote_shortfall_action(
+            venue, quote, short_usd,
+            reason=f"Hot-pair prefund buy leg ({quote})",
+            score=score,
+            top25=top25 or ["skip_reason_funding", "arb_exec_zero"],
+            configured_usd=notion,
+        )
+    if side == "sell" and venue != "internal":
+        spec = vapi.market_order_for_leg(venue, "buy", sym, short_usd)
+        if not spec.get("ok"):
+            return None
+        return _external_buy_action(
+            venue, sym, "buy",
+            amount_usd=short_usd,
+            qty=spec["quantity"],
+            reason=f"Hot-pair prefund sell leg ({sym})",
+            score=score,
+            top25=top25 or ["skip_reason_funding", "arb_exec_zero"],
+            market=spec.get("market"),
+            quote=spec.get("quote"),
+        )
+    return None
+
+
+def maybe_hot_pair_prefund(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
+    """After exchange tick: prefund exact hot symbol when spread qualifies but unfunded."""
+    if not rotation_auto_execute_enabled():
+        return {"skipped": True, "reason": "auto_disabled"}
+
+    plat = exchange_res.get("platform") or {}
+    results = plat.get("results") or {}
+    arb = results.get("arbitrage") or {}
+    if int(arb.get("executed_count") or 0) > 0:
+        return {"skipped": True, "reason": "arb_executed"}
+
+    bq = arb.get("best_qualifying") or {}
+    if not bq.get("qualifies") or bq.get("funded"):
+        return {"skipped": True, "reason": "not_unfunded_qualifying"}
+
+    sym = str(bq.get("symbol") or "").upper()
+    agent_id = str(bq.get("agent_id") or "arb_live_dual_farm")
+    if not sym:
+        return {"skipped": True, "reason": "no_symbol"}
+
+    hot: List[str] = []
+    ps = plat.get("profit_pair_search") or {}
+    if ps.get("success"):
+        hot = [str(s).upper() for s in (ps.get("hot_symbols") or []) if s]
+    if not hot:
+        try:
+            from backend.services.exchange_extended_profit_service import read_arb_threshold_state
+
+            hot = [str(s).upper() for s in (read_arb_threshold_state().get("hot_symbols") or []) if s]
+        except Exception:
+            pass
+    if hot and sym not in hot:
+        return {"skipped": True, "reason": "symbol_not_hot", "symbol": sym}
+
+    gaps = analyze_funding_gaps(agent_id, sym, 0)
+    if gaps.get("funded_ok"):
+        return {"skipped": True, "reason": "already_funded", "symbol": sym}
+
+    short_legs = gaps.get("short_legs") or []
+    if not short_legs:
+        return {"skipped": True, "reason": "no_short_leg", "symbol": sym}
+
+    cfg = load_config()
+    max_usd = float(cfg.get("rotation_auto_max_usd_per_tick") or 100)
+    score = float(bq.get("net_bps") or 0)
+
+    sell_venue = str(bq.get("sell_venue") or gaps.get("sell_venue") or "")
+    ordered = sorted(
+        short_legs,
+        key=lambda leg: (
+            0 if str(leg.get("leg") or "") == "sell" and str(leg.get("venue_id") or "") == sell_venue else 1,
+            0 if str(leg.get("leg") or "") == "sell" else 1,
+        ),
+    )
+    action: Optional[Dict[str, Any]] = None
+    for leg in ordered:
+        venue = str(leg.get("venue_id") or "")
+        if venue and not _venue_rotation_eligible(venue):
+            continue
+        action = _prefund_action_for_short_leg(gaps, leg, score=score)
+        if action:
+            break
+    if not action:
+        return {"skipped": True, "reason": "no_eligible_prefund", "symbol": sym}
+
+    if str(action.get("type") or "") in ("external_market_buy", "external_market_sell") and not rotation_live_enabled():
+        return {"skipped": True, "reason": "rotation_live_off", "symbol": sym}
+
+    capped = _cap_action_amount(action, min(max_usd, 25.0))
+    if str(capped.get("type") or "") in ("external_market_buy", "external_market_sell"):
+        capped = _fit_external_action_to_balance(capped, max_usd)
+        venue = str(capped.get("venue_id") or "")
+        sym_a = str(capped.get("symbol") or "")
+        side = str(capped.get("side") or "buy")
+        if not capped.get("market") and sym_a and venue:
+            spec = vapi.market_order_for_leg(
+                venue, side, sym_a, float(capped.get("amount_usd") or 0),
+                quote=capped.get("quote"),
+                quantity=float(capped.get("quantity") or 0) or None,
+            )
+            if not spec.get("ok"):
+                return {
+                    "skipped": True,
+                    "reason": str(spec.get("error") or "pair_not_supported"),
+                    "symbol": sym,
+                    **(_rotation_log_fields(capped)),
+                }
+            capped = {**capped, **{k: spec[k] for k in ("market", "quote", "quantity", "notional_usd") if k in spec}}
+
+    state = _load_rotation_state()
+    skip = _dedupe_skip(capped, state)
+    if skip:
+        return {
+            "skipped": True,
+            "reason": skip,
+            "action": capped.get("label"),
+            "symbol": sym,
+            **(_rotation_log_fields(capped)),
+        }
+
+    exec_res = execute_rotation(capped, dry_run=False)
+    success = bool(exec_res.get("success") or exec_res.get("already_applied"))
+    _record_rotation_attempt(capped, state, success=success, skip_reason=str(exec_res.get("error") or ""))
+
+    log_fields = _rotation_log_fields(capped)
+    return {
+        "prefund_executed": True,
+        "auto_executed": True,
+        "success": success,
+        "action": capped.get("label"),
+        "mode": exec_res.get("mode"),
+        "symbol": sym,
+        "hot": hot[:4] if hot else [],
+        "skip_reason": None if success else str(exec_res.get("error") or exec_res.get("reason") or "failed"),
+        **log_fields,
+    }
+
+
 def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
     """After exchange tick: suggest and optionally auto-execute top rotation action."""
     plat = exchange_res.get("platform") or {}
@@ -343,6 +625,11 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
 
     rot = suggest_swap_actions(hours=6, limit=3)
     actions = rot.get("actions") or []
+    hot, _hot_bps = _hot_spread_ready()
+    if profit_first_enabled() and hot:
+        preferred = [row for row in actions if str(row.get("type") or "") != "reduce_notional"]
+        if preferred:
+            actions = preferred
     if not actions:
         return {"skipped": True, "reason": "no_actions"}
 
@@ -367,6 +654,7 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
 
     capped = _cap_action_amount(action, max_usd)
     if str(capped.get("type") or "") in ("external_market_buy", "external_market_sell"):
+        capped = _fit_external_action_to_balance(capped, max_usd)
         venue = str(capped.get("venue_id") or "")
         sym = str(capped.get("symbol") or "")
         side = str(capped.get("side") or "buy")
@@ -389,7 +677,13 @@ def maybe_auto_rotation(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
         capped = {**capped, **{k: spec[k] for k in ("market", "quote", "quantity") if k in spec}}
 
     state = _load_rotation_state()
-    skip = _dedupe_skip(capped, state)
+    skip = _dedupe_skip(
+        capped,
+        state,
+        bypass_cooldown=bool(
+            profit_first_enabled() and str(capped.get("type") or "") == "reduce_notional"
+        ),
+    )
     if skip:
         log_fields = _rotation_log_fields(capped)
         return {"skipped": True, "reason": skip, "action": capped.get("label"), **log_fields}
@@ -774,6 +1068,7 @@ def suggest_swap_actions(
     agent_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Ranked swap/rotation actions from PPP skips + live venue balances."""
+    _refresh_rotation_balances()
     cfg = load_config()
     lookback = float(hours if hours is not None else cfg.get("rotation_lookback_hours") or 24)
     rows = search_paths(hours=lookback, limit=3000, agent_id=agent_id).get("paths") or []
@@ -825,6 +1120,8 @@ def suggest_swap_actions(
             qty = float(gaps.get("quantity") or 0)
             act: Optional[Dict[str, Any]] = None
             if side == "buy" and venue != "internal":
+                if not _venue_rotation_eligible(venue):
+                    continue
                 quote = asset or vapi.venue_quote_asset(venue)
                 act = _quote_shortfall_action(
                     venue, quote, short_usd,
@@ -834,6 +1131,8 @@ def suggest_swap_actions(
                     configured_usd=float(gaps.get("notional_usd") or notion),
                 )
             elif side == "sell" and venue != "internal":
+                if not _venue_rotation_eligible(venue):
+                    continue
                 spec = vapi.market_order_for_leg(venue, "buy", sym, short_usd)
                 if not spec.get("ok"):
                     continue
@@ -859,14 +1158,18 @@ def suggest_swap_actions(
         max_f = float(gaps.get("max_funded_usd") or 0)
         if max_f > 10 and notion > max_f + 5:
             buy_v = meta["buy_venue"]
-            quote = vapi.venue_quote_asset(buy_v) if buy_v else "USDC"
-            act = _reduce_notional_action(buy_v, quote, max_f, notion, score=float(count) * 0.5)
-            if act["label"] not in seen_labels:
-                seen_labels.add(act["label"])
-                actions.append(act)
+            if buy_v and _venue_rotation_eligible(buy_v):
+                quote = vapi.venue_quote_asset(buy_v) if buy_v else "USDC"
+                act = _reduce_notional_action(buy_v, quote, max_f, notion, score=float(count) * 0.5)
+                if act["label"] not in seen_labels:
+                    seen_labels.add(act["label"])
+                    actions.append(act)
 
     # Venue balance heuristics (Binance USDC cap, NonKYC DOGE, quote imbalance)
-    venue_ids = list(cfg.get("balance_summary_venues") or ["binance", "nonkyc"])
+    venue_ids = [
+        vid for vid in (cfg.get("balance_summary_venues") or ["binance", "nonkyc"])
+        if _venue_rotation_eligible(vid)
+    ]
     from backend.services import external_exchange_connector_service as conn
 
     default_notion = float(conn.load_connectors_config().get("paper_trade_usd") or 75.0)
@@ -941,6 +1244,7 @@ def suggest_swap_actions(
                     seen_labels.add(act["label"])
                     actions.append(act)
 
+    actions = _filter_rotation_actions(actions)
     actions.sort(key=_action_score, reverse=True)
     trimmed = actions[: max(1, int(limit))]
     return {

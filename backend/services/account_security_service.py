@@ -210,6 +210,27 @@ def check_real_money_action(user_id: str, verification_token: Optional[str] = No
     return "Password verification required. Verify at /api/user/security/verify with your account password."
 
 
+def bind_session_requires_password(user_id: str) -> bool:
+    settings = get_security_settings(user_id)
+    if not settings.get("require_password_bind_session"):
+        return False
+    return has_password(user_id)
+
+
+def check_bind_session_action(user_id: str, password: Optional[str] = None) -> Optional[str]:
+    """Return error message if bind blocked, else None."""
+    if not bind_session_requires_password(user_id):
+        return None
+    if not password:
+        return "Password required to bind session"
+    from backend.services.password_protection_service import verify_password
+
+    verified = verify_password(user_id, password)
+    if not verified.get("success"):
+        return verified.get("error") or "Invalid password"
+    return None
+
+
 def check_purchase_action(user_id: str, verification_token: Optional[str] = None, price_usd: float = 0) -> Optional[str]:
     settings = get_security_settings(user_id)
     if not settings.get("require_password_purchases") or price_usd <= 0:

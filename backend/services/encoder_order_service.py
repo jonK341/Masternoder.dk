@@ -277,14 +277,14 @@ def create_onchain_order(
         return create_balance_order(user_id, k, cfg, auto_fulfill=True)
 
     try:
-        from backend.services.mn2_rpc_client import getnewaddress
+        from backend.services.mn2_wallet_service import generate_daemon_address
 
-        r = getnewaddress()
-        if r.get("error"):
-            return {"success": False, "error": r.get("error", "address_failed")}
-        address = (r.get("result") or "").strip()
+        r = generate_daemon_address()
+        if not r.get("success"):
+            return {"success": False, "error": r.get("error") or "address_failed", "code": r.get("code")}
+        address = (r.get("deposit_address") or "").strip()
         if not address:
-            return {"success": False, "error": "no_address"}
+            return {"success": False, "error": "no_address", "code": "no_address"}
     except Exception as exc:
         return {"success": False, "error": str(exc)[:120]}
 

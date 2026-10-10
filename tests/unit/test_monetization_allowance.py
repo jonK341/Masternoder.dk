@@ -33,13 +33,19 @@ def test_ref_eq_helpers():
     assert "ref-eq" in pack["reference_eq_label"]
 
 
-def test_public_config_includes_ref_eq_on_packs_and_plans():
+def test_public_config_includes_ref_eq_on_packs_and_plans(monkeypatch):
     reload_monetization_config()
     pub = get_public_config()
     pack_m = next(p for p in pub["coin_packs"] if p["id"] == "coin-pack-m")
     assert pack_m.get("reference_eq_label")
-    plans = pub["subscriptions"]["plans"]
-    assert plans["P-PLACEHOLDER-PRO"].get("reference_eq_label_monthly")
+    from backend.services.monetization_config_service import get_subscription_plan
+    # Public config hides placeholder plan ids until PAYPAL_SUBSCRIPTION_PLAN_PRO is set.
+    assert "P-PLACEHOLDER-PRO" not in pub["subscriptions"]["plans"]
+    template = get_subscription_plan("P-PLACEHOLDER-PRO")
+    assert template
+    monkeypatch.setenv("PAYPAL_SUBSCRIPTION_PLAN_PRO", "P-LIVE-PRO-TEST")
+    live = get_public_config()["subscriptions"]["plans"]["P-LIVE-PRO-TEST"]
+    assert live.get("reference_eq_label_monthly")
 
 
 def test_usage_allowance_with_metering_and_subscription(monkeypatch):
@@ -64,7 +70,7 @@ def test_usage_allowance_with_metering_and_subscription(monkeypatch):
         with open(metering, "w", encoding="utf-8") as f:
             f.write(
                 json.dumps({
-                    "ts": "2026-06-15T12:00:00+00:00",
+                    "ts": "2026-10-08T12:00:00+00:00",
                     "user_id": "u_allow",
                     "ratio_vs_reference_job": 1.0,
                     "cogs_usd": {"total_usd": 0.5},
@@ -120,7 +126,7 @@ def test_nudge_scan_writes_log(monkeypatch):
             for _ in range(3):
                 f.write(
                     json.dumps({
-                        "ts": "2026-06-16T12:00:00+00:00",
+                        "ts": "2026-10-08T12:00:00+00:00",
                         "user_id": "u_high",
                         "ratio_vs_reference_job": 1.0,
                         "cogs_usd": {"total_usd": 0.5},

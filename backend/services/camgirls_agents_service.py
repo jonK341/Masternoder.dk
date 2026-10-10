@@ -62,8 +62,11 @@ def persona_system_prompt(row: Dict[str, Any]) -> Tuple[str, str]:
     return system, task
 
 
+AGENT_TOOLS = _AGENT_TOOLS
+
+
 def list_agent_tools() -> List[Dict[str, Any]]:
-    return list(_AGENT_TOOLS)
+    return list(AGENT_TOOLS)
 
 
 def execute_agent_action(action: str, user_id: str, approved: bool = False, **kwargs) -> Dict[str, Any]:

@@ -26,17 +26,32 @@ def _load_config() -> Dict[str, Any]:
         return {}
 
 
+_B58 = set("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+
+
+def looks_like_chain_address(value: str) -> bool:
+    text = (value or "").strip()
+    return len(text) >= 26 and all(ch in _B58 for ch in text)
+
+
 def _resolve_recipient(to: str) -> Optional[str]:
+    """Map a site user id or one of our deposit addresses to a user id.
+
+    Chain-shaped strings that are not in the deposit map are not site users.
+    """
     target = (to or "").strip()
     if not target:
         return None
-    if target.startswith("user_"):
-        return target
     try:
         from backend.services.mn2_wallet_service import get_address_to_user_map
-        return (get_address_to_user_map().get(target) or "").strip() or None
+        mapped = (get_address_to_user_map().get(target) or "").strip()
+        if mapped:
+            return mapped
     except Exception:
+        mapped = ""
+    if looks_like_chain_address(target):
         return None
+    return target
 
 
 def _daily_sent(user_id: str) -> float:

@@ -23,6 +23,19 @@ def _load_news() -> list:
         return []
 
 
+@platform_news_bp.route("/api/news/channels", methods=["GET"])
+def platform_news_channels():
+    items = _load_news()
+    channels = []
+    seen = set()
+    for item in items:
+        channel = (item.get("channel") or item.get("category") or "").strip().lower()
+        if channel and channel not in seen:
+            seen.add(channel)
+            channels.append(channel)
+    return jsonify({"success": True, "channels": channels}), 200
+
+
 @platform_news_bp.route("/api/news/platform", methods=["GET"])
 def platform_news():
     try:

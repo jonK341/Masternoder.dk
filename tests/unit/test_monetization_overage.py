@@ -49,7 +49,7 @@ def test_overage_offers_when_over_allowance(monkeypatch):
             for _ in range(3):
                 f.write(
                     json.dumps({
-                        "ts": "2026-06-16T12:00:00+00:00",
+                        "ts": "2026-10-08T12:00:00+00:00",
                         "user_id": "u_over",
                         "ratio_vs_reference_job": 1.0,
                         "cogs_usd": {"total_usd": 0.5},

@@ -1,140 +1,279 @@
-"""MN2 + coins rewards for AI-routed agent actions (chat, debugger, feedback)."""
+"""
+MN2 + coins rewards for agent and AI-assisted user actions.
+
+Config: data/mn2_config.json -> agent_rewards (rates, daily cap).
+Credits via game_mn2_rewards.credit_mn2 + unified_points_database (idempotent references).
+"""
 from __future__ import annotations
 
 import json
 import os
+import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
+_LOCK = threading.RLock()
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _DAILY_FILE = os.path.join(_BASE, "data", "agent_crypto_daily.json")
+_MN2_CONFIG = os.path.join(_BASE, "data", "mn2_config.json")
 
 
-def _iso_day() -> str:
+def _iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _today_utc() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
-def _load_rewards_config() -> Dict[str, Any]:
+def _read_json(path: str) -> dict:
+    if not os.path.isfile(path):
+        return {}
     try:
-        from backend.services.monetization_config_service import _load_raw
-
-        raw = _load_raw() or {}
-        block = raw.get("agent_ai_rewards") or {}
-        return block if isinstance(block, dict) else {}
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
     except Exception:
         return {}
 
 
-def _action_rates(action: str) -> Dict[str, float]:
-    cfg = _load_rewards_config()
-    actions = cfg.get("actions") if isinstance(cfg.get("actions"), dict) else {}
-    row = actions.get(action) if isinstance(actions.get(action), dict) else {}
-    return {
-        "mn2": float(row.get("mn2") or 0),
-        "coins": float(row.get("coins") or 0),
-    }
-
-
-def _load_daily() -> Dict[str, Any]:
-    if not os.path.isfile(_DAILY_FILE):
-        return {"days": {}}
-    try:
-        with open(_DAILY_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, dict) else {"days": {}}
-    except Exception:
-        return {"days": {}}
-
-
-def _save_daily(data: Dict[str, Any]) -> None:
-    os.makedirs(os.path.dirname(_DAILY_FILE), exist_ok=True)
-    tmp = _DAILY_FILE + ".tmp"
+def _write_json(path: str, data: dict) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
-    os.replace(tmp, _DAILY_FILE)
+    os.replace(tmp, path)
 
 
-def public_rewards_info() -> Dict[str, Any]:
-    cfg = _load_rewards_config()
-    actions = cfg.get("actions") if isinstance(cfg.get("actions"), dict) else {}
-    actions_mn2 = {
-        k: float((v or {}).get("mn2") or 0)
-        for k, v in actions.items()
-        if isinstance(v, dict)
+def _overlay_monetization_rewards(defaults: Dict[str, Any]) -> None:
+    """Apply data/monetization_config.json agent_ai_rewards when present."""
+    try:
+        from backend.services.monetization_config_service import _load_raw
+
+        block = (_load_raw() or {}).get("agent_ai_rewards") or {}
+    except Exception:
+        return
+    if not isinstance(block, dict):
+        return
+    if "enabled" in block:
+        defaults["enabled"] = block["enabled"]
+    if block.get("daily_cap_mn2") is not None:
+        defaults["daily_cap_mn2"] = block["daily_cap_mn2"]
+    actions = block.get("actions") if isinstance(block.get("actions"), dict) else {}
+    for name, row in actions.items():
+        if not isinstance(row, dict):
+            continue
+        if row.get("mn2") is not None:
+            defaults["action_rewards_mn2"][str(name)] = float(row["mn2"])
+        if row.get("coins") is not None:
+            defaults["action_rewards_coins"][str(name)] = float(row["coins"])
+
+
+def _agent_rewards_cfg() -> Dict[str, Any]:
+    raw = _read_json(_MN2_CONFIG).get("agent_rewards") or {}
+    defaults: Dict[str, Any] = {
+        "enabled": True,
+        "daily_cap_mn2": 0.5,
+        "action_rewards_mn2": {
+            "routed_chat": 0.002,
+            "llm_insight": 0.003,
+            "debugger_task_complete": 0.0005,
+            "debugger_task_ai": 0.001,
+            "feedback_outcome": 0.0003,
+            "agent_orchestrator": 0.001,
+            "research_rotation_insight": 0.002,
+            "cron_ai_summary": 0.001,
+            "evaluate_output": 0.0004,
+            "first_post": 0.001,
+            "post_created": 0.0003,
+            "like_received": 0.0002,
+        },
+        "action_rewards_coins": {
+            "routed_chat": 5,
+            "llm_insight": 8,
+            "debugger_task_complete": 2,
+            "debugger_task_ai": 4,
+            "feedback_outcome": 2,
+            "agent_orchestrator": 3,
+            "research_rotation_insight": 5,
+            "cron_ai_summary": 3,
+            "evaluate_output": 2,
+            "first_post": 3,
+            "post_created": 1,
+            "like_received": 1,
+        },
     }
-    return {
-        "success": True,
-        "enabled": bool(cfg.get("enabled", True)),
-        "daily_cap_mn2": float(cfg.get("daily_cap_mn2") or 0),
-        "actions_mn2": actions_mn2,
-        "actions": actions,
-    }
+    _overlay_monetization_rewards(defaults)
+    if isinstance(raw.get("action_rewards_mn2"), dict):
+        defaults["action_rewards_mn2"].update(raw["action_rewards_mn2"])
+    if isinstance(raw.get("action_rewards_coins"), dict):
+        defaults["action_rewards_coins"].update(raw["action_rewards_coins"])
+    for k in ("enabled", "daily_cap_mn2"):
+        if k in raw:
+            defaults[k] = raw[k]
+    return defaults
+
+
+def _daily_mn2_used(user_id: str) -> float:
+    with _LOCK:
+        daily = _read_json(_DAILY_FILE)
+        row = daily.get(f"{user_id}:{_today_utc()}") or {}
+        return float(row.get("mn2") or 0)
+
+
+def _record_daily_mn2(user_id: str, amount: float) -> None:
+    with _LOCK:
+        daily = _read_json(_DAILY_FILE)
+        key = f"{user_id}:{_today_utc()}"
+        row = daily.get(key) or {"mn2": 0.0, "events": []}
+        row["mn2"] = round(float(row.get("mn2") or 0) + amount, 8)
+        events = list(row.get("events") or [])
+        events.append({"at": _iso(), "amount": amount})
+        row["events"] = events[-50:]
+        daily[key] = row
+        _write_json(_DAILY_FILE, daily)
+
+
+def get_reward_amount(action: str) -> Dict[str, float]:
+    cfg = _agent_rewards_cfg()
+    mn2 = float((cfg.get("action_rewards_mn2") or {}).get(action) or 0)
+    coins = float((cfg.get("action_rewards_coins") or {}).get(action) or 0)
+    return {"mn2": mn2, "coins": coins}
 
 
 def award_agent_action(
     user_id: str,
     action: str,
     *,
-    reference: Optional[str] = None,
+    reference: str,
+    metadata: Optional[Dict[str, Any]] = None,
+    require_success: bool = True,
     success: bool = True,
 ) -> Dict[str, Any]:
+    """
+    Idempotent MN2/coins grant for an agent or AI-assisted action.
+    reference must be unique per award (e.g. trace_id, task_id+day).
+    """
+    if require_success and not success:
+        return {"success": False, "skipped": "action_not_successful"}
+
     from backend.services.mn2_earn_auth import require_earn_user
 
-    if not success:
-        return {"success": False, "error": "action_not_successful"}
     ok, uid_or_err = require_earn_user(user_id)
     if not ok:
-        return {"success": False, "error": uid_or_err}
-
+        return {"success": False, "error": uid_or_err, "skipped": uid_or_err}
     user_id = uid_or_err
-    cfg = _load_rewards_config()
+
+    cfg = _agent_rewards_cfg()
     if not cfg.get("enabled", True):
-        return {"success": False, "error": "rewards_disabled"}
+        return {"success": False, "skipped": "agent_rewards_disabled"}
 
-    rates = _action_rates(action)
-    mn2_amt = float(rates.get("mn2") or 0)
-    coins_amt = float(rates.get("coins") or 0)
+    rates = get_reward_amount(action)
+    mn2_amt = rates["mn2"]
+    coins_amt = int(rates["coins"])
     if mn2_amt <= 0 and coins_amt <= 0:
-        return {"success": False, "error": "unknown_action"}
+        return {"success": False, "skipped": "no_reward_configured", "action": action}
 
-    ref = (reference or f"{action}:{user_id}:{_iso_day()}").strip()
-    from backend.services.unified_points_database import unified_points_db
-    from backend.services.mn2_ledger import append_entry
+    cap = float(cfg.get("daily_cap_mn2") or 0)
+    if mn2_amt > 0 and cap > 0:
+        used = _daily_mn2_used(str(user_id))
+        if used >= cap:
+            mn2_amt = 0.0
+        elif used + mn2_amt > cap:
+            mn2_amt = round(max(0.0, cap - used), 8)
 
-    meta = {"reference": ref, "action": action}
+    out: Dict[str, Any] = {
+        "success": True,
+        "action": action,
+        "reference": reference,
+        "mn2_awarded": 0.0,
+        "coins_awarded": 0,
+    }
+
+    meta = dict(metadata or {})
+    meta["action"] = action
+
     if mn2_amt > 0:
-        result = unified_points_db.add_points(
-            user_id, "mn2_balance", mn2_amt, source=f"agent_{action}", metadata=meta,
-        )
-        if not result.get("success"):
-            return result
-        if result.get("duplicate"):
-            return {"success": True, "duplicate": True, "mn2_awarded": 0.0, "coins_awarded": 0}
-        append_entry(
-            user_id=user_id,
-            entry_type=f"agent_{action}",
-            amount=mn2_amt,
-            txid=ref,
+        from backend.services.game_mn2_rewards import credit_mn2
+
+        src = f"agent_ai_{action}"
+        cr = credit_mn2(
+            user_id,
+            mn2_amt,
+            source=src,
+            reference=reference,
             metadata=meta,
         )
+        if cr.get("success") and not cr.get("duplicate"):
+            _record_daily_mn2(str(user_id), mn2_amt)
+            out["mn2_awarded"] = mn2_amt
+        elif cr.get("duplicate"):
+            out["duplicate"] = True
+            out["mn2_awarded"] = 0.0
+        else:
+            out["success"] = False
+            out["error"] = cr.get("error", "mn2_credit_failed")
+            return out
 
     if coins_amt > 0:
-        unified_points_db.add_points(
-            user_id, "coins", coins_amt, source=f"agent_{action}", metadata=meta,
-        )
+        try:
+            from backend.services.mn2_earn_auth import require_earn_user
+            from backend.services.unified_points_database import unified_points_db
 
-    day = _iso_day()
-    daily = _load_daily()
-    days = daily.setdefault("days", {})
-    user_day = days.setdefault(day, {}).setdefault(user_id, {"mn2": 0.0, "actions": []})
-    user_day["mn2"] = round(float(user_day.get("mn2") or 0) + mn2_amt, 8)
-    user_day.setdefault("actions", []).append({"action": action, "reference": ref, "mn2": mn2_amt})
-    _save_daily(daily)
+            ok, uid_or_err = require_earn_user(user_id)
+            if ok:
+                coin_ref = f"coins:{reference}"
+                coin_meta = {**meta, "reference": coin_ref, "source": f"agent_ai_{action}"}
+                cr_coins = unified_points_db.add_points(
+                    uid_or_err,
+                    "coins",
+                    coins_amt,
+                    source=f"agent_ai_{action}",
+                    metadata=coin_meta,
+                )
+                if cr_coins.get("success") and not cr_coins.get("duplicate"):
+                    out["coins_awarded"] = coins_amt
+                elif cr_coins.get("duplicate"):
+                    out.setdefault("duplicate", True)
+        except Exception as e:
+            out["coins_error"] = str(e)[:120]
 
+    if out.get("mn2_awarded", 0) > 0 or out.get("coins_awarded", 0) > 0:
+        try:
+            from backend.services.activity_events_service import emit
+
+            emit(
+                "agent_ai_reward",
+                user_id=str(user_id),
+                channel="agents",
+                text=f"+{out.get('mn2_awarded', 0)} MN2, +{out.get('coins_awarded', 0)} coins ({action})",
+                payload={
+                    "action": action,
+                    "mn2": out.get("mn2_awarded", 0),
+                    "coins": out.get("coins_awarded", 0),
+                    "reference": reference,
+                },
+            )
+        except Exception:
+            pass
+
+    return out
+
+
+def public_rewards_info() -> Dict[str, Any]:
+    cfg = _agent_rewards_cfg()
+    mn2_map = cfg.get("action_rewards_mn2") or {}
+    coin_map = cfg.get("action_rewards_coins") or {}
+    actions = {
+        name: {"mn2": float(mn2_map.get(name) or 0), "coins": float(coin_map.get(name) or 0)}
+        for name in set(mn2_map) | set(coin_map)
+    }
     return {
         "success": True,
-        "mn2_awarded": mn2_amt,
-        "coins_awarded": coins_amt,
-        "action": action,
-        "reference": ref,
+        "enabled": bool(cfg.get("enabled", True)),
+        "daily_cap_mn2": cfg.get("daily_cap_mn2"),
+        "actions_mn2": mn2_map,
+        "actions_coins": coin_map,
+        "actions": actions,
+        "currency": "MN2",
     }
