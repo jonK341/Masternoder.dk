@@ -339,6 +339,15 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP shop_monetization: {e}")
     try:
+        from backend.routes.shop_monetization_routes import shop_monetization_bp
+        if 'shop_monetization' not in app.blueprints:
+            app.register_blueprint(shop_monetization_bp)
+            n += 1
+            print("  [OK] Registered shop_monetization blueprint (LITE)")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP shop_monetization: {e}")
+
+    try:
         from backend.routes.social_auth_routes import social_auth_bp
         app.register_blueprint(social_auth_bp)
         n += 1

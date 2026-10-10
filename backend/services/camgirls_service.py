@@ -98,11 +98,6 @@ def list_performers_catalog(user_id: str = "default_user", lite: bool = False) -
         if not lite:
             row["chat_price_mn2"] = p.get("chat_price_mn2", 2)
             row["goal_mn2"] = p.get("goal_mn2", 100)
-            try:
-                from backend.services.camgirls_social_service import is_fan_club_member
-                row["fan_club"] = is_fan_club_member(user_id, str(p.get("id")))
-            except Exception:
-                row["fan_club"] = False
         performers.append(row)
     return {"success": True, "performers": performers, "count": len(performers)}
 
@@ -193,47 +188,6 @@ def chat_with_performer(user_id: str, performer_id: str, message: str) -> Dict[s
         "created_at": _iso(),
     })
     return {"success": True, "reply": reply, "amount_mn2": price}
-
-
-def fulfill_external_payment(
-    user_id: str,
-    performer_id: str,
-    action: str,
-    amount_mn2: float,
-    *,
-    payment_ref: str = "",
-    gift_id: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Grant unlock/tip/gift after PayPal capture (no MN2 debit)."""
-    if not _is_age_verified(user_id):
-        return {"success": False, "code": "age_verification_required"}
-    p = _get_performer(performer_id)
-    if not p:
-        return {"success": False, "error": "performer_not_found"}
-    action = (action or "unlock").strip().lower()
-    meta = {"performer_id": performer_id, "payment_ref": payment_ref, "method": "paypal"}
-    if action == "unlock":
-        if _is_unlocked(user_id, performer_id):
-            return {"success": True, "already_unlocked": True}
-        data = _read_json(_UNLOCKS_FILE, {})
-        data.setdefault(user_id, [])
-        if performer_id not in data[user_id]:
-            data[user_id].append(performer_id)
-        _write_json(_UNLOCKS_FILE, data)
-        return {"success": True, "action": "unlock", "performer_id": performer_id}
-    if action in ("tip", "gift"):
-        amt = float(amount_mn2 or 0)
-        _append_jsonl(_TIPS_FILE, {
-            "user_id": user_id,
-            "performer_id": performer_id,
-            "amount_mn2": amt,
-            "gift_id": gift_id,
-            "payment_method": "paypal",
-            "payment_ref": payment_ref,
-            "created_at": _iso(),
-        })
-        return {"success": True, "action": action, "amount_mn2": amt, **meta}
-    return {"success": False, "error": "invalid_action"}
 
 
 def get_chat_history(user_id: str, performer_id: str, limit: int = 30) -> Dict[str, Any]:

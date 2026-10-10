@@ -38,13 +38,16 @@
     <script>
         (function() {
             var path = (window.location.pathname || '').replace(/\/+$/, '');
-            var m = path.match(/\/rulebook-v(\d+)(?:-(\d+))?(?:\.html)?$/i);
-            var v = m ? ('v' + m[1] + (m[2] != null && m[2] !== '' ? '.' + m[2] : '')) : 'v1';
+            var apiVersion = 'v1';
+            if (/rulebook-v3-2/i.test(path)) {
+                apiVersion = 'v3.2';
+            } else {
+                var m = path.match(/\/rulebook-v(\d+)(?:\.html)?$/i);
+                if (m) apiVersion = 'v' + m[1];
+            }
             var apis = [
-                '/api/rulebooks/' + v,
-                '/api/rulebooks/' + v,
-                '/api/rulebooks/' + v.replace('v', ''),
-                '/api/rulebooks/' + v.replace('v', '')
+                '/api/rulebooks/' + apiVersion,
+                '/api/rulebooks/' + encodeURIComponent(apiVersion)
             ];
 
             function getRulebookFromApis(i) {
@@ -62,7 +65,7 @@
 
             getRulebookFromApis(0).then(function(res) {
                 var rb = res.rulebook || {};
-                document.getElementById('rulebook-title').textContent = (rb._meta && rb._meta.icon ? rb._meta.icon + ' ' : '') + (rb.name || 'Rulebook ' + v);
+                document.getElementById('rulebook-title').textContent = (rb._meta && rb._meta.icon ? rb._meta.icon + ' ' : '') + (rb.name || 'Rulebook ' + apiVersion.toUpperCase());
                 document.getElementById('rulebook-desc').textContent = rb.description || '';
                 var el = document.getElementById('rulebook-content');
                 var html = '';
@@ -136,7 +139,7 @@
                 }
                 el.innerHTML = html || '<p>Ingen indhold.</p>';
             }).catch(function() {
-                document.getElementById('rulebook-title').textContent = 'Rulebook ' + v.toUpperCase();
+                document.getElementById('rulebook-title').textContent = 'Rulebook ' + apiVersion.toUpperCase();
                 document.getElementById('rulebook-desc').textContent = 'Rulebook API unavailable - fallback mode.';
                 document.getElementById('rulebook-content').innerHTML = '<div class="rule-block"><h3>Fallback</h3><p>Kunne ikke hente rulebook-data lige nu. Prøv igen om lidt.</p></div>';
             });

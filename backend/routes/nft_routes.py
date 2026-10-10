@@ -86,12 +86,14 @@ def nft_buy_paypal():
 
     base = _base_url()
     item_name = sku_row.get("name") or sku
+    return_to = str(data.get("return_to") or "market").strip().lower()
+    page_path = "/nft" if return_to == "nft" else "/market"
     return_url = (
-        f"{base}/market?paypal=success"
+        f"{base}{page_path}?paypal=success"
         f"&item_id={urllib.parse.quote(sku)}"
         f"&user_id={urllib.parse.quote(user_id)}"
     )
-    cancel_url = f"{base}/market?paypal=cancel"
+    cancel_url = f"{base}{page_path}?paypal=cancel"
     try:
         from backend.services.paypal_service import create_order, remember_shop_order
 

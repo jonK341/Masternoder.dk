@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Page Debugger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #00ff00;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid rgba(0, 255, 0, 0.3);
+            border-radius: 10px;
+        }
+        
+        .header h1 {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+        
+        .section {
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid rgba(0, 255, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section h2 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+            padding-bottom: 10px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #00ff00, #00cc00);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        
+        .status.success {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+        
+        .status.error {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+        
+        .status.warning {
+            background: rgba(255, 255, 0, 0.1);
+            border-color: #ffff00;
+            color: #ffff00;
+        }
+        
+        .diagnosis-result {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .fix-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0, 255, 0, 0.05);
+            border-left: 3px solid #00ff00;
+            border-radius: 3px;
+        }
+        
+        pre {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bug"></i> Generator Page Debugger</h1>
+            <p>Diagnose and fix issues with the generator page</p>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-server"></i> Server Processes</h2>
+            <div class="button-group">
+                <button class="btn" onclick="checkProcesses()">
+                    <i class="fas fa-server"></i> Check Processes
+                </button>
+                <button class="btn btn-secondary" onclick="checkUwsgi()">
+                    <i class="fas fa-cog"></i> Check uWSGI
+                </button>
+                <button class="btn btn-secondary" onclick="restartUwsgi()">
+                    <i class="fas fa-redo"></i> Restart uWSGI
+                </button>
+            </div>
+            <div id="processes-result"></div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-upload"></i> File Uploads</h2>
+            <div class="button-group">
+                <button class="btn" onclick="checkUploads()">
+                    <i class="fas fa-check-circle"></i> Check Uploads
+                </button>
+                <button class="btn btn-secondary" onclick="testFileAccess()">
+                    <i class="fas fa-key"></i> Test File Access
+                </button>
+                <button class="btn btn-secondary" onclick="createMissingFiles()">
+                    <i class="fas fa-plus-circle"></i> Create Missing Files
+                </button>
+            </div>
+            <div id="uploads-result"></div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-stethoscope"></i> Diagnosis</h2>
+            <div class="button-group">
+                <button class="btn" onclick="runDiagnosis()">
+                    <i class="fas fa-search"></i> Run Diagnosis
+                </button>
+                <button class="btn btn-secondary" onclick="testGeneratorButton()">
+                    <i class="fas fa-play"></i> Test Generator Button
+                </button>
+                <button class="btn btn-secondary" onclick="checkServiceWorker()">
+                    <i class="fas fa-cog"></i> Check Service Worker
+                </button>
+                <button class="btn btn-secondary" onclick="testEndpoint()">
+                    <i class="fas fa-plug"></i> Test API Endpoint
+                </button>
+            </div>
+            <div id="diagnosis-result"></div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-wrench"></i> Fixes</h2>
+            <div class="button-group">
+                <button class="btn" onclick="applyFixes()">
+                    <i class="fas fa-magic"></i> Apply Auto-Fixes
+                </button>
+                <button class="btn btn-secondary" onclick="reloadGenerator()">
+                    <i class="fas fa-sync"></i> Reload Generator Page
+                </button>
+            </div>
+            <div id="fixes-result"></div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-robot"></i> AI Engine & Service Worker Tests</h2>
+            <div class="button-group">
+                <button class="btn" onclick="testAIEngine()">
+                    <i class="fas fa-brain"></i> Test AI Engine
+                </button>
+                <button class="btn btn-secondary" onclick="testServiceWorkerGathering()">
+                    <i class="fas fa-database"></i> Test Service Worker Data Gathering
+                </button>
+                <button class="btn btn-secondary" onclick="testCompleteFlow()">
+                    <i class="fas fa-play-circle"></i> Test Complete Flow
+                </button>
+                <button class="btn btn-secondary" onclick="testAIIntegration()">
+                    <i class="fas fa-link"></i> Test AI Integration
+                </button>
+            </div>
+            <div id="ai-test-result"></div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-info-circle"></i> Status</h2>
+            <div id="status-display">
+                <div class="status warning">Click "Run Diagnosis" to check generator page status</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load AI Engine for testing -->
+        <script src="/vidgenerator/static/js/error-manager.js"></script>
+    <script src="/vidgenerator/static/js/service-worker-register.js"></script>
+    <script src="/vidgenerator/static/js/ai-engine-simple.js"></script>
+    
+    <script>
+        const BASE_URL = window.location.origin;
+        
+        async function checkProcesses() {
+            const resultDiv = document.getElementById('processes-result');
+            resultDiv.innerHTML = '<div class="status warning">Checking processes...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/check-processes`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    const p = data.processes;
+                    let html = '<div class="diagnosis-result">';
+                    html += `<div class="status ${p.uwsgi.running ? 'success' : 'error'}">
+                        <strong>uWSGI:</strong> ${p.uwsgi.running ? '✓ Running' : '✗ Not Running'}
+                        ${p.uwsgi.pid ? `(PID: ${p.uwsgi.pid})` : ''}
+                    </div>`;
+                    html += `<div class="status ${p.apache.running ? 'success' : 'warning'}">
+                        <strong>Apache:</strong> ${p.apache.running ? '✓ Running' : '⚠ Not Running'}
+                        ${p.apache.pid ? `(PID: ${p.apache.pid})` : ''}
+                    </div>`;
+                    html += `<div class="status ${p.python.running ? 'success' : 'warning'}">
+                        <strong>Python/Flask:</strong> ${p.python.running ? '✓ Running' : '⚠ Not Running'}
+                        ${p.python.pids.length > 0 ? `(PIDs: ${p.python.pids.join(', ')})` : ''}
+                    </div>`;
+                    if (p.uwsgi.command) {
+                        html += `<pre>uWSGI Command: ${p.uwsgi.command}</pre>`;
+                    }
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function checkUwsgi() {
+            const resultDiv = document.getElementById('processes-result');
+            resultDiv.innerHTML = '<div class="status warning">Checking uWSGI...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/check-uwsgi`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    const s = data.status;
+                    let html = '<div class="diagnosis-result">';
+                    html += `<div class="status ${s.service_active ? 'success' : 'error'}">
+                        <strong>Service Active:</strong> ${s.service_active ? '✓ Yes' : '✗ No'}
+                    </div>`;
+                    html += `<div class="status ${s.service_enabled ? 'success' : 'warning'}">
+                        <strong>Service Enabled:</strong> ${s.service_enabled ? '✓ Yes' : '⚠ No'}
+                    </div>`;
+                    html += `<div class="status ${s.process_running ? 'success' : 'error'}">
+                        <strong>Process Running:</strong> ${s.process_running ? '✓ Yes' : '✗ No'}
+                    </div>`;
+                    if (s.error) {
+                        html += `<div class="status error">Error: ${s.error}</div>`;
+                    }
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function restartUwsgi() {
+            if (!confirm('Are you sure you want to restart uWSGI?')) return;
+            
+            const resultDiv = document.getElementById('processes-result');
+            resultDiv.innerHTML = '<div class="status warning">Restarting uWSGI...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/restart-uwsgi`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = '<div class="diagnosis-result">';
+                    html += `<div class="status success">${data.message}</div>`;
+                    if (data.status_output) {
+                        html += `<pre>${data.status_output}</pre>`;
+                    }
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error || data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function checkUploads() {
+            const resultDiv = document.getElementById('uploads-result');
+            resultDiv.innerHTML = '<div class="status warning">Checking uploads...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/check-uploads`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    const u = data.upload_status;
+                    let html = '<div class="diagnosis-result">';
+                    html += `<div class="status ${u.all_uploaded ? 'success' : 'error'}">
+                        <strong>All Files Uploaded:</strong> ${u.all_uploaded ? '✓ Yes' : '✗ No'}
+                    </div>`;
+                    html += '<h3 style="margin-top: 15px; color: #00ff00;">Files:</h3>';
+                    for (const [name, info] of Object.entries(u.files)) {
+                        html += `<div class="status ${info.exists ? 'success' : 'error'}">
+                            <strong>${name}:</strong> ${info.exists ? '✓ Exists' : '✗ Missing'}
+                            ${info.exists ? `(${(info.size / 1024).toFixed(2)} KB, modified: ${info.modified})` : ''}
+                        </div>`;
+                    }
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function runDiagnosis() {
+            const resultDiv = document.getElementById('diagnosis-result');
+            resultDiv.innerHTML = '<div class="status warning">Running diagnosis...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/debug`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    const diagnosis = data.diagnosis;
+                    let html = '<div class="diagnosis-result">';
+                    
+                    // Template status
+                    html += `<div class="status ${diagnosis.template_exists ? 'success' : 'error'}">
+                        <strong>Template:</strong> ${diagnosis.template_exists ? '✓ Found' : '✗ Missing'}
+                    </div>`;
+                    
+                    // Button status
+                    html += `<div class="status ${diagnosis.button_exists ? 'success' : 'error'}">
+                        <strong>Generate Button:</strong> ${diagnosis.button_exists ? '✓ Found' : '✗ Missing'}
+                    </div>`;
+                    
+                    // Scripts status
+                    html += '<h3 style="margin-top: 15px; color: #00ff00;">Scripts:</h3>';
+                    for (const [script, info] of Object.entries(diagnosis.scripts)) {
+                        const exists = info.exists && info.in_template;
+                        html += `<div class="status ${exists ? 'success' : 'error'}">
+                            <strong>${script}:</strong> ${exists ? '✓ Loaded' : '✗ Missing'}
+                        </div>`;
+                    }
+                    
+                    // Service Worker status
+                    html += '<h3 style="margin-top: 15px; color: #00ff00;">Service Worker:</h3>';
+                    html += `<div class="status ${!diagnosis.service_worker.disabled ? 'success' : 'error'}">
+                        <strong>Status:</strong> ${diagnosis.service_worker.disabled ? '✗ Disabled' : '✓ Active'}
+                    </div>`;
+                    
+                    // Issues
+                    if (diagnosis.issues.length > 0) {
+                        html += '<h3 style="margin-top: 15px; color: #ff0000;">Issues Found:</h3>';
+                        diagnosis.issues.forEach(issue => {
+                            html += `<div class="status error">✗ ${issue}</div>`;
+                        });
+                    }
+                    
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function applyFixes() {
+            const resultDiv = document.getElementById('fixes-result');
+            resultDiv.innerHTML = '<div class="status warning">Applying fixes...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/fix`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = '<div class="diagnosis-result">';
+                    html += '<div class="status success"><strong>Fixes Applied:</strong></div>';
+                    data.fixes_applied.forEach(fix => {
+                        html += `<div class="fix-item">✓ ${fix}</div>`;
+                    });
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testGeneratorButton() {
+            // Open generator page in new tab and test button
+            const generatorWindow = window.open('/vidgenerator/generator', '_blank');
+            if (generatorWindow) {
+                generatorWindow.addEventListener('load', () => {
+                    setTimeout(() => {
+                        const btn = generatorWindow.document.getElementById('generate-btn');
+                        if (btn) {
+                            alert('Generator button found! Click it to test.');
+                        } else {
+                            alert('Generator button NOT found!');
+                        }
+                    }, 2000);
+                });
+            }
+        }
+        
+        async function checkServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                const statusDiv = document.getElementById('status-display');
+                
+                if (registrations.length > 0) {
+                    statusDiv.innerHTML = `<div class="status success">
+                        <strong>Service Worker:</strong> ✓ Active (${registrations.length} registration(s))
+                    </div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">
+                        <strong>Service Worker:</strong> ✗ Not registered
+                    </div>`;
+                }
+            } else {
+                document.getElementById('status-display').innerHTML = 
+                    '<div class="status error">Service Worker not supported in this browser</div>';
+            }
+        }
+        
+        function reloadGenerator() {
+            window.open('/vidgenerator/generator', '_blank');
+        }
+        
+        async function testFileAccess() {
+            const resultDiv = document.getElementById('uploads-result');
+            resultDiv.innerHTML = '<div class="status warning">Testing file access...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/test-file-access`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    const results = data.results;
+                    let html = '<div class="diagnosis-result">';
+                    
+                    html += '<h3 style="margin-top: 15px; color: #00ff00;">File Access:</h3>';
+                    for (const [name, info] of Object.entries(results.files)) {
+                        const status = info.exists && info.readable ? 'success' : 'error';
+                        html += `<div class="status ${status}">
+                            <strong>${name}:</strong> 
+                            ${info.exists ? '✓' : '✗'} Exists,
+                            ${info.readable ? '✓' : '✗'} Readable,
+                            ${info.writable ? '✓' : '✗'} Writable
+                            ${info.exists ? `(${(info.size / 1024).toFixed(2)} KB)` : ''}
+                        </div>`;
+                    }
+                    
+                    html += '<h3 style="margin-top: 15px; color: #00ff00;">Directory Permissions:</h3>';
+                    for (const [name, info] of Object.entries(results.permissions)) {
+                        const status = info.exists && info.readable ? 'success' : 'warning';
+                        html += `<div class="status ${status}">
+                            <strong>${name}:</strong> 
+                            ${info.exists ? '✓' : '✗'} Exists,
+                            ${info.readable ? '✓' : '✗'} Readable,
+                            ${info.writable ? '✓' : '✗'} Writable
+                        </div>`;
+                    }
+                    
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function createMissingFiles() {
+            if (!confirm('This will create missing files with fallback content. Continue?')) return;
+            
+            const resultDiv = document.getElementById('uploads-result');
+            resultDiv.innerHTML = '<div class="status warning">Creating missing files...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/create-missing-files`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = '<div class="diagnosis-result">';
+                    html += '<div class="status success"><strong>Files Created:</strong></div>';
+                    data.created.forEach(file => {
+                        html += `<div class="fix-item">✓ ${file}</div>`;
+                    });
+                    if (data.errors && data.errors.length > 0) {
+                        html += '<div class="status error"><strong>Errors:</strong></div>';
+                        data.errors.forEach(error => {
+                            html += `<div class="status error">✗ ${error}</div>`;
+                        });
+                    }
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                    
+                    // Re-check uploads after creation
+                    setTimeout(checkUploads, 1000);
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testEndpoint() {
+            const resultDiv = document.getElementById('diagnosis-result');
+            resultDiv.innerHTML = '<div class="status warning">Testing API endpoint...</div>';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/vidgenerator/api/generator/test-endpoint`);
+                if (!response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">HTTP ${response.status}: ${response.statusText}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `<div class="status error">Expected JSON but got ${contentType}<br><pre>${text.substring(0, 500)}</pre></div>`;
+                    return;
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = '<div class="diagnosis-result">';
+                    html += `<div class="status success">✓ ${data.message}</div>`;
+                    html += '<h3 style="margin-top: 15px; color: #00ff00;">Available Endpoints:</h3>';
+                    for (const [name, path] of Object.entries(data.endpoints)) {
+                        html += `<div class="status success">${name}: ${path}</div>`;
+                    }
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // AI Engine and Service Worker Tests
+        async function testAIEngine() {
+            const resultDiv = document.getElementById('ai-test-result');
+            resultDiv.innerHTML = '<div class="status warning">Testing AI Engine...</div>';
+            
+            try {
+                // Check if AI engine is loaded
+                if (!window.simpleAIEngine) {
+                    resultDiv.innerHTML = '<div class="status error">✗ AI Engine not loaded. Make sure ai-engine-simple.js is included.</div>';
+                    return;
+                }
+                
+                // Check if initialized
+                if (!window.simpleAIEngine.isReady) {
+                    resultDiv.innerHTML = '<div class="status warning">⏳ AI Engine initializing...</div>';
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    if (!window.simpleAIEngine.isReady) {
+                        resultDiv.innerHTML = '<div class="status error">✗ AI Engine failed to initialize</div>';
+                        return;
+                    }
+                }
+                
+                let html = '<div class="diagnosis-result">';
+                html += '<div class="status success">✓ AI Engine loaded and ready</div>';
+                html += '<h3 style="margin-top: 15px; color: #00ff00;">AI Engine Status:</h3>';
+                html += `<div class="status success">Ready: ${window.simpleAIEngine.isReady ? '✓ Yes' : '✗ No'}</div>`;
+                html += `<div class="status ${window.simpleAIEngine.serviceWorker ? 'success' : 'warning'}">Service Worker: ${window.simpleAIEngine.serviceWorker ? '✓ Connected' : '⚠ Not connected'}</div>`;
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testServiceWorkerGathering() {
+            const resultDiv = document.getElementById('ai-test-result');
+            resultDiv.innerHTML = '<div class="status warning">Testing Service Worker Data Gathering...</div>';
+            
+            try {
+                if (!window.simpleAIEngine || !window.simpleAIEngine.isReady) {
+                    resultDiv.innerHTML = '<div class="status error">✗ AI Engine not ready. Initialize first.</div>';
+                    return;
+                }
+                
+                const testPrompt = 'Test prompt for data gathering';
+                const testTitle = 'Test Title';
+                
+                resultDiv.innerHTML = '<div class="status warning">Gathering data via Service Worker...</div>';
+                
+                const data = await window.simpleAIEngine.gatherData(testPrompt, testTitle);
+                
+                let html = '<div class="diagnosis-result">';
+                html += '<div class="status success">✓ Data gathering complete</div>';
+                html += '<h3 style="margin-top: 15px; color: #00ff00;">Gathered Data:</h3>';
+                
+                if (data.research) {
+                    html += `<div class="status ${data.research.wikipedia ? 'success' : 'warning'}">Wikipedia: ${data.research.wikipedia ? '✓ Found' : '⚠ Not found'}</div>`;
+                    html += `<div class="status ${data.research.facts && data.research.facts.length > 0 ? 'success' : 'warning'}">Facts: ${data.research.facts ? data.research.facts.length : 0} found</div>`;
+                    html += `<div class="status ${data.research.keywords && data.research.keywords.length > 0 ? 'success' : 'warning'}">Keywords: ${data.research.keywords ? data.research.keywords.length : 0} found</div>`;
+                }
+                
+                if (data.images) {
+                    html += `<div class="status ${data.images.images && data.images.images.length > 0 ? 'success' : 'warning'}">Images: ${data.images.images ? data.images.images.length : 0} found</div>`;
+                }
+                
+                if (data.metadata) {
+                    html += '<h3 style="margin-top: 15px; color: #00ff00;">Metadata:</h3>';
+                    html += `<div class="status success">Intelligence Score: ${data.metadata.intelligence_score || 'N/A'}</div>`;
+                    html += `<div class="status success">Sources: ${data.metadata.sources_count || 0}</div>`;
+                }
+                
+                html += '<pre style="margin-top: 15px; max-height: 300px; overflow-y: auto;">' + 
+                    JSON.stringify(data, null, 2).substring(0, 2000) + '</pre>';
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}<br><pre>${error.stack}</pre></div>`;
+            }
+        }
+        
+        async function testCompleteFlow() {
+            const resultDiv = document.getElementById('ai-test-result');
+            resultDiv.innerHTML = '<div class="status warning">Testing Complete Flow (Data Gathering → AI Generation)...</div>';
+            
+            try {
+                if (!window.simpleAIEngine || !window.simpleAIEngine.isReady) {
+                    resultDiv.innerHTML = '<div class="status error">✗ AI Engine not ready. Initialize first.</div>';
+                    return;
+                }
+                
+                const testPrompt = 'A documentary about space exploration';
+                const testTitle = 'Space Exploration';
+                
+                resultDiv.innerHTML = '<div class="status warning">Step 1: Gathering data...</div>';
+                
+                // Step 1: Gather data
+                const data = await window.simpleAIEngine.gatherData(testPrompt, testTitle);
+                
+                resultDiv.innerHTML = '<div class="status warning">Step 2: Creating enhanced prompt...</div>';
+                
+                // Step 2: Create enhanced prompt
+                const enhancedPrompt = window.simpleAIEngine.createEnhancedPrompt(testPrompt, data);
+                
+                resultDiv.innerHTML = '<div class="status warning">Step 3: Testing AI generation (will not actually generate)...</div>';
+                
+                let html = '<div class="diagnosis-result">';
+                html += '<div class="status success">✓ Complete flow test successful</div>';
+                html += '<h3 style="margin-top: 15px; color: #00ff00;">Flow Steps:</h3>';
+                html += '<div class="status success">Step 1: ✓ Data gathered</div>';
+                html += '<div class="status success">Step 2: ✓ Enhanced prompt created</div>';
+                html += '<div class="status warning">Step 3: ⚠ AI generation skipped (test mode)</div>';
+                
+                html += '<h3 style="margin-top: 15px; color: #00ff00;">Original Prompt:</h3>';
+                html += `<pre>${testPrompt}</pre>`;
+                
+                html += '<h3 style="margin-top: 15px; color: #00ff00;">Enhanced Prompt:</h3>';
+                html += `<pre>${enhancedPrompt.substring(0, 500)}${enhancedPrompt.length > 500 ? '...' : ''}</pre>`;
+                
+                html += '<h3 style="margin-top: 15px; color: #00ff00;">Gathered Data Summary:</h3>';
+                html += `<div class="status success">Wikipedia: ${data.research?.wikipedia ? '✓' : '✗'}</div>`;
+                html += `<div class="status success">Facts: ${data.research?.facts?.length || 0}</div>`;
+                html += `<div class="status success">Keywords: ${data.research?.keywords?.length || data.keywords?.length || 0}</div>`;
+                html += `<div class="status success">Images: ${data.images?.images?.length || 0}</div>`;
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}<br><pre>${error.stack}</pre></div>`;
+            }
+        }
+        
+        async function testAIIntegration() {
+            const resultDiv = document.getElementById('ai-test-result');
+            resultDiv.innerHTML = '<div class="status warning">Testing AI Integration...</div>';
+            
+            try {
+                let html = '<div class="diagnosis-result">';
+                html += '<h3 style="color: #00ff00;">Available Objects:</h3>';
+                
+                // Check AI Engine
+                html += `<div class="status ${window.simpleAIEngine ? 'success' : 'error'}">simpleAIEngine: ${window.simpleAIEngine ? '✓ Available' : '✗ Not found'}</div>`;
+                
+                // Check Service Worker AI Integration
+                html += `<div class="status ${window.serviceWorkerAIIntegration ? 'success' : 'warning'}">serviceWorkerAIIntegration: ${window.serviceWorkerAIIntegration ? '✓ Available' : '⚠ Not found'}</div>`;
+                
+                // Check Service Worker
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    html += `<div class="status ${registrations.length > 0 ? 'success' : 'warning'}">Service Worker Registrations: ${registrations.length}</div>`;
+                    if (registrations.length > 0) {
+                        registrations.forEach((reg, idx) => {
+                            html += `<div class="status success">  Registration ${idx + 1}: ${reg.scope}</div>`;
+                        });
+                    }
+                } else {
+                    html += '<div class="status error">Service Worker: ✗ Not supported</div>';
+                }
+                
+                // Check Peer Download
+                html += `<div class="status ${window.peerDownloadManager ? 'success' : 'warning'}">peerDownloadManager: ${window.peerDownloadManager ? '✓ Available' : '⚠ Not found'}</div>`;
+                
+                // Check Game Sync
+                html += `<div class="status ${window.gameSyncClient ? 'success' : 'warning'}">gameSyncClient: ${window.gameSyncClient ? '✓ Available' : '⚠ Not found'}</div>`;
+                
+                html += '<h3 style="margin-top: 15px; color: #00ff00;">Test Commands:</h3>';
+                html += '<div class="status warning">Open browser console and try:</div>';
+                html += '<pre style="margin-top: 10px;">';
+                html += '// Test AI Engine\n';
+                html += 'await window.simpleAIEngine.gatherData("test prompt", "test title")\n\n';
+                html += '// Test complete generation\n';
+                html += 'await window.simpleAIEngine.generate("test prompt", "test title", "openai")\n\n';
+                html += '// Check service worker\n';
+                html += 'navigator.serviceWorker.getRegistration()\n';
+                html += '</pre>';
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-run checks on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkProcesses();
+                checkUploads();
+                runDiagnosis();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+

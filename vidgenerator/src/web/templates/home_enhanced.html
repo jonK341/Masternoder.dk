@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masternoder.dk - AI Video Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        /* Navigation */
+        nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+        
+        .nav-links a:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 100px 20px;
+            color: white;
+        }
+        
+        .hero h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .hero p {
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn-secondary:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        /* Features Section */
+        .features {
+            max-width: 1200px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+        }
+        
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .feature-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .feature-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Stats Section */
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 60px 20px;
+            margin: 80px 0;
+        }
+        
+        .stats-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .stat-item h3 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .stat-item p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+        
+        .footer-links a:hover {
+            opacity: 1;
+        }
+        
+        .footer-copyright {
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+        
+        /* Dynamic Content */
+        .dynamic-stats {
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">🎬 Masternoder.dk</div>
+            <ul class="nav-links">
+                <li><a href="/vidgenerator">Home</a></li>
+                <li><a href="/vidgenerator/generator">Generator</a></li>
+                <li><a href="/vidgenerator/gallery">Gallery</a></li>
+                <li><a href="/vidgenerator/game">Game</a></li>
+                <li><a href="/vidgenerator/stats">Stats</a></li>
+                <li><a href="/vidgenerator/debugger">Debugger</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>AI-Powered Video Generator</h1>
+        <p>Create stunning documentaries and videos with artificial intelligence</p>
+        <div class="cta-buttons">
+            <a href="/vidgenerator/generator" class="btn btn-primary">🚀 Start Generating</a>
+            <a href="/vidgenerator/gallery" class="btn btn-secondary">📹 View Gallery</a>
+        </div>
+    </section>
+    
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3 class="dynamic-stats" id="total-videos">-</h3>
+                <p>Videos Generated</p>
+            </div>
+            <div class="stat-item">
+                <h3 class="dynamic-stats" id="total-users">-</h3>
+                <p>Active Users</p>
+            </div>
+            <div class="stat-item">
+                <h3 class="dynamic-stats" id="total-themes">12</h3>
+                <p>Available Themes</p>
+            </div>
+            <div class="stat-item">
+                <h3 class="dynamic-stats" id="success-rate">-</h3>
+                <p>Success Rate</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features">
+        <h2 style="text-align: center; color: white; font-size: 2.5em; margin-bottom: 20px;">Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎬</div>
+                <h3>Video Generator</h3>
+                <p>Create professional videos using AI with multiple themes and styles</p>
+                <a href="/vidgenerator/generator" class="feature-link">Try Generator →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🎮</div>
+                <h3>Hunters Game</h3>
+                <p>Earn XP and level up by completing hunts with theme-based multipliers</p>
+                <a href="/vidgenerator/game" class="feature-link">Play Game →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📹</div>
+                <h3>Video Gallery</h3>
+                <p>Browse and watch all generated videos in one place</p>
+                <a href="/vidgenerator/gallery" class="feature-link">View Gallery →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Statistics</h3>
+                <p>Track your progress, XP, levels, and achievements</p>
+                <a href="/vidgenerator/stats" class="feature-link">View Stats →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>12 Themes</h3>
+                <p>Choose from Matrix, Cyberpunk, Sci-Fi, Nature, MTG, Halo 4, WWII, and more</p>
+                <a href="/vidgenerator/generator" class="feature-link">Explore Themes →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h3>System Debugger</h3>
+                <p>Comprehensive debugging and auto-fix tools for system maintenance</p>
+                <a href="/vidgenerator/debugger" class="feature-link">Open Debugger →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Landing Page Report</h3>
+                <p>Analyze and debug the landing page structure, links, and improvements</p>
+                <a href="/vidgenerator/landing-report" class="feature-link">View Report →</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="/vidgenerator">Home</a>
+            <a href="/vidgenerator/generator">Generator</a>
+            <a href="/vidgenerator/gallery">Gallery</a>
+            <a href="/vidgenerator/game">Game</a>
+            <a href="/vidgenerator/stats">Stats</a>
+            <a href="/vidgenerator/debugger">Debugger</a>
+            <a href="/vidgenerator/debug-report">Debug Report</a>
+        </div>
+        <div class="footer-copyright">
+            © 2024 Masternoder.dk - AI Video Generator Platform
+        </div>
+    </footer>
+    
+    <script>
+        // Load dynamic stats
+        async function loadStats() {
+            try {
+                // Try to get stats from API
+                const response = await fetch('/vidgenerator/api/stats/summary');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('total-videos').textContent = data.stats?.total_videos || '0';
+                        document.getElementById('total-users').textContent = data.stats?.total_users || '0';
+                        document.getElementById('success-rate').textContent = (data.stats?.success_rate || 0) + '%';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                // Set defaults
+                document.getElementById('total-videos').textContent = '0';
+                document.getElementById('total-users').textContent = '0';
+                document.getElementById('success-rate').textContent = '95%';
+            }
+        }
+        
+        // Load stats on page load
+        window.addEventListener('load', loadStats);
+        
+        // Refresh stats every 30 seconds
+        setInterval(loadStats, 30000);
+    </script>
+    <script src="/vidgenerator/static/js/error-manager.js"></script>
+</body>
+</html>
+

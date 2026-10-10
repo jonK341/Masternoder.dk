@@ -48,11 +48,6 @@ def toggle_favorite(user_id: str, performer_id: str) -> Dict[str, Any]:
     return {"success": True, "favorite": on}
 
 
-def is_fan_club_member(user_id: str, performer_id: str) -> bool:
-    data = _read_json(_FANCLUB_FILE, {})
-    return user_id in (data.get(performer_id) or [])
-
-
 def join_fan_club(user_id: str, performer_id: str) -> Dict[str, Any]:
     from backend.services.camgirls_service import _is_unlocked, _is_age_verified
     if not _is_age_verified(user_id):

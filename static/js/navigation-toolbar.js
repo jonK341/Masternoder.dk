@@ -7,6 +7,18 @@
     'use strict';
 
     const APP_BASE = (typeof window !== 'undefined' && window.APP_BASE !== undefined) ? window.APP_BASE : '';
+    const NAV_PORTAL_ASSET_V = '20261002';
+
+    /** Every page with the toolbar gets tema CSS before first paint when possible. */
+    (function ensureNavPortalThemesCss() {
+        if (typeof document === 'undefined' || !document.head) return;
+        var href = APP_BASE + '/static/css/nav-portal-themes.css?v=' + NAV_PORTAL_ASSET_V;
+        if (document.querySelector('link[href*="nav-portal-themes.css"]')) return;
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        document.head.appendChild(link);
+    })();
 
     // Small image icons for upper nav (SVG / agent avatars). Emoji kept as fallback.
     const NAV_ICON_IMAGES = {
@@ -49,7 +61,7 @@
             iconImg: APP_BASE + '/static/img/nav/brand.svg',
             url: APP_BASE + '/'
         },
-        favorites: ['generator', 'game', 'battle', 'trophies'],
+        favorites: ['generator', 'game', 'battle', 'trophies'], /* overridden by NavPortalTemplate */
         links: [
             { name: 'Home', icon: '🏠', url: APP_BASE + '/', id: 'home' },
             { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
@@ -76,7 +88,8 @@
             { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
             { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'MN2 wallet portal: deposit, withdraw, trusted addresses, and downloads' },
             { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
-            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'NFT editions + P2P MN2 marketplace' },
+            { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'P2P MN2 marketplace' },
+            { name: 'NFT Hub', icon: '💎', url: APP_BASE + '/nft', id: 'nft', title: 'Numbered NFT editions — primary, resale, profile avatar' },
             { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', title: 'MN2 staking leaderboard' },
             { name: 'Staking Teams', icon: '🤝', url: APP_BASE + '/staking-teams', id: 'staking_teams', title: 'MN2 staking team leaderboard' },
             { name: 'Profit Daemon', icon: '⚡', url: APP_BASE + '/profit/', id: 'profit', title: '24/7 live profit daemon monitor, news, rentals' },
@@ -87,6 +100,176 @@
         ],
         apiBase: window.location.origin + APP_BASE
     };
+
+    var NAV_CAT_GIF_BASE = APP_BASE + '/static/img/nav/categories/';
+    var NAV_CATEGORIES = [];
+
+    function syncFromPortalTemplate() {
+        var tpl = window.NavPortalTemplate;
+        if (!tpl) return;
+        NAV_CATEGORIES = tpl.getCategories();
+        NAV_CAT_GIF_BASE = tpl.categoryGifBase();
+        NAV_CONFIG.favorites = tpl.getFavorites();
+    }
+
+    function ensurePortalTemplate(done) {
+        function run() {
+            if (!window.NavPortalTemplate) {
+                done();
+                return;
+            }
+            window.NavPortalTemplate.boot().then(function () {
+                syncFromPortalTemplate();
+                done();
+            }).catch(function () {
+                done();
+            });
+            return;
+        }
+        if (window.NavPortalTemplate) {
+            run();
+            return;
+        }
+        var src = APP_BASE + '/static/js/nav-portal-template.js?v=' + NAV_PORTAL_ASSET_V;
+        if (document.querySelector('script[src*="nav-portal-template.js"]')) {
+            var waited = 0;
+            var timer = setInterval(function () {
+                waited += 50;
+                if (window.NavPortalTemplate || waited > 3000) {
+                    clearInterval(timer);
+                    run();
+                }
+            }, 50);
+            return;
+        }
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = run;
+        s.onerror = function () { done(); };
+        document.head.appendChild(s);
+    }
+
+    function _renderCategoryGif(cat, className) {
+        const src = NAV_CAT_GIF_BASE + (cat.gif || cat.id + '.gif');
+        const cls = className || 'nav-toolbar-cat-gif';
+        return (
+            '<img class="' + cls + '" src="' + src + '" alt="" width="28" height="28" loading="lazy" decoding="async">' +
+            '<span class="nav-toolbar-cat-smiley" aria-hidden="true">' + (cat.smiley || '✨') + '</span>'
+        );
+    }
+
+    function _renderCategoryMenuHead(cat) {
+        const title = cat.menuTitle || cat.label;
+        return (
+            '<div class="nav-toolbar-cat-menu-head" data-nav-cat-head="' + cat.id + '">' +
+            _renderCategoryGif(cat, 'nav-toolbar-cat-gif nav-toolbar-cat-gif--menu') +
+            '<div class="nav-toolbar-cat-menu-head-text">' +
+            '<strong>' + title + '</strong>' +
+            '<span class="nav-toolbar-cat-menu-sub">' + cat.label + '</span>' +
+            '</div></div>'
+        );
+    }
+
+    function _linksById() {
+        const map = {};
+        NAV_CONFIG.links.forEach(function (link) {
+            map[link.id] = link;
+        });
+        return map;
+    }
+
+    function _renderCategoryMenuLinks(links, linkClass, catSmiley) {
+        return links.map(function (link) {
+            const smiley = link.icon || catSmiley || '✨';
+            const extraCls = linkClass ? ' ' + linkClass : '';
+            return (
+                '<a href="' + link.url + '" class="nav-toolbar-cat-link' + extraCls + '" data-page-id="' + link.id + '"' +
+                (link.title ? ' title="' + link.title.replace(/"/g, '&quot;') + '"' : '') + '>' +
+                '<span class="nav-toolbar-cat-link-smiley" aria-hidden="true">' + smiley + '</span>' +
+                _renderIcon(link, { extraClass: ' nav-toolbar-cat-link-icon-wrap' }) +
+                '<span class="nav-toolbar-cat-link-label">' + link.name + '</span>' +
+                '</a>'
+            );
+        }).join('');
+    }
+
+    function _renderCategoryDropdowns(byId) {
+        return NAV_CATEGORIES.map(function (cat) {
+            const items = cat.ids.map(function (id) { return byId[id]; }).filter(Boolean);
+            if (!items.length) return '';
+            return (
+                '<div class="nav-toolbar-cat" data-nav-cat="' + cat.id + '">' +
+                '<button type="button" class="nav-toolbar-cat-btn" aria-expanded="false" aria-haspopup="true" aria-label="' + cat.label + ' menu">' +
+                '<span class="nav-toolbar-cat-btn-art">' + _renderCategoryGif(cat, 'nav-toolbar-cat-gif nav-toolbar-cat-gif--btn') + '</span>' +
+                '<span class="nav-toolbar-cat-label">' + cat.label + '</span>' +
+                '<span class="nav-toolbar-cat-chevron" aria-hidden="true">▾</span>' +
+                '</button>' +
+                '<div class="nav-toolbar-cat-menu" role="menu" hidden data-nav-cat-menu="' + cat.id + '">' +
+                _renderCategoryMenuHead(cat) +
+                '<div class="nav-toolbar-cat-menu-links">' +
+                _renderCategoryMenuLinks(items, '', cat.smiley) +
+                '</div></div></div>'
+            );
+        }).join('');
+    }
+
+    function _renderCategorizedPortalPanel(byId) {
+        return NAV_CATEGORIES.map(function (cat) {
+            const items = cat.ids.map(function (id) { return byId[id]; }).filter(Boolean);
+            if (!items.length) return '';
+            return (
+                '<section class="nav-toolbar-portal-section" aria-labelledby="nav-cat-' + cat.id + '">' +
+                '<h3 class="nav-toolbar-portal-section-title" id="nav-cat-' + cat.id + '">' +
+                '<span class="nav-toolbar-portal-section-art">' + _renderCategoryGif(cat, 'nav-toolbar-cat-gif nav-toolbar-cat-gif--section') + '</span>' +
+                '<span>' + (cat.menuTitle || cat.label) + '</span></h3>' +
+                '<div class="nav-toolbar-portal-grid">' +
+                items.map(function (link) {
+                    return _renderLinkAnchor(link, 'nav-toolbar-portal-grid-link');
+                }).join('') +
+                '</div></section>'
+            );
+        }).join('');
+    }
+
+    function _renderMobileMenuGrouped(byId) {
+        const home = byId.home;
+        let html = '';
+        if (home) {
+            html += '<a href="' + home.url + '" class="nav-toolbar-mobile-link" data-page-id="home">' +
+                _renderIcon(home) + '<span>' + home.name + '</span></a>';
+        }
+        NAV_CATEGORIES.forEach(function (cat) {
+            const items = cat.ids.map(function (id) { return byId[id]; }).filter(Boolean);
+            if (!items.length) return;
+            html += '<div class="nav-toolbar-mobile-group"><div class="nav-toolbar-mobile-group-title">' +
+                '<span class="nav-toolbar-mobile-cat-smiley" aria-hidden="true">' + (cat.smiley || '') + '</span>' +
+                (cat.menuTitle || cat.label) + '</div>';
+            items.forEach(function (link) {
+                const fav = link.favorite ? ' nav-toolbar-mobile-link-favorite' : '';
+                html += '<a href="' + link.url + '" class="nav-toolbar-mobile-link' + fav + '" data-page-id="' + link.id + '">' +
+                    _renderIcon(link) + '<span>' + link.name + '</span></a>';
+            });
+            html += '</div>';
+        });
+        return html;
+    }
+
+    function _renderUserBlock() {
+        return (
+            '<div class="nav-toolbar-user">' +
+            '<div class="nav-toolbar-user-controls" id="navToolbarUserControls">' +
+            '<button class="nav-toolbar-control-btn" id="navToolbarUserBtn" title="User Settings"><span>👤</span></button>' +
+            '<button class="nav-toolbar-control-btn" id="navToolbarSettingsBtn" title="Settings"><span>⚙️</span></button>' +
+            '<button class="nav-toolbar-control-btn" id="navToolbarNotificationsBtn" title="Notifications">' +
+            '<span>🔔</span><span class="nav-toolbar-badge" id="navToolbarNotificationsBadge" style="display: none;">0</span></button>' +
+            '</div>' +
+            '<div class="nav-toolbar-currency" id="navToolbarCurrency">' +
+            '<span class="nav-toolbar-currency-icon">🪙</span><span id="navToolbarCurrencyAmount">0</span></div>' +
+            '<button class="nav-toolbar-toggle" id="navToolbarToggle" aria-label="Toggle menu">☰</button>' +
+            '</div>'
+        );
+    }
 
     function _resolveIconImg(link) {
         return link.iconImg || NAV_ICON_IMAGES[link.id] || null;
@@ -123,15 +306,21 @@
      * Create navigation toolbar HTML
      */
     function createToolbarHTML() {
-        const portalVoid = typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID;
-
-        const linksHTML = NAV_CONFIG.links.map(link => _renderLinkAnchor(link, '')).join('');
-
-        const portalGridHTML = NAV_CONFIG.links.map(link => _renderLinkAnchor(link, 'nav-toolbar-portal-grid-link')).join('');
+        const portalVoid = window.NavPortalTemplate
+            ? window.NavPortalTemplate.isPortalVoid()
+            : (typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID);
+        const byId = _linksById();
+        const categorizedPanelHTML = _renderCategorizedPortalPanel(byId);
+        const favoriteLinksHTML = NAV_CONFIG.favorites.map(function (id) {
+            const link = byId[id];
+            return link ? _renderLinkAnchor(link, 'nav-toolbar-link--quick') : '';
+        }).join('');
+        const categoryDropdownsHTML = _renderCategoryDropdowns(byId);
+        const mobileGroupedHTML = _renderMobileMenuGrouped(byId);
 
         if (portalVoid) {
             return `
-            <nav class="nav-toolbar nav-toolbar--portal-void" id="navToolbar">
+            <nav class="nav-toolbar nav-toolbar--portal-void nav-toolbar--categorized" id="navToolbar">
                 <div class="nav-toolbar-content">
                     <a href="${NAV_CONFIG.brand.url}" class="nav-toolbar-brand">
                         ${_renderIcon(NAV_CONFIG.brand, { extraClass: ' nav-toolbar-brand-icon-wrap', pulse: true, large: true })}
@@ -141,38 +330,18 @@
                     <div class="nav-toolbar-portal-wrap">
                         <button type="button" class="nav-toolbar-portal-trigger" id="navPortalTrigger" aria-expanded="false" aria-haspopup="true" aria-controls="navPortalPanel">
                             <span class="nav-toolbar-portal-trigger-icon nav-toolbar-portal-trigger-icon--spin">🌀</span>
-                            <span>Portaler</span>
+                            <span>Portals</span>
                         </button>
                     </div>
 
-                    <div class="nav-toolbar-user">
-                        <div class="nav-toolbar-user-controls" id="navToolbarUserControls">
-                            <button class="nav-toolbar-control-btn" id="navToolbarUserBtn" title="User Settings">
-                                <span>👤</span>
-                            </button>
-                            <button class="nav-toolbar-control-btn" id="navToolbarSettingsBtn" title="Settings">
-                                <span>⚙️</span>
-                            </button>
-                            <button class="nav-toolbar-control-btn" id="navToolbarNotificationsBtn" title="Notifications">
-                                <span>🔔</span>
-                                <span class="nav-toolbar-badge" id="navToolbarNotificationsBadge" style="display: none;">0</span>
-                            </button>
-                        </div>
-                        <div class="nav-toolbar-currency" id="navToolbarCurrency">
-                            <span class="nav-toolbar-currency-icon">🪙</span>
-                            <span id="navToolbarCurrencyAmount">0</span>
-                        </div>
-                        <button class="nav-toolbar-toggle" id="navToolbarToggle" aria-label="Toggle portals menu">
-                            ☰
-                        </button>
-                    </div>
+                    ${_renderUserBlock()}
                 </div>
 
                 <div id="navPortalPanel" class="nav-toolbar-portal-panel" role="menu" aria-hidden="true" hidden>
                     <div class="nav-toolbar-portal-inner">
-                        <p class="nav-toolbar-portal-hint">Alle sider — ét sted</p>
-                        <div class="nav-toolbar-portal-grid" id="navPortalGrid">
-                            ${portalGridHTML}
+                        <p class="nav-toolbar-portal-hint">Browse by category — all site portals</p>
+                        <div class="nav-toolbar-portal-sections" id="navPortalGrid">
+                            ${categorizedPanelHTML}
                         </div>
                     </div>
                 </div>
@@ -180,47 +349,23 @@
         }
 
         return `
-            <nav class="nav-toolbar" id="navToolbar">
+            <nav class="nav-toolbar nav-toolbar--categorized" id="navToolbar">
                 <div class="nav-toolbar-content">
                     <a href="${NAV_CONFIG.brand.url}" class="nav-toolbar-brand">
                         ${_renderIcon(NAV_CONFIG.brand, { extraClass: ' nav-toolbar-brand-icon-wrap', pulse: true, large: true })}
                         <span>${NAV_CONFIG.brand.name}</span>
                     </a>
                     
-                    <div class="nav-toolbar-links" id="navToolbarLinks">
-                        ${linksHTML}
+                    <div class="nav-toolbar-nav" id="navToolbarLinks">
+                        <div class="nav-toolbar-quick">${favoriteLinksHTML}</div>
+                        <div class="nav-toolbar-categories">${categoryDropdownsHTML}</div>
                     </div>
                     
-                    <div class="nav-toolbar-user">
-                        <div class="nav-toolbar-user-controls" id="navToolbarUserControls">
-                            <button class="nav-toolbar-control-btn" id="navToolbarUserBtn" title="User Settings">
-                                <span>👤</span>
-                            </button>
-                            <button class="nav-toolbar-control-btn" id="navToolbarSettingsBtn" title="Settings">
-                                <span>⚙️</span>
-                            </button>
-                            <button class="nav-toolbar-control-btn" id="navToolbarNotificationsBtn" title="Notifications">
-                                <span>🔔</span>
-                                <span class="nav-toolbar-badge" id="navToolbarNotificationsBadge" style="display: none;">0</span>
-                            </button>
-                        </div>
-                        <div class="nav-toolbar-currency" id="navToolbarCurrency">
-                            <span class="nav-toolbar-currency-icon">🪙</span>
-                            <span id="navToolbarCurrencyAmount">0</span>
-                        </div>
-                        <button class="nav-toolbar-toggle" id="navToolbarToggle" aria-label="Toggle menu">
-                            ☰
-                        </button>
-                    </div>
+                    ${_renderUserBlock()}
                 </div>
                 
                 <div class="nav-toolbar-mobile" id="navToolbarMobile">
-                    ${NAV_CONFIG.links.map(link => `
-                        <a href="${link.url}" class="nav-toolbar-mobile-link${link.favorite ? ' nav-toolbar-mobile-link-favorite' : ''}" data-page-id="${link.id}">
-                            ${_renderIcon(link)}
-                            <span>${link.name}</span>
-                        </a>
-                    `).join('')}
+                    ${mobileGroupedHTML}
                 </div>
             </nav>
         `;
@@ -229,33 +374,42 @@
     /**
      * Initialize navigation toolbar
      */
+    function mountToolbar() {
+        const toolbarHTML = createToolbarHTML();
+        document.body.insertAdjacentHTML('afterbegin', toolbarHTML);
+        highlightActiveLink();
+        setupMobileMenu();
+        setupCategoryMenus();
+        loadCurrency();
+        setupClickTracking();
+        setupUserControls();
+        ensureGlobalSystems();
+    }
+
     function initToolbar() {
-        // Check if toolbar already exists
         if (document.getElementById('navToolbar')) {
             return;
         }
+        ensurePortalTemplate(function () {
+            if (!NAV_CATEGORIES.length) {
+                NAV_CATEGORIES = [
+                    { id: 'play', label: 'Play', menuTitle: 'Play portals', smiley: '🎮', gif: 'play.gif', ids: ['game', 'battle', 'trophies', 'quests', 'casino', 'battlegrounds', 'starmap25'] },
+                    { id: 'account', label: 'Shop & profile', menuTitle: 'Shop & profile', smiley: '🛒', gif: 'account.gif', ids: ['shop', 'profile', 'market'] },
+                    { id: 'finance', label: 'MN2 & exchange', menuTitle: 'MN2 & exchange', smiley: '💠', gif: 'finance.gif', ids: ['exchange', 'nft', 'wallets', 'explorer', 'profit', 'staking_leaderboard', 'staking_teams', 'hosting', 'market'] },
+                    { id: 'create', label: 'Create', menuTitle: 'Create & publish', smiley: '🎬', gif: 'create.gif', ids: ['generator', 'create_app', 'podcast', 'gallery'] },
+                    { id: 'intel', label: 'Lab & agents', menuTitle: 'Lab & agents', smiley: '🤖', gif: 'intel.gif', ids: ['lab', 'aggregator', 'agents', 'agent_support', 'agents_control', 'debugger'] },
+                    { id: 'social', label: 'Social & news', menuTitle: 'Social & news', smiley: '💬', gif: 'social.gif', ids: ['social', 'news', 'library', 'camgirls', 'customers'] },
+                ];
+            }
+            mountToolbar();
+        });
+    }
 
-        // Create and insert toolbar
-        const toolbarHTML = createToolbarHTML();
-        document.body.insertAdjacentHTML('afterbegin', toolbarHTML);
-
-        // Highlight active link
-        highlightActiveLink();
-
-        // Setup mobile menu toggle
-        setupMobileMenu();
-
-        // Load currency
-        loadCurrency();
-
-        // Setup click tracking
-        setupClickTracking();
-        
-        // Setup user controls
-        setupUserControls();
-
-        // Ensure AI + points systems are available across pages.
-        ensureGlobalSystems();
+    function reinitToolbar() {
+        var el = document.getElementById('navToolbar');
+        if (el) el.remove();
+        syncFromPortalTemplate();
+        mountToolbar();
     }
 
     /**
@@ -292,12 +446,15 @@
         const currentUrl = window.location.href;
 
         // Remove all active classes
-        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link').forEach(link => {
+        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link, .nav-toolbar-cat-link').forEach(link => {
             link.classList.remove('active');
+        });
+        document.querySelectorAll('.nav-toolbar-cat-btn').forEach(function (btn) {
+            btn.classList.remove('active');
         });
 
         // Find and highlight active link
-        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link').forEach(link => {
+        document.querySelectorAll('.nav-toolbar-link, .nav-toolbar-mobile-link, .nav-toolbar-portal-grid-link, .nav-toolbar-cat-link').forEach(link => {
             const linkUrl = new URL(link.href, window.location.origin);
             const linkPath = linkUrl.pathname;
 
@@ -305,7 +462,68 @@
             if (linkPath === currentPath || 
                 (currentPath.startsWith(linkPath) && linkPath !== '/')) {
                 link.classList.add('active');
+                const catWrap = link.closest('.nav-toolbar-cat');
+                if (catWrap) {
+                    const btn = catWrap.querySelector('.nav-toolbar-cat-btn');
+                    if (btn) btn.classList.add('active');
+                }
             }
+        });
+    }
+
+    /**
+     * Category dropdowns in the compact top bar
+     */
+    function setupCategoryMenus() {
+        const cats = document.querySelectorAll('.nav-toolbar-cat');
+        if (!cats.length) return;
+
+        function closeAll(except) {
+            cats.forEach(function (wrap) {
+                if (except && wrap === except) return;
+                wrap.classList.remove('open');
+                const menu = wrap.querySelector('.nav-toolbar-cat-menu');
+                const btn = wrap.querySelector('.nav-toolbar-cat-btn');
+                if (menu) menu.hidden = true;
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        cats.forEach(function (wrap) {
+            const btn = wrap.querySelector('.nav-toolbar-cat-btn');
+            const menu = wrap.querySelector('.nav-toolbar-cat-menu');
+            if (!btn || !menu) return;
+
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const willOpen = !wrap.classList.contains('open');
+                closeAll();
+                if (willOpen) {
+                    wrap.classList.add('open');
+                    menu.hidden = false;
+                    btn.setAttribute('aria-expanded', 'true');
+                }
+            });
+
+            menu.querySelectorAll('a').forEach(function (a) {
+                a.addEventListener('click', function () {
+                    closeAll();
+                });
+            });
+        });
+
+        document.addEventListener('click', function (e) {
+            const t = e.target;
+            let inside = false;
+            cats.forEach(function (wrap) {
+                if (wrap.contains(t)) inside = true;
+            });
+            if (!inside) closeAll();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeAll();
         });
     }
 
@@ -313,7 +531,9 @@
      * Setup mobile menu toggle
      */
     function setupMobileMenu() {
-        const portalVoid = typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID;
+        const portalVoid = window.NavPortalTemplate
+            ? window.NavPortalTemplate.isPortalVoid()
+            : (typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID);
         const toggle = document.getElementById('navToolbarToggle');
         const mobileMenu = document.getElementById('navToolbarMobile');
         const portalPanel = document.getElementById('navPortalPanel');
@@ -503,6 +723,7 @@
     // Expose API
     window.NavigationToolbar = {
         init: initToolbar,
+        reinit: reinitToolbar,
         refresh: refreshNavigation,
         updateCurrency: updateCurrency,
         updateBadge: updateBadge,
@@ -598,14 +819,25 @@
      * Show settings menu
      */
     function showSettingsMenu() {
+        var themeItems = '';
+        var templateItems = '';
+        if (window.NavPortalTemplate) {
+            window.NavPortalTemplate.listThemes().forEach(function (th) {
+                themeItems += '<div class="nav-toolbar-dropdown-item" onclick="applyNavTheme(\'' + th.id + '\')"><span>🎨</span> Tema: ' + th.label + '</div>';
+            });
+            window.NavPortalTemplate.listTemplates().forEach(function (tp) {
+                templateItems += '<div class="nav-toolbar-dropdown-item" onclick="applyNavTemplate(\'' + tp.id + '\')"><span>📂</span> Template: ' + tp.label + '</div>';
+            });
+        }
         const menu = `
             <div class="nav-toolbar-dropdown" id="settingsMenuDropdown">
                 <div class="nav-toolbar-dropdown-header">
                     <strong>⚙️ Settings</strong>
                 </div>
-                <div class="nav-toolbar-dropdown-item" onclick="toggleTheme()">
-                    <span>🎨</span> Toggle Theme
-                </div>
+                <div class="nav-toolbar-dropdown-header" style="font-size:0.75rem;opacity:0.85">Portal tema</div>
+                ${themeItems || '<div class="nav-toolbar-dropdown-item" onclick="toggleTheme()"><span>🎨</span> Toggle Theme</div>'}
+                <div class="nav-toolbar-dropdown-header" style="font-size:0.75rem;opacity:0.85;margin-top:6px">Portal template</div>
+                ${templateItems || '<div class="nav-toolbar-dropdown-item" style="opacity:0.6">Templates loading…</div>'}
                 <div class="nav-toolbar-dropdown-item" onclick="toggleNotifications()">
                     <span>🔔</span> Notifications
                 </div>
@@ -724,6 +956,18 @@
     window.toggleTheme = function() {
         document.body.classList.toggle('dark-theme');
         localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+    };
+
+    window.applyNavTheme = function (themeId) {
+        if (!window.NavPortalTemplate) return;
+        window.NavPortalTemplate.setTheme(themeId, true);
+        window.NavPortalTemplate.applyAndReloadToolbar();
+    };
+
+    window.applyNavTemplate = function (templateId) {
+        if (!window.NavPortalTemplate) return;
+        window.NavPortalTemplate.setTemplate(templateId, true);
+        window.NavPortalTemplate.applyAndReloadToolbar();
     };
     
     window.toggleNotifications = function() {

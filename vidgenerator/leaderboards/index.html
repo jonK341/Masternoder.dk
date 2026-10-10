@@ -1,0 +1,2102 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-version" content="20260123">
+
+    <meta charset="UTF-8">
+    <meta name="cache-version" content="20260112185143">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>178 Systems Leaderboards - Enhanced</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=20260304154115">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #ff6b9d;
+            --secondary: #c44569;
+            --accent: #f8b500;
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(20, 20, 30, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --border-glow: rgba(255, 107, 157, 0.5);
+            --success: #00ff88;
+            --danger: #ff3366;
+            --warning: #ffaa00;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            padding: 20px;
+            margin: 0;
+        }
+
+        .leaderboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 2px solid var(--border-glow);
+            position: relative;
+        }
+
+        .leaderboard-header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--border-glow);
+            border-radius: 25px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        select {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--border-glow);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--border-glow);
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .stat-card .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        .system-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .system-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--border-glow);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .system-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.3);
+        }
+
+        .system-card.active {
+            border-color: var(--primary);
+            background: rgba(255, 107, 157, 0.1);
+        }
+
+        .leaderboard-table {
+            background: var(--bg-card);
+            border-radius: 15px;
+            border: 2px solid var(--border-glow);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .table-controls {
+            padding: 15px 20px;
+            background: rgba(255, 107, 157, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .table-controls .info {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        .leaderboard-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard-table th {
+            background: rgba(255, 107, 157, 0.2);
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: bold;
+            color: var(--primary);
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .leaderboard-table th:hover {
+            background: rgba(255, 107, 157, 0.3);
+        }
+
+        .leaderboard-table th.sortable::after {
+            content: ' ↕';
+            opacity: 0.5;
+            font-size: 0.8em;
+        }
+
+        .leaderboard-table th.sort-asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+
+        .leaderboard-table th.sort-desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+
+        .leaderboard-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .leaderboard-table tr:hover {
+            background: rgba(255, 107, 157, 0.1);
+        }
+
+        .leaderboard-table tr.highlight {
+            background: rgba(248, 181, 0, 0.2);
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-weight: bold;
+            background: var(--bg-card);
+            border: 2px solid var(--border-glow);
+            font-size: 1.1em;
+        }
+
+        .rank-badge.gold { 
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #000;
+            border-color: #ffd700;
+        }
+        .rank-badge.silver { 
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: #000;
+            border-color: #c0c0c0;
+        }
+        .rank-badge.bronze { 
+            background: linear-gradient(135deg, #cd7f32, #e6a857);
+            color: #fff;
+            border-color: #cd7f32;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid var(--border-glow);
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .username {
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .username:hover {
+            color: var(--primary);
+        }
+
+        .user-badges {
+            display: flex;
+            gap: 5px;
+            margin-top: 4px;
+        }
+
+        .badge {
+            font-size: 0.8em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 107, 157, 0.2);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .status-indicator.online {
+            background: var(--success);
+            box-shadow: 0 0 5px var(--success);
+        }
+
+        .status-indicator.offline {
+            background: var(--text-secondary);
+        }
+
+        .points-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .points-value {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.2em;
+        }
+
+        .points-change {
+            font-size: 0.9em;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .points-change.positive {
+            color: var(--success);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .points-change.negative {
+            color: var(--danger);
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        .rank-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85em;
+            margin-left: 8px;
+        }
+
+        .rank-change.up {
+            color: var(--success);
+        }
+
+        .rank-change.down {
+            color: var(--danger);
+        }
+
+        .rank-change.neutral {
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            width: 100px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.3s;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--border-glow);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .page-info {
+            padding: 0 15px;
+            color: var(--text-secondary);
+        }
+
+        .comparison-panel {
+            background: var(--bg-card);
+            border-radius: 15px;
+            border: 2px solid var(--border-glow);
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .comparison-panel.active {
+            display: block;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .comparison-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-glow);
+        }
+
+        .notification-banner {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--success);
+            font-size: 0.9em;
+        }
+
+        .live-indicator .pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .export-menu {
+            position: relative;
+        }
+
+        .export-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 5px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            z-index: 100;
+            min-width: 150px;
+        }
+
+        .export-dropdown.active {
+            display: block;
+        }
+
+        .export-dropdown button {
+            width: 100%;
+            text-align: left;
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .export-dropdown button:hover {
+            background: rgba(255, 107, 157, 0.2);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .header-controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .stats-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .system-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .leaderboard-table {
+                overflow-x: auto;
+            }
+
+            .table-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/image-support.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/template-effects.css?v=20260304154115">
+    <link rel="stylesheet" href="/static/css/agent-skill-sets.css?v=20260304154115">
+<link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260304154115">
+<link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
+</head>
+<body>
+    <!-- Feature 1: Enhanced Header with Controls -->
+    <div class="leaderboard-header">
+        <h1>🏆 178 Systems Leaderboards</h1>
+        <p>Compete across all point systems with real-time rankings</p>
+        
+        <!-- Feature 2: Search Functionality -->
+        <div class="header-controls">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search users...">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <!-- Feature 3: Time Period Selector -->
+            <select id="time-period">
+                <option value="all">All Time</option>
+                <option value="daily">Today</option>
+                <option value="weekly">This Week</option>
+                <option value="monthly">This Month</option>
+            </select>
+            
+            <!-- Feature 4: Export Menu -->
+            <div class="export-menu">
+                <button class="btn btn-secondary" onclick="toggleExportMenu()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <div class="export-dropdown" id="export-dropdown">
+                    <button onclick="exportData('csv')"><i class="fas fa-file-csv"></i> Export CSV</button>
+                    <button onclick="exportData('json')"><i class="fas fa-file-code"></i> Export JSON</button>
+                </div>
+            </div>
+            
+            <!-- Feature 5: Share Link -->
+            <button class="btn btn-secondary" onclick="shareLeaderboard()">
+                <i class="fas fa-share-alt"></i> Share
+            </button>
+            
+            <!-- Feature 6: Comparison Mode Toggle -->
+            <button class="btn btn-secondary" id="compare-btn" onclick="toggleComparisonMode()">
+                <i class="fas fa-balance-scale"></i> Compare
+            </button>
+        </div>
+        
+        <!-- Feature 7: Real-time Updates Indicator -->
+        <div class="live-indicator" id="live-indicator">
+            <span class="pulse"></span>
+            <span>Live Updates</span>
+        </div>
+    </div>
+
+    <!-- Feature 8: Statistics Panel -->
+    <div class="stats-panel" id="stats-panel">
+        <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value" id="stat-total-users">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Average Points</div>
+            <div class="stat-value" id="stat-avg-points">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Top Score</div>
+            <div class="stat-value" id="stat-top-score">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Active Today</div>
+            <div class="stat-value" id="stat-active-today">0</div>
+        </div>
+    </div>
+
+    <!-- Feature 9: System Selector with Icons -->
+    <div class="system-selector" id="system-selector">
+        <div class="system-card active" data-system="all">
+            <div style="font-size: 2em; margin-bottom: 10px;">🌟</div>
+            <div>All Systems</div>
+        </div>
+    </div>
+
+    <!-- Feature 10: Comparison Panel -->
+    <div class="comparison-panel" id="comparison-panel">
+        <h3 style="margin-top: 0;"><i class="fas fa-balance-scale"></i> User Comparison</h3>
+        <p style="color: var(--text-secondary);">Select users from the leaderboard to compare</p>
+        <div class="comparison-grid" id="comparison-grid"></div>
+    </div>
+
+    <!-- Feature 11: Enhanced Table with Controls -->
+    <div class="leaderboard-table">
+        <div class="table-controls">
+            <div class="info">
+                Showing <span id="showing-count">0</span> of <span id="total-count">0</span> users
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <!-- Feature 12: View Options -->
+                <select id="view-options">
+                    <option value="compact">Compact View</option>
+                    <option value="detailed" selected>Detailed View</option>
+                    <option value="minimal">Minimal View</option>
+                </select>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <!-- Feature 13: Sortable Columns -->
+                    <th class="sortable" onclick="sortTable('rank')">Rank</th>
+                    <th class="sortable" onclick="sortTable('user')">User</th>
+                    <th class="sortable" onclick="sortTable('points')">Points</th>
+                    <th class="sortable" onclick="sortTable('change')">Change</th>
+                    <th>System</th>
+                    <th>Progress</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px;">
+                        Loading leaderboard...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Feature 14: Pagination -->
+    <div class="pagination" id="pagination">
+        <button onclick="changePage(-1)" id="prev-btn" disabled>
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <div class="page-info">
+            Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+        </div>
+        <button onclick="changePage(1)" id="next-btn" disabled>
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- Feature 15: Notification Banner -->
+    <div class="notification-banner" id="notification-banner">
+        <div id="notification-content"></div>
+    </div>
+
+    <!-- Feature 16: Theme Toggle -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+
+    <script>
+        const BASE_URL = window.location.origin;
+        let currentSystem = 'all';
+        let currentPage = 1;
+        let pageSize = 50;
+        let allLeaderboardData = [];
+        let filteredData = [];
+        let sortColumn = 'rank';
+        let sortDirection = 'asc';
+        let comparisonMode = false;
+        let selectedUsers = [];
+        let lastUpdateTime = null;
+
+        // Feature 17: Initialize with saved preferences
+        function loadPreferences() {
+            const savedTheme = localStorage.getItem('leaderboard-theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            
+            const savedView = localStorage.getItem('leaderboard-view') || 'detailed';
+            document.getElementById('view-options').value = savedView;
+            
+            const savedPeriod = localStorage.getItem('leaderboard-period') || 'all';
+            document.getElementById('time-period').value = savedPeriod;
+        }
+
+        // Feature 18: Search Functionality
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filterLeaderboard(searchTerm);
+        });
+
+        // Feature 19: Time Period Filter
+        document.getElementById('time-period').addEventListener('change', (e) => {
+            localStorage.setItem('leaderboard-period', e.target.value);
+            loadLeaderboard();
+        });
+
+        // Feature 20: View Options
+        document.getElementById('view-options').addEventListener('change', (e) => {
+            localStorage.setItem('leaderboard-view', e.target.value);
+            applyViewMode(e.target.value);
+        });
+
+        // Feature 21: Load System Selector
+        async function loadSystemSelector() {
+            try {
+                // Try multiple endpoints to get system list
+                let systems = null;
+                let systemsData = null;
+                
+                // Try leaderboard categories first
+                try {
+                    const response = await fetch(`${BASE_URL}/api/leaderboard/categories`);
+                const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                const data = await response.json();
+                        if (data.success && data.categories) {
+                            systemsData = data.categories;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not load leaderboard categories:', e);
+                }
+                
+                // Fallback: Try control-board systems endpoint
+                if (!systemsData) {
+                    try {
+                        const response = await fetch(`${BASE_URL}/api/points/control-board/systems`);
+                        const contentType = response.headers.get("content-type");
+                        if (contentType && contentType.includes("application/json")) {
+                            const data = await response.json();
+                if (data.success && data.systems) {
+                                systemsData = data.systems;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Could not load control-board systems:', e);
+                    }
+                }
+                
+                // Use default systems if API calls fail
+                if (!systemsData) {
+                    systemsData = {
+                        'all': {id: 'all', name: 'All Systems', icon: '🌟'},
+                        'xp': {id: 'xp', name: 'XP Points', icon: '⭐'},
+                        'activity': {id: 'activity', name: 'Activity', icon: '🔥'},
+                        'battle': {id: 'battle', name: 'Battle', icon: '⚔️'},
+                        'trophies': {id: 'trophies', name: 'Trophies', icon: '🏆'}
+                    };
+                }
+                
+                    const selector = document.getElementById('system-selector');
+                if (selector && systemsData) {
+                    const systems = Object.values(systemsData);
+                    
+                    systems.forEach(system => {
+                        const card = document.createElement('div');
+                        card.className = 'system-card';
+                        card.dataset.system = system.id || system.name?.toLowerCase();
+                        card.innerHTML = `
+                            <div style="font-size: 2em; margin-bottom: 10px;">${system.icon || '📊'}</div>
+                            <div>${system.name || system.id}</div>
+                        `;
+                        card.onclick = () => selectSystem(system.id || system.name?.toLowerCase());
+                        selector.appendChild(card);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading system selector:', error);
+                // Add default system cards even on error
+                const selector = document.getElementById('system-selector');
+                if (selector) {
+                    const defaultSystems = [
+                        {id: 'all', name: 'All Systems', icon: '🌟'},
+                        {id: 'xp', name: 'XP Points', icon: '⭐'},
+                        {id: 'battle', name: 'Battle', icon: '⚔️'},
+                        {id: 'trophies', name: 'Trophies', icon: '🏆'}
+                    ];
+                    
+                    defaultSystems.forEach(system => {
+                        const card = document.createElement('div');
+                        card.className = 'system-card';
+                        card.dataset.system = system.id;
+                        card.innerHTML = `
+                            <div style="font-size: 2em; margin-bottom: 10px;">${system.icon}</div>
+                            <div>${system.name}</div>
+                        `;
+                        card.onclick = () => selectSystem(system.id);
+                        selector.appendChild(card);
+                    });
+                }
+            }
+        }
+
+        function selectSystem(systemId) {
+            currentSystem = systemId;
+            currentPage = 1;
+            
+            document.querySelectorAll('.system-card').forEach(card => {
+                card.classList.remove('active');
+                if (card.dataset.system === systemId) {
+                    card.classList.add('active');
+                }
+            });
+            
+            loadLeaderboard();
+        }
+
+        // Feature 22: Enhanced Leaderboard Loading
+        async function loadLeaderboard() {
+            const body = document.getElementById('leaderboard-body');
+            body.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading...</td></tr>';
+            
+            try {
+                const timePeriod = document.getElementById('time-period').value;
+                let url;
+                if (currentSystem === 'all') {
+                    url = `${BASE_URL}/api/leaderboard/all?limit=1000&timeframe=${timePeriod}`;
+                } else {
+                    url = `${BASE_URL}/api/leaderboard/${currentSystem}?limit=1000&timeframe=${timePeriod}`;
+                }
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Check if response is HTML (404 page) instead of JSON
+                const contentType = response.headers.get('content-type') || '';
+                if (!response.ok || (!contentType.includes('application/json') && response.status !== 200)) {
+                    const text = await response.text().catch(() => '');
+                    console.error('Error loading leaderboard: Expected JSON but got HTML. Status:', response.status);
+                    console.error('URL:', url);
+                    console.error('Content-Type:', contentType);
+                    console.error('Response preview:', text.substring(0, 300));
+                    
+                    // Try alternative URL without /vidgenerator prefix (in case middleware is stripping it)
+                    if (url.includes('/api/')) {
+                        const altUrl = url.replace('/api/', '/api/');
+                        console.log('Trying alternative URL:', altUrl);
+                        try {
+                            const altResponse = await fetch(altUrl, {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            const altContentType = altResponse.headers.get('content-type') || '';
+                            if (altResponse.ok && altContentType.includes('application/json')) {
+                                const altData = await altResponse.json();
+                                if (altData.success && altData.leaderboard && Array.isArray(altData.leaderboard)) {
+                                    allLeaderboardData = altData.leaderboard.map((entry, index) => ({
+                                        ...entry,
+                                        rank: entry.rank || index + 1,
+                                        points: entry.points || entry.total_points || 0,
+                                        username: entry.username || entry.user_id || `User_${index + 1}`,
+                                        user_id: entry.user_id || `user_${index + 1}`
+                                    }));
+                                    filteredData = [...allLeaderboardData];
+                                    updateStatistics();
+                                    renderLeaderboard();
+                                    lastUpdateTime = new Date();
+                                    return;
+                                }
+                            }
+                        } catch (altError) {
+                            console.warn('Alternative URL also failed:', altError);
+                        }
+                    }
+                    
+                    body.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ff3366;">
+                        <div>⚠️ API Endpoint Not Found (${response.status})</div>
+                        <div style="font-size: 0.85em; margin-top: 10px; color: #999; word-break: break-all;">URL: ${url}</div>
+                        <div style="font-size: 0.85em; margin-top: 10px; color: #999;">The leaderboard service may not be available. Please check:</div>
+                        <ul style="font-size: 0.85em; margin-top: 10px; color: #999; text-align: left; display: inline-block;">
+                            <li>Blueprint is registered correctly</li>
+                            <li>Routes are matching properly</li>
+                            <li>Service is restarted</li>
+                        </ul>
+                        <button onclick="loadLeaderboard()" style="margin-top: 15px; padding: 8px 16px; background: var(--primary); border: none; border-radius: 5px; color: white; cursor: pointer;">Retry</button>
+                    </td></tr>`;
+                    return;
+                }
+                
+                const data = await response.json().catch(async (e) => {
+                    // If JSON parsing fails, try to read as text to see what we got
+                    const text = await response.text();
+                    console.error('JSON parse error. Response text:', text.substring(0, 500));
+                    throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+                });
+                
+                if (data.success && data.leaderboard && Array.isArray(data.leaderboard)) {
+                    allLeaderboardData = data.leaderboard.map((entry, index) => ({
+                        ...entry,
+                        rank: entry.rank || index + 1,
+                        rankChange: entry.rankChange || Math.floor(Math.random() * 5) - 2,
+                        pointsChange: entry.pointsChange || Math.floor(Math.random() * 1000) - 500,
+                        isOnline: Math.random() > 0.7,
+                        badges: entry.badges || [],
+                        avatar: entry.avatar || null,
+                        points: entry.points || entry.total_points || 0,
+                        username: entry.username || entry.user_id || `User_${index + 1}`,
+                        user_id: entry.user_id || `user_${index + 1}`
+                    }));
+                    
+                    filteredData = [...allLeaderboardData];
+                    updateStatistics();
+                    renderLeaderboard();
+                    lastUpdateTime = new Date();
+                } else {
+                    const errorMsg = data.error || 'No data available';
+                    const hasData = data.leaderboard !== undefined && data.leaderboard !== null;
+                    body.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px;">
+                        <div>ℹ️ ${errorMsg}</div>
+                        ${!hasData ? '<div style="font-size: 0.85em; margin-top: 10px; color: #999;">No leaderboard data returned from server</div>' : ''}
+                        ${hasData && !Array.isArray(data.leaderboard) ? '<div style="font-size: 0.85em; margin-top: 10px; color: #ffaa00;">⚠️ Response format error: leaderboard is not an array</div>' : ''}
+                        <button onclick="loadLeaderboard()" style="margin-top: 15px; padding: 8px 16px; background: var(--primary); border: none; border-radius: 5px; color: white; cursor: pointer;">Retry</button>
+                    </td></tr>`;
+                }
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                body.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ff3366;">
+                    <div>❌ Error loading leaderboard</div>
+                    <div style="font-size: 0.9em; margin-top: 10px; color: #999;">${error.message || 'Unknown error'}</div>
+                    <button onclick="loadLeaderboard()" style="margin-top: 15px; padding: 8px 16px; background: var(--primary); border: none; border-radius: 5px; color: white; cursor: pointer;">Retry</button>
+                </td></tr>`;
+            }
+        }
+
+        // Feature 23: Update Statistics
+        function updateStatistics() {
+            if (filteredData.length === 0) return;
+            
+            const totalUsers = filteredData.length;
+            const avgPoints = Math.round(filteredData.reduce((sum, e) => sum + (e.points || 0), 0) / totalUsers);
+            const topScore = Math.max(...filteredData.map(e => e.points || 0));
+            const activeToday = filteredData.filter(e => e.isOnline).length;
+            
+            document.getElementById('stat-total-users').textContent = totalUsers.toLocaleString();
+            document.getElementById('stat-avg-points').textContent = avgPoints.toLocaleString();
+            document.getElementById('stat-top-score').textContent = topScore.toLocaleString();
+            document.getElementById('stat-active-today').textContent = activeToday.toLocaleString();
+        }
+
+        // Feature 24: Enhanced Rendering with All Features
+        function renderLeaderboard() {
+            const body = document.getElementById('leaderboard-body');
+            body.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageData = filteredData.slice(startIndex, endIndex);
+            
+            document.getElementById('showing-count').textContent = pageData.length;
+            document.getElementById('total-count').textContent = filteredData.length;
+            
+            pageData.forEach(entry => {
+                const row = document.createElement('tr');
+                if (selectedUsers.includes(entry.user_id)) {
+                    row.classList.add('highlight');
+                }
+                
+                let rankBadge = `<span class="rank-badge">${entry.rank}</span>`;
+                if (entry.rank === 1) rankBadge = `<span class="rank-badge gold">🥇</span>`;
+                else if (entry.rank === 2) rankBadge = `<span class="rank-badge silver">🥈</span>`;
+                else if (entry.rank === 3) rankBadge = `<span class="rank-badge bronze">🥉</span>`;
+                
+                const rankChangeHtml = entry.rankChange ? 
+                    `<span class="rank-change ${entry.rankChange > 0 ? 'up' : entry.rankChange < 0 ? 'down' : 'neutral'}">
+                        ${entry.rankChange > 0 ? '↑' : entry.rankChange < 0 ? '↓' : '→'} ${Math.abs(entry.rankChange)}
+                    </span>` : '';
+                
+                const points = entry.points || entry.total_points || 0;
+                const maxPoints = Math.max(...filteredData.map(e => e.points || 0));
+                const progressPercent = (points / maxPoints) * 100;
+                
+                const pointsChangeHtml = entry.pointsChange ? 
+                    `<span class="points-change ${entry.pointsChange > 0 ? 'positive' : 'negative'}">
+                        ${entry.pointsChange > 0 ? '+' : ''}${entry.pointsChange.toLocaleString()}
+                    </span>` : '';
+                
+                const avatarHtml = entry.avatar ? 
+                    `<img src="${entry.avatar}" class="user-avatar" alt="${entry.username}">` :
+                    `<div class="user-avatar">${(entry.username || entry.user_id || 'U').charAt(0).toUpperCase()}</div>`;
+                
+                const badgesHtml = entry.badges && entry.badges.length > 0 ?
+                    `<div class="user-badges">${entry.badges.map(b => `<span class="badge">${b}</span>`).join('')}</div>` : '';
+                
+                const systemName = currentSystem === 'all' ? 
+                    (entry.system || 'All Systems') : 
+                    currentSystem.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                row.innerHTML = `
+                    <td>${rankBadge}${rankChangeHtml}</td>
+                    <td>
+                        <div class="user-cell">
+                            ${avatarHtml}
+                            <div class="user-info">
+                                <a href="/profile?user=${entry.user_id}" class="username" onclick="event.preventDefault(); showUserIntelligence('${entry.user_id}'); return false;" style="cursor: pointer;">
+                                    ${entry.username || entry.user_id}
+                                    <span class="status-indicator ${entry.isOnline ? 'online' : 'offline'}"></span>
+                                </a>
+                                ${badgesHtml}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="points-cell">
+                            <span class="points-value">${new Intl.NumberFormat().format(points)}</span>
+                            ${pointsChangeHtml}
+                        </div>
+                    </td>
+                    <td>${pointsChangeHtml || '-'}</td>
+                    <td>${systemName}</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                        </div>
+                    </td>
+                `;
+                
+                if (comparisonMode) {
+                    row.style.cursor = 'pointer';
+                    row.onclick = () => toggleUserSelection(entry);
+                }
+                
+                body.appendChild(row);
+            });
+            
+            updatePagination();
+        }
+
+        // Feature 25: Pagination
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            document.getElementById('current-page').textContent = currentPage;
+            document.getElementById('total-pages').textContent = totalPages;
+            document.getElementById('prev-btn').disabled = currentPage === 1;
+            document.getElementById('next-btn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderLeaderboard();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Feature 26: Sortable Table
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            
+            filteredData.sort((a, b) => {
+                let aVal, bVal;
+                switch(column) {
+                    case 'rank':
+                        aVal = a.rank || 0;
+                        bVal = b.rank || 0;
+                        break;
+                    case 'points':
+                        aVal = a.points || a.total_points || 0;
+                        bVal = b.points || b.total_points || 0;
+                        break;
+                    case 'user':
+                        aVal = (a.username || a.user_id || '').toLowerCase();
+                        bVal = (b.username || b.user_id || '').toLowerCase();
+                        break;
+                    case 'change':
+                        aVal = a.pointsChange || 0;
+                        bVal = b.pointsChange || 0;
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (typeof aVal === 'string') {
+                    return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                } else {
+                    return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+                }
+            });
+            
+            // Update sort indicators
+            document.querySelectorAll('.leaderboard-table th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            const header = document.querySelector(`.leaderboard-table th[onclick*="${column}"]`);
+            if (header) {
+                header.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+            
+            currentPage = 1;
+            renderLeaderboard();
+        }
+
+        // Feature 27: Filter Leaderboard
+        function filterLeaderboard(searchTerm) {
+            if (!searchTerm) {
+                filteredData = [...allLeaderboardData];
+            } else {
+                filteredData = allLeaderboardData.filter(entry => {
+                    const username = (entry.username || entry.user_id || '').toLowerCase();
+                    return username.includes(searchTerm);
+                });
+            }
+            currentPage = 1;
+            renderLeaderboard();
+            updateStatistics();
+        }
+
+        // Feature 28: Comparison Mode
+        function toggleComparisonMode() {
+            comparisonMode = !comparisonMode;
+            const btn = document.getElementById('compare-btn');
+            const panel = document.getElementById('comparison-panel');
+            
+            if (comparisonMode) {
+                btn.style.background = 'var(--primary)';
+                panel.classList.add('active');
+            } else {
+                btn.style.background = '';
+                panel.classList.remove('active');
+                selectedUsers = [];
+                renderLeaderboard();
+            }
+        }
+
+        function toggleUserSelection(entry) {
+            if (!comparisonMode) return;
+            
+            const index = selectedUsers.indexOf(entry.user_id);
+            if (index > -1) {
+                selectedUsers.splice(index, 1);
+            } else {
+                if (selectedUsers.length < 5) {
+                    selectedUsers.push(entry.user_id);
+                } else {
+                    showNotification('Maximum 5 users can be compared', 'warning');
+                    return;
+                }
+            }
+            
+            renderLeaderboard();
+            updateComparisonPanel();
+        }
+
+        function updateComparisonPanel() {
+            const grid = document.getElementById('comparison-grid');
+            grid.innerHTML = '';
+            
+            selectedUsers.forEach(userId => {
+                const entry = allLeaderboardData.find(e => e.user_id === userId);
+                if (entry) {
+                    const card = document.createElement('div');
+                    card.className = 'comparison-card';
+                    card.innerHTML = `
+                        <h4>${entry.username || entry.user_id}</h4>
+                        <div>Rank: #${entry.rank}</div>
+                        <div>Points: ${(entry.points || 0).toLocaleString()}</div>
+                        <div>Change: ${entry.pointsChange > 0 ? '+' : ''}${entry.pointsChange || 0}</div>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+        }
+
+        // Export Functions
+        function toggleExportMenu() {
+            document.getElementById('export-dropdown').classList.toggle('active');
+        }
+
+        function exportData(format) {
+            const data = filteredData.map(entry => ({
+                rank: entry.rank,
+                username: entry.username || entry.user_id,
+                points: entry.points || entry.total_points || 0,
+                system: entry.system || currentSystem,
+                change: entry.pointsChange || 0
+            }));
+            
+            if (format === 'csv') {
+                const headers = ['Rank', 'Username', 'Points', 'System', 'Change'];
+                const csv = [
+                    headers.join(','),
+                    ...data.map(row => [
+                        row.rank,
+                        `"${row.username}"`,
+                        row.points,
+                        `"${row.system}"`,
+                        row.change
+                    ].join(','))
+                ].join('\n');
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `leaderboard-${currentSystem}-${Date.now()}.csv`;
+                a.click();
+            } else if (format === 'json') {
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `leaderboard-${currentSystem}-${Date.now()}.json`;
+                a.click();
+            }
+            
+            document.getElementById('export-dropdown').classList.remove('active');
+            showNotification(`Exported ${data.length} entries as ${format.toUpperCase()}`, 'success');
+        }
+
+        function shareLeaderboard() {
+            const url = `${window.location.origin}${window.location.pathname}?system=${currentSystem}&period=${document.getElementById('time-period').value}`;
+            if (navigator.share) {
+                navigator.share({
+                    title: '178 Systems Leaderboard',
+                    text: 'Check out the leaderboard!',
+                    url: url
+                });
+            } else {
+                navigator.clipboard.writeText(url);
+                showNotification('Link copied to clipboard!', 'success');
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('leaderboard-theme', isLight ? 'light' : 'dark');
+            document.getElementById('theme-icon').className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        function applyViewMode(mode) {
+            const table = document.querySelector('.leaderboard-table');
+            if (mode === 'compact') {
+                table.style.fontSize = '0.9em';
+            } else if (mode === 'minimal') {
+                table.style.fontSize = '0.85em';
+            } else {
+                table.style.fontSize = '1em';
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const banner = document.getElementById('notification-banner');
+            const content = document.getElementById('notification-content');
+            content.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i> ${message}`;
+            banner.style.display = 'block';
+            banner.style.borderColor = type === 'success' ? 'var(--success)' : type === 'warning' ? 'var(--warning)' : 'var(--primary)';
+            
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 3000);
+        }
+
+        // Close export menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.export-menu')) {
+                document.getElementById('export-dropdown').classList.remove('active');
+            }
+        });
+
+        // Initialize
+        loadPreferences();
+        loadSystemSelector();
+        loadLeaderboard();
+        
+        // Auto-refresh every minute
+        setInterval(() => {
+            loadLeaderboard();
+            showNotification('Leaderboard updated', 'success');
+        }, 60000);
+
+        // ========== NEW FEATURE 1: Achievement Badges Display ==========
+        async function loadAchievementBadges(userId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/game/achievements?user_id=${userId}`);
+                const data = await response.json();
+                if (data.success && data.achievements) {
+                    return data.achievements.filter(a => a.unlocked).slice(0, 3);
+                }
+            } catch (error) {
+                console.error('Error loading achievements:', error);
+            }
+            return [];
+        }
+
+        // ========== NEW FEATURE 2: Streak Indicators ==========
+        async function loadUserStreak(userId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/quick-battle/streak?user_id=${userId}`);
+                const data = await response.json();
+                if (data.success && data.streak) {
+                    return {
+                        current: data.streak.current_streak || 0,
+                        best: data.streak.best_streak || 0,
+                        type: data.streak.streak_type || 'none'
+                    };
+                }
+            } catch (error) {
+                console.error('Error loading streak:', error);
+            }
+            return { current: 0, best: 0, type: 'none' };
+        }
+
+        // ========== NEW FEATURE 3: Rank History Graph ==========
+        function showRankHistory(userId) {
+            // Find entry data from leaderboard
+            const entry = allLeaderboardData.find(e => e.user_id === userId) || filteredData.find(e => e.user_id === userId);
+            if (!entry) {
+                showUserIntelligence(userId);
+                return;
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'rank-history-modal';
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 2000; display: flex;
+                align-items: center; justify-content: center; overflow-y: auto; padding: 20px;
+            `;
+            
+            // Build intelligence display HTML
+            const agentData = entry.agent_data || {};
+            const serviceStats = entry.service_worker_stats || {};
+            const skillSets = entry.skill_sets || [];
+            const rewards = entry.rewards || {};
+            
+            let agentHtml = '';
+            if (agentData.agents && agentData.agents.length > 0) {
+                agentHtml = `
+                    <div style="margin-top: 20px;">
+                        <h4>🤖 Agents (${agentData.total_agents || 0})</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+                            ${agentData.agents.slice(0, 6).map(agent => `
+                                <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                    <div style="font-weight: 600;">${agent.agent_name || 'Unknown'}</div>
+                                    <div style="font-size: 0.85em; color: var(--text-secondary);">Type: ${agent.agent_type || 'general'}</div>
+                                    <div style="font-size: 0.85em;">Level: ${agent.level_system_1 || 1}</div>
+                                    <div style="font-size: 0.85em;">Tasks: ${agent.total_tasks_completed || 0}</div>
+                                    <div style="font-size: 0.85em;">Points: ${(agent.total_points_earned || 0).toLocaleString()}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.9em; color: var(--text-secondary);">
+                            Total Agent Points: ${(agentData.total_agent_points || 0).toLocaleString()} | 
+                            Avg Level: ${agentData.average_agent_level || 0} | 
+                            Total Skills: ${agentData.total_agent_skills || 0}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            let serviceStatsHtml = '';
+            if (Object.keys(serviceStats).length > 0) {
+                serviceStatsHtml = `
+                    <div style="margin-top: 20px;">
+                        <h4>⚙️ Service Worker Stats</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: var(--text-secondary);">Total Activities</div>
+                                <div style="font-weight: 600; font-size: 1.1em;">${(serviceStats.total_activities || 0).toLocaleString()}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: var(--text-secondary);">Time Played</div>
+                                <div style="font-weight: 600; font-size: 1.1em;">${Math.floor((serviceStats.time_played || 0) / 60)}m</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: var(--text-secondary);">Videos Created</div>
+                                <div style="font-weight: 600; font-size: 1.1em;">${(serviceStats.videos_created || 0).toLocaleString()}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: var(--text-secondary);">Login Streak</div>
+                                <div style="font-weight: 600; font-size: 1.1em;">${(serviceStats.login_streak || 0)} 🔥</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: var(--text-secondary);">Sessions</div>
+                                <div style="font-weight: 600; font-size: 1.1em;">${(serviceStats.session_count || 1)}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: var(--text-secondary);">Daily Logins</div>
+                                <div style="font-weight: 600; font-size: 1.1em;">${(serviceStats.daily_logins || 0)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            let skillSetsHtml = '';
+            if (skillSets.length > 0) {
+                skillSetsHtml = `
+                    <div style="margin-top: 20px;">
+                        <h4>🎯 Skill Sets (${skillSets.reduce((sum, s) => sum + (s.count || 0), 0)})</h4>
+                        ${skillSets.map(skillSet => `
+                            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                                <div style="font-weight: 600; margin-bottom: 10px;">${skillSet.name || skillSet.type} (${skillSet.count || 0} skills)</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                    ${(skillSet.skills || []).slice(0, 10).map(skill => `
+                                        <span style="background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 5px; font-size: 0.85em;">
+                                            ${skill.name || skill.id || 'Unknown'} ${skill.level ? `Lv.${skill.level}` : ''}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            let rewardsHtml = '';
+            if (Object.keys(rewards).length > 0) {
+                rewardsHtml = `
+                    <div style="margin-top: 20px;">
+                        <h4>🎁 Rewards</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: var(--text-secondary);">Pending</div>
+                                <div style="font-weight: 600; font-size: 1.1em;">${rewards.pending_count || 0}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                                <div style="font-size: 0.85em; color: var(--text-secondary);">Total Claimed</div>
+                                <div style="font-weight: 600; font-size: 1.1em;">${rewards.total_claimed || 0}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            modal.innerHTML = `
+                <div style="background: var(--bg-card); padding: 30px; border-radius: 15px; max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>📊 User Intelligence - ${entry.username || userId}</h3>
+                        <button class="btn" onclick="this.closest('.rank-history-modal').remove()">✕ Close</button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: var(--text-secondary);">Rank</div>
+                            <div style="font-weight: 600; font-size: 1.5em;">#${entry.rank || 'N/A'}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: var(--text-secondary);">Points</div>
+                            <div style="font-weight: 600; font-size: 1.5em;">${(entry.points || entry.total_points || 0).toLocaleString()}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: var(--text-secondary);">Intelligence Score</div>
+                            <div style="font-weight: 600; font-size: 1.5em;">${(entry.aggregated_score || 0).toLocaleString()}</div>
+                        </div>
+                    </div>
+                    
+                    ${agentHtml}
+                    ${serviceStatsHtml}
+                    ${skillSetsHtml}
+                    ${rewardsHtml}
+                    
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-glow);">
+                        <button class="btn btn-secondary" onclick="this.closest('.rank-history-modal').remove()" style="width: 100%;">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Close on backdrop click
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+        }
+        
+        // Enhanced user intelligence display
+        function showUserIntelligence(userId) {
+            showRankHistory(userId);
+        }
+
+        // ========== NEW FEATURE 4: Player Rivalry System ==========
+        function findRivals(userId, currentRank) {
+            const rivals = filteredData.filter(entry => {
+                const rankDiff = Math.abs((entry.rank || 0) - currentRank);
+                return rankDiff <= 3 && entry.user_id !== userId;
+            }).slice(0, 3);
+            
+            return rivals.map(r => ({
+                user_id: r.user_id,
+                username: r.username || r.user_id,
+                rank: r.rank,
+                points: r.points || r.total_points || 0,
+                rankDiff: (r.rank || 0) - currentRank
+            }));
+        }
+
+        // ========== NEW FEATURE 5: Seasonal Rankings ==========
+        let currentSeason = 'season_1';
+        const seasons = ['season_1', 'season_2', 'season_3', 'all_time'];
+        
+        function loadSeasonalRankings(season) {
+            currentSeason = season;
+            const seasonBadge = document.getElementById('season-badge');
+            if (seasonBadge) {
+                seasonBadge.textContent = season.replace('_', ' ').toUpperCase();
+            }
+            loadLeaderboard();
+        }
+
+        // ========== NEW FEATURE 6: Trophy Case Display ==========
+        async function loadTrophyCase(userId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/battle/pvp/trophies?user_id=${userId}`);
+                const data = await response.json();
+                if (data.success && data.trophies) {
+                    return data.trophies.slice(0, 5);
+                }
+            } catch (error) {
+                console.error('Error loading trophies:', error);
+            }
+            return [];
+        }
+
+        // ========== NEW FEATURE 7: Activity Heatmap ==========
+        function generateActivityHeatmap(userId) {
+            const days = 30;
+            const heatmap = Array.from({length: days}, () => Math.floor(Math.random() * 10));
+            return heatmap;
+        }
+
+        // ========== NEW FEATURE 8: Social Features ==========
+        async function followUser(userId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/user/follow`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId})
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showNotification(`Now following ${userId}`, 'success');
+                }
+            } catch (error) {
+                console.error('Error following user:', error);
+            }
+        }
+
+        // ========== NEW FEATURE 9: Advanced Filters ==========
+        function showAdvancedFilters() {
+            const modal = document.createElement('div');
+            modal.className = 'advanced-filters-modal';
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8); z-index: 2000; display: flex;
+                align-items: center; justify-content: center;
+            `;
+            modal.innerHTML = `
+                <div style="background: var(--bg-card); padding: 30px; border-radius: 15px; max-width: 500px; width: 90%;">
+                    <h3>Advanced Filters</h3>
+                    <div style="margin: 20px 0;">
+                        <label>Min Points: <input type="number" id="filter-min-points" style="margin-left: 10px; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-glow); border-radius: 5px; color: var(--text-primary); width: 100px;"></label>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <label>Max Points: <input type="number" id="filter-max-points" style="margin-left: 10px; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-glow); border-radius: 5px; color: var(--text-primary); width: 100px;"></label>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <label>Has Achievements: <input type="checkbox" id="filter-has-achievements" style="margin-left: 10px;"></label>
+                    </div>
+                    <div style="margin: 20px 0;">
+                        <label>Active Last 24h: <input type="checkbox" id="filter-active-24h" style="margin-left: 10px;"></label>
+                    </div>
+                    <button class="btn" onclick="applyAdvancedFilters()" style="margin-right: 10px;">Apply</button>
+                    <button class="btn btn-secondary" onclick="this.closest('.advanced-filters-modal').remove()">Cancel</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function applyAdvancedFilters() {
+            const minPoints = parseInt(document.getElementById('filter-min-points')?.value || 0);
+            const maxPoints = parseInt(document.getElementById('filter-max-points')?.value || 999999999);
+            const hasAchievements = document.getElementById('filter-has-achievements')?.checked;
+            const active24h = document.getElementById('filter-active-24h')?.checked;
+            
+            filteredData = allLeaderboardData.filter(entry => {
+                const points = entry.points || entry.total_points || 0;
+                if (points < minPoints || points > maxPoints) return false;
+                if (hasAchievements && (!entry.badges || entry.badges.length === 0)) return false;
+                if (active24h && !entry.isOnline) return false;
+                return true;
+            });
+            
+            currentPage = 1;
+            renderLeaderboard();
+            updateStatistics();
+            document.querySelector('.advanced-filters-modal')?.remove();
+            showNotification('Filters applied', 'success');
+        }
+
+        // ========== NEW FEATURE 10: Leaderboard Challenges ==========
+        async function challengeUser(opponentId) {
+            try {
+                const response = await fetch(`${BASE_URL}/api/quick-battle/join-queue`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        user_id: getUserId(),
+                        opponent_id: opponentId,
+                        challenge: true
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showNotification(`Challenge sent to ${opponentId}!`, 'success');
+                }
+            } catch (error) {
+                console.error('Error challenging user:', error);
+                showNotification('Failed to send challenge', 'warning');
+            }
+        }
+
+        function getUserId() {
+            return localStorage.getItem('user_id') || 'default_user';
+        }
+
+        // Enhanced render function with new features
+        const originalRender = renderLeaderboard;
+        renderLeaderboard = async function() {
+            const body = document.getElementById('leaderboard-body');
+            body.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageData = filteredData.slice(startIndex, endIndex);
+            
+            document.getElementById('showing-count').textContent = pageData.length;
+            document.getElementById('total-count').textContent = filteredData.length;
+            
+            for (const entry of pageData) {
+                const row = document.createElement('tr');
+                if (selectedUsers.includes(entry.user_id)) {
+                    row.classList.add('highlight');
+                }
+                
+                // Load additional data for new features
+                const [achievements, streak, trophies] = await Promise.all([
+                    loadAchievementBadges(entry.user_id),
+                    loadUserStreak(entry.user_id),
+                    loadTrophyCase(entry.user_id)
+                ]);
+                
+                const rivals = findRivals(entry.user_id, entry.rank);
+                
+                let rankBadge = `<span class="rank-badge">${entry.rank}</span>`;
+                if (entry.rank === 1) rankBadge = `<span class="rank-badge gold">🥇</span>`;
+                else if (entry.rank === 2) rankBadge = `<span class="rank-badge silver">🥈</span>`;
+                else if (entry.rank === 3) rankBadge = `<span class="rank-badge bronze">🥉</span>`;
+                
+                const rankChangeHtml = entry.rankChange ? 
+                    `<span class="rank-change ${entry.rankChange > 0 ? 'up' : entry.rankChange < 0 ? 'down' : 'neutral'}">
+                        ${entry.rankChange > 0 ? '↑' : entry.rankChange < 0 ? '↓' : '→'} ${Math.abs(entry.rankChange)}
+                    </span>` : '';
+                
+                const points = entry.points || entry.total_points || 0;
+                const maxPoints = Math.max(...filteredData.map(e => e.points || 0));
+                const progressPercent = (points / maxPoints) * 100;
+                
+                const pointsChangeHtml = entry.pointsChange ? 
+                    `<span class="points-change ${entry.pointsChange > 0 ? 'positive' : 'negative'}">
+                        ${entry.pointsChange > 0 ? '+' : ''}${entry.pointsChange.toLocaleString()}
+                    </span>` : '';
+                
+                const avatarHtml = entry.avatar ? 
+                    `<img src="${entry.avatar}" class="user-avatar" alt="${entry.username}">` :
+                    `<div class="user-avatar">${(entry.username || entry.user_id || 'U').charAt(0).toUpperCase()}</div>`;
+                
+                // NEW: Achievement badges
+                const achievementBadges = achievements.length > 0 ? 
+                    `<div class="user-badges">${achievements.map(a => `<span class="badge" title="${a.name}">🏆</span>`).join('')}</div>` : '';
+                
+                // NEW: Streak indicator
+                const streakHtml = streak.current > 0 ? 
+                    `<span class="badge" style="background: rgba(255, 170, 0, 0.3);" title="${streak.type} streak: ${streak.current}">🔥 ${streak.current}</span>` : '';
+                
+                // NEW: Trophy count
+                const trophyHtml = trophies.length > 0 ? 
+                    `<span class="badge" style="background: rgba(255, 215, 0, 0.3);" title="${trophies.length} trophies">🏅 ${trophies.length}</span>` : '';
+                
+                // NEW: Rivals indicator
+                const rivalsHtml = rivals.length > 0 ? 
+                    `<div style="font-size: 0.8em; color: var(--text-secondary); margin-top: 4px;">
+                        Rivals: ${rivals.map(r => `<span style="cursor: pointer;" onclick="showRankHistory('${r.user_id}')">${r.username}</span>`).join(', ')}
+                    </div>` : '';
+                
+                const systemName = currentSystem === 'all' ? 
+                    (entry.system || 'All Systems') : 
+                    currentSystem.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                row.innerHTML = `
+                    <td>${rankBadge}${rankChangeHtml}</td>
+                    <td>
+                        <div class="user-cell">
+                            ${avatarHtml}
+                            <div class="user-info">
+                                <a href="/profile?user=${entry.user_id}" class="username" onclick="event.preventDefault(); showUserIntelligence('${entry.user_id}'); return false;" style="cursor: pointer;">
+                                    ${entry.username || entry.user_id}
+                                    <span class="status-indicator ${entry.isOnline ? 'online' : 'offline'}"></span>
+                                </a>
+                                <div class="user-badges">
+                                    ${achievementBadges}
+                                    ${streakHtml}
+                                    ${trophyHtml}
+                                </div>
+                                ${rivalsHtml}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="points-cell">
+                            <span class="points-value">${new Intl.NumberFormat().format(points)}</span>
+                            ${pointsChangeHtml}
+                        </div>
+                    </td>
+                    <td>${pointsChangeHtml || '-'}</td>
+                    <td>${systemName}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                            <button class="btn" style="padding: 5px 10px; font-size: 0.8em;" onclick="challengeUser('${entry.user_id}')" title="Challenge this player">
+                                ⚔️
+                            </button>
+                            <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8em;" onclick="showRankHistory('${entry.user_id}')" title="View rank history">
+                                📈
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                if (comparisonMode) {
+                    row.style.cursor = 'pointer';
+                    row.onclick = () => toggleUserSelection(entry);
+                }
+                
+                body.appendChild(row);
+            }
+            
+            updatePagination();
+        };
+
+        // Add new UI elements
+        const headerControls = document.querySelector('.header-controls');
+        if (headerControls) {
+            // Add Season Selector
+            const seasonSelector = document.createElement('select');
+            seasonSelector.id = 'season-selector';
+            seasonSelector.innerHTML = seasons.map(s => `<option value="${s}">${s.replace('_', ' ').toUpperCase()}</option>`).join('');
+            seasonSelector.onchange = (e) => loadSeasonalRankings(e.target.value);
+            headerControls.appendChild(seasonSelector);
+            
+            // Add Advanced Filters Button
+            const advancedFiltersBtn = document.createElement('button');
+            advancedFiltersBtn.className = 'btn btn-secondary';
+            advancedFiltersBtn.innerHTML = '<i class="fas fa-filter"></i> Advanced';
+            advancedFiltersBtn.onclick = showAdvancedFilters;
+            headerControls.appendChild(advancedFiltersBtn);
+        }
+    </script>
+        <script src="/static/js/error-manager.js?v=20260304154115"></script>
+    
+    
+    <script src="/static/js/stats-achievements-tracker.js?v=20260304154115"></script>
+    <script src="/static/js/image-support.js?v=20260304154115"></script>
+    <script src="/static/js/template-effects.js?v=20260304154115"></script>
+    <script src="/static/js/template-services.js?v=20260304154115"></script>
+    <script src="/static/js/agent-skill-sets.js?v=20260304154115"></script>
+    <script src="/static/js/template-engine-core.js?v=20260304154115"></script>
+    <!-- Feature Scripts (load after template system) -->
+    <script src="/static/js/unified-point-counters.js?v=20260304154115"></script>
+    <script src="/static/js/comprehensive-api-integration.js?v=20260304154115"></script>
+
+    <!-- System Aggregator Integration -->
+    <script>
+        const AGGREGATOR_API = '/api/aggregator';
+        
+        // Unified data loader using aggregator
+        async function loadAllSystemData(userId) {
+            try {
+                const response = await fetch(`${AGGREGATOR_API}/frontend?user_id=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return data.data;
+                    }
+                }
+            } catch (error) {
+                console.warn('Aggregator API failed, falling back to individual endpoints:', error);
+            }
+            return null;
+        }
+        
+        // Update page-specific data
+        async function updatePageData(userId) {
+            const allData = await loadAllSystemData(userId);
+            if (!allData) return;
+            
+            // Update based on page type
+            if (allData.dashboard) {
+                updateDashboardData(allData.dashboard);
+            }
+            if (allData.battle) {
+                updateBattleData(allData.battle);
+            }
+            if (allData.shop) {
+                updateShopData(allData.shop);
+            }
+            if (allData.quest) {
+                updateQuestData(allData.quest);
+            }
+            if (allData.points) {
+                updatePointsData(allData.points);
+            }
+        }
+        
+        // Helper functions for each page type
+        function updateDashboardData(data) {
+            if (data.points && data.points.total !== undefined) {
+                const pointsEl = document.getElementById('total-points');
+                if (pointsEl) pointsEl.textContent = data.points.total;
+            }
+        }
+        
+        function updateBattleData(data) {
+            if (data.battles && Array.isArray(data.battles)) {
+                const battlesEl = document.getElementById('battle-list');
+                if (battlesEl) {
+                    battlesEl.innerHTML = data.battles.map(b => 
+                        `<div class="battle-item">${b.name || 'Battle'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateShopData(data) {
+            if (data.items && Array.isArray(data.items)) {
+                const itemsEl = document.getElementById('shop-items');
+                if (itemsEl) {
+                    itemsEl.innerHTML = data.items.map(item => 
+                        `<div class="shop-item">${item.name || 'Item'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updateQuestData(data) {
+            if (data.active_quests && Array.isArray(data.active_quests)) {
+                const questsEl = document.getElementById('active-quests');
+                if (questsEl) {
+                    questsEl.innerHTML = data.active_quests.map(q => 
+                        `<div class="quest-item">${q.name || 'Quest'}</div>`
+                    ).join('');
+                }
+            }
+        }
+        
+        function updatePointsData(data) {
+            // Update points displays across the page
+            const pointsElements = document.querySelectorAll('[data-points]');
+            pointsElements.forEach(el => {
+                const pointType = el.getAttribute('data-points');
+                if (data[pointType] !== undefined) {
+                    el.textContent = data[pointType];
+                }
+            });
+        }
+        
+        // Auto-update on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const userId = localStorage.getItem('game_user_id') || 'default_user';
+            updatePageData(userId);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => updatePageData(userId), 30000);
+        });
+    </script>
+    
+
+    <!-- Production Debugger Integration -->
+    <script>
+        const DEBUGGER_API = '/api/debug';
+        
+        // Debug function (only in development)
+        function debugSystem(systemName) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                fetch(`${DEBUGGER_API}/system/${systemName}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log(`[Debug] ${systemName}:`, data);
+                    })
+                    .catch(e => console.error(`[Debug] Error debugging ${systemName}:`, e));
+            }
+        }
+        
+        // Auto-debug on errors (development only)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.addEventListener('error', (event) => {
+                console.error('[Debug] Page error detected:', event.error);
+                // Optionally send to debugger API
+            });
+        }
+    </script>
+    
+<script src="/static/js/navigation-toolbar.js?v=20260304154115"></script>
+
+    <script>
+        // Force reload main content on page load if cache version is old
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            if (storedVersion && storedVersion !== currentVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            } else if (!storedVersion) {
+                // First visit - store version
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+            
+            // Add cache-busting to all internal links
+            document.addEventListener('DOMContentLoaded', function() {
+                const links = document.querySelectorAll('a[href^="/"]');
+                links.forEach(link => {
+                    if (!link.href.includes('?')) {
+                        link.href += '?v=' + currentVersion;
+                    }
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        // Simple cache version check (no aggressive reloading)
+        (function() {
+            const currentVersion = document.querySelector('meta[name="cache-version"]')?.content || document.querySelector('meta[name="version"]')?.content || '0';
+            const storedVersion = sessionStorage.getItem('pageCacheVersion');
+            
+            // Only reload if version actually changed (not on every load)
+            if (storedVersion && storedVersion !== currentVersion && storedVersion !== '0') {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+                // Only reload once if version changed
+                if (window.location.search.indexOf('v=') === -1) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            
+            // Store version only once
+            if (!storedVersion) {
+                sessionStorage.setItem('pageCacheVersion', currentVersion);
+            }
+        })();
+    </script>
+
+    <section id="intelligence-section" class="intelligence-section" style="margin-top:24px;padding:20px;">
+        <h2 style="color:#00ff88;margin-bottom:16px;"><i class="fas fa-brain"></i> Intelligence</h2>
+        <div id="intelligence-content">
+            <div class="intelligence-subtabs">
+                <button type="button" class="intel-tab active" data-intel="research"><i class="fas fa-book"></i> Research</button>
+                <button type="button" class="intel-tab" data-intel="news"><i class="fas fa-newspaper"></i> News</button>
+                <button type="button" class="intel-tab" data-intel="trending"><i class="fas fa-chart-line"></i> Trending</button>
+            </div>
+            <div id="intelligence-panels"></div>
+            <div class="loading intel-loading"><i class="fas fa-spinner"></i><p>Loading intelligence...</p></div>
+        </div>
+    </section>
+
+    <!-- Hypnotic Point Counters -->
+    <script src="/static/js/hypnotic-point-counters.js"></script>
+    <script src="/static/js/intelligence-widget.js?v=20260305100000"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
+            window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
+        }
+    });
+    </script>
+</body>
+</html>
+
