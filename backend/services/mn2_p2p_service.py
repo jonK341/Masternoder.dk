@@ -760,6 +760,15 @@ def p2p_stats() -> Dict[str, Any]:
     }
 
 
+def abandon_pending_paypal_payment(order_id: str, *, reason: str = "paypal_abandoned") -> Dict[str, Any]:
+    """Release escrow reservation and expire a pending PayPal checkout."""
+    oid = str(order_id or "").strip()
+    if not oid:
+        return {"success": False, "error": "order_id required"}
+    _release_reservation(oid, reason)
+    return {"success": True, "order_id": oid}
+
+
 def list_pending_paypal_payments() -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for order in _read(_ORDERS_FILE).values():

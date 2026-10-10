@@ -52,6 +52,31 @@ def maybe_publish_tick_news(loop: str, summary: str, *, res: Optional[Dict[str, 
     """Emit platform news on meaningful profit events (throttled)."""
     if loop in ("grid", "stuck", "micro_chain", "unified"):
         return _publish_ops_loop_news(loop, summary, res=res)
+    if loop == "paypal_finish":
+        kv = _parse_kv(summary)
+        captured = 0
+        for part in (summary or "").split():
+            if part.startswith("captured="):
+                try:
+                    captured = int(part.split("=", 1)[1])
+                except ValueError:
+                    pass
+        if captured > 0 and _cooldown_ok(f"pf_cap_{captured}"):
+            try:
+                from backend.services.platform_news_publish import publish
+                item_id = "profit_" + hashlib.sha256(f"pf_cap_{captured}".encode()).hexdigest()[:12]
+                return publish(
+                    item_id=item_id,
+                    title=f"PayPal capture batch: {captured} order(s)",
+                    summary=summary[:200],
+                    channel=_CHANNEL,
+                    href="/profit/",
+                    featured=True,
+                )
+            except Exception:
+                pass
+        return None
+
     if loop != "exchange":
         return None
 
@@ -169,6 +194,35 @@ def _publish_ops_loop_news(loop: str, summary: str, *, res: Optional[Dict[str, A
             channel=_CHANNEL,
             href="/business-control/",
             featured=featured,
+        )
+    except Exception:
+        return None
+
+
+def maybe_publish_paypal_finish_news(finish_result: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Headline when paypal_finish tick captures merchant payments."""
+    counts = finish_result.get("counts") if isinstance(finish_result.get("counts"), dict) else {}
+    captured = int(counts.get("captured") or 0)
+    awaiting = int(counts.get("awaiting_payer") or 0)
+    if captured <= 0:
+        return None
+    event_key = f"paypal_cap_{captured}"
+    if not _cooldown_ok(event_key):
+        return None
+    title = f"PayPal: {captured} checkout(s) captured to merchant"
+    summary = str(finish_result.get("summary") or "")[:180]
+    if awaiting:
+        summary += f" · {awaiting} still awaiting payer approval"
+    try:
+        from backend.services.platform_news_publish import publish
+        item_id = "profit_" + hashlib.sha256(event_key.encode()).hexdigest()[:12]
+        return publish(
+            item_id=item_id,
+            title=title,
+            summary=summary or "Profit daemon auto-finish",
+            channel=_CHANNEL,
+            href="/profit/",
+            featured=True,
         )
     except Exception:
         return None

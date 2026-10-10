@@ -10,7 +10,9 @@ WorkingDirectory=/var/www/html
 Environment=DAEMON_QUIET=1
 Environment=LITE_APP=1
 Environment=EXCHANGE_DAEMON_MODE=live
-Environment=EXCHANGE_PROFIT_PROFILE=max
+Environment=EXCHANGE_PROFIT_PROFILE=paypal
+Environment=PYTHON_BIN=python3
+Environment=EXCHANGE_LIVE_PROFIT_MAX=0
 Environment=PROFIT_DAEMON_HEARTBEAT_PATH=/var/www/html/logs/daemon_all_profit_heartbeat.json
 ExecStart=/var/www/html/scripts/run_profit_daemon_server.sh
 Restart=always

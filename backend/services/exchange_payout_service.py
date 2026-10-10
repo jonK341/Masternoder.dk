@@ -151,6 +151,95 @@ def _save(cfg: Dict[str, Any]) -> None:
     ex._write_json(_PAYOUT_PATH, cfg)
 
 
+def payout_ledger_split(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Paper vs live treasury stash and PayPal sweepable amounts (monitor / UI)."""
+    cfg = cfg or _load()
+    share = _paypal_share_pct(cfg)
+    min_usd = _min_sweep_usd(cfg)
+    email = _owner_paypal_email(cfg)
+    active = _sweep_ledger_mode()
+    paypal_live = _paypal_live_enabled()
+
+    def _leg(mode: str) -> Dict[str, Any]:
+        pool = round(_treasury_stashed_usd_by_mode(mode), 4)
+        swept = round(_swept_total_for_mode(cfg, mode), 4)
+        net = round(max(0.0, pool - swept), 4)
+        sweepable = round(net * share, 4) if email else net
+        return {
+            "mode": mode,
+            "stash_usd": pool,
+            "swept_usd": swept,
+            "net_unswept_usd": net,
+            "paypal_sweepable_usd": sweepable,
+            "ready_to_sweep": bool(email and sweepable >= min_usd and mode == active),
+        }
+
+    paper = _leg("paper")
+    live = _leg("live")
+    if paypal_live and active == "live":
+        banner = (
+            f"Live PayPal rail — sweep uses live stash (${live['stash_usd']:.2f}); "
+            f"paper ${paper['stash_usd']:.2f} is simulated only."
+        )
+    else:
+        banner = (
+            f"Paper payout mode — ${paper['paypal_sweepable_usd']:.2f} sweepable is not real PayPal cash. "
+            f"Enable EXCHANGE_PAYOUT_PAYPAL_LIVE=1 for live ledger."
+        )
+    return {
+        "success": True,
+        "active_sweep_mode": active,
+        "paypal_live_enabled": paypal_live,
+        "min_sweep_usd": min_usd,
+        "paper": paper,
+        "live": live,
+        "banner": banner,
+    }
+
+
+def sync_auto_sweep_from_env() -> Dict[str, Any]:
+    """Align payout_config.json with EXCHANGE_AUTO_PAYPAL_SWEEP / min / owner email from .env."""
+    try:
+        from scripts.daemon_env import load_dotenv
+
+        load_dotenv()
+    except Exception:
+        pass
+    cfg = _load()
+    changed = False
+    want_sweep = os.environ.get("EXCHANGE_AUTO_PAYPAL_SWEEP", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+    if want_sweep and not bool(cfg.get("auto_sweep")):
+        cfg["auto_sweep"] = True
+        changed = True
+    min_usd = _min_sweep_usd(cfg)
+    if float(cfg.get("min_sweep_usd") or 0) != min_usd:
+        cfg["min_sweep_usd"] = min_usd
+        changed = True
+    email = _owner_paypal_email(cfg)
+    paypal = cfg.setdefault("paypal", {})
+    if email and str(paypal.get("email") or "").strip() != email:
+        paypal["email"] = email
+        paypal["connected"] = True
+        changed = True
+    if str(cfg.get("destination") or "") != "paypal" and email:
+        cfg["destination"] = "paypal"
+        changed = True
+    if changed:
+        _save(cfg)
+    return {
+        "success": True,
+        "changed": changed,
+        "auto_sweep": bool(cfg.get("auto_sweep")),
+        "min_sweep_usd": float(cfg.get("min_sweep_usd") or 0),
+        "paypal_email_set": bool(email),
+    }
+
+
 def _live_enabled() -> bool:
     try:
         from backend.services import mn2_spork_service as spork

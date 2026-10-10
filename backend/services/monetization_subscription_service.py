@@ -381,6 +381,19 @@ def process_paypal_webhook_event(body: Dict[str, Any]) -> Tuple[Dict[str, Any], 
         _mark_event_processed(event_id, {"event_type": event_type, **out})
         return {"success": True, "handled": "payment_sale_completed", "event_id": event_id, **out}, 200
 
+    # Checkout / capture order events (shop, onramp, hosting, exchange, casino, …)
+    from backend.services.paypal_order_events import dispatch_order_webhook, is_order_event
+
+    if is_order_event(event_type):
+        out = dispatch_order_webhook(body, True)
+        _mark_event_processed(event_id, {"event_type": event_type, "order": True})
+        return {
+            "success": True,
+            "handled": "order_event",
+            "event_id": event_id,
+            "dispatched": out.get("dispatched") if isinstance(out, dict) else out,
+        }, 200
+
     # Other event types: acknowledge to avoid endless retries if we subscribe to many
     _mark_event_processed(event_id, {"event_type": event_type, "note": "ignored"})
     return {"success": True, "ignored": True, "event_type": event_type}, 200

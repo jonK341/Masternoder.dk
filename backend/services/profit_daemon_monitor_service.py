@@ -337,9 +337,14 @@ def _build_stats(
     stats.append(_stat("prefunded_bps", "Prefunded cost", conn.get("prefunded_transfer_bps"), unit="bps", category="funding"))
 
     stash = treasury.get("ledger_stashed_usd_live") or treasury.get("live_stash_usd")
+    paper_stash = treasury.get("ledger_stashed_usd_paper")
+    stats.append(_stat("paper_stash", "Paper stash", round(float(paper_stash), 2) if paper_stash is not None else 0,
+                       unit="USD", category="treasury", status="neutral",
+                       hint="Simulated P&L — not PayPal cash"))
     stats.append(_stat("live_stash", "Live stash", round(float(stash), 4) if stash else 0,
                        unit="USD", category="treasury",
-                       status="good" if stash and float(stash) > 0 else "neutral"))
+                       status="good" if stash and float(stash) > 0 else "neutral",
+                       hint="Realized live arb rows in treasury ledger"))
     stats.append(_stat("compound", "Treasury compound", "on" if treasury.get("compound_on_trade") or treasury.get("auto_stash_on_trade") else "off",
                        category="treasury"))
 
@@ -358,8 +363,37 @@ def _build_stats(
                        category="payout", status="good" if (payout.get("paypal") or {}).get("live_enabled") else "warn"))
     stats.append(_stat("auto_sweep", "Auto sweep", "on" if payout.get("auto_sweep") else "off", category="payout",
                        status="good" if payout.get("auto_sweep") else "warn"))
-    stats.append(_stat("sweepable_usd", "Sweepable", round(float(payout.get("paypal_sweepable_usd") or 0), 2),
-                       unit="USD", category="payout"))
+    ledger = payout.get("ledger_split") if isinstance(payout.get("ledger_split"), dict) else {}
+    live_leg = ledger.get("live") if isinstance(ledger.get("live"), dict) else {}
+    paper_leg = ledger.get("paper") if isinstance(ledger.get("paper"), dict) else {}
+    active_mode = str(ledger.get("active_sweep_mode") or payout.get("mode") or "paper")
+    stats.append(_stat(
+        "sweepable_usd",
+        "Sweepable (active)",
+        round(float(payout.get("paypal_sweepable_usd") or 0), 2),
+        unit="USD",
+        category="payout",
+        hint=f"Active rail: {active_mode}",
+    ))
+    if live_leg.get("paypal_sweepable_usd") is not None:
+        stats.append(_stat(
+            "live_sweepable_usd",
+            "Live sweepable",
+            round(float(live_leg.get("paypal_sweepable_usd") or 0), 2),
+            unit="USD",
+            category="payout",
+            status="good" if live_leg.get("ready_to_sweep") else "neutral",
+        ))
+    if paper_leg.get("paypal_sweepable_usd") is not None:
+        stats.append(_stat(
+            "paper_sweepable_usd",
+            "Paper sweepable",
+            round(float(paper_leg.get("paypal_sweepable_usd") or 0), 2),
+            unit="USD",
+            category="payout",
+            status="neutral",
+            hint="Not sent to PayPal in paper mode",
+        ))
     stats.append(_stat("min_sweep", "Sweep minimum", payout.get("min_sweep_usd", 100), unit="USD", category="payout"))
     bbw = payout.get("binance_bank_wire") or {}
     stats.append(_stat("bank_wire", "Binance bank wire",
@@ -459,10 +493,17 @@ def _light_payout_snapshot() -> Dict[str, Any]:
     bbw_min = float(bbw_cfg.get("min_withdraw_usd") or 50)
     bbw_acct = bool(bbw_cfg.get("bank_account_id") or os.environ.get("EXCHANGE_PAYOUT_BINANCE_BANK_ACCOUNT"))
     live_stash = sums["ledger_stashed_usd_live"]
+    try:
+        from backend.services.exchange_payout_service import payout_ledger_split
+
+        ledger_split = payout_ledger_split(cfg)
+    except Exception:
+        ledger_split = {"success": False}
     return {
         "success": True,
         "destination": dest,
         "mode": "live" if paypal_live else "paper",
+        "ledger_split": ledger_split,
         "auto_sweep": auto_sweep,
         "min_sweep_usd": min_usd,
         "paypal": {
@@ -713,8 +754,10 @@ def monitor_status() -> Dict[str, Any]:
         },
         "treasury": {
             "live_stash_usd": treasury.get("ledger_stashed_usd_live") or treasury.get("live_stash_usd"),
+            "paper_stash_usd": treasury.get("ledger_stashed_usd_paper"),
             "compound_enabled": treasury.get("compound_on_trade") or treasury.get("auto_stash_on_trade"),
         },
+        "payout_ledger": payout.get("ledger_split") if isinstance(payout.get("ledger_split"), dict) else {},
         "ppp_24h": {
             "fill_count": ppp.get("fill_count"),
             "scan_count": ppp.get("scan_count"),

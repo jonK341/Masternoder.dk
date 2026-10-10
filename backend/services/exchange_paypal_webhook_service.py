@@ -64,7 +64,7 @@ def handle_webhook_event(event: Dict[str, Any]) -> Dict[str, Any]:
     """
     event_type = (event.get("event_type") or "").upper()
 
-    if event_type not in ("PAYMENT.CAPTURE.COMPLETED", "CHECKOUT.ORDER.APPROVED"):
+    if event_type not in ("PAYMENT.CAPTURE.COMPLETED", "CHECKOUT.ORDER.APPROVED", "CHECKOUT.ORDER.COMPLETED"):
         return {"success": True, "skipped": True, "event_type": event_type}
 
     # Extract order_id — may live at resource.supplementary_data or resource.id
@@ -88,12 +88,18 @@ def handle_webhook_event(event: Dict[str, Any]) -> Dict[str, Any]:
     if order_type.endswith("_dup"):
         return {"success": True, "duplicate": True, "order_id": order_id, "order_type": order_type}
 
-    capture = _build_capture(event)
     user_id = str(row.get("user_id") or (row.get("quote") or {}).get("user_id") or "").strip()
 
     if not user_id:
         ex._audit("exchange_webhook_no_user", order_id=order_id)
         return {"success": False, "error": "no_user_id_for_order"}
+
+    if event_type in ("CHECKOUT.ORDER.APPROVED", "CHECKOUT.ORDER.COMPLETED"):
+        from backend.services.paypal_service import finish_checkout_order
+
+        capture = finish_checkout_order(order_id)
+    else:
+        capture = _build_capture(event)
 
     if order_type == "crypto":
         result = ex.fulfill_paypal_crypto_order(user_id, order_id, capture)

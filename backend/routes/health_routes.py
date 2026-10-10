@@ -269,6 +269,15 @@ def system_health():
     except Exception as e:
         health_status['components']['worker_pressure'] = {'status': 'unavailable', 'error': str(e)}
 
+    try:
+        from backend.services.profit_daemon_background_ops_service import profit_daemon_health_probe
+        pd = profit_daemon_health_probe(alert_on_stale=True)
+        health_status['components']['profit_daemon'] = pd
+        if pd.get('status') == 'offline':
+            health_status['overall'] = 'degraded'
+    except Exception as e:
+        health_status['components']['profit_daemon'] = {'status': 'unavailable', 'error': str(e)}
+
     # Always HTTP 200 so nginx/load checks get a body; use overall=degraded for signal.
     return jsonify({
         'success': True,

@@ -7,15 +7,18 @@ cd "$ROOT"
 if [[ -f "$ROOT/.env" ]]; then
   set -a
   # shellcheck disable=SC1091
-  source "$ROOT/.env" 2>/dev/null || true
+  # Strip Windows CRLF so EXCHANGE_PROFIT_PROFILE=max does not become max\r (argparse exit 2).
+  source <(sed 's/\r$//' "$ROOT/.env") 2>/dev/null || true
   set +a
 fi
 
 export DAEMON_QUIET="${DAEMON_QUIET:-1}"
 export LITE_APP="${LITE_APP:-1}"
 export EXCHANGE_DAEMON_MODE="${EXCHANGE_DAEMON_MODE:-live}"
-export EXCHANGE_PROFIT_PROFILE="${EXCHANGE_PROFIT_PROFILE:-max}"
-export EXCHANGE_LIVE_PROFIT_MAX="${EXCHANGE_LIVE_PROFIT_MAX:-1}"
+export EXCHANGE_PROFIT_PROFILE="${EXCHANGE_PROFIT_PROFILE:-paypal}"
+export EXCHANGE_LIVE_PROFIT_MAX="${EXCHANGE_LIVE_PROFIT_MAX:-0}"
+export EXCHANGE_PAIR_SEARCH_MIN_INTERVAL_SEC="${EXCHANGE_PAIR_SEARCH_MIN_INTERVAL_SEC:-120}"
+export PROFIT_DAEMON_NICE="${PROFIT_DAEMON_NICE:-10}"
 export BINANCE_QUOTE="${BINANCE_QUOTE:-USDC}"
 export EXCHANGE_FORCE_IPV4="${EXCHANGE_FORCE_IPV4:-1}"
 

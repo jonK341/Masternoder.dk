@@ -460,10 +460,33 @@ def run_profit_pair_search(
     injected: Optional[Dict[str, Dict[str, Dict[str, float]]]] = None,
     venues: Optional[List[str]] = None,
     top_n: Optional[int] = None,
+    force: bool = False,
 ) -> Dict[str, Any]:
     """Run ledger + catalog + live search; persist index; return top hits."""
     if not enabled():
         return {"success": False, "error": "profit_pair_search_disabled", "enabled": False}
+
+    min_iv = float(os.environ.get("EXCHANGE_PAIR_SEARCH_MIN_INTERVAL_SEC") or 0)
+    if min_iv > 0 and not force:
+        idx = read_index()
+        updated = str(idx.get("updated_at") or "")
+        if updated:
+            try:
+                from datetime import datetime, timezone
+
+                ts = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+                age = (datetime.now(timezone.utc) - ts).total_seconds()
+                if age < min_iv:
+                    return {
+                        "success": True,
+                        "throttled": True,
+                        "age_sec": age,
+                        "hot_symbols": list(idx.get("hot_symbols") or []),
+                        "hits": list(idx.get("hits") or []),
+                        "hit_count": len(idx.get("hits") or []),
+                    }
+            except (TypeError, ValueError):
+                pass
 
     cfg = search_config()
     n = int(top_n or cfg.get("top_n") or 12)

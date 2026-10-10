@@ -239,6 +239,19 @@ def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
 
 
 # Restored from pre-merge branch so both APIs stay callable.
+def abandon_pending_paypal_payment(paypal_order_id: str, *, reason: str = "paypal_abandoned") -> Dict[str, Any]:
+    oid = str(paypal_order_id or "").strip()
+    if not oid:
+        return {"success": False, "error": "order_id required"}
+    data = _read_orders()
+    row = (data.get("pending") or {}).pop(oid, None)
+    if not row:
+        return {"success": False, "skipped": True, "reason": "not_found"}
+    data.setdefault("expired", {})[oid] = {**(row if isinstance(row, dict) else {}), "expired_at": _iso(), "reason": reason}
+    _write_orders(data)
+    return {"success": True, "order_id": oid}
+
+
 def list_pending_paypal_payments() -> list:
     out = []
     for oid, row in (_read_orders().get("pending") or {}).items():

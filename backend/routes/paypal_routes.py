@@ -456,3 +456,58 @@ def paypal_create_order_vid():
 @paypal_bp.route("/vidgenerator/api/paypal/capture", methods=["POST"])
 def paypal_capture_vid():
     return paypal_capture()
+
+
+def _paypal_webhook_signature_ok(body: Dict[str, Any]) -> bool:
+    bypass = (os.environ.get("PAYPAL_WEBHOOK_BYPASS") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+    wid = (os.environ.get("PAYPAL_WEBHOOK_ID") or "").strip()
+    if bypass or not wid:
+        return bool(bypass)
+    from backend.services.paypal_webhook_service import verify_paypal_webhook_signature
+
+    return bool(verify_paypal_webhook_signature(request.headers, body))
+
+
+@paypal_bp.route("/api/paypal/webhook", methods=["POST"])
+def paypal_unified_webhook():
+    """
+    PayPal developer webhook URL for checkout + subscriptions.
+
+    CHECKOUT.ORDER.APPROVED triggers immediate capture (merchant payout) then rail fulfillment.
+    Configure this URL in PayPal alongside PAYPAL_WEBHOOK_ID for signature verification.
+    """
+    body = request.get_json(force=True, silent=True) or {}
+    if not isinstance(body, dict) or not body.get("event_type"):
+        return jsonify({"success": False, "error": "expected_json_body"}), 400
+
+    wid = (os.environ.get("PAYPAL_WEBHOOK_ID") or "").strip()
+    bypass = (os.environ.get("PAYPAL_WEBHOOK_BYPASS") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+    if not bypass and not wid:
+        return jsonify({
+            "success": False,
+            "error": "webhook_not_configured",
+            "hint": "Set PAYPAL_WEBHOOK_ID or PAYPAL_WEBHOOK_BYPASS=1 for dev.",
+        }), 503
+
+    if not _paypal_webhook_signature_ok(body):
+        return jsonify({"success": False, "error": "webhook_verification_failed"}), 401
+
+    from backend.services.monetization_subscription_service import process_paypal_webhook_event
+
+    payload, status = process_paypal_webhook_event(body)
+    return jsonify(payload), status
+
+
+@paypal_bp.route("/vidgenerator/api/paypal/webhook", methods=["POST"])
+def paypal_unified_webhook_vid():
+    return paypal_unified_webhook()

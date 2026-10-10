@@ -79,6 +79,16 @@ def dispatch_order_webhook(event: Dict[str, Any], signature_ok: bool) -> Dict[st
     event_type = str((event or {}).get("event_type") or "").upper()
     dispatched: Dict[str, Any] = {}
 
+    if signature_ok and event_type == "CHECKOUT.ORDER.APPROVED":
+        oid = _order_id_from_event(event or {})
+        if oid:
+            try:
+                from backend.services.paypal_service import finish_checkout_order
+
+                dispatched["immediate_capture"] = finish_checkout_order(oid)
+            except Exception as exc:
+                dispatched["immediate_capture"] = {"success": False, "error": str(exc)}
+
     handlers = (
         ("hosting", "backend.services.mn2_masternode_hosting_service"),
         ("onramp", "backend.services.mn2_onramp_service"),
@@ -302,6 +312,136 @@ def _fulfill_job(job: Dict[str, Any]) -> Dict[str, Any]:
     return _fulfill_shop_job(job)
 
 
+_DEAD_PAYPAL = frozenset({"VOIDED", "EXPIRED", "DECLINED"})
+
+
+def _prune_reason_from_lookup(lookup: Dict[str, Any]) -> Optional[str]:
+    if not lookup.get("success"):
+        err = str(lookup.get("error") or "")
+        if "INVALID_RESOURCE_ID" in err or "RESOURCE_NOT_FOUND" in err:
+            return "paypal_not_found"
+        return None
+    st = str(lookup.get("status") or "").upper()
+    if st in _DEAD_PAYPAL:
+        return f"paypal_{st.lower()}"
+    return None
+
+
+def expire_pending_paypal_job(job: Dict[str, Any], reason: str) -> Dict[str, Any]:
+    """Remove a local pending row after PayPal checkout is gone or dead."""
+    rail = str(job.get("rail") or "shop")
+    local_id = str(job.get("local_id") or "").strip()
+    ppid = str(job.get("paypal_order_id") or "").strip()
+    if not ppid and not local_id:
+        return {"success": False, "error": "missing_ids"}
+
+    try:
+        if rail == "shop" or rail in _SHOP_FALLBACK_RAILS:
+            from backend.services.paypal_service import update_shop_order
+
+            update_shop_order(ppid or local_id, status="expired", prune_reason=reason)
+            return {"success": True, "rail": rail, "paypal_order_id": ppid}
+        if rail == "hosting":
+            from backend.services.mn2_masternode_hosting_service import abandon_pending_paypal_payment
+
+            return abandon_pending_paypal_payment(local_id, reason=reason)
+        if rail == "onramp":
+            from backend.services.mn2_onramp_service import abandon_pending_paypal_payment
+
+            return abandon_pending_paypal_payment(local_id, reason=reason)
+        if rail == "p2p":
+            from backend.services.mn2_p2p_service import abandon_pending_paypal_payment
+
+            return abandon_pending_paypal_payment(local_id, reason=reason)
+        if rail == "camgirls":
+            from backend.services.camgirls_paypal_service import abandon_pending_paypal_payment
+
+            return abandon_pending_paypal_payment(ppid, reason=reason)
+        if rail == "casino":
+            from backend.services.casino_service import abandon_pending_paypal_deposit
+
+            return abandon_pending_paypal_deposit(ppid, reason=reason)
+        if rail == "exchange_mn2":
+            from backend.services import crypto_exchange_service as ex
+
+            return _expire_exchange_paypal_pending(ex._PAYPAL_MN2_ORDERS_PATH, ppid, reason)
+        if rail == "exchange_crypto":
+            from backend.services import crypto_exchange_service as ex
+
+            return _expire_exchange_paypal_pending(ex._PAYPAL_CRYPTO_ORDERS_PATH, ppid, reason)
+        if rail == "exchange_controller":
+            from backend.services.exchange_user_controller_service import abandon_pending_paypal_payment
+
+            return abandon_pending_paypal_payment(ppid, reason=reason)
+    except Exception as exc:
+        return {"success": False, "error": str(exc), "rail": rail}
+
+    return {"success": False, "error": "unknown_rail", "rail": rail}
+
+
+def _expire_exchange_paypal_pending(path: str, paypal_order_id: str, reason: str) -> Dict[str, Any]:
+    from backend.services import crypto_exchange_service as ex
+
+    oid = str(paypal_order_id or "").strip()
+    with ex._LOCK:
+        rows = ex._read_json(path, {"pending": {}, "captured": {}, "expired": {}})
+        pending = rows.get("pending") or {}
+        row = pending.pop(oid, None)
+        if not row:
+            return {"success": False, "skipped": True, "reason": "not_found"}
+        rows.setdefault("expired", {})[oid] = {
+            **(row if isinstance(row, dict) else {}),
+            "pruned_at": ex._iso(),
+            "reason": reason,
+        }
+        ex._write_json(path, rows)
+    return {"success": True, "order_id": oid}
+
+
+def prune_stale_paypal_pending_orders(
+    *,
+    limit: int = 400,
+    extra_order_ids: Optional[List[str]] = None,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Drop local pending rows when PayPal no longer has a live checkout."""
+    from backend.services.paypal_service import get_checkout_order
+
+    jobs = collect_pending_paypal_jobs(extra_order_ids)
+    jobs = jobs[: max(1, int(limit or 400))]
+    counts = {"scanned": len(jobs), "pruned": 0, "kept": 0, "skipped_lookup": 0}
+    results: List[Dict[str, Any]] = []
+    for job in jobs:
+        ppid = str(job.get("paypal_order_id") or "").strip()
+        if not ppid:
+            counts["skipped_lookup"] += 1
+            results.append({**job, "outcome": "no_paypal_id"})
+            continue
+        lookup = get_checkout_order(ppid)
+        reason = _prune_reason_from_lookup(lookup)
+        if not reason:
+            counts["kept"] += 1
+            results.append({
+                **job,
+                "outcome": "kept",
+                "paypal_status": lookup.get("status"),
+                "lookup_ok": lookup.get("success"),
+            })
+            continue
+        if dry_run:
+            results.append({**job, "outcome": "would_prune", "reason": reason})
+            counts["pruned"] += 1
+            continue
+        expired = expire_pending_paypal_job(job, reason)
+        if expired.get("success"):
+            counts["pruned"] += 1
+            results.append({**job, "outcome": "pruned", "reason": reason, "expire": expired})
+        else:
+            counts["skipped_lookup"] += 1
+            results.append({**job, "outcome": "prune_failed", "reason": reason, "expire": expired})
+    return {"success": True, "dry_run": dry_run, "counts": counts, "results": results}
+
+
 def finish_pending_paypal_orders(
     *,
     limit: int = 400,
@@ -336,11 +476,21 @@ def finish_pending_paypal_orders(
             continue
         if outcome == "expired":
             counts["expired"] += 1
-            results.append({**job, **lookup})
+            expire_pending_paypal_job(
+                job,
+                f"paypal_{str(lookup.get('paypal_status') or 'expired').lower()}",
+            )
+            results.append({**job, **lookup, "local_expired": True})
             continue
         if outcome == "missing":
-            counts["skipped"] += 1
-            results.append({**job, **lookup})
+            err = str(lookup.get("error") or "")
+            if "INVALID_RESOURCE_ID" in err or "RESOURCE_NOT_FOUND" in err:
+                counts["expired"] += 1
+                expire_pending_paypal_job(job, "paypal_not_found")
+                results.append({**job, **lookup, "local_expired": True})
+            else:
+                counts["skipped"] += 1
+                results.append({**job, **lookup})
             continue
         if not lookup.get("success") and outcome not in ("captured", "capture_failed"):
             counts["failed"] += 1

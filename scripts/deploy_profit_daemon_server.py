@@ -13,7 +13,11 @@ REMOTE_ROOT = "/var/www/html"
 
 UPLOAD = [
     "scripts/all_profit_daemons.py",
+    "scripts/finish_pending_paypal_orders.py",
     "scripts/run_profit_daemon_server.sh",
+    "backend/services/exchange_profit_pair_search_service.py",
+    "backend/services/profit_daemon_paypal_finish_service.py",
+    "backend/services/paypal_order_events.py",
     "scripts/install_profit_daemon_server.sh",
     "scripts/exchange_master_daemon.py",
     "scripts/daemon_env.py",
@@ -21,6 +25,11 @@ UPLOAD = [
     "systemd/masternoder-profit-daemon.service",
     "backend/services/profit_daemon_monitor_service.py",
     "backend/services/profit_daemon_news_service.py",
+    "backend/services/profit_daemon_ops_service.py",
+    "backend/services/profit_daemon_background_ops_service.py",
+    "backend/services/profit_daemon_venue_funding_service.py",
+    "backend/services/profit_daemon_paths.py",
+    "backend/services/exchange_payout_service.py",
     "backend/routes/profit_daemon_routes.py",
     "backend/register_blueprints.py",
     "backend/routes/all_page_routes.py",

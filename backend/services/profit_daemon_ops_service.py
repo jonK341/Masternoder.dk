@@ -1045,6 +1045,12 @@ def run_exchange_tick_ops(
     out["compound_tier"] = compound_streak_bonus_tier(streak)
     pref = cross_venue_prefund_batch(exchange_res, max_legs=3)
     out["prefund_batch"] = pref
+    try:
+        from backend.services.profit_daemon_venue_funding_service import maybe_ensure_dual_venue_funding
+
+        out["dual_venue_prefund"] = maybe_ensure_dual_venue_funding(exchange_res)
+    except Exception as exc:
+        out["dual_venue_prefund"] = {"success": False, "error": str(exc)}
     xeg = maybe_auto_enable_xeggex_live_farm()
     out["xeggex_auto"] = xeg
     force = arb_force_attempt_gate(exchange_res)
@@ -1344,28 +1350,35 @@ def maybe_sales_pool_treasury_transfer() -> Dict[str, Any]:
 
 def maybe_paypal_auto_sweep(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
     """PayPal sweep automation when profit pool ready (#42 extension)."""
-    if os.environ.get("EXCHANGE_AUTO_PAYPAL_SWEEP", "").strip().lower() not in ("1", "true", "yes", "on"):
-        if not exchange_res.get("sweep"):
-            return {"skipped": True, "reason": "auto_sweep_disabled"}
+    auto_env = os.environ.get("EXCHANGE_AUTO_PAYPAL_SWEEP", "").strip().lower() in ("1", "true", "yes", "on")
+    if not auto_env and not exchange_res.get("sweep"):
+        return {"skipped": True, "reason": "auto_sweep_disabled"}
     if profit_kill_active():
         return {"skipped": True, "reason": "kill_switch"}
     sweep = exchange_res.get("sweep")
     if isinstance(sweep, dict) and sweep.get("success"):
-        return {"success": True, "swept": True, "mode": (sweep.get("swept") or {}).get("mode")}
+        return {"success": True, "swept": True, "mode": (sweep.get("swept") or {}).get("mode"), "via": "exchange_tick"}
     try:
-        from backend.services.exchange_payout_service import plan_sweep
+        from backend.services.exchange_payout_service import execute_sweep, payout_status, plan_sweep, sync_auto_sweep_from_env
+
+        sync_auto_sweep_from_env()
         plan = plan_sweep()
     except Exception as exc:
         return {"success": False, "error": str(exc)}
     if not plan.get("actionable"):
-        return {"skipped": True, "reason": plan.get("reason"), "display_only": True}
-    return {
-        "success": True,
-        "actionable": True,
-        "amount_usd": plan.get("amount_usd"),
-        "destination": plan.get("destination"),
-        "display_only": not plan.get("live"),
-    }
+        return {"skipped": True, "reason": plan.get("reason")}
+    status = payout_status()
+    if not status.get("ready_to_sweep"):
+        return {
+            "skipped": True,
+            "reason": "not_ready_to_sweep",
+            "net_unswept_usd": status.get("net_unswept_usd"),
+            "min_sweep_usd": status.get("min_sweep_usd"),
+        }
+    executed = execute_sweep()
+    if executed.get("success"):
+        return {**executed, "via": "ops_auto_sweep", "plan": plan}
+    return {"success": False, "error": executed.get("error"), "plan": plan, "execute": executed}
 
 
 def maybe_alert_sweep_success(sweep_res: Dict[str, Any]) -> Dict[str, Any]:
@@ -1657,6 +1670,36 @@ def post_deploy_verify_hook() -> Dict[str, Any]:
         checks["payout_validation"] = validate_payout_share_pct()
     except Exception as exc:
         checks["payout_validation"] = {"success": False, "error": str(exc)}
+    try:
+        from backend.services.profit_daemon_background_ops_service import profit_daemon_health_probe
+
+        checks["daemon_health"] = profit_daemon_health_probe(alert_on_stale=False)
+    except Exception as exc:
+        checks["daemon_health"] = {"success": False, "error": str(exc)}
+    try:
+        from backend.services.exchange_payout_service import payout_status, sync_auto_sweep_from_env
+
+        checks["payout_sync"] = sync_auto_sweep_from_env()
+        checks["payout_status"] = payout_status()
+    except Exception as exc:
+        checks["payout_status"] = {"success": False, "error": str(exc)}
+    try:
+        from backend.services.paypal_order_events import collect_pending_paypal_jobs
+
+        pending = collect_pending_paypal_jobs()
+        checks["paypal_pending"] = {"success": True, "count": len(pending)}
+    except Exception as exc:
+        checks["paypal_pending"] = {"success": False, "error": str(exc)}
+    try:
+        from backend.services.exchange_payout_service import payout_ledger_split
+
+        checks["payout_ledger_split"] = payout_ledger_split()
+    except Exception as exc:
+        checks["payout_ledger_split"] = {"success": False, "error": str(exc)}
+    try:
+        checks["readiness_cta"] = exchange_readiness_cta()
+    except Exception as exc:
+        checks["readiness_cta"] = {"success": False, "error": str(exc)}
     ok = all(
         isinstance(v, dict) and (v.get("success") is not False or v.get("skipped"))
         for v in checks.values()
@@ -2209,8 +2252,31 @@ def maybe_mn2_fill_streak_bonus(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
     return {"success": True, "streak": streak, "bonus_mn2": bonus_mn2, "awarded": awarded}
 
 
+def maybe_alert_paypal_capture_batch(finish_result: Dict[str, Any]) -> Dict[str, Any]:
+    """Discord + ops alert when auto-finish captures PayPal checkouts."""
+    counts = finish_result.get("counts") if isinstance(finish_result.get("counts"), dict) else {}
+    captured = int(counts.get("captured") or 0)
+    pruned = int((finish_result.get("prune") or {}).get("counts", {}).get("pruned") or 0)
+    if captured <= 0 and pruned <= 0:
+        return {"skipped": True, "reason": "no_captures"}
+    body = (
+        f"PayPal finish tick — **{captured}** captured"
+        + (f", **{pruned}** stale pending pruned" if pruned else "")
+        + "."
+    )
+    return _post_ops_alert(
+        "Profit daemon — PayPal checkouts captured",
+        body,
+        alert_key="paypal_capture_batch",
+        fields=[
+            {"name": "Captured", "value": str(captured), "inline": True},
+            {"name": "Pruned", "value": str(pruned), "inline": True},
+        ],
+    )
+
+
 def exchange_readiness_cta() -> Dict[str, Any]:
-    """Exchange tab CTA when monitor readiness >75% (#95)."""
+    """Exchange Bots tab + profit monitor CTAs (#95 / #10)."""
     try:
         from backend.services.profit_daemon_monitor_service import monitor_status
 
@@ -2218,13 +2284,31 @@ def exchange_readiness_cta() -> Dict[str, Any]:
     except Exception as exc:
         return {"success": False, "error": str(exc)}
     pct = float(st.get("profit_readiness_pct") or 0)
-    show = pct >= float(os.environ.get("PROFIT_READINESS_CTA_PCT", "75"))
+    threshold = float(os.environ.get("PROFIT_READINESS_CTA_PCT", "75"))
+    show_live = pct >= threshold
+    ledger = st.get("payout_ledger") if isinstance(st.get("payout_ledger"), dict) else {}
     return {
         "success": True,
         "readiness_pct": pct,
-        "show_cta": show,
-        "cta_text": "Profit path ready — enable live trading" if show else None,
-        "cta_href": "/exchange?tab=bots" if show else None,
+        "show_cta": show_live,
+        "cta_text": "Profit path ready — enable live trading" if show_live else None,
+        "cta_href": "/exchange?hub=bots" if show_live else None,
+        "ledger_banner": ledger.get("banner"),
+        "monitor_cta": {
+            "show": True,
+            "text": "Open Profit Daemon monitor",
+            "href": "/profit/",
+        },
+        "rent_cta": {
+            "show": True,
+            "text": "Rent a profit daemon (7d cross / 3d AI trial)",
+            "href": "/profit/#rent",
+        },
+        "shop_cta": {
+            "show": True,
+            "text": "Shop — daemon passes & MN2 packs",
+            "href": "/shop",
+        },
     }
 
 

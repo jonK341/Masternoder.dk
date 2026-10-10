@@ -101,6 +101,16 @@
             if (fill && pct != null) fill.style.width = Math.min(100, Math.max(0, pct)) + '%';
             if (pctEl && pct != null) pctEl.textContent = pct + '%';
 
+            const banner = $('pdm-ledger-banner');
+            const ledger = data.payout_ledger || {};
+            if (banner && ledger.banner) {
+                banner.hidden = false;
+                banner.textContent = ledger.banner;
+                banner.classList.toggle('live', ledger.active_sweep_mode === 'live');
+            } else if (banner) {
+                banner.hidden = true;
+            }
+
             renderStats(data.stats || []);
             renderBlockers(data.blockers || []);
 

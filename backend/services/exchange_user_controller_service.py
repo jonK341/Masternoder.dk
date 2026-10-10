@@ -404,6 +404,23 @@ def catalog_for_controller() -> Dict[str, Any]:
     }
 
 # Restored PayPal webhook helpers from the branch.
+def abandon_pending_paypal_payment(paypal_order_id: str, *, reason: str = "paypal_abandoned") -> Dict[str, Any]:
+    oid = str(paypal_order_id or "").strip()
+    if not oid:
+        return {"success": False, "error": "order_id required"}
+    rows = ex._read_json(_PAYPAL_ORDERS, {"pending": {}, "captured": {}, "expired": {}})
+    row = (rows.get("pending") or {}).pop(oid, None)
+    if not row:
+        return {"success": False, "skipped": True, "reason": "not_found"}
+    rows.setdefault("expired", {})[oid] = {
+        **(row if isinstance(row, dict) else {}),
+        "pruned_at": ex._iso(),
+        "reason": reason,
+    }
+    ex._write_json(_PAYPAL_ORDERS, rows)
+    return {"success": True, "order_id": oid}
+
+
 def list_pending_paypal_payments() -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     rows = ex._read_json(_PAYPAL_ORDERS, {"pending": {}, "captured": {}})

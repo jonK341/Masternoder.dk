@@ -586,6 +586,26 @@ def onramp_stats() -> Dict[str, Any]:
     }
 
 
+def abandon_pending_paypal_payment(order_id: str, *, reason: str = "paypal_abandoned") -> Dict[str, Any]:
+    """Close a pending_payment row when PayPal no longer has the checkout."""
+    oid = str(order_id or "").strip()
+    if not oid:
+        return {"success": False, "error": "order_id required"}
+    with _LOCK:
+        orders = _load_orders()
+        order = orders.get(oid)
+        if not isinstance(order, dict):
+            return {"success": False, "skipped": True, "reason": "not_found"}
+        if order.get("status") != "pending_payment":
+            return {"success": False, "skipped": True, "reason": "not_pending_payment"}
+        order["status"] = "expired"
+        order["paypal_prune_reason"] = str(reason or "paypal_abandoned")
+        order["updated_at"] = _iso()
+        _save_orders(orders)
+    _audit(oid, "expired", {"reason": reason})
+    return {"success": True, "order_id": oid}
+
+
 def list_pending_paypal_payments() -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for order in _load_orders().values():

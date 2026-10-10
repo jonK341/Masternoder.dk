@@ -407,6 +407,40 @@
     return qs;
   }
 
+  function renderProfitDaemonCta(data) {
+    var card = q('cex-profit-daemon-cta');
+    var bannerEl = q('cex-profit-daemon-cta-banner');
+    var links = q('cex-profit-daemon-cta-links');
+    if (!card) return;
+    if (!data || !data.success) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    if (bannerEl) {
+      bannerEl.textContent = data.ledger_banner || (
+        '24/7 profit daemon — arb, sweeps, PayPal capture. Readiness ' +
+        Number(data.readiness_pct || 0).toFixed(0) + '%.'
+      );
+    }
+    if (!links) return;
+    var btns = [];
+    var rent = data.rent_cta || {};
+    var mon = data.monitor_cta || {};
+    var shop = data.shop_cta || {};
+    if (rent.show) btns.push('<a class="cex-btn cex-btn--ghost" href="' + rent.href + '">' + rent.text + '</a>');
+    if (mon.show) btns.push('<a class="cex-btn cex-btn--primary" href="' + mon.href + '">' + mon.text + '</a>');
+    if (shop.show) btns.push('<a class="cex-btn cex-btn--ghost" href="' + shop.href + '">' + shop.text + '</a>');
+    if (data.show_cta && data.cta_href) {
+      btns.push('<a class="cex-btn cex-btn--primary" href="' + data.cta_href + '">' + (data.cta_text || 'Go live') + '</a>');
+    }
+    links.innerHTML = btns.join(' ');
+  }
+
+  function loadProfitDaemonCta() {
+    return fetchJson('/api/profit-daemon/readiness-cta', { timeout: 8000 }).then(renderProfitDaemonCta);
+  }
+
   function loadProfitPathResearch() {
     var qs = profitPathQuery();
     return Promise.all([
@@ -435,7 +469,7 @@
   onTab('venues', loadVenuesTab);
   onTab('bots', function () {
     initProfitPathFilters();
-    return loadProfitPathResearch();
+    return Promise.all([loadProfitDaemonCta(), loadProfitPathResearch()]);
   });
   onTab('bots', loadProfitBlockers);
 

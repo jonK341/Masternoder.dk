@@ -2949,6 +2949,22 @@ def _save_paypal_deposits(data: Dict[str, Any]) -> None:
         pass
 
 
+def abandon_pending_paypal_deposit(paypal_order_id: str, *, reason: str = "paypal_abandoned") -> Dict[str, Any]:
+    oid = str(paypal_order_id or "").strip()
+    if not oid:
+        return {"success": False, "error": "order_id required"}
+    data = _load_paypal_deposits()
+    row = (data.get("pending") or {}).pop(oid, None)
+    if not row:
+        return {"success": False, "skipped": True, "reason": "not_found"}
+    data.setdefault("expired", {})[oid] = {
+        **(row if isinstance(row, dict) else {}),
+        "reason": reason,
+    }
+    _save_paypal_deposits(data)
+    return {"success": True, "order_id": oid}
+
+
 def list_pending_paypal_deposits() -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for oid, row in (_load_paypal_deposits().get("pending") or {}).items():

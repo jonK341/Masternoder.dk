@@ -44,6 +44,8 @@ PROFILE_INTERVALS = {
     "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180},
     "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90},
     "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120},
+    # PayPal revenue focus: one exchange tick (deals + sweep), capture loop, no parallel fast/grid/casino CPU burn.
+    "paypal": {"exchange": 180, "casino": 0, "fast": 0, "grid": 0, "stuck": 1200, "micro": 600},
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
@@ -51,10 +53,44 @@ _LIVE_PROFIT_MAX_INTERVALS = {"exchange": 120, "casino": 300, "fast": 60, "grid"
 
 
 def _resolve_intervals(profile: str, iv: dict) -> dict:
+    if profile == "paypal":
+        return iv
     if os.environ.get("EXCHANGE_LIVE_PROFIT_MAX", "").strip().lower() in ("1", "true", "yes", "on"):
         if profile in ("max", "fast", "live-only"):
             return {**iv, **_LIVE_PROFIT_MAX_INTERVALS}
+    if os.environ.get("PROFIT_DAEMON_LOW_CPU", "").strip().lower() in ("1", "true", "yes", "on"):
+        return {
+            **iv,
+            "fast": 0,
+            "grid": max(int(iv.get("grid") or 0), 300) if int(iv.get("grid") or 0) > 0 else 0,
+            "exchange": max(int(iv.get("exchange") or 300), 300),
+            "casino": max(int(iv.get("casino") or 0), 600) if int(iv.get("casino") or 0) > 0 else 0,
+            "stuck": max(int(iv.get("stuck") or 600), 900),
+            "micro": max(int(iv.get("micro") or 120), 300),
+        }
     return iv
+
+
+def _loop_interval(env_key: str, iv: dict, iv_key: str, default: int) -> int:
+    """Interval in seconds; 0 disables that loop (not coerced to default)."""
+    override = int(os.environ.get(env_key) or 0)
+    if override > 0:
+        return override
+    if iv_key in iv and iv[iv_key] is not None:
+        return int(iv[iv_key])
+    return default
+
+
+def _apply_process_nice() -> None:
+    level = os.environ.get("PROFIT_DAEMON_NICE", "").strip()
+    if not level:
+        return
+    try:
+        import os as _os
+
+        _os.nice(int(level))
+    except (OSError, ValueError):
+        pass
 
 
 def _exchange_once(auto_sweep: bool, profile: str) -> Dict[str, Any]:
@@ -468,6 +504,21 @@ def _summarize_casino(res: Dict[str, Any]) -> str:
     )
 
 
+def _maybe_dual_venue_prefund(res: Dict[str, Any]) -> None:
+    try:
+        from backend.services.profit_daemon_venue_funding_service import maybe_ensure_dual_venue_funding
+
+        outcome = maybe_ensure_dual_venue_funding(res)
+        if outcome.get("skipped"):
+            return
+        if outcome.get("funded_any"):
+            syms = ",".join(outcome.get("symbols") or [])
+            mode = "dry_run" if outcome.get("dry_run") else "live"
+            print(f"[all-profit] venue_prefund agent={outcome.get('agent_id')} symbols={syms} mode={mode}", flush=True)
+    except Exception:
+        pass
+
+
 def _maybe_hot_pair_prefund(res: Dict[str, Any]) -> None:
     """Targeted prefund when hot pair qualifies but is unfunded."""
     try:
@@ -546,7 +597,17 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
     print(f"[all-profit] exchange loop interval={interval}s profile={profile} mode={daemon_mode_label()}", flush=True)
     while not stop.is_set():
         try:
+            tick_start = time.time()
             res = _exchange_once(auto_sweep, profile)
+            try:
+                from backend.services.profit_daemon_ops_service import run_exchange_tick_ops
+
+                ops = run_exchange_tick_ops(res, tick_start=tick_start)
+                ps = ops.get("paypal_sweep") if isinstance(ops.get("paypal_sweep"), dict) else {}
+                if ps.get("success") and ps.get("via") == "ops_auto_sweep":
+                    res = {**res, "sweep": ps}
+            except Exception as ops_exc:
+                print(f"[all-profit] exchange_ops error: {ops_exc}", flush=True)
             plat = res.get("platform") or {}
             ps = plat.get("profit_pair_search")
             if ps is not None:
@@ -555,6 +616,7 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             print(f"[all-profit] exchange {summary}", flush=True)
             streak = _track_zero_fill_streak(res)
             _maybe_hot_pair_prefund(res)
+            _maybe_dual_venue_prefund(res)
             _maybe_auto_rotation(res)
             _write_heartbeat("exchange", summary, extra={"zero_fill_streak": streak})
             try:
@@ -658,6 +720,51 @@ def _micro_chain_loop(interval: int, stop: threading.Event) -> None:
         stop.wait(max(30, interval))
 
 
+def _summarize_paypal_finish(res: Dict[str, Any]) -> str:
+    if res.get("skipped"):
+        return f"skipped reason={res.get('reason', '?')}"
+    return str(res.get("summary") or "ok")
+
+
+def _background_ops_loop(interval: int, stop: threading.Event, threads: List[threading.Thread]) -> None:
+    print(f"[all-profit] background ops interval={interval}s", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.profit_daemon_background_ops_service import run_background_ops_tick
+
+            res = run_background_ops_tick(threads)
+            workers = (res.get("workers") or {}) if isinstance(res.get("workers"), dict) else {}
+            dead = workers.get("dead") or []
+            summary = f"payout_sync={((res.get('payout_sync') or {}).get('changed'))} workers_dead={len(dead)}"
+            print(f"[all-profit] background_ops {summary}", flush=True)
+            _write_heartbeat("background_ops", summary, extra={"dead_threads": dead})
+            if dead:
+                print(f"[all-profit] WARN dead worker threads: {', '.join(dead)}", flush=True)
+        except Exception as exc:
+            print(f"[all-profit] background_ops error: {exc}", flush=True)
+        stop.wait(max(60, interval))
+
+
+def _paypal_finish_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] paypal finish (capture APPROVED checkouts) interval={interval}s", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.profit_daemon_paypal_finish_service import run_paypal_finish_tick
+
+            res = run_paypal_finish_tick()
+            summary = _summarize_paypal_finish(res)
+            print(f"[all-profit] paypal_finish {summary}", flush=True)
+            _write_heartbeat("paypal_finish", summary)
+            try:
+                from backend.services.profit_daemon_news_service import maybe_publish_tick_news
+                maybe_publish_tick_news("paypal_finish", summary, res=res)
+            except Exception:
+                pass
+        except Exception as exc:
+            print(f"[all-profit] paypal_finish error: {exc}", flush=True)
+        stop.wait(max(60, interval))
+
+
 def _warm_flask_for_daemons() -> None:
     """Load Flask once before worker threads — avoids parallel blueprint registration.
 
@@ -687,8 +794,12 @@ def _warm_flask_for_daemons() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="All profit daemons in one process")
     parser.add_argument("--once", action="store_true", help="Single tick and exit")
-    parser.add_argument("--profile", choices=["max", "standard", "fast", "live-only"], default="max",
-                        help="Profit strategy profile (default: max = everything)")
+    parser.add_argument(
+        "--profile",
+        choices=["max", "standard", "fast", "live-only", "paypal"],
+        default="max",
+        help="Profit strategy profile (paypal = deals + PayPal capture/sweep, low CPU)",
+    )
     parser.add_argument("--interval", type=int, default=0, help="Override main exchange interval")
     parser.add_argument("--exchange-interval", type=int, default=0, help="Override exchange interval")
     parser.add_argument("--casino-interval", type=int, default=0, help="Override casino interval")
@@ -697,6 +808,11 @@ def main() -> int:
     parser.add_argument("--skip-grid", action="store_true", help="Do not run grid bot loop")
     parser.add_argument("--skip-stuck", action="store_true", help="Do not run stuck-inventory strategy")
     parser.add_argument("--skip-micro-chain", action="store_true", help="Do not run portal micro-chain loop")
+    parser.add_argument(
+        "--skip-paypal-finish",
+        action="store_true",
+        help="Do not auto-capture APPROVED PayPal checkouts (PROFIT_DAEMON_PAYPAL_FINISH=0)",
+    )
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
@@ -706,35 +822,57 @@ def main() -> int:
     args = parser.parse_args()
 
     load_dotenv()
+    _apply_process_nice()
     profile = os.environ.get("EXCHANGE_PROFIT_PROFILE") or args.profile
     os.environ["EXCHANGE_PROFIT_PROFILE"] = profile
     iv = _resolve_intervals(profile, PROFILE_INTERVALS.get(profile, PROFILE_INTERVALS["standard"]))
-    ex_iv = args.exchange_interval or args.interval or iv["exchange"]
-    cas_iv = args.casino_interval or args.interval or int(os.environ.get("CASINO_AGENT_INTERVAL") or 0) or iv["casino"]
-    fast_iv = iv.get("fast") or 0
-    grid_iv = int(os.environ.get("EXCHANGE_GRID_INTERVAL") or 0) or iv.get("grid") or 30
-    stuck_iv = int(os.environ.get("EXCHANGE_STUCK_INTERVAL") or 0) or iv.get("stuck") or 600
-    micro_iv = int(os.environ.get("MN2_MICRO_CHAIN_INTERVAL") or 0) or iv.get("micro") or 120
+    base_iv = args.interval or 0
+    ex_iv = args.exchange_interval or base_iv or iv["exchange"]
+    cas_iv = args.casino_interval or int(os.environ.get("CASINO_AGENT_INTERVAL") or 0) or base_iv
+    if not cas_iv and "casino" in iv:
+        cas_iv = int(iv["casino"])
+    fast_iv = int(iv.get("fast") or 0)
+    grid_iv = _loop_interval("EXCHANGE_GRID_INTERVAL", iv, "grid", 30)
+    stuck_iv = _loop_interval("EXCHANGE_STUCK_INTERVAL", iv, "stuck", 600)
+    micro_iv = _loop_interval("MN2_MICRO_CHAIN_INTERVAL", iv, "micro", 120)
+    skip_grid = args.skip_grid or grid_iv <= 0
+    skip_stuck = args.skip_stuck or stuck_iv <= 0
+    skip_micro = args.skip_micro_chain or micro_iv <= 0
+    from backend.services.profit_daemon_paypal_finish_service import (
+        paypal_finish_enabled,
+        paypal_finish_interval_sec,
+    )
+    from backend.services.profit_daemon_background_ops_service import (
+        background_ops_enabled,
+        background_ops_interval_sec,
+    )
+
+    paypal_finish_iv = paypal_finish_interval_sec()
+    background_iv = background_ops_interval_sec()
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
 
-    auto_sweep = _auto_sweep_default(args.auto_sweep) or profile == "live-only"
-    skip_casino = args.skip_casino or profile == "live-only"
+    auto_sweep = _auto_sweep_default(args.auto_sweep) or profile in ("live-only", "paypal")
+    skip_casino = args.skip_casino or profile in ("live-only", "paypal") or cas_iv <= 0
 
     if args.once:
         _warm_flask_for_daemons()
         out: Dict[str, Any] = {}
         if not args.skip_exchange:
             out["exchange"] = _exchange_once(auto_sweep, profile)
-            if not args.skip_grid:
+            if not skip_grid:
                 out["grid"] = _grid_once()
-            if not args.skip_stuck:
+            if not skip_stuck:
                 out["stuck"] = _stuck_once(apply_grid=True)
-            if not args.skip_micro_chain:
+            if not skip_micro:
                 out["micro_chain"] = _micro_chain_once()
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
+        if not args.skip_paypal_finish and paypal_finish_enabled():
+            from backend.services.profit_daemon_paypal_finish_service import run_paypal_finish_tick
+
+            out["paypal_finish"] = run_paypal_finish_tick()
         if args.json:
             print(json.dumps(out, indent=2, default=str))
         else:
@@ -767,12 +905,16 @@ def main() -> int:
         print(f"    interval={ex_iv}s")
         if fast_iv:
             print(f"    fast rescan interval={fast_iv}s")
-        if not args.skip_grid:
+        if not skip_grid:
             print(f"  grid market-maker interval={grid_iv}s")
-        if not args.skip_stuck:
+        if not skip_stuck:
             print(f"  stuck inventory → grid strategy interval={stuck_iv}s")
-        if not args.skip_micro_chain:
+        if not skip_micro:
             print(f"  portal micro-chain (MN2) interval={micro_iv}s")
+        if not args.skip_paypal_finish and paypal_finish_enabled():
+            print(f"  paypal checkout capture (APPROVED→paid) interval={paypal_finish_iv}s")
+        if background_ops_enabled():
+            print(f"  background ops (payout sync, logs, workers) interval={background_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -786,17 +928,21 @@ def main() -> int:
             threads.append(threading.Thread(
                 target=_fast_loop, args=(fast_iv, profile, stop), name="fast", daemon=True,
             ))
-        if not args.skip_grid:
+        if not skip_grid:
             threads.append(threading.Thread(
                 target=_grid_loop, args=(grid_iv, stop), name="grid", daemon=True,
             ))
-        if not args.skip_stuck:
+        if not skip_stuck:
             threads.append(threading.Thread(
                 target=_stuck_loop, args=(stuck_iv, stop), name="stuck", daemon=True,
             ))
-        if not args.skip_micro_chain:
+        if not skip_micro:
             threads.append(threading.Thread(
                 target=_micro_chain_loop, args=(micro_iv, stop), name="micro_chain", daemon=True,
+            ))
+        if not args.skip_paypal_finish and paypal_finish_enabled():
+            threads.append(threading.Thread(
+                target=_paypal_finish_loop, args=(paypal_finish_iv, stop), name="paypal_finish", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(
@@ -814,8 +960,20 @@ def main() -> int:
 
     _warm_flask_for_daemons()
 
+    if background_ops_enabled() and threads:
+        threads.append(threading.Thread(
+            target=_background_ops_loop,
+            args=(background_iv, stop, threads),
+            name="background_ops",
+            daemon=True,
+        ))
+
+    _write_heartbeat("startup", f"profile={profile} mode={daemon_mode_label()} workers=starting")
+
     for t in threads:
         t.start()
+
+    _write_heartbeat("startup", f"profile={profile} mode={daemon_mode_label()} workers=running")
 
     print("[all-profit] running — Ctrl+C to stop", flush=True)
     try:
