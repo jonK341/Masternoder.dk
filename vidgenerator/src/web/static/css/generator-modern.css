@@ -1,0 +1,290 @@
+/**
+ * Modern Generator UI Enhancements
+ * Professional, user-friendly improvements
+ */
+
+.generator-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+}
+
+/* Prompt Input Enhancement */
+.prompt-input-wrapper {
+    position: relative;
+    margin-bottom: var(--spacing-xl);
+}
+
+.prompt-input {
+    width: 100%;
+    min-height: 150px;
+    padding: var(--spacing-lg);
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    font-family: var(--font-family-primary);
+    resize: vertical;
+    transition: all var(--transition-base);
+}
+
+.prompt-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(0, 255, 0, 0.1), var(--shadow-md);
+    background: var(--bg-card-hover);
+}
+
+.prompt-input::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.prompt-char-count {
+    position: absolute;
+    bottom: var(--spacing-md);
+    right: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    background: var(--bg-primary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+}
+
+/* Generate Button Enhancement */
+.generate-button-wrapper {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    flex-wrap: wrap;
+}
+
+.generate-btn {
+    flex: 1;
+    min-width: 200px;
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+}
+
+.generate-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.generate-btn:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+.generate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Status Display Enhancement */
+.status-display {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    min-height: 200px;
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.status-title {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--text-success);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.status-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+.status-content {
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+.status-progress {
+    margin-top: var(--spacing-lg);
+}
+
+/* Phase Frames Enhancement */
+.phase-frames-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.phase-frame {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.phase-frame.active {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-glow);
+    background: var(--bg-card-hover);
+}
+
+.phase-frame.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    animation: phaseProgress 2s infinite;
+}
+
+@keyframes phaseProgress {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.phase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.phase-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--text-secondary);
+    transition: all var(--transition-base);
+}
+
+.phase-frame.active .phase-number {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--bg-primary);
+    box-shadow: var(--shadow-glow);
+}
+
+.phase-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.phase-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
+/* Video Player Enhancement */
+.video-player-container {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-xl);
+    position: relative;
+    overflow: hidden;
+}
+
+.video-player {
+    width: 100%;
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+}
+
+.video-placeholder {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+    border: 2px dashed var(--border-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .generator-container {
+        padding: var(--spacing-md);
+    }
+    
+    .generate-button-wrapper {
+        flex-direction: column;
+    }
+    
+    .generate-btn {
+        width: 100%;
+    }
+    
+    .phase-frames-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dark Mode Support (already dark, but can enhance) */
+@media (prefers-color-scheme: dark) {
+    /* Already optimized for dark mode */
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+

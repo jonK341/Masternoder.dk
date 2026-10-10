@@ -35,6 +35,14 @@ def run_preflight(*, sync_binance: bool = True) -> Dict[str, Any]:
         warnings.append("live mode but external arb needs 2+ credentialed venues")
 
     try:
+        import importlib.util
+
+        if importlib.util.find_spec("sqlalchemy") is None:
+            blockers.append("sqlalchemy missing from Python venv — pip install 'SQLAlchemy==1.4.23'")
+    except Exception:
+        pass
+
+    try:
         from scripts.daemon_env import load_dotenv
         from backend.services import exchange_secrets_vault_service as vault
         load_dotenv()

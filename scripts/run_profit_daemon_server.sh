@@ -19,6 +19,19 @@ export EXCHANGE_LIVE_PROFIT_MAX="${EXCHANGE_LIVE_PROFIT_MAX:-1}"
 export BINANCE_QUOTE="${BINANCE_QUOTE:-USDC}"
 export EXCHANGE_FORCE_IPV4="${EXCHANGE_FORCE_IPV4:-1}"
 
+# Rotate oversized daemon logs before start
+python3 - <<'PY' "$ROOT" 2>/dev/null || true
+import os, sys
+sys.path.insert(0, sys.argv[1])
+try:
+    from backend.services.profit_daemon_ops_service import rotate_daemon_logs
+    r = rotate_daemon_logs()
+    if r.get("rotated"):
+        print("[run] rotated logs:", r["rotated"])
+except Exception:
+    pass
+PY
+
 AUTO_SWEEP_ARGS=()
 if [[ "${EXCHANGE_AUTO_PAYPAL_SWEEP:-0}" =~ ^(1|true|yes|on)$ ]]; then
   AUTO_SWEEP_ARGS+=(--auto-sweep)

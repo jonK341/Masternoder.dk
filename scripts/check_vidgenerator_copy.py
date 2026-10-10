@@ -38,7 +38,7 @@ def check():
                     print("  [WARN] Does not use get_all_points")
                 
                 # Check for get_points
-                stdin3, stdout3, stderr3 = ssh.exec_command(f"grep -n '\.get_points(' {path} | head -2", timeout=5)
+                stdin3, stdout3, stderr3 = ssh.exec_command(rf"grep -n '\.get_points(' {path} | head -2", timeout=5)
                 output3 = stdout3.read().decode().strip()
                 if output3:
                     print(f"  [ERROR] Still uses get_points: {output3}")

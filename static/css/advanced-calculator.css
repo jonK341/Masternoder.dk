@@ -1,0 +1,356 @@
+/* Advanced Intelligent Calculator + Casino math panel */
+
+:root {
+    --primary: #00ff88;
+    --secondary: #00d4ff;
+    --accent: #ff6b9d;
+    --casino-gold: #ffd166;
+    --bg-dark: #0a0a0f;
+    --bg-card: rgba(20, 20, 30, 0.95);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --border-glow: rgba(0, 255, 136, 0.5);
+    --success: #00ff88;
+    --warning: #ffa500;
+    --error: #ff4444;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.calculator-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px;
+    background: var(--bg-card);
+    border-radius: 20px;
+    border: 2px solid var(--border-glow);
+    position: relative;
+    overflow: hidden;
+}
+
+.calculator-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+    opacity: 0.1;
+    animation: calc-rotate 30s linear infinite;
+}
+
+@keyframes calc-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.calculator-header h1 {
+    font-size: clamp(1.8rem, 4vw, 3em);
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+.calculator-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.2em;
+    position: relative;
+    z-index: 1;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.feature-card {
+    background: var(--bg-card);
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid var(--border-glow);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+    border-color: var(--primary);
+}
+
+.feature-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+}
+
+.feature-title {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+.feature-description {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.tools-section {
+    background: var(--bg-card);
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid var(--border-glow);
+    margin-bottom: 40px;
+}
+
+.tools-section h2 {
+    font-size: 2em;
+    margin-bottom: 30px;
+    color: var(--primary);
+}
+
+.tool-button {
+    display: inline-block;
+    padding: 15px 30px;
+    margin: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-decoration: none;
+}
+
+.tool-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+}
+
+.tool-button.casino-accent {
+    background: linear-gradient(135deg, var(--casino-gold), #ff9f43);
+}
+
+.results-panel {
+    background: var(--bg-card);
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid var(--border-glow);
+    margin-top: 30px;
+    display: none;
+}
+
+.results-panel.active {
+    display: block;
+}
+
+.result-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    background: rgba(0, 255, 136, 0.1);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+}
+
+.result-label {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.result-value {
+    color: var(--primary);
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: bold;
+    margin: 5px;
+}
+
+.status-badge.success {
+    background: var(--success);
+    color: #000;
+}
+
+.status-badge.warning {
+    background: var(--warning);
+    color: #000;
+}
+
+.status-badge.error {
+    background: var(--error);
+    color: #fff;
+}
+
+.insights-list {
+    list-style: none;
+    padding: 0;
+}
+
+.insights-list li {
+    padding: 15px;
+    margin-bottom: 10px;
+    background: rgba(0, 255, 136, 0.1);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+}
+
+/* Casino calculator panel */
+.casino-calc-section {
+    background: linear-gradient(145deg, rgba(26, 16, 53, 0.95), rgba(10, 14, 28, 0.98));
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 209, 102, 0.35);
+    margin-bottom: 40px;
+}
+
+.casino-calc-section h2 {
+    font-size: 2em;
+    margin-bottom: 8px;
+    color: var(--casino-gold);
+}
+
+.casino-calc-lead {
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    max-width: 720px;
+    line-height: 1.5;
+}
+
+.casino-calc-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.casino-calc-field label {
+    display: block;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.casino-calc-field select,
+.casino-calc-field input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 209, 102, 0.25);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.casino-calc-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.casino-calc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.casino-calc-metric {
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(255, 209, 102, 0.08);
+    border: 1px solid rgba(255, 209, 102, 0.2);
+}
+
+.casino-calc-metric .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 4px;
+}
+
+.casino-calc-metric .value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--casino-gold);
+}
+
+.casino-calc-guide {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(0, 212, 255, 0.06);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.casino-calc-guide .win { color: #6ee7a0; }
+.casino-calc-guide .lose { color: #f87171; }
+
+.casino-calc-funcs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.casino-calc-func-chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.casino-prognosis-list {
+    margin-top: 16px;
+}
+
+.casino-prognosis-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border-left: 3px solid var(--secondary);
+    font-size: 0.88rem;
+}
+
+@media (max-width: 640px) {
+    .tools-section,
+    .casino-calc-section {
+        padding: 24px 16px;
+    }
+
+    .tool-button {
+        width: 100%;
+        margin: 8px 0;
+    }
+}

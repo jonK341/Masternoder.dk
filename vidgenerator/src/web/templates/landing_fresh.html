@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}MasterNoder.dk - AI Videogenerering Platform{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing-fresh.css') }}?v={{ cache_bust() }}">
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<nav class="main-nav" id="main-nav">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <i class="fas fa-video"></i>
+            <span>MasterNoder</span>
+        </div>
+        <div class="nav-links">
+            <a href="/vidgenerator/generator/simple" class="nav-link active" data-section="generator">
+                <i class="fas fa-magic"></i> Generator
+            </a>
+            <a href="/vidgenerator/gallery" class="nav-link" data-section="gallery">
+                <i class="fas fa-images"></i> Gallery
+            </a>
+            <a href="/vidgenerator/stats" class="nav-link" data-section="stats">
+                <i class="fas fa-chart-line"></i> Stats
+            </a>
+            <a href="/vidgenerator/debugger" class="nav-link" data-section="debugger">
+                <i class="fas fa-bug"></i> Debugger
+            </a>
+            <a href="/vidgenerator/game" class="nav-link" data-section="game">
+                <i class="fas fa-gamepad"></i> Game
+            </a>
+        </div>
+        <div class="nav-actions">
+            <button class="btn-nav-primary" onclick="window.location.href='/vidgenerator/generator/simple'">
+                <i class="fas fa-rocket"></i> Start Now
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero-section" id="hero">
+    <div class="hero-background">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="hero-content">
+        <div class="hero-badge">
+            <i class="fas fa-sparkles"></i>
+            <span>AI-Powered Video Generation</span>
+        </div>
+        <h1 class="hero-title">
+            <span class="title-line">Create Stunning</span>
+            <span class="title-line title-highlight">Documentaries</span>
+            <span class="title-line">with AI</span>
+        </h1>
+        <p class="hero-description">
+            Transform your ideas into professional documentary videos with cutting-edge artificial intelligence.
+            Simple, fast, and intelligent.
+        </p>
+        
+        <!-- Intelligent CTA Section -->
+        <div class="hero-cta" id="hero-cta">
+            <a href="/vidgenerator/generator/simple" class="btn-hero-primary" id="btn-generator-primary">
+                <i class="fas fa-magic"></i>
+                <span>Try New Simple Generator</span>
+                <span class="badge-new">NEW</span>
+            </a>
+            <a href="/vidgenerator/generator" class="btn-hero-secondary" id="btn-generator-classic">
+                <i class="fas fa-cog"></i>
+                <span>Classic Generator</span>
+            </a>
+        </div>
+        
+        <!-- Live Stats -->
+        <div class="hero-stats" id="hero-stats">
+            <div class="stat-item" data-stat="videos">
+                <div class="stat-value" id="stat-videos">0</div>
+                <div class="stat-label">Videos Created</div>
+            </div>
+            <div class="stat-item" data-stat="users">
+                <div class="stat-value" id="stat-users">0</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-item" data-stat="time">
+                <div class="stat-value" id="stat-time">~3</div>
+                <div class="stat-label">Min Avg Time</div>
+            </div>
+            <div class="stat-item" data-stat="xp">
+                <div class="stat-value" id="stat-xp">0</div>
+                <div class="stat-label">Total XP</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator" id="scroll-indicator">
+        <i class="fas fa-chevron-down"></i>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section" id="features">
+    <div class="section-header">
+        <h2 class="section-title">Powerful Features</h2>
+        <p class="section-subtitle">Everything you need to create amazing documentaries</p>
+    </div>
+    
+    <div class="features-grid" id="features-grid">
+        <!-- Features will be populated by JavaScript with intelligence -->
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works" id="how-it-works">
+    <div class="section-header">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Simple, intelligent, and fast</p>
+    </div>
+    
+    <div class="steps-container" id="steps-container">
+        <!-- Steps will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- Intelligence Showcase -->
+<section class="intelligence-section" id="intelligence">
+    <div class="section-header">
+        <h2 class="section-title">AI Intelligence</h2>
+        <p class="section-subtitle">Smart features that learn and adapt</p>
+    </div>
+    
+    <div class="intelligence-grid" id="intelligence-grid">
+        <!-- Intelligence features will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- Testimonials / Social Proof -->
+<section class="testimonials-section" id="testimonials">
+    <div class="section-header">
+        <h2 class="section-title">What Users Say</h2>
+        <p class="section-subtitle">Real feedback from our community</p>
+    </div>
+    
+    <div class="testimonials-grid" id="testimonials-grid">
+        <!-- Testimonials will be populated by JavaScript -->
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section" id="cta">
+    <div class="cta-background">
+        <div class="cta-gradient"></div>
+    </div>
+    <div class="cta-content">
+        <h2 class="cta-title">Ready to Create?</h2>
+        <p class="cta-description">Start generating your first documentary video now</p>
+        <div class="cta-buttons">
+            <a href="/vidgenerator/generator/simple" class="btn-cta-primary" id="btn-cta-primary">
+                <i class="fas fa-rocket"></i>
+                <span>Start Generating</span>
+            </a>
+            <a href="/vidgenerator/gallery" class="btn-cta-secondary" id="btn-cta-secondary">
+                <i class="fas fa-images"></i>
+                <span>View Gallery</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="main-footer" id="footer">
+    <div class="footer-container">
+        <div class="footer-section">
+            <h3 class="footer-title">MasterNoder</h3>
+            <p class="footer-description">AI-powered video generation platform</p>
+            <div class="footer-social">
+                <a href="#" class="social-link" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="#" class="social-link" aria-label="Discord"><i class="fab fa-discord"></i></a>
+            </div>
+        </div>
+        
+        <div class="footer-section">
+            <h4 class="footer-heading">Platform</h4>
+            <ul class="footer-links">
+                <li><a href="/vidgenerator/generator/simple">Simple Generator</a></li>
+                <li><a href="/vidgenerator/generator">Classic Generator</a></li>
+                <li><a href="/vidgenerator/gallery">Gallery</a></li>
+                <li><a href="/vidgenerator/stats">Statistics</a></li>
+            </ul>
+        </div>
+        
+        <div class="footer-section">
+            <h4 class="footer-heading">Tools</h4>
+            <ul class="footer-links">
+                <li><a href="/vidgenerator/debugger">Debugger</a></li>
+                <li><a href="/vidgenerator/game">Game</a></li>
+                <li><a href="/vidgenerator/api/status">API Status</a></li>
+            </ul>
+        </div>
+        
+        <div class="footer-section">
+            <h4 class="footer-heading">Resources</h4>
+            <ul class="footer-links">
+                <li><a href="/vidgenerator/api/status/html">API Documentation</a></li>
+                <li><a href="/vidgenerator/debugger">System Status</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="footer-bottom">
+        <p>&copy; 2025 MasterNoder.dk - All rights reserved</p>
+        <div class="footer-meta">
+            <span id="footer-version">v3.30.0</span>
+            <span id="footer-status" class="status-online">● Online</span>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/landing/landing-fresh-core.js') }}?v={{ cache_bust() }}"></script>
+<script src="{{ url_for('static', filename='js/landing/landing-fresh-intelligence.js') }}?v={{ cache_bust() }}"></script>
+<script src="{{ url_for('static', filename='js/landing/landing-fresh-stats.js') }}?v={{ cache_bust() }}"></script>
+{% endblock %}
+

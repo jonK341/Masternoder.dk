@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MasterNoder.dk - AI-drevet videogenerering platform. Opret professionelle dokumentarfilm med kunstig intelligens.">
+    <title>MasterNoder.dk - AI Videogenerering Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #00ff88;
+            --secondary: #00d4ff;
+            --accent: #ff00ff;
+            --dark: #0a0a0a;
+            --darker: #050505;
+            --light: rgba(255, 255, 255, 0.1);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: var(--darker);
+            color: #fff;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated gradient background */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: linear-gradient(-45deg, #0a0a0a, #1a1a2e, #16213e, #0f1419);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translate(100px, -100vh) scale(0);
+                opacity: 0;
+            }
+        }
+        
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            z-index: 2;
+        }
+        
+        .hero-content {
+            max-width: 1400px;
+            width: 100%;
+            text-align: center;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo-large {
+            font-size: 8em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pulse 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.5));
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        h1 {
+            font-size: 4.5em;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+        
+        .tagline {
+            font-size: 1.8em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 50px;
+            font-weight: 300;
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin: 60px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 30px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            min-width: 180px;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.2);
+        }
+        
+        .stat-number {
+            font-size: 3.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Enhanced Generator CTA */
+        .generator-cta-enhanced {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 40px 0;
+        }
+        
+        .btn-new-generator {
+            position: relative;
+            padding-right: 60px !important;
+        }
+        
+        .badge-new {
+            position: absolute;
+            top: -8px;
+            right: 10px;
+            background: linear-gradient(135deg, #ff00ff, #ff0080);
+            color: #fff;
+            font-size: 0.5em;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        /* Main Navigation */
+        .main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+        
+        .main-nav a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.1em;
+            transition: all 0.3s;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+        
+        .main-nav a:hover {
+            color: var(--primary);
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .main-nav a.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        /* CTA Buttons */
+        .cta-section {
+            margin: 60px 0;
+        }
+        
+        .btn-primary-large {
+            display: inline-block;
+            padding: 25px 70px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #000;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.5em;
+            transition: all 0.3s;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+            position: relative;
+            overflow: hidden;
+            margin: 15px;
+        }
+        
+        .btn-primary-large::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-primary-large:hover::before {
+            width: 500px;
+            height: 500px;
+        }
+        
+        .btn-primary-large:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 50px rgba(0, 255, 136, 0.4);
+        }
+        
+        .btn-secondary {
+            display: inline-block;
+            padding: 18px 50px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.2em;
+            transition: all 0.3s;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            margin: 10px;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+        
+        /* Features Grid */
+        .features-section {
+            padding: 100px 20px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .features-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 50px 40px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s;
+            text-align: center;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-15px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.2);
+        }
+        
+        .feature-icon {
+            font-size: 5em;
+            margin-bottom: 25px;
+            display: block;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.5));
+        }
+        
+        .feature-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .feature-description {
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.8;
+        }
+        
+        /* Footer */
+        .footer {
+            padding: 60px 20px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        
+        .footer-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        
+        .footer-link:hover {
+            color: var(--primary);
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5em; }
+            .tagline { font-size: 1.3em; }
+            .logo-large { font-size: 5em; }
+            .btn-primary-large { padding: 20px 50px; font-size: 1.2em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div class="particles" id="particles"></div>
+    
+        <div class="hero" style="padding-top: 100px;">
+            <div class="hero-content">
+            <div class="logo-large">🎬</div>
+            <h1>MasterNoder.dk</h1>
+            <p class="tagline">AI-Drevet Videogenerering Platform</p>
+            <p class="tagline" style="font-size: 1.2em; color: rgba(255, 255, 255, 0.6);">
+                Opret professionelle dokumentarfilm med kunstig intelligens
+            </p>
+            
+            <div class="stats-bar">
+                <div class="stat-box">
+                    <span class="stat-number" id="stat-videos">0</span>
+                    <span class="stat-label">Videos</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="stat-users">0</span>
+                    <span class="stat-label">Brugere</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">12</span>
+                    <span class="stat-label">Temaer</span>
+                </div>
+            </div>
+            
+            <!-- Enhanced Generator CTA -->
+            <div class="generator-cta-enhanced">
+                <a href="/vidgenerator/generator/simple" class="btn-primary-large btn-new-generator" onclick="trackAction('generator_simple_click')">
+                    <i class="fas fa-magic"></i> Try New Simple Generator
+                    <span class="badge-new">NEW</span>
+                </a>
+                <a href="/vidgenerator/generator" class="btn-secondary" onclick="trackAction('generator_classic_click')">
+                    <i class="fas fa-cog"></i> Classic Generator
+                </a>
+            </div>
+            <div class="cta-section">
+                <a href="/vidgenerator" class="btn-secondary" onclick="trackAction('platform_click')">
+                    <i class="fas fa-home"></i> Platform
+                </a>
+                <a href="/vidgenerator/gallery" class="btn-secondary" onclick="trackAction('gallery_click')">
+                    <i class="fas fa-images"></i> Galleri
+                </a>
+                <a href="/vidgenerator/stats" class="btn-secondary" onclick="trackAction('stats_click')">
+                    <i class="fas fa-chart-line"></i> Statistikker
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="features-section">
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🤖</span>
+                <h3 class="feature-title">AI-Drevet</h3>
+                <p class="feature-description">
+                    Avanceret kunstig intelligens skaber professionelle dokumentarfilm fra tekstprompter med state-of-the-art AI modeller
+                </p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🎨</span>
+                <h3 class="feature-title">12 Unikke Temaer</h3>
+                <p class="feature-description">
+                    Matrix, WWII, Space, Nature, Cyberpunk og mange flere temaer. Hvert tema har unikke properties og bonuses
+                </p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">⚡</span>
+                <h3 class="feature-title">Hurtig Generering</h3>
+                <p class="feature-description">
+                    Få dine videoer genereret på få minutter med optimerede AI-systemer og peer-to-peer download
+                </p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🎮</span>
+                <h3 class="feature-title">Game Mechanics</h3>
+                <p class="feature-description">
+                    Spil med XP system, defense mechanisms, og sync mellem klient og server for optimal performance
+                </p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🌐</span>
+                <h3 class="feature-title">Peer Download</h3>
+                <p class="feature-description">
+                    Download fra multiple peers for hurtigere overførsel. Double eller triple peer support for maksimal hastighed
+                </p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🔄</span>
+                <h3 class="feature-title">Real-time Sync</h3>
+                <p class="feature-description">
+                    Synkroniser game state mellem klient og server automatisk. Ingen data tab, alt er sikret
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p style="color: rgba(255, 255, 255, 0.5); margin-bottom: 20px;">&copy; 2024 MasterNoder.dk</p>
+        <div class="footer-links">
+            <a href="/vidgenerator/generator" class="footer-link">Generator</a>
+            <a href="/vidgenerator/gallery" class="footer-link">Galleri</a>
+            <a href="/vidgenerator/stats" class="footer-link">Statistikker</a>
+            <a href="/vidgenerator/debugger" class="footer-link">Debugger</a>
+            <a href="/vidgenerator/game" class="footer-link">Game</a>
+        </div>
+    </div>
+    
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const count = 50;
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        // Track actions
+        function trackAction(action) {
+            fetch('/vidgenerator/api/landing/track-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: action,
+                    timestamp: new Date().toISOString(),
+                    page: 'landing'
+                })
+            }).catch(() => {});
+        }
+        
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/vidgenerator/api/stats/summary');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.stats) {
+                        document.getElementById('stat-videos').textContent = data.stats.total_videos || 0;
+                        document.getElementById('stat-users').textContent = data.stats.total_users || 0;
+                    }
+                }
+            } catch (error) {
+                console.log('Stats loading failed:', error);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            loadStats();
+            trackAction('page_view');
+        });
+    </script>
+</body>
+</html>
+

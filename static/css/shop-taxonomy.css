@@ -1,0 +1,244 @@
+/**
+ * Shop taxonomy — subcategory chips, data tables, and list panels
+ * Shared across shop, profile, casino, and exchange.
+ */
+
+/* Keep chips, tables, and row cards inside the viewport */
+.shop-subnav,
+.shop-data-table-wrap,
+.stall-table,
+.taxonomy-list,
+.taxonomy-scroll-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.shop-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 14px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.24);
+}
+
+.shop-subnav-btn {
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(207, 238, 255, 0.92);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.25;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.shop-subnav-btn:hover {
+    border-color: rgba(0, 212, 255, 0.45);
+    color: #fff;
+}
+
+.shop-subnav-btn.active {
+    background: linear-gradient(135deg, #00d4ff, #0099cc);
+    color: #000;
+    border-color: transparent;
+}
+
+.profile-hub-parents.shop-subnav {
+    margin-bottom: 16px;
+}
+
+/* Rounded data tables — scroll inside the panel, not the whole page */
+.shop-data-table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: min(360px, calc(100dvh - var(--nav-toolbar-offset, 96px) - 240px));
+    margin: 8px 0 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.24);
+    -webkit-overflow-scrolling: touch;
+}
+
+.shop-data-table {
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.84rem;
+    line-height: 1.35;
+}
+
+.shop-data-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(0, 212, 255, 0.14);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.shop-data-table tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.shop-data-table .col-narrow {
+    width: 4.5rem;
+    white-space: nowrap;
+}
+
+.shop-data-table .col-xs {
+    width: 2.75rem;
+    white-space: nowrap;
+}
+
+.shop-data-table .col-note {
+    width: 38%;
+}
+
+.shop-data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.shop-data-table tbody tr:hover td {
+    background: rgba(0, 255, 136, 0.06);
+}
+
+.shop-data-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.shop-data-table .pos {
+    color: #00ff88;
+}
+
+.shop-data-table .neg {
+    color: #ffaa44;
+}
+
+.shop-data-table .muted {
+    opacity: 0.65;
+}
+
+/* Scrollable list region (MN2 tx, history) */
+.taxonomy-scroll-panel {
+    margin: 8px 0 14px;
+    max-height: min(320px, calc(100dvh - var(--nav-toolbar-offset, 96px) - 260px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Grouped list panels (history, MN2 tx, stall summaries) */
+.taxonomy-list {
+    margin: 0 0 14px;
+    padding: 10px 14px 10px 1.6rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.22);
+    list-style: disc;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.taxonomy-scroll-panel > .taxonomy-list {
+    margin: 0;
+}
+
+.taxonomy-list li {
+    padding: 5px 0;
+    font-size: 0.86rem;
+    line-height: 1.4;
+}
+
+.taxonomy-group-title {
+    margin: 14px 0 8px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #7ee8ff;
+}
+
+/* Stall / inventory row cards */
+.stall-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0 16px;
+}
+
+.stall-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(48px, 64px) minmax(72px, 96px) minmax(0, auto);
+    gap: 8px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.stall-row > * {
+    min-width: 0;
+}
+
+.stall-row .btn-purchase,
+.stall-row button {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+}
+
+.stall-row input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(0, 0, 0, 0.28);
+    color: inherit;
+    font-size: 0.84rem;
+}
+
+@media (max-width: 900px) {
+    .stall-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .shop-data-table {
+        font-size: 0.78rem;
+    }
+
+    .shop-data-table thead th,
+    .shop-data-table tbody td {
+        padding: 6px 8px;
+        font-size: 0.76rem;
+    }
+
+    .taxonomy-list {
+        padding: 8px 10px 8px 1.35rem;
+        font-size: 0.82rem;
+    }
+
+    .shop-data-table-wrap,
+    .taxonomy-scroll-panel {
+        max-height: min(280px, calc(100dvh - var(--nav-toolbar-offset, 96px) - 200px));
+    }
+}

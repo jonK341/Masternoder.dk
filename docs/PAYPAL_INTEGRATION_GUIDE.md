@@ -2,8 +2,6 @@
 
 **Goal:** Connect your PayPal Pro account so users can pay real dollars for shop items, premium features, and agent-driven monetization.
 
-**Related:** [MONETIZATION_PAYPAL.md](./MONETIZATION_PAYPAL.md) — revenue models (packs, tiers, subscriptions, B2B), rollout order, and code touchpoints.
-
 ---
 
 ## Quick Start (3 steps)

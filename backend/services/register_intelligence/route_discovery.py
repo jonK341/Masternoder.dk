@@ -3,7 +3,7 @@ import os
 import re
 from typing import List, Dict, Tuple, Optional
 
-BLUEPRINT_PATTERN = re.compile(r"^(\w+_bp)\s*=\s*Blueprint\s*\(\s*['\"](\w+)['\"]")
+BLUEPRINT_PATTERN = re.compile(r"^(\w+_bp)\s*=\s*Blueprint\s*\(\s*['\"](\w+)['\"]", re.MULTILINE)
 ROUTE_DECORATOR_PATTERN = re.compile(r"@\w+\.route\s*\(\s*['\"]([^'\"]+)['\"]")
 ROUTE_SIMPLE_PATTERN = re.compile(r"@(\w+_bp)\.route\s*\(\s*['\"]([^'\"]+)['\"]")
 

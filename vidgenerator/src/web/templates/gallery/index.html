@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Documentary Gallery - Browse Generated Videos{% endblock %}
+{% block meta_description %}Browse and watch all generated documentary videos. Search, filter, and discover AI-generated documentaries.{% endblock %}
+{% block meta_keywords %}documentary gallery, video gallery, AI videos, documentary collection, video browser{% endblock %}
+
+{% block og_title %}Documentary Gallery{% endblock %}
+{% block og_description %}Browse and watch all generated documentary videos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/gallery_smooth.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/video-editor.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar-monetization.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="gallery-container">
+        <header class="gallery-header">
+            <h1>🎬 Documentary Gallery</h1>
+            <p class="subtitle">Browse and watch generated documentaries</p>
+        </header>
+        
+        <!-- Gallery Tabs Navigation -->
+        <div class="gallery-tabs">
+            <button class="gallery-tab active" data-tab="videos">Videos</button>
+            <button class="gallery-tab" data-tab="calendar">Calendar</button>
+            <button class="gallery-tab" data-tab="stats">Stats</button>
+        </div>
+        
+        <!-- Videos Tab Content -->
+        <div class="gallery-tab-content active" id="tab-videos">
+        <!-- Enhanced Search and Filter Section -->
+        <div class="gallery-controls">
+            <form method="GET" action="{{ url_for('gallery') }}" class="search-form" id="gallery-search-form">
+                <div class="search-input-wrapper">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        id="gallery-search-input"
+                        placeholder="🔍 Search titles, prompts, descriptions, dates..." 
+                        value="{{ search_query }}"
+                        class="search-input"
+                        autocomplete="off"
+                        aria-label="Search documentaries"
+                    >
+                    <button type="button" class="search-clear-btn" id="search-clear-btn" style="display: none;" aria-label="Clear search">✕</button>
+                </div>
+                <select name="status" class="status-filter" aria-label="Filter by status">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="generating" {% if status_filter == 'generating' %}selected{% endif %}>Generating</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                </select>
+                <select name="sort" class="sort-filter" aria-label="Sort by">
+                    <option value="newest" {% if sort_by|default('newest') == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if sort_by|default('newest') == 'oldest' %}selected{% endif %}>Oldest First</option>
+                    <option value="title" {% if sort_by|default('newest') == 'title' %}selected{% endif %}>Title A-Z</option>
+                    <option value="duration" {% if sort_by|default('newest') == 'duration' %}selected{% endif %}>Longest First</option>
+                </select>
+                <button type="submit" class="search-btn" aria-label="Search">Search</button>
+                <a href="{{ url_for('gallery') }}" class="reset-btn" aria-label="Reset filters">Reset</a>
+            </form>
+            <div class="search-suggestions" id="search-suggestions" style="display: none;"></div>
+        </div>
+
+        <!-- Gallery Grid -->
+        {% if documentaries %}
+        <div class="gallery-grid" id="gallery-grid" data-page="{{ pagination.page if pagination else 1 }}">
+            {% for doc in documentaries %}
+            <div class="gallery-item" data-status="{{ doc.status }}" data-id="{{ doc.id }}" data-title="{{ doc.title|lower }}" data-prompt="{{ doc.prompt|lower }}" data-description="{{ (doc.description or '')|lower }}">
+                <a href="/vidgenerator/documentary/{{ doc.id }}" class="doc-link" aria-label="View {{ doc.title }}">
+                    <div class="doc-thumbnail">
+                        {% if doc.thumbnail_path and doc.status == 'completed' %}
+                        <img 
+                            src="{{ url_for('static', filename='../' + doc.thumbnail_path) }}" 
+                            alt="{{ doc.title }}" 
+                            loading="lazy"
+                            class="doc-thumbnail-img"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        >
+                        {% endif %}
+                        <div class="placeholder-thumbnail" style="display: {% if doc.thumbnail_path and doc.status == 'completed' %}none{% else %}flex{% endif %};">
+                            <span class="thumbnail-icon">🎬</span>
+                        </div>
+                        {% if doc.status == 'generating' %}
+                        <div class="generating-overlay">
+                            <div class="spinner"></div>
+                            <span>Generating...</span>
+                        </div>
+                        {% endif %}
+                        <div class="status-badge status-{{ doc.status }}" aria-label="Status: {{ doc.status }}">
+                            {{ doc.status.title() }}
+                        </div>
+                        {% if doc.duration %}
+                        <div class="duration-badge" aria-label="Duration: {{ (doc.duration // 60) }} minutes">
+                            ⏱️ {{ (doc.duration // 60) }}m
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="doc-info">
+                        <h3 class="doc-title">{{ doc.title }}</h3>
+                        <p class="doc-description" title="{{ doc.prompt }}">{{ doc.prompt[:80] }}{% if doc.prompt|length > 80 %}...{% endif %}</p>
+                        <div class="doc-meta">
+                            <span class="meta-item" title="{{ doc.created_at.strftime('%Y-%m-%d %H:%M') if doc.created_at else 'N/A' }}">
+                                📅 {{ doc.created_at.strftime('%Y-%m-%d') if doc.created_at else 'N/A' }}
+                            </span>
+                            {% if doc.duration %}
+                            <span class="meta-item">⏱️ {{ (doc.duration // 60) }}m {{ doc.duration % 60 }}s</span>
+                            {% endif %}
+                        </div>
+                        <div class="doc-actions">
+                            <button class="edit-clip-btn" data-doc-id="{{ doc.id }}" title="Edit Clips" onclick="event.preventDefault(); event.stopPropagation(); window.videoEditor?.openEditor('{{ doc.id }}', {title: '{{ doc.title }}', video_path: '{{ doc.video_path }}', duration: {{ doc.duration or 0 }}});">
+                                ✏️ Edit
+                            </button>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('gallery', page=pagination.prev_num, status=status_filter if status_filter != 'all' else None, search=search_query if search_query else None) }}" class="page-link">« Previous</a>
+            {% endif %}
+            
+            <span class="page-info">
+                Page {{ pagination.page }} of {{ pagination.pages }}
+            </span>
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('gallery', page=pagination.next_num, status=status_filter if status_filter != 'all' else None, search=search_query if search_query else None) }}" class="page-link">Next »</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-gallery">
+            <div class="empty-icon">📭</div>
+            <h2>No documentaries found</h2>
+            <p>{% if search_query %}Try adjusting your search or filters{% else %}Create your first documentary to get started!{% endif %}</p>
+            <a href="{{ url_for('generator') }}" class="cta-button">Create Documentary</a>
+        </div>
+        {% endif %}
+        </div>
+        
+        <!-- Calendar Tab Content -->
+        <div class="gallery-tab-content" id="tab-calendar">
+            <div class="calendar-container">
+                <div id="calendar-widget"></div>
+            </div>
+        </div>
+        
+        <!-- Stats Tab Content -->
+        <div class="gallery-tab-content" id="tab-stats">
+            <div class="gallery-stats-container">
+                <h2>Gallery Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎬</div>
+                        <div class="stat-value" id="gallery-total-docs">--</div>
+                        <div class="stat-label">Total Documentaries</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-value" id="gallery-total-duration">--</div>
+                        <div class="stat-label">Total Duration</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value" id="gallery-avg-quality">--</div>
+                        <div class="stat-label">Average Quality</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-value" id="gallery-this-month">--</div>
+                        <div class="stat-label">This Month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/gallery/clip-cache.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gallery/theme-sound.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gallery/video-editor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gallery.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gallery-auto-refresh.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stats/calendar-enhanced.js') }}"></script>
+<script>
+// Initialize clip cache manager
+const clipCache = new ClipCacheManager();
+const themeSound = new ThemeSoundManager();
+
+// Load clips from cache on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Store current gallery items in cache
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    galleryItems.forEach(item => {
+        const clipData = {
+            id: item.dataset.id,
+            title: item.dataset.title,
+            status: item.dataset.status,
+            prompt: item.dataset.prompt,
+            description: item.dataset.description
+        };
+        clipCache.addClip(clipData);
+    });
+    
+    // Log cache stats
+    const stats = clipCache.getStats();
+    console.log('Clip Cache Stats:', stats);
+    
+    // Load theme sound (default to matrix theme)
+    const currentTheme = localStorage.getItem('selected_theme') || 'matrix';
+    themeSound.loadThemeSound(currentTheme);
+    
+    // Play ambient sound on gallery load (optional, can be disabled)
+    // themeSound.playSound('ambient');
+    
+    // Initialize calendar if available
+    if (typeof EnhancedCalendar !== 'undefined') {
+        const calendar = new EnhancedCalendar('calendar-widget');
+        calendar.loadAppointments();
+    }
+    
+    // Tab switching
+    document.querySelectorAll('.gallery-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+            
+            // Update active tab
+            document.querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Update active content
+            document.querySelectorAll('.gallery-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            // Load data for active tab
+            if (tabName === 'stats') {
+                loadGalleryStats();
+            } else if (tabName === 'calendar' && typeof EnhancedCalendar !== 'undefined') {
+                const calendar = new EnhancedCalendar('calendar-widget');
+                calendar.loadAppointments();
+            }
+        });
+    });
+    
+    // Load gallery stats
+    async function loadGalleryStats() {
+        try {
+            const response = await fetch('/vidgenerator/api/statistics');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.statistics) {
+                    const stats = data.statistics;
+                    document.getElementById('gallery-total-docs').textContent = stats.total_documentaries || 0;
+                    document.getElementById('gallery-total-duration').textContent = formatDuration(stats.total_duration || 0);
+                    document.getElementById('gallery-avg-quality').textContent = (stats.avg_quality || 0).toFixed(1);
+                    // Calculate this month's count (would need separate endpoint)
+                    document.getElementById('gallery-this-month').textContent = '--';
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load gallery stats:', error);
+        }
+    }
+    
+    function formatDuration(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        }
+        return `${minutes}m`;
+    }
+});
+</script>
+{% endblock %}
+
