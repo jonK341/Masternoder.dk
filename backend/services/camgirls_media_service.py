@@ -204,7 +204,11 @@ def attach_media_to_row(performer_row: Dict[str, Any], *, lite: bool = False) ->
             "logo_url": media.get("logo_url"),
             "icon_url": media.get("icon_url"),
             "shop_item_id": shop_sku,
-            "shop_query": f"highlight={shop_sku}" if shop_sku else "category=digital_goods",
+            "shop_query": (
+                f"highlight={shop_sku}"
+                if shop_sku
+                else "category=digital_goods&tag=camgirls"
+            ),
         }
     return performer_row
 

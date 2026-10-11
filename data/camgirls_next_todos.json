@@ -139,9 +139,9 @@
         },
         {
           "id": "phase1_shop",
-          "priority": "P1",
+          "priority": "done",
           "title": "Brand packs in shop UI",
-          "detail": "16 SKUs dg-camgirls-brand-* — filter digital_goods + tag camgirls on /app/shop/."
+          "detail": "Shop ?category=digital_goods&tag=camgirls; studio /app/shop/ via cgShopUrl + camgirls.js CG_SHOP_BRAND_QUERY."
         }
       ]
     },

@@ -33,11 +33,14 @@
     return '/camgirls/p/' + encodeURIComponent(id) + '/';
   }
 
+  var CG_SHOP_BRAND_QUERY = 'category=digital_goods&tag=camgirls';
+
   function cgShopHref(query) {
+    var q = query || '';
     if (typeof window.cgShopUrl === 'function') {
-      return window.cgShopUrl(query || '');
+      return window.cgShopUrl(q);
     }
-    return '/shop/' + (query ? (query.charAt(0) === '?' ? query : '?' + query) : '');
+    return '/shop/' + (q ? (q.charAt(0) === '?' ? q : '?' + q) : '');
   }
 
   function applyAppExpandLayout() {
@@ -56,7 +59,7 @@
           '<strong>camgirls.masternoder.dk studio</strong> — 15 AI hosts · ' +
           '<a href="/">MN2 block explorer</a> · ' +
           '<a href="' +
-          cgShopHref('category=digital_goods') +
+          cgShopHref(CG_SHOP_BRAND_QUERY) +
           '">Brand packs shop</a>';
         var header = document.querySelector('.cg-header');
         if (header) header.appendChild(sub);
@@ -65,7 +68,7 @@
     document.querySelectorAll('.cg-shop-strip a[href], .cg-resell-link').forEach(function (a) {
       var href = a.getAttribute('href') || '';
       if (href.indexOf('/shop') >= 0 && href.indexOf('/app/shop') < 0) {
-        a.setAttribute('href', cgShopHref(href.split('?')[1] || 'category=digital_goods'));
+        a.setAttribute('href', cgShopHref(href.split('?')[1] || CG_SHOP_BRAND_QUERY));
       }
     });
     document.querySelectorAll('a[href^="/camgirls"]').forEach(function (a) {
@@ -234,7 +237,9 @@
     if (p.resell && p.resell.logo_url) {
       var shopQ =
         p.resell.shop_query ||
-        (p.resell.shop_item_id ? 'highlight=' + encodeURIComponent(p.resell.shop_item_id) : 'category=digital_goods');
+        (p.resell.shop_item_id
+          ? 'highlight=' + encodeURIComponent(p.resell.shop_item_id)
+          : CG_SHOP_BRAND_QUERY);
       var shopHref = cgShopHref(shopQ);
       resell =
         '<a class="cg-resell-link" href="' +
