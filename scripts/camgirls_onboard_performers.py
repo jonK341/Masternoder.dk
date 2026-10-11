@@ -47,6 +47,11 @@ def main() -> int:
         action="store_true",
         help="Provision daemon payout addresses for all active performers",
     )
+    parser.add_argument(
+        "--sync-db",
+        action="store_true",
+        help="After JSON upserts, sync full catalog into SQLite camgirls_performers",
+    )
     args = parser.parse_args()
 
     if args.provision_addresses:
@@ -133,6 +138,13 @@ def main() -> int:
         else:
             print(f"Failed {pid}: {result.get('error')}", file=sys.stderr)
     print(f"Done: {ok}/{len(rows)} performers")
+    if args.sync_db and not args.dry_run:
+        from backend.services.camgirls_catalog_sync_service import sync_json_catalog_to_db
+
+        sync = sync_json_catalog_to_db()
+        print(f"SQLite catalog sync: {sync.get('synced')}/{sync.get('json_rows')} rows")
+        if not sync.get("success"):
+            return 1
     return 0 if ok else 1
 
 

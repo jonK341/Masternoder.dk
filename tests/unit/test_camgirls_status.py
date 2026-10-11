@@ -9,6 +9,13 @@ def test_platform_status_includes_tech_and_todos():
     assert out.get("agents_linked", 0) >= 15
     assert isinstance(out.get("next_todos"), list)
     assert len(out.get("next_todos") or []) >= 1
+    by_cat = out.get("next_todos_by_category")
+    assert isinstance(by_cat, list)
+    assert len(by_cat) >= 5
+    assert by_cat[0].get("id") and isinstance(by_cat[0].get("items"), list)
+    assert len(out.get("next_todos") or []) == sum(
+        len(c.get("items") or []) for c in by_cat
+    )
     assert "platform_tech" in out
     roster = out.get("performers") or []
     assert roster

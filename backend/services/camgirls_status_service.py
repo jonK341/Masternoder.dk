@@ -39,17 +39,58 @@ def paypal_configured() -> bool:
     )
 
 
-def _load_next_todos() -> List[Dict[str, Any]]:
+def _read_next_todos_file() -> Dict[str, Any]:
     if not os.path.isfile(_NEXT_TODOS_FILE):
-        return []
+        return {}
     try:
         with open(_NEXT_TODOS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-        items = data.get("items") if isinstance(data, dict) else None
-        if isinstance(items, list):
-            return [i for i in items if isinstance(i, dict)]
+        if isinstance(data, dict):
+            return data
     except Exception:
         pass
+    return {}
+
+
+def _next_todos_by_category(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    categories = data.get("categories")
+    if not isinstance(categories, list):
+        return []
+    out: List[Dict[str, Any]] = []
+    for cat in categories:
+        if not isinstance(cat, dict):
+            continue
+        items = cat.get("items")
+        if not isinstance(items, list):
+            items = []
+        out.append(
+            {
+                "id": str(cat.get("id") or ""),
+                "title": str(cat.get("title") or ""),
+                "description": str(cat.get("description") or ""),
+                "items": [i for i in items if isinstance(i, dict)],
+            }
+        )
+    return out
+
+
+def _flatten_next_todos(categories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    flat: List[Dict[str, Any]] = []
+    for cat in categories:
+        for item in cat.get("items") or []:
+            if isinstance(item, dict):
+                flat.append(item)
+    return flat
+
+
+def _load_next_todos() -> List[Dict[str, Any]]:
+    data = _read_next_todos_file()
+    categories = _next_todos_by_category(data)
+    if categories:
+        return _flatten_next_todos(categories)
+    items = data.get("items")
+    if isinstance(items, list):
+        return [i for i in items if isinstance(i, dict)]
     return []
 
 
@@ -149,7 +190,13 @@ def platform_status() -> Dict[str, Any]:
         )
 
     agents_linked = sum(1 for r in roster if r.get("agent_id"))
-    next_todos = _load_next_todos()
+    todos_data = _read_next_todos_file()
+    next_todos_by_category = _next_todos_by_category(todos_data)
+    next_todos = (
+        _flatten_next_todos(next_todos_by_category)
+        if next_todos_by_category
+        else _load_next_todos()
+    )
 
     try:
         from backend.services.camgirls_catalog_db_service import catalog_source_label
@@ -178,6 +225,7 @@ def platform_status() -> Dict[str, Any]:
         },
         "performers": roster,
         "next_todos": next_todos,
+        "next_todos_by_category": next_todos_by_category,
         "note": (
             "Performers are AI studio personas — chat, gifts, and dances work 24/7. "
             + (

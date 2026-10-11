@@ -33,11 +33,14 @@
     return '/camgirls/p/' + encodeURIComponent(id) + '/';
   }
 
+  var CG_SHOP_BRAND_QUERY = 'category=digital_goods&tag=camgirls';
+
   function cgShopHref(query) {
+    var q = query || '';
     if (typeof window.cgShopUrl === 'function') {
-      return window.cgShopUrl(query || '');
+      return window.cgShopUrl(q);
     }
-    return '/shop/' + (query ? (query.charAt(0) === '?' ? query : '?' + query) : '');
+    return '/shop/' + (q ? (q.charAt(0) === '?' ? q : '?' + q) : '');
   }
 
   function applyAppExpandLayout() {
@@ -56,7 +59,7 @@
           '<strong>camgirls.masternoder.dk studio</strong> — 15 AI hosts · ' +
           '<a href="/">MN2 block explorer</a> · ' +
           '<a href="' +
-          cgShopHref('category=digital_goods') +
+          cgShopHref(CG_SHOP_BRAND_QUERY) +
           '">Brand packs shop</a>';
         var header = document.querySelector('.cg-header');
         if (header) header.appendChild(sub);
@@ -65,7 +68,7 @@
     document.querySelectorAll('.cg-shop-strip a[href], .cg-resell-link').forEach(function (a) {
       var href = a.getAttribute('href') || '';
       if (href.indexOf('/shop') >= 0 && href.indexOf('/app/shop') < 0) {
-        a.setAttribute('href', cgShopHref(href.split('?')[1] || 'category=digital_goods'));
+        a.setAttribute('href', cgShopHref(href.split('?')[1] || CG_SHOP_BRAND_QUERY));
       }
     });
     document.querySelectorAll('a[href^="/camgirls"]').forEach(function (a) {
@@ -125,7 +128,7 @@
     if (i >= 0) favs.splice(i, 1);
     else favs.push(id);
     saveFavorites(favs);
-    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/favorite', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/favorite'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() }),
@@ -144,7 +147,7 @@
       msg('Enter birth year', true);
       return;
     }
-    fetch(apiUrl('/api/camgirls/age-verify', {
+    fetch(apiUrl('/api/camgirls/age-verify'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid(), birth_year: year }),
@@ -162,7 +165,7 @@
   }
 
   function loadAgents() {
-    fetch(apiUrl('/api/camgirls/agents')
+    fetch(apiUrl('/api/camgirls/agents'))
       .then(function (r) {
         return r.json();
       })
@@ -234,7 +237,9 @@
     if (p.resell && p.resell.logo_url) {
       var shopQ =
         p.resell.shop_query ||
-        (p.resell.shop_item_id ? 'highlight=' + encodeURIComponent(p.resell.shop_item_id) : 'category=digital_goods');
+        (p.resell.shop_item_id
+          ? 'highlight=' + encodeURIComponent(p.resell.shop_item_id)
+          : CG_SHOP_BRAND_QUERY);
       var shopHref = cgShopHref(shopQ);
       resell =
         '<a class="cg-resell-link" href="' +
@@ -275,7 +280,7 @@
   }
 
   function loadStatus() {
-    fetch(apiUrl('/api/camgirls/status')
+    fetch(apiUrl('/api/camgirls/status'))
       .then(function (r) {
         return r.json();
       })
@@ -297,23 +302,40 @@
           infobarPill('Catalog: ' + (d.catalog_source || 'json'), true);
         text.textContent = d.note || 'AI studio ready';
         if (todos) {
-          var items = d.next_todos || [];
-          if (!items.length) {
-            todos.innerHTML = '<li>All Phase 0 items shipped — see MN2_TODO for ops.</li>';
-          } else {
-            todos.innerHTML = items
-              .map(function (item) {
-                return (
-                  '<li><span class="cg-todo-pri">' +
-                  esc(item.priority || '—') +
-                  '</span><strong>' +
-                  esc(item.title || '') +
-                  '</strong> — ' +
-                  esc(item.detail || '') +
-                  '</li>'
-                );
+          function todoLi(item) {
+            return (
+              '<li><span class="cg-todo-pri">' +
+              esc(item.priority || '—') +
+              '</span><strong>' +
+              esc(item.title || '') +
+              '</strong> — ' +
+              esc(item.detail || '') +
+              '</li>'
+            );
+          }
+          var byCat = d.next_todos_by_category || [];
+          if (byCat.length) {
+            todos.innerHTML = byCat
+              .map(function (cat) {
+                var catItems = cat.items || [];
+                if (!catItems.length) return '';
+                var head =
+                  '<div class="cg-todo-cat"><h4 class="cg-todo-cat-title">' +
+                  esc(cat.title || cat.id || '') +
+                  '</h4>';
+                if (cat.description) {
+                  head += '<p class="cg-todo-cat-desc">' + esc(cat.description) + '</p>';
+                }
+                return head + '<ol>' + catItems.map(todoLi).join('') + '</ol></div>';
               })
               .join('');
+          } else {
+            var items = d.next_todos || [];
+            if (!items.length) {
+              todos.innerHTML = '<ol><li>All Phase 0 items shipped — see MN2_TODO for ops.</li></ol>';
+            } else {
+              todos.innerHTML = '<ol>' + items.map(todoLi).join('') + '</ol>';
+            }
           }
         }
       })
@@ -326,7 +348,7 @@
     if (extra.amount_mn2 != null) body.amount_mn2 = extra.amount_mn2;
     if (extra.gift_id) body.gift_id = extra.gift_id;
     if (extra.minutes != null) body.minutes = extra.minutes;
-    fetch(apiUrl('/api/camgirls/paypal/create-order', {
+    fetch(apiUrl('/api/camgirls/paypal/create-order'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -366,7 +388,7 @@
 
   function startPrivateShow(id, minutes) {
     var mins = parseInt(minutes, 10) || 5;
-    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/private-show', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/private-show'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid(), minutes: mins }),
@@ -392,7 +414,7 @@
   }
 
   function joinFanClub(id) {
-    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/fan-club', {
+    fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/fan-club'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() }),
@@ -446,7 +468,7 @@
       }
       return;
     }
-    fetch(apiUrl('/api/camgirls/paypal/capture', {
+    fetch(apiUrl('/api/camgirls/paypal/capture'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() || params.get('user_id') || '', order_id: orderId }),
@@ -631,7 +653,7 @@
     grid.querySelectorAll('[data-unlock]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-unlock');
-        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/unlock', {
+        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/unlock'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: uid() }),
@@ -699,7 +721,7 @@
           return x.id === id;
         });
         var amt = (p && p.tip_min_mn2) || 5;
-        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/tip', {
+        fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/tip'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: uid(), amount: amt }),

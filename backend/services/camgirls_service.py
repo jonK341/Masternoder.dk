@@ -349,7 +349,14 @@ def upsert_performer(row: Dict[str, Any]) -> Dict[str, Any]:
         merged["id"] = pid
         out.append(merged)
     _write_json(_PERFORMERS_FILE, {"performers": out})
-    payout_hint: Dict[str, Any] = {}
+    db_synced = False
+    try:
+        from backend.services.camgirls_catalog_sync_service import upsert_performer_db
+
+        db_synced = upsert_performer_db(merged or dict(row))
+    except Exception:
+        db_synced = False
+    payout_hint: Dict[str, Any] = {"catalog_db_synced": db_synced}
     try:
         from backend.services.camgirls_payout_service import get_payout_address, provision_paypal_for_performers
 

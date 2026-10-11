@@ -460,25 +460,69 @@
 
       voiceBtn.addEventListener('click', function () {
 
-        fetch(apiUrl('/api/camgirls/livekit/token', {
+        var lk = global.CgLiveKitVoice;
 
-          method: 'POST',
+        if (!lk || typeof lk.toggleVoice !== 'function') {
 
-          headers: { 'Content-Type': 'application/json' },
+          append('Voice module loading — refresh and try again.', 'cg-chat-bot');
 
-          body: JSON.stringify({ user_id: uid(), performer_id: performerId }),
+          return;
 
-        })
+        }
 
-          .then(function (r) {
+        var user = uid();
 
-            return r.json();
+        voiceBtn.disabled = true;
 
-          })
+        lk.toggleVoice(apiUrl, user, performerId)
 
           .then(function (d) {
 
-            append(d.note || (d.mode === 'live' ? 'Voice room ready.' : 'Voice preview mode.'), 'cg-chat-bot');
+            if (!d.success) {
+
+              if (d.error === 'unlock_required' || d._httpStatus === 403) {
+
+                append('Unlock this room before live voice.', 'cg-chat-bot');
+
+              } else {
+
+                append(d.error || 'Voice unavailable', 'cg-chat-bot');
+
+              }
+
+              return;
+
+            }
+
+            if (d.action === 'connected') {
+
+              voiceBtn.textContent = '🔇 Leave voice';
+
+              append('LiveKit connected — microphone on.', 'cg-chat-bot');
+
+            } else if (d.action === 'disconnected') {
+
+              voiceBtn.textContent = '🎙 Voice';
+
+              append('Left voice room.', 'cg-chat-bot');
+
+            } else {
+
+              append(d.note || 'Voice preview (LiveKit not configured on server).', 'cg-chat-bot');
+
+            }
+
+          })
+
+          .catch(function (err) {
+
+            append((err && err.message) || 'Voice connect failed', 'cg-chat-bot');
+
+          })
+
+          .finally(function () {
+
+            voiceBtn.disabled = false;
 
           });
 
