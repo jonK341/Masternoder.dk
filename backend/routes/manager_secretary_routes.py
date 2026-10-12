@@ -68,11 +68,7 @@ def manager_status():
                     'note': 'Agent manager service not fully initialized'
                 }
             }
-            payload['ai_assist'] = _get_agent_ai_response(
-                profile_key='manager_status',
-                user_prompt='Interpret manager status and suggest next operational step.',
-                context=payload.get('agent', {}),
-            )
+            payload['ai_assist'] = _status_ai_assist(payload.get('agent', {}))
             payload['ai_orchestrator_metrics'] = _get_ai_metrics()
             return jsonify(payload), 200
         
@@ -90,11 +86,7 @@ def manager_status():
             }
         
         payload = {'success': True, 'agent': result}
-        payload['ai_assist'] = _get_agent_ai_response(
-            profile_key='manager_status',
-            user_prompt='Interpret manager status and suggest next operational step.',
-            context=result,
-        )
+        payload['ai_assist'] = _status_ai_assist(result if isinstance(result, dict) else {})
         payload['ai_orchestrator_metrics'] = _get_ai_metrics()
         return jsonify(payload), 200
     except Exception as e:
@@ -106,13 +98,20 @@ def manager_status():
                 'error': str(e)
             }
         }
-        payload['ai_assist'] = _get_agent_ai_response(
-            profile_key='manager_status',
-            user_prompt='Interpret degraded manager status and suggest safe checks.',
-            context={'error': str(e)},
-        )
+        payload['ai_assist'] = _status_ai_assist({'error': str(e)})
         payload['ai_orchestrator_metrics'] = _get_ai_metrics()
         return jsonify(payload), 200
+
+
+def _status_ai_assist(context):
+    """Status is polled by the debugger. LLM enrichment only when ?ai=1."""
+    if (request.args.get("ai") or "").strip() != "1":
+        return {"used_ai": False, "success": False, "reason": "ai_not_requested"}
+    return _get_agent_ai_response(
+        profile_key="manager_status",
+        user_prompt="Interpret manager status and suggest next operational step.",
+        context=context if isinstance(context, dict) else {},
+    )
 
 @manager_secretary_bp.route('/api/agents/manager/activate-all', methods=['POST'])
 def manager_activate_all():

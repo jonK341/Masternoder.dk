@@ -102,7 +102,8 @@ class EnhancedCalendar {
                     this.monetizationRewards = data.monetization_rewards;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'calendar-enhanced.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'calendar-enhanced.js', context: 'console.error' }); }
             console.error('[Calendar] Error loading monetization appointments:', error);
         }
     }

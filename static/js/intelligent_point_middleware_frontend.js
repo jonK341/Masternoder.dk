@@ -78,7 +78,8 @@ class IntelligentPointMiddlewareFrontend {
                 update,
                 backendResult
             };
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'intelligent_point_middleware_frontend.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'intelligent_point_middleware_frontend.js', context: 'console.error' }); }
             console.error('[Frontend Middleware] Error processing point update:', error);
             return {
                 success: false,
@@ -212,7 +213,7 @@ class IntelligentPointMiddlewareFrontend {
             existing.lastUpdate = new Date().toISOString();
             localStorage.setItem(key, JSON.stringify(existing));
             result.persisted = true;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'intelligent_point_middleware_frontend.js', context: 'catch' }); }
             console.warn('[Frontend Middleware] Failed to persist locally:', error);
         }
 
@@ -249,7 +250,8 @@ class IntelligentPointMiddlewareFrontend {
             }
 
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'intelligent_point_middleware_frontend.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'intelligent_point_middleware_frontend.js', context: 'console.error' }); }
             console.error('[Frontend Middleware] Backend update failed:', error);
             throw error;
         }
@@ -330,7 +332,8 @@ class IntelligentPointMiddlewareFrontend {
             }
             
             return data;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'intelligent_point_middleware_frontend.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'intelligent_point_middleware_frontend.js', context: 'console.error' }); }
             console.error('[Frontend Middleware] Sync failed:', error);
             throw error;
         }

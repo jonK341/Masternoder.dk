@@ -58,7 +58,7 @@
         var btn = el.querySelector('.pu-refresh');
         if (btn) btn.addEventListener('click', function () { initArea(area, true); });
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-upgrades.js', context: 'catch' }); }});
   }
 
   function widgetHtml(title, metrics, extra) {
@@ -91,7 +91,7 @@
         else if (area === 'quest') renderQuest(slot, d);
         else if (area === 'battle') renderBattle(slot, d);
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-upgrades.js', context: 'catch' }); }
         if (force) slot.textContent = 'Summary unavailable — try again.';
       });
   }
@@ -209,7 +209,7 @@
           localStorage.setItem(key, JSON.stringify(window.shopCart.items));
         }
       });
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'platform-upgrades.js', context: 'catch' }); } /* ignore */ }
   }
 
   function annotateShopMn2Prices(usdPerMn2) {
@@ -269,7 +269,7 @@
             return '<li>' + esc(j.status || j.state || 'job') + ' — ' + esc(j.id || j.job_id || '') + '</li>';
           }).join('') + '</ul>';
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-upgrades.js', context: 'catch' }); }
         var box = document.getElementById('pu-gen-history');
         if (box) box.textContent = 'History unavailable.';
       });
@@ -359,7 +359,7 @@
         if (!d || d.success === false) return;
         renderBatch1(area, d.batch1 || {});
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-upgrades.js', context: 'catch' }); }});
   }
 
   function renderBatch1(area, b1) {

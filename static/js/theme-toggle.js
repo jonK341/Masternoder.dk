@@ -100,7 +100,7 @@ class ThemeToggle {
     getStoredTheme() {
         try {
             return localStorage.getItem('theme-preference');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'theme-toggle.js', context: 'catch' }); }
             return null;
         }
     }
@@ -108,7 +108,7 @@ class ThemeToggle {
     storeTheme(theme) {
         try {
             localStorage.setItem('theme-preference', theme);
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'theme-toggle.js', context: 'catch' }); }
             console.warn('Could not store theme preference:', e);
         }
     }

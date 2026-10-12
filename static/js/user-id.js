@@ -21,7 +21,7 @@
         var raw = global.localStorage.getItem(keys[i]);
         if (isUsable(raw)) return raw.trim();
       }
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'user-id.js', context: 'catch' }); }}
     return '';
   }
 
@@ -39,7 +39,7 @@
         var fromIdentify = await global.userIdentification.getUserId();
         if (isUsable(fromIdentify)) return String(fromIdentify).trim();
       }
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'user-id.js', context: 'catch' }); }}
     return read() || null;
   }
 

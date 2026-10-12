@@ -8,7 +8,7 @@
     if (global.Mn2SiteBridge && global.Mn2SiteBridge.uid) return global.Mn2SiteBridge.uid();
     try {
       return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'wallet-swoop-hub.js', context: 'catch' }); }
       return 'default_user';
     }
   }
@@ -125,7 +125,7 @@
       renderPool(poolEl, hub.pool);
       renderSwoopChips(chipsEl, opts.activeFrom, opts.activeTo, hub.swoop_presets);
       if (opts.onLoad) opts.onLoad(hub);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'wallet-swoop-hub.js', context: 'catch' }); }
       if (balancesEl) balancesEl.innerHTML = '<p class="wallet-muted">Could not load wallet hub.</p>';
     });
   }

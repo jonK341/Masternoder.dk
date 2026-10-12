@@ -31,7 +31,8 @@ class BattleStatsDisplay {
                 return data.stats;
             }
             return null;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'battle-stats-display.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'battle-stats-display.js', context: 'console.error' }); }
             console.error(`Error fetching stats for ${tabName}:`, error);
             return null;
         }

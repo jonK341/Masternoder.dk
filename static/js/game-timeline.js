@@ -7,6 +7,7 @@ class GameTimeline {
     constructor(containerId, options = {}) {
         this.container = document.getElementById(containerId);
         if (!this.container) {
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'game-timeline.js', context: 'console.error' }); }
             console.error(`Container with id "${containerId}" not found`);
             return;
         }
@@ -88,7 +89,8 @@ class GameTimeline {
             // Sort by date (newest first)
             this.timelineData.sort((a, b) => b.date - a.date);
             
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'game-timeline.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'game-timeline.js', context: 'console.error' }); }
             console.error('Error loading timeline data:', error);
             this.timelineData = [];
         }

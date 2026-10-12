@@ -200,7 +200,7 @@
     setStatus('loading', 'Refreshing');
     skeleton(true);
     Promise.resolve(meta.onRefresh())
-      .catch(function () { setStatus('warn', 'Partial'); })
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hub-pages-ux.js', context: 'catch' }); } setStatus('warn', 'Partial'); })
       .finally(function () {
         if (state.refreshBtn) {
           state.refreshBtn.disabled = false;
@@ -253,12 +253,12 @@
         el('game-overview-coins', (p.coins != null ? p.coins : 0).toLocaleString());
         markReady('ok');
       })
-      .catch(function () { markReady('warn'); });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hub-pages-ux.js', context: 'catch' }); } markReady('warn'); });
   }
 
   function refreshQuests() {
     if (typeof global.loadQuests === 'function') {
-      return global.loadQuests().then(function () { markReady('ok'); }).catch(function () { markReady('warn'); });
+      return global.loadQuests().then(function () { markReady('ok'); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hub-pages-ux.js', context: 'catch' }); } markReady('warn'); });
     }
     global.dispatchEvent(new CustomEvent('hub-ux-refresh', { detail: { page: 'quests' } }));
     markReady('ok');
@@ -284,7 +284,7 @@
         el('stat-wins', (b.wins != null ? b.wins : 0).toLocaleString());
         markReady('ok');
       })
-      .catch(function () { markReady('warn'); });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hub-pages-ux.js', context: 'catch' }); } markReady('warn'); });
   }
 
   function refreshExchangeHub() {
@@ -365,7 +365,7 @@
       }
       setStatus('loading', 'Loading');
       return Promise.resolve(orig.apply(this, arguments))
-        .catch(function (e) {
+        .catch(function (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hub-pages-ux.js', context: 'catch' }); }
           if (container) {
             container.innerHTML = emptyStateHtml({
               icon: '⚠️',
@@ -497,3 +497,13 @@
     init();
   }
 })(window);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'hub-pages-ux.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

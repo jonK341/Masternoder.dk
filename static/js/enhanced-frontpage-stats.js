@@ -47,7 +47,8 @@ class EnhancedFrontpageStats {
                 points: points,
                 timestamp: new Date().toISOString()
             };
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-frontpage-stats.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-frontpage-stats.js', context: 'console.error' }); }
             console.error('Error loading unified stats:', error);
         }
     }
@@ -59,7 +60,7 @@ class EnhancedFrontpageStats {
         try {
             const response = await fetch(`${this.baseURL}/points/unified/get?user_id=${this.userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-frontpage-stats.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -73,7 +74,7 @@ class EnhancedFrontpageStats {
                 return await window.GameMechanicsAPI.getProgress(this.userId);
             }
             return {success: false};
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-frontpage-stats.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -87,7 +88,7 @@ class EnhancedFrontpageStats {
                 return await window.comprehensiveAPI.getEnergyStatus();
             }
             return {success: false};
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-frontpage-stats.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -101,7 +102,7 @@ class EnhancedFrontpageStats {
                 return await window.comprehensiveAPI.getPointsJSON(true);
             }
             return {success: false};
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-frontpage-stats.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }

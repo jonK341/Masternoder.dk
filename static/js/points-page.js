@@ -91,7 +91,8 @@ async function loadQuickStats() {
             const availableCount = rewardsData.rewards.filter(r => !r.claimed && r.available).length;
             document.getElementById('quick-stat-rewards').textContent = availableCount;
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'points-page.js', context: 'catch' }); }
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'points-page.js', context: 'console.error' }); }
         console.error('Error loading quick stats:', error);
     }
 }
@@ -126,7 +127,7 @@ async function loadPointCounters() {
                         value: valueData.value || 0,
                         category: getCategoryForSystem(system)
                     };
-                } catch (e) {
+                } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'points-page.js', context: 'catch' }); }
                     return { name: system, value: 0, category: 'other' };
                 }
             });
@@ -148,7 +149,8 @@ async function loadPointCounters() {
                 updateRewardIndicator(point.name, point.value);
             });
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'points-page.js', context: 'catch' }); }
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'points-page.js', context: 'console.error' }); }
         console.error('Error loading point counters:', error);
         grid.innerHTML = '<p style="text-align: center; color: white;">Failed to load point counters</p>';
     }
@@ -228,7 +230,8 @@ async function showCounterDetails(pointType, currentValue) {
                 }
             </div>
         `;
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'points-page.js', context: 'catch' }); }
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'points-page.js', context: 'console.error' }); }
         console.error('Error loading counter details:', error);
         content.innerHTML = '<p>Error loading details</p>';
     }
@@ -260,7 +263,8 @@ async function updateRewardIndicator(pointType, currentValue) {
         } else {
             indicator.style.display = 'none';
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'points-page.js', context: 'catch' }); }
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'points-page.js', context: 'console.error' }); }
         console.error('Error updating reward indicator:', error);
         indicator.style.display = 'none';
     }
@@ -302,7 +306,8 @@ async function loadRewards(filter = 'available') {
                 });
             });
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'points-page.js', context: 'catch' }); }
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'points-page.js', context: 'console.error' }); }
         console.error('Error loading rewards:', error);
         grid.innerHTML = '<p style="text-align: center; color: white;">Failed to load rewards</p>';
     }
@@ -363,7 +368,8 @@ async function claimReward(rewardId) {
         } else {
             alert('Error: ' + (data.error || 'Failed to claim reward'));
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'points-page.js', context: 'catch' }); }
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'points-page.js', context: 'console.error' }); }
         console.error('Error claiming reward:', error);
         alert('Error claiming reward');
     }
@@ -409,7 +415,8 @@ async function loadCountingTracking(period = 'today') {
                     .join('');
             }
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'points-page.js', context: 'catch' }); }
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'points-page.js', context: 'console.error' }); }
         console.error('Error loading counting tracking:', error);
     }
 }
@@ -449,7 +456,8 @@ async function loadHistory() {
         if (data.success && data.history) {
             list.innerHTML = data.history.map(entry => createHistoryEntryHTML(entry)).join('');
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'points-page.js', context: 'catch' }); }
+        if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'points-page.js', context: 'console.error' }); }
         console.error('Error loading history:', error);
         list.innerHTML = '<p style="text-align: center; color: white;">Failed to load history</p>';
     }

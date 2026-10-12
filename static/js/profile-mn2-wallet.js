@@ -35,7 +35,7 @@
           return { ok: r.ok, data: j };
         });
       })
-      .catch(function (e) {
+      .catch(function (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'profile-mn2-wallet.js', context: 'catch' }); }
         return { ok: false, data: { success: false, error: e.name === 'AbortError' ? 'Request timed out' : 'Network error' } };
       })
       .finally(function () {
@@ -146,7 +146,7 @@
         qrEl.innerHTML = '';
         try {
           new QRCode(qrEl, { text: addrData.deposit_address, width: 96, height: 96 });
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profile-mn2-wallet.js', context: 'catch' }); }
           qrEl.innerHTML = '';
         }
       }

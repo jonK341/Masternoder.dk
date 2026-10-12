@@ -31,10 +31,10 @@
                 history.unshift({ ts: new Date().toISOString(), full: fullLoad, domReady: domReady, page: page });
                 history = history.slice(0, 5);
                 sessionStorage.setItem('loadTimeHistory', JSON.stringify(history));
-            } catch (e) {}
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'load-time-measurement.js', context: 'catch' }); }}
 
             window._lastLoadTime = metrics;
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'load-time-measurement.js', context: 'catch' }); }
             console.warn('[LoadTime] Capture failed:', err);
         }
     }

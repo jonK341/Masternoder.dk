@@ -38,12 +38,12 @@
             var bal = (d && (d.balance != null ? d.balance : d.mn2_balance)) || 0;
             var el = global.document.getElementById('mn2-global-balance');
             if (el) el.textContent = fmt(bal);
-        }).catch(function () {});
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-global-bar.js', context: 'catch' }); }});
         global.Mn2SiteBridge.loadPrice().then(function (d) {
             var p = d && (d.price_usd != null ? d.price_usd : d.usd);
             var el = global.document.getElementById('mn2-global-rate');
             if (el && p != null) el.textContent = '$' + Number(p).toFixed(4);
-        }).catch(function () {});
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-global-bar.js', context: 'catch' }); }});
     }
 
     function loadScripts(cb) {
@@ -58,3 +58,13 @@
         loadScripts(inject);
     });
 })(window);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'mn2-global-bar.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

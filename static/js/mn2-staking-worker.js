@@ -54,7 +54,7 @@
     try {
       var result = await findProof();
       self.postMessage({ type: 'proof', payload: result });
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-staking-worker.js', context: 'catch' }); }
       self.postMessage({ type: 'error', error: String(e) });
     }
   }

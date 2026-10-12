@@ -83,7 +83,7 @@
       if (route === 'overview') url.searchParams.delete('tab');
       else url.searchParams.set('tab', route);
       global.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profile-hub-bar.js', context: 'catch' }); } /* ignore */ }
   }
 
   function bindSecuritySubnavOnce() {

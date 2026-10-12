@@ -34,7 +34,8 @@ class ChatNotificationAlarm {
                 // Permission will be requested when needed
                 this.screenCaptureEnabled = true;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'notification-alarm.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'notification-alarm.js', context: 'console.error' }); }
             console.error('[ChatAlarm] Screen capture not available:', error);
             this.screenCaptureEnabled = false;
         }
@@ -189,7 +190,8 @@ class ChatNotificationAlarm {
             
             this.notifications.push(notification);
             
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'notification-alarm.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'notification-alarm.js', context: 'console.error' }); }
             console.error('[ChatAlarm] Notification error:', error);
         }
     }
@@ -235,7 +237,8 @@ class ChatNotificationAlarm {
                 messageText: message.text.substring(0, 200)
             });
             
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'notification-alarm.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'notification-alarm.js', context: 'console.error' }); }
             console.error('[ChatAlarm] Screen capture error:', error);
         }
     }
@@ -277,7 +280,8 @@ class ChatNotificationAlarm {
                 alertMessage: alert.message
             });
             
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'notification-alarm.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'notification-alarm.js', context: 'console.error' }); }
             console.error('[ChatAlarm] Screen capture error:', error);
         }
     }
@@ -301,7 +305,8 @@ class ChatNotificationAlarm {
             // Also save to server if needed
             await this.uploadScreenshot(blob, metadata);
             
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'notification-alarm.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'notification-alarm.js', context: 'console.error' }); }
             console.error('[ChatAlarm] Save screenshot error:', error);
         }
     }
@@ -334,7 +339,8 @@ class ChatNotificationAlarm {
                 method: 'POST',
                 body: formData
             });
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'notification-alarm.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'notification-alarm.js', context: 'console.error' }); }
             console.error('[ChatAlarm] Upload screenshot error:', error);
         }
     }
@@ -358,6 +364,7 @@ class ChatNotificationAlarm {
         
         audio.volume = 0.5;
         audio.play().catch(error => {
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'notification-alarm.js', context: 'console.error' }); }
             console.error('[ChatAlarm] Sound play error:', error);
         });
     }

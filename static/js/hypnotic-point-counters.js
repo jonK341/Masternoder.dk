@@ -54,7 +54,8 @@ class HypnoticPointCounters {
                 return data.points;
             }
             throw new Error('Invalid response format');
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'hypnotic-point-counters.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'hypnotic-point-counters.js', context: 'console.error' }); }
             console.error('[HypnoticPointCounters] Error loading points:', error);
             return this.getDefaultPoints();
         }
@@ -624,7 +625,7 @@ const hypnoticPointCounters = new HypnoticPointCounters();
 function _mnHypnoticShouldInit() {
     try {
         if (document.body && document.body.classList.contains('mn-no-hypnotic')) return false;
-    } catch (_) {}
+    } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'hypnotic-point-counters.js', context: 'catch' }); }}
     return true;
 }
 

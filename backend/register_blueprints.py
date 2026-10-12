@@ -556,6 +556,16 @@ def register_lite_blueprints(app):
         ("backend.routes.error_agent_tasks_routes", "error_agent_tasks_bp"),
         ("backend.routes.debugging_master_routes", "debugging_master_bp"),
         ("backend.routes.debugger_download", "debugger_download_bp"),
+        ("backend.routes.debugger_quiz_routes", "debugger_quiz_bp"),
+        ("backend.routes.podcast_routes", "podcast_bp"),
+        ("backend.routes.ai_agent_routes", "ai_agent_bp"),
+        ("backend.routes.user_identification_routes", "user_identification_bp"),
+        ("backend.routes.agent_electric_magnet_routes", "agent_electric_magnet_bp"),
+        ("backend.routes.agent_event_tracker_routes", "agent_event_tracker_bp"),
+        ("backend.routes.manager_secretary_routes", "manager_secretary_bp"),
+        ("backend.routes.master_dashboard_routes", "master_dashboard_bp"),
+        ("backend.routes.agent_automation_routes", "agent_automation_bp"),
+        ("backend.routes.ai_enhanced_routes", "ai_enhanced_bp"),
     ]
     for _mod_path, _bp_attr in _debugger_blueprints:
         try:

@@ -21,7 +21,8 @@ class HardcoreAIMetalMagi {
             if (data.success) {
                 this.stats = data.stats;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'hardcore-ai-metal.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'hardcore-ai-metal.js', context: 'console.error' }); }
             console.error('Error loading Hardcore AI Metal Magi stats:', error);
         }
     }
@@ -96,7 +97,8 @@ class HardcoreAIMetalMagi {
                 }
             }
             return data;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'hardcore-ai-metal.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'hardcore-ai-metal.js', context: 'console.error' }); }
             console.error('Error adding Magi points:', error);
             return null;
         }

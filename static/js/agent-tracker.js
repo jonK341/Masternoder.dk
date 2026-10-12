@@ -13,6 +13,7 @@ class AgentTracker {
     
     init() {
         if (!this.container) {
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'agent-tracker.js', context: 'console.error' }); }
             console.error('Agent tracker container not found:', this.containerId);
             return;
         }
@@ -62,7 +63,8 @@ class AgentTracker {
             } else {
                 this.showError('Failed to load agent data');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'agent-tracker.js', context: 'console.error' }); }
             console.error('Error loading agent data:', error);
             this.showError('Error loading agent data: ' + error.message);
         }
@@ -315,7 +317,7 @@ class AgentTracker {
             if (hours > 0) return `${hours}h ago`;
             if (minutes > 0) return `${minutes}m ago`;
             return 'Just now';
-        } catch {
+        } catch { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'agent-tracker.js', context: 'catch' }); }
             return timestamp;
         }
     }

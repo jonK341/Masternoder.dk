@@ -56,7 +56,7 @@
                 renderSecurityPanel(data);
                 return data;
             })
-            .catch(function () {
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'profile-security.js', context: 'catch' }); }
                 var panel = global.document.getElementById('profile-security-status-panel');
                 if (panel) panel.textContent = 'Failed to load security status.';
             });
@@ -101,7 +101,7 @@
                 if (data.recovery_email_verified) parts.push('recovery email set');
                 setStatus(parts.join(' · ') + '.', data.email_verified ? 'ok' : 'warn');
             })
-            .catch(function () { setStatus('Could not load email status.', 'bad'); });
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'profile-security.js', context: 'catch' }); } setStatus('Could not load email status.', 'bad'); });
 
         if (verifyBtn && !verifyBtn._wired) {
             verifyBtn._wired = true;
@@ -211,3 +211,13 @@
         init: initProfileSecurity,
     };
 })(typeof window !== 'undefined' ? window : this);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'profile-security.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

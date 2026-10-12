@@ -144,7 +144,7 @@
                 var contentRoot = panelsEl.closest('#intelligence-content') || panelsEl.parentElement;
                 if (contentRoot) bindSubTabs(contentRoot, panelsId);
             })
-            .catch(function (err) {
+            .catch(function (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'intelligence-widget.js', context: 'catch' }); }
                 if (loadingEl) loadingEl.style.display = 'none';
                 if (panelsEl) panelsEl.innerHTML = '<div class="intel-error">Failed to load: ' + escapeHtml(err.message) + '</div>';
             });
@@ -167,4 +167,14 @@
         startAutoRefresh: startAutoRefresh,
         stopAutoRefresh: stopAutoRefresh
     };
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'intelligence-widget.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

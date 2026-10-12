@@ -78,7 +78,7 @@ class PollingUtility {
                         this.onError(result);
                     }
                 }
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'polling-utility.js', context: 'catch' }); }
                 this._handleFailure();
                 this.onError({ success: false, error: error.message });
             }

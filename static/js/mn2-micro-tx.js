@@ -84,7 +84,7 @@
           btn.textContent = r && r.error ? r.error.slice(0, 40) : 'Try again';
           btn.disabled = false;
         }
-      } catch (e) {
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-micro-tx.js', context: 'catch' }); }
         btn.disabled = false;
       }
     });

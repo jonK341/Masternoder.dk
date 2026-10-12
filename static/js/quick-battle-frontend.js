@@ -213,7 +213,8 @@ class QuickBattleFrontend {
                     statusDiv.innerHTML = `<span style="color: #ff4444;">Error: ${data.error || 'Unknown error'}</span>`;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'quick-battle-frontend.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'quick-battle-frontend.js', context: 'console.error' }); }
             console.error('[QuickBattle] Error creating battle:', error);
             if (statusDiv) {
                 statusDiv.innerHTML = `<span style="color: #ff4444;">Error creating battle</span>`;
@@ -239,7 +240,8 @@ class QuickBattleFrontend {
                 if (totalEl) totalEl.textContent = counter.total_battles || ((counter.wins || 0) + (counter.losses || 0));
                 if (winsEl) winsEl.textContent = counter.wins || 0;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'quick-battle-frontend.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'quick-battle-frontend.js', context: 'console.error' }); }
             console.error('[QuickBattle] Error updating counters:', error);
         }
     }
@@ -258,7 +260,8 @@ class QuickBattleFrontend {
                     streakEl.style.color = (streak.win_streak || 0) > 0 ? '#00ff88' : '#ff4444';
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'quick-battle-frontend.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'quick-battle-frontend.js', context: 'console.error' }); }
             console.error('[QuickBattle] Error updating streak:', error);
         }
     }
@@ -288,7 +291,8 @@ class QuickBattleFrontend {
                 
                 this.pointsCache = points;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'quick-battle-frontend.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'quick-battle-frontend.js', context: 'console.error' }); }
             console.error('[QuickBattle] Error updating points:', error);
         }
     }
@@ -339,7 +343,7 @@ class QuickBattleFrontend {
                 
                 // Update points immediately
                 this.updatePoints();
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'quick-battle-frontend.js', context: 'catch' }); }
                 // Silent fail - don't interrupt user experience
             }
         });

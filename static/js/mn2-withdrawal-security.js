@@ -51,7 +51,7 @@
             }
             var req = root.querySelector('#mn2-whitelist-required');
             if (req) req.textContent = d.withdrawal_requires_whitelist ? 'Whitelist required for withdrawals' : 'Whitelist optional';
-        }).catch(function () {});
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-withdrawal-security.js', context: 'catch' }); }});
     }
 
     function init() {
@@ -92,3 +92,13 @@
     global.Mn2WithdrawalSecurity = { init: init, refresh: refresh };
     global.document.addEventListener('DOMContentLoaded', init);
 })(window);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'mn2-withdrawal-security.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

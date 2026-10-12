@@ -46,7 +46,7 @@ class OnboardingManager {
                     return data.status;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'onboarding-manager.js', context: 'catch' }); }
             console.warn('Error checking onboarding status:', error);
         }
         
@@ -82,7 +82,8 @@ class OnboardingManager {
                     return true;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'onboarding-manager.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'onboarding-manager.js', context: 'console.error' }); }
             console.error('Error starting onboarding:', error);
         }
         return false;
@@ -125,7 +126,8 @@ class OnboardingManager {
                 const data = await response.json();
                 return data.success;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'onboarding-manager.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'onboarding-manager.js', context: 'console.error' }); }
             console.error('Error ensuring user exists:', error);
         }
         return false;
@@ -189,7 +191,8 @@ class OnboardingManager {
                     return true;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'onboarding-manager.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'onboarding-manager.js', context: 'console.error' }); }
             console.error('Error completing step:', error);
         }
         return false;
@@ -217,7 +220,8 @@ class OnboardingManager {
                     return true;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'onboarding-manager.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'onboarding-manager.js', context: 'console.error' }); }
             console.error('Error skipping step:', error);
         }
         return false;
@@ -237,7 +241,7 @@ class OnboardingManager {
                     return data.progress;
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'onboarding-manager.js', context: 'catch' }); }
             console.warn('Error getting progress:', error);
         }
         return null;

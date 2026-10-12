@@ -6,7 +6,7 @@
 
   function uid() {
     try { return global.localStorage.getItem('game_user_id') || ''; }
-    catch (e) { return ''; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nft-paypal-return.js', context: 'catch' }); } return ''; }
   }
 
   function isNftSku(itemId) {
@@ -83,7 +83,7 @@
       }
       if (opts.onReload) opts.onReload();
       return data;
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'nft-paypal-return.js', context: 'catch' }); }
       if (opts.onMessage) opts.onMessage('Capture failed');
       return { success: false };
     });

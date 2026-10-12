@@ -51,14 +51,14 @@
         if (!metaPixelId || !window.fbq) return;
         try {
             window.fbq('trackCustom', name, params || {});
-        } catch (e) { /* optional analytics */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional analytics */ }
     }
 
     function securityTokenValid() {
         if (!securityToken || !securityExpires) return false;
         try {
             return new Date(securityExpires) > new Date();
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }
             return false;
         }
     }
@@ -92,7 +92,7 @@
     function prefersReducedMotion() {
         try {
             return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }
             return false;
         }
     }
@@ -115,7 +115,7 @@
             gain.gain.value = spec[1];
             osc.start();
             osc.stop(audioCtx.currentTime + spec[2]);
-        } catch (e) { /* optional sound */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional sound */ }
     }
 
     function updateSoundToggle() {
@@ -242,7 +242,7 @@
     }
 
     function showDoubleOffer(data) {
-        try { maybeCelebrate(data); } catch (e) { /* celebration optional */ }
+        try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* celebration optional */ }
         const bar = $('casino-double-bar');
         if (!bar) return;
         if (data && data.success && data.can_double && data.bet_id) {
@@ -279,7 +279,7 @@
         }
         try {
             const res = await fetch(url, fetchOpts);
-            const data = await res.json().catch(function () { return {}; });
+            const data = await res.json().catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino.js', context: 'catch' }); } return {}; });
             if (!res.ok && !data.error) {
                 data.error = 'Request failed (' + res.status + ')';
             }
@@ -287,7 +287,7 @@
                 data.success = false;
             }
             return data;
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'casino.js', context: 'catch' }); }
             var msg = (err && err.name === 'AbortError') ? 'Request timed out' : ((err && err.message) || 'Network error');
             return { success: false, error: msg };
         } finally {
@@ -337,7 +337,7 @@
             return Promise.resolve(fn()).catch(function (err) {
                 console.warn('[casino] ' + name + ' failed:', err);
             });
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'casino.js', context: 'catch' }); }
             console.warn('[casino] ' + name + ' sync failed:', err);
             return Promise.resolve();
         }
@@ -398,7 +398,7 @@
         if (!panel) return;
         try {
             mobileConfig = await fetch(baseUrl + '/api/casino/mobile/config').then(function (r) { return r.json(); });
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }
             mobileConfig = null;
         }
         if (badge && mobileConfig && mobileConfig.play_store_url) {
@@ -412,7 +412,7 @@
             pwaBtn.addEventListener('click', async function () {
                 if (!deferredInstallPrompt) return;
                 deferredInstallPrompt.prompt();
-                try { await deferredInstallPrompt.userChoice; } catch (e) { /* ignore */ }
+                try { await deferredInstallPrompt.userChoice; } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* ignore */ }
                 deferredInstallPrompt = null;
                 pwaBtn.classList.add('hidden');
             });
@@ -462,12 +462,12 @@
                     history.replaceState(null, '', '#tab-' + activeMainTab);
                 }
             }
-        } catch (e) { /* optional */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         try {
             if (window.__casinoMobile && window.__casinoMobile.hapticLight) {
                 window.__casinoMobile.hapticLight();
             }
-        } catch (e) { /* optional haptics */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional haptics */ }
     }
 
     window.__casinoSwitchTab = switchMainTab;
@@ -556,13 +556,13 @@
         switchMainTab(activeMainTab);
         try {
             window.dispatchEvent(new CustomEvent('casino:ready'));
-        } catch (e) { /* optional */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
     }
 
     function setResult(el, data) {
         if (data && data.success && data.jackpot) {
-            try { jackpotCelebrate(data.jackpot); } catch (e) { /* optional */ }
-            try { safeRefresh('jackpotMeter', refreshJackpotMeter); } catch (e) { /* optional */ }
+            try { jackpotCelebrate(data.jackpot); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
+            try { safeRefresh('jackpotMeter', refreshJackpotMeter); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         }
         if (!el) return;
         el.classList.remove('win', 'loss', 'draw');
@@ -716,7 +716,7 @@
             try {
                 sessionStorage.setItem('casino_paypal_order', data.order_id || '');
                 sessionStorage.setItem('casino_paypal_pack', packId || '');
-            } catch (e) {}
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }}
             window.location.href = data.approve_url;
         } else {
             alert(data.error || 'Could not start PayPal checkout');
@@ -729,7 +729,7 @@
             try {
                 sessionStorage.removeItem('casino_paypal_order');
                 sessionStorage.removeItem('casino_paypal_pack');
-            } catch (e) {}
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }}
             return;
         }
         let orderId = params.get('token') || params.get('order_id') || '';
@@ -737,7 +737,7 @@
         try {
             orderId = orderId || sessionStorage.getItem('casino_paypal_order') || '';
             packId = packId || sessionStorage.getItem('casino_paypal_pack') || '';
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }}
         const payerId = params.get('PayerID') || params.get('PayerId');
         const approved = params.get('paypal') === 'success' || !!payerId;
         if (!orderId || !approved) return;
@@ -752,7 +752,7 @@
             try {
                 sessionStorage.removeItem('casino_paypal_order');
                 sessionStorage.removeItem('casino_paypal_pack');
-            } catch (e) {}
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }}
         } else {
             alert(data.error || 'PayPal capture failed');
         }
@@ -785,7 +785,7 @@
         if (!data.success) return;
         featuredGames = data.featured_games || [];
         socialLinks = data.social_links || [];
-        try { renderFeaturedGames(); } catch (e) { /* optional */ }
+        try { renderFeaturedGames(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         try {
             realMoneyEnabled = !!(data.real_money && data.real_money.enabled);
             paypalEnabled = realMoneyEnabled && (data.real_money.rails || []).indexOf('paypal') >= 0;
@@ -799,13 +799,13 @@
                 disclaimers.paypal = data.real_money.disclaimer_paypal || disclaimers.coins;
             }
             applyCurrencyUi();
-        } catch (uiErr) {
+        } catch (uiErr) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(uiErr instanceof Error ? uiErr : new Error(String(uiErr)), { source: 'casino.js', context: 'catch' }); }
             console.warn('[casino] currency ui failed:', uiErr);
         }
         if (data.games) {
             try {
                 renderSlotMachinesFromGames(data.games);
-            } catch (slotErr) {
+            } catch (slotErr) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(slotErr instanceof Error ? slotErr : new Error(String(slotErr)), { source: 'casino.js', context: 'catch' }); }
                 console.warn('[casino] slot render failed:', slotErr);
                 var grid = $('casino-slots-grid');
                 if (grid) grid.textContent = 'Slot machines failed to render.';
@@ -815,7 +815,7 @@
                     plinko.rows = data.games.plinko.rows || 12;
                     plinko.riskTables = data.games.plinko.risk_tables || {};
                     if (!plinko.drawing) drawPlinkoBoard(null, null);
-                } catch (plinkoErr) {
+                } catch (plinkoErr) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(plinkoErr instanceof Error ? plinkoErr : new Error(String(plinkoErr)), { source: 'casino.js', context: 'catch' }); }
                     console.warn('[casino] plinko init failed:', plinkoErr);
                 }
             }
@@ -823,7 +823,7 @@
                 try {
                     wheel.riskTables = data.games.wheel.risk_tables || {};
                     if (!wheel.spinning) drawWheel(wheel.rotation, -1);
-                } catch (wheelErr) {
+                } catch (wheelErr) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(wheelErr instanceof Error ? wheelErr : new Error(String(wheelErr)), { source: 'casino.js', context: 'catch' }); }
                     console.warn('[casino] wheel init failed:', wheelErr);
                 }
             }
@@ -831,7 +831,7 @@
                 try {
                     mines.tiles = data.games.mines.tiles || 25;
                     if (!mines.active) buildMinesGrid();
-                } catch (minesErr) {
+                } catch (minesErr) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(minesErr instanceof Error ? minesErr : new Error(String(minesErr)), { source: 'casino.js', context: 'catch' }); }
                     console.warn('[casino] mines init failed:', minesErr);
                 }
             }
@@ -841,7 +841,7 @@
                     keno.maxSpots = data.games.keno.max_spots || 6;
                     keno.drawCount = data.games.keno.draw || 10;
                     if (!keno.playing) buildKenoGrid();
-                } catch (kenoErr) {
+                } catch (kenoErr) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(kenoErr instanceof Error ? kenoErr : new Error(String(kenoErr)), { source: 'casino.js', context: 'catch' }); }
                     console.warn('[casino] keno init failed:', kenoErr);
                 }
             }
@@ -1246,7 +1246,7 @@
         var linksData = null;
         try {
             linksData = await api('/api/casino/social/links');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }
             linksData = null;
         }
         if (linksData && linksData.success) {
@@ -1280,7 +1280,7 @@
             try {
                 var sn = await fetch(baseUrl + '/data/social_networks.json').then(function (r) { return r.json(); });
                 shareNetworks = sn || {};
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }
                 shareNetworks = {};
             }
         }
@@ -1349,7 +1349,7 @@
         if (!codeEl || !codeEl.textContent || codeEl.textContent === 'Loading…') return;
         navigator.clipboard.writeText(codeEl.textContent).then(function () {
             showToast('Referral code copied');
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino.js', context: 'catch' }); }
             showToast('Copy: ' + codeEl.textContent);
         });
     }
@@ -1359,7 +1359,7 @@
         var link = (codeEl && codeEl.dataset.inviteUrl) || (baseUrl + '/casino/');
         navigator.clipboard.writeText(link).then(function () {
             showToast('Invite link copied');
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino.js', context: 'catch' }); }
             showToast('Copy link: ' + link);
         });
     }
@@ -1438,7 +1438,7 @@
         var reactions = { reactions: {} };
         try {
             reactions = await api('/api/casino/social/feed/reactions?item_ids=' + encodeURIComponent(ids));
-        } catch (e) { /* optional */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         list.innerHTML = '';
         feed.feed.forEach(function (f) {
             var itemId = f.bet_id || (f.user_id + '-' + (f.created_at || ''));
@@ -1513,7 +1513,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: userId, referral_code: ref }),
             });
-        } catch (e) { /* best effort */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* best effort */ }
     }
 
     async function shareCasinoWin() {
@@ -1535,7 +1535,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }
             card = null;
         }
         if (card && card.success && card.share_urls) {
@@ -1599,7 +1599,7 @@
                 showToast('Facebook share opened');
                 return;
             }
-        } catch (e) { /* fallback */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* fallback */ }
         var fb = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
         window.open(fb, '_blank', 'noopener');
         showToast('Share dialog opened — paste your message: ' + text);
@@ -2192,7 +2192,7 @@
                     if (msg.type === 'wins' && msg.feed) {
                         renderActivityFeedItems(msg.feed);
                     }
-                } catch (e) { /* ignore parse errors */ }
+                } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* ignore parse errors */ }
             };
             activityFeedEventSource.onerror = function () {
                 if (activityFeedEventSource) {
@@ -2201,7 +2201,7 @@
                 }
             };
             return true;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }
             return false;
         }
     }
@@ -2568,7 +2568,7 @@
     }
 
     function isMobileSlot() {
-        try { return window.matchMedia && window.matchMedia('(max-width: 640px)').matches; } catch (e) { return false; }
+        try { return window.matchMedia && window.matchMedia('(max-width: 640px)').matches; } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } return false; }
     }
 
     function spawnSlotParticles(machineEl, kind, intensity) {
@@ -2845,7 +2845,7 @@
                 return;
             }
             grid.textContent = 'Slot machines unavailable — refresh the page.';
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); }
             grid.textContent = 'Slot machines unavailable.';
         }
     }
@@ -2910,7 +2910,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: userId, password: pwd }),
         });
-        const data = await res.json().catch(function () { return {}; });
+        const data = await res.json().catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino.js', context: 'catch' }); } return {}; });
         if (data.success && data.verification_token) {
             securityToken = data.verification_token;
             securityExpires = data.expires_at || '';
@@ -2978,7 +2978,7 @@
                     (gst.network_label || 'Network') + ' · ' + (gst.totals && gst.totals.bets != null ? gst.totals.bets + ' bets' : 'live') +
                     '</span>';
             }
-        } catch (e) { /* optional */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         el.innerHTML = parts.join('<span class="casino-jackpot-sep">·</span>') + networkLabel;
         bar.classList.remove('hidden');
     }
@@ -3294,7 +3294,7 @@
         if (room.started_at && room.status === 'live') {
             try {
                 crashCrew.startMs = Date.parse(room.started_at);
-            } catch (e) { /* keep prior */ }
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* keep prior */ }
         }
         crashCrew.growth = (room.fairness && room.growth_per_second) ? room.growth_per_second : 0.13863;
     }
@@ -3547,7 +3547,7 @@
         var bin = data.details ? data.details.bin : null;
         await animatePlinkoDrop(path, bin);
         setResult($('plinko-result'), data);
-        try { maybeCelebrate(data); } catch (e) { /* optional */ }
+        try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         await afterPlay();
         if (btn) btn.disabled = false;
         plinko.drawing = false;
@@ -3679,7 +3679,7 @@
         var index = (data.details && typeof data.details.index === 'number') ? data.details.index : 0;
         await animateWheelTo(index);
         setResult($('wheel-result'), data);
-        try { maybeCelebrate(data); } catch (e) { /* optional */ }
+        try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         await afterPlay();
         if (btn) btn.disabled = false;
         wheel.spinning = false;
@@ -3810,7 +3810,7 @@
         if (data.cleared) {
             revealAllMines(data.mine_positions);
             setResult($('mines-result'), data);
-            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
             endMinesRound();
             await afterPlay();
             return;
@@ -3839,7 +3839,7 @@
         revealAllMines(data.mine_positions);
         playSound('win');
         setResult($('mines-result'), data);
-        try { maybeCelebrate(data); } catch (e) { /* optional */ }
+        try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         endMinesRound();
         await afterPlay();
     }
@@ -3944,7 +3944,7 @@
             var hitNums = keno.selected.filter(function (s) { return drawn.indexOf(s) >= 0; });
             applyKenoSelection(drawn, hitNums);
             playSound(data.outcome === 'win' ? 'win' : 'tick');
-            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
             await afterPlay();
         }
         setResult($('keno-result'), data);
@@ -4005,7 +4005,7 @@
                 pocketEl.className = 'casino-roulette-pocket pocket-' + color;
             }
             playSound(data.outcome === 'win' ? 'win' : 'tick');
-            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
             await afterPlay();
         }
         setResult($('roulette-result'), data);
@@ -4129,7 +4129,7 @@
         }
         playSound('win');
         setResult($('hilo-result'), data);
-        try { maybeCelebrate(data); } catch (e) { /* optional */ }
+        try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         hilo.active = false; hilo.roundId = null;
         var s = $('hilo-start'); if (s) s.disabled = false;
         var st2 = $('hilo-status'); if (st2) st2.textContent = 'Cashed out. Deal again?';
@@ -4177,7 +4177,7 @@
         if (data.bet_id || data.outcome) {
             setResult($('bj-result'), data);
             bj.roundId = null; setBjControls(false);
-            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
             await afterPlay();
         }
     }
@@ -4191,7 +4191,7 @@
             body: JSON.stringify({ user_id: userId, bet: bet, side: side, currency: activeCurrency }),
         });
         setResult($('baccarat-result'), data);
-        if (data.success) { try { maybeCelebrate(data); } catch (e) { /* optional */ } await afterPlay(); }
+        if (data.success) { try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ } await afterPlay(); }
     }
 
     function renderVpHold(hand) {
@@ -4261,7 +4261,7 @@
                     data.display_hand_name + ' @ ' + data.display_multiplier + '× (tier: ' +
                     (data.ladder_tier || 'Base') + ') — net ' + data.net;
             }
-            try { maybeCelebrate(data); } catch (e) { /* optional */ }
+            try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
             await afterPlay();
         }
     }
@@ -4387,7 +4387,7 @@
             var h = Math.floor(ms / 3600000);
             var m = Math.floor((ms % 3600000) / 60000);
             return h + 'h ' + m + 'm left';
-        } catch (e) { return ''; }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } return ''; }
     }
 
     function renderTournamentCard(t) {
@@ -4559,14 +4559,14 @@
 
         setTimeout(markStaleLoadingPanels, 15000);
 
-        try { initMainTabNav(); } catch (e) { console.warn('[casino] tab nav failed:', e); }
-        try { applyDeepLinks(); } catch (e) { console.warn('[casino] deep links failed:', e); }
-        try { applyDuelDeepLink(); } catch (e) { console.warn('[casino] duel deep link failed:', e); }
-        try { registerCasinoReferralFromUrl(); } catch (e) { /* optional */ }
+        try { initMainTabNav(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } console.warn('[casino] tab nav failed:', e); }
+        try { applyDeepLinks(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } console.warn('[casino] deep links failed:', e); }
+        try { applyDuelDeepLink(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } console.warn('[casino] duel deep link failed:', e); }
+        try { registerCasinoReferralFromUrl(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
 
         try {
             await refreshBalance();
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'casino.js', context: 'catch' }); }
             console.warn('[casino] balance bootstrap failed:', err);
             var bal = $('casino-balance');
             if (bal) bal.textContent = 'Could not load balance — refresh the page';
@@ -4600,12 +4600,12 @@
         safeRefresh('duels', refreshDuels);
         safeRefresh('fairness', refreshFairnessState);
         safeRefresh('crashCrewLobbies', refreshCrashCrewLobbies);
-        try { drawCrashCurve(1.0, false); } catch (e) { /* canvas optional */ }
-        try { drawPlinkoBoard(null, null); } catch (e) { /* canvas optional */ }
-        try { drawWheel(wheel.rotation, -1); } catch (e) { /* canvas optional */ }
-        try { buildMinesGrid(); } catch (e) { /* grid optional */ }
-        try { buildKenoGrid(); } catch (e) { /* grid optional */ }
-        try { updateRouletteSelectionField(); } catch (e) { /* optional */ }
+        try { drawCrashCurve(1.0, false); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* canvas optional */ }
+        try { drawPlinkoBoard(null, null); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* canvas optional */ }
+        try { drawWheel(wheel.rotation, -1); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* canvas optional */ }
+        try { buildMinesGrid(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* grid optional */ }
+        try { buildKenoGrid(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* grid optional */ }
+        try { updateRouletteSelectionField(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         setupFairnessExportLink();
         if (!startActivityFeedStream()) {
             setInterval(function () { safeRefresh('activityFeed', refreshActivityFeed); }, 15000);

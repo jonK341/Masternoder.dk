@@ -16,7 +16,7 @@
       var raw = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '';
       if (!raw || /^(default_user|undefined|null)$/i.test(raw) || raw === '[object Promise]') return '';
       return String(raw).trim();
-    } catch (e) { return ''; }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-internal-market.js', context: 'catch' }); } return ''; }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -159,7 +159,7 @@
         renderTicker(res[0]);
         renderOrders((res[1] && res[1].orders) || []);
         renderTrades((res[2] && res[2].trades) || []);
-      }).catch(function () {
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-internal-market.js', context: 'catch' }); }
         msg('Could not refresh market data.');
       });
     }
@@ -175,7 +175,7 @@
       renderTrades((res[2] && res[2].trades) || []);
       renderTraderStrip(res[3]);
       renderBalances(res[4]);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-internal-market.js', context: 'catch' }); }
       msg('Could not refresh market data.');
     });
   }
@@ -213,7 +213,7 @@
       refresh();
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = setInterval(refresh, 45000);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-internal-market.js', context: 'catch' }); }
       root.style.display = 'none';
     });
   }

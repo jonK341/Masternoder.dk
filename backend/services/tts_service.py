@@ -338,18 +338,11 @@ def list_voices() -> list:
 def get_status() -> dict:
     """Return TTS provider status for debugger."""
     el_key = _elevenlabs_key()
-    gtts_ok = False
-    try:
-        import gtts as _gtts
-        gtts_ok = True
-    except ImportError:
-        pass
-    pyttsx3_ok = False
-    try:
-        import pyttsx3 as _p
-        pyttsx3_ok = True
-    except ImportError:
-        pass
+    # find_spec does not execute the module. Importing pyttsx3 can sit on the
+    # audio device and stall Mission Control.
+    import importlib.util
+    gtts_ok = importlib.util.find_spec("gtts") is not None
+    pyttsx3_ok = importlib.util.find_spec("pyttsx3") is not None
 
     piper_ok = _piper_model_path() is not None
     return {

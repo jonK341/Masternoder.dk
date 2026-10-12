@@ -36,7 +36,7 @@
             (cas.bets_today || 0) + " casino bets today · audience-safe";
         }
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-progress-monitor-embed.js', context: 'catch' }); }});
   }
 
   if (document.readyState === "loading") {
@@ -44,4 +44,14 @@
   } else {
     init();
   }
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'fleet-progress-monitor-embed.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

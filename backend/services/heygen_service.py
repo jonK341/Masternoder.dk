@@ -108,11 +108,15 @@ def _resolve_avatar_and_voice(api_key: str) -> tuple:
 
 
 def is_available() -> bool:
+    """True when a HeyGen key is configured.
+
+    Resolving avatar and voice ids calls the HeyGen catalog (30s timeout each).
+    That belongs in generate_clip, not in a status poll — Mission Control was
+    waiting out the catalog timeout on every overview.
+    """
     if not _get_api_key():
         return False
-    api_key = _get_api_key()
-    avatar_id, voice_id = _resolve_avatar_and_voice(api_key)
-    return bool(avatar_id and voice_id)
+    return True
 
 
 def _download_video(video_url: str, dest_dir: Optional[str]) -> Optional[str]:

@@ -35,7 +35,7 @@
             gain.gain.value = 0.04;
             osc.start();
             setTimeout(function () { osc.stop(); ctx.close(); }, ms || 120);
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-activity-monitor.js', context: 'catch' }); } /* ignore */ }
     }
 
     function onLiveEvents(events) {
@@ -123,7 +123,7 @@
                 renderStatus(data);
                 if (data.recent_events) onLiveEvents(data.recent_events);
             })
-            .catch(function () {});
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-activity-monitor.js', context: 'catch' }); }});
     }
 
     function connectSse() {
@@ -133,7 +133,7 @@
             try {
                 var data = JSON.parse(ev.data);
                 if (data.type === 'activity' && data.events) onLiveEvents(data.events);
-            } catch (e) { /* ignore */ }
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-activity-monitor.js', context: 'catch' }); } /* ignore */ }
         };
         es.onerror = function () {
             if (es) { es.close(); es = null; }

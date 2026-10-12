@@ -34,10 +34,12 @@ class OFCUnifiedSync {
                 console.log('[OFC Unified Sync] Points synced successfully:', result);
                 return result;
             } else {
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'ofc_unified_sync.js', context: 'console.error' }); }
                 console.error('[OFC Unified Sync] Sync failed:', result.error);
                 return result;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'ofc_unified_sync.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'ofc_unified_sync.js', context: 'console.error' }); }
             console.error('[OFC Unified Sync] Error syncing points:', error);
             return { success: false, error: error.message };
         }
@@ -165,10 +167,12 @@ class OFCUnifiedSync {
                 this.updateCalculationDisplay(result.calculation);
                 return result;
             } else {
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'ofc_unified_sync.js', context: 'console.error' }); }
                 console.error('[OFC Unified Sync] Calculation failed:', result.error);
                 return result;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'ofc_unified_sync.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'ofc_unified_sync.js', context: 'console.error' }); }
             console.error('[OFC Unified Sync] Error calculating all:', error);
             return { success: false, error: error.message };
         }

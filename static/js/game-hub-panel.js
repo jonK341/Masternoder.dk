@@ -118,7 +118,7 @@
 
             if (status) status.textContent = 'Live';
 
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-hub-panel.js', context: 'catch' }); }
 
             degradeOverview();
 
@@ -166,7 +166,7 @@
 
             }
 
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-hub-panel.js', context: 'catch' }); }
 
             btn.disabled = false;
 

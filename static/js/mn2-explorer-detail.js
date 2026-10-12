@@ -8,7 +8,7 @@
   function q(id) { return document.getElementById(id); }
 
   function params() {
-    try { return new URLSearchParams(window.location.search); } catch (e) { return new URLSearchParams(); }
+    try { return new URLSearchParams(window.location.search); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-explorer-detail.js', context: 'catch' }); } return new URLSearchParams(); }
   }
 
   function initEmbed() {
@@ -35,7 +35,7 @@
     if (!unixTs) return '—';
     try {
       return new Date(Number(unixTs) * 1000).toLocaleString();
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-explorer-detail.js', context: 'catch' }); }
       return '—';
     }
   }
@@ -56,7 +56,7 @@
           setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
         }
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(val).then(function () { done(true); }).catch(function () { done(false); });
+          navigator.clipboard.writeText(val).then(function () { done(true); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-detail.js', context: 'catch' }); } done(false); });
         } else {
           try {
             var ta = document.createElement('textarea');
@@ -65,7 +65,7 @@
             ta.select();
             done(document.execCommand('copy'));
             document.body.removeChild(ta);
-          } catch (e) {
+          } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-explorer-detail.js', context: 'catch' }); }
             done(false);
           }
         }
@@ -392,7 +392,7 @@
         }
         renderTx(txid, res.d);
       })
-      .catch(function () { showError('Failed to load transaction.'); });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-detail.js', context: 'catch' }); } showError('Failed to load transaction.'); });
   } else if (addrMatch) {
     var address = decodeURIComponent(addrMatch[1]);
     fetch('/api/mn2/explorer/address/' + encodeURIComponent(address), { credentials: 'same-origin' })
@@ -417,9 +417,9 @@
             }
             renderAddress(address, res.d);
           })
-          .catch(function () { renderAddress(address, res.d); });
+          .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-detail.js', context: 'catch' }); } renderAddress(address, res.d); });
       })
-      .catch(function () { showError('Failed to load address.'); });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-detail.js', context: 'catch' }); } showError('Failed to load address.'); });
   } else if (blockMatch) {
     var ref = decodeURIComponent(blockMatch[1]);
     fetch('/api/mn2/explorer/block/' + encodeURIComponent(ref), { credentials: 'same-origin' })
@@ -431,7 +431,7 @@
         }
         renderBlock(ref, res.d);
       })
-      .catch(function () { showError('Failed to load block.'); });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-detail.js', context: 'catch' }); } showError('Failed to load block.'); });
   } else {
     showError('Invalid explorer detail URL.');
   }

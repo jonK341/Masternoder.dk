@@ -14,7 +14,7 @@
         try {
             const d = new Date(iso);
             return d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'sync-status-widget.js', context: 'catch' }); }
             return iso;
         }
     }
@@ -71,7 +71,7 @@
                 fetch(SYNC_NOW_FALLBACK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
                     .then(function (r) { return r.json(); })
                     .then(function () { load(); })
-                    .catch(function () { load(); })
+                    .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'sync-status-widget.js', context: 'catch' }); } load(); })
                     .finally(function () {
                         if (btn) { btn.disabled = false; btn.textContent = 'Sync now'; }
                     });
@@ -87,7 +87,7 @@
             .then(function (data) {
                 if (data.success) render(container, data);
             })
-            .catch(function () {
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'sync-status-widget.js', context: 'catch' }); }
                 if (container) container.innerHTML = '<div class="sync-status-widget"><span class="sync-status-time">Sync status unavailable</span></div>';
             });
     }

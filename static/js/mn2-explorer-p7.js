@@ -76,7 +76,7 @@
           return '<li><a href="/explorer/tx/' + encodeURIComponent(txid) + '">' + shortHash(txid) + '</a></li>';
         }).join('');
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-p7.js', context: 'catch' }); }
         var feed = q('ex-mempool-feed');
         if (feed) feed.innerHTML = '<li class="ex-p7-empty">Mempool unavailable</li>';
       });
@@ -110,7 +110,7 @@
         el.innerHTML = '<strong>~' + fmtNum(reward, 4) + ' MN2</strong> over ' + days + 'd' +
           (apr != null ? ' <span class="ex-calc-apr">(' + fmtNum(apr, 2) + '% APR est.)</span>' : '');
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-p7.js', context: 'catch' }); }
         var el = q('ex-calc-result');
         if (el) el.textContent = 'Calculator unavailable';
       });
@@ -136,7 +136,7 @@
         var prices = series.map(function (p) { return p.price; });
         chart.innerHTML = areaChart(prices);
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-p7.js', context: 'catch' }); }
         var chart = q('ex-price-chart');
         if (chart) chart.innerHTML = '<div class="ex-p7-empty">Price history unavailable</div>';
       });
@@ -156,7 +156,7 @@
         }
         chart.innerHTML = barCompare(pool, network);
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-p7.js', context: 'catch' }); }
         var chart = q('ex-stake-chart');
         if (chart) chart.innerHTML = '<div class="ex-p7-empty">Stake comparison unavailable</div>';
       });
@@ -188,7 +188,7 @@
         return '<li><span class="ex-ob-side ' + side.toLowerCase() + '">' + side + '</span> ' +
           fmtNum(o.amount_mn2 || o.amount, 2) + ' @ ' + fmtNum(o.price_coins_per_mn2 || o.price, 2) + '</li>';
       }).join('');
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-p7.js', context: 'catch' }); }
       var tickEl = q('ex-ob-ticker');
       if (tickEl) tickEl.textContent = 'Market unavailable';
     });
@@ -209,7 +209,7 @@
           '<div class="ex-sync-row"><span>Verified</span><strong>' + vpPct + '</strong></div>' +
           '<div class="ex-sync-row"><span>Synced</span><strong>' + (d.synced === true ? 'Yes' : (d.synced === false ? 'No' : '—')) + '</strong></div>';
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-p7.js', context: 'catch' }); }
         var el = q('ex-sync-stats');
         if (el) el.textContent = 'Sync status unavailable';
       });
@@ -229,7 +229,7 @@
           el.textContent = '';
         }
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-p7.js', context: 'catch' }); }});
   }
 
   function init() {
@@ -252,4 +252,14 @@
   } else {
     init();
   }
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'mn2-explorer-p7.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

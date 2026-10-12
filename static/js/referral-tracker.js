@@ -91,7 +91,8 @@ class ReferralTracker {
                     referral: isReferral
                 })
             });
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'referral-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'referral-tracker.js', context: 'console.error' }); }
             console.error('Error tracking click:', error);
         }
     }
@@ -109,7 +110,8 @@ class ReferralTracker {
                     referral: true
                 })
             });
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'referral-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'referral-tracker.js', context: 'console.error' }); }
             console.error('Error tracking referral visit:', error);
         }
     }
@@ -119,7 +121,8 @@ class ReferralTracker {
             const response = await fetch(`/api/tracking/stats?user_id=${this.userId}`);
             const data = await response.json();
             return data;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'referral-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'referral-tracker.js', context: 'console.error' }); }
             console.error('Error getting click stats:', error);
             return null;
         }
@@ -130,7 +133,8 @@ class ReferralTracker {
             const response = await fetch(`/api/tracking/referral?user_id=${this.userId}`);
             const data = await response.json();
             return data;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'referral-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'referral-tracker.js', context: 'console.error' }); }
             console.error('Error getting referral stats:', error);
             return null;
         }

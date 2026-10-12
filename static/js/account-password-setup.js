@@ -243,7 +243,7 @@
             self.render(data);
             if (self.options.onRefresh) self.options.onRefresh(data);
             return data;
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'account-password-setup.js', context: 'catch' }); }
             if (self.root) self.root.innerHTML = '<p class="aps-message error">Failed to load password status.</p>';
         });
     };
@@ -258,7 +258,7 @@
             }
             self.setMessage('Unlocked — you can set your password now.', 'success');
             return self.refresh();
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'account-password-setup.js', context: 'catch' }); }
             self.setMessage('Unlock check failed.', 'error');
         });
     };
@@ -297,7 +297,7 @@
             self.setMessage(msg, 'success');
             if (self.options.onSaved) self.options.onSaved(res.data);
             return self.refresh();
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'account-password-setup.js', context: 'catch' }); }
             self.setMessage('Save failed — try again.', 'error');
         });
     };
@@ -313,7 +313,7 @@
             var tokenInput = self.root.querySelector('#aps-recovery-token');
             if (res.data.reset_token && tokenInput) tokenInput.value = res.data.reset_token;
             self.setMessage(res.data.message || 'Recovery token created.', 'success');
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'account-password-setup.js', context: 'catch' }); }
             self.setMessage('Recovery request failed.', 'error');
         });
     };
@@ -343,7 +343,7 @@
             self.setMessage('Password reset successfully.', 'success');
             if (self.options.onSaved) self.options.onSaved(res.data);
             return self.refresh();
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'account-password-setup.js', context: 'catch' }); }
             self.setMessage('Password reset failed.', 'error');
         });
     };
@@ -354,3 +354,13 @@
 
     global.AccountPasswordSetup = AccountPasswordSetup;
 })(typeof window !== 'undefined' ? window : this);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'account-password-setup.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

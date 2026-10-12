@@ -47,7 +47,8 @@ class AudioPlayer {
             };
             
             return { success: true, audioId };
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'audio-player.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'audio-player.js', context: 'console.error' }); }
             console.error('Error playing audio:', error);
             return { success: false, error: error.message };
         }
@@ -112,7 +113,8 @@ class AudioPlayer {
             }
             
             return { success: false, error: 'No demon compelling audio found' };
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'audio-player.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'audio-player.js', context: 'console.error' }); }
             console.error('Error playing demon compelling audio:', error);
             return { success: false, error: error.message };
         }
@@ -132,7 +134,8 @@ class AudioPlayer {
             }
             
             return { success: false, error: 'No theme intro found' };
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'audio-player.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'audio-player.js', context: 'console.error' }); }
             console.error('Error playing theme intro:', error);
             return { success: false, error: error.message };
         }
@@ -152,7 +155,8 @@ class AudioPlayer {
             }
             
             return { success: false, error: 'Sound effect not found' };
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'audio-player.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'audio-player.js', context: 'console.error' }); }
             console.error('Error playing sound effect:', error);
             return { success: false, error: error.message };
         }

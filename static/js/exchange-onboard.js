@@ -64,7 +64,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-onboard.js', context: 'catch' }); } return 'default_user'; }
   }
 
   function fetchJson(path) {
@@ -90,10 +90,10 @@
   function loadGlance() {
     var u = encodeURIComponent(uid());
     return Promise.all([
-      fetchJson('/api/exchange/catalog').catch(function () { return null; }),
-      fetchJson('/api/exchange/health').catch(function () { return null; }),
-      fetchJson('/api/exchange/wallet?user_id=' + u).catch(function () { return null; }),
-      fetchJson('/api/exchange/rewards?user_id=' + u).catch(function () { return null; }),
+      fetchJson('/api/exchange/catalog').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-onboard.js', context: 'catch' }); } return null; }),
+      fetchJson('/api/exchange/health').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-onboard.js', context: 'catch' }); } return null; }),
+      fetchJson('/api/exchange/wallet?user_id=' + u).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-onboard.js', context: 'catch' }); } return null; }),
+      fetchJson('/api/exchange/rewards?user_id=' + u).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-onboard.js', context: 'catch' }); } return null; }),
     ]).then(function (res) {
       var catalog = res[0];
       var health = res[1];
@@ -137,7 +137,7 @@
   function displayName() {
     try {
       return localStorage.getItem('game_display_name') || localStorage.getItem('game_username') || '';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-onboard.js', context: 'catch' }); }
       return '';
     }
   }
@@ -183,7 +183,7 @@
     root.hidden = true;
     root.setAttribute('aria-hidden', 'true');
     if (markDone) {
-      try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-onboard.js', context: 'catch' }); } /* ignore */ }
     }
   }
 
@@ -215,7 +215,7 @@
       if (localStorage.getItem(STORAGE_KEY) === '1') return;
       var force = window.location.search.indexOf('tour=1') >= 0;
       setTimeout(openOnboard, force ? 400 : 1400);
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-onboard.js', context: 'catch' }); } /* ignore */ }
   }
 
   function bindGotoControl(btn) {

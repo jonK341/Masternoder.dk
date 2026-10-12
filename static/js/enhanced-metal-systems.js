@@ -58,7 +58,8 @@ class EnhancedMetalSystems {
                     console.log('User initialized with metal systems');
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-metal-systems.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-metal-systems.js', context: 'console.error' }); }
             console.error('Error initializing user:', error);
         }
     }
@@ -78,7 +79,8 @@ class EnhancedMetalSystems {
                     this.renderHashes(data.refresh_hashes || {});
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-metal-systems.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-metal-systems.js', context: 'console.error' }); }
             console.error('Error loading data:', error);
             this.showError('Failed to load metal systems data');
         }
@@ -414,7 +416,8 @@ class EnhancedMetalSystems {
                             window.toast.success('GPS location updated!');
                         }
                     }
-                } catch (error) {
+                } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-metal-systems.js', context: 'catch' }); }
+                    if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-metal-systems.js', context: 'console.error' }); }
                     console.error('Error updating GPS:', error);
                 }
             },
@@ -444,7 +447,8 @@ class EnhancedMetalSystems {
                     }
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-metal-systems.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-metal-systems.js', context: 'console.error' }); }
             console.error('Error connecting metal:', error);
             this.showError('Failed to connect metal system');
         }
@@ -461,6 +465,7 @@ class EnhancedMetalSystems {
         if (window.toast) {
             window.toast.error(message);
         } else {
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-metal-systems.js', context: 'console.error' }); }
             console.error(message);
         }
     }

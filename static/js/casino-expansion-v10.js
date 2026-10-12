@@ -386,7 +386,7 @@
             renderLevels();
             renderSocial();
             enhanceGameCards();
-        }).catch(function () { /* silent */ });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino-expansion-v10.js', context: 'catch' }); } /* silent */ });
     }
 
     function init() {
@@ -419,4 +419,14 @@
     } else {
         init();
     }
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'casino-expansion-v10.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

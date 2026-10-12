@@ -31,7 +31,8 @@ class ProgressionDisplay {
                 this.progressionData = data;
                 this.updateAllDisplays();
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'progression-display.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'progression-display.js', context: 'console.error' }); }
             console.error('Error loading progression:', error);
         }
     }

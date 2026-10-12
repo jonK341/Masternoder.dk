@@ -20,7 +20,7 @@
         global.localStorage.getItem('user_id') ||
         'default_user'
       );
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-account-bridge.js', context: 'catch' }); }
       return 'default_user';
     }
   }
@@ -97,7 +97,7 @@
     }
     try {
       if (display) global.localStorage.setItem('game_display_name', display);
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-account-bridge.js', context: 'catch' }); } /* ignore */ }
   }
 
   function fmtNum(n) {
@@ -160,35 +160,35 @@
     var userId = uid();
     var u = encodeURIComponent(userId);
     var jobs = [
-      fetchJson('/api/user/profile/' + u + '/aggregated').catch(function () {
-        return fetchJson('/api/user/profile/' + u + '/display').catch(function () {
+      fetchJson('/api/user/profile/' + u + '/aggregated').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
+        return fetchJson('/api/user/profile/' + u + '/display').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
           return null;
         });
       }),
       global.Mn2SiteBridge
-        ? global.Mn2SiteBridge.loadBalance().catch(function () {
+        ? global.Mn2SiteBridge.loadBalance().catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
             return null;
           })
-        : fetchJson('/api/mn2/balance?user_id=' + u).catch(function () {
+        : fetchJson('/api/mn2/balance?user_id=' + u).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
             return null;
           }),
       global.Mn2SiteBridge
-        ? global.Mn2SiteBridge.loadPrice().catch(function () {
+        ? global.Mn2SiteBridge.loadPrice().catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
             return null;
           })
-        : fetchJson('/api/mn2/price').catch(function () {
+        : fetchJson('/api/mn2/price').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
             return null;
           }),
-      fetchJson('/api/exchange/wallet?user_id=' + u).catch(function () {
+      fetchJson('/api/exchange/wallet?user_id=' + u).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
         return null;
       }),
-      fetchJson('/api/exchange/rewards?user_id=' + u).catch(function () {
+      fetchJson('/api/exchange/rewards?user_id=' + u).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
         return null;
       }),
-      fetchJson('/api/exchange/health').catch(function () {
+      fetchJson('/api/exchange/health').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
         return null;
       }),
-      fetchJson('/api/exchange/catalog').catch(function () {
+      fetchJson('/api/exchange/catalog').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-account-bridge.js', context: 'catch' }); }
         return null;
       }),
     ];

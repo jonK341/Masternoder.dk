@@ -33,7 +33,7 @@
             } else {
                 node.textContent = String(val);
             }
-        }).catch(function () { /* ignore */ });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-page-strip-init.js', context: 'catch' }); } /* ignore */ });
     }
 
     function initStrip(strip) {
@@ -48,7 +48,7 @@
                 var el = global.document.getElementById(balanceId);
                 if (el) el.textContent = fmt(bal) + ' MN2';
             }
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-page-strip-init.js', context: 'catch' }); }
             if (balanceId) {
                 var el = global.document.getElementById(balanceId);
                 if (el) el.textContent = '—';
@@ -61,7 +61,7 @@
                 var el = global.document.getElementById(rateId);
                 if (el) el.textContent = p != null ? ('$' + Number(p).toFixed(4) + ' / MN2') : '—';
             }
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-page-strip-init.js', context: 'catch' }); }
             if (rateId) {
                 var el = global.document.getElementById(rateId);
                 if (el) el.textContent = '—';
@@ -78,3 +78,13 @@
     global.Mn2PageStripInit = { init: init, initStrip: initStrip };
     global.document.addEventListener('DOMContentLoaded', init);
 })(window);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'mn2-page-strip-init.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

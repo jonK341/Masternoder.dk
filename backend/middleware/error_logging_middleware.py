@@ -8,6 +8,7 @@ from datetime import datetime
 from flask import request, jsonify
 from typing import Optional
 import json
+from werkzeug.exceptions import HTTPException
 
 
 class ErrorLogger:
@@ -97,7 +98,27 @@ def register_error_logging_middleware(app):
     
     @app.errorhandler(Exception)
     def handle_generic_error(e):
-        """Handle any unhandled exception"""
+        """Handle any unhandled exception.
+
+        Werkzeug raises HTTPException for 405/404 and the like. Those must keep
+        their real status. Swallowing them here turned GET on a POST-only
+        debugger route into a 500.
+        """
+        if isinstance(e, HTTPException):
+            path = request.path if request else ''
+            if e.code == 404 and '/api/' in path:
+                from backend.middleware.auto_fix_404_middleware import handle_404
+                return handle_404(e)
+            if path.startswith('/api/'):
+                return jsonify({
+                    'success': False,
+                    'error': e.name,
+                    'message': e.description,
+                    'path': path,
+                    'method': request.method if request else None,
+                }), (e.code or 500)
+            return e
+
         error_logger.log_error(e, {
             'endpoint': request.path,
             'method': request.method

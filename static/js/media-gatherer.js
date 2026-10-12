@@ -198,7 +198,8 @@ class MediaGatherer {
             } else {
                 console.warn(`[MediaGatherer] Failed to send ${type}:`, response.status);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'media-gatherer.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'media-gatherer.js', context: 'console.error' }); }
             console.error(`[MediaGatherer] Error sending ${type}:`, error);
         }
     }

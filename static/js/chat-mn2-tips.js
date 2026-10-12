@@ -31,7 +31,7 @@
         return bridge.loadBalance().then(function (d) {
             var bal = (d && (d.balance != null ? d.balance : d.mn2_balance)) || 0;
             setText('chat-mn2-balance', fmt(bal) + ' MN2');
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'chat-mn2-tips.js', context: 'catch' }); }
             setText('chat-mn2-balance', '—');
         });
     }
@@ -50,7 +50,7 @@
                     if (input) input.value = btn.getAttribute('data-amt');
                 });
             });
-        }).catch(function () { /* ignore */ });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'chat-mn2-tips.js', context: 'catch' }); } /* ignore */ });
     }
 
     function sendTip() {
@@ -89,7 +89,7 @@
             } else {
                 showStatus(d.error || 'Tip failed', false);
             }
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'chat-mn2-tips.js', context: 'catch' }); }
             showStatus('Network error sending tip', false);
         }).finally(function () {
             if (btn) { btn.disabled = false; btn.textContent = 'Send tip'; }
@@ -102,7 +102,7 @@
         bridge && bridge.loadPrice().then(function (d) {
             var p = d && (d.price_usd != null ? d.price_usd : d.usd);
             setText('chat-mn2-rate', p != null ? ('$' + Number(p).toFixed(4) + ' / MN2') : '—');
-        }).catch(function () { setText('chat-mn2-rate', '—'); });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'chat-mn2-tips.js', context: 'catch' }); } setText('chat-mn2-rate', '—'); });
         var btn = global.document.getElementById('chat-tip-send');
         if (btn) btn.addEventListener('click', sendTip);
     }
@@ -110,3 +110,13 @@
     global.ChatMn2Tips = { init: init, refreshBalance: refreshBalance, sendTip: sendTip };
     global.document.addEventListener('DOMContentLoaded', init);
 })(window);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'chat-mn2-tips.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();

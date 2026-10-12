@@ -14,7 +14,7 @@
             try {
                 var parsed = JSON.parse(value);
                 if (parsed && typeof parsed === 'object') return parsed;
-            } catch (err) { /* ignore */ }
+            } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'shop-profile-manager.js', context: 'catch' }); } /* ignore */ }
         }
         return {};
     }
@@ -52,7 +52,7 @@
 
     async function readJson(url, options) {
         var response = await fetch(url, options || { credentials: 'same-origin', cache: 'no-store' });
-        var data = await response.json().catch(function () { return {}; });
+        var data = await response.json().catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'shop-profile-manager.js', context: 'catch' }); } return {}; });
         return { ok: response.ok, status: response.status, data: data };
     }
 
@@ -97,7 +97,7 @@
             if (pack[0].data && pack[0].data.success) coins = String(pack[0].data.currency || 0);
             if (pack[1].data && pack[1].data.mn2_balance != null) mn2 = String(pack[1].data.mn2_balance);
             if (pack[2].data && Array.isArray(pack[2].data.purchases)) orders = String(pack[2].data.purchases.length);
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'shop-profile-manager.js', context: 'catch' }); }
             coins = 'unavailable';
         }
         var name = (profile && (profile.display_name || profile.username)) || '—';
@@ -134,7 +134,7 @@
                 setStatus((out.data && out.data.error) || 'No profile yet. Create the account to connect checkout.');
             }
             await loadLedger(uid, profile);
-        } catch (err) {
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'shop-profile-manager.js', context: 'catch' }); }
             setStatus('Could not reach the profile service. You can still create or log in.');
         }
     }
@@ -218,7 +218,7 @@
     async function logoutAccount() {
         try {
             await readJson('/api/user/logout', { method: 'POST', credentials: 'same-origin' });
-        } catch (err) { /* ignore */ }
+        } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'shop-profile-manager.js', context: 'catch' }); } /* ignore */ }
         localStorage.removeItem('game_user_id');
         localStorage.removeItem('user_id');
         setStatus('Logged out on this device.');

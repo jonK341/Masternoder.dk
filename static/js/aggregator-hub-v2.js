@@ -9,7 +9,7 @@
   function uid() {
     try {
       return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-hub-v2.js', context: 'catch' }); }
       return (window.MnUserId ? window.MnUserId.read() : '');
     }
   }
@@ -94,7 +94,7 @@
           cat.appendChild(opt);
         });
       }
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'aggregator-hub-v2.js', context: 'catch' }); }
       if (grid) grid.innerHTML = '<p class="agg-v2-muted">Could not load catalog.</p>';
     });
   }

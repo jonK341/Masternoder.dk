@@ -98,7 +98,7 @@
                     } else {
                         res.textContent = out.error || 'Play failed';
                     }
-                }).catch(function () {
+                }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'discord-play.js', context: 'catch' }); }
                     var res = $('dp-play-result');
                     if (res) res.textContent = 'Network error';
                 }).finally(function () {
@@ -154,7 +154,7 @@
             renderGames(uber.games, session && session.success ? uid : null);
             if (cfg.ai_hosts) renderAi(cfg.ai_hosts);
             if (cfg.network) renderNetwork(cfg.network);
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'discord-play.js', context: 'catch' }); }
             var res = $('dp-play-result');
             if (res) res.textContent = 'Could not load play site config.';
         });
@@ -165,4 +165,14 @@
     } else {
         init();
     }
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'discord-play.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

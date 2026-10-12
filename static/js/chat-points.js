@@ -18,7 +18,7 @@ class ChatPointsManager {
             const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             localStorage.setItem('user_id', userId);
             return userId;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'chat-points.js', context: 'catch' }); }
             return 'user_anonymous';
         }
     }
@@ -31,7 +31,8 @@ class ChatPointsManager {
                 const data = await response.json();
                 this.displayChatPoints(data);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'chat-points.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'chat-points.js', context: 'console.error' }); }
             console.error('[ChatPoints] Error loading chat points:', error);
         }
     }
@@ -62,7 +63,8 @@ class ChatPointsManager {
                     this.updateChatPointsDisplay(data.total_chat_points);
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'chat-points.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'chat-points.js', context: 'console.error' }); }
             console.error('[ChatPoints] Error awarding points:', error);
         }
     }

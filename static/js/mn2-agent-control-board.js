@@ -75,7 +75,7 @@
         if (j.success) render(j);
         else setBanner(j.error || 'Snapshot failed', false);
       })
-      .catch(function (e) { setBanner(String(e), false); });
+      .catch(function (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-agent-control-board.js', context: 'catch' }); } setBanner(String(e), false); });
   }
 
   function startPollFallback() {
@@ -95,14 +95,14 @@
         try {
           var data = JSON.parse(ev.data);
           if (data.type === 'ops') render(data);
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-agent-control-board.js', context: 'catch' }); } /* ignore */ }
       };
       es.onerror = function () {
         if (es) { es.close(); es = null; }
         setBanner('SSE disconnected — polling fallback', false);
         startPollFallback();
       };
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-agent-control-board.js', context: 'catch' }); }
       startPollFallback();
     }
   }

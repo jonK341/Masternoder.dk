@@ -84,7 +84,7 @@
   function uid() {
     try {
       return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }
       return (window.MnUserId ? window.MnUserId.read() : '');
     }
   }
@@ -111,7 +111,7 @@
   function loadFavorites() {
     try {
       return JSON.parse(localStorage.getItem(favoritesKey()) || '[]');
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }
       return [];
     }
   }
@@ -119,7 +119,7 @@
   function saveFavorites(list) {
     try {
       localStorage.setItem(favoritesKey(), JSON.stringify(list));
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }}
   }
 
   function toggleFav(id) {
@@ -132,7 +132,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: uid() }),
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }});
     renderGrid();
   }
 
@@ -180,7 +180,7 @@
           })
           .join('');
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }});
   }
 
   function infobarPill(label, on) {
@@ -339,7 +339,7 @@
           }
         }
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }});
   }
 
   function paypalCheckout(action, performerId, extra) {
@@ -374,7 +374,7 @@
                 minutes: extra.minutes || 0,
               })
             );
-          } catch (e) {}
+          } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }}
           window.location.href = d.approve_url;
         } else msg(d.error || 'PayPal unavailable', true);
       });
@@ -443,7 +443,7 @@
       try {
         sessionStorage.removeItem('cg_paypal_order');
         sessionStorage.removeItem('cg_paypal_ctx');
-      } catch (e) {}
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }}
       if (window.history && window.history.replaceState) {
         window.history.replaceState({}, '', pageBase());
       }
@@ -453,12 +453,12 @@
     try {
       orderId = orderId || sessionStorage.getItem('cg_paypal_order') || '';
       sessionStorage.removeItem('cg_paypal_order');
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls.js', context: 'catch' }); }}
     var paypalCtx = {};
     try {
       paypalCtx = JSON.parse(sessionStorage.getItem('cg_paypal_ctx') || '{}');
       sessionStorage.removeItem('cg_paypal_ctx');
-    } catch (e2) {
+    } catch (e2) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e2 instanceof Error ? e2 : new Error(String(e2)), { source: 'camgirls.js', context: 'catch' }); }
       paypalCtx = {};
     }
     var approved = params.get('paypal') === 'success' || !!(params.get('PayerID') || params.get('PayerId'));
@@ -533,7 +533,7 @@
           msg('Loading gallery & shop links…');
         }
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }});
     fetch(apiUrl('/api/camgirls/performers?user_id=' + user))
       .then(function (r) {
         return r.json();
@@ -560,7 +560,7 @@
         }
         msg('');
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls.js', context: 'catch' }); }
         if (!performers.length) {
           msg('Network error loading performers', true);
           if (grid) grid.innerHTML = '<p>Could not reach API. Retry in a moment.</p>';
