@@ -38,6 +38,12 @@ def record_view():
             page_number = 0
     if page_number < 1 or page_number > 25:
         return jsonify({"success": False, "error": "page_number must be 1-25"}), 400
+    try:
+        from backend.services.compendium_access_service import can_access_page
+        if not can_access_page(user_id, page_number):
+            return jsonify({"success": False, "error": "premium_required", "page_number": page_number}), 403
+    except Exception:
+        pass
     amount = COMPENDIUM_POINTS_PER_PAGE
     try:
         from backend.services.unified_points_database import unified_points_db
@@ -64,12 +70,19 @@ def record_view():
             on_user_activity(user_id, "compendium_read", {"page_number": page_number})
         except Exception:
             pass
+        crypto_reward = None
+        try:
+            from backend.services.compendium_crypto_rewards_service import award_page_read_reward
+            crypto_reward = award_page_read_reward(user_id, page_number)
+        except Exception:
+            crypto_reward = None
         return jsonify({
             "success": True,
             "user_id": user_id,
             "page_number": page_number,
             "points_awarded": amount,
             "point_type": POINT_TYPE,
+            "crypto_reward": crypto_reward,
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

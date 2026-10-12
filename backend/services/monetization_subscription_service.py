@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple, List
 
 from backend.services.monetization_config_service import get_subscription_plan, reload_monetization_config
+from backend.services import paypal_order_events
 
 
 def _log_dir() -> str:
@@ -380,6 +381,20 @@ def process_paypal_webhook_event(body: Dict[str, Any]) -> Tuple[Dict[str, Any], 
         )
         _mark_event_processed(event_id, {"event_type": event_type, **out})
         return {"success": True, "handled": "payment_sale_completed", "event_id": event_id, **out}, 200
+
+    if paypal_order_events.is_order_event(event_type):
+        try:
+            dispatched = paypal_order_events.dispatch_order_webhook(body, True)
+        except Exception as exc:
+            return {"success": False, "error": str(exc), "event_type": event_type}, 500
+        _mark_event_processed(event_id, {"event_type": event_type, "handled": "order_event"})
+        return {
+            "success": True,
+            "handled": "order_event",
+            "event_id": event_id,
+            "event_type": event_type,
+            "dispatched": dispatched,
+        }, 200
 
     # Other event types: acknowledge to avoid endless retries if we subscribe to many
     _mark_event_processed(event_id, {"event_type": event_type, "note": "ignored"})
