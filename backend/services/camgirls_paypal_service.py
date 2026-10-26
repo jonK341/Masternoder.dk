@@ -226,7 +226,7 @@ def fulfill_capture(order_id: str, *, user_id: str = "") -> Dict[str, Any]:
     uid = (user_id or "").strip() or str(pending.get("user_id") or "").strip()
     pending_uid = str(pending.get("user_id") or "").strip()
     if pending_uid and uid != pending_uid:
-        if uid in ("", "default_user"):
+        if uid.lower() in ("", "default_user"):
             uid = pending_uid
         else:
             return {"success": False, "error": "user_mismatch"}
