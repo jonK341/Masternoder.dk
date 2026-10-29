@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Lab — MasterNoder</title>
+  <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
+  <style>
+    :root {
+      --bg: #070b12;
+      --panel: #101826;
+      --line: #243044;
+      --text: #e8eef8;
+      --muted: #8ea0b8;
+      --accent: #3ee0a2;
+      --accent-2: #7aa2ff;
+      --warn: #f0b429;
+      --danger: #ff6b7a;
+      --get: #1f8a5b;
+      --post: #2f6fed;
+      --put: #b8860b;
+      --delete: #b34040;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, rgba(62, 224, 162, 0.16), transparent 55%),
+        radial-gradient(900px 400px at 100% 0%, rgba(122, 162, 255, 0.14), transparent 50%),
+        var(--bg);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    header.hero {
+      padding: 28px 28px 8px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    header.hero h1 { margin: 0 0 6px; font-size: 2rem; letter-spacing: -0.03em; }
+    header.hero p { margin: 0; color: var(--muted); max-width: 720px; }
+    .shell {
+      display: grid;
+      grid-template-columns: 240px 1fr 380px;
+      gap: 16px;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 18px 20px 40px;
+    }
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: rgba(16, 24, 38, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .cats { display: flex; flex-direction: column; gap: 8px; max-height: 72vh; overflow: auto; }
+    button.cat, button.ep {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      background: #0c1420;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font: inherit;
+    }
+    button.cat.active, button.ep.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(62, 224, 162, 0.35);
+    }
+    button.cat .count { float: right; color: var(--muted); font-size: 0.85rem; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 10px; }
+    input[type="search"], input[type="text"], textarea {
+      width: 100%;
+      background: #0c1420;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+    }
+    .list { display: flex; flex-direction: column; gap: 8px; max-height: 72vh; overflow: auto; }
+    .method {
+      display: inline-block;
+      min-width: 58px;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-right: 8px;
+    }
+    .m-GET { background: var(--get); }
+    .m-POST { background: var(--post); }
+    .m-PUT, .m-PATCH { background: var(--put); color: #1a1200; }
+    .m-DELETE { background: var(--delete); }
+    .path { font-family: ui-monospace, Consolas, monospace; font-size: 0.86rem; word-break: break-all; }
+    .try h2 { margin: 4px 0 8px; font-size: 1.05rem; }
+    .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 10px; }
+    button.run {
+      background: var(--accent);
+      color: #042016;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin: 8px 0;
+    }
+    button.run:disabled { opacity: 0.5; cursor: wait; }
+    pre.out {
+      background: #070d16;
+      border-radius: 12px;
+      padding: 12px;
+      max-height: 42vh;
+      overflow: auto;
+      font-size: 0.78rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status-ok { color: var(--accent); }
+    .status-bad { color: var(--danger); }
+    .pill { color: var(--warn); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>API Lab</h1>
+    <p>Pick a category, push an endpoint, and try it. Safe GET calls run immediately. Writes ask you to confirm and send a JSON body.</p>
+  </header>
+  <div class="shell">
+    <aside class="panel">
+      <div class="cats" id="cats"></div>
+    </aside>
+    <section class="panel">
+      <div class="toolbar">
+        <input id="q" type="search" placeholder="Search path, method, category" autocomplete="off">
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+    <section class="panel try" id="try">
+      <h2>Try an endpoint</h2>
+      <p class="meta">Choose a link on the left. Results stay in this panel.</p>
+      <div id="form"></div>
+      <pre class="out" id="out">Waiting for a push.</pre>
+    </section>
+  </div>
+  <script src="/static/js/navigation-toolbar.js"></script>
+  <script src="/static/js/api-lab.js"></script>
+</body>
+</html>

@@ -81,6 +81,7 @@
             { name: 'Lab', icon: '🔬', url: APP_BASE + '/lab', id: 'lab', title: 'Discussion, experiments, and system lab' },
             { name: 'Agent Support', icon: '🛠️', url: APP_BASE + '/agent_support', id: 'agent_support', title: 'Tickets, AI API keys, tools' },
             { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
+            { name: 'API Lab', icon: '🧪', url: APP_BASE + '/api-lab', id: 'api_lab', title: 'Browse API categories and try endpoints' },
             { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
             { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
             { name: 'Battlegrounds', icon: '🗺️', url: APP_BASE + '/battlegrounds', id: 'battlegrounds' },
@@ -398,7 +399,7 @@
                     { id: 'account', label: 'Shop & profile', menuTitle: 'Shop & profile', smiley: '🛒', gif: 'account.gif', ids: ['shop', 'profile', 'nft', 'market'] },
                     { id: 'finance', label: 'MN2 & exchange', menuTitle: 'MN2 & exchange', smiley: '💠', gif: 'finance.gif', ids: ['exchange', 'nft', 'wallets', 'explorer', 'profit', 'staking_leaderboard', 'staking_teams', 'hosting', 'market'] },
                     { id: 'create', label: 'Create', menuTitle: 'Create & publish', smiley: '🎬', gif: 'create.gif', ids: ['generator', 'create_app', 'podcast', 'gallery'] },
-                    { id: 'intel', label: 'Lab & agents', menuTitle: 'Lab & agents', smiley: '🤖', gif: 'intel.gif', ids: ['lab', 'aggregator', 'agents', 'agent_support', 'agents_control', 'debugger'] },
+                    { id: 'intel', label: 'Lab & agents', menuTitle: 'Lab & agents', smiley: '🤖', gif: 'intel.gif', ids: ['lab', 'api_lab', 'aggregator', 'agents', 'agent_support', 'agents_control', 'debugger'] },
                     { id: 'social', label: 'Social & news', menuTitle: 'Social & news', smiley: '💬', gif: 'social.gif', ids: ['social', 'news', 'library', 'camgirls', 'customers'] },
                 ];
             }

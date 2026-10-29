@@ -840,6 +840,17 @@ def _register_all_blueprints_impl(app):
     except Exception as e:
         print(f"  [ERROR] Error registering advanced_calculator: {e}")
     
+    # API Lab — categorized try-it console
+    try:
+        from backend.routes.api_lab_routes import api_lab_bp
+        app.register_blueprint(api_lab_bp)
+        registered_count += 1
+        print("  [OK] Registered api_lab blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import api_lab: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering api_lab: {e}")
+
     # API Scanner Routes (Debugger Tool)
     try:
         from backend.routes.api_scanner_routes import api_scanner_bp
