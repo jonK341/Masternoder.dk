@@ -331,6 +331,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP user_profile: {e}")
     try:
+        if 'profiler' not in app.blueprints:
+            from backend.routes.player_profiler import profiler_bp
+            app.register_blueprint(profiler_bp)
+            n += 1
+            print("  [OK] Registered player profiler blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP profiler: {e}")
+    try:
         from backend.routes.shop_routes import shop_bp
         app.register_blueprint(shop_bp)
         n += 1
@@ -1287,6 +1295,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import user_profile: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering user_profile: {e}")
+
+    try:
+        if 'profiler' not in app.blueprints:
+            from backend.routes.player_profiler import profiler_bp
+            app.register_blueprint(profiler_bp)
+            registered_count += 1
+            print("  [OK] Registered player profiler blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import player profiler: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering player profiler: {e}")
 
     print("  [OK 2/4] Core features (game, battle, agents, points, paypal, user, compendium)")
     

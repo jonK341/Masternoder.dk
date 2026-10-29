@@ -84,9 +84,96 @@ class PlayerProfiler:
                 'stats': {},
                 'triggers_activated': [],
                 'total_actions': 0,
-                'online_time_seconds': 0
+                'online_time_seconds': 0,
+                'avatar_url': '',
+                'picture_gallery': [],
             }
-        return self.profiles[user_id]
+        profile = self.profiles[user_id]
+        profile.setdefault('avatar_url', '')
+        profile.setdefault('picture_gallery', [])
+        return profile
+
+    def _normalize_picture_url(self, url: str) -> str:
+        token = str(url or '').strip()
+        if not token:
+            return ''
+        if token.startswith(('http://', 'https://', '/')):
+            return token
+        return '/' + token.lstrip('/')
+
+    def set_avatar_url(self, user_id: str, url: str) -> Dict[str, Any]:
+        profile = self.get_profile(user_id)
+        clean = self._normalize_picture_url(url)
+        profile['avatar_url'] = clean
+        profile['last_active'] = datetime.utcnow().isoformat()
+        if clean:
+            self.add_picture(user_id, clean, source='avatar')
+        return {'success': True, 'avatar_url': clean}
+
+    def add_picture(self, user_id: str, url: str, source: str = 'manual') -> Dict[str, Any]:
+        profile = self.get_profile(user_id)
+        clean = self._normalize_picture_url(url)
+        if not clean:
+            return {'success': False, 'error': 'url_required'}
+        gallery = profile.get('picture_gallery') or []
+        if not isinstance(gallery, list):
+            gallery = []
+        entry = {
+            'url': clean,
+            'source': str(source or 'manual'),
+            'added_at': datetime.utcnow().isoformat(),
+        }
+        if not any(row.get('url') == clean for row in gallery if isinstance(row, dict)):
+            gallery.insert(0, entry)
+        profile['picture_gallery'] = gallery[:48]
+        profile['last_active'] = datetime.utcnow().isoformat()
+        return {'success': True, 'picture': entry, 'count': len(profile['picture_gallery'])}
+
+    def camgirl_picture_board(self, user_id: str) -> List[Dict[str, Any]]:
+        """Portrait stills from unlocked / favorited camgirl performers."""
+        board: List[Dict[str, Any]] = []
+        try:
+            from backend.services.camgirls_service import list_performers_catalog
+
+            catalog = list_performers_catalog(user_id=user_id, lite=False)
+            for row in catalog.get('performers') or []:
+                if not isinstance(row, dict):
+                    continue
+                if not row.get('unlocked') and not row.get('fan_club'):
+                    continue
+                media = row.get('media') if isinstance(row.get('media'), dict) else {}
+                url = str(
+                    row.get('picture_url')
+                    or (media or {}).get('picture_url')
+                    or row.get('avatar_url')
+                    or ''
+                ).strip()
+                if not url:
+                    continue
+                board.append(
+                    {
+                        'url': url,
+                        'performer_id': row.get('id'),
+                        'display_name': row.get('display_name'),
+                        'studio_upgrades': row.get('studio_upgrades') or [],
+                        'source': 'camgirls_studio',
+                    }
+                )
+        except Exception:
+            return board
+        return board[:24]
+
+    def get_picture_features(self, user_id: str) -> Dict[str, Any]:
+        profile = self.get_profile(user_id)
+        gallery = profile.get('picture_gallery') or []
+        camgirl_board = self.camgirl_picture_board(user_id)
+        return {
+            'avatar_url': profile.get('avatar_url') or '',
+            'picture_gallery': gallery if isinstance(gallery, list) else [],
+            'camgirl_pictures': camgirl_board,
+            'total_saved': len(gallery) if isinstance(gallery, list) else 0,
+            'total_studio': len(camgirl_board),
+        }
     
     def update_profile(self, user_id: str, stats: Dict[str, Any], action_type: str = 'general') -> Dict[str, Any]:
         """Update player profile with new stats"""

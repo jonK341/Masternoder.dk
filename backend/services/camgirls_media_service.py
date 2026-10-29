@@ -186,6 +186,21 @@ def resell_pack_for_performer(performer_id: str, display_name: str = "") -> Dict
     }
 
 
+_STUDIO_UPGRADE_LABELS = {
+    "portrait_pictures": "Portrait",
+    "close_up": "Close-up",
+    "icon_webp": "HD icon",
+    "gallery_hd": "HD gallery",
+}
+
+
+def studio_upgrade_label(tag: str) -> str:
+    key = str(tag or "").strip()
+    if not key:
+        return ""
+    return _STUDIO_UPGRADE_LABELS.get(key, key.replace("_", " ").title())
+
+
 def attach_media_to_row(performer_row: Dict[str, Any], *, lite: bool = False) -> Dict[str, Any]:
     pid = str(performer_row.get("id") or "")
     if not pid:

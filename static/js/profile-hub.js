@@ -33,6 +33,7 @@
     agents: 'my-agents-card',
     activity: 'profile-section-activity',
     lab: 'profile-section-lab-logbook',
+    pictures: 'profile-section-profiler-pictures',
     battle: 'quick-battle-profile-card',
     progress: 'profile-section-achievements',
   };

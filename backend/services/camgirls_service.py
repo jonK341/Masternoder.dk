@@ -159,10 +159,22 @@ def list_performers_catalog(user_id: str = "default_user", lite: bool = False) -
         media = row.get("media") if isinstance(row.get("media"), dict) else {}
         picture = str(
             (media or {}).get("picture_url")
+            or p.get("picture_url")
             or row.get("icon_url")
             or row.get("avatar_url")
             or ""
         )
+        if picture:
+            row["picture_url"] = picture
+        json_upgrades = p.get("studio_upgrades") if isinstance(p.get("studio_upgrades"), list) else []
+        media_upgrades = (media or {}).get("studio_upgrades") if isinstance((media or {}).get("studio_upgrades"), list) else []
+        merged_upgrades: List[str] = []
+        for tag in list(json_upgrades) + list(media_upgrades):
+            token = str(tag or "").strip()
+            if token and token not in merged_upgrades:
+                merged_upgrades.append(token)
+        if merged_upgrades:
+            row["studio_upgrades"] = merged_upgrades
         row["floor"] = performer_link(str(p.get("id") or ""), picture_url=picture)
         performers.append(row)
     return {"success": True, "performers": performers, "count": len(performers)}
