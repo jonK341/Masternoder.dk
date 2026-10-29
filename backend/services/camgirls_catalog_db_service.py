@@ -82,7 +82,8 @@ def catalog_source_label() -> str:
     if mode == "json":
         return "json"
     if mode == "db":
-        return "db" if load_performers_from_db() else "json"
+        rows = load_performers_from_db()
+        return "db" if rows else "json_fallback"
     if has_json:
         try:
             with open(performers_json, "r", encoding="utf-8") as f:

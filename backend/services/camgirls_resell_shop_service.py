@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List
 
-from backend.services.camgirls_media_service import _PERFORMER_MEDIA_META
+from backend.services.camgirls_media_service import all_performer_media_meta, get_performer_media_meta
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _PACK_DIR = os.path.join(_ROOT, "content", "digital_goods", "camgirls")
@@ -17,7 +17,7 @@ def _pack_artifact(slug: str) -> str:
 def list_resell_digital_goods() -> List[Dict[str, Any]]:
     """Digital-good rows merged into monetization catalog."""
     goods: List[Dict[str, Any]] = []
-    for performer_id, meta in _PERFORMER_MEDIA_META.items():
+    for performer_id, meta in all_performer_media_meta().items():
         slug = str(meta.get("slug") or "")
         if not slug:
             continue
@@ -61,7 +61,7 @@ def list_resell_digital_goods() -> List[Dict[str, Any]]:
 
 
 def shop_item_id_for_performer(performer_id: str) -> str | None:
-    meta = _PERFORMER_MEDIA_META.get(performer_id) or {}
+    meta = get_performer_media_meta(performer_id)
     slug = meta.get("slug")
     if not slug:
         return None

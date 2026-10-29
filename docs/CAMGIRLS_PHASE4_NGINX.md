@@ -74,6 +74,12 @@ Update `camgirls.js` fetch paths from `/api/camgirls/` to `/app/api/` **or** set
 
 ---
 
+## DB catalog (Phase 4)
+
+- Sync JSON → SQLite: `python scripts/camgirls_sync_catalog_db.py` (runs on `deploy.py camgirls` post-hook).
+- Ops: `POST /api/camgirls/ops/sync-catalog-db` (X-Ops-Secret).
+- Production: set `CAMGIRLS_CATALOG_SOURCE=db` in server env after sync; status API reports `catalog_source`.
+
 ## References
 
 - [CAMGIRLS_PHASE0.md](CAMGIRLS_PHASE0.md) — URL plan

@@ -856,6 +856,7 @@ MANIFESTS = {
         "backend/services/camgirls_social_service.py",
         "backend/services/camgirls_status_service.py",
         "backend/services/camgirls_catalog_db_service.py",
+        "backend/services/camgirls_catalog_sync_service.py",
         "backend/services/camgirls_paypal_service.py",
         "backend/services/camgirls_media_service.py",
         "backend/services/camgirls_media_paths.py",
@@ -890,23 +891,32 @@ MANIFESTS = {
         "data/camgirls_performers_production.json",
         "data/camgirls_performers_production.template.json",
         "scripts/camgirls_onboard_performers.py",
+        "scripts/camgirls_batch_onboard.py",
+        "scripts/camgirls_batch_onboard.sh",
         "scripts/camgirls_provision_payout_addresses.py",
         "scripts/camgirls_py.sh",
         "scripts/project_env.py",
         "scripts/camgirls_post_deploy_verify.py",
         "scripts/camgirls_prod_fast_sync.sh",
         "scripts/camgirls_generate_performer_media.py",
+        "scripts/camgirls_livekit_smoke.py",
+        "scripts/camgirls_sync_catalog_db.py",
         "scripts/camgirls_phase4_nginx_remote.py",
         "config/nginx/camgirls-phase4-app.conf.snippet",
         "scripts/camgirls_discord_spotlight.py",
         "scripts/camgirls_remote_diag.py",
         "docs/CAMGIRLS_PHASE4_NGINX.md",
         "data/camgirls_next_todos.json",
+        "data/camgirls_performers_wave.template.json",
+        "data/camgirls_performer_media_meta.json",
+        "docs/CAMGIRLS_SCALE_250.md",
+        "backend/services/camgirls_wave_ops.py",
         "camgirls/index.html",
         "camgirls/performer.html",
         "shop/index.html",
         "static/js/camgirls.js",
         "static/js/camgirls-studio.js",
+        "static/js/camgirls-livekit-voice.js",
         "static/js/camgirls-stream-voice.js",
         "static/js/camgirls-api-base.js",
         "static/js/camgirls-nav-fix.js",
@@ -1463,6 +1473,14 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 print(f"  [WARN] pip install requests: {err[:200]}")
             else:
                 print("  [OK] .venv requests (MN2 payout RPC)")
+            sync_cmd = (
+                f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
+                "scripts/camgirls_sync_catalog_db.py 2>&1 | tail -3"
+            )
+            _, sync_out, _ = ssh.exec_command(sync_cmd, timeout=120)
+            sync_text = (sync_out.read() or b"").decode(errors="replace").strip()
+            if sync_text:
+                print(f"  [catalog-db] {sync_text.split(chr(10))[-1][:120]}")
             gen_cmd = (
                 f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
                 "scripts/camgirls_generate_performer_media.py 2>&1 | tail -5"

@@ -710,7 +710,10 @@ def fulfill_paypal_mn2_order(user_id: str, order_id: str, capture: Dict[str, Any
         pending = (rows.get("pending") or {}).get(order_id)
         if not pending:
             return {"success": False, "error": "pending_order_not_found"}
-        if str(pending.get("user_id") or "").strip() != uid:
+        pending_uid = str(pending.get("user_id") or "").strip()
+        if not uid or uid.lower() == "default_user":
+            uid = pending_uid
+        if pending_uid != uid:
             return {"success": False, "error": "order_user_mismatch"}
         expires = _parse_iso(pending.get("expires_at"))
         if expires and expires < datetime.now(timezone.utc):

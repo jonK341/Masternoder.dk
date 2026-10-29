@@ -73,8 +73,22 @@ def _address_validity(addr: str) -> Optional[bool]:
         return False
     # Well-formed. If the daemon reports ownership, require it to be ours.
     if "ismine" in res and res.get("ismine") is False:
+        if not _wallet_info_ready():
+            return None
         return False
     return True
+
+
+def _wallet_info_ready() -> bool:
+    """False when getwalletinfo is missing or the daemon cannot answer."""
+    try:
+        from backend.services.mn2_rpc_client import getwalletinfo
+        info = getwalletinfo()
+    except Exception:
+        return False
+    if not isinstance(info, dict) or info.get("error"):
+        return False
+    return isinstance(info.get("result"), dict)
 
 
 _UNLOCK_MARKERS = (
@@ -219,8 +233,14 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
     # a *definitive* invalid; an RPC outage (None) must keep the existing address.
     if user_id in addresses:
         existing = _entry_primary(addresses[user_id])
-        if existing and _address_validity(existing) is not False:
-            return {"success": True, "deposit_address": existing, "user_id": user_id}
+        validity = _address_validity(existing) if existing else False
+        if existing and validity is not False:
+            payload = {"success": True, "deposit_address": existing, "user_id": user_id}
+            if validity is None and not _wallet_info_ready():
+                payload["address_warning"] = (
+                    "Wallet is not ready to confirm ownership; kept the existing deposit address."
+                )
+            return payload
         addresses.pop(user_id, None)
 
     # Use a pre-created pool address if available (reassign to this user),

@@ -108,6 +108,10 @@ def process_one(row: Dict[str, Any]) -> Dict[str, Any]:
     row["updated_at"] = _iso()
     try:
         result = _dispatch(row.get("handler") or "", row.get("payload") or {})
+        if isinstance(result, tuple):
+            result = result[0] if result else {}
+        if not isinstance(result, dict):
+            result = {"success": False, "error": "invalid_handler_result"}
         ok = bool(result.get("success", True)) and not result.get("error")
         if ok or result.get("duplicate"):
             row["status"] = "done"

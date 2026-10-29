@@ -1,0 +1,26 @@
+{
+  "wave": 2,
+  "id_prefix": "performer_wave2_",
+  "notes": "Copy to waves/wave2.json, fill 15–50 stubs, remove _example rows, then batch onboard. Do not commit real PII.",
+  "performers": [
+    {
+      "_example": true,
+      "slug": "studio-host-a",
+      "display_name": "Example Host A",
+      "bio": "Short studio bio for catalog.",
+      "tagline": "Live AI · wave 2",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "studio-host-a",
+        "initials": "EA",
+        "c1": "#a855f7",
+        "c2": "#4c1d95"
+      }
+    }
+  ]
+}
