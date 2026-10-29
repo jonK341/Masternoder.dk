@@ -29,7 +29,18 @@ git checkout -B main origin/main
 
 Use a **deploy key** or **HTTPS token** if the repo is private (`git config credential.helper store` after one successful pull).
 
-## Every deploy (after merges to `main`)
+**Option C — bootstrap script (no git repo yet; run once on the server)**
+
+`git pull` will always say *not a git repository* until `.git` exists. From Termux, SSH to the server, then:
+
+```bash
+apt update && apt install -y git    # if `git` is missing
+curl -fsSL "https://raw.githubusercontent.com/jonK341/Masternoder.dk/main/scripts/bootstrap_git_on_server.sh" | bash  <!-- pragma: allowlist secret -->
+```
+
+(If that URL 404s before the script is on `main`, use branch `cursor/container-deploy-faa3` in the path instead of `main`.)
+
+Then `git pull --ff-only origin main` will work.
 
 SSH to the server (or `pct enter` your LXC), then:
 
