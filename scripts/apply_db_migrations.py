@@ -74,6 +74,14 @@ def main() -> int:
             _run("SQLite safety backup", [py, backup, db_path], timeout=120)
         _run("MN2 additive schema (001_create_schema)", [py, schema_script, "--db", db_path], timeout=300)
 
+    platform_script = os.path.join(migrations_dir, "010_platform_wallet_nft_payments.py")
+    if os.path.isfile(platform_script):
+        _run(
+            "Platform wallets, NFT, payment slots (010)",
+            [py, platform_script, "--db", db_path, "--data-dir", os.path.join(_ROOT, "data")],
+            timeout=600,
+        )
+
     if os.environ.get("RUN_MN2_BACKFILL", "").strip().lower() in ("1", "true", "yes"):
         runner = os.path.join(migrations_dir, "run_server_migration.sh")
         if os.path.isfile(runner):

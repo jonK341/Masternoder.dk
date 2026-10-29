@@ -54,6 +54,9 @@ $PY "$SCRIPT_DIR/009_camgirls.py" --db "$DB" --data-dir "$DATA"
 echo; echo "===== 3e. Compute MN2 stats + consolidate wallet identities ====="
 $PY "$SCRIPT_DIR/005_compute_stats.py" --db "$DB" --data-dir "$DATA"
 
+echo; echo "===== 3f. Platform wallets, NFT registry, payment tokens, staking/hosting ====="
+$PY "$SCRIPT_DIR/010_platform_wallet_nft_payments.py" --db "$DB" --data-dir "$DATA"
+
 echo; echo "===== 4. Crawl public pages -> site_pages ====="
 $PY "$SCRIPT_DIR/003_crawl_site_pages.py" --db "$DB" --no-html
 
