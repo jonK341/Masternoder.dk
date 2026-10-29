@@ -450,6 +450,75 @@ def get_address_to_user_map() -> Dict[str, str]:
     return out
 
 
+def _coins_per_mn2() -> float:
+    try:
+        with open(os.path.join(_data_dir(), "mn2_config.json"), "r", encoding="utf-8") as handle:
+            return float(json.load(handle).get("coins_per_mn2") or 100)
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return 100.0
+
+
+def frame_user_mn2_wallet(user_id: str) -> Dict[str, Any]:
+    """One deposit address per user, with that user's MN2 balance shown as coins.
+
+    Creates the address through getnewaddress when the user has none. Extra
+    labeled addresses stay on file but only the primary stays active.
+    """
+    uid = str(user_id or "").strip()
+    if not uid:
+        return {"success": False, "error": "user_id required", "deposit_address": None}
+
+    addresses = _load_addresses()
+    had_address = bool(_entry_primary(addresses.get(uid)))
+    created = get_or_create_deposit_address(uid)
+    if not created.get("success"):
+        return {
+            "success": False,
+            "error": created.get("error") or "could not create address",
+            "code": created.get("code"),
+            "user_id": uid,
+            "deposit_address": None,
+        }
+
+    addresses = _load_addresses()
+    entry = addresses.get(uid)
+    primary = _entry_primary(entry) or created.get("deposit_address")
+    if isinstance(entry, dict):
+        rows = entry.get("addresses")
+        if isinstance(rows, list):
+            for row in rows:
+                if isinstance(row, dict):
+                    row["active"] = str(row.get("address") or "").strip() == primary
+        entry["primary"] = primary
+        entry["wallet_type"] = entry.get("wallet_type") or "core"
+        entry["framed"] = True
+        addresses[uid] = entry
+        _save_addresses(addresses)
+    elif isinstance(entry, str) and primary:
+        addresses[uid] = {
+            "primary": primary,
+            "wallet_type": "core",
+            "framed": True,
+            "addresses": [{"label": "primary", "address": primary, "type": "core", "active": True}],
+        }
+        _save_addresses(addresses)
+
+    bal = get_balance(uid)
+    mn2 = float(bal.get("mn2_balance") or 0)
+    rate = _coins_per_mn2()
+    return {
+        "success": True,
+        "user_id": uid,
+        "deposit_address": primary,
+        "created": not had_address,
+        "framed": True,
+        "wallet_count": 1,
+        "mn2_balance": mn2,
+        "coins_per_mn2": rate,
+        "mn2_coins": int(round(mn2 * rate)),
+    }
+
+
 def get_balance(user_id: str) -> Dict[str, Any]:
     """Return the user's in-app MN2 balance from unified points (not chain balance)."""
     if not (user_id or "").strip():

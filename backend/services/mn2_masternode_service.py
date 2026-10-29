@@ -65,7 +65,7 @@ def get_config() -> Dict[str, Any]:
     cfg = _read_json(_data_path(_CONFIG_FILE))
     cfg.setdefault("enabled", True)
     cfg.setdefault("collateral_mn2", _COLLATERAL_MN2)
-    cfg.setdefault("max_hosted_nodes", 3)
+    cfg.setdefault("max_hosted_nodes", 500)
     return cfg
 
 
@@ -393,7 +393,7 @@ def register_host(payload: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": "label required"}
 
     cfg = get_config()
-    max_nodes = int(cfg.get("max_hosted_nodes") or 3)
+    max_nodes = int(cfg.get("max_hosted_nodes") or 500)
     with _LOCK:
         doc = _load_hosts_doc()
         hosts: List[Dict[str, Any]] = list(doc.get("hosts") or [])
@@ -1967,7 +1967,7 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
     cfg = get_config()
     enabled = bool(cfg.get("enabled", True))
     collateral = float(cfg.get("collateral_mn2") or _COLLATERAL_MN2)
-    max_nodes = int(cfg.get("max_hosted_nodes") or 3)
+    max_nodes = int(cfg.get("max_hosted_nodes") or 500)
     registry_hosts = list(_load_hosts_doc().get("hosts") or [])
     # Internal rows keep collateral_txid so on-chain matching works.
     hosts = list_hosts(include_internal=True)
@@ -2109,7 +2109,7 @@ def probe_health() -> Dict[str, Any]:
         # File-only fallback — no RPC on the health path.
         registry_hosts = list(_load_hosts_doc().get("hosts") or [])
         slots_used = _count_slots_used(registry_hosts)
-        max_nodes = int(cfg.get("max_hosted_nodes") or 3)
+        max_nodes = int(cfg.get("max_hosted_nodes") or 500)
         return {
             "status": "unknown",
             "enabled": True,

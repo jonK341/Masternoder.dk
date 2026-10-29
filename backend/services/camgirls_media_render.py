@@ -78,8 +78,14 @@ def render_gallery_webp(
     # Silhouette / portrait oval
     cx, cy = w // 2, int(h * 0.42) + variant * 6
     rx, ry = 95, 120
-    draw.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=(12, 14, 22))
-    draw.ellipse((cx - rx + 8, cy - ry + 8, cx + rx - 8, cy + ry - 8), fill=_blend(top, bot, 0.35))
+    skin = _blend((243, 213, 196), top, 0.15)
+    draw.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=(18, 14, 24))
+    draw.ellipse((cx - 54, cy - 70, cx + 54, cy + 78), fill=skin)
+    hair = _blend((28, 16, 18), bot, 0.25)
+    draw.pieslice((cx - 62, cy - 92, cx + 62, cy + 10), 200, 340, fill=hair)
+    draw.ellipse((cx - 22, cy - 8, cx - 8, cy + 8), fill=(26, 18, 14))
+    draw.ellipse((cx + 8, cy - 8, cx + 22, cy + 8), fill=(26, 18, 14))
+    draw.arc((cx - 16, cy + 18, cx + 16, cy + 36), 20, 160, fill=(150, 70, 80), width=3)
 
     try:
         font = ImageFont.truetype("arial.ttf", 48)
@@ -88,8 +94,8 @@ def render_gallery_webp(
         font = ImageFont.load_default()
         font_sm = font
 
-    labels = ("Studio still", "Profile shot", "Stage look")
-    label = labels[variant - 1] if 1 <= variant <= 3 else "Still"
+    labels = ("Studio still", "Profile shot", "Stage look", "Close-up")
+    label = labels[variant - 1] if 1 <= variant <= len(labels) else "Still"
     init = (initials or "AI")[:3]
     bbox = draw.textbbox((0, 0), init, font=font)
     tw = bbox[2] - bbox[0]

@@ -5,6 +5,9 @@ import json
 import os
 from flask import Blueprint, jsonify, redirect, request
 
+from backend.services.discord_controller_service import parse_discord_interaction
+from backend.services.discord_customer_ingest_service import list_discord_audio
+
 discord_bp = Blueprint("discord", __name__)
 _INTERACTION_PING = 1
 
@@ -58,7 +61,21 @@ def discord_interactions():
         return jsonify({"success": False, "error": "invalid_json"}), 400
     if payload.get("type") == _INTERACTION_PING:
         return jsonify({"type": 1}), 200
+    if int(payload.get("type") or 0) == 2:
+        handled = parse_discord_interaction(payload)
+        if handled:
+            return jsonify(handled), 200
     return jsonify({"success": False, "error": "unsupported_interaction_type"}), 501
+
+
+@discord_bp.route("/api/discord/audio", methods=["GET"])
+def discord_audio():
+    """Audio clips captured from Discord message attachments."""
+    try:
+        limit = int(request.args.get("limit") or 20)
+    except (TypeError, ValueError):
+        limit = 20
+    return jsonify(list_discord_audio(limit=limit)), 200
 
 
 @discord_bp.route("/api/discord/status", methods=["GET"])

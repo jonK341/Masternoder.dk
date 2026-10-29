@@ -25,8 +25,9 @@ from backend.services.camgirls_media_service import (  # noqa: E402
 
 
 def _svg_gallery(slug: str, initials: str, c1: str, c2: str, variant: int) -> str:
-    labels = ("Studio still", "Profile shot", "Stage look")
-    label = labels[variant - 1] if 1 <= variant <= 3 else "Still"
+    labels = ("Studio still", "Profile shot", "Stage look", "Close-up")
+    label = labels[variant - 1] if 1 <= variant <= len(labels) else "Still"
+    shift = (variant - 1) * 8
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
@@ -36,10 +37,14 @@ def _svg_gallery(slug: str, initials: str, c1: str, c2: str, variant: int) -> st
   </defs>
   <rect width="640" height="480" fill="#0d1117"/>
   <rect x="24" y="24" width="592" height="432" rx="20" fill="url(#g)" opacity="0.92"/>
-  <circle cx="320" cy="200" r="72" fill="#0d1117" opacity="0.35"/>
-  <text x="320" y="210" text-anchor="middle" fill="#fff" font-size="42" font-family="system-ui,sans-serif">{initials}</text>
-  <text x="320" y="320" text-anchor="middle" fill="#f8fafc" font-size="22" font-family="system-ui,sans-serif">{label}</text>
-  <text x="320" y="360" text-anchor="middle" fill="#e2e8f0" font-size="14" font-family="system-ui,sans-serif">{slug} · MN2 Camgirls</text>
+  <ellipse cx="{320 + shift}" cy="250" rx="92" ry="118" fill="#1c1428"/>
+  <ellipse cx="{320 + shift}" cy="228" rx="70" ry="86" fill="#f3d5c4"/>
+  <path d="M{250 + shift} 210 Q{320 + shift} 120 {390 + shift} 210 Q{360 + shift} 160 {320 + shift} 168 Q{280 + shift} 160 {250 + shift} 210" fill="#2a1a14"/>
+  <ellipse cx="{296 + shift}" cy="228" rx="7" ry="8" fill="#1a120e"/>
+  <ellipse cx="{344 + shift}" cy="228" rx="7" ry="8" fill="#1a120e"/>
+  <path d="M{304 + shift} 262 Q{320 + shift} 274 {336 + shift} 262" fill="none" stroke="#a15a62" stroke-width="3" stroke-linecap="round"/>
+  <text x="320" y="400" text-anchor="middle" fill="#f8fafc" font-size="20" font-family="system-ui,sans-serif">{label} · {initials}</text>
+  <text x="320" y="428" text-anchor="middle" fill="#e2e8f0" font-size="13" font-family="system-ui,sans-serif">{slug} · MN2 Camgirls</text>
 </svg>
 """
 
@@ -200,7 +205,7 @@ def main() -> int:
         os.makedirs(out_dir, exist_ok=True)
 
         if not args.no_raster:
-            for i in (1, 2, 3):
+            for i in (1, 2, 3, 4):
                 stem = f"gallery-{i}"
                 webp_path = os.path.join(out_dir, f"{stem}.webp")
                 if args.force or not _user_raster_exists(out_dir, stem):
@@ -221,7 +226,7 @@ def main() -> int:
                     c2=meta["c2"],
                 )
 
-        for i in (1, 2, 3):
+        for i in (1, 2, 3, 4):
             svg_path = os.path.join(out_dir, f"gallery-{i}.svg")
             if args.no_raster or args.force or not os.path.isfile(svg_path):
                 _write_if_allowed(

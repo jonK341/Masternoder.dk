@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Hosting Beacon NFT">
+  <rect width="128" height="128" rx="16" fill="#082018"/>
+  <rect x="58" y="36" width="12" height="52" fill="#34d399"/>
+  <circle cx="64" cy="32" r="10" fill="#bbf7d0"/>
+  <path d="M40 88 H88" stroke="#6ee7b7" stroke-width="4"/>
+  <text x="64" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#d1fae5">HOST</text>
+</svg>

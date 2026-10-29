@@ -17,6 +17,8 @@ _DISCORD_CHANNEL_URL_RE = re.compile(
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _INDEX_FILE = os.path.join(_BASE, "data", "discord_customer_index.json")
+_AUDIO_FILE = os.path.join(_BASE, "data", "discord_audio_clips.json")
+_AUDIO_EXTS = (".mp3", ".ogg", ".wav", ".m4a", ".webm", ".flac")
 _POINTS_DIR = os.path.join(_BASE, "logs", "unified_points")
 _IDENT_DIR = os.path.join(_BASE, "logs", "user_identifiers")
 
@@ -216,6 +218,79 @@ def _upsert_discord_customer(
     return {"success": True, "customer": row, "user_id": user_id}
 
 
+def _is_audio_attachment(attachment: Dict[str, Any]) -> bool:
+    if not isinstance(attachment, dict):
+        return False
+    url = str(attachment.get("url") or attachment.get("proxy_url") or "").strip()
+    if not url:
+        return False
+    content_type = str(attachment.get("content_type") or "").lower()
+    filename = str(attachment.get("filename") or "").lower()
+    return content_type.startswith("audio/") or filename.endswith(_AUDIO_EXTS)
+
+
+def extract_audio_clips(message: Dict[str, Any], *, channel_id: str = "") -> List[Dict[str, Any]]:
+    """Pull playable audio attachments off one Discord message."""
+    clips: List[Dict[str, Any]] = []
+    author = (message or {}).get("author") or {}
+    for attachment in (message or {}).get("attachments") or []:
+        if not _is_audio_attachment(attachment):
+            continue
+        clips.append({
+            "id": str(attachment.get("id") or message.get("id") or ""),
+            "message_id": str(message.get("id") or ""),
+            "channel_id": channel_id or str(message.get("channel_id") or ""),
+            "discord_id": str(author.get("id") or ""),
+            "username": str(author.get("username") or ""),
+            "filename": str(attachment.get("filename") or "audio"),
+            "content_type": str(attachment.get("content_type") or ""),
+            "url": str(attachment.get("url") or attachment.get("proxy_url") or ""),
+            "captured_at": _iso(),
+        })
+    return clips
+
+
+def _load_audio() -> Dict[str, Any]:
+    if not os.path.isfile(_AUDIO_FILE):
+        return {"clips": []}
+    try:
+        with open(_AUDIO_FILE, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        if isinstance(data, dict) and isinstance(data.get("clips"), list):
+            return data
+    except (OSError, json.JSONDecodeError):
+        pass
+    return {"clips": []}
+
+
+def _save_audio(doc: Dict[str, Any]) -> None:
+    os.makedirs(os.path.dirname(_AUDIO_FILE), exist_ok=True)
+    with open(_AUDIO_FILE, "w", encoding="utf-8") as handle:
+        json.dump(doc, handle, indent=2)
+
+
+def record_message_audio(message: Dict[str, Any], *, channel_id: str = "") -> List[Dict[str, Any]]:
+    fresh = extract_audio_clips(message, channel_id=channel_id)
+    if not fresh:
+        return []
+    doc = _load_audio()
+    known = {str(row.get("id") or "") for row in doc.get("clips") or []}
+    added = [row for row in fresh if row["id"] and row["id"] not in known]
+    if not added:
+        return []
+    clips = added + list(doc.get("clips") or [])
+    doc["clips"] = clips[:40]
+    doc["updated_at"] = _iso()
+    _save_audio(doc)
+    return added
+
+
+def list_discord_audio(*, limit: int = 20) -> Dict[str, Any]:
+    doc = _load_audio()
+    clips = list(doc.get("clips") or [])[: max(1, min(int(limit or 20), 40))]
+    return {"success": True, "clips": clips, "count": len(doc.get("clips") or [])}
+
+
 def fetch_channel_messages(channel_id: str, *, limit: int = 100) -> Dict[str, Any]:
     cid = str(channel_id or "").strip()
     if not cid:
@@ -280,6 +355,7 @@ def sync_customers_from_channel(
             )
             if row.get("success"):
                 upserted.append(row["customer"])
+            record_message_audio(msg, channel_id=cid)
     else:
         errors.append(msg_res.get("error") or "message_fetch_failed")
 

@@ -135,7 +135,14 @@
         depositErrEl.style.display = 'none';
         depositErrEl.textContent = '';
       }
-      if (depositHintEl) depositHintEl.style.display = 'none';
+      if (depositHintEl) {
+        if (addrData.mn2_coins != null) {
+          depositHintEl.style.display = '';
+          depositHintEl.textContent = 'One wallet · ' + addrData.mn2_coins + ' MN2 coins';
+        } else {
+          depositHintEl.style.display = 'none';
+        }
+      }
       if (depositRetryBtn) depositRetryBtn.style.display = 'none';
       if (requestAddrBtn) requestAddrBtn.style.display = 'inline-block';
       if (explorerLink && addrData.explorer_address_url) {
@@ -249,10 +256,10 @@
         timeout: 20000,
       }).then(function (res) {
         if (res.data && res.data.success) return { data: res.data };
-        return fetchJson(base() + '/api/mn2/deposit-address?user_id=' + encodeURIComponent(user), { timeout: 20000 });
+        return fetchJson(base() + '/api/mn2/wallet-frame?user_id=' + encodeURIComponent(user), { timeout: 20000 });
       });
     } else {
-      promise = fetchJson(base() + '/api/mn2/deposit-address?user_id=' + encodeURIComponent(user), { timeout: 20000 });
+      promise = fetchJson(base() + '/api/mn2/wallet-frame?user_id=' + encodeURIComponent(user), { timeout: 20000 });
     }
     return promise
       .then(function (res) {
@@ -431,7 +438,7 @@
     fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
       renderBalance(res.data);
     });
-    fetchJson(base() + '/api/mn2/deposit-address?user_id=' + q, { timeout: 18000 }).then(function (res) {
+    fetchJson(base() + '/api/mn2/wallet-frame?user_id=' + q, { timeout: 18000 }).then(function (res) {
       renderDeposit(res.data);
     });
     fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {

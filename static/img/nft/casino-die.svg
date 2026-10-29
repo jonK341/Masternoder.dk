@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Casino Die NFT">
+  <rect width="128" height="128" rx="16" fill="#1a0a14"/>
+  <rect x="34" y="34" width="60" height="60" rx="10" fill="#f8fafc"/>
+  <circle cx="50" cy="50" r="5" fill="#111"/>
+  <circle cx="78" cy="50" r="5" fill="#111"/>
+  <circle cx="64" cy="64" r="5" fill="#111"/>
+  <circle cx="50" cy="78" r="5" fill="#111"/>
+  <circle cx="78" cy="78" r="5" fill="#111"/>
+</svg>
