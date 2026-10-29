@@ -2,7 +2,7 @@
 Missing Endpoints Routes
 Provides routes for endpoints that are referenced in frontend but missing from backend
 """
-from flask import Blueprint, jsonify, request, send_file, Response
+from flask import Blueprint, current_app, jsonify, request, send_file, Response
 from datetime import datetime
 import json
 import os
@@ -64,6 +64,42 @@ def _get_lab_page_path():
         if os.path.exists(p):
             return p
     return None
+
+
+def _get_api_lab_page_path():
+    """Resolve API Lab index.html (vidgenerator/api-lab/)."""
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    candidates = [
+        os.path.join(base, 'vidgenerator', 'api-lab', 'index.html'),
+        '/var/www/html/vidgenerator/api-lab/index.html',
+        '/var/www/html/vidgenerator/vidgenerator/api-lab/index.html',
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return p
+    return None
+
+
+def _serve_api_lab_html():
+    page_path = _get_api_lab_page_path()
+    if page_path:
+        try:
+            with open(page_path, 'r', encoding='utf-8') as handle:
+                content = handle.read()
+            return content, 200, {
+                'Content-Type': 'text/html; charset=utf-8',
+                'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+                'Pragma': 'no-cache',
+            }
+        except Exception:
+            pass
+    return (
+        '<!DOCTYPE html><html><head><title>API Lab</title></head><body>'
+        '<h1>API Lab</h1><p>Page files missing on server — run git pull on main.</p>'
+        '<a href="/vidgenerator/">Home</a></body></html>',
+        200,
+        {'Content-Type': 'text/html; charset=utf-8'},
+    )
 
 
 def _load_json_file_or_none(path):
@@ -431,6 +467,48 @@ def lab_page():
         200,
         {'Content-Type': 'text/html; charset=utf-8'},
     )
+
+
+# ========== API LAB PAGE ==========
+
+@missing_endpoints_bp.route('/vidgenerator/api-lab', methods=['GET'])
+@missing_endpoints_bp.route('/vidgenerator/api-lab/', methods=['GET'])
+@missing_endpoints_bp.route('/vidgenerator/api-lab/index.html', methods=['GET'])
+@missing_endpoints_bp.route('/api-lab', methods=['GET'])
+@missing_endpoints_bp.route('/api-lab/', methods=['GET'])
+@missing_endpoints_bp.route('/api-lab/index.html', methods=['GET'])
+def api_lab_page_fallback():
+    """Serve API Lab HTML (fallback if api_lab blueprint not loaded yet)."""
+    return _serve_api_lab_html()
+
+
+@missing_endpoints_bp.route('/api/lab/catalog', methods=['GET'])
+@missing_endpoints_bp.route('/vidgenerator/api/lab/catalog', methods=['GET'])
+def api_lab_catalog_fallback():
+    """Catalog JSON when api_lab blueprint is not registered (e.g. before deploy restart)."""
+    from backend.routes.api_lab_routes import build_catalog
+
+    catalog = build_catalog(current_app.url_map.iter_rules())
+    query = (request.args.get('q') or '').strip().lower()
+    category = (request.args.get('category') or '').strip().lower()
+    if query or category:
+        rows = catalog['endpoints']
+        if category and category != 'all':
+            rows = [row for row in rows if row['category'] == category]
+        if query:
+            rows = [
+                row
+                for row in rows
+                if query in row['path'].lower()
+                or query in row['method'].lower()
+                or query in row['category']
+            ]
+        catalog = dict(catalog)
+        catalog['endpoints'] = rows
+        catalog['total'] = len(rows)
+        catalog['filtered'] = True
+    return jsonify(catalog), 200
+
 
 # ========== POINTS ROUTES ==========
 

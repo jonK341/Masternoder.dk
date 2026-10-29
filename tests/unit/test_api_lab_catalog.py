@@ -1,5 +1,37 @@
 """API Lab catalog grouping."""
+import os
+
+import pytest
+
 from backend.routes.api_lab_routes import build_catalog, category_for, is_try_safe
+
+
+@pytest.fixture
+def lite_app_client():
+    previous = os.environ.get("LITE_APP")
+    os.environ["LITE_APP"] = "1"
+    try:
+        from run import app
+
+        app.config["TESTING"] = True
+        yield app.test_client()
+    finally:
+        if previous is None:
+            os.environ.pop("LITE_APP", None)
+        else:
+            os.environ["LITE_APP"] = previous
+
+
+def test_lite_app_serves_api_lab_page_and_catalog(lite_app_client):
+    for path in ("/api-lab/", "/vidgenerator/api-lab/"):
+        resp = lite_app_client.get(path)
+        assert resp.status_code == 200
+        assert b"API Lab" in resp.data
+    catalog = lite_app_client.get("/api/lab/catalog")
+    assert catalog.status_code == 200
+    payload = catalog.get_json()
+    assert payload.get("success") is True
+    assert payload.get("total", 0) > 0
 
 
 def test_category_for_api_prefixes():

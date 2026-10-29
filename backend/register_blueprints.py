@@ -124,6 +124,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP lab: {e}")
     try:
+        if "api_lab" not in app.blueprints:
+            from backend.routes.api_lab_routes import api_lab_bp
+            app.register_blueprint(api_lab_bp)
+            n += 1
+            print("  [OK] Registered api_lab blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP api_lab: {e}")
+    try:
         from backend.routes.create_app_routes import create_app_bp
         app.register_blueprint(create_app_bp)
         n += 1
