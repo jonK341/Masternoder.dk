@@ -31,7 +31,7 @@
     if (window.Mn2SiteBridge && window.Mn2SiteBridge.uid) return window.Mn2SiteBridge.uid();
     try {
       return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); }
       return 'default_user';
     }
   }
@@ -92,7 +92,7 @@
       try {
         document.execCommand('copy');
         toast('Copied', 'ok');
-      } catch (e) {
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); }
         toast('Copy failed', 'err');
       }
       document.body.removeChild(ta);
@@ -103,13 +103,13 @@
     try {
       var raw = localStorage.getItem(key);
       return raw ? JSON.parse(raw) : fallback;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); }
       return fallback;
     }
   }
 
   function writeJson(key, val) {
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* ignore */ }
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); } /* ignore */ }
   }
 
   function getFavorites() {
@@ -165,7 +165,7 @@
         var pts = d.points || {};
         pill.textContent = fmtNum(pts.mn2_balance, 4) + ' MN2 · ' + fmtNum(pts.coins, 0) + ' coins';
         pill.className = 'host-status-pill ok';
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hosting-hub.js', context: 'catch' }); }});
   }
 
   function setFooter(text) {
@@ -393,7 +393,7 @@
         toast(err, 'warn');
       }
       return d;
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hosting-hub.js', context: 'catch' }); }
       setFooter('<span style="color:#ffaa66">Could not reach hosting API · press <kbd>R</kbd> to retry</span>');
       toast('Hosting service unreachable', 'err');
     });
@@ -522,7 +522,7 @@
         return payOnchain(quote);
       }
       return payPayPal(quote);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'hosting-hub.js', context: 'catch' }); }
       setCheckoutBusy(false);
       toast('Checkout failed', 'err');
     });
@@ -597,7 +597,7 @@
     var qrEl = q('host-onchain-qr');
     if (qrEl) qrEl.innerHTML = '';
     if (qrEl && window.QRCode && data.address) {
-      try { new window.QRCode(qrEl, { text: data.address, width: 120, height: 120 }); } catch (e) { qrEl.textContent = 'QR N/A'; }
+      try { new window.QRCode(qrEl, { text: data.address, width: 120, height: 120 }); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); } qrEl.textContent = 'QR N/A'; }
     }
     var copyBtn = q('host-onchain-copy');
     if (copyBtn) copyBtn.onclick = function () { copyText(data.address); };
@@ -642,7 +642,7 @@
         url.searchParams.delete('paypal');
         url.searchParams.delete('mn_quote');
         window.history.replaceState({}, document.title, url.pathname + url.search);
-      } catch (e) { /* ignore */ }
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); } /* ignore */ }
     });
   }
 
@@ -664,7 +664,7 @@
       if (tabId === 'overview') url.searchParams.delete('host_tab');
       else url.searchParams.set('host_tab', tabId);
       window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); } /* ignore */ }
     if (tabId === 'orders') loadMyOrders();
     if (tabId === 'network') loadNetwork();
   }
@@ -764,11 +764,11 @@
     if (!banner) return;
     try {
       if (localStorage.getItem('host_onboard_dismissed') === '1') banner.hidden = true;
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); } /* ignore */ }
     if (dismiss) {
       dismiss.addEventListener('click', function () {
         banner.hidden = true;
-        try { localStorage.setItem('host_onboard_dismissed', '1'); } catch (e) { /* ignore */ }
+        try { localStorage.setItem('host_onboard_dismissed', '1'); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'hosting-hub.js', context: 'catch' }); } /* ignore */ }
       });
     }
   }

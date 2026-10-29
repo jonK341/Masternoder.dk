@@ -65,7 +65,8 @@ class ServiceWorkerGatherer {
                 console.log('[SW Gatherer] New service worker active');
                 // No reload: minimal SW does not cache, so nothing to refresh
             });
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'service-worker-gatherer.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'service-worker-gatherer.js', context: 'console.error' }); }
             console.error('[SW Gatherer] Service Worker registration failed:', error);
         }
     }
@@ -74,7 +75,8 @@ class ServiceWorkerGatherer {
         try {
             const stored = localStorage.getItem('sw_request_queue');
             return stored ? JSON.parse(stored) : [];
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'service-worker-gatherer.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'service-worker-gatherer.js', context: 'console.error' }); }
             console.error('[SW Gatherer] Failed to load queue:', e);
             return [];
         }
@@ -83,7 +85,8 @@ class ServiceWorkerGatherer {
     saveQueue() {
         try {
             localStorage.setItem('sw_request_queue', JSON.stringify(this.queue));
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'service-worker-gatherer.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'service-worker-gatherer.js', context: 'console.error' }); }
             console.error('[SW Gatherer] Failed to save queue:', e);
         }
     }
@@ -127,7 +130,8 @@ class ServiceWorkerGatherer {
                 window.dispatchEvent(new CustomEvent('sw-request-complete', {
                     detail: { requestId: request.id, response }
                 }));
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'service-worker-gatherer.js', context: 'catch' }); }
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'service-worker-gatherer.js', context: 'console.error' }); }
                 console.error('[SW Gatherer] Failed to process queued request:', request.id, error);
                 // Re-queue on failure
                 this.queue.push(request);
@@ -163,7 +167,7 @@ class ServiceWorkerGatherer {
         if (this.isOnline) {
             try {
                 return await fetch(url, options);
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'service-worker-gatherer.js', context: 'catch' }); }
                 // Network error - queue it
                 if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
                     await this.queueRequest(url, options);

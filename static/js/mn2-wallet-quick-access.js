@@ -42,7 +42,7 @@
             var user = global.localStorage.getItem('user_id');
             if (game && game !== 'default_user') return game;
             if (user && user !== 'default_user') return user;
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-wallet-quick-access.js', context: 'catch' }); } /* ignore */ }
         return 'default_user';
     }
 
@@ -266,7 +266,7 @@
                 chip.classList.remove('is-loading', 'is-anonymous');
             }
             return bal;
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-wallet-quick-access.js', context: 'catch' }); }
             setBalanceText('—');
             if (chip) chip.classList.remove('is-loading');
             return null;

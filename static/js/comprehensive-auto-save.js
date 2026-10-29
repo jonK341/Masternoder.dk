@@ -93,7 +93,8 @@ class ComprehensiveAutoSave {
                     }
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-auto-save.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-auto-save.js', context: 'console.error' }); }
             console.error('[AutoSave] Error saving points:', error);
         }
     }
@@ -120,7 +121,8 @@ class ComprehensiveAutoSave {
                     }
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-auto-save.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-auto-save.js', context: 'console.error' }); }
             console.error('[AutoSave] Error saving energy:', error);
         }
     }
@@ -147,7 +149,8 @@ class ComprehensiveAutoSave {
                     }
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-auto-save.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-auto-save.js', context: 'console.error' }); }
             console.error('[AutoSave] Error saving progress:', error);
         }
     }
@@ -178,7 +181,8 @@ class ComprehensiveAutoSave {
             if (result.success) {
                 console.log('[AutoSave] State saved');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-auto-save.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-auto-save.js', context: 'console.error' }); }
             console.error('[AutoSave] Error saving state:', error);
         }
     }
@@ -217,7 +221,8 @@ class ComprehensiveAutoSave {
             if (result.success) {
                 console.log('[AutoSave] Full snapshot saved');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-auto-save.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'comprehensive-auto-save.js', context: 'console.error' }); }
             console.error('[AutoSave] Error saving full snapshot:', error);
         }
     }
@@ -229,7 +234,7 @@ class ComprehensiveAutoSave {
         try {
             const response = await fetch(`${this.baseURL}/status?user_id=${this.userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'comprehensive-auto-save.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }

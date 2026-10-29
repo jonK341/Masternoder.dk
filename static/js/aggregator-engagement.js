@@ -8,7 +8,7 @@
   function getUserId() {
     try {
       if (window.MnUserId && typeof window.MnUserId.read === 'function') return window.MnUserId.read();
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'aggregator-engagement.js', context: 'catch' }); }}
     return '';
   }
 
@@ -52,7 +52,7 @@
         }
         return data;
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'aggregator-engagement.js', context: 'catch' }); }
         return { success: false };
       });
   }
@@ -72,7 +72,7 @@
         if (gp) gp.textContent = (p.game_points != null ? p.game_points : 0).toLocaleString();
         if (kn) kn.textContent = (p.knowledge_points != null ? p.knowledge_points : 0).toLocaleString();
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'aggregator-engagement.js', context: 'catch' }); }});
   }
 
   window.AggregatorEngagement = {

@@ -136,7 +136,7 @@
     if (isNaN(d.getTime())) return String(raw);
     try {
       return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'shop-order-list.js', context: 'catch' }); }
       return d.toLocaleString();
     }
   }
@@ -476,7 +476,7 @@
         setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
         return true;
       })
-      .catch(function (err) {
+      .catch(function (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'shop-order-list.js', context: 'catch' }); }
         if (pdfHint) pdfHint.textContent = err && err.message ? err.message : 'Could not build PDF';
         return false;
       })

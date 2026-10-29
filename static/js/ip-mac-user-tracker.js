@@ -48,7 +48,7 @@
                 ctx.font = '14px Arial';
                 ctx.fillText('Device fingerprint', 2, 2);
                 components.push(`canvas:${canvas.toDataURL().substring(0, 50)}`);
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'ip-mac-user-tracker.js', context: 'catch' }); }
                 components.push('canvas:error');
             }
             
@@ -62,7 +62,7 @@
                         components.push(`webglRenderer:${gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)}`);
                     }
                 }
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'ip-mac-user-tracker.js', context: 'catch' }); }
                 components.push('webgl:error');
             }
             
@@ -84,7 +84,7 @@
                 components.push(`audio:${audioFingerprint}`);
                 
                 audioContext.close();
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'ip-mac-user-tracker.js', context: 'catch' }); }
                 components.push('audio:error');
             }
             
@@ -151,7 +151,8 @@
                 }
                 
                 return data;
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'ip-mac-user-tracker.js', context: 'catch' }); }
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'ip-mac-user-tracker.js', context: 'console.error' }); }
                 console.error('[IPMACUserTracker] Error registering device:', error);
                 return { success: false, error: error.message };
             }
@@ -171,7 +172,8 @@
                 }
                 
                 return data;
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'ip-mac-user-tracker.js', context: 'catch' }); }
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'ip-mac-user-tracker.js', context: 'console.error' }); }
                 console.error('[IPMACUserTracker] Error getting current user:', error);
                 return { success: false, error: error.message };
             }

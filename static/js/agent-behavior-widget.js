@@ -148,7 +148,7 @@
           shouldBeActive: !!a.should_be_active,
         };
       });
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'agent-behavior-widget.js', context: 'catch' }); }
       rows = await Promise.all(
         ids.map(async (id) => {
           try {
@@ -158,7 +158,7 @@
               behaviorType: t.behavior_type || t.behaviorType || "unknown",
               shouldBeActive: !!a.should_be_active,
             };
-          } catch (err) {
+          } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'agent-behavior-widget.js', context: 'catch' }); }
             return { agentId: id, behaviorType: "error", shouldBeActive: false, error: String(err) };
           }
         })
@@ -180,7 +180,7 @@
       const xp = plan.total_xp ?? 0;
       const actions = Array.isArray(plan.actions) ? plan.actions.length : 0;
       if (out) out.textContent = `OK: ${actions} actions, ${xp} XP${persist ? " (persisted)" : ""}`;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'agent-behavior-widget.js', context: 'catch' }); }
       if (out) out.textContent = `Error: ${String(e)}`;
     }
   }

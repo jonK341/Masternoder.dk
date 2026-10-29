@@ -85,7 +85,7 @@
         sparkline('sp-conn', hist.map(function (r) { return r.connections; }));
         sparkline('sp-mempool', hist.map(function (r) { return r.mempool_tx; }));
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-overview.js', context: 'catch' }); }});
   }
 
   function render(d) {
@@ -173,7 +173,7 @@
     fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(render)
-      .catch(function () { q('ex-updated').textContent = 'Stats temporarily unavailable.'; });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-overview.js', context: 'catch' }); } q('ex-updated').textContent = 'Stats temporarily unavailable.'; });
   }
 
   function startExplorerStream() {
@@ -184,11 +184,11 @@
         try {
           var msg = JSON.parse(ev.data || '{}');
           if (msg.type === 'overview' && msg.data) render(msg.data);
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-explorer-overview.js', context: 'catch' }); } /* ignore */ }
       };
       es.onerror = function () { es.close(); };
       return true;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-explorer-overview.js', context: 'catch' }); }
       return false;
     }
   }
@@ -245,7 +245,7 @@
             '</tr>';
         }).join('');
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-overview.js', context: 'catch' }); }});
   }
 
   function loadMasternodes() {
@@ -276,7 +276,7 @@
             '</tr>';
         }).join('');
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-overview.js', context: 'catch' }); }});
   }
 
   // ---- 5-day Network Monitor: multi-metric area charts from network-history ----
@@ -368,7 +368,7 @@
     fetch('/api/mn2/network-history?hours=120&limit=900', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) { renderMonitor((d && d.success && d.history) ? d.history : []); })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-overview.js', context: 'catch' }); }});
     fetch('/api/mn2/network-alerts?limit=5', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -401,7 +401,7 @@
             }).join('');
           });
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-overview.js', context: 'catch' }); }});
   }
 
   function initSearch() {

@@ -85,12 +85,63 @@ def execute_skill(skill_name):
 
 # ========== DIAGNOSTIC ENDPOINTS ==========
 
+_DIAGNOSTIC_CACHE = {"at": 0.0, "payload": None}
+
+
+def _quick_diagnostic_payload():
+    """In-process diagnostic. The full skill walks the tree and calls APIScanner,
+    which blew past the debugger's request budget."""
+    import time as _time
+    now = _time.time()
+    cached = _DIAGNOSTIC_CACHE.get("payload")
+    if cached is not None and (now - float(_DIAGNOSTIC_CACHE.get("at") or 0)) < 30:
+        return cached
+
+    blueprints = []
+    try:
+        from flask import current_app
+        blueprints = sorted(current_app.blueprints.keys())
+    except Exception:
+        blueprints = []
+
+    skills_count = 0
+    if master_fix_agent_skills and hasattr(master_fix_agent_skills, "get_all_skills"):
+        try:
+            skills = master_fix_agent_skills.get_all_skills()
+            skills_count = len(skills) if skills is not None else 0
+        except Exception:
+            skills_count = 0
+
+    payload = {
+        "success": True,
+        "diagnostic": {
+            "mode": "quick",
+            "agent_status": "active" if master_fix_agent_skills else "degraded",
+            "skills_available": skills_count,
+            "blueprints_registered": len(blueprints),
+            "health": "good" if blueprints else "degraded",
+            "health_score": 80 if blueprints else 40,
+            "note": "Live app registry. Filesystem and APIScanner passes are not run on this request.",
+        },
+    }
+    _DIAGNOSTIC_CACHE["at"] = now
+    _DIAGNOSTIC_CACHE["payload"] = payload
+    return payload
+
+
 @master_fix_agent_bp.route('/api/agent/master-fix/diagnostic', methods=['GET', 'POST'])
 @master_fix_agent_bp.route('/api/agent/master-fix/run-full-diagnostic', methods=['GET', 'POST'])
 def run_diagnostic():
-    """Run full diagnostic"""
+    """Run a fast in-process diagnostic.
+
+    ?deep=1 still runs the filesystem skill scan, but the debugger buttons do
+    not pass that flag and must return within the request budget.
+    """
     try:
-        if hasattr(master_fix_agent_skills, 'skill_run_full_diagnostic'):
+        deep = (request.args.get("deep") or "").strip() == "1"
+        if not deep:
+            return jsonify(_quick_diagnostic_payload()), 200
+        if master_fix_agent_skills and hasattr(master_fix_agent_skills, 'skill_run_full_diagnostic'):
             result = master_fix_agent_skills.skill_run_full_diagnostic()
             return jsonify({
                 'success': result.get('success', True),

@@ -37,7 +37,7 @@
         clearTimeout(timer);
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
-      }).catch(function (err) {
+      }).catch(function (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-hub.js', context: 'catch' }); }
         clearTimeout(timer);
         var aborted = err && (err.name === 'AbortError' || /aborted/i.test(String(err && err.message || '')));
         if (!aborted && attempt < retries) {
@@ -104,10 +104,10 @@
     setLoading(tabId, true);
     return Promise.all(list.map(function (fn) {
       try { return Promise.resolve(fn()); }
-      catch (e) { return Promise.reject(e); }
+      catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-hub.js', context: 'catch' }); } return Promise.reject(e); }
     })).then(function () {
       clearSlot(tabId);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-hub.js', context: 'catch' }); }
       setError(tabId, 'Request timed out or failed.', function () { loadTab(tabId, true); });
     });
   }
@@ -156,7 +156,7 @@
       var swapTab = url.searchParams.get('tab');
       var hash = window.location.hash || '';
       window.history.replaceState({}, document.title, url.pathname + url.search + hash);
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-hub.js', context: 'catch' }); } /* ignore */ }
     loadTab(tabId);
     Object.keys(pollTimers).forEach(function (k) {
       if (k !== tabId) stopPoll(k);

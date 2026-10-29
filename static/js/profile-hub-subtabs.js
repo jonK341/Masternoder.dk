@@ -129,7 +129,7 @@
       if (sid && sid !== tabs[0].id) url.searchParams.set('subtab', sid);
       else url.searchParams.delete('subtab');
       global.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profile-hub-subtabs.js', context: 'catch' }); }}
 
     if (route === 'wallet' && sid === 'mn2' && global.ProfileMn2Wallet && typeof global.ProfileMn2Wallet.load === 'function') {
       global.ProfileMn2Wallet.load();
@@ -154,7 +154,7 @@
     var fromUrl = '';
     try {
       fromUrl = new URLSearchParams(global.location.search).get('subtab') || '';
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profile-hub-subtabs.js', context: 'catch' }); }}
     applySubtab(route, fromUrl || activeSubtab[route] || tabs[0].id);
   }
 

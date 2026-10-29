@@ -8,7 +8,7 @@
   function uid() {
     try {
       return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino-upgrades.js', context: 'catch' }); }
       return 'default_user';
     }
   }
@@ -151,7 +151,7 @@
         }
         toast(d.error || 'Could not unlock upgrade');
       })
-      .catch(function () { toast('Network error'); });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino-upgrades.js', context: 'catch' }); } toast('Network error'); });
   }
 
   function fetchCatalog(category) {

@@ -31,7 +31,7 @@
         state.guestId = "g_" + Math.random().toString(36).slice(2, 12);
         localStorage.setItem("mn_fleet_guest", state.guestId);
       }
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'fleet-stream-chat.js', context: 'catch' }); }
       state.guestId = "g_" + Date.now();
     }
     return state.guestId;
@@ -67,7 +67,7 @@
       .then(function (d) {
         if (d && d.success) renderMessages(el, d.messages || []);
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-stream-chat.js', context: 'catch' }); }});
   }
 
   function poll(el) {

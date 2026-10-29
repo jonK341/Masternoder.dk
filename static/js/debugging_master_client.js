@@ -51,7 +51,8 @@ class DebuggingMasterClient {
                     });
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'debugging_master_client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'debugging_master_client.js', context: 'console.error' }); }
             console.error('[Debugging Master] Initialization error:', error);
         }
     }
@@ -131,7 +132,7 @@ class DebuggingMasterClient {
             ctx.font = '14px Arial';
             ctx.fillText('Debugging Master', 2, 2);
             return canvas.toDataURL().substring(0, 100);
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'debugging_master_client.js', context: 'catch' }); }
             return '';
         }
     }
@@ -146,7 +147,7 @@ class DebuggingMasterClient {
                 return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).substring(0, 50);
             }
             return '';
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'debugging_master_client.js', context: 'catch' }); }
             return '';
         }
     }
@@ -177,7 +178,7 @@ class DebuggingMasterClient {
                 if (predictResponse.ok) {
                     aiPrediction = await predictResponse.json();
                 }
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'debugging_master_client.js', context: 'catch' }); }
                 // AI prediction is optional
             }
             
@@ -205,7 +206,8 @@ class DebuggingMasterClient {
                 const data = await response.json();
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'debugging_master_client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'debugging_master_client.js', context: 'console.error' }); }
             console.error('[Debugging Master] Error logging action:', error);
         }
     }
@@ -237,7 +239,8 @@ class DebuggingMasterClient {
                 const data = await response.json();
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'debugging_master_client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'debugging_master_client.js', context: 'console.error' }); }
             console.error('[Debugging Master] Error logging error:', error);
         }
     }
@@ -266,7 +269,8 @@ class DebuggingMasterClient {
                 const data = await response.json();
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'debugging_master_client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'debugging_master_client.js', context: 'console.error' }); }
             console.error('[Debugging Master] Error logging performance:', error);
         }
     }
@@ -285,7 +289,8 @@ class DebuggingMasterClient {
             
             this.sessionId = null;
             this.initialized = false;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'debugging_master_client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'debugging_master_client.js', context: 'console.error' }); }
             console.error('[Debugging Master] Error ending session:', error);
         }
     }
@@ -297,7 +302,8 @@ class DebuggingMasterClient {
                 const data = await response.json();
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'debugging_master_client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'debugging_master_client.js', context: 'console.error' }); }
             console.error('[Debugging Master] Error getting stats:', error);
         }
         return null;
@@ -310,7 +316,8 @@ class DebuggingMasterClient {
                 const data = await response.json();
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'debugging_master_client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'debugging_master_client.js', context: 'console.error' }); }
             console.error('[Debugging Master] Error getting AI intelligence:', error);
         }
         return null;
@@ -323,7 +330,8 @@ class DebuggingMasterClient {
                 const data = await response.json();
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'debugging_master_client.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'debugging_master_client.js', context: 'console.error' }); }
             console.error('[Debugging Master] Error getting AI insights:', error);
         }
         return null;

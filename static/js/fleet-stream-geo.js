@@ -35,7 +35,7 @@
         localStorage.setItem("mn_fleet_guest", g);
       }
       return g;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'fleet-stream-geo.js', context: 'catch' }); }
       return "g_" + Date.now();
     }
   }
@@ -60,7 +60,7 @@
         source: source || "browser_gps",
         guest_id: guestKey(),
       }),
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-stream-geo.js', context: 'catch' }); }});
   }
 
   function startBrowserGps() {
@@ -194,7 +194,7 @@
         document.dispatchEvent(new CustomEvent("mn:fleet-go-live", { detail: d }));
         return d;
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-stream-geo.js', context: 'catch' }); }});
   }
 
   function init() {

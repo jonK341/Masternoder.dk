@@ -41,7 +41,7 @@
     fetch('/api/mn2/staking/monitor?limit=100', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(render)
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking-monitor.js', context: 'catch' }); }});
     fetch('/api/mn2/network-overview', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (o) {
@@ -54,7 +54,7 @@
         } else if (fo.enabled && fo.configured) {
           b.style.display = 'none';
         }
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking-monitor.js', context: 'catch' }); }});
     loadHealthHub();
   }
 
@@ -120,7 +120,7 @@
         if (up) up.textContent = 'Health updated ' + new Date().toLocaleTimeString() + ' · overall ' + (d.status || '—') + (res.http >= 400 ? ' (HTTP ' + res.http + ')' : '');
         loadServicesGrid();
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking-monitor.js', context: 'catch' }); }
         var grid = q('hub-grid');
         if (grid) grid.innerHTML = '<div class="hub-card bad"><div class="label">Health</div><div class="value">Unavailable</div></div>';
       });
@@ -141,7 +141,7 @@
             (d.summary.healthy || 0) + ' healthy / ' + (d.summary.total || 0) + ' total';
         }
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-staking-monitor.js', context: 'catch' }); }
         var grid = q('services-grid');
         if (grid) grid.innerHTML = '<div class="hub-card bad"><div class="label">Services</div><div class="value">Unavailable</div></div>';
       });
@@ -149,4 +149,14 @@
 
   refresh();
   setInterval(refresh, 15000);
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'mn2-staking-monitor.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

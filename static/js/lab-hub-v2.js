@@ -35,7 +35,7 @@
                     '<p class="lab-news-meta">' + esc(n.date || '') + ' · ' + esc(n.category || 'lab') + '</p>' +
                     '<p>' + esc(n.summary || '') + '</p></article>';
             }).join('');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'lab-hub-v2.js', context: 'catch' }); }
             list.innerHTML = '<p class="lab-muted">Could not load news.</p>';
         }
     }
@@ -64,7 +64,7 @@
             if (d && d.all_ok && typeof global.loadLabV2Status === 'function') {
                 global.loadLabV2Status();
             }
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'lab-hub-v2.js', context: 'catch' }); }
             if (out) out.innerHTML = '<p class="lab-muted">Systems check failed.</p>';
         }
         if (btn) { btn.disabled = false; btn.textContent = '⚙️ Recheck all functions'; }
@@ -110,7 +110,7 @@
                     loadIdeaBoard();
                 });
             });
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'lab-hub-v2.js', context: 'catch' }); }
             if (list) list.innerHTML = '<p class="lab-muted">Could not load idea board.</p>';
         }
     }
@@ -172,7 +172,7 @@
                     '<p>Agent-owned tools: ' + tools.map(esc).join(', ') + '.</p>' +
                     '<p class="lab-muted">Agents summarize and recommend — mutating actions need your explicit click.</p>';
             }
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'lab-hub-v2.js', context: 'catch' }); } /* ignore */ }
     }
 
     async function loadRewards() {
@@ -182,9 +182,9 @@
         const uid = global.userId || localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
         try {
             const [shopR, trophyR, mn2R] = await Promise.all([
-                fetch('/api/game/shop/items').then(function (x) { return x.json(); }).catch(function () { return {}; }),
-                fetch('/api/trophies/definitions').then(function (x) { return x.json(); }).catch(function () { return {}; }),
-                fetch('/api/mn2/balance?user_id=' + encodeURIComponent(uid)).then(function (x) { return x.json(); }).catch(function () { return {}; })
+                fetch('/api/game/shop/items').then(function (x) { return x.json(); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'lab-hub-v2.js', context: 'catch' }); } return {}; }),
+                fetch('/api/trophies/definitions').then(function (x) { return x.json(); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'lab-hub-v2.js', context: 'catch' }); } return {}; }),
+                fetch('/api/mn2/balance?user_id=' + encodeURIComponent(uid)).then(function (x) { return x.json(); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'lab-hub-v2.js', context: 'catch' }); } return {}; })
             ]);
             const items = ((shopR.items || shopR.data || []) || []).filter(function (it) {
                 return (it.category || '') === 'lab' || ((it.tags || []).indexOf('lab') >= 0);
@@ -212,7 +212,7 @@
                 mn2El.innerHTML = '<div class="lab-mini-card"><strong>' + esc(String(bal)) + ' MN2</strong><span>Wallet balance</span></div>' +
                     '<p class="lab-muted">Crypto rewards are display + shop-grant only from Lab — no auto-spend.</p>';
             }
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'lab-hub-v2.js', context: 'catch' }); }
             if (shopEl) shopEl.innerHTML = '<p class="lab-muted">Could not load rewards.</p>';
         }
     }

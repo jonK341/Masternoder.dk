@@ -62,7 +62,8 @@ class EnergyRegenerationTimers {
                     }
                 }
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'energy-regeneration-timers.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'energy-regeneration-timers.js', context: 'console.error' }); }
             console.error('Error loading energy:', error);
         }
     }
@@ -178,7 +179,8 @@ class EnergyRegenerationTimers {
             if (response.ok) {
                 console.log('[EnergyRegen] Energy saved');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'energy-regeneration-timers.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'energy-regeneration-timers.js', context: 'console.error' }); }
             console.error('[EnergyRegen] Error saving energy:', error);
         }
     }

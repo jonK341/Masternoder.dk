@@ -29,7 +29,7 @@
       applyBodyTheme(t);
       try {
         localStorage.setItem(STORAGE_KEY, t.id);
-      } catch (e) {
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'fleet-monitor-visual.js', context: 'catch' }); }
         /* ignore */
       }
       return Promise.resolve(t);
@@ -44,7 +44,7 @@
     applyBodyTheme(state.theme);
     try {
       localStorage.setItem(STORAGE_KEY, state.theme.id);
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'fleet-monitor-visual.js', context: 'catch' }); }
       /* ignore */
     }
     return fetch(API + "?theme=" + encodeURIComponent(state.theme.id), { credentials: "same-origin" })
@@ -55,7 +55,7 @@
         if (d && d.encoded_pool) state.encodedPool = d.encoded_pool;
         return state.theme;
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-monitor-visual.js', context: 'catch' }); }
         return state.theme;
       });
   }
@@ -93,7 +93,7 @@
     var saved = "";
     try {
       saved = localStorage.getItem(STORAGE_KEY) || "";
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'fleet-monitor-visual.js', context: 'catch' }); }
       saved = "";
     }
     var url = API + (saved ? "?theme=" + encodeURIComponent(saved) : "");

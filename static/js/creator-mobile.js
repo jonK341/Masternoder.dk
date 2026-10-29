@@ -17,7 +17,7 @@
         try {
             return window.matchMedia('(display-mode: standalone)').matches
                 || window.navigator.standalone === true;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'creator-mobile.js', context: 'catch' }); }
             return false;
         }
     }
@@ -54,7 +54,7 @@
                     if (u.pathname.indexOf('/creator') >= 0) {
                         window.location.href = u.pathname + u.search + u.hash;
                     }
-                } catch (err) { /* optional */ }
+                } catch (err) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'creator-mobile.js', context: 'catch' }); } /* optional */ }
             }
         });
     }
@@ -64,7 +64,7 @@
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.success && data.download_apk_url) APK_URL = data.download_apk_url;
-            }).catch(function () { /* optional */ });
+            }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-mobile.js', context: 'catch' }); } /* optional */ });
     }
 
     document.addEventListener('DOMContentLoaded', function () {

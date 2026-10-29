@@ -29,7 +29,7 @@
         try {
             return window.matchMedia('(display-mode: standalone)').matches
                 || window.navigator.standalone === true;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino-mobile.js', context: 'catch' }); }
             return false;
         }
     }
@@ -44,7 +44,7 @@
             new URLSearchParams(search || window.location.search).forEach(function (v, k) {
                 out[k] = v;
             });
-        } catch (e) { /* optional */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino-mobile.js', context: 'catch' }); } /* optional */ }
         return out;
     }
 
@@ -88,7 +88,7 @@
             var cleaned = url.replace(/^masternoder:\/\//i, 'https://masternoder.dk/');
             var u = new URL(cleaned);
             return parseQuery(u.search);
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino-mobile.js', context: 'catch' }); }
             return null;
         }
     }
@@ -113,20 +113,20 @@
             if (Haptics && Haptics.impact) {
                 Haptics.impact({ style: 'LIGHT' });
             }
-        } catch (e) { /* optional */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino-mobile.js', context: 'catch' }); } /* optional */ }
     }
 
     function dismissBanner(el) {
         if (!el) return;
         el.classList.add('hidden');
-        try { sessionStorage.setItem('casino_install_banner_dismissed', '1'); } catch (e) { /* */ }
+        try { sessionStorage.setItem('casino_install_banner_dismissed', '1'); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino-mobile.js', context: 'catch' }); } /* */ }
     }
 
     function buildInstallBanner(cfg) {
         if (isStandalone() || isCapacitor()) return;
         try {
             if (sessionStorage.getItem('casino_install_banner_dismissed') === '1') return;
-        } catch (e) { /* */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino-mobile.js', context: 'catch' }); } /* */ }
         if (cfg && cfg.install_prompt_enabled === false) return;
 
         var storeUrl = isIos() ? (cfg && cfg.app_store_url) || STORE.ios : (cfg && cfg.play_store_url) || STORE.android;
@@ -162,7 +162,7 @@
     function loadMobileConfig() {
         return fetch('/api/casino/mobile/config', { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
-            .catch(function () { return {}; });
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino-mobile.js', context: 'catch' }); } return {}; });
     }
 
     function boot() {

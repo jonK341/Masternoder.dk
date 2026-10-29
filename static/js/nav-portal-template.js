@@ -26,7 +26,7 @@
   function readQuery(key) {
     try {
       return new URLSearchParams(global.location.search).get(key);
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); }
       return null;
     }
   }
@@ -45,7 +45,7 @@
         if (!r.ok) throw new Error('manifest HTTP ' + r.status);
         return r.json();
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'nav-portal-template.js', context: 'catch' }); }
         return null;
       });
   }
@@ -67,7 +67,7 @@
         global.localStorage.getItem('user_id') ||
         'default_user'
       );
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); }
       return 'default_user';
     }
   }
@@ -82,7 +82,7 @@
     try {
       var stored = global.localStorage.getItem(STORAGE_TEMPLATE);
       if (stored) return stored;
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); } /* ignore */ }
     return manifest && manifest.defaultTemplate;
   }
 
@@ -96,7 +96,7 @@
     try {
       var stored = global.localStorage.getItem(STORAGE_THEME);
       if (stored) return stored;
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); } /* ignore */ }
     if (template && template.theme) return template.theme;
     return manifest && manifest.defaultTheme;
   }
@@ -126,10 +126,10 @@
           if (serverPrefs.theme) {
             global.localStorage.setItem(STORAGE_THEME, serverPrefs.theme);
           }
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); } /* ignore */ }
         return data;
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'nav-portal-template.js', context: 'catch' }); }
         return null;
       });
   }
@@ -158,7 +158,7 @@
         }
         return data;
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'nav-portal-template.js', context: 'catch' }); }
         return null;
       });
   }
@@ -267,7 +267,7 @@
   function setTemplate(templateId, persist) {
     if (!manifest || !manifest.templates[templateId]) return false;
     if (persist !== false) {
-      try { global.localStorage.setItem(STORAGE_TEMPLATE, templateId); } catch (e) { /* ignore */ }
+      try { global.localStorage.setItem(STORAGE_TEMPLATE, templateId); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); } /* ignore */ }
       saveServerPrefs(templateId, null);
     }
     global.MN_NAV_TEMPLATE = templateId;
@@ -279,7 +279,7 @@
   function setTheme(themeId, persist) {
     if (!manifest || !manifest.themes[themeId]) return false;
     if (persist !== false) {
-      try { global.localStorage.setItem(STORAGE_THEME, themeId); } catch (e) { /* ignore */ }
+      try { global.localStorage.setItem(STORAGE_THEME, themeId); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); } /* ignore */ }
       saveServerPrefs(null, themeId);
     }
     global.MN_NAV_THEME = themeId;

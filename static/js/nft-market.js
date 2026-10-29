@@ -7,7 +7,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || ''; }
-    catch (e) { return ''; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nft-market.js', context: 'catch' }); } return ''; }
   }
   function q(id) { return document.getElementById(id); }
   function msg(text) {
@@ -31,8 +31,8 @@
   }
 
   function load() {
-    get('/api/nft/deals').then(render).catch(function () { msg('Could not load NFT market'); });
-    get('/api/nft/holdings').then(renderHoldings).catch(function () {});
+    get('/api/nft/deals').then(render).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'nft-market.js', context: 'catch' }); } msg('Could not load NFT market'); });
+    get('/api/nft/holdings').then(renderHoldings).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'nft-market.js', context: 'catch' }); }});
   }
 
   function render(res) {

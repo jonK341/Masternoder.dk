@@ -210,7 +210,8 @@
                     </div>
                 `;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error loading quests:', error);
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Failed to load quests</div>';
         }
@@ -233,7 +234,8 @@
                 loadQuests();
                 if (window.toast) toast.success('Quest created!');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error creating quest:', error);
         }
     };
@@ -257,7 +259,8 @@
                 loadQuests();
                 if (window.toast) toast.success('Quest completed!');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error completing quest:', error);
         }
     };
@@ -313,7 +316,8 @@
             } else {
                 container.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">No daily challenges available</div>';
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error loading daily challenges:', error);
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Failed to load challenges</div>';
         }
@@ -338,7 +342,8 @@
                 loadDailyChallenges();
                 if (window.toast) toast.success('Challenge completed!');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error completing challenge:', error);
         }
     };
@@ -403,7 +408,8 @@
                     </div>
                 `;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error loading tournaments:', error);
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Failed to load tournaments</div>';
         }
@@ -424,7 +430,8 @@
             } else {
                 if (window.toast) toast.error(data.error || 'Failed to join tournament');
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error joining tournament:', error);
         }
     };
@@ -467,7 +474,8 @@
                     </button>
                 </div>
             `;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error loading seasons:', error);
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--error);">Failed to load seasons</div>';
         }
@@ -507,7 +515,8 @@
                 `;
                 document.body.appendChild(modal);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'enhanced-game-mechanics.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'enhanced-game-mechanics.js', context: 'console.error' }); }
             console.error('Error loading season leaderboard:', error);
         }
     };

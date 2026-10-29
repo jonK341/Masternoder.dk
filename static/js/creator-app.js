@@ -130,7 +130,7 @@
                 }
                 aiEl.textContent = 'AI routing: ' + lines.join(' · ');
             }
-        }).catch(function () { /* optional */ });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-app.js', context: 'catch' }); } /* optional */ });
     }
 
     function trackHasPlayback(t) {
@@ -162,7 +162,7 @@
 
     function stopPlayback() {
         if (currentMediaEl) {
-            try { currentMediaEl.pause(); } catch (e) { /* ignore */ }
+            try { currentMediaEl.pause(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'creator-app.js', context: 'catch' }); } /* ignore */ }
             currentMediaEl = null;
         }
         currentPlayingId = null;
@@ -229,8 +229,8 @@
                 }
             });
             var playPromise = currentMediaEl.play();
-            if (playPromise && playPromise.catch) {
-                playPromise.catch(function () { /* autoplay blocked — user can press play */ });
+            if (playPromise && playPromise.catch) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-app.js', context: 'catch' }); }
+                playPromise.catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-app.js', context: 'catch' }); } /* autoplay blocked — user can press play */ });
             }
         }
     }
@@ -296,7 +296,7 @@
     function loadTracks() {
         return api('/api/creator/tracks?limit=125').then(function (data) {
             if (data.success) renderTracks(data.tracks);
-        }).catch(function () { /* optional */ });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-app.js', context: 'catch' }); } /* optional */ });
     }
 
     function superEncode() {
@@ -337,7 +337,7 @@
             } else {
                 toast(data.error || 'Encode failed');
             }
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-app.js', context: 'catch' }); }
             if (btn) btn.disabled = false;
             toast('Network error');
         });
@@ -360,7 +360,7 @@
             } else {
                 toast(data.error || 'Rating failed');
             }
-        }).catch(function () { toast('Rating error'); });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-app.js', context: 'catch' }); } toast('Rating error'); });
     }
 
     function loadMobileConfig() {
@@ -371,7 +371,7 @@
                 apk.href = data.download_apk_url;
                 if (data.download_apk_filename) apk.setAttribute('download', data.download_apk_filename);
             }
-        }).catch(function () { /* optional */ });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-app.js', context: 'catch' }); } /* optional */ });
     }
 
     function initNav() {
@@ -401,7 +401,7 @@
                 return;
             }
             renderTracks(items, 'cr-feed-list');
-        }).catch(function () { /* optional */ });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'creator-app.js', context: 'catch' }); } /* optional */ });
     }
 
     document.addEventListener('DOMContentLoaded', function () {

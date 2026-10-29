@@ -55,7 +55,8 @@ class ThreeJSVisualizations {
 
             this.initialized = true;
             this.animate();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'threejs-visualizations.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'threejs-visualizations.js', context: 'console.error' }); }
             console.error('[ThreeJS] Initialization error:', error);
         }
     }

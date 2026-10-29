@@ -47,7 +47,7 @@
     function getUserId() {
         try {
             return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-battle-bridge.js', context: 'catch' }); }
             return (window.MnUserId ? window.MnUserId.read() : '');
         }
     }
@@ -82,7 +82,7 @@
         try {
             dname = localStorage.getItem(LS_NAME) || '';
             focus = localStorage.getItem(LS_FOCUS) || 'balanced';
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-battle-bridge.js', context: 'catch' }); }}
 
         var showName = dname.trim() || 'Your profile';
         var isGame = variant === 'game';
@@ -159,7 +159,7 @@
             dnameInput.addEventListener('blur', function () {
                 try {
                     localStorage.setItem(LS_NAME, dnameInput.value.trim().slice(0, 48));
-                } catch (e) {}
+                } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-battle-bridge.js', context: 'catch' }); }}
                 render(host, variant, data);
             });
         }
@@ -167,7 +167,7 @@
             focusSel.addEventListener('change', function () {
                 try {
                     localStorage.setItem(LS_FOCUS, focusSel.value || 'balanced');
-                } catch (e) {}
+                } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'game-battle-bridge.js', context: 'catch' }); }}
                 render(host, variant, data);
             });
         }
@@ -207,7 +207,7 @@
                 }
                 render(host, variant, d);
             })
-            .catch(function () {
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'game-battle-bridge.js', context: 'catch' }); }
                 host.querySelector('.mn-gbb-inner').innerHTML = '<p class="mn-gbb-err">Network error loading bridge.</p>';
             });
     }

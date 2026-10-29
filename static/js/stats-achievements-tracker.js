@@ -39,7 +39,8 @@ class StatsAchievementsTracker {
             
             this.isInitialized = true;
             console.log('[StatsTracker] Initialized');
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'stats-achievements-tracker.js', context: 'console.error' }); }
             console.error('[StatsTracker] Initialization error:', error);
         }
     }
@@ -54,7 +55,8 @@ class StatsAchievementsTracker {
                 const achieved = JSON.parse(stored);
                 this.achievedStats = new Set(achieved);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'stats-achievements-tracker.js', context: 'console.error' }); }
             console.error('[StatsTracker] Error loading achieved stats:', error);
         }
     }
@@ -68,7 +70,8 @@ class StatsAchievementsTracker {
                 `stats_achievements_${this.userId}`,
                 JSON.stringify(Array.from(this.achievedStats))
             );
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'stats-achievements-tracker.js', context: 'console.error' }); }
             console.error('[StatsTracker] Error saving achieved stats:', error);
         }
     }
@@ -86,7 +89,8 @@ class StatsAchievementsTracker {
             
             // Cache stats
             this.statsCache = stats;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'stats-achievements-tracker.js', context: 'console.error' }); }
             console.error('[StatsTracker] Error tracking stats:', error);
         }
     }
@@ -127,44 +131,44 @@ class StatsAchievementsTracker {
             try {
                 const data = await videosRes.value.json();
                 stats.videos = { total: data.total_videos || 0, completed: data.completed_videos || 0, success_rate: data.success_rate || 0 };
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }}
         }
         if (gameRes.status === 'fulfilled' && gameRes.value.ok) {
             try {
                 const data = await gameRes.value.json();
                 stats.game = data.stats || {};
                 stats.xp = data.stats?.xp || {};
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }}
         }
         if (achRes.status === 'fulfilled' && achRes.value.ok) {
             try {
                 const data = await achRes.value.json();
                 stats.achievements = { total: data.total_count || 0, earned: data.earned_count || 0, list: data.achievements || [] };
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }}
         }
         if (battleRes.status === 'fulfilled' && battleRes.value.ok) {
             try {
                 const data = await battleRes.value.json();
                 stats.battles = data.stats || {};
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }}
         }
         if (pointsRes.status === 'fulfilled' && pointsRes.value.ok) {
             try {
                 const data = await pointsRes.value.json();
                 stats.points = data.points || {};
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }}
         }
         if (trophiesRes.status === 'fulfilled' && trophiesRes.value.ok) {
             try {
                 const data = await trophiesRes.value.json();
                 stats.trophies = { total: data.allTime?.length || 0, weekly: data.weekly?.length || 0 };
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }}
         }
         if (milestonesRes.status === 'fulfilled' && milestonesRes.value.ok) {
             try {
                 const data = await milestonesRes.value.json();
                 stats.milestones = { total: data.milestones?.length || 0, reached: data.milestones?.filter(m => m.reached)?.length || 0 };
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }}
         }
 
         return stats;
@@ -615,7 +619,8 @@ class StatsAchievementsTracker {
                 
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'stats-achievements-tracker.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'stats-achievements-tracker.js', context: 'console.error' }); }
             console.error(`[StatsTracker] Error awarding achievement ${achievement.id}:`, error);
         }
     }

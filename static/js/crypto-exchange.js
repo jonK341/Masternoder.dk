@@ -11,7 +11,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''); }
-    catch (e) { return (window.MnUserId ? window.MnUserId.read() : ''); }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); } return (window.MnUserId ? window.MnUserId.read() : ''); }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -298,7 +298,7 @@
       renderWallet(res[1]);
       renderRewards(res[2]);
       renderTrades(res[3]);
-    }).catch(function () { msg('Could not load exchange data.'); });
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); } msg('Could not load exchange data.'); });
   }
 
   function loadMn2Packs() {
@@ -309,8 +309,8 @@
     return getJson('/api/exchange/paypal/mn2-packs').then(function (data) {
       if (data && (data.packs || data.mn2_packs)) return withPacks(data);
       return getJson('/api/shop/mn2-packs').then(withPacks);
-    }).catch(function () {
-      return getJson('/api/shop/mn2-packs').then(withPacks).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); }
+      return getJson('/api/shop/mn2-packs').then(withPacks).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); }
         return { packs: [] };
       });
     });
@@ -318,7 +318,7 @@
 
   function refreshTradeExtras() {
     return Promise.all([
-      getJson('/api/exchange/orders?limit=20').catch(function () { return { orders: [] }; }),
+      getJson('/api/exchange/orders?limit=20').catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); } return { orders: [] }; }),
       loadMn2Packs(),
     ]).then(function (res) {
       renderOrders(res[0]);
@@ -427,12 +427,12 @@
         try {
           sessionStorage.setItem('cex_paypal_pack', packId);
           sessionStorage.setItem('cex_paypal_order', res.order_id || '');
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); }}
         window.location.href = res.approve_url;
       } else {
         msg((res && res.error) || 'Could not start PayPal checkout');
       }
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); }
       msg('PayPal checkout failed to start.');
     });
   }
@@ -466,12 +466,12 @@
         try {
           sessionStorage.setItem('cex_crypto_paypal_order', res.order_id || '');
           sessionStorage.setItem('cex_crypto_paypal_symbol', selected);
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); }}
         window.location.href = res.approve_url;
       } else {
         msg((res && res.error) || 'Could not start crypto checkout');
       }
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); }
       msg('PayPal crypto checkout failed to start.');
     });
   }
@@ -498,7 +498,7 @@
       storedOrder = sessionStorage.getItem('cex_paypal_order') || '';
       orderId = orderId || storedOrder;
       packId = packId || sessionStorage.getItem('cex_paypal_pack');
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); }}
     var payerId = params.get('PayerID') || params.get('PayerId');
     var flagged = params.get('exchange_paypal') === 'success';
     var approved = flagged || params.get('paypal') === 'success' || !!payerId;
@@ -517,7 +517,7 @@
         try {
           sessionStorage.removeItem('cex_paypal_pack');
           sessionStorage.removeItem('cex_paypal_order');
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); }}
         refresh();
       } else if (!flagged && (res && (res.error === 'pending_order_not_found' || res.error === 'order_not_found'))) {
         handleCryptoPayPalReturn(true);
@@ -537,7 +537,7 @@
     try {
       storedOrder = sessionStorage.getItem('cex_crypto_paypal_order') || '';
       orderId = orderId || storedOrder;
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); }}
     var payerId = params.get('PayerID') || params.get('PayerId');
     var flagged = params.get('crypto_paypal') === 'success';
     var approved = flagged || params.get('paypal') === 'success' || !!payerId || !!fromMn2Fallback;
@@ -554,7 +554,7 @@
         try {
           sessionStorage.removeItem('cex_crypto_paypal_order');
           sessionStorage.removeItem('cex_crypto_paypal_symbol');
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'crypto-exchange.js', context: 'catch' }); }}
         refresh();
       } else {
         msg((res && res.error) || 'PayPal crypto capture failed');

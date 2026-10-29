@@ -135,7 +135,7 @@
                     seen.add(el);
                     if (capElement(el)) anyCapped = true;
                 });
-            } catch (e) { /* invalid selector in old browsers */ }
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'page-length-guard.js', context: 'catch' }); } /* invalid selector in old browsers */ }
         });
 
         var docMax = maxScrollPx() + NAV_OFFSET;

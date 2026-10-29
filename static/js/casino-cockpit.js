@@ -4,7 +4,7 @@
   function uid() {
     try {
       return localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino-cockpit.js', context: 'catch' }); }
       return (window.MnUserId ? window.MnUserId.read() : '');
     }
   }
@@ -17,7 +17,7 @@
     var sep = path.indexOf('?') >= 0 ? '&' : '?';
     return fetch(path + sep + 'user_id=' + encodeURIComponent(uid()), { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : {}; })
-      .catch(function () { return {}; });
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino-cockpit.js', context: 'catch' }); } return {}; });
   }
 
   function fmt(n, d) {

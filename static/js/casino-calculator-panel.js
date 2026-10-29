@@ -59,7 +59,7 @@
         var balance = parseFloat(($('casino-calc-balance') && $('casino-calc-balance').value) || 1000);
         var q = '/api/casino/calculators/calculate_for_game?game_id=' + encodeURIComponent(game) +
             '&bet=' + encodeURIComponent(bet) + '&balance=' + encodeURIComponent(balance);
-        api(q).then(renderMetrics).catch(function () {
+        api(q).then(renderMetrics).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino-calculator-panel.js', context: 'catch' }); }
             var root = $('casino-calc-metrics');
             if (root) root.innerHTML = '<p style="color:#f87171;">Calculator API unavailable.</p>';
         });
@@ -117,4 +117,14 @@
     } else {
         init();
     }
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'casino-calculator-panel.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

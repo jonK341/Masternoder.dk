@@ -30,7 +30,7 @@ class AtomicCalculatorIntegration {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'atomic-calculator-integration.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -49,7 +49,7 @@ class AtomicCalculatorIntegration {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'atomic-calculator-integration.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -68,7 +68,7 @@ class AtomicCalculatorIntegration {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'atomic-calculator-integration.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -116,7 +116,7 @@ ${result.periods ? `Periods: ${result.periods}` : ''}
         } else {
             alert('Error: ' + (result.error || 'Unknown error'));
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'atomic-calculator-integration.js', context: 'catch' }); }
         alert('Error: ' + error.message);
     }
 }
@@ -160,7 +160,7 @@ Growth Percentage: ${result.growth_percentage.toFixed(2)}%
         } else {
             alert('Error: ' + (result.error || 'Unknown error'));
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'atomic-calculator-integration.js', context: 'catch' }); }
         alert('Error: ' + error.message);
     }
 }

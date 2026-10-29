@@ -131,7 +131,7 @@
         return esc(w.line || w.agent + ' +' + w.net);
       }).join(' · ') || 'No recent wins yet';
       ticker.innerHTML = '🏆 ' + lines;
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-upgrades-batch2.js', context: 'catch' }); }
       ticker.textContent = '🏆 Wins ticker loading…';
     });
     var jack = document.getElementById('pu-jackpot-bar');
@@ -253,7 +253,7 @@
           localStorage.setItem('quick_battle_difficulty', sel2.value);
         });
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'platform-upgrades-batch2.js', context: 'catch' }); } /* ignore */ }
   }
 
   function renderProfile(d) {
@@ -426,11 +426,11 @@
         var fn = RENDERERS[area];
         if (fn) fn(d);
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-upgrades-batch2.js', context: 'catch' }); }});
     if (area === 'shop') {
       fetchJson('/api/shop/daily-deal/ui').then(function (d) {
         if (d && d.success) renderShop({ daily_deal: d });
-      }).catch(function () {});
+      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-upgrades-batch2.js', context: 'catch' }); }});
     }
   }
 
@@ -450,7 +450,7 @@
       if (el && el.textContent.indexOf('Platform upgrades') >= 0) {
         el.textContent = 'Platform upgrades (300)';
       }
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'platform-upgrades-batch2.js', context: 'catch' }); }});
   }
 
   window.PlatformUpgradesBatch2 = { init: init, initArea: initArea };

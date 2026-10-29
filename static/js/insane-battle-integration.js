@@ -29,7 +29,7 @@ class InsaneBattleIntegration {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'insane-battle-integration.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -41,7 +41,7 @@ class InsaneBattleIntegration {
         try {
             const response = await fetch(`${this.baseURL}/status/${battleId}?user_id=${this.userId}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'insane-battle-integration.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -60,7 +60,7 @@ class InsaneBattleIntegration {
                 })
             });
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'insane-battle-integration.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -72,7 +72,7 @@ class InsaneBattleIntegration {
         try {
             const response = await fetch(`${this.baseURL}/types`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'insane-battle-integration.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -84,7 +84,7 @@ class InsaneBattleIntegration {
         try {
             const response = await fetch(`${this.baseURL}/history?user_id=${this.userId}&limit=${limit}`);
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'insane-battle-integration.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -112,7 +112,7 @@ async function startInsaneBattleUI(battleType) {
         } else {
             showNotification(`Error: ${result.error || 'Failed to start battle'}`, 'error');
         }
-    } catch (error) {
+    } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'insane-battle-integration.js', context: 'catch' }); }
         showNotification(`Error: ${error.message}`, 'error');
     } finally {
         button.disabled = false;

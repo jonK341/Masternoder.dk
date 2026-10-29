@@ -28,7 +28,8 @@ class KnowledgeUnlockUI {
                 this.renderKnowledgeTree();
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'knowledge-unlock-ui.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'knowledge-unlock-ui.js', context: 'console.error' }); }
             console.error('Error loading knowledge:', error);
             return {success: false, error: error.message};
         }
@@ -59,7 +60,8 @@ class KnowledgeUnlockUI {
                 this.showError(data.error || 'Failed to unlock knowledge');
                 return data;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'knowledge-unlock-ui.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'knowledge-unlock-ui.js', context: 'console.error' }); }
             console.error('Error unlocking knowledge:', error);
             this.showError(error.message);
             return {success: false, error: error.message};

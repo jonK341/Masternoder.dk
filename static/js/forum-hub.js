@@ -35,7 +35,7 @@
     try {
       const d = await api('/api/forum/languages');
       LANGS = d.languages || [];
-    } catch (_) { LANGS = []; }
+    } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'forum-hub.js', context: 'catch' }); } LANGS = []; }
     return LANGS;
   }
   function savedLang() { return localStorage.getItem('forum_lang') || 'auto'; }
@@ -121,7 +121,7 @@
     return s + 's ago';
   }
 
-  function sonic(name) { try { if (window.SonicEngine) window.SonicEngine.cue(name); } catch (_) {} }
+  function sonic(name) { try { if (window.SonicEngine) window.SonicEngine.cue(name); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'forum-hub.js', context: 'catch' }); }} }
 
   function toast(msg, kind) {
     const el = $('#forum-toast');
@@ -437,7 +437,7 @@
         `).join('');
       }
       el.innerHTML = html;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'forum-hub.js', context: 'catch' }); }
       el.innerHTML = '<div class="forum-status">Podcast API unavailable. <a href="/podcast/">Try full player</a></div>';
     }
   }
@@ -491,7 +491,7 @@
       const faq = await api('/api/support/faq/list');
       const items = faq.items || faq.faqs || [];
       $('#faq-list').innerHTML = items.slice(0, 8).map((f) => `<strong>${esc(f.q || f.question)}</strong><br>${esc(f.a || f.answer)}<br><br>`).join('') || 'No FAQ loaded.';
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'forum-hub.js', context: 'catch' }); }
       $('#faq-list').textContent = 'FAQ API not available.';
     }
   }
@@ -549,7 +549,7 @@
         try {
           await navigator.share({ title: 'MasterNoder', text: shareTextValue(), url: shareUrlValue() });
           sonic('success');
-        } catch (_) {}
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'forum-hub.js', context: 'catch' }); }}
       });
     }
     $('#copy-share-link')?.addEventListener('click', () => {
@@ -932,7 +932,7 @@
         badge.textContent = n > 99 ? '99+' : n;
         badge.hidden = n === 0;
       }
-    } catch (_) {}
+    } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'forum-hub.js', context: 'catch' }); }}
   }
   async function toggleNotifPanel() {
     const panel = $('#notif-panel');

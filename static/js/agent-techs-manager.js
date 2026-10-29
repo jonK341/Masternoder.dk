@@ -71,13 +71,14 @@ class AgentTechsManager {
             const promises = techIds.map(techId => 
                 fetch(`${this.baseUrl}/api/agent-tech/${techId}/status`)
                     .then(r => r.ok ? r.json() : {success: false, tech_id: techId})
-                    .catch(() => ({success: false, tech_id: techId}))
+                    .catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'agent-techs-manager.js', context: 'catch' }); }success: false, tech_id: techId}))
             );
             
             const results = await Promise.all(promises);
             this.techs = results.filter(r => r.success);
             return this.techs;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-techs-manager.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'agent-techs-manager.js', context: 'console.error' }); }
             console.error('[AgentTechsManager] Error loading techs:', error);
             return [];
         }
@@ -97,7 +98,7 @@ class AgentTechsManager {
                 }
             );
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-techs-manager.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }
@@ -111,7 +112,7 @@ class AgentTechsManager {
                 `${this.baseUrl}/api/agent-tech/${techId}/metrics`
             );
             return await response.json();
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-techs-manager.js', context: 'catch' }); }
             return {success: false, error: error.message};
         }
     }

@@ -22,7 +22,7 @@
             gain.gain.value = 0.04;
             osc.start();
             setTimeout(function () { osc.stop(); ctx.close(); }, ms || 120);
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-activity-stream.js', context: 'catch' }); } /* ignore */ }
     }
 
     function onEvents(events) {
@@ -50,7 +50,7 @@
             try {
                 var data = JSON.parse(ev.data);
                 if (data.type === 'activity' && data.events) onEvents(data.events);
-            } catch (e) { /* ignore */ }
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mn2-activity-stream.js', context: 'catch' }); } /* ignore */ }
         };
         es.onerror = function () {
             if (es) { es.close(); es = null; }

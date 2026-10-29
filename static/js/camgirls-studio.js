@@ -22,7 +22,7 @@
 
       return global.localStorage.getItem('game_user_id') || global.localStorage.getItem('user_id') || (window.MnUserId ? window.MnUserId.read() : '');
 
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls-studio.js', context: 'catch' }); }
 
       return (window.MnUserId ? window.MnUserId.read() : '');
 
@@ -66,7 +66,7 @@
 
       })
 
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-studio.js', context: 'catch' }); }
 
         return null;
 
@@ -122,7 +122,7 @@
 
       })
 
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-studio.js', context: 'catch' }); }});
 
   }
 
@@ -290,7 +290,7 @@
 
                   if (evt.type === 'done' && !botLine.textContent) botLine.textContent = evt.reply || '';
 
-                } catch (e) {}
+                } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls-studio.js', context: 'catch' }); }}
 
               });
 
@@ -304,7 +304,7 @@
 
         })
 
-        .catch(function () {
+        .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-studio.js', context: 'catch' }); }
 
           botLine.textContent = 'Chat unavailable';
 
@@ -582,7 +582,7 @@
 
         })
 
-        .catch(function () {});
+        .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-studio.js', context: 'catch' }); }});
 
     });
 

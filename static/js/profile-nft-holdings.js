@@ -7,7 +7,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || ''; }
-    catch (e) { return ''; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profile-nft-holdings.js', context: 'catch' }); } return ''; }
   }
 
   function load() {
@@ -31,7 +31,7 @@
             '</div>';
         }).join('');
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'profile-nft-holdings.js', context: 'catch' }); }
         root.textContent = 'Could not load NFT holdings.';
       });
   }

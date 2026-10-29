@@ -52,7 +52,7 @@
     if (state.recorder && state.recorder.state !== "inactive") {
       try {
         state.recorder.stop();
-      } catch (e) {
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'fleet-youtube-ingest.js', context: 'catch' }); }
         /* ignore */
       }
     }
@@ -64,7 +64,7 @@
     state.recorder = null;
     state.stream = null;
     state.uploadChain = Promise.resolve();
-    fetch(API_STOP, { method: "POST", credentials: "same-origin" }).catch(function () {});
+    fetch(API_STOP, { method: "POST", credentials: "same-origin" }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-youtube-ingest.js', context: 'catch' }); }});
   }
 
   var uploadFails = 0;
@@ -83,7 +83,7 @@
             var d = {};
             try {
               d = JSON.parse(text);
-            } catch (e) {
+            } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'fleet-youtube-ingest.js', context: 'catch' }); }
               d = { success: false, error: "http_" + r.status };
             }
             return { r: r, d: d };
@@ -110,7 +110,7 @@
           }
         });
     });
-    return state.uploadChain.catch(function (e) {
+    return state.uploadChain.catch(function (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-youtube-ingest.js', context: 'catch' }); }
       if (e && e.message && e.message !== "upload_failed") {
         uploadFails += 1;
         if (uploadFails <= 5) setStatus("Netværksfejl mod server ingest — " + e.message);
@@ -159,7 +159,7 @@
               "image/jpeg",
               0.78
             );
-          } catch (e) {
+          } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'fleet-youtube-ingest.js', context: 'catch' }); }
             /* ignore tainted canvas */
           }
         }, 66);
@@ -232,7 +232,7 @@
         go_live: false,
         start_ingest: false,
       }),
-    }).catch(function () {});
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-youtube-ingest.js', context: 'catch' }); }});
     return startCanvasIngest();
   }
 
@@ -247,7 +247,7 @@
       b.disabled = true;
     });
     runNoObs()
-      .catch(function (e) {
+      .catch(function (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-youtube-ingest.js', context: 'catch' }); }
         setStatus((e && e.message) || "No-OBS start failed");
       })
       .finally(function () {
@@ -323,7 +323,7 @@
           );
         }
       })
-      .catch(function () {});
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-youtube-ingest.js', context: 'catch' }); }});
   }
 
   window.MNFleetYoutubeIngest = {

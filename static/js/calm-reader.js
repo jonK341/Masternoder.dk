@@ -24,7 +24,7 @@
     function getUserId() {
         try {
             return localStorage.getItem('game_user_id') || 'default_user';
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'calm-reader.js', context: 'catch' }); }
             return 'default_user';
         }
     }
@@ -72,13 +72,13 @@
                 index: idx,
                 at: Date.now()
             }));
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'calm-reader.js', context: 'catch' }); }}
     }
 
     function loadSession() {
         try {
             return JSON.parse(localStorage.getItem(STORAGE_SESSION) || 'null');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'calm-reader.js', context: 'catch' }); }
             return null;
         }
     }
@@ -87,7 +87,7 @@
         var uid = encodeURIComponent(getUserId());
         return fetch('/api/compendium/access?user_id=' + uid)
             .then(function (r) { return r.json(); })
-            .catch(function () { return {}; });
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'calm-reader.js', context: 'catch' }); } return {}; });
     }
 
     function fetchPages() {
@@ -101,14 +101,14 @@
                 });
                 return pages;
             })
-            .catch(function () { return []; });
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'calm-reader.js', context: 'catch' }); } return []; });
     }
 
     function fetchProgress() {
         var uid = encodeURIComponent(getUserId());
         return fetch('/api/user/compendium/progress?user_id=' + uid)
             .then(function (r) { return r.json(); })
-            .catch(function () { return {}; });
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'calm-reader.js', context: 'catch' }); } return {}; });
     }
 
     function nextUnreadUrl(pages, progress) {
@@ -124,7 +124,7 @@
 
     function applyCalmMode(on) {
         document.body.classList.toggle('calm-reading-active', on);
-        try { localStorage.setItem(STORAGE_CALM, on ? '1' : '0'); } catch (e) {}
+        try { localStorage.setItem(STORAGE_CALM, on ? '1' : '0'); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'calm-reader.js', context: 'catch' }); }}
         var focusBtn = document.getElementById('cr-focus-toggle');
         if (focusBtn) focusBtn.textContent = document.body.classList.contains('calm-reading-focus') ? 'Show chrome' : 'Focus';
     }
@@ -183,7 +183,7 @@
         document.getElementById('cr-focus-toggle').addEventListener('click', toggleFocus);
 
         var calmOn = false;
-        try { calmOn = localStorage.getItem(STORAGE_CALM) !== '0'; } catch (e) { calmOn = true; }
+        try { calmOn = localStorage.getItem(STORAGE_CALM) !== '0'; } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'calm-reader.js', context: 'catch' }); } calmOn = true; }
         if (calmOn || window.location.search.indexOf('calm=1') !== -1) {
             applyCalmMode(true);
             var t = document.getElementById('cr-calm-toggle');

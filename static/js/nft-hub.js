@@ -7,7 +7,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || ''; }
-    catch (e) { return ''; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nft-hub.js', context: 'catch' }); } return ''; }
   }
 
   function q(id) { return document.getElementById(id); }
@@ -278,7 +278,7 @@
         else url.searchParams.set('tab', key);
         var hash = key === 'primary' ? '' : '#nft-' + key;
         window.history.replaceState({}, document.title, url.pathname + url.search + hash);
-      } catch (e) { /* ignore */ }
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nft-hub.js', context: 'catch' }); } /* ignore */ }
     }
   }
 
@@ -335,7 +335,7 @@
       get('/api/nft/catalog'),
       get('/api/nft/deals'),
       get('/api/nft/wallet'),
-      fetch('/api/agents/nft-wallets', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).catch(function () { return {}; })
+      fetch('/api/agents/nft-wallets', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'nft-hub.js', context: 'catch' }); } return {}; })
     ]).then(function (parts) {
       var cat = parts[0];
       var deals = parts[1];
@@ -346,7 +346,7 @@
       renderBook(deals);
       renderWallet(wallet, null);
       renderAgents(agents);
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'nft-hub.js', context: 'catch' }); }
       msg('Could not load NFT hub');
     });
   }

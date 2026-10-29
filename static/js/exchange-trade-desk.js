@@ -46,7 +46,7 @@
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || 'default_user'; }
-    catch (e) { return 'default_user'; }
+    catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-trade-desk.js', context: 'catch' }); } return 'default_user'; }
   }
 
   function isAuthed() {
@@ -107,7 +107,7 @@
         }
       }
       el.innerHTML = pills;
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-trade-desk.js', context: 'catch' }); }
       el.innerHTML = '<span class="cex-status-pill-inline ok">🔐 Account active</span>';
     });
   }
@@ -153,7 +153,7 @@
   function loadBroadcast() {
     return fetchJson('/api/exchange/monitor/live?limit=20&include_metrics=1').then(function (data) {
       renderBroadcast({ monitor: data, daemon_metrics: data.daemon_metrics });
-    }).catch(function () {
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'exchange-trade-desk.js', context: 'catch' }); }
       var feed = q('cex-broadcast-feed');
       if (feed) feed.innerHTML = '<div class="cex-empty-hint cex-empty-hint--icon">⚠️ Broadcast fetch failed — retrying…</div>';
       cexToast('Live broadcast unavailable', 'warn');
@@ -230,14 +230,14 @@
         try {
           var data = JSON.parse(ev.data);
           if (data.type === 'broadcast') handleBroadcastEvent(data);
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-trade-desk.js', context: 'catch' }); } /* ignore */ }
       };
       broadcastEs.onerror = function () {
         setSseStatus('reconnecting', 'reconnecting…');
         if (broadcastEs) { broadcastEs.close(); broadcastEs = null; }
         startPolling();
       };
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-trade-desk.js', context: 'catch' }); }
       setSseStatus('polling', 'polling fallback');
       startPolling();
     }
@@ -346,7 +346,7 @@
         quickSwapQuote = null;
         try {
           document.dispatchEvent(new CustomEvent('cex-venue-change', { detail: { venue: selectedVenue } }));
-        } catch (e) { /* ignore */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-trade-desk.js', context: 'catch' }); } /* ignore */ }
         if (window.CexTradeDesk && window.CexTradeDesk.onVenueChange) {
           window.CexTradeDesk.onVenueChange(selectedVenue);
         }
@@ -538,11 +538,11 @@
     if (!banner) return;
     try {
       if (!localStorage.getItem('cex_onboard_dismissed')) banner.hidden = false;
-    } catch (e) { banner.hidden = false; }
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-trade-desk.js', context: 'catch' }); } banner.hidden = false; }
     if (dismiss) {
       dismiss.addEventListener('click', function () {
         banner.hidden = true;
-        try { localStorage.setItem('cex_onboard_dismissed', '1'); } catch (e) {}
+        try { localStorage.setItem('cex_onboard_dismissed', '1'); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-trade-desk.js', context: 'catch' }); }}
       });
     }
   }
@@ -557,13 +557,13 @@
         localStorage.setItem('cex_alert_stub', String(n));
         var badge = q('cex-alert-badge');
         if (badge) badge.textContent = String(n);
-      } catch (e) {}
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-trade-desk.js', context: 'catch' }); }}
     });
     try {
       var count = localStorage.getItem('cex_alert_stub') || '0';
       var badge = q('cex-alert-badge');
       if (badge) badge.textContent = count;
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'exchange-trade-desk.js', context: 'catch' }); }}
   }
 
   function initFlowControls() {

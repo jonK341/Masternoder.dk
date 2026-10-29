@@ -59,7 +59,7 @@
           localStorage.removeItem(this._keyTotal);
         }
       }
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'cooldown-timer.js', context: 'catch' }); }}
   };
 
   CooldownTimer.prototype._persist = function () {
@@ -73,7 +73,7 @@
         localStorage.removeItem(this._keyEnd);
         localStorage.removeItem(this._keyTotal);
       }
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'cooldown-timer.js', context: 'catch' }); }}
   };
 
   CooldownTimer.prototype.remainingMs = function () {
@@ -100,7 +100,7 @@
     try {
       localStorage.removeItem(this._keyEnd);
       localStorage.removeItem(this._keyTotal);
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'cooldown-timer.js', context: 'catch' }); }}
     this._emit();
     this._stopTick();
   };
@@ -111,7 +111,7 @@
     for (var i = 0; i < this._listeners.length; i++) {
       try {
         this._listeners[i](rem, str, this);
-      } catch (e) {}
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'cooldown-timer.js', context: 'catch' }); }}
     }
   };
 
@@ -125,7 +125,7 @@
         try {
           localStorage.removeItem(self._keyEnd);
           localStorage.removeItem(self._keyTotal);
-        } catch (e) {}
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'cooldown-timer.js', context: 'catch' }); }}
         self._emit();
         self._stopTick();
       } else {
@@ -146,7 +146,7 @@
     if (this.isActive()) this._ensureTick();
     try {
       fn(this.remainingMs(), formatMs(this.remainingMs()), this);
-    } catch (e) {}
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'cooldown-timer.js', context: 'catch' }); }}
   };
 
   CooldownTimer.create = function (options) {

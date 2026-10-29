@@ -173,7 +173,7 @@
         fillSpeakerSelect();
         return state.speakers;
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-progress-monitor-5d.js', context: 'catch' }); }
         state.speakers = [
           { id: "performer_nova", name: "Nova Star", avatar: "/static/camgirls/avatar-demo.svg" },
         ];
@@ -781,7 +781,7 @@
         }).then(function () {
           state.audio.tick();
           soundBtn.textContent = "Sound on";
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-progress-monitor-5d.js', context: 'catch' }); }
           setStatus("Audio unavailable in this browser.");
         });
       });
@@ -819,7 +819,7 @@
     }
     $("f5-refresh") &&
       $("f5-refresh").addEventListener("click", function () {
-        fetchData().catch(function (e) {
+        fetchData().catch(function (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-progress-monitor-5d.js', context: 'catch' }); }
           setStatus(e.message || "Refresh failed");
         });
       });
@@ -871,7 +871,7 @@
         if (state._lastLvl && lvl > state._lastLvl && state.audio) state.audio.levelUp();
         state._lastLvl = lvl;
       })
-      .catch(function (e) {
+      .catch(function (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-progress-monitor-5d.js', context: 'catch' }); }
         setStatus(e.message || "Monitor offline");
       });
     setTimeout(poll, POLL_MS);
@@ -912,7 +912,7 @@
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
     bindControls();
-    initVoiceModule().catch(function () {
+    initVoiceModule().catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'fleet-progress-monitor-5d.js', context: 'catch' }); }
       return loadSpeakers();
     });
     requestAnimationFrame(drawFrame);
@@ -926,4 +926,14 @@
   } else {
     init();
   }
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'fleet-progress-monitor-5d.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

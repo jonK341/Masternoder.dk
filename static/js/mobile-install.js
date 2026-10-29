@@ -31,7 +31,7 @@
         try {
             return window.matchMedia('(display-mode: standalone)').matches
                 || window.navigator.standalone === true;
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mobile-install.js', context: 'catch' }); }
             return false;
         }
     }
@@ -83,14 +83,14 @@
         navigator.serviceWorker.register('/service-worker.js', {
             scope: '/',
             updateViaCache: 'none'
-        }).catch(function () { /* optional */ });
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mobile-install.js', context: 'catch' }); } /* optional */ });
     }
 
     function dismissBanner(bar) {
         if (!bar) return;
         bar.classList.add('hidden');
         document.body.classList.remove('mn-install-banner-visible');
-        try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch (e) { /* */ }
+        try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mobile-install.js', context: 'catch' }); } /* */ }
     }
 
     function showIosSheet() {
@@ -132,7 +132,7 @@
         if (!isMobilePhone() || isStandalone() || isCasinoPage()) return;
         try {
             if (sessionStorage.getItem(DISMISS_KEY) === '1') return;
-        } catch (e) { /* */ }
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mobile-install.js', context: 'catch' }); } /* */ }
         if (document.getElementById('mn-install-banner')) return;
 
         var bar = document.createElement('div');
@@ -168,7 +168,7 @@
             }
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                try { await deferredPrompt.userChoice; } catch (e) { /* ignore */ }
+                try { await deferredPrompt.userChoice; } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'mobile-install.js', context: 'catch' }); } /* ignore */ }
                 deferredPrompt = null;
                 dismissBanner(bar);
                 return;
@@ -200,7 +200,7 @@
         }
         if (deferredPrompt) {
             deferredPrompt.prompt();
-            deferredPrompt.userChoice.catch(function () {});
+            deferredPrompt.userChoice.catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mobile-install.js', context: 'catch' }); }});
             return;
         }
         showIosSheet();

@@ -53,7 +53,7 @@
       if (typeof p.rateMul === "number") state.rateMul = Math.min(1.35, Math.max(0.7, p.rateMul));
       if (typeof p.pitchMul === "number") state.pitchMul = Math.min(1.35, Math.max(0.75, p.pitchMul));
       if (p.leadSpeakerId) state.leadSpeakerId = p.leadSpeakerId;
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls-stream-voice.js', context: 'catch' }); }
       /* ignore */
     }
   }
@@ -71,7 +71,7 @@
           leadSpeakerId: state.leadSpeakerId,
         })
       );
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls-stream-voice.js', context: 'catch' }); }
       /* ignore */
     }
   }
@@ -236,7 +236,7 @@
         if (!state.leadSpeakerId) state.leadSpeakerId = state.speakers[0].id;
         return state.speakers;
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-stream-voice.js', context: 'catch' }); }
         state.speakers = [
           { id: "performer_nova", name: "Nova Star", avatar: "/static/camgirls/avatar-demo.svg" },
         ];

@@ -46,7 +46,7 @@
         renderChecks(d);
         if (updated) updated.textContent = 'Kind: ' + (d.explorer_kind || '—') + ' · Updated ' + new Date().toLocaleString();
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-explorer-status.js', context: 'catch' }); }
         var pill = q('ex-status-pill');
         if (pill) {
           pill.textContent = 'UNREACHABLE';
@@ -57,4 +57,14 @@
 
   refresh();
   setInterval(refresh, 30000);
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'mn2-explorer-status.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

@@ -46,7 +46,7 @@ class AgentDashboardData {
             }
 
             return result;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-dashboard-data.js', context: 'catch' }); }
             console.warn('Error fetching agent data (non-critical):', error);
             // Return empty result instead of error - don't break the page
             return {
@@ -85,7 +85,7 @@ class AgentDashboardData {
                 } else {
                     console.warn(`[Agent Data] ⚠️  ${response.status} from ${url}`);
                 }
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-dashboard-data.js', context: 'catch' }); }
                 console.warn(`[Agent Data] ❌ Error from ${url}:`, error);
                 continue; // Try next URL
             }
@@ -121,7 +121,7 @@ class AgentDashboardData {
                 } else {
                     console.warn(`[Agent Data] ⚠️  ${response.status} from ${url}`);
                 }
-            } catch (error) {
+            } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-dashboard-data.js', context: 'catch' }); }
                 console.warn(`[Agent Data] ❌ Error from ${url}:`, error);
                 continue; // Try next URL
             }
@@ -143,7 +143,7 @@ class AgentDashboardData {
                 const data = await response.json();
                 return data.success ? data : null;
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-dashboard-data.js', context: 'catch' }); }
             console.warn('Error fetching user agent skills:', error);
         }
         return null;
@@ -194,7 +194,7 @@ class AgentDashboardData {
             });
 
             return stats;
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-dashboard-data.js', context: 'catch' }); }
             console.warn('Error fetching agent statistics:', error);
             return null;
         }
@@ -335,7 +335,8 @@ class AgentDashboardData {
             
             container.innerHTML = this.renderAgentDataCard(formatted);
             console.log(`[Agent Data] ✅ Rendered successfully`);
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'agent-dashboard-data.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'agent-dashboard-data.js', context: 'console.error' }); }
             console.error('[Agent Data] ❌ Error loading agent data:', error);
             container.innerHTML = `<div class="error">Error loading agent data: ${error.message}</div>`;
         }

@@ -166,7 +166,7 @@
           .then(function () {
             setStatus(el, "Copied: " + url);
           })
-          .catch(function () {
+          .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'youtube-stream-controls.js', context: 'catch' }); }
             setStatus(el, url);
           });
       });
@@ -196,7 +196,7 @@
                 : d.error || "Start failed"
             );
           })
-          .catch(function () {
+          .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'youtube-stream-controls.js', context: 'catch' }); }
             setStatus(el, "Start stream request failed.");
           })
           .finally(function () {
@@ -219,7 +219,7 @@
           .then(function (d) {
             setStatus(el, d.success ? "Agents assigned to your profile." : d.error || "Assign failed");
           })
-          .catch(function () {
+          .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'youtube-stream-controls.js', context: 'catch' }); }
             setStatus(el, "Assign request failed.");
           })
           .finally(function () {
@@ -248,7 +248,7 @@
             }).length;
             setStatus(el, "Preflight: " + ok + "/" + checks.length + " URLs OK");
           })
-          .catch(function () {
+          .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'youtube-stream-controls.js', context: 'catch' }); }
             setStatus(el, "Preflight failed.");
           })
           .finally(function () {
@@ -277,7 +277,7 @@
             }
             setStatus(el, "Narration loaded — use with Camgirl voice on monitor.");
           })
-          .catch(function () {
+          .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'youtube-stream-controls.js', context: 'catch' }); }
             setStatus(el, "Narration unavailable.");
           });
       });
@@ -309,7 +309,7 @@
           window.MNFleetYoutubeIngest.bind();
         }
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'youtube-stream-controls.js', context: 'catch' }); }
         target.innerHTML = '<p class="yt-stream-meta">YouTube stream controls offline.</p>';
       });
   }
@@ -319,4 +319,14 @@
   } else {
     init();
   }
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'youtube-stream-controls.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

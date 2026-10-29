@@ -42,7 +42,7 @@
       if (!Number.isNaN(i)) state.intensity = Math.min(1, Math.max(0, i));
       const t = localStorage.getItem(STORAGE_KEY_THEME);
       if (t) state.theme = t;
-    } catch (_) {}
+    } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
   }
 
   function persistState() {
@@ -50,7 +50,7 @@
       localStorage.setItem(STORAGE_KEY_ENABLED, String(state.enabled));
       localStorage.setItem(STORAGE_KEY_INTENSITY, String(state.intensity));
       localStorage.setItem(STORAGE_KEY_THEME, String(state.theme));
-    } catch (_) {}
+    } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
   }
 
   function cssForTheme(theme) {
@@ -515,7 +515,7 @@
         checked.push(url);
         const res = await fetch(url, { method: "HEAD" });
         if (!res.ok) dead.push({ url, status: res.status });
-      } catch (e) {
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }
         dead.push({ url: href, error: String(e) });
       }
     }
@@ -537,20 +537,20 @@
         state.consoleErrors.push({ ts: new Date().toISOString(), type: "error", args: args.map(String).slice(0, 8) });
         if (state.consoleErrors.length > 500) state.consoleErrors = state.consoleErrors.slice(-500);
         if (state.overlayOpen) refreshOverlayOutputs();
-      } catch (_) {}
+      } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
       return origError(...args);
     };
     window.addEventListener("error", (e) => {
       try {
         state.consoleErrors.push({ ts: new Date().toISOString(), type: "window_error", message: String(e.message || ""), file: e.filename, line: e.lineno });
         if (state.overlayOpen) refreshOverlayOutputs();
-      } catch (_) {}
+      } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
     });
     window.addEventListener("unhandledrejection", (e) => {
       try {
         state.consoleErrors.push({ ts: new Date().toISOString(), type: "unhandledrejection", message: String(e.reason || "") });
         if (state.overlayOpen) refreshOverlayOutputs();
-      } catch (_) {}
+      } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
     });
     return true;
   }
@@ -575,9 +575,9 @@
           });
           if (state.networkEvents.length > 500) state.networkEvents = state.networkEvents.slice(-500);
           if (state.overlayOpen) refreshOverlayOutputs();
-        } catch (_) {}
+        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
         return res;
-      } catch (e) {
+      } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }
         const end = nowMs();
         state.networkEvents.push({
           ts: new Date().toISOString(),
@@ -613,7 +613,7 @@
         }));
         logEvent("dom_mutation", { ts: new Date().toISOString(), sample });
         if (state.overlayOpen) refreshOverlayOutputs();
-      } catch (_) {}
+      } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
     });
     obs.observe(document.documentElement, options || { childList: true, subtree: true });
     state.mutationObserver = obs;
@@ -622,7 +622,7 @@
 
   function stopDOMMutationTracker() {
     if (state.mutationObserver) {
-      try { state.mutationObserver.disconnect(); } catch (_) {}
+      try { state.mutationObserver.disconnect(); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
       state.mutationObserver = null;
     }
     return true;
@@ -686,7 +686,7 @@
 
   function stopGPSWatch() {
     if (state.gpsWatchId != null && navigator.geolocation) {
-      try { navigator.geolocation.clearWatch(state.gpsWatchId); } catch (_) {}
+      try { navigator.geolocation.clearWatch(state.gpsWatchId); } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'electronic-hypnosis-lab.js', context: 'catch' }); }}
     }
     state.gpsWatchId = null;
     return true;

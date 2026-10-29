@@ -51,7 +51,7 @@
         );
         return d;
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'streamer-hub.js', context: 'catch' }); }
         setStatus("5D monitor API slow or offline — iframe may still load.");
       });
   }
@@ -82,7 +82,7 @@
             })
             .join("");
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'streamer-hub.js', context: 'catch' }); }
         wrap.innerHTML = "";
       });
   }
@@ -97,7 +97,7 @@
           .then(function () {
             setStatus("Copied OBS URL (chrome hidden).");
           })
-          .catch(function () {
+          .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'streamer-hub.js', context: 'catch' }); }
             setStatus(obsUrl);
           });
       });
@@ -108,7 +108,7 @@
           .then(function () {
             setStatus("Copied clean fleet stream URL.");
           })
-          .catch(function () {
+          .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'streamer-hub.js', context: 'catch' }); }
             setStatus(cleanUrl);
           });
       });
@@ -154,12 +154,12 @@
           queueBtn.onclick = function () {
             try {
               audio.play();
-            } catch (_) {}
+            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'streamer-hub.js', context: 'catch' }); }}
             setStatus("Podcast queued — audio plays alongside the 5D monitor.");
           };
         }
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'streamer-hub.js', context: 'catch' }); }
         if (meta) meta.textContent = "Podcast API offline — use /podcast for full hub.";
       });
   }

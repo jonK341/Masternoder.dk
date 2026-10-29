@@ -48,10 +48,20 @@
           render(el, data);
         });
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'aggregator-ideas.js', context: 'catch' }); }
         nodes.forEach(function (el) {
           el.innerHTML = '<p style="color:#f88;">Could not load idea list.</p>';
         });
       });
+  });
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'aggregator-ideas.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
   });
 })();

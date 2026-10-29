@@ -161,7 +161,7 @@
         if (isFinite(bal)) animateStat('profile-glance-mn2', bal, statOpts);
         else setElText('profile-glance-mn2', '—');
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'profile-hub.js', context: 'catch' }); }
         updateMn2Glow(NaN);
         setElText('profile-glance-mn2', '—');
       });
@@ -232,7 +232,7 @@
         }
         return data;
       })
-      .catch(function () {
+      .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'profile-hub.js', context: 'catch' }); }
         var sum = document.getElementById('profile-hub-summary');
         if (sum) sum.textContent = 'Could not load unified overview.';
         return null;
@@ -291,7 +291,7 @@
       if (key === 'overview') url.searchParams.delete('tab');
       else url.searchParams.set('tab', key);
       global.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-    } catch (e) {
+    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profile-hub.js', context: 'catch' }); }
       /* ignore */
     }
     if (scroll !== false) {

@@ -40,7 +40,7 @@ class TemplateEngineCore {
                     effects_js: '/static/js/effects/professor-a-plus-effects.js'
                 };
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-engine-core.js', context: 'catch' }); }
             console.warn('Could not load active template, using default:', error);
             this.activeTemplate = {
                 id: 'professor_a_plus',
@@ -132,9 +132,11 @@ class TemplateEngineCore {
                 // Reload page to apply new template
                 window.location.reload();
             } else {
+                if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-engine-core.js', context: 'console.error' }); }
                 console.error('Failed to switch template:', data.error);
             }
-        } catch (error) {
+        } catch (error) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(error instanceof Error ? error : new Error(String(error)), { source: 'template-engine-core.js', context: 'catch' }); }
+            if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('console.error'), { source: 'template-engine-core.js', context: 'console.error' }); }
             console.error('Error switching template:', error);
         }
     }

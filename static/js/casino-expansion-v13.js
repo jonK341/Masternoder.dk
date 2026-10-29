@@ -174,7 +174,7 @@
                     grid.appendChild(card);
                 });
             }
-        }).catch(function () {
+        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino-expansion-v13.js', context: 'catch' }); }
             root.innerHTML = '<p>Could not load intel hub.</p>';
         });
     }
@@ -207,4 +207,14 @@
     } else {
         init();
     }
+})();
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'casino-expansion-v13.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
 })();

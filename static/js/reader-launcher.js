@@ -21,7 +21,7 @@
     function getUserId() {
         try {
             return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : '');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'reader-launcher.js', context: 'catch' }); }
             return (window.MnUserId ? window.MnUserId.read() : '');
         }
     }
@@ -29,7 +29,7 @@
     function loadSession() {
         try {
             return JSON.parse(localStorage.getItem('mn2_reading_session') || 'null');
-        } catch (e) {
+        } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'reader-launcher.js', context: 'catch' }); }
             return null;
         }
     }
@@ -87,7 +87,7 @@
         fetch('/api/user/compendium/progress?user_id=' + encodeURIComponent(getUserId()))
             .then(function (r) { return r.json(); })
             .then(function (progress) { buildLauncher(session, progress); })
-            .catch(function () { buildLauncher(session, null); });
+            .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'reader-launcher.js', context: 'catch' }); } buildLauncher(session, null); });
     }
 
     if (document.readyState === 'loading') {
