@@ -1,0 +1,55 @@
+# Upload main app + MN2 manifests to the live server over SSH (runs in GitHub's Ubuntu container). <!-- pragma: allowlist secret -->
+# Secrets (repo → Settings → Secrets → Actions):
+#   DEPLOY_HOST  — SSH hostname (same as deploy_ssh_env default if omitted)
+#   DEPLOY_PASS  — root SSH password
+# Optional: DEPLOY_USER (default root)
+name: Deploy live site (container job)
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_only:
+        description: "Upload only (no service restart)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deploy dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install paramiko
+
+      - name: Deploy manifests to server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PASS: ${{ secrets.DEPLOY_PASS }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          EXTRA=()
+          if [ "${{ inputs.upload_only }}" = "true" ]; then
+            EXTRA+=(--upload-only)
+          fi
+          python scripts/deploy.py fix_404 compendium mn2_staking static_pages mn2_env "${EXTRA[@]}"
+
+      - name: Hint — finish on server with git
+        if: inputs.upload_only != 'true'
+        run: |
+          echo "Prefer git on the server after uploads:"
+          echo "  cd /var/www/html && bash scripts/container_deploy.sh"
+          echo "See docs/DEPLOY_GIT.md for clone setup and MN2_WALLET_PASSPHRASE."
