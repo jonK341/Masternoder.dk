@@ -41,7 +41,7 @@ def main():
                 cwd=_root,
                 capture_output=True,
                 text=True,
-                timeout=60,
+                timeout=180,
             )
             print(out.stdout or "(no output)")
             if out.stderr:

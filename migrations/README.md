@@ -64,6 +64,9 @@ to serve from (app-code change — see Notes).
 | `005_compute_stats.py` | Phase C: stats + wallet-identity consolidation |
 | `003_crawl_site_pages.py` | Crawl public pages → `site_pages` |
 | `004_verify.py` | Row counts + integrity + reconciliation summary |
+| `009_camgirls.py` | Phase E: camgirls performers, payouts, PayPal mirror |
+| `010_platform_wallet_nft_payments.py` | Phase F: multi-coin wallets, NFT tables, payment token slots, staking/hosting capacity |
+| `schema_platform_extensions.sql` | DDL for Phase F (used by 010) |
 | `run_server_migration.sh` | `probe` then `apply` (resolves its own folder) |
 | `PROBE.sh` | Standalone read-only schema/shape probe |
 | `seed_local_sample.py`, `seed_real_shapes.py` | **LOCAL ONLY** fixtures (never run on server) |

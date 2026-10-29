@@ -181,11 +181,23 @@ def _public_listing(row: Dict[str, Any], edition: Optional[Dict[str, Any]]) -> D
 
 def catalog() -> Dict[str, Any]:
     state = _read_state()
-    skus = [
-        _with_floor_link(_public_sku(row, _minted_count(state, str(row.get("sku")))))
-        for row in (_load_catalog().get("skus") or [])
-        if isinstance(row, dict) and row.get("sku")
-    ]
+    db_skus = []
+    try:
+        from backend.services.nft_db_service import catalog_skus_from_db
+
+        db_skus = catalog_skus_from_db()
+    except Exception:
+        db_skus = []
+    if db_skus:
+        for row in db_skus:
+            row.setdefault("secondary_fee_percent", _fee_percent())
+        skus = [_with_floor_link(dict(row)) for row in db_skus]
+    else:
+        skus = [
+            _with_floor_link(_public_sku(row, _minted_count(state, str(row.get("sku")))))
+            for row in (_load_catalog().get("skus") or [])
+            if isinstance(row, dict) and row.get("sku")
+        ]
     return {
         "success": True,
         "secondary_fee_percent": _fee_percent(),
