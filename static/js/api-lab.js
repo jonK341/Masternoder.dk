@@ -1,6 +1,13 @@
 (function () {
   "use strict";
 
+  var APP_BASE = (typeof window !== "undefined" && window.APP_BASE !== undefined)
+    ? window.APP_BASE
+    : (function () {
+      var p = (typeof window !== "undefined" && window.location && window.location.pathname) || "";
+      return p.indexOf("/vidgenerator/") === 0 ? "/vidgenerator" : "";
+    })();
+
   var state = { catalog: null, category: "all", selected: null };
 
   function $(id) { return document.getElementById(id); }
@@ -170,7 +177,7 @@
 
   function boot() {
     $("q").addEventListener("input", renderList);
-    fetch("/api/lab/catalog").then(function (res) { return res.json(); }).then(function (data) {
+    fetch(APP_BASE + "/api/lab/catalog").then(function (res) { return res.json(); }).then(function (data) {
       state.catalog = data;
       renderCategories();
       renderList();

@@ -151,6 +151,12 @@
       <pre class="out" id="out">Waiting for a push.</pre>
     </section>
   </div>
+  <script>
+    (function () {
+      var p = window.location.pathname || "";
+      window.APP_BASE = p.indexOf("/vidgenerator/") === 0 ? "/vidgenerator" : "";
+    })();
+  </script>
   <script src="/static/js/navigation-toolbar.js"></script>
   <script src="/static/js/api-lab.js"></script>
 </body>
