@@ -15,19 +15,34 @@
 REMOTE_BASE="${REMOTE_BASE:-/var/www/html}"
 cd "$REMOTE_BASE" || exit 1
 
+PY="python3"
+if [[ -x "$REMOTE_BASE/.venv/bin/python" ]]; then
+  PY="$REMOTE_BASE/.venv/bin/python"
+fi
+
 echo "=========================================="
 echo "PRODUCTION APPLY ROUTES"
 echo "=========================================="
-echo "[1/6] Clearing Python cache..."
+echo "[0/7] Database migrations (idempotent)..."
+if [[ -f "$REMOTE_BASE/scripts/apply_db_migrations.py" ]]; then
+  if ! "$PY" "$REMOTE_BASE/scripts/apply_db_migrations.py"; then
+    echo "  [WARN] DB migrations failed — continuing with route reload (check logs)"
+  fi
+else
+  echo "  skipped (apply_db_migrations.py not present yet)"
+fi
+echo "  done"
+
+echo "[1/7] Clearing Python cache..."
 find "$REMOTE_BASE" -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 find "$REMOTE_BASE" -name '*.pyc' -delete 2>/dev/null || true
 echo "  done"
 
-echo "[2/6] Purging nginx cache..."
+echo "[2/7] Purging nginx cache..."
 rm -rf /var/cache/nginx/* 2>/dev/null || true
 echo "  done"
 
-echo "[3/6] Ensuring uwsgi pythonpath..."
+echo "[3/7] Ensuring uwsgi pythonpath..."
 for cfg in /etc/uwsgi/apps-enabled/vidgenerator.ini /etc/uwsgi/apps-available/vidgenerator.ini "$REMOTE_BASE/vidgenerator/uwsgi.ini"; do
     if [ -f "$cfg" ]; then
         if ! grep -q "pythonpath = $REMOTE_BASE" "$cfg" 2>/dev/null; then
@@ -38,7 +53,7 @@ for cfg in /etc/uwsgi/apps-enabled/vidgenerator.ini /etc/uwsgi/apps-available/vi
     fi
 done
 
-echo "[4/6] Ensuring python-proxy PYTHONPATH..."
+echo "[4/7] Ensuring python-proxy PYTHONPATH..."
 mkdir -p /etc/systemd/system/python-proxy.service.d
 cat > /etc/systemd/system/python-proxy.service.d/environment.conf << EOF
 [Service]
@@ -47,7 +62,7 @@ EOF
 systemctl daemon-reload 2>/dev/null || true
 echo "  done"
 
-echo "[5/6] Restarting services (order: python-proxy -> uwsgi-vidgenerator -> uwsgi -> nginx)..."
+echo "[5/7] Restarting services (order: python-proxy -> uwsgi-vidgenerator -> uwsgi -> nginx)..."
 systemctl restart python-proxy 2>/dev/null || systemctl restart python-proxy.service 2>/dev/null || true
 sleep 4
 systemctl stop uwsgi-vidgenerator 2>/dev/null || true
@@ -59,7 +74,7 @@ sleep 2
 systemctl reload nginx 2>/dev/null || systemctl restart nginx 2>/dev/null || true
 echo "  done"
 
-echo "[6/6] Quick route check..."
+echo "[6/7] Quick route check..."
 for path in /api/version /api/generator/test /api/unified/status; do
     code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:5000$path" 2>/dev/null || echo "---")
     echo "  $path: $code"

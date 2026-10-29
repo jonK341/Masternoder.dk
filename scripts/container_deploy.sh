@@ -24,7 +24,7 @@ if [[ ! -d .git ]]; then
   exit 1
 fi
 
-echo "[1/5] Git sync origin/main..."
+echo "[1/6] Git sync origin/main..."
 git remote -v | head -2 || true
 git fetch origin main
 git checkout main
@@ -32,7 +32,7 @@ git pull --ff-only origin main
 echo "  HEAD: $(git log -1 --oneline)"
 echo
 
-echo "[2/5] Python dependencies (if requirements changed)..."
+echo "[2/6] Python dependencies (if requirements changed)..."
 REQ=""
 for candidate in requirements.txt; do
   if [[ -f "$candidate" ]]; then
@@ -47,7 +47,7 @@ else
 fi
 echo
 
-echo "[3/5] MN2 wallet passphrase (.env on server only)..."
+echo "[3/6] MN2 wallet passphrase (.env on server only)..."
 ENV_FILE="$REMOTE_BASE/.env"
 touch "$ENV_FILE"
 if [[ -t 0 ]]; then
@@ -88,11 +88,23 @@ else
 fi
 echo
 
-echo "[4/5] Apply routes / restart uwsgi stack..."
+echo "[4/6] Database migrations (idempotent)..."
+MIG_PY="python3"
+if [[ -x "$REMOTE_BASE/.venv/bin/python" ]]; then
+  MIG_PY="$REMOTE_BASE/.venv/bin/python"
+fi
+if [[ -f "$REMOTE_BASE/scripts/apply_db_migrations.py" ]]; then
+  "$MIG_PY" "$REMOTE_BASE/scripts/apply_db_migrations.py" || echo "  [WARN] DB migrations failed — check logs"
+else
+  echo "  skipped (apply_db_migrations.py missing)"
+fi
+echo
+
+echo "[5/6] Apply routes / restart uwsgi stack..."
 bash "$REMOTE_BASE/scripts/production_apply_routes.sh"  # pragma: allowlist secret
 echo
 
-echo "[5/5] Optional Docker sidecars..."
+echo "[6/6] Optional Docker sidecars..."
 if command -v docker >/dev/null 2>&1 && [[ -f "$REMOTE_BASE/docker/suno-api/docker-compose.yml" ]]; then
   bash "$REMOTE_BASE/scripts/setup_suno_proxy.sh" "$REMOTE_BASE" || echo "  [WARN] suno proxy setup failed (non-fatal)"
 else

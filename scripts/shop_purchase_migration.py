@@ -38,8 +38,7 @@ class ShopPurchaseMigration:
             if not database_url.startswith('sqlite'):
                 database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1) if 'postgresql' in database_url else database_url
             self.engine = create_engine(database_url)
-            self._connection = self.engine.connect()
-            self._transaction = None  # commit after each op in standalone
+            self._connection = None
             self._inspector = inspect(self.engine)
         else:
             from src.app import create_app
@@ -53,25 +52,25 @@ class ShopPurchaseMigration:
     
     def _execute(self, statement, params=None):
         if self.standalone:
+            conn = self._connection
+            if conn is None:
+                raise RuntimeError("standalone migration requires an active connection")
             if params:
-                return self._connection.execute(text(statement), params or {})
-            return self._connection.execute(text(statement))
+                return conn.execute(text(statement), params or {})
+            return conn.execute(text(statement))
         if params:
             return self._db.session.execute(text(statement), params or {})
         return self._db.session.execute(text(statement))
     
     def _commit(self):
         if self.standalone:
-            self._connection.commit()
+            return
         else:
             self._db.session.commit()
     
     def _rollback(self):
         if self.standalone:
-            try:
-                self._connection.rollback()
-            except Exception:
-                pass
+            return
         else:
             self._db.session.rollback()
     
@@ -79,13 +78,19 @@ class ShopPurchaseMigration:
         return self._inspector.get_table_names()
     
     def _close(self):
-        if self.standalone and self._connection:
-            try:
-                self._connection.close()
-            except Exception:
-                pass
+        pass
     
     def run_migration(self):
+        """Run all migrations for shop purchase system"""
+        if self.standalone:
+            with self.engine.begin() as conn:
+                self._connection = conn
+                self._run_migration_body()
+            self._connection = None
+        else:
+            self._run_migration_body()
+    
+    def _run_migration_body(self):
         """Run all migrations for shop purchase system"""
         print("=" * 80)
         print("SHOP PURCHASE SYSTEM DATABASE MIGRATION")
@@ -245,21 +250,21 @@ class ShopPurchaseMigration:
                 self._rollback()
     
     def seed_shop_items(self):
-        """Seed shop_items table with initial items (from backend seed or skip if import fails)."""
+        """Seed shop_items table with initial items (static catalog; no Flask import)."""
         import json
         try:
-            # Import from backend when run from project root (scripts/shop_purchase_migration.py)
-            from backend.routes.shop_routes import _seed_shop_items
-            items = _seed_shop_items()
-        except Exception as e:
-            print(f"   [WARN] Could not import _seed_shop_items: {e}")
-            print("   [SKIP] Run migration from project root: python scripts/shop_purchase_migration.py")
-            return
-        try:
             existing_count = self._execute("SELECT COUNT(*) FROM shop_items").scalar()
-            if existing_count > 0:
+            if existing_count and int(existing_count) > 0:
                 print(f"   [OK] Shop items already seeded ({existing_count} items)")
                 return
+        except Exception:
+            pass
+        try:
+            from backend.services.shop_catalog_seed import build_seed_shop_items
+            items = build_seed_shop_items(include_dynamic_offers=False)
+        except Exception as e:
+            print(f"   [WARN] Could not load shop catalog seed: {e}")
+            return
             print(f"   Seeding {len(items)} shop items...")
             inserted = 0
             for item in items:

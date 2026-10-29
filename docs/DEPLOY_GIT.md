@@ -57,15 +57,16 @@ The script will:
 4. Run `scripts/production_apply_routes.sh` (cache clear + restart uwsgi/nginx) <!-- pragma: allowlist secret -->
 5. Optionally refresh the Suno Docker sidecar if Docker is installed
 
-## Manual shortcut (same as steps 1 + 4)
+## Manual shortcut (same as pull + migrations + apply routes)
 
 ```bash
 cd /var/www/html
 git fetch origin main && git checkout main && git pull --ff-only origin main
+python3 scripts/apply_db_migrations.py
 bash scripts/production_apply_routes.sh  <!-- pragma: allowlist secret -->
-# edit .env for MN2_WALLET_PASSPHRASE if needed
-systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001
 ```
+
+`apply_db_migrations.py` runs feature migrations, point-ledger bootstrap, and additive MN2 DDL. Optional full MN2 JSON backfill: `RUN_MN2_BACKFILL=1 python3 scripts/apply_db_migrations.py`. Step **[0/7]** of `production_apply_routes.sh` runs `apply_db_migrations.py` automatically.  <!-- pragma: allowlist secret -->
 
 ## Verify
 

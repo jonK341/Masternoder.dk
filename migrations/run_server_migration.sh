@@ -12,7 +12,12 @@
 set -uo pipefail
 cd /var/www/html                      # DATABASE_URL (instance/database.db) resolves from here
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PY=.venv/bin/python
+PY=python3
+if [[ -x /var/www/html/.venv/bin/python ]]; then
+  PY=/var/www/html/.venv/bin/python
+elif [[ -x .venv/bin/python ]]; then
+  PY=.venv/bin/python
+fi
 DB=instance/database.db
 DATA=data                             # real MN2 json live in /var/www/html/data
 STAGE="${1:-probe}"
