@@ -615,6 +615,13 @@
           '</a></strong> <span class="cg-ai-badge">AI</span>' +
           unlocked +
           fanBadge +
+          (p.floor
+            ? '<p style="font-size:0.75rem;opacity:0.75;margin:4px 0 0;">' +
+              esc(p.floor.nft_name || 'NFT') +
+              ' · ' +
+              esc(String(p.floor.hosting_spots || '')) +
+              ' host spots · one MN2 wallet</p>'
+            : '') +
           '<p style="font-size:0.85rem;opacity:0.8;margin:6px 0 0;">' + esc(p.bio || p.tagline || '') + '</p></div>' +
           '<button type="button" class="cg-studio-btn cg-fav-btn" data-fav="' + esc(p.id) + '">' +
           (favs.indexOf(p.id) >= 0 ? '★' : '☆') +

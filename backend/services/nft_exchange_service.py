@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 import backend.services.unified_points_database as points_mod
 from backend.services.mn2_earn_auth import require_earn_user
+from backend.services.studio_floor_service import nft_link
 
 _LOCK = threading.RLock()
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -134,6 +135,11 @@ def _public_sku(row: Dict[str, Any], minted: int) -> Dict[str, Any]:
     }
 
 
+def _with_floor_link(public: Dict[str, Any]) -> Dict[str, Any]:
+    public["floor"] = nft_link(str(public.get("sku") or ""))
+    return public
+
+
 def _sku_meta(sku: str) -> Dict[str, Any]:
     return dict(_sku_map().get(str(sku or "").strip()) or {})
 
@@ -176,7 +182,7 @@ def _public_listing(row: Dict[str, Any], edition: Optional[Dict[str, Any]]) -> D
 def catalog() -> Dict[str, Any]:
     state = _read_state()
     skus = [
-        _public_sku(row, _minted_count(state, str(row.get("sku"))))
+        _with_floor_link(_public_sku(row, _minted_count(state, str(row.get("sku")))))
         for row in (_load_catalog().get("skus") or [])
         if isinstance(row, dict) and row.get("sku")
     ]
@@ -185,7 +191,10 @@ def catalog() -> Dict[str, Any]:
         "secondary_fee_percent": _fee_percent(),
         "min_list_coins": _min_list_coins(),
         "wallet_schema_version": int(_load_catalog().get("wallet_schema_version") or 2),
-        "settlement": "Primary: PayPal USD or shop coins. Resale: shop coins, house keeps the fee.",
+        "settlement": (
+            "Primary: PayPal USD or shop coins on the user's one MN2 wallet. "
+            "Resale: shop coins, house keeps the fee. Portraits and hosting spots share the floor."
+        ),
         "skus": skus,
     }
 

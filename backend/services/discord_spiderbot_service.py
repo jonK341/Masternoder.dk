@@ -6,51 +6,46 @@ from typing import Any, Dict
 
 
 def platform_facts() -> Dict[str, Any]:
-    hosting_spots = 500
-    try:
-        from backend.services.mn2_masternode_hosting_service import get_paypal_config
+    """Same snapshot the studio cards and NFT desk use."""
+    from backend.services.studio_floor_service import snapshot
 
-        hosting_spots = int(get_paypal_config().get("max_hosted_nodes") or 500)
-    except Exception:
-        hosting_spots = 500
-
-    nft_editions = 0
-    nft_names: list = []
-    try:
-        from backend.services.nft_exchange_service import catalog
-
-        skus = catalog().get("skus") or []
-        nft_editions = len(skus)
-        nft_names = [str(row.get("name") or row.get("sku")) for row in skus[:8]]
-    except Exception:
-        nft_editions = 0
-
-    clips: list = []
-    try:
-        from backend.services.discord_customer_ingest_service import list_discord_audio
-
-        clips = list_discord_audio(limit=3).get("clips") or []
-    except Exception:
-        clips = []
-
+    floor = snapshot()
+    names = [str(row.get("name") or row.get("sku")) for row in (floor.get("nfts") or [])[:8]]
+    portraits = [
+        {
+            "name": row.get("display_name"),
+            "picture_url": row.get("picture_url"),
+            "nft_name": row.get("nft_name"),
+        }
+        for row in (floor.get("performers") or [])[:6]
+    ]
     return {
-        "hosting_spots": hosting_spots,
-        "nft_editions": nft_editions,
-        "nft_names": nft_names,
-        "audio_clips": [
-            {"filename": row.get("filename"), "url": row.get("url"), "username": row.get("username")}
-            for row in clips
-            if isinstance(row, dict)
-        ],
+        "hosting_spots": floor.get("hosting_spots"),
+        "nft_editions": floor.get("nft_editions"),
+        "nft_names": names,
+        "audio_clips": floor.get("audio_clips") or [],
+        "audio_url": floor.get("audio_url") or "",
+        "portraits": portraits,
+        "wallet": "one MN2 wallet per user, coins framed on that address",
+        "together": floor.get("together"),
     }
 
 
 def _calculated_reply(query: str, facts: Dict[str, Any]) -> str:
     q = (query or "").lower()
-    bits = [
-        f"Hosting is capped at {facts.get('hosting_spots')} masternode spots.",
-        f"The NFT desk has {facts.get('nft_editions')} editions.",
-    ]
+    portraits = facts.get("portraits") or []
+    lead = portraits[0] if portraits else {}
+    if lead.get("name"):
+        bits = [
+            (
+                f"{lead.get('name')}'s portrait is on the floor with the {lead.get('nft_name')} NFT, "
+                f"paid from one MN2 wallet."
+            )
+        ]
+    else:
+        bits = ["The floor shares one MN2 wallet per user."]
+    bits.append(f"Hosting is capped at {facts.get('hosting_spots')} masternode spots.")
+    bits.append(f"The NFT desk has {facts.get('nft_editions')} editions.")
     names = facts.get("nft_names") or []
     if names:
         bits.append("On the shelf: " + ", ".join(names[:4]) + ".")
@@ -103,6 +98,7 @@ def reply(query: str, *, discord_id: str = "") -> Dict[str, Any]:
                 "source": "llm",
                 "provider": getattr(result, "provider", None),
                 "ai_score": 0.9,
+                "audio_url": facts.get("audio_url") or "",
                 "facts": facts,
             }
     except Exception:
@@ -112,5 +108,6 @@ def reply(query: str, *, discord_id: str = "") -> Dict[str, Any]:
         "text": _calculated_reply(prompt, facts)[:1800],
         "source": "calculated",
         "ai_score": 0.45,
+        "audio_url": facts.get("audio_url") or "",
         "facts": facts,
     }

@@ -272,6 +272,12 @@ def get_quote(slots: int, user_id: str) -> Dict[str, Any]:
         "collateral_mn2_per_slot": pp["collateral_mn2"],
         "expires_at": expires_at,
         "disclaimer": "Checkout reserves a slot and provisions your masternode automatically.",
+        "floor": {
+            "max_hosted_nodes": pp["max_hosted_nodes"],
+            "wallet": "one_mn2_wallet",
+            "coins_per_mn2": shop_prices["coins_per_mn2"],
+            "pays_with": "framed_mn2_coins",
+        },
     }
 
 

@@ -574,7 +574,11 @@ def handle_slash_command(command: str, discord_id: str, options: Optional[Dict[s
     if cmd in ("spider", "spiderbot", "ask"):
         prompt = str(opts.get("prompt") or opts.get("question") or "").strip()
         out = spiderbot_reply(prompt, discord_id=did)
-        return reply(out.get("text") or "Spiderbot is quiet right now.", embed_title="Spiderbot")
+        text = out.get("text") or "Spiderbot is quiet right now."
+        audio = str(out.get("audio_url") or "").strip()
+        if audio and audio not in text:
+            text = f"{text}\nAudio: {audio}"
+        return reply(text, embed_title="Spiderbot")
 
     return reply(
         f"Unknown command `/{cmd}`. Try: `/spider` `/play` `/playnow` `/mn2` `/uber` `/casino` `/earn`"

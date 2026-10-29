@@ -93,6 +93,39 @@ def test_discord_audio_is_indexed_and_posted(tmp_path, monkeypatch):
     assert "floor.mp3" in body["content"]
 
 
+def test_floor_ties_portrait_nft_hosting_and_audio(monkeypatch, tmp_path):
+    from backend.services import discord_customer_ingest_service as ingest
+    from backend.services.studio_floor_service import performer_link, snapshot
+
+    monkeypatch.setattr(ingest, "_AUDIO_FILE", str(tmp_path / "audio.json"))
+    ingest.record_message_audio({
+        "id": "m2",
+        "author": {"id": "u2", "username": "nova"},
+        "attachments": [{
+            "id": "a2",
+            "filename": "floor.ogg",
+            "content_type": "audio/ogg",
+            "url": "https://cdn.discordapp.com/attachments/floor.ogg",
+        }],
+    })
+    floor = snapshot(user_id="user-a")
+    assert floor["hosting_spots"] == 500
+    assert floor["nft_editions"] >= 9
+    assert floor["wallet"]["wallet_count"] == 0
+    nova = next(row for row in floor["performers"] if row["id"] == "performer_nova")
+    assert nova["picture_url"].endswith("icon.webp") or "gallery" in nova["picture_url"]
+    assert nova["nft_sku"] == "nft-discord-wave"
+    assert floor["audio_url"].endswith("floor.ogg")
+    link = performer_link("performer_venus")
+    assert link["nft_sku"] == "nft-hosting-beacon"
+    assert link["hosting_spots"] == 500
+    from backend.services.nft_exchange_service import catalog
+
+    wave = next(row for row in catalog()["skus"] if row["sku"] == "nft-discord-wave")
+    assert wave["floor"]["performer_id"] == "performer_nova"
+    assert wave["floor"]["wallet"] == "one_mn2_wallet"
+
+
 def test_spiderbot_calculated_reply_uses_live_cap(monkeypatch):
     from backend.services import discord_spiderbot_service as bot
 
