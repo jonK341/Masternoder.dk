@@ -12,6 +12,8 @@ import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from backend.services.discord_spiderbot_service import reply as spiderbot_reply
+
 _LOCK = threading.Lock()
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _MANIFEST_PATH = os.path.join(_BASE, "data", "discord_app_manifest.json")
@@ -569,7 +571,18 @@ def handle_slash_command(command: str, discord_id: str, options: Optional[Dict[s
     if cmd == "bundle":
         return reply(f"🎁 **Entertainment bundle** $9.99 — AI pack + 500 coins + uber day pass\n{_BASE_URL}/shop/")
 
-    return reply(f"Unknown command `/{cmd}`. Try: `/play` `/playnow` `/mn2` `/uber` `/casino` `/earn` `/deposit` `/balance`")
+    if cmd in ("spider", "spiderbot", "ask"):
+        prompt = str(opts.get("prompt") or opts.get("question") or "").strip()
+        out = spiderbot_reply(prompt, discord_id=did)
+        text = out.get("text") or "Spiderbot is quiet right now."
+        audio = str(out.get("audio_url") or "").strip()
+        if audio and audio not in text:
+            text = f"{text}\nAudio: {audio}"
+        return reply(text, embed_title="Spiderbot")
+
+    return reply(
+        f"Unknown command `/{cmd}`. Try: `/spider` `/play` `/playnow` `/mn2` `/uber` `/casino` `/earn`"
+    )
 
 
 def parse_discord_interaction(body: Dict[str, Any]) -> Optional[Dict[str, Any]]:

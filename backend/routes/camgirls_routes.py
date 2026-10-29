@@ -7,6 +7,8 @@ import json
 
 from flask import Blueprint, Response, jsonify, request, session
 
+from backend.services.studio_floor_service import snapshot
+
 camgirls_bp = Blueprint("camgirls", __name__)
 
 
@@ -48,6 +50,14 @@ def _ops_ok() -> bool:
     if not secret:
         return request.environ.get("REMOTE_ADDR") in ("127.0.0.1", "::1")
     return request.headers.get("X-Ops-Secret") == secret
+
+
+@camgirls_bp.route("/api/floor", methods=["GET"])
+def studio_floor():
+    """Portraits, one wallet, NFTs, hosting spots, and Discord audio in one payload."""
+    user_id = (request.args.get("user_id") or "").strip()
+    frame = str(request.args.get("frame") or "").strip().lower() in ("1", "true", "yes")
+    return jsonify(snapshot(user_id=user_id, frame_wallet=frame)), 200
 
 
 @camgirls_bp.route("/api/camgirls/performers", methods=["GET"])

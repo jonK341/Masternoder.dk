@@ -6,6 +6,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from backend.services.studio_floor_service import performer_link
+
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _PERFORMERS_FILE = os.path.join(_ROOT, "data", "camgirls_performers.json")
 _UNLOCKS_FILE = os.path.join(_ROOT, "data", "camgirls_unlocks.json")
@@ -154,6 +156,14 @@ def list_performers_catalog(user_id: str = "default_user", lite: bool = False) -
             row = attach_media_to_row(row, lite=lite)
         except Exception:
             pass
+        media = row.get("media") if isinstance(row.get("media"), dict) else {}
+        picture = str(
+            (media or {}).get("picture_url")
+            or row.get("icon_url")
+            or row.get("avatar_url")
+            or ""
+        )
+        row["floor"] = performer_link(str(p.get("id") or ""), picture_url=picture)
         performers.append(row)
     return {"success": True, "performers": performers, "count": len(performers)}
 

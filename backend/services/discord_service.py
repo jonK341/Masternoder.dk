@@ -60,6 +60,27 @@ def _webhook_for_channel(channel: str) -> tuple[Optional[str], Optional[str]]:
     return None, None
 
 
+def prepare_webhook_body(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Fold an optional audio_url into Discord content so the webhook stays valid."""
+    body = dict(payload or {})
+    audio = str(body.pop("audio_url", "") or "").strip()
+    if not audio:
+        return body
+    content = str(body.get("content") or "").strip()
+    line = f"Audio: {audio}"
+    body["content"] = f"{content}\n{line}".strip() if content else line
+    embeds = body.get("embeds")
+    if isinstance(embeds, list) and embeds and isinstance(embeds[0], dict):
+        embed = dict(embeds[0])
+        fields = list(embed.get("fields") or [])
+        fields.append({"name": "Audio", "value": audio[:1024]})
+        embed["fields"] = fields
+        embeds = list(embeds)
+        embeds[0] = embed
+        body["embeds"] = embeds
+    return body
+
+
 def post_message(
     channel: str,
     payload: Dict[str, Any],
@@ -86,7 +107,7 @@ def post_message(
         if config_err:
             err = config_err
         else:
-            body = json.dumps(payload).encode("utf-8")
+            body = json.dumps(prepare_webhook_body(payload)).encode("utf-8")
             req = urllib.request.Request(
                 webhook,
                 data=body,

@@ -42,6 +42,84 @@
       "emblem_icon": "💎",
       "avatar_url": "/static/img/nft/vault-holo.svg",
       "description": "Holographic vault card with a fixed serial."
+    },
+    {
+      "sku": "nft-comet-chip",
+      "name": "Comet Chip",
+      "series": "Market",
+      "rarity": "common",
+      "supply": 200,
+      "price_usd": 1.99,
+      "price_coins": 199,
+      "trophy_id": "nft_edition_comet_chip",
+      "emblem_icon": "☄️",
+      "avatar_url": "/static/img/nft/comet-chip.svg",
+      "description": "Small comet token for the MN2 market floor."
+    },
+    {
+      "sku": "nft-hosting-beacon",
+      "name": "Hosting Beacon",
+      "series": "Hosting",
+      "rarity": "rare",
+      "supply": 80,
+      "price_usd": 6.99,
+      "price_coins": 699,
+      "trophy_id": "nft_edition_hosting_beacon",
+      "emblem_icon": "📡",
+      "avatar_url": "/static/img/nft/hosting-beacon.svg",
+      "description": "Beacon for a hosted masternode slot."
+    },
+    {
+      "sku": "nft-casino-die",
+      "name": "Casino Die",
+      "series": "Casino",
+      "rarity": "rare",
+      "supply": 80,
+      "price_usd": 5.99,
+      "price_coins": 599,
+      "trophy_id": "nft_edition_casino_die",
+      "emblem_icon": "🎲",
+      "avatar_url": "/static/img/nft/casino-die.svg",
+      "description": "Numbered die from the casino floor."
+    },
+    {
+      "sku": "nft-explorer-compass",
+      "name": "Explorer Compass",
+      "series": "Explorer",
+      "rarity": "epic",
+      "supply": 40,
+      "price_usd": 8.99,
+      "price_coins": 899,
+      "trophy_id": "nft_edition_explorer_compass",
+      "emblem_icon": "🧭",
+      "avatar_url": "/static/img/nft/explorer-compass.svg",
+      "description": "Compass card for the MN2 explorer."
+    },
+    {
+      "sku": "nft-discord-wave",
+      "name": "Discord Wave",
+      "series": "Discord",
+      "rarity": "rare",
+      "supply": 60,
+      "price_usd": 4.49,
+      "price_coins": 449,
+      "trophy_id": "nft_edition_discord_wave",
+      "emblem_icon": "🎙️",
+      "avatar_url": "/static/img/nft/discord-wave.svg",
+      "description": "Wave token tied to Discord audio drops."
+    },
+    {
+      "sku": "nft-spider-sigil",
+      "name": "Spider Sigil",
+      "series": "Discord",
+      "rarity": "legendary",
+      "supply": 25,
+      "price_usd": 12.99,
+      "price_coins": 1299,
+      "trophy_id": "nft_edition_spider_sigil",
+      "emblem_icon": "🕸️",
+      "avatar_url": "/static/img/nft/spider-sigil.svg",
+      "description": "Sigil of the Discord Spiderbot."
     }
   ]
 }

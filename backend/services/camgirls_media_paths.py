@@ -17,8 +17,11 @@ def pick_media_url(media_dir: str, url_base: str, stem: str) -> str:
 
 def gallery_urls(media_dir: str, url_base: str) -> List[str]:
     urls: List[str] = []
-    for i in (1, 2, 3):
-        urls.append(pick_media_url(media_dir, url_base, f"gallery-{i}"))
+    for i in (1, 2, 3, 4):
+        stem = f"gallery-{i}"
+        if i == 4 and not os.path.isfile(os.path.join(media_dir, f"{stem}.webp")) and not os.path.isfile(os.path.join(media_dir, f"{stem}.svg")) and not os.path.isfile(os.path.join(media_dir, f"{stem}.png")):
+            continue
+        urls.append(pick_media_url(media_dir, url_base, stem))
     return urls
 
 

@@ -132,7 +132,10 @@ def media_paths_for_performer(performer_id: str) -> Dict[str, Any]:
         "avatar_hd_url": gallery[1] if len(gallery) > 1 else f"{base}/gallery-2.webp",
         "resell_manifest_url": f"{base}/resell-pack.json",
         "media_tier": "phase2_raster" if _disk_has_raster(disk) else "phase1_svg",
+        "picture_url": None,
+        "studio_upgrades": ["portrait_pictures", "close_up", "icon_webp"],
     }
+    pack["picture_url"] = pack.get("avatar_hd_url") or pack.get("icon_url")
     if os.path.isdir(disk):
         pack["preview_video_url"] = preview_video_url(disk, base)
         pack["preview_video_mp4_url"] = preview_video_mp4_url(disk, base)

@@ -12,6 +12,7 @@ _log = logging.getLogger(__name__)
 
 from backend.services.account_resolution_service import resolve_user_id
 from backend.services.mn2_wallet_service import (
+    frame_user_mn2_wallet,
     generate_daemon_address,
     get_balance,
     get_or_create_deposit_address,
@@ -168,6 +169,24 @@ def mn2_deposit_address():
         "deposit_address": addr,
         "explorer_address_url": explorer_address_url,
     }), 200
+
+
+@mn2_bp.route("/api/mn2/wallet-frame", methods=["GET"])
+def mn2_wallet_frame():
+    """Create the user's single MN2 address if needed and frame coins to it."""
+    user_id = resolve_user_id(from_body=False, from_query=True)
+    result = frame_user_mn2_wallet(user_id)
+    if not result.get("success"):
+        return jsonify({
+            "success": False,
+            "error": _user_facing_rpc_error(result.get("error") or "Could not frame wallet"),
+            "user_id": user_id,
+            "deposit_address": None,
+        }), 200
+    addr = result.get("deposit_address") or ""
+    base = _explorer_base_url().rstrip("/")
+    result["explorer_address_url"] = f"{base}/address.dws?addr={addr}" if addr else ""
+    return jsonify(result), 200
 
 
 @mn2_bp.route("/api/mn2/wallet/refresh", methods=["POST"])

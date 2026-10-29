@@ -91,7 +91,7 @@ def get_paypal_config() -> Dict[str, Any]:
         "max_slots_per_order": int(pp.get("max_slots_per_order") or 5),
         "return_path": pp.get("return_path") or "/explorer?tab=masternodes",
         "collateral_mn2": float(cfg.get("collateral_mn2") or 5000),
-        "max_hosted_nodes": int(cfg.get("max_hosted_nodes") or 350),
+        "max_hosted_nodes": int(cfg.get("max_hosted_nodes") or 500),
         "auto_provision": bool(cfg.get("auto_provision", True)),
         "shop_payments": {
             "enabled": bool(shop.get("enabled", True)),
@@ -272,6 +272,12 @@ def get_quote(slots: int, user_id: str) -> Dict[str, Any]:
         "collateral_mn2_per_slot": pp["collateral_mn2"],
         "expires_at": expires_at,
         "disclaimer": "Checkout reserves a slot and provisions your masternode automatically.",
+        "floor": {
+            "max_hosted_nodes": pp["max_hosted_nodes"],
+            "wallet": "one_mn2_wallet",
+            "coins_per_mn2": shop_prices["coins_per_mn2"],
+            "pays_with": "framed_mn2_coins",
+        },
     }
 
 

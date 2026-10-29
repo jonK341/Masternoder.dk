@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="480" fill="#0d1117"/>
+  <rect x="24" y="24" width="592" height="432" rx="20" fill="url(#g)" opacity="0.92"/>
+  <ellipse cx="344" cy="250" rx="92" ry="118" fill="#1c1428"/>
+  <ellipse cx="344" cy="228" rx="70" ry="86" fill="#f3d5c4"/>
+  <path d="M274 210 Q344 120 414 210 Q384 160 344 168 Q304 160 274 210" fill="#2a1a14"/>
+  <ellipse cx="320" cy="228" rx="7" ry="8" fill="#1a120e"/>
+  <ellipse cx="368" cy="228" rx="7" ry="8" fill="#1a120e"/>
+  <path d="M328 262 Q344 274 360 262" fill="none" stroke="#a15a62" stroke-width="3" stroke-linecap="round"/>
+  <text x="320" y="400" text-anchor="middle" fill="#f8fafc" font-size="20" font-family="system-ui,sans-serif">Close-up · MS</text>
+  <text x="320" y="428" text-anchor="middle" fill="#e2e8f0" font-size="13" font-family="system-ui,sans-serif">mist · MN2 Camgirls</text>
+</svg>

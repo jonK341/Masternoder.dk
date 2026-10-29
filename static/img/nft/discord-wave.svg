@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Discord Wave NFT">
+  <rect width="128" height="128" rx="16" fill="#1e1b4b"/>
+  <path d="M24 72 Q40 48 56 72 T88 72 T112 60" fill="none" stroke="#c4b5fd" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="40" cy="46" r="8" fill="#a78bfa"/>
+  <text x="64" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#e9d5ff">WAVE</text>
+</svg>

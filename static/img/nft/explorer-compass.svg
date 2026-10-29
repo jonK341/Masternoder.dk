@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Explorer Compass NFT">
+  <rect width="128" height="128" rx="16" fill="#101828"/>
+  <circle cx="64" cy="60" r="32" fill="none" stroke="#93c5fd" stroke-width="6"/>
+  <path d="M64 36 L72 64 L64 84 L56 64 Z" fill="#fbbf24"/>
+  <text x="64" y="116" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#dbeafe">EXPL</text>
+</svg>
