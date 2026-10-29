@@ -22,8 +22,15 @@
     activeRoom = null;
     activePerformerId = '';
     try {
-      return room.disconnect().catch(function () {});
+      return room.disconnect().catch(function (err) {
+        if (window.ErrorManager && window.ErrorManager.logJSError) {
+          window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'camgirls-livekit-voice.js', context: 'disconnect' });
+        }
+      });
     } catch (e) {
+      if (window.ErrorManager && window.ErrorManager.logJSError) {
+        window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'camgirls-livekit-voice.js', context: 'disconnect' });
+      }
       return Promise.resolve();
     }
   }
@@ -53,6 +60,9 @@
         .catch(function (err) {
           activeRoom = null;
           activePerformerId = '';
+          if (window.ErrorManager && window.ErrorManager.logJSError) {
+            window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'camgirls-livekit-voice.js', context: 'connectLive' });
+          }
           throw err;
         });
     });
@@ -102,3 +112,13 @@
     },
   };
 })(typeof window !== 'undefined' ? window : this);
+
+;(function () {
+  if (typeof window === 'undefined' || !window.ErrorManager || typeof window.ErrorManager.logJSError !== 'function') return;
+  var source = 'camgirls-livekit-voice.js';
+  window.addEventListener('error', function (event) {
+    var file = (event && event.filename) || '';
+    if (file.indexOf(source) === -1) return;
+    window.ErrorManager.logJSError(event.error || new Error(event.message || 'script error'), { source: source, context: 'window_error' });
+  });
+})();
