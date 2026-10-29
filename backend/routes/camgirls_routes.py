@@ -508,6 +508,16 @@ def performer_landing_page(performer_id: str):
     name = html_module.escape(str(row.get("display_name") or performer_id))
     bio = html_module.escape(str(row.get("bio") or row.get("tagline") or ""))
     avatar = html_module.escape(str(row.get("avatar_url") or "/static/camgirls/avatar-demo.svg"))
+    picture = avatar
+    try:
+        from backend.services.camgirls_media_service import media_paths_for_performer
+
+        media = media_paths_for_performer(str(row.get("id") or performer_id))
+        pic = str(media.get("picture_url") or row.get("picture_url") or "").strip()
+        if pic:
+            picture = html_module.escape(pic)
+    except Exception:
+        pass
     host = (request.host or "").split(":")[0].lower()
     if host == "camgirls.masternoder.dk":
         origin = "https://camgirls.masternoder.dk"
@@ -520,6 +530,7 @@ def performer_landing_page(performer_id: str):
         ("DISPLAY_NAME", name),
         ("BIO", bio),
         ("AVATAR_URL", avatar),
+        ("PICTURE_URL", picture),
         ("CANONICAL_URL", html_module.escape(canonical)),
         ("SITE_ORIGIN", html_module.escape(origin)),
     ):

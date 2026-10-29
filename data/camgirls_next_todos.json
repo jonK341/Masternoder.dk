@@ -56,6 +56,12 @@
           "detail": "WebP gallery defaults + preview.webm/mp4 from stills; scripts/camgirls_generate_performer_media.py."
         },
         {
+          "id": "studio_picture_ui",
+          "priority": "done",
+          "title": "Portrait & close-up picture UI",
+          "detail": "Catalog cards show portrait hero, gallery-4 close-up, upgrade pills; performer landings use picture_url OG tags; profile profiler board syncs unlocked studio stills."
+        },
+        {
           "id": "media_real_photos",
           "priority": "P2",
           "title": "Real photo gallery drops",

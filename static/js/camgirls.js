@@ -128,6 +128,10 @@
     if (i >= 0) favs.splice(i, 1);
     else favs.push(id);
     saveFavorites(favs);
+    var perf = performers.find(function (x) {
+      return x.id === id;
+    });
+    if (perf && favs.indexOf(id) >= 0) trackProfilerPicture('camgirl_favorite', perf);
     fetch(apiUrl('/api/camgirls/performers/' + encodeURIComponent(id) + '/favorite'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -193,14 +197,95 @@
     );
   }
 
+  function infobarPill(label, on) {
+    return (
+      '<span class="cg-infobar-pill' +
+      (on ? ' cg-infobar-on' : '') +
+      '">' +
+      esc(label) +
+      '</span>'
+    );
+  }
+
+  var CG_UPGRADE_LABELS = {
+    portrait_pictures: 'Portrait',
+    close_up: 'Close-up',
+    icon_webp: 'HD icon',
+    gallery_hd: 'HD gallery',
+  };
+
+  function upgradeLabel(tag) {
+    return CG_UPGRADE_LABELS[tag] || String(tag || '').replace(/_/g, ' ');
+  }
+
+  function performerUpgradeBar(p) {
+    var tags = p.studio_upgrades || (p.media && p.media.studio_upgrades) || [];
+    if (!tags.length) return '';
+    return (
+      '<div class="cg-infobar-upgrades">' +
+      tags
+        .map(function (tag) {
+          return '<span class="cg-upgrade-pill">' + esc(upgradeLabel(tag)) + '</span>';
+        })
+        .join('') +
+      '</div>'
+    );
+  }
+
+  function portraitUrl(p) {
+    return (
+      p.picture_url ||
+      (p.media && (p.media.picture_url || p.media.avatar_hd_url)) ||
+      p.icon_url ||
+      p.avatar_url ||
+      ''
+    );
+  }
+
+  function trackProfilerPicture(action, p) {
+    var pic = portraitUrl(p);
+    if (!pic || !uid()) return;
+    fetch(apiUrl('/api/profiler/track'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: uid(),
+        action_type: action,
+        metadata: {
+          performer_id: p.id,
+          picture_url: pic,
+        },
+      }),
+    })
+      .then(function () {
+        return fetch(apiUrl('/api/profiler/pictures'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: uid(),
+            url: pic,
+            source: 'camgirls_' + action,
+          }),
+        });
+      })
+      .catch(function () {});
+  }
+
   function performerMediaBlock(p) {
     var m = p.media;
     if (!m) return '';
-    var gal = (m.gallery || []).slice(0, 3);
+    var gal = (m.gallery || []).slice(0, 4);
+    var portrait = portraitUrl(p);
+    var hero = portrait
+      ? '<img class="cg-card-portrait" src="' + esc(staticUrl(portrait)) + '" alt="" loading="lazy">'
+      : '';
     var thumbs = gal
-      .map(function (url) {
+      .map(function (url, idx) {
+        var cls = 'cg-gallery-thumb' + (idx === gal.length - 1 ? ' cg-closeup-thumb' : '');
         return (
-          '<img class="cg-gallery-thumb" src="' +
+          '<img class="' +
+          cls +
+          '" src="' +
           esc(staticUrl(url)) +
           '" alt="" loading="lazy">'
         );
@@ -254,10 +339,12 @@
     }
     return (
       '<div class="cg-media-block">' +
+      hero +
       preview +
       '<div class="cg-gallery-row">' +
       thumbs +
       '</div>' +
+      performerUpgradeBar(p) +
       (resell ? '<p class="cg-resell-row">' + resell + '</p>' : '') +
       '</div>'
     );
@@ -275,7 +362,9 @@
       infobarPill(agent, !!t.agent_id) +
       infobarPill(pay, true) +
       infobarPill('Chat·Gifts·Dance', !!(t.features && t.features.length)) +
-      '</div>'
+      (p.picture_url || portraitUrl(p) ? infobarPill('Portrait', true) : '') +
+      '</div>' +
+      performerUpgradeBar(p)
     );
   }
 
@@ -675,7 +764,13 @@
               return;
             }
             msg(d.success ? 'Room unlocked!' : d.error || 'Unlock failed', !d.success);
-            if (d.success) loadPerformers();
+            if (d.success) {
+              var unlocked = performers.find(function (x) {
+                return x.id === id;
+              });
+              if (unlocked) trackProfilerPicture('camgirl_unlock', unlocked);
+              loadPerformers();
+            }
           });
       });
     });

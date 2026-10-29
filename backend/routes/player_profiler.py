@@ -14,9 +14,11 @@ def get_profile():
     try:
         user_id = request.args.get('user_id', 'default_user')
         profile = player_profiler.get_profile(user_id)
+        pictures = player_profiler.get_picture_features(user_id)
         return jsonify({
             'success': True,
-            'profile': profile
+            'profile': profile,
+            'pictures': pictures,
         }), 200
     except Exception as e:
         return jsonify({
@@ -103,4 +105,47 @@ def get_trigger_history():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@profiler_bp.route('/api/profiler/pictures', methods=['GET'])
+@profiler_bp.route('/vidgenerator/api/profiler/pictures', methods=['GET'])
+def get_pictures():
+    """Saved avatar + gallery plus camgirl studio portrait board."""
+    try:
+        user_id = request.args.get('user_id', 'default_user')
+        payload = player_profiler.get_picture_features(user_id)
+        return jsonify({'success': True, **payload}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@profiler_bp.route('/api/profiler/pictures', methods=['POST'])
+@profiler_bp.route('/vidgenerator/api/profiler/pictures', methods=['POST'])
+def add_picture():
+    """Save a picture URL to the player gallery."""
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id', 'default_user')
+        url = data.get('url') or data.get('picture_url')
+        source = data.get('source') or 'manual'
+        result = player_profiler.add_picture(user_id, url, source=source)
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@profiler_bp.route('/api/profiler/pictures/avatar', methods=['POST'])
+@profiler_bp.route('/vidgenerator/api/profiler/pictures/avatar', methods=['POST'])
+def set_profiler_avatar():
+    """Set profiler avatar from a picture URL."""
+    try:
+        data = request.get_json() or {}
+        user_id = data.get('user_id', 'default_user')
+        url = data.get('url') or data.get('avatar_url')
+        result = player_profiler.set_avatar_url(user_id, url)
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
