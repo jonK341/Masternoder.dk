@@ -73,7 +73,11 @@ def main() -> int:
             def hook(event: dict) -> None:
                 phase = event.get("phase")
                 if phase:
-                    print(f"[activate-all] {phase} {event}", file=sys.stderr, flush=True)
+                    msg = event.get("message")
+                    if msg:
+                        print(f"[activate-all] {phase}: {msg}", file=sys.stderr, flush=True)
+                    else:
+                        print(f"[activate-all] {phase} {event}", file=sys.stderr, flush=True)
                     return
                 print(
                     f"[activate-all] round {event.get('round')} "

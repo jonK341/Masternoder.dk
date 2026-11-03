@@ -609,6 +609,12 @@ def startmasternode(
     params: List[Any] = [set_type, lock_str]
     if alias is not None:
         params.append(alias)
+    if set_type == "all":
+        try:
+            long_to = float((os.environ.get("MN2_RPC_STARTMN_ALL_TIMEOUT") or "1800").strip() or 1800)
+        except (TypeError, ValueError):
+            long_to = 1800.0
+        return _call("startmasternode", params, timeout_sec=long_to)
     return _call("startmasternode", params)
 
 

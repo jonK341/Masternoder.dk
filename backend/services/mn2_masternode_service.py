@@ -1505,7 +1505,7 @@ def maintain_ping_loop(*, skip_explorer: bool = False) -> Dict[str, Any]:
     }
 
 
-def sync_ping_targets() -> Dict[str, Any]:
+def sync_ping_targets(*, skip_heavy_status: bool = False) -> Dict[str, Any]:
     """
     Ops: unlock collateral and run ``startmasternode all`` so every masternode.conf
     alias joins the daemon multi-ping set (v1.3+). Used by fleet cron / SSH ops.
@@ -1518,6 +1518,13 @@ def sync_ping_targets() -> Dict[str, Any]:
             "multi_ping_enabled": False,
         }
     reg_err = _register_fleet_ping_targets()
+    if skip_heavy_status:
+        return {
+            "success": reg_err is None,
+            "error": reg_err,
+            "multi_ping_enabled": True,
+            "action": "startmasternode all (fleet ping register)",
+        }
     snap = get_service_status(fresh=True)
     daemon = snap.get("daemon") if isinstance(snap, dict) else {}
     return {
@@ -2072,20 +2079,28 @@ def activate_all_rented_masternodes(
     try:
         if progress_hook:
             try:
-                progress_hook({"phase": "fleet_ping_and_start"})
+                progress_hook(
+                    {
+                        "phase": "fleet_ping_and_start",
+                        "message": "startmasternode all may take 5-30 min on large fleets; do not Ctrl+C",
+                    }
+                )
             except Exception:
                 pass
         if multi_ping_enabled():
-            out["ping"] = sync_ping_targets()
+            out["ping"] = sync_ping_targets(skip_heavy_status=skip_drain)
         else:
             out["ping"] = maintain_ping_loop(skip_explorer=skip_explorer)
     except Exception as exc:
         out["ping"] = {"success": False, "error": str(exc)[:300]}
 
-    try:
-        out["starts"] = start_rented_hosts_via_rpc(limit=0)
-    except Exception as exc:
-        out["starts"] = {"success": False, "error": str(exc)[:300]}
+    if skip_drain:
+        out["starts"] = {"skipped": True, "reason": "skip_drain_ping_only"}
+    else:
+        try:
+            out["starts"] = start_rented_hosts_via_rpc(limit=0)
+        except Exception as exc:
+            out["starts"] = {"success": False, "error": str(exc)[:300]}
 
     out["snapshot_after"] = rented_masternodes_snapshot()
     after = out["snapshot_after"]
