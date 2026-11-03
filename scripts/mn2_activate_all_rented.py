@@ -61,16 +61,20 @@ def main() -> int:
         help="Log each drain round to stderr (use with --summary)",
     )
     args = parser.parse_args()
+    print("[activate-all] loading environment…", file=sys.stderr, flush=True)
     _load_env()
+    print("[activate-all] importing masternode service…", file=sys.stderr, flush=True)
     from backend.services.mn2_masternode_service import activate_all_rented_masternodes
 
     if args.progress:
 
         class _Progress:
-            round_idx = 0
-
             @staticmethod
             def hook(event: dict) -> None:
+                phase = event.get("phase")
+                if phase:
+                    print(f"[activate-all] {phase} {event}", file=sys.stderr, flush=True)
+                    return
                 print(
                     f"[activate-all] round {event.get('round')} "
                     f"pending={event.get('pending_before')} "
@@ -85,6 +89,12 @@ def main() -> int:
     else:
         progress_hook = None
 
+    print(
+        f"[activate-all] drain batch_size={args.batch_size} max_rounds={args.max_rounds} "
+        f"skip_drain={args.skip_drain}",
+        file=sys.stderr,
+        flush=True,
+    )
     result = activate_all_rented_masternodes(
         batch_size=args.batch_size,
         max_rounds=args.max_rounds,

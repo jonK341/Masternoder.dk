@@ -1995,6 +1995,12 @@ def activate_all_rented_masternodes(
     batch_size = max(1, int(batch_size))
     max_rounds = max(1, int(max_rounds))
 
+    if progress_hook:
+        try:
+            progress_hook({"phase": "order_sync"})
+        except Exception:
+            pass
+
     if not skip_drain:
         import time as _time
 
@@ -2003,11 +2009,27 @@ def activate_all_rented_masternodes(
             snap = rented_masternodes_snapshot()
             if not snap.get("daemon_healthy"):
                 out["drain_rounds"].append({"round": rnd + 1, "skipped": "daemon_unhealthy"})
+                if progress_hook:
+                    try:
+                        progress_hook({"phase": "daemon_unhealthy", "round": rnd + 1})
+                    except Exception:
+                        pass
                 _time.sleep(15)
                 continue
             pending = snap.get("pending") or []
             if not pending:
                 break
+            if progress_hook:
+                try:
+                    progress_hook(
+                        {
+                            "phase": "batch_start",
+                            "round": rnd + 1,
+                            "pending_before": len(pending),
+                        }
+                    )
+                except Exception:
+                    pass
             try:
                 batch = process_pending_hosts(
                     limit=batch_size,
@@ -2046,6 +2068,11 @@ def activate_all_rented_masternodes(
                 _time.sleep(3)
 
     try:
+        if progress_hook:
+            try:
+                progress_hook({"phase": "fleet_ping_and_start"})
+            except Exception:
+                pass
         if multi_ping_enabled():
             out["ping"] = sync_ping_targets()
         else:

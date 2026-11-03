@@ -16,6 +16,20 @@ if [[ ! -d "$WEB" ]]; then
 fi
 cd "$WEB"
 
+log() { echo "[activate-all $(date -u +%H:%M:%S)] $*" >&2; }
+
+LOCK_FILE="${MN2_ACTIVATE_LOCK:-$WEB/data/mn2_activate_all.lock}"
+mkdir -p "$(dirname "$LOCK_FILE")"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  log "ERROR: another activate-all is already running."
+  log "Check: pgrep -af 'mn2_activate_all_rented'"
+  log "Stop extras: kill \$(pgrep -f 'mn2_activate_all_rented' | tr '\\n' ' ')"
+  exit 1
+fi
+
+log "starting pid=$$ web=$WEB args=$*"
+
 export PYTHONUNBUFFERED=1
 export MN2_RPC_HEALTH_TIMEOUT="${MN2_RPC_HEALTH_TIMEOUT:-60}"
 export MN2_RPC_TIMEOUT="${MN2_RPC_TIMEOUT:-60}"
@@ -33,17 +47,23 @@ fi
 CLI="${MN2_CLI:-/opt/masternoder2d/masternoder2-cli}"
 DATADIR="${MN2_DATADIR:-$WEB/config}"
 if [[ -x "$CLI" ]]; then
-  if ! out=$("$CLI" -datadir="$DATADIR" getblockcount 2>&1) || [[ ! "$out" =~ ^[0-9]+$ ]]; then
-    echo "[activate-all] WARN: CLI RPC not ready yet: ${out:0:120}" >&2
-    echo "[activate-all] Waiting up to 120s for getblockcount…" >&2
-    for _ in $(seq 1 120); do
+  if out=$("$CLI" -datadir="$DATADIR" getblockcount 2>&1) && [[ "$out" =~ ^[0-9]+$ ]]; then
+    log "CLI RPC height=$out"
+  elif ! out=$("$CLI" -datadir="$DATADIR" getblockcount 2>&1) || [[ ! "$out" =~ ^[0-9]+$ ]]; then
+    log "WARN: CLI RPC not ready yet: ${out:0:120}"
+    log "Waiting up to 120s for getblockcount…"
+    for i in $(seq 1 120); do
       if out=$("$CLI" -datadir="$DATADIR" getblockcount 2>&1) && [[ "$out" =~ ^[0-9]+$ ]]; then
-        echo "[activate-all] RPC height=$out" >&2
+        log "RPC height=$out (after ${i}s)"
         break
+      fi
+      if [[ $((i % 15)) -eq 0 ]]; then
+        log "still waiting RPC (${i}/120s)…"
       fi
       sleep 1
     done
   fi
 fi
 
+log "exec python3 mn2_activate_all_rented.py $*"
 exec python3 "$SCRIPT_DIR/mn2_activate_all_rented.py" "$@"
