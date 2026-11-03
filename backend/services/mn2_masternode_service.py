@@ -1766,7 +1766,8 @@ def start_rented_hosts_via_rpc(limit: int = 50) -> Dict[str, Any]:
         err = _start_masternode(alias, skip_privkey_sync=True)
         results.append({"id": hid, "alias": alias, "error": err, "ok": err is None})
         n += 1
-        if n >= max(1, int(limit)):
+        lim = int(limit)
+        if lim > 0 and n >= lim:
             break
     return {
         "success": True,
@@ -1905,6 +1906,94 @@ def bring_rented_masternodes_online(limit: int = 20) -> Dict[str, Any]:
     except Exception as exc:
         out["ping"] = {"success": False, "error": str(exc)[:300]}
     out["snapshot_after"] = rented_masternodes_snapshot()
+    return out
+
+
+def activate_all_rented_masternodes(
+    *,
+    batch_size: int = 250,
+    max_rounds: int = 200,
+    skip_drain: bool = False,
+    skip_explorer: bool = True,
+) -> Dict[str, Any]:
+    """
+    Drain every pending/queued host in-process, then fleet ping + start all collateralized hosts.
+    One ops call instead of many cron batches. Stops early when no collateral remains.
+    """
+    restored: Dict[str, Any]
+    try:
+        from backend.services.mn2_masternode_hosting_service import ensure_paid_hosts_in_registry
+        restored = ensure_paid_hosts_in_registry()
+    except Exception as exc:
+        restored = {"success": False, "error": str(exc)[:300]}
+
+    snap = rented_masternodes_snapshot()
+    out: Dict[str, Any] = {
+        "success": True,
+        "order_sync": restored,
+        "snapshot_before": snap,
+        "drain_rounds": [],
+        "ping": None,
+        "starts": None,
+    }
+    if not snap.get("daemon_healthy"):
+        out["success"] = False
+        out["error"] = "Cannot activate rented masternodes: wallet daemon RPC is down."
+        return out
+    if not snap.get("auto_provision"):
+        out["success"] = False
+        out["error"] = "auto_provision disabled in mn2_masternode_config.json"
+        return out
+
+    batch_size = max(1, int(batch_size))
+    max_rounds = max(1, int(max_rounds))
+
+    if not skip_drain:
+        for rnd in range(max_rounds):
+            snap = rented_masternodes_snapshot()
+            pending = snap.get("pending") or []
+            if not pending:
+                break
+            try:
+                batch = process_pending_hosts(limit=batch_size, skip_explorer=skip_explorer)
+            except Exception as exc:
+                out["success"] = False
+                out["error"] = str(exc)[:300]
+                out["snapshot_after"] = rented_masternodes_snapshot()
+                return out
+            processed = int(batch.get("processed") or 0)
+            out["drain_rounds"].append(
+                {
+                    "round": rnd + 1,
+                    "pending_before": len(pending),
+                    "processed": processed,
+                }
+            )
+            if processed == 0:
+                break
+
+    try:
+        if multi_ping_enabled():
+            out["ping"] = sync_ping_targets()
+        else:
+            out["ping"] = maintain_ping_loop(skip_explorer=skip_explorer)
+    except Exception as exc:
+        out["ping"] = {"success": False, "error": str(exc)[:300]}
+
+    try:
+        out["starts"] = start_rented_hosts_via_rpc(limit=0)
+    except Exception as exc:
+        out["starts"] = {"success": False, "error": str(exc)[:300]}
+
+    out["snapshot_after"] = rented_masternodes_snapshot()
+    after = out["snapshot_after"]
+    pending_left = len(after.get("pending") or [])
+    if pending_left and out.get("success"):
+        blockers = after.get("blockers") or []
+        if any("collateral" in str(b) for b in blockers):
+            out["note"] = (
+                f"{pending_left} host(s) still pending — usually no free 5000 MN2 collateral UTXOs."
+            )
     return out
 
 

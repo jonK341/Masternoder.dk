@@ -47,6 +47,8 @@ SCRIPT_FILES=(
   scripts/mn2_repair_daemon.sh
   scripts/mn2_diagnose_rpc_wallet.sh
   scripts/mn2_bring_rented_online.py
+  scripts/mn2_activate_all_rented.py
+  scripts/mn2_activate_all_rented.sh
   scripts/mn2_with_env.sh
   scripts/mn2_provision_status.sh
   scripts/mn2_fleet_audit.py
