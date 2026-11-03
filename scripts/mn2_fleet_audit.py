@@ -25,6 +25,10 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 os.chdir(ROOT)
 
+from scripts.daemon_env import load_dotenv
+
+load_dotenv()
+
 from backend.services import mn2_masternode_service as mn  # noqa: E402
 
 

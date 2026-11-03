@@ -18,11 +18,17 @@ if ROOT not in sys.path:
 os.chdir(ROOT)
 
 
+def _load_env() -> None:
+    from scripts.daemon_env import load_dotenv
+    load_dotenv()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Bring rented MN2 masternodes online")
     parser.add_argument("--start", action="store_true", help="Provision pending hosts and startmasternode")
     parser.add_argument("--limit", type=int, default=20, help="Max hosts to process")
     args = parser.parse_args()
+    _load_env()
     from backend.services.mn2_masternode_service import (
         bring_rented_masternodes_online,
         rented_masternodes_snapshot,

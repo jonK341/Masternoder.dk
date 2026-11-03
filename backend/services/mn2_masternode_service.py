@@ -1805,6 +1805,8 @@ def rented_masternodes_snapshot() -> Dict[str, Any]:
     except Exception as exc:
         daemon = {"status": "error", "error": str(exc)[:200]}
     healthy = bool(daemon.get("healthy") or (daemon.get("health") or {}).get("status") == "healthy")
+    hc_status = (daemon.get("health") or {}).get("status")
+    hc_error = (daemon.get("health") or {}).get("error")
     cfg = get_config()
     paid_orders = 0
     paid_slots = 0
@@ -1820,7 +1822,12 @@ def rented_masternodes_snapshot() -> Dict[str, Any]:
     blockers = []
     auto_provision = bool(cfg.get("auto_provision", True))
     if not healthy:
-        blockers.append("masternoder2d_rpc_unreachable")
+        if hc_status == "auth_failed":
+            blockers.append("masternoder2d_rpc_auth_failed")
+        else:
+            blockers.append("masternoder2d_rpc_unreachable")
+        if hc_error:
+            blockers.append(str(hc_error)[:120])
     if not auto_provision:
         blockers.append("auto_provision_disabled")
     if not pending and not active and paid_orders == 0:
