@@ -14,9 +14,12 @@
 
 set -euo pipefail
 
-WEB="${WEB_ROOT:-/var/www/html}"
-cd "$WEB"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WEB="${WEB_ROOT:-/var/www/html}"
+if [[ ! -d "$WEB" ]]; then
+  WEB="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
+cd "$WEB"
 DRY_RUN=0
 SKIP_PROVISION=0
 PROVISION_PASSES="${PROVISION_PASSES:-25}"
