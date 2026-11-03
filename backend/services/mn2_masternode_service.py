@@ -1871,6 +1871,8 @@ def rented_masternodes_snapshot() -> Dict[str, Any]:
     if not healthy:
         if hc_status == "auth_failed":
             blockers.append("masternoder2d_rpc_auth_failed")
+        elif hc_status == "work_queue_saturated":
+            blockers.append("masternoder2d_rpc_work_queue_saturated")
         else:
             blockers.append("masternoder2d_rpc_unreachable")
         if hc_error:

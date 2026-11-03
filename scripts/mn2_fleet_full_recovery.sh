@@ -7,7 +7,8 @@
 # Usage:
 #   cd /var/www/html && bash scripts/mn2_fleet_full_recovery.sh
 #   bash scripts/mn2_fleet_full_recovery.sh --dry-run
-#   bash scripts/mn2_fleet_full_recovery.sh --skip-provision
+#   bash scripts/mn2_fleet_full_recovery.sh --skip-provision   # default: RPC/uWSGI only
+#   bash scripts/mn2_fleet_full_recovery.sh --with-provision   # run activate-all / batches
 #   bash scripts/mn2_fleet_full_recovery.sh --skip-daemon-kill   # after server reboot
 #   bash scripts/mn2_fleet_full_recovery.sh --fast-daemon-kill   # skip slow systemctl stop
 #   bash scripts/mn2_fleet_full_recovery.sh --provision-passes 40 --provision-limit 15
@@ -23,7 +24,7 @@ if [[ ! -d "$WEB" ]]; then
 fi
 cd "$WEB"
 DRY_RUN=0
-SKIP_PROVISION=0
+SKIP_PROVISION=1
 SKIP_DAEMON_KILL=0
 FAST_DAEMON_KILL=0
 PROVISION_PASSES="${PROVISION_PASSES:-25}"
@@ -33,6 +34,7 @@ for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
     --skip-provision) SKIP_PROVISION=1 ;;
+    --with-provision) SKIP_PROVISION=0 ;;
     --skip-daemon-kill) SKIP_DAEMON_KILL=1 ;;
     --fast-daemon-kill) FAST_DAEMON_KILL=1 ;;
     --provision-passes=*) PROVISION_PASSES="${arg#*=}" ;;
@@ -204,6 +206,10 @@ PY
 
 log "=== MN2 fleet full recovery (WEB=$WEB) ==="
 
+if [[ -x "$SCRIPT_DIR/mn2_stop_fleet_ops.sh" ]]; then
+  run bash "$SCRIPT_DIR/mn2_stop_fleet_ops.sh" || true
+fi
+
 kill_stuck_ops_python
 
 if [[ "$SKIP_DAEMON_KILL" -eq 1 ]]; then
@@ -251,7 +257,12 @@ else
 fi
 
 run systemctl restart uwsgi-vidgenerator uwsgi-vidgenerator-5001
-sleep 8
+sleep 10
+
+if [[ "$SKIP_PROVISION" -eq 0 ]]; then
+  log "wallet warm-up 60s before heavy listunspent / provision…"
+  sleep 60
+fi
 
 log "uWSGI /api/health/system mn2_rpc:"
 if [[ "$DRY_RUN" -eq 0 ]]; then

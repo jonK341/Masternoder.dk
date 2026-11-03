@@ -317,9 +317,14 @@ def getbalance() -> Dict[str, Any]:
     return _call("getbalance")
 
 
-def listunspent(minconf: int = 1, maxconf: int = 9999999) -> Dict[str, Any]:
+def listunspent(minconf: int = 1, maxconf: int = 9999999, *, timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """List spendable wallet UTXOs. Used to find 10k MN2 masternode collateral outputs."""
-    return _call("listunspent", [int(minconf), int(maxconf)])
+    if timeout_sec is None:
+        try:
+            timeout_sec = float((os.environ.get("MN2_RPC_LISTUNSPENT_TIMEOUT") or "120").strip() or 120)
+        except (TypeError, ValueError):
+            timeout_sec = 120.0
+    return _call("listunspent", [int(minconf), int(maxconf)], timeout_sec=timeout_sec)
 
 
 def getnewaddress() -> Dict[str, Any]:
@@ -693,7 +698,7 @@ def health_check(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
             hc_to = float((os.environ.get("MN2_RPC_HEALTH_TIMEOUT") or "5").strip() or 5)
         except (TypeError, ValueError):
             hc_to = 5.0
-    hc_to = max(1.0, min(hc_to, 25.0))
+    hc_to = max(1.0, min(hc_to, 60.0))
     r = getblockcount(timeout_sec=hc_to)
     out["latency_ms"] = round((time.perf_counter() - t0) * 1000, 2)
     if r.get("error"):
@@ -707,6 +712,8 @@ def health_check(timeout_sec: Optional[float] = None) -> Dict[str, Any]:
             or "http 403" in el
         ):
             out["status"] = "auth_failed"
+        elif "work queue" in el or "queue depth" in el:
+            out["status"] = "work_queue_saturated"
         elif any(x in el for x in ("connection refused", "connection aborted", "timed out", "timeout", "name or service not known", "failed to establish")):
             out["status"] = "unreachable"
         else:
