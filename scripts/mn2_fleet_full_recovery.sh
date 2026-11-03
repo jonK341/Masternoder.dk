@@ -8,6 +8,8 @@
 #   cd /var/www/html && bash scripts/mn2_fleet_full_recovery.sh
 #   bash scripts/mn2_fleet_full_recovery.sh --dry-run
 #   bash scripts/mn2_fleet_full_recovery.sh --skip-provision
+#   bash scripts/mn2_fleet_full_recovery.sh --skip-daemon-kill   # after server reboot
+#   bash scripts/mn2_fleet_full_recovery.sh --fast-daemon-kill   # skip slow systemctl stop
 #   bash scripts/mn2_fleet_full_recovery.sh --provision-passes 40 --provision-limit 15
 #
 # Env (optional): WEB_ROOT, MN2_DATADIR, MN2_WALLET_PASSPHRASE, PROVISION_PASSES, PROVISION_LIMIT
@@ -189,7 +191,7 @@ print("before pending", pending, "daemon_healthy", snap.get("daemon_healthy"))
 if not snap.get("daemon_healthy"):
     print("skip batch — daemon not healthy")
     sys.exit(1)
-out = process_pending_hosts(limit=int("$limit"), skip_explorer=True)
+out = process_pending_hosts(limit=int("$limit"), skip_explorer=True, skip_ping=True)
 print("processed", out.get("processed"))
 for r in (out.get("results") or [])[:5]:
     print(" ", r.get("host_id"), r.get("status"), (r.get("message") or r.get("error") or "")[:60])
@@ -277,8 +279,13 @@ PY
 fi
 
 if [[ "$SKIP_PROVISION" -eq 0 && "$DRY_RUN" -eq 0 ]]; then
-  log "=== provisioning batches ==="
-  provision_batches || true
+  if [[ -f "$SCRIPT_DIR/mn2_activate_all_rented.py" ]]; then
+    log "=== activate all rented (single process) ==="
+    python3 "$SCRIPT_DIR/mn2_activate_all_rented.py" --summary --progress --batch-size "${PROVISION_LIMIT}" || true
+  else
+    log "=== provisioning batches ==="
+    provision_batches || true
+  fi
   if [[ -x "$SCRIPT_DIR/mn2_start_masternode.py" ]]; then
     log "sync multi-ping / fleet start"
     python3 "$SCRIPT_DIR/mn2_start_masternode.py" --all-from-conf || true

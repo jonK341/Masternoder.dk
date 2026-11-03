@@ -6,7 +6,7 @@
 #   bash scripts/mn2_activate_all_rented.sh --summary
 #   bash scripts/mn2_activate_all_rented.sh --skip-drain
 #
-# Optional env: MN2_WALLET_PASSPHRASE, WEB_ROOT, MN2_RPC_TIMEOUT=60
+# Optional env: MN2_WALLET_PASSPHRASE (real wallet password in .env — not a placeholder)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,9 +28,7 @@ if [[ -f "$WEB/.env" ]]; then
   set +a
 fi
 
-if [[ -x "$SCRIPT_DIR/mn2_unlock_collateral.sh" && -n "${MN2_WALLET_PASSPHRASE:-}" ]]; then
-  bash "$SCRIPT_DIR/mn2_unlock_collateral.sh" || true
-fi
+# Wallet unlock runs inside Python (_unlock_wallet) — avoid blocking CLI walletpassphrase here.
 
 CLI="${MN2_CLI:-/opt/masternoder2d/masternoder2-cli}"
 DATADIR="${MN2_DATADIR:-$WEB/config}"

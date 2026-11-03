@@ -1719,19 +1719,65 @@ def provision_host(
     }
 
 
-def process_pending_hosts(limit: int = 20, *, skip_explorer: bool = False) -> Dict[str, Any]:
-    """Cron/ops: retry auto-provision for paid hosts still provisioning + maintain ping loop."""
-    ping = maintain_ping_loop(skip_explorer=skip_explorer)
+def _select_pending_for_provision(
+    hosts: List[Dict[str, Any]],
+    limit: int,
+    min_conf: int,
+) -> tuple[List[Dict[str, Any]], int]:
+    """Prefer hosts that can finish now; avoid re-hammering unconfirmed collateral every batch."""
     pending_status = {"queued", "provisioning", "planned"}
+    candidates = [h for h in hosts if isinstance(h, dict) and (h.get("status") or "").lower() in pending_status]
+    ready: List[Dict[str, Any]] = []
+    confirming: List[Dict[str, Any]] = []
+    for h in candidates:
+        txid = h.get("collateral_txid")
+        vout = h.get("collateral_vout")
+        if txid is None or vout is None:
+            ready.append(h)
+            continue
+        stored = _wallet_collateral_utxo(txid, vout)
+        if not stored:
+            ready.append(h)
+            continue
+        if int(stored.get("confirmations") or 0) >= min_conf:
+            ready.append(h)
+        else:
+            confirming.append(h)
+    cap = max(1, int(limit))
+    todo = ready[:cap]
+    if len(todo) < cap and confirming:
+        for h in confirming[: min(5, cap - len(todo))]:
+            todo.append(h)
+    return todo, len(confirming)
+
+
+def process_pending_hosts(
+    limit: int = 20,
+    *,
+    skip_explorer: bool = False,
+    skip_ping: bool = False,
+) -> Dict[str, Any]:
+    """Cron/ops: retry auto-provision for paid hosts still provisioning + maintain ping loop."""
+    min_conf = int(_ops_cfg().get("min_collateral_confirmations") or 10)
+    ping = None
+    if not skip_ping:
+        ping = maintain_ping_loop(skip_explorer=skip_explorer)
     hosts = list_hosts(include_internal=True)
-    todo = [h for h in hosts if (h.get("status") or "").lower() in pending_status][: max(1, int(limit))]
+    todo, waiting_conf = _select_pending_for_provision(hosts, limit, min_conf)
     results = []
     for h in todo:
         hid = h.get("id")
         if not hid:
             continue
         results.append({"host_id": hid, **provision_host(str(hid), skip_explorer=skip_explorer)})
-    return {"success": True, "processed": len(results), "results": results, "ping_loop": ping}
+    return {
+        "success": True,
+        "processed": len(results),
+        "results": results,
+        "ping_loop": ping,
+        "waiting_confirmations": waiting_conf,
+        "selected": len(todo),
+    }
 
 
 def start_rented_hosts_via_rpc(limit: int = 50) -> Dict[str, Any]:
@@ -1915,6 +1961,7 @@ def activate_all_rented_masternodes(
     max_rounds: int = 200,
     skip_drain: bool = False,
     skip_explorer: bool = True,
+    progress_hook=None,
 ) -> Dict[str, Any]:
     """
     Drain every pending/queued host in-process, then fleet ping + start all collateralized hosts.
@@ -1949,28 +1996,54 @@ def activate_all_rented_masternodes(
     max_rounds = max(1, int(max_rounds))
 
     if not skip_drain:
+        import time as _time
+
+        _unlock_wallet()
         for rnd in range(max_rounds):
             snap = rented_masternodes_snapshot()
+            if not snap.get("daemon_healthy"):
+                out["drain_rounds"].append({"round": rnd + 1, "skipped": "daemon_unhealthy"})
+                _time.sleep(15)
+                continue
             pending = snap.get("pending") or []
             if not pending:
                 break
             try:
-                batch = process_pending_hosts(limit=batch_size, skip_explorer=skip_explorer)
+                batch = process_pending_hosts(
+                    limit=batch_size,
+                    skip_explorer=skip_explorer,
+                    skip_ping=True,
+                )
             except Exception as exc:
                 out["success"] = False
                 out["error"] = str(exc)[:300]
                 out["snapshot_after"] = rented_masternodes_snapshot()
                 return out
             processed = int(batch.get("processed") or 0)
-            out["drain_rounds"].append(
-                {
-                    "round": rnd + 1,
-                    "pending_before": len(pending),
-                    "processed": processed,
-                }
+            progressed = sum(
+                1
+                for r in (batch.get("results") or [])
+                if isinstance(r, dict) and r.get("status") == "active"
             )
+            round_info = {
+                "round": rnd + 1,
+                "pending_before": len(pending),
+                "processed": processed,
+                "activated": progressed,
+                "waiting_confirmations": batch.get("waiting_confirmations"),
+            }
+            out["drain_rounds"].append(round_info)
+            if progress_hook:
+                try:
+                    progress_hook(round_info)
+                except Exception:
+                    pass
             if processed == 0:
                 break
+            if progressed == 0:
+                _time.sleep(20)
+            else:
+                _time.sleep(3)
 
     try:
         if multi_ping_enabled():

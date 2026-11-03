@@ -55,15 +55,42 @@ def main() -> int:
     parser.add_argument("--max-rounds", type=int, default=200, help="Max drain rounds (safety cap)")
     parser.add_argument("--skip-drain", action="store_true", help="Skip provision loop; ping + start only")
     parser.add_argument("--summary", action="store_true", help="Print compact JSON summary")
+    parser.add_argument(
+        "--progress",
+        action="store_true",
+        help="Log each drain round to stderr (use with --summary)",
+    )
     args = parser.parse_args()
     _load_env()
     from backend.services.mn2_masternode_service import activate_all_rented_masternodes
+
+    if args.progress:
+
+        class _Progress:
+            round_idx = 0
+
+            @staticmethod
+            def hook(event: dict) -> None:
+                print(
+                    f"[activate-all] round {event.get('round')} "
+                    f"pending={event.get('pending_before')} "
+                    f"processed={event.get('processed')} "
+                    f"activated={event.get('activated')} "
+                    f"waiting_conf={event.get('waiting_confirmations')}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+
+        progress_hook = _Progress.hook
+    else:
+        progress_hook = None
 
     result = activate_all_rented_masternodes(
         batch_size=args.batch_size,
         max_rounds=args.max_rounds,
         skip_drain=args.skip_drain,
         skip_explorer=True,
+        progress_hook=progress_hook,
     )
     if args.summary:
         print(json.dumps(_summary(result), indent=2, default=str))
