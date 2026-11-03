@@ -30,10 +30,6 @@ fi
 
 log "starting pid=$$ web=$WEB args=$*"
 
-if [[ -x "$SCRIPT_DIR/mn2_stop_fleet_ops.sh" ]]; then
-  bash "$SCRIPT_DIR/mn2_stop_fleet_ops.sh" || true
-fi
-
 export PYTHONUNBUFFERED=1
 export MN2_RPC_HEALTH_TIMEOUT="${MN2_RPC_HEALTH_TIMEOUT:-60}"
 export MN2_RPC_TIMEOUT="${MN2_RPC_TIMEOUT:-60}"
