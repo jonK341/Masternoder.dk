@@ -137,6 +137,10 @@ def remove_orphan_registry(apply: bool) -> Dict[str, Any]:
     return out
 
 
+def delete_provisioning(apply: bool, remove_conf: bool) -> Dict[str, Any]:
+    return mn.delete_pending_provisioning_hosts(dry_run=not apply, remove_conf=remove_conf)
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Audit MN2 fleet; provision or purge orphan registry rows")
     p.add_argument("--provision", action="store_true", help="Run provision-pending + bring-online + sync-ping")
@@ -145,6 +149,12 @@ def main() -> int:
     p.add_argument("--purge-stale", action="store_true", help="Drop old provisioning rows with no collateral")
     p.add_argument("--force-purge", action="store_true", help="Purge all no-collateral provisioning (any age)")
     p.add_argument("--remove-orphan-registry", action="store_true", help="Remove registry rows: provisioning, no collateral, no owner")
+    p.add_argument(
+        "--delete-provisioning",
+        action="store_true",
+        help="Remove all queued/provisioning/planned registry rows (keeps active)",
+    )
+    p.add_argument("--keep-conf", action="store_true", help="With --delete-provisioning: registry only, leave masternode.conf")
     p.add_argument("--apply", action="store_true", help="Execute purge/remove (default dry-run for those)")
     args = p.parse_args()
 
@@ -172,6 +182,10 @@ def main() -> int:
     if args.remove_orphan_registry:
         print("\n== remove-orphan-registry ==")
         print(json.dumps(remove_orphan_registry(args.apply), indent=2))
+
+    if args.delete_provisioning:
+        print("\n== delete-provisioning ==")
+        print(json.dumps(delete_provisioning(args.apply, remove_conf=not args.keep_conf), indent=2))
 
     return rc
 

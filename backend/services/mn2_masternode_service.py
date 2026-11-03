@@ -18,7 +18,7 @@ import threading
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 _LOGGER = logging.getLogger(__name__)
 _LOCK = threading.RLock()
@@ -146,6 +146,142 @@ def purge_stale_provisioning_hosts(
         "removed_count": len(removed),
         "registry_count": len(kept) if not dry_run else len(hosts) - len(removed),
         "slots_used": _count_slots_used(kept if not dry_run else [h for h in hosts if h.get("id") not in removed]),
+    }
+
+
+_PENDING_DELETE_STATUSES = frozenset({"queued", "provisioning", "planned"})
+
+
+def remove_masternode_conf_aliases(
+    aliases: List[str],
+    *,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Drop masternode.conf lines for the given aliases (active fleet unchanged if omitted)."""
+    want = {str(a).strip() for a in aliases if str(a).strip()}
+    if not want:
+        return {"success": True, "dry_run": dry_run, "removed_aliases": [], "removed_count": 0}
+    path = _masternode_conf_path()
+    rows = _read_masternode_conf_entries()
+    if not rows and not os.path.isfile(path):
+        return {"success": True, "dry_run": dry_run, "removed_aliases": [], "removed_count": 0, "path": path}
+
+    preamble: List[str] = []
+    kept_entries: List[Dict[str, Any]] = []
+    removed_aliases: List[str] = []
+    for row in rows:
+        if row.get("kind") == "comment":
+            preamble.append(row["raw"])
+            continue
+        alias = str(row.get("alias") or "")
+        if alias in want:
+            removed_aliases.append(alias)
+            continue
+        kept_entries.append(row)
+
+    new_lines: List[str] = []
+    if preamble:
+        new_lines.extend(f"{ln}\n" if not ln.endswith("\n") else ln for ln in preamble)
+    for entry in kept_entries:
+        if entry.get("valid"):
+            new_lines.append(
+                _format_masternode_conf_line(
+                    entry["alias"],
+                    entry["ip_port"],
+                    entry["privkey"],
+                    entry["txid"],
+                    int(entry["vout"]),
+                )
+            )
+        else:
+            new_lines.append(entry["raw"] + ("\n" if not str(entry["raw"]).endswith("\n") else ""))
+
+    new_body = "".join(new_lines)
+    old_body = ""
+    if os.path.isfile(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                old_body = f.read()
+        except OSError:
+            old_body = ""
+
+    changed = new_body != old_body
+    if changed and not dry_run:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = f"{path}.tmp.{os.getpid()}"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(new_body)
+        os.replace(tmp, path)
+
+    return {
+        "success": True,
+        "dry_run": dry_run,
+        "changed": changed,
+        "path": path,
+        "removed_aliases": sorted(set(removed_aliases)),
+        "removed_count": len(set(removed_aliases)),
+        "kept_conf_entries": len(kept_entries),
+    }
+
+
+def delete_pending_provisioning_hosts(
+    *,
+    dry_run: bool = True,
+    remove_conf: bool = True,
+    statuses: Optional[Set[str]] = None,
+) -> Dict[str, Any]:
+    """
+    Remove rented-host registry rows that never reached ``active`` (queued / provisioning / planned).
+    Keeps ``active`` hosts. Optionally removes their masternode.conf aliases so collateral UTXOs
+    can re-enter the free pool (does not refund shop orders).
+    """
+    drop = {s.lower() for s in (statuses or _PENDING_DELETE_STATUSES)}
+    removed_rows: List[Dict[str, Any]] = []
+    aliases: List[str] = []
+    with _LOCK:
+        doc = _load_hosts_doc()
+        hosts: List[Dict[str, Any]] = list(doc.get("hosts") or [])
+        kept: List[Dict[str, Any]] = []
+        for h in hosts:
+            if not isinstance(h, dict):
+                continue
+            st = (h.get("status") or "").lower()
+            hid = str(h.get("id") or "")
+            if st in drop:
+                removed_rows.append(
+                    {
+                        "id": hid,
+                        "status": st,
+                        "owner_user_id": h.get("owner_user_id"),
+                        "has_collateral": bool(h.get("collateral_txid")),
+                    }
+                )
+                if hid:
+                    aliases.append(_alias_from_host_id(hid))
+            else:
+                kept.append(h)
+        if not dry_run and removed_rows:
+            _save_hosts_doc(kept)
+
+    conf_out: Dict[str, Any] = {"skipped": True}
+    if remove_conf and aliases:
+        conf_out = remove_masternode_conf_aliases(aliases, dry_run=dry_run)
+
+    removed_ids = {r["id"] for r in removed_rows}
+    sample = removed_rows[:20]
+    kept_for_slots = kept if not dry_run else [h for h in hosts if str(h.get("id") or "") not in removed_ids]
+    return {
+        "success": True,
+        "dry_run": dry_run,
+        "removed_count": len(removed_rows),
+        "removed_sample": sample,
+        "registry_count_after": len(kept) if not dry_run else len(hosts) - len(removed_rows),
+        "active_kept": sum(
+            1 for h in kept_for_slots if (h.get("status") or "").lower() == "active"
+        ),
+        "slots_used": _count_slots_used(kept_for_slots),
+        "masternode_conf": conf_out,
+        "note": "Shop/payment records unchanged; only fleet registry (+ optional conf lines) removed.",
     }
 
 
