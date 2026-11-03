@@ -24,8 +24,10 @@ mn2_masternode_bp = Blueprint("mn2_masternode", __name__)
 
 
 def _ops_authorized() -> bool:
-    secret = (os.environ.get("MN2_OPS_SECRET") or os.environ.get("MN2_SCAN_SECRET") or "").strip()
-    if not secret:
+    keys = ("MN2_OPS_SECRET", "MN2_SCAN_SECRET", "DISCORD_OPS_SECRET", "ADMIN_OPS_SECRET")
+    configured = [(os.environ.get(k) or "").strip() for k in keys]
+    configured = [s for s in configured if s]
+    if not configured:
         return True
     token = (
         request.headers.get("X-Ops-Token")
@@ -34,7 +36,7 @@ def _ops_authorized() -> bool:
         or request.args.get("token")
         or ""
     ).strip()
-    return token == secret
+    return token in configured
 
 
 def _body() -> dict:

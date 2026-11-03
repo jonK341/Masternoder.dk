@@ -28,13 +28,28 @@ except ImportError:
     Retry = None  # type: ignore[misc, assignment]
 
 _SESSION: Optional["requests.Session"] = None
+_DOTENV_LOADED = False
 
 # Default ports: mainnet 9332, testnet 19332 (common convention; confirm in MasterNoder2 repo)
 _DEFAULT_URL_MAINNET = "http://127.0.0.1:9332"
 _DEFAULT_URL_TESTNET = "http://127.0.0.1:19332"
 
 
+def _ensure_dotenv_loaded() -> None:
+    """CLI/cron scripts often run without systemd EnvironmentFile — load repo .env once."""
+    global _DOTENV_LOADED
+    if _DOTENV_LOADED:
+        return
+    _DOTENV_LOADED = True
+    try:
+        from scripts.daemon_env import load_dotenv
+        load_dotenv()
+    except Exception:
+        pass
+
+
 def _rpc_url() -> str:
+    _ensure_dotenv_loaded()
     try:
         from backend.services.mn2_rpc_failover import resolve_active_endpoint
         ep = resolve_active_endpoint()
