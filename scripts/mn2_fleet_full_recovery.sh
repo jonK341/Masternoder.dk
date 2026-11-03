@@ -51,7 +51,7 @@ run() {
 
 kill_stuck_ops_python() {
   local pid script
-  for script in mn2_bring_rented_online mn2_start_masternode mn2_recover_pending; do
+  for script in mn2_bring_rented_online mn2_start_masternode mn2_recover_pending masternoder2-cli; do
     while read -r pid; do
       [[ -z "$pid" || "$pid" == "$$" ]] && continue
       log "stop stuck pid $pid ($script)"
@@ -63,6 +63,24 @@ kill_stuck_ops_python() {
     [[ -z "$pid" || "$pid" == "$$" ]] && continue
     kill -9 "$pid" 2>/dev/null || true
   done < <(pgrep -f "scripts/mn2_bring_rented_online" 2>/dev/null || true)
+}
+
+_ensure_env_kv() {
+  local env="$1" key="$2" val="$3"
+  if grep -q "^${key}=" "$env" 2>/dev/null; then
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      log "DRY: would set ${key} in .env"
+      return 0
+    fi
+    cp -a "$env" "${env}.bak.$(date +%s)"
+    sed -i "/^${key}=/d" "$env"
+  elif [[ "$DRY_RUN" -eq 1 ]]; then
+    log "DRY: would append ${key} to .env"
+    return 0
+  else
+    cp -a "$env" "${env}.bak.$(date +%s)"
+  fi
+  printf '%s=%s\n' "$key" "$val" >> "$env"
 }
 
 ensure_ops_secret() {
@@ -78,24 +96,31 @@ ensure_ops_secret() {
   for key in DISCORD_OPS_SECRET ADMIN_OPS_SECRET MN2_SCAN_SECRET AGENT_CRON_SECRET; do
     val=$(grep -E "^${key}=" "$env" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r"' || true)
     if [[ -n "${val:-}" ]]; then
-      if [[ "$DRY_RUN" -eq 1 ]]; then
-        log "DRY: would append MN2_OPS_SECRET from $key"
-        return 0
-      fi
-      cp -a "$env" "${env}.bak.$(date +%s)"
-      printf '\nMN2_OPS_SECRET=%s\n' "$val" >> "$env"
-      log "Appended MN2_OPS_SECRET from $key (len ${#val})"
+      _ensure_env_kv "$env" MN2_OPS_SECRET "$val"
+      log "Set MN2_OPS_SECRET from $key (len ${#val})"
       return 0
     fi
   done
   val=$(openssl rand -hex 24 2>/dev/null || head -c 48 /dev/urandom | xxd -p -c 48)
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    log "DRY: would generate new MN2_OPS_SECRET"
-    return 0
-  fi
-  cp -a "$env" "${env}.bak.$(date +%s)"
-  printf '\nMN2_OPS_SECRET=%s\n' "$val" >> "$env"
-  log "Generated new MN2_OPS_SECRET in .env (len ${#val}) — save this value for ops curl"
+  _ensure_env_kv "$env" MN2_OPS_SECRET "$val"
+  log "Generated MN2_OPS_SECRET in .env (len ${#val}) — save this value for ops curl"
+}
+
+ensure_rpc_env_defaults() {
+  local env="$WEB/.env"
+  [[ -f "$env" ]] || return 0
+  local key val cur
+  for key in MN2_RPC_HEALTH_TIMEOUT MN2_RPC_TIMEOUT; do
+    val="30"
+    cur=$(grep -E "^${key}=" "$env" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r"' || true)
+    if [[ -n "${cur:-}" && "${cur}" != "3" && "${cur}" != "5" ]]; then
+      continue
+    fi
+    if [[ -z "${cur:-}" || "${cur}" == "3" || "${cur}" == "5" ]]; then
+      _ensure_env_kv "$env" "$key" "$val"
+      log "Set ${key}=${val} (avoids false RPC-down on busy daemon)"
+    fi
+  done
 }
 
 load_env() {
@@ -188,6 +213,7 @@ if [[ -x "$SCRIPT_DIR/mn2_reset_rpc_failover_primary.sh" ]]; then
 fi
 
 ensure_ops_secret
+ensure_rpc_env_defaults
 load_env
 
 if [[ -x "$SCRIPT_DIR/mn2_fix_config_permissions.sh" ]]; then
