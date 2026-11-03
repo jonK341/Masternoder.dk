@@ -22,6 +22,8 @@ fi
 cd "$WEB"
 DRY_RUN=0
 SKIP_PROVISION=0
+SKIP_DAEMON_KILL=0
+FAST_DAEMON_KILL=0
 PROVISION_PASSES="${PROVISION_PASSES:-25}"
 PROVISION_LIMIT="${PROVISION_LIMIT:-10}"
 
@@ -29,6 +31,8 @@ for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
     --skip-provision) SKIP_PROVISION=1 ;;
+    --skip-daemon-kill) SKIP_DAEMON_KILL=1 ;;
+    --fast-daemon-kill) FAST_DAEMON_KILL=1 ;;
     --provision-passes=*) PROVISION_PASSES="${arg#*=}" ;;
     --provision-limit=*) PROVISION_LIMIT="${arg#*=}" ;;
     -h|--help)
@@ -200,8 +204,14 @@ log "=== MN2 fleet full recovery (WEB=$WEB) ==="
 
 kill_stuck_ops_python
 
-if [[ -x "$SCRIPT_DIR/mn2_kill_all_daemons.sh" ]]; then
-  run bash "$SCRIPT_DIR/mn2_kill_all_daemons.sh" --wait-rpc 120
+if [[ "$SKIP_DAEMON_KILL" -eq 1 ]]; then
+  log "skip daemon kill (--skip-daemon-kill); assuming clean boot or manual restart"
+elif [[ -x "$SCRIPT_DIR/mn2_kill_all_daemons.sh" ]]; then
+  kill_args=(--wait-rpc 120)
+  if [[ "$FAST_DAEMON_KILL" -eq 1 ]]; then
+    kill_args=(--fast --wait-rpc 120)
+  fi
+  run bash "$SCRIPT_DIR/mn2_kill_all_daemons.sh" "${kill_args[@]}"
 else
   log "WARN: mn2_kill_all_daemons.sh missing — manual systemctl restart masternoder2d"
   run systemctl restart masternoder2d

@@ -7,6 +7,7 @@
 # Usage (on server as root):
 #   ./scripts/mn2_kill_all_daemons.sh
 #   ./scripts/mn2_kill_all_daemons.sh --no-start          # kill only, do not systemctl start
+#   ./scripts/mn2_kill_all_daemons.sh --fast              # skip slow systemctl stop; SIGKILL immediately
 #   ./scripts/mn2_kill_all_daemons.sh --wait-rpc 60       # poll getblockcount after start
 #
 # Env: MN2_DATADIR, MN2_UNIT, MN2_CLI
@@ -18,6 +19,7 @@ UNIT="${MN2_UNIT:-masternoder2d}"
 LOCK="${DATADIR}/.lock"
 CLI="${MN2_CLI:-/opt/masternoder2d/masternoder2-cli}"
 NO_START=0
+FAST=0
 WAIT_RPC=25
 
 log() { echo "[mn2-kill-all] $*" >&2; }
@@ -30,6 +32,7 @@ usage() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-start) NO_START=1 ;;
+    --fast) FAST=1 ;;
     --wait-rpc)
       shift
       WAIT_RPC="${1:-25}"
@@ -70,12 +73,21 @@ wait_unit_stopped() {
 }
 
 log "stopping ${UNIT}"
-systemctl stop "$UNIT" 2>/dev/null || true
-wait_unit_stopped
+if [[ "$FAST" -eq 1 ]]; then
+  log "fast mode: skip systemctl stop (SIGKILL immediately)"
+  systemctl reset-failed "$UNIT" 2>/dev/null || true
+else
+  systemctl stop "$UNIT" 2>/dev/null || true
+  wait_unit_stopped
+fi
 
 log "SIGTERM all masternoder2d PIDs"
-kill_all_pids TERM TERM
-sleep 2
+if [[ "$FAST" -eq 1 ]]; then
+  log "fast mode: skip SIGTERM wait"
+else
+  kill_all_pids TERM TERM
+  sleep 2
+fi
 
 log "SIGKILL remaining PIDs"
 kill_all_pids 9 KILL
