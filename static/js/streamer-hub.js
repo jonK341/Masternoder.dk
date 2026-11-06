@@ -89,7 +89,7 @@
 
   function bindChrome() {
     var obsUrl = absoluteUrl("/streamer/?obs=1");
-    var cleanUrl = absoluteUrl("/fleet-stream/");
+    var cleanUrl = absoluteUrl("/fleet-progress-monitor/");
 
     $("streamer-copy-obs") &&
       $("streamer-copy-obs").addEventListener("click", function () {

@@ -39,11 +39,9 @@ def serve_static(filename):
 # Add any new page subdir with index.html at project root here to expose it.
 PAGES = [
     'gallery', 'battle', 'shop', 'debugger',
-    'quests', 'news', 'metal', 'theme-points', 'battlegrounds', 'champions-league',
-    'editor', 'monetization', 'milkyway', 'rights-law', 'victory-tech-tree',
-    'danish-divine-tech-tree', 'academic-perspective', 'theme_premium',
-    'time-achievement-guides', 'beta_testing',
-    'advanced_calculator', 'agent_support', 'game', 'generator', 'lab',
+    'quests', 'news', 'battlegrounds', 'champions-league',
+    'rights-law', 'theme_premium',
+    'agent_support', 'game', 'generator', 'lab',
     'social', 'profile', 'user', 'trophies',
     'compendium', 'starmap25',
     'aggregator', 'staking-monitor', 'staking-leaderboard', 'staking-teams',
@@ -147,24 +145,8 @@ def create_page_route(page_name):
             # Handle special cases
             if _page_name == 'theme_premium':
                 page_path = os.path.join(base_path, 'theme_premium', 'index.html')
-            elif _page_name == 'theme-points':
-                page_path = os.path.join(base_path, 'theme-points', 'index.html')
             elif _page_name == 'champions-league':
                 page_path = os.path.join(base_path, 'champions-league', 'index.html')
-            elif _page_name == 'danish-divine-tech-tree':
-                page_path = os.path.join(base_path, 'danish-divine-tech-tree', 'index.html')
-            elif _page_name == 'victory-tech-tree':
-                page_path = os.path.join(base_path, 'victory-tech-tree', 'index.html')
-            elif _page_name == 'academic-perspective':
-                page_path = os.path.join(base_path, 'academic-perspective', 'index.html')
-            elif _page_name == 'time-achievement-guides':
-                page_path = os.path.join(base_path, 'time-achievement-guides', 'index.html')
-            elif _page_name == 'beta_testing':
-                page_path = os.path.join(base_path, 'beta_testing', 'index.html')
-            elif _page_name == 'unified_dashboard':
-                page_path = os.path.join(base_path, 'unified_dashboard', 'index.html')
-            elif _page_name == 'advanced_calculator':
-                page_path = os.path.join(base_path, 'advanced_calculator', 'index.html')
             elif _page_name == 'agent_support':
                 page_path = os.path.join(base_path, 'agent_support', 'index.html')
             elif _page_name == 'lab':
@@ -176,9 +158,7 @@ def create_page_route(page_name):
             
             if os.path.exists(page_path):
                 # Stream with send_file for faster TTFB (same as root_index)
-                if _page_name in ('theme_premium', 'theme-points', 'champions-league', 'danish-divine-tech-tree',
-                                 'victory-tech-tree', 'academic-perspective', 'time-achievement-guides', 'beta_testing',
-                                 'unified_dashboard', 'advanced_calculator', 'agent_support', 'lab', 'compendium'):
+                if _page_name in ('theme_premium', 'champions-league', 'agent_support', 'lab', 'compendium'):
                     dir_path = os.path.dirname(page_path)
                     resp = send_from_directory(dir_path, 'index.html', mimetype='text/html; charset=utf-8')
                 else:
@@ -463,35 +443,6 @@ def compendium_hunters_rulebook():
     except Exception:
         pass
     return "Page not found", 404
-
-
-# Nested path: dashboard/master_control
-@all_page_bp.route('/dashboard/master_control', methods=['GET'])
-@all_page_bp.route('/dashboard/master_control/', methods=['GET'])
-@all_page_bp.route('/dashboard/master_control/index.html', methods=['GET'])
-def dashboard_master_control():
-    """Serve dashboard/master_control/index.html at project root."""
-    try:
-        base_path = _base_path()
-        page_path = os.path.join(base_path, 'dashboard', 'master_control', 'index.html')
-        if os.path.exists(page_path):
-            with open(page_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            headers = {
-                'Content-Type': 'text/html; charset=utf-8',
-                'Cache-Control': 'public, max-age=300, stale-while-revalidate=60',
-                'ETag': CONTENT_VERSION,
-                'X-Content-Version': CONTENT_VERSION,
-            }
-            return content, 200, headers
-    except Exception:
-        pass
-    return (
-        '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Master Control - Not Found</title></head>'
-        '<body><h1>Master Control</h1><p>Page file not found.</p></body></html>',
-        200,
-        {'Content-Type': 'text/html; charset=utf-8'},
-    )
 
 
 @all_page_bp.route('/dashboard/agents_control', methods=['GET'])
