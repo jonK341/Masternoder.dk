@@ -1625,9 +1625,6 @@
                         <button class="action-btn preview-btn" onclick="event.stopPropagation(); openVideoPreview('${video.id}')" title="Preview">
                             <i class="fas fa-play"></i> Preview
                         </button>
-                        <button class="action-btn edit-btn" onclick="event.stopPropagation(); openVideoEditor('${video.id}')" title="Edit">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
                         <button class="action-btn download-btn" onclick="event.stopPropagation(); downloadVideo('${video.id}', '${(video.title || 'video').replace(/'/g, "\\'")}')" title="Download">
                             <i class="fas fa-download"></i> Download
                         </button>
@@ -1700,11 +1697,6 @@
         }
 
         // Video Preview Modal Functions
-        function openVideoEditor(videoId) {
-            // Navigate to video editor page
-            window.location.href = `/editor/?video_id=${videoId}`;
-        }
-
         function openVideoPreview(videoId) {
             let modal = document.getElementById('video-preview-modal');
             if (!modal) {
