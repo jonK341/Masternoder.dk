@@ -98,3 +98,4 @@ data/click_game/
 data/trophy_income/
 data/trophy_quests/
 data/paypal_shop_orders.json
+instance/*.lock
