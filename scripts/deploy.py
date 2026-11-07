@@ -602,6 +602,8 @@ MANIFESTS = {
         "agents/index.html",
         "gallery/index.html",
         "aggregator/index.html",
+        "static/css/mn2-aggregator-ww2.css",
+        "static/js/aggregator-mn2-crypto.js",
         "static/js/theme-timeline.js",
         "docs/USER_LOCATION_GPS_SYSTEM.md",
         "docs/AGENT_SKILLS_AND_CONCLUSIONS.md",

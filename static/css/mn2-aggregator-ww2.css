@@ -1,0 +1,170 @@
+/**
+ * Aggregator monitor — WW2 Linux field terminal (MN2), pairs with mn2-explorer-ww2.css
+ */
+body.layout-aggregator-tech.explorer-theme-ww2 {
+  --ww2-bg: #12180e;
+  --ww2-panel: #1a2114;
+  --ww2-border: #4a5c38;
+  --ww2-amber: #d4b06a;
+  --ww2-green: #8fc86a;
+  --ww2-dim: #9aa88a;
+  --ww2-mn2: #6ecf4e;
+  background: var(--ww2-bg);
+  color: var(--ww2-amber);
+  font-family: "IBM Plex Mono", "DejaVu Sans Mono", "Liberation Mono", ui-monospace, monospace;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .bg-animated {
+  display: none !important;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-top-nav,
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-tech-stack,
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-points-hud,
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-crypto-hud {
+  background: var(--ww2-panel) !important;
+  border: 1px solid var(--ww2-border) !important;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-tech-chip,
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-hud-bit,
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-crypto-chip {
+  color: var(--ww2-dim);
+  border-color: var(--ww2-border);
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-crypto-chip strong,
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-points-hud strong {
+  color: var(--ww2-mn2);
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-crypto-link {
+  background: var(--ww2-green);
+  color: #0a1208;
+  border-radius: 3px;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-hero h1 {
+  background: none;
+  -webkit-text-fill-color: var(--ww2-mn2);
+  color: var(--ww2-mn2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1.1rem;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-hero h1::before {
+  content: "[MN2/] ";
+  color: var(--ww2-dim);
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-hero p {
+  color: var(--ww2-dim);
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-hub-nav,
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-hub-tab {
+  border-radius: 3px;
+  border-color: var(--ww2-border);
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-hub-tab.active {
+  background: rgba(110, 207, 78, 0.12);
+  color: var(--ww2-mn2);
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-panel {
+  background: var(--ww2-panel);
+  border: 1px solid var(--ww2-border);
+  border-radius: 3px;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-panel h3 {
+  color: var(--ww2-green);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-monitor-bezel,
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-play-surface {
+  border-color: var(--ww2-border);
+  background: #0e120a;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-daemon-panel {
+  border-color: var(--ww2-mn2);
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-daemon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  font-size: 0.72rem;
+  margin-top: 8px;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-daemon-grid .k {
+  display: block;
+  color: var(--ww2-dim);
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-daemon-grid .v {
+  display: block;
+  color: var(--ww2-amber);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-daemon-upd {
+  font-size: 0.65rem;
+  color: var(--ww2-dim);
+  margin: 0;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-daemon-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 0.72rem;
+  color: var(--ww2-mn2);
+  text-decoration: none;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-daemon-link:hover {
+  text-decoration: underline;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-tab-panel[hidden] {
+  display: none !important;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-tab-panel {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.035;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.35) 2px,
+    rgba(0, 0, 0, 0.35) 4px
+  );
+}
+
+body.layout-aggregator-tech.explorer-theme-ww2 .agg-main-wrap {
+  position: relative;
+  z-index: 1;
+}
