@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,6 +18,21 @@ _TECH = [
     "Holodeck grid", "Web Audio", "Base64 encoder", "Intel feeds", "MN2 rewards",
     "Unified points", "5D narrative", "Agent mesh", "LiveKit", "PayPal bridge",
 ]
+
+_ORCHESTRATOR_AGENT = "analytics_agent"
+
+_CATEGORY_SKILL_SETS: Dict[str, List[str]] = {
+    "intelligence": ["intel_gather", "nlp_summarize", "feed_watch"],
+    "commerce": ["sku_router", "checkout_nudge", "mn2_treasury"],
+    "social": ["community_pulse", "trend_scout", "mention_fanout"],
+    "gaming": ["battle_telemetry", "loot_router", "xp_mesh"],
+    "media": ["encoder_pipeline", "transcode_queue", "cdn_prefetch"],
+    "security": ["audit_trail", "payout_sentinel", "acl_scan"],
+    "analytics": ["metrics_rollup", "anomaly_ping", "kpi_stream"],
+    "automation": ["cron_mesh", "webhook_fanout", "job_orchestrator"],
+    "research": ["paper_digest", "source_verify", "hypothesis_tag"],
+    "ops": ["deploy_smoke", "health_ping", "incident_triage"],
+}
 
 
 def _read_assignments() -> dict:
@@ -36,21 +52,77 @@ def _write_assignments(data: dict) -> None:
         json.dump(data, f, indent=2)
 
 
+def _skill_set_for_category(category: str) -> List[str]:
+    return list(_CATEGORY_SKILL_SETS.get(category, ["aggregator_ops", "mesh_relay"]))
+
+
 def _catalog_rows() -> List[Dict[str, Any]]:
     rows = []
     for i in range(1, 76):
         aid = f"agg_{i:03d}"
         cat = _CATEGORIES[(i - 1) % len(_CATEGORIES)]
+        skill_set = _skill_set_for_category(cat)
         rows.append({
             "id": aid,
             "name": f"Aggregator {i:02d}",
             "category": cat,
             "technologies": [_TECH[(i - 1) % len(_TECH)], _TECH[i % len(_TECH)]],
             "agent_id": f"agent_{cat}_{(i % 12) + 1:02d}",
+            "skill_set": skill_set,
+            "status": "active",
             "description": f"{cat.title()} pipeline node #{i} for platform intelligence and fulfillment.",
             "rank_score": max(1, 100 - i),
         })
     return rows
+
+
+def _catalog_row(aggregator_id: str) -> Optional[Dict[str, Any]]:
+    for row in _catalog_rows():
+        if row.get("id") == aggregator_id:
+            return row
+    return None
+
+
+def _activate_assignment_agents(
+    user_id: str,
+    orchestrator_agent_id: str,
+    worker_agent_id: str,
+    *,
+    aggregator_id: str,
+    skill_set: List[str],
+) -> Dict[str, Any]:
+    """Mark agents active and stamp aggregator skill sets on activity + skills tracker."""
+    activated: List[str] = []
+    try:
+        from backend.services.agent_db_service import agent_db_service
+        for aid, role in ((orchestrator_agent_id, "orchestrator"), (worker_agent_id, "worker")):
+            agent_db_service.record_agent_activity(
+                user_id=user_id,
+                agent_id=aid,
+                action="aggregator_assign_active",
+                skill=skill_set[0] if skill_set else "aggregator_ops",
+                xp_gained=5,
+                points_gained=0.0,
+                metadata={
+                    "aggregator_id": aggregator_id,
+                    "role": role,
+                    "skill_set": skill_set,
+                    "status": "active",
+                },
+            )
+            activated.append(aid)
+    except Exception:
+        pass
+    try:
+        from backend.services.skills_abilities_tracker import SkillsAbilitiesTracker
+        tracker = SkillsAbilitiesTracker()
+        cat_row = _catalog_row(aggregator_id) or {}
+        category = cat_row.get("category") or "ops"
+        for skill in skill_set:
+            tracker.update_skill(user_id, category, skill, 1.0, source=f"aggregator:{aggregator_id}")
+    except Exception:
+        pass
+    return {"activated_agents": activated, "skill_set": skill_set}
 
 
 def list_catalog(limit: int = 75, category: Optional[str] = None, search: Optional[str] = None) -> Dict[str, Any]:
@@ -91,12 +163,61 @@ def fulfillment_section() -> Dict[str, Any]:
     return {"success": True, "playbook": playbook}
 
 
-def assign_agent(user_id: str, aggregator_id: str, agent_id: str) -> Dict[str, Any]:
+def assign_agent(
+    user_id: str,
+    aggregator_id: str,
+    agent_id: str,
+    *,
+    chain_burst: int = 5,
+) -> Dict[str, Any]:
+    row = _catalog_row(aggregator_id)
+    skill_set = row.get("skill_set") if row else _skill_set_for_category("ops")
+    orchestrator = _ORCHESTRATOR_AGENT
+    worker = agent_id or (row.get("agent_id") if row else "")
+
     data = _read_assignments()
     user_rows = data.setdefault(user_id, {})
-    user_rows[aggregator_id] = agent_id
+    meta = {
+        "agent_id": worker,
+        "skill_set": skill_set,
+        "status": "active",
+        "orchestrator_agent_id": orchestrator,
+        "assigned_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+    user_rows[aggregator_id] = meta
     _write_assignments(data)
-    return {"success": True, "user_id": user_id, "aggregator_id": aggregator_id, "agent_id": agent_id}
+
+    activation = _activate_assignment_agents(
+        user_id,
+        orchestrator,
+        worker,
+        aggregator_id=aggregator_id,
+        skill_set=skill_set,
+    )
+
+    chain: Dict[str, Any] = {"attempted": 0, "on_chain": 0, "transfers": []}
+    try:
+        from backend.services.agent_peer_transactions_service import fire_aggregator_assignment_transfers
+        chain = fire_aggregator_assignment_transfers(
+            user_id,
+            orchestrator,
+            worker,
+            aggregator_id=aggregator_id,
+            burst=chain_burst,
+        )
+    except Exception as exc:
+        chain = {"success": False, "error": str(exc)[:200]}
+
+    return {
+        "success": True,
+        "user_id": user_id,
+        "aggregator_id": aggregator_id,
+        "agent_id": worker,
+        "skill_set": skill_set,
+        "agent_status": "active",
+        "activation": activation,
+        "chain_settlement": chain,
+    }
 
 
 def progress_snapshot(user_id: str) -> Dict[str, Any]:

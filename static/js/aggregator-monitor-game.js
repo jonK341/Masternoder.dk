@@ -28,7 +28,7 @@
     const box = el('agg-user-print');
     if (!box) return;
     const ts = new Date().toISOString().slice(11, 19);
-    box.textContent += `[${ts}] ${line}\n`;
+    box.textContent += `[aggmon ${ts}] ${line}\n`;
     box.scrollTop = box.scrollHeight;
   }
 
@@ -69,7 +69,7 @@
     state.stratum = 1 + (manhattanToGoal() % 4);
     updateDimReadout();
     renderGrid();
-    logPrint(`move → cell (${state.px},${state.py}) · ${dimsText()}`);
+    logPrint(`journald: move → (${state.px},${state.py}) · ${dimsText()}`);
     eg('monitor_move');
     if (state.px === CENTER && state.py === CENTER) {
       beginBattleOverlay();

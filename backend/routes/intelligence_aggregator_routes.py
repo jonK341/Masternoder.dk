@@ -7,6 +7,24 @@ from backend.services.aggregators.intelligence_aggregator import intelligence_ag
 
 intelligence_aggregator_bp = Blueprint('intelligence_aggregator', __name__)
 
+
+@intelligence_aggregator_bp.route('/api/aggregators/catalog', methods=['GET'])
+def get_aggregators_catalog():
+    """Get catalog of 75 aggregators"""
+    try:
+        from backend.services.aggregator_catalog_service import list_catalog
+        limit = int(request.args.get('limit', 75))
+        category = request.args.get('category')
+        search = request.args.get('search')
+        result = list_catalog(limit=limit, category=category, search=search)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @intelligence_aggregator_bp.route('/api/aggregators/intelligence/research')
 def get_research():
     """Get research papers"""
@@ -172,7 +190,73 @@ def aggregator_mn2_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-        return jsonify({"success": False, "error": str(e)}), 500
+@intelligence_aggregator_bp.route('/api/aggregators/catalog', methods=['GET'])
+def aggregator_hub_catalog():
+    """Hub v2 — 75-aggregator catalog for /aggregator tabs."""
+    try:
+        from backend.services.aggregator_catalog_service import list_catalog
+        limit = int(request.args.get('limit', 75))
+        category = (request.args.get('category') or '').strip() or None
+        search = (request.args.get('search') or '').strip() or None
+        return jsonify(list_catalog(limit=limit, category=category, search=search)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/top25', methods=['GET'])
+def aggregator_hub_top25():
+    try:
+        from backend.services.aggregator_catalog_service import top25_list
+        return jsonify(top25_list()), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/fulfillment', methods=['GET'])
+def aggregator_hub_fulfillment():
+    try:
+        from backend.services.aggregator_catalog_service import fulfillment_section
+        return jsonify(fulfillment_section()), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/progress', methods=['GET'])
+def aggregator_hub_progress():
+    try:
+        from backend.services.aggregator_catalog_service import progress_snapshot
+        user_id = (request.args.get('user_id') or _resolve_uid_agg()) or 'default_user'
+        return jsonify(progress_snapshot(user_id)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@intelligence_aggregator_bp.route('/api/aggregators/assign', methods=['POST'])
+def aggregator_hub_assign():
+    """Assign an agent to an aggregator; activates skills and fires MN2 peer txs."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = (data.get('user_id') or _resolve_uid_agg()) or 'default_user'
+        aggregator_id = (data.get('aggregator_id') or '').strip()
+        agent_id = (data.get('agent_id') or '').strip()
+        if not aggregator_id or not agent_id:
+            return jsonify({'success': False, 'error': 'aggregator_id and agent_id required'}), 400
+        burst = data.get('chain_burst')
+        try:
+            burst = int(burst) if burst is not None else 5
+        except (TypeError, ValueError):
+            burst = 5
+        burst = max(1, min(burst, 15))
+        from backend.services.aggregator_catalog_service import assign_agent
+        result = assign_agent(
+            user_id,
+            aggregator_id,
+            agent_id,
+            chain_burst=burst,
+        )
+        return jsonify(result), 200 if result.get('success') else 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @intelligence_aggregator_bp.route('/api/aggregators/callback/bet', methods=['POST'])
@@ -246,6 +330,11 @@ def test_intelligence():
             'weather': '/api/aggregators/intelligence/weather',
             'hub_links': '/api/aggregators/hub/links',
             'engagement_award': '/api/aggregators/engagement/award',
+            'catalog': '/api/aggregators/catalog',
+            'assign': '/api/aggregators/assign',
+            'top25': '/api/aggregators/top25',
+            'fulfillment': '/api/aggregators/fulfillment',
+            'progress': '/api/aggregators/progress',
         },
         'sources': {
             'research': ['arXiv (real API)', 'fallback mock'],
