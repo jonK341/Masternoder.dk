@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-10",
+  "updated_at": "2026-11-07",
   "categories": [
     {
       "id": "platform_core",
@@ -195,9 +195,9 @@
         },
         {
           "id": "verify_milestone_50",
-          "priority": "P2",
+          "priority": "done",
           "title": "Roster verify @50 performers",
-          "detail": "Extend verify script counts + spot-check payout/media for first scale wave; run after wave 2 onboard."
+          "detail": "camgirls_post_deploy_verify.py --milestone 50 + roster_scale on /api/camgirls/status; wave 2 avatar spot-check when count ≥ 40."
         },
         {
           "id": "verify_milestone_100",
@@ -238,9 +238,9 @@
         },
         {
           "id": "scale_wave2_run",
-          "priority": "P2",
+          "priority": "done",
           "title": "Run wave 2 onboard",
-          "detail": "waves/wave2.json + --batch 2 --wave-size 25 --provision-addresses --generate-media --full-catalog-sync after review."
+          "detail": "data/camgirls_performers_wave2.json (25 stubs) onboarded in dev → 40 performers + media. Prod: camgirls_batch_onboard.sh + --provision-addresses --full-catalog-sync."
         },
         {
           "id": "scale_wave3_plus",

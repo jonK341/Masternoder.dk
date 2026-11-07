@@ -69,6 +69,43 @@ def _performer_count_minimum() -> int:
         return 15
 
 
+def _milestone_minimum(milestone: int | None) -> int | None:
+    """Map roster milestone (50 / 100 / 250) to minimum performer count."""
+    if milestone is None:
+        return None
+    table = {50: 50, 100: 100, 250: 250}
+    if milestone not in table:
+        raise ValueError(f"unsupported milestone {milestone}; use 50, 100, or 250")
+    return table[milestone]
+
+
+def _status_roster_ok(body: str, minimum: int) -> bool:
+    line = body.split("HTTP:")[0].strip() if "HTTP:" in body else body.strip()
+    try:
+        data = json.loads(line)
+    except json.JSONDecodeError:
+        return False
+    if not data.get("success"):
+        return False
+    scale = data.get("roster_scale") if isinstance(data.get("roster_scale"), dict) else {}
+    current = int(data.get("performers_count") or scale.get("current") or 0)
+    return current >= minimum
+
+
+def _spotcheck_wave2_media(body: str, *, sample_id: str = "performer_wave2_studio_host_a") -> bool:
+    line = body.split("HTTP:")[0].strip() if "HTTP:" in body else body.strip()
+    try:
+        data = json.loads(line)
+        performers = data.get("performers") if isinstance(data.get("performers"), list) else []
+    except json.JSONDecodeError:
+        return False
+    for row in performers:
+        if str(row.get("id") or "") == sample_id:
+            avatar = str(row.get("avatar_url") or "")
+            return avatar.endswith((".svg", ".webp", ".png", ".jpg"))
+    return False
+
+
 def _performer_count_ok(body: str, minimum: int | None = None) -> bool:
     if minimum is None:
         minimum = _performer_count_minimum()
@@ -105,8 +142,9 @@ def _check_json(label: str, url: str, *, expect_keys: list[str]) -> bool:
     return ok
 
 
-def verify_public(base: str) -> int:
+def verify_public(base: str, *, milestone: int | None = None) -> int:
     base = base.rstrip("/")
+    min_count = _milestone_minimum(milestone) or _performer_count_minimum()
     checks = [
         ("performers", f"{base}/api/camgirls/performers?user_id=post_deploy_verify", ["success", "performers"]),
         ("agents", f"{base}/api/camgirls/agents", ["success", "agents"]),
@@ -118,7 +156,25 @@ def verify_public(base: str) -> int:
     print(f"HTTP {page_status}")
     page_ok = page_status == 200 and "Camgirls" in page_body
 
-    results = [page_ok]
+    status_status, status_body = _fetch(f"{base}/api/camgirls/status")
+    roster_ok = False
+    print("\n=== roster scale /status ===")
+    print(f"GET {base}/api/camgirls/status")
+    print(f"HTTP {status_status}")
+    if status_status == 200:
+        try:
+            st = json.loads(status_body)
+            scale = st.get("roster_scale") if isinstance(st.get("roster_scale"), dict) else {}
+            current = int(st.get("performers_count") or scale.get("current") or 0)
+            target = int(scale.get("target") or 250)
+            print(json.dumps({"performers_count": current, "roster_scale": scale}, indent=2)[:600])
+            roster_ok = current >= min_count
+        except json.JSONDecodeError:
+            print(status_body[:400])
+    else:
+        print(status_body[:400])
+
+    results = [page_ok, roster_ok]
     for label, url, keys in checks:
         results.append(_check_json(label, url, expect_keys=keys))
 
@@ -128,7 +184,7 @@ def verify_public(base: str) -> int:
     return 0 if passed == total else 1
 
 
-def verify_remote(*, force_prompt: bool = False) -> int:
+def verify_remote(*, force_prompt: bool = False, milestone: int | None = None) -> int:
     try:
         import paramiko
     except ImportError:
@@ -159,6 +215,8 @@ def verify_remote(*, force_prompt: bool = False) -> int:
         code = stdout.channel.recv_exit_status()
         text = (stdout.read() + stderr.read()).decode(errors="replace").strip()
         return code, text
+
+    min_count = _milestone_minimum(milestone) or _performer_count_minimum()
 
     # HTTP-only checks — uwsgi already proves routes; no Flask import on system python3.
     checks: list[tuple[str, str, object]] = [
@@ -236,7 +294,12 @@ def verify_remote(*, force_prompt: bool = False) -> int:
         (
             "performer count",
             "curl -s 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'",
-            lambda body: _performer_count_ok(body),
+            lambda body: _performer_count_ok(body, min_count),
+        ),
+        (
+            "roster scale status",
+            "curl -s 'http://127.0.0.1:5000/api/camgirls/status'",
+            lambda body: _status_roster_ok(body, min_count),
         ),
         (
             "favorite route",
@@ -246,6 +309,14 @@ def verify_remote(*, force_prompt: bool = False) -> int:
             lambda body: body.strip() == "200",
         ),
     ]
+    if min_count >= 40:
+        checks.append(
+            (
+                "wave2 avatar sample",
+                "curl -s 'http://127.0.0.1:5000/api/camgirls/performers?user_id=verify'",
+                _spotcheck_wave2_media,
+            )
+        )
 
     passed = 0
     for label, cmd, ok_fn in checks:
@@ -275,13 +346,19 @@ def main() -> int:
     parser.add_argument("--remote", action="store_true", help="SSH curl checks on server :5000")
     parser.add_argument("--remote-only", action="store_true", help="Skip public HTTPS checks")
     parser.add_argument("--ask-pass", action="store_true", help="Prompt for SSH password (remote checks)")
+    parser.add_argument(
+        "--milestone",
+        type=int,
+        choices=(50, 100, 250),
+        help="Require roster count >= milestone (50 / 100 / 250) and extra wave checks",
+    )
     args = parser.parse_args()
 
     codes = []
     if not args.remote_only:
-        codes.append(verify_public(args.base_url))
+        codes.append(verify_public(args.base_url, milestone=args.milestone))
     if args.remote or args.remote_only:
-        codes.append(verify_remote(force_prompt=args.ask_pass))
+        codes.append(verify_remote(force_prompt=args.ask_pass, milestone=args.milestone))
     return 0 if all(c == 0 for c in codes) else 1
 
 

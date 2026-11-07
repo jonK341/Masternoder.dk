@@ -17,6 +17,10 @@ def test_platform_status_includes_tech_and_todos():
         len(c.get("items") or []) for c in by_cat
     )
     assert "platform_tech" in out
+    scale = out.get("roster_scale") or {}
+    assert scale.get("target") == 250
+    assert scale.get("current") == out.get("performers_count")
+    assert "waves" in scale
     roster = out.get("performers") or []
     assert roster
     first = roster[0]

@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave2_studio_host_q",
+  "slug": "studio-host-q",
+  "display_name": "Host Quinn",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/studio-host-q/icon.webp",
+    "logo": "/static/camgirls/media/studio-host-q/logo.svg",
+    "avatar_hd": "/static/camgirls/media/studio-host-q/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/studio-host-q/gallery-1.webp",
+      "/static/camgirls/media/studio-host-q/gallery-2.webp",
+      "/static/camgirls/media/studio-host-q/gallery-3.webp",
+      "/static/camgirls/media/studio-host-q/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/studio-host-q/preview.webm",
+    "preview_poster": "/static/camgirls/media/studio-host-q/gallery-1.webp"
+  },
+  "initials": "Q",
+  "brand_colors": [
+    "#a3e635",
+    "#3f6212"
+  ]
+}

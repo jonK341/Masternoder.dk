@@ -922,6 +922,8 @@ MANIFESTS = {
         "docs/CAMGIRLS_PHASE4_NGINX.md",
         "data/camgirls_next_todos.json",
         "data/camgirls_performers_wave.template.json",
+        "data/camgirls_performers_wave2.json",
+        "data/camgirls_ops_state.json",
         "data/camgirls_performer_media_meta.json",
         "docs/CAMGIRLS_SCALE_250.md",
         "backend/services/camgirls_wave_ops.py",

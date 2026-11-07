@@ -1,4 +1,155 @@
 {
-  "performers": {},
-  "updated_at": null
+  "performers": {
+    "performer_wave2_studio_host_a": {
+      "slug": "studio-host-a",
+      "initials": "A",
+      "c1": "#a855f7",
+      "c2": "#4c1d95"
+    },
+    "performer_wave2_studio_host_b": {
+      "slug": "studio-host-b",
+      "initials": "B",
+      "c1": "#3b82f6",
+      "c2": "#1e3a5f"
+    },
+    "performer_wave2_studio_host_c": {
+      "slug": "studio-host-c",
+      "initials": "C",
+      "c1": "#ec4899",
+      "c2": "#831843"
+    },
+    "performer_wave2_studio_host_d": {
+      "slug": "studio-host-d",
+      "initials": "D",
+      "c1": "#14b8a6",
+      "c2": "#134e4a"
+    },
+    "performer_wave2_studio_host_e": {
+      "slug": "studio-host-e",
+      "initials": "E",
+      "c1": "#f59e0b",
+      "c2": "#78350f"
+    },
+    "performer_wave2_studio_host_f": {
+      "slug": "studio-host-f",
+      "initials": "F",
+      "c1": "#8b5cf6",
+      "c2": "#4c1d95"
+    },
+    "performer_wave2_studio_host_g": {
+      "slug": "studio-host-g",
+      "initials": "G",
+      "c1": "#06b6d4",
+      "c2": "#164e63"
+    },
+    "performer_wave2_studio_host_h": {
+      "slug": "studio-host-h",
+      "initials": "H",
+      "c1": "#10b981",
+      "c2": "#064e3b"
+    },
+    "performer_wave2_studio_host_i": {
+      "slug": "studio-host-i",
+      "initials": "I",
+      "c1": "#6366f1",
+      "c2": "#312e81"
+    },
+    "performer_wave2_studio_host_j": {
+      "slug": "studio-host-j",
+      "initials": "JW",
+      "c1": "#84cc16",
+      "c2": "#365314"
+    },
+    "performer_wave2_studio_host_k": {
+      "slug": "studio-host-k",
+      "initials": "K",
+      "c1": "#f43f5e",
+      "c2": "#881337"
+    },
+    "performer_wave2_studio_host_l": {
+      "slug": "studio-host-l",
+      "initials": "L",
+      "c1": "#0ea5e9",
+      "c2": "#0c4a6e"
+    },
+    "performer_wave2_studio_host_m": {
+      "slug": "studio-host-m",
+      "initials": "M",
+      "c1": "#d946ef",
+      "c2": "#701a75"
+    },
+    "performer_wave2_studio_host_n": {
+      "slug": "studio-host-n",
+      "initials": "N",
+      "c1": "#22d3ee",
+      "c2": "#155e75"
+    },
+    "performer_wave2_studio_host_o": {
+      "slug": "studio-host-o",
+      "initials": "O",
+      "c1": "#64748b",
+      "c2": "#1e293b"
+    },
+    "performer_wave2_studio_host_p": {
+      "slug": "studio-host-p",
+      "initials": "P",
+      "c1": "#fda4af",
+      "c2": "#9f1239"
+    },
+    "performer_wave2_studio_host_q": {
+      "slug": "studio-host-q",
+      "initials": "Q",
+      "c1": "#a3e635",
+      "c2": "#3f6212"
+    },
+    "performer_wave2_studio_host_r": {
+      "slug": "studio-host-r",
+      "initials": "R",
+      "c1": "#fb923c",
+      "c2": "#9a3412"
+    },
+    "performer_wave2_studio_host_s": {
+      "slug": "studio-host-s",
+      "initials": "S",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave2_studio_host_t": {
+      "slug": "studio-host-t",
+      "initials": "T",
+      "c1": "#c084fc",
+      "c2": "#581c87"
+    },
+    "performer_wave2_studio_host_u": {
+      "slug": "studio-host-u",
+      "initials": "U",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave2_studio_host_v": {
+      "slug": "studio-host-v",
+      "initials": "V",
+      "c1": "#e879f9",
+      "c2": "#86198f"
+    },
+    "performer_wave2_studio_host_w": {
+      "slug": "studio-host-w",
+      "initials": "W",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave2_studio_host_x": {
+      "slug": "studio-host-x",
+      "initials": "X",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave2_studio_host_y": {
+      "slug": "studio-host-y",
+      "initials": "Y",
+      "c1": "#60a5fa",
+      "c2": "#1e40af"
+    }
+  },
+  "updated_at": "2026-11-07T21:06:58Z"
 }

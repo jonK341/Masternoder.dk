@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave2_studio_host_i",
+  "slug": "studio-host-i",
+  "display_name": "Host Ivy",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/studio-host-i/icon.webp",
+    "logo": "/static/camgirls/media/studio-host-i/logo.svg",
+    "avatar_hd": "/static/camgirls/media/studio-host-i/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/studio-host-i/gallery-1.webp",
+      "/static/camgirls/media/studio-host-i/gallery-2.webp",
+      "/static/camgirls/media/studio-host-i/gallery-3.webp",
+      "/static/camgirls/media/studio-host-i/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/studio-host-i/preview.webm",
+    "preview_poster": "/static/camgirls/media/studio-host-i/gallery-1.webp"
+  },
+  "initials": "I",
+  "brand_colors": [
+    "#6366f1",
+    "#312e81"
+  ]
+}

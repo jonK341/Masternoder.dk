@@ -1,0 +1,27 @@
+{
+  "updated_at": "2026-11-07",
+  "roster_target": 250,
+  "waves": [
+    {
+      "wave": 1,
+      "label": "Phase 0 go-live",
+      "performer_count": 15,
+      "status": "deployed"
+    },
+    {
+      "wave": 2,
+      "label": "Scale wave 2",
+      "stub_file": "data/camgirls_performers_wave2.json",
+      "planned_stubs": 25,
+      "performer_count_after": 40,
+      "status": "onboarded_dev",
+      "notes": "Onboarded in dev (40 total roster). Prod: camgirls_batch_onboard.sh + --provision-addresses."
+    }
+  ],
+  "next_milestone": 50,
+  "milestone_checks": {
+    "50": "verify_milestone_50",
+    "100": "verify_milestone_100",
+    "250": "verify_milestone_250"
+  }
+}
