@@ -32,18 +32,43 @@ git pull --ff-only origin main
 echo "  HEAD: $(git log -1 --oneline)"
 echo
 
-echo "[2/6] Python dependencies (if requirements changed)..."
+echo "[2/6] Python dependencies (.venv; never system pip — PEP 668)..."
+VENV="$REMOTE_BASE/.venv"
+PY="python3"
+PIP=""
+if [[ -x "$VENV/bin/python" ]]; then
+  PY="$VENV/bin/python"
+  PIP="$VENV/bin/pip"
+elif [[ ! -d "$VENV" ]]; then
+  echo "  Creating $VENV ..."
+  if python3 -m venv "$VENV" 2>/dev/null; then
+    PY="$VENV/bin/python"
+    PIP="$VENV/bin/pip"
+  else
+    echo "  [WARN] could not create venv — pip step skipped"
+  fi
+fi
 REQ=""
-for candidate in requirements.txt; do
-  if [[ -f "$candidate" ]]; then
+for candidate in requirements-production.txt requirements.txt; do # pragma: allowlist secret # pragma: allowlist secret
+  if [[ -f "$REMOTE_BASE/$candidate" ]]; then
     REQ="$candidate"
     break
   fi
 done
-if [[ -n "$REQ" ]]; then
-  python3 -m pip install --no-cache-dir -r "$REQ" || echo "  [WARN] pip install failed — check manually"
-else
+if [[ -n "$PIP" && -n "$REQ" ]]; then
+  "$PIP" install --upgrade pip wheel setuptools >/dev/null 2>&1 || true
+  if "$PIP" install --no-cache-dir -r "$REQ"; then
+    echo "  [OK] $PIP install -r $REQ"
+  else
+    echo "  [WARN] pip install failed — try: $PIP install -r $REQ"
+  fi
+  if [[ -n "$(command -v www-data 2>/dev/null || true)" ]] || id www-data >/dev/null 2>&1; then
+    chown -R www-data:www-data "$VENV" 2>/dev/null || true
+  fi
+elif [[ -z "$REQ" ]]; then
   echo "  No requirements file — skipped"
+else
+  echo "  No .venv pip — skipped (run python3 -m venv $VENV)"
 fi
 echo
 
