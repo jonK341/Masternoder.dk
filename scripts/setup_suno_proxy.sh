@@ -21,7 +21,15 @@ if [ ! -f "$COMPOSE_DIR/docker-compose.yml" ]; then
 fi
 
 if [ ! -f "$ENV_FILE" ]; then
-  cp "$COMPOSE_DIR/.env.example" "$ENV_FILE"
+  if [ -f "$COMPOSE_DIR/.env.example" ]; then
+    cp "$COMPOSE_DIR/.env.example" "$ENV_FILE"
+  else
+    cat >"$ENV_FILE" <<'EOF'
+SUNO_COOKIE=
+BROWSER=chromium
+BROWSER_HEADLESS=1
+EOF
+  fi
   echo "[suno] Created $ENV_FILE — edit SUNO_COOKIE before starting."
 fi
 

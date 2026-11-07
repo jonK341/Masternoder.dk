@@ -52,7 +52,7 @@ bash scripts/container_deploy.sh
 The script will:
 
 1. `git pull --ff-only origin main`
-2. `pip install -r requirements.txt` (repo root)
+2. `.venv/bin/pip install -r requirements-production.txt` (slim prod set; never system `python3 -m pip` — PEP 668) <!-- pragma: allowlist secret -->
 3. Prompt for **`MN2_WALLET_PASSPHRASE`** (Enter to skip if already set)
 4. Run `scripts/production_apply_routes.sh` (cache clear + restart uwsgi/nginx) <!-- pragma: allowlist secret -->
 5. Optionally refresh the Suno Docker sidecar if Docker is installed
