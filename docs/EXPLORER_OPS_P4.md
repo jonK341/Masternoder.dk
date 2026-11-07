@@ -2,6 +2,22 @@
 
 Companion to [MN2_OPS.md §10](MN2_OPS.md) and [EXPLORER_UPGRADES_250.md](EXPLORER_UPGRADES_250.md).
 
+## MongoDB on kernel 6.19 – 7.0.13 (#kernel-mongo)
+
+If `mongod` fails with *Linux kernel versions 6.19 and newer has a known incompatibility* (MongoDB 8.0, `SERVER-121912`):
+
+```bash
+sudo bash scripts/install_mongod_glibc_rseq.sh
+```
+
+Then bring the stack up:
+
+```bash
+cd /var/www/html && sudo bash scripts/start_explorer_stack.sh
+```
+
+Artifact: `systemd/mongod-glibc-rseq.conf.example`
+
 ## Deploy PR to live uwsgi (#168)
 
 ```bash
