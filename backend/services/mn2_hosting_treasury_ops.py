@@ -123,6 +123,7 @@ def fund_collateral_utxos(
     slots: int,
     *,
     dry_run: bool = False,
+    unlock_every: int = 15,
 ) -> Dict[str, Any]:
     """Create up to ``slots`` new exactly-collateral-sized UTXOs in the ops daemon wallet."""
     n = max(0, int(slots or 0))
@@ -132,7 +133,11 @@ def fund_collateral_utxos(
     cfg = get_config()
     collateral = float(cfg.get("collateral_mn2") or 5000.0)
 
-    from backend.services.mn2_masternode_service import list_collateral_outputs, _send_collateral_utxo
+    from backend.services.mn2_masternode_service import (
+        _send_collateral_utxo,
+        _unlock_wallet,
+        list_collateral_outputs,
+    )
 
     before = list_collateral_outputs()
     free_before = int(before.get("count") or 0) if before.get("success") else 0
@@ -155,7 +160,10 @@ def fund_collateral_utxos(
 
     created: List[Dict[str, Any]] = []
     errors: List[str] = []
-    for _ in range(n):
+    refresh = max(1, int(unlock_every or 15))
+    for i in range(n):
+        if i > 0 and i % refresh == 0:
+            _unlock_wallet(staking_only=False, timeout_sec=600)
         row = _send_collateral_utxo(collateral)
         if row.get("success"):
             created.append({"txid": row.get("txid"), "address": row.get("address")})
