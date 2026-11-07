@@ -2413,7 +2413,9 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
     try:
         from backend.services import mn2_masternode_hosting_service as hosting
         out["paypal"] = hosting.get_paypal_config()
-        out["hosting_stats"] = hosting.hosting_stats()
+        hstats = hosting.hosting_stats()
+        out["hosting_stats"] = hstats
+        out["waiting_slots"] = int(hstats.get("pending_orders") or 0)
     except Exception:
         pass
     try:

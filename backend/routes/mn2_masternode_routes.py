@@ -75,6 +75,18 @@ def masternode_service_public():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/health", methods=["GET"])
+def masternode_hosting_health():
+    """Lightweight hosting probe for the dedicated hosting hub UI."""
+    try:
+        body = mn_service.probe_health()
+        body = dict(body) if isinstance(body, dict) else {"status": "unknown"}
+        body.setdefault("success", True)
+        return jsonify(body), 200
+    except Exception as exc:
+        return jsonify({"success": False, "status": "error", "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/hosts", methods=["GET"])
 def masternode_hosts_list():
     if not _ops_authorized():

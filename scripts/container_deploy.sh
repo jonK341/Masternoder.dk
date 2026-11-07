@@ -125,6 +125,15 @@ else
 fi
 echo
 
+echo "[4b/6] MN2 hosting cron (executable + provision tick)..."
+chmod +x "$REMOTE_BASE/cron/mn2_masternode_provision.sh" "$REMOTE_BASE/cron/mn2_ops_watchdog.sh" 2>/dev/null || true
+if [[ -f "$REMOTE_BASE/cron/mn2_read_ops_secret.sh" ]]; then
+  bash "$REMOTE_BASE/cron/mn2_masternode_provision.sh" >/dev/null 2>&1 && echo "  [OK] provision-pending tick" || echo "  [WARN] provision tick failed (see logs/mn2_masternode_provision.log)"
+else
+  echo "  skipped (mn2_read_ops_secret.sh missing)"
+fi
+echo
+
 echo "[5/6] Apply routes / restart uwsgi stack..."
 bash "$REMOTE_BASE/scripts/production_apply_routes.sh"  # pragma: allowlist secret
 echo

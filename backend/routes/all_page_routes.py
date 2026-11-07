@@ -243,6 +243,21 @@ def casino_page():
     return 'Casino page not found', 404
 
 
+@all_page_bp.route('/hosting/hosting-ui.css', methods=['GET'])
+def hosting_ui_stylesheet():
+    """Styles for the masternode hosting hub (/hosting/)."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'hosting')
+        if os.path.isfile(os.path.join(page_dir, 'hosting-ui.css')):
+            resp = send_from_directory(page_dir, 'hosting-ui.css', mimetype='text/css; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=3600, stale-while-revalidate=300'
+            return resp
+    except Exception:
+        pass
+    return 'Stylesheet not found', 404
+
+
 @all_page_bp.route('/casino/manifest.webmanifest', methods=['GET'])
 def casino_manifest():
     """PWA manifest for casino (Play TWA + installable web app)."""
