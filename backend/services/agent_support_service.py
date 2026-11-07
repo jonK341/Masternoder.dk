@@ -123,9 +123,9 @@ class AgentSupportService:
                     '/api/agent/support/resources',
                 ],
                 'tools': [
-                    {'label': 'Debugger', 'url': '/vidgenerator/debugger'},
-                    {'label': 'AI Agents', 'url': '/vidgenerator/agents'},
-                    {'label': 'Aggregator', 'url': '/vidgenerator/aggregator'},
+                    {'label': 'Debugger', 'url': '/debugger'},
+                    {'label': 'AI Agents', 'url': '/agents'},
+                    {'label': 'Aggregator', 'url': '/aggregator'},
                 ]
             }
         }

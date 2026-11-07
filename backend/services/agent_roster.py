@@ -400,7 +400,7 @@ def discover_site_pages(root):
         parts = [] if rel == "." else rel.split(os.sep)
         dirnames[:] = [
             name for name in dirnames
-            if name not in _SKIP_DIRS and not name.startswith(".")
+            if name not in _SKIP_DIRS and not name.startswith(".") and name != "vidgenerator"
         ]
         if any(part in _SKIP_DIRS or part.startswith(".") for part in parts):
             dirnames[:] = []
