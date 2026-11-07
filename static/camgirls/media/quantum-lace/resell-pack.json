@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave3_quantum_lace",
+  "slug": "quantum-lace",
+  "display_name": "Quantum Lace",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/quantum-lace/icon.webp",
+    "logo": "/static/camgirls/media/quantum-lace/logo.svg",
+    "avatar_hd": "/static/camgirls/media/quantum-lace/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/quantum-lace/gallery-1.webp",
+      "/static/camgirls/media/quantum-lace/gallery-2.webp",
+      "/static/camgirls/media/quantum-lace/gallery-3.webp",
+      "/static/camgirls/media/quantum-lace/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/quantum-lace/preview.webm",
+    "preview_poster": "/static/camgirls/media/quantum-lace/gallery-1.webp"
+  },
+  "initials": "QL",
+  "brand_colors": [
+    "#6366f1",
+    "#3730a3"
+  ]
+}

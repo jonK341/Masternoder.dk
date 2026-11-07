@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave3_pulsar_heart",
+  "slug": "pulsar-heart",
+  "display_name": "Pulsar Heart",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/pulsar-heart/icon.webp",
+    "logo": "/static/camgirls/media/pulsar-heart/logo.svg",
+    "avatar_hd": "/static/camgirls/media/pulsar-heart/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/pulsar-heart/gallery-1.webp",
+      "/static/camgirls/media/pulsar-heart/gallery-2.webp",
+      "/static/camgirls/media/pulsar-heart/gallery-3.webp",
+      "/static/camgirls/media/pulsar-heart/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/pulsar-heart/preview.webm",
+    "preview_poster": "/static/camgirls/media/pulsar-heart/gallery-1.webp"
+  },
+  "initials": "PH",
+  "brand_colors": [
+    "#fbbf24",
+    "#78350f"
+  ]
+}

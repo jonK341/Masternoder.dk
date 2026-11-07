@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave3_nebula_prime",
+  "slug": "nebula-prime",
+  "display_name": "Nebula Prime",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/nebula-prime/icon.webp",
+    "logo": "/static/camgirls/media/nebula-prime/logo.svg",
+    "avatar_hd": "/static/camgirls/media/nebula-prime/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/nebula-prime/gallery-1.webp",
+      "/static/camgirls/media/nebula-prime/gallery-2.webp",
+      "/static/camgirls/media/nebula-prime/gallery-3.webp",
+      "/static/camgirls/media/nebula-prime/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/nebula-prime/preview.webm",
+    "preview_poster": "/static/camgirls/media/nebula-prime/gallery-1.webp"
+  },
+  "initials": "NP",
+  "brand_colors": [
+    "#7c3aed",
+    "#1e1b4b"
+  ]
+}
