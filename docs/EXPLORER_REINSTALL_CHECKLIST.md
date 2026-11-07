@@ -114,6 +114,20 @@ systemctl status mongod
 ss -tlnp | grep 27017
 ```
 
+**Kernel 6.19 – 7.0.13:** MongoDB 8.0+ may exit at startup with `SERVER-121912`. On affected hosts (e.g. Ubuntu 24.04 on `7.0.0-*` before a vendor bump to 7.0.14+), install the glibc tunable drop-in once:
+
+```bash
+sudo bash scripts/install_mongod_glibc_rseq.sh
+```
+
+This copies `systemd/mongod-glibc-rseq.conf.example` → `/etc/systemd/system/mongod.service.d/glibc-rseq.conf` and restarts `mongod`. Long-term: upgrade the host kernel to **7.0.14+** or MongoDB per [SERVER-125742](https://jira.mongodb.org/browse/SERVER-125742), then you can remove the drop-in.
+
+**Start daemon + Mongo + eiquidus together:**
+
+```bash
+cd /var/www/html && sudo bash scripts/start_explorer_stack.sh
+```
+
 If replica set + `keyFile`: see [MN2_DAEMON_SETUP.md](MN2_DAEMON_SETUP.md) (keyfile path, `chmod 400`, `chown mongodb`).
 
 ---
