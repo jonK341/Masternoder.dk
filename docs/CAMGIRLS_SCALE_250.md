@@ -6,6 +6,7 @@ Goal: grow from ~15 live performers toward **250** using **waves** of 15–50 st
 
 - Template: `data/camgirls_performers_wave.template.json`
 - **Wave 2 (25 stubs, committed):** `data/camgirls_performers_wave2.json` — copy to `waves/wave2.json` on the server if you prefer that path.
+- **Wave 3 (25 stubs, committed):** `data/camgirls_performers_wave3.json` — 65 roster total after onboard with waves 1–2.
 - Copy other waves to e.g. `waves/waveN.json` (gitignored locally if it contains ops data).
 - CSV is also supported (`display_name` required; optional `slug`, `initials`, `c1`, `c2`, prices).
 

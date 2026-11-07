@@ -16,9 +16,18 @@
       "performer_count_after": 40,
       "status": "onboarded_dev",
       "notes": "Onboarded in dev (40 total roster). Prod: camgirls_batch_onboard.sh + --provision-addresses."
+    },
+    {
+      "wave": 3,
+      "label": "Scale wave 3",
+      "stub_file": "data/camgirls_performers_wave3.json",
+      "planned_stubs": 25,
+      "performer_count_after": 65,
+      "status": "onboarded_dev",
+      "notes": "25 galaxy/cosmic stubs. Prod: batch onboard + --provision-addresses."
     }
   ],
-  "next_milestone": 50,
+  "next_milestone": 100,
   "milestone_checks": {
     "50": "verify_milestone_50",
     "100": "verify_milestone_100",

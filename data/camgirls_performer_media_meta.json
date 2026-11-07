@@ -149,7 +149,157 @@
       "initials": "Y",
       "c1": "#60a5fa",
       "c2": "#1e40af"
+    },
+    "performer_wave3_nebula_prime": {
+      "slug": "nebula-prime",
+      "initials": "NP",
+      "c1": "#7c3aed",
+      "c2": "#1e1b4b"
+    },
+    "performer_wave3_cosmic_rift": {
+      "slug": "cosmic-rift",
+      "initials": "CR",
+      "c1": "#2563eb",
+      "c2": "#1e3a8a"
+    },
+    "performer_wave3_stellar_dawn": {
+      "slug": "stellar-dawn",
+      "initials": "SD",
+      "c1": "#f472b6",
+      "c2": "#831843"
+    },
+    "performer_wave3_lunar_cascade": {
+      "slug": "lunar-cascade",
+      "initials": "LC",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave3_solar_flare": {
+      "slug": "solar-flare",
+      "initials": "SF",
+      "c1": "#fb7185",
+      "c2": "#9f1239"
+    },
+    "performer_wave3_orion_veil": {
+      "slug": "orion-veil",
+      "initials": "OV",
+      "c1": "#818cf8",
+      "c2": "#312e81"
+    },
+    "performer_wave3_comet_whisper": {
+      "slug": "comet-whisper",
+      "initials": "CW",
+      "c1": "#38bdf8",
+      "c2": "#0c4a6e"
+    },
+    "performer_wave3_void_dancer": {
+      "slug": "void-dancer",
+      "initials": "VD",
+      "c1": "#a78bfa",
+      "c2": "#4c1d95"
+    },
+    "performer_wave3_pulsar_heart": {
+      "slug": "pulsar-heart",
+      "initials": "PH",
+      "c1": "#fbbf24",
+      "c2": "#78350f"
+    },
+    "performer_wave3_galaxy_silk": {
+      "slug": "galaxy-silk",
+      "initials": "GS",
+      "c1": "#34d399",
+      "c2": "#065f46"
+    },
+    "performer_wave3_drift_queen": {
+      "slug": "drift-queen",
+      "initials": "DQ",
+      "c1": "#f97316",
+      "c2": "#7c2d12"
+    },
+    "performer_wave3_cyber_rose": {
+      "slug": "cyber-rose",
+      "initials": "CR",
+      "c1": "#e11d48",
+      "c2": "#881337"
+    },
+    "performer_wave3_holo_muse": {
+      "slug": "holo-muse",
+      "initials": "HM",
+      "c1": "#06b6d4",
+      "c2": "#164e63"
+    },
+    "performer_wave3_neon_siren": {
+      "slug": "neon-siren",
+      "initials": "NS",
+      "c1": "#d946ef",
+      "c2": "#701a75"
+    },
+    "performer_wave3_quantum_lace": {
+      "slug": "quantum-lace",
+      "initials": "QL",
+      "c1": "#6366f1",
+      "c2": "#3730a3"
+    },
+    "performer_wave3_midnight_orbit": {
+      "slug": "midnight-orbit",
+      "initials": "MO",
+      "c1": "#64748b",
+      "c2": "#1e293b"
+    },
+    "performer_wave3_coral_signal": {
+      "slug": "coral-signal",
+      "initials": "CS",
+      "c1": "#fda4af",
+      "c2": "#9f1239"
+    },
+    "performer_wave3_mint_signal": {
+      "slug": "mint-signal",
+      "initials": "MS",
+      "c1": "#6ee7b7",
+      "c2": "#065f46"
+    },
+    "performer_wave3_amber_signal": {
+      "slug": "amber-signal",
+      "initials": "AS",
+      "c1": "#fcd34d",
+      "c2": "#92400e"
+    },
+    "performer_wave3_azure_signal": {
+      "slug": "azure-signal",
+      "initials": "AS",
+      "c1": "#60a5fa",
+      "c2": "#1e40af"
+    },
+    "performer_wave3_violet_signal": {
+      "slug": "violet-signal",
+      "initials": "VS",
+      "c1": "#c084fc",
+      "c2": "#581c87"
+    },
+    "performer_wave3_chrome_vox": {
+      "slug": "chrome-vox",
+      "initials": "CV",
+      "c1": "#94a3b8",
+      "c2": "#334155"
+    },
+    "performer_wave3_plasma_silk": {
+      "slug": "plasma-silk",
+      "initials": "PS",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave3_rift_muse": {
+      "slug": "rift-muse",
+      "initials": "RM",
+      "c1": "#f43f5e",
+      "c2": "#881337"
+    },
+    "performer_wave3_nova_drift": {
+      "slug": "nova-drift",
+      "initials": "ND",
+      "c1": "#22d3ee",
+      "c2": "#155e75"
     }
   },
-  "updated_at": "2026-11-07T21:06:58Z"
+  "updated_at": "2026-11-07T22:25:27Z"
 }

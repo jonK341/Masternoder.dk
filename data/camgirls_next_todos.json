@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-07",
+  "updated_at": "2026-11-07T22:30:00Z",
   "categories": [
     {
       "id": "platform_core",
@@ -243,10 +243,16 @@
           "detail": "data/camgirls_performers_wave2.json (25 stubs) onboarded in dev → 40 performers + media. Prod: camgirls_batch_onboard.sh + --provision-addresses --full-catalog-sync."
         },
         {
+          "id": "scale_wave3_run",
+          "priority": "done",
+          "title": "Run wave 3 onboard",
+          "detail": "data/camgirls_performers_wave3.json (25 cosmic/galaxy stubs) → 65 performers in dev + media. Prod: camgirls_batch_onboard.sh --batch 3."
+        },
+        {
           "id": "scale_wave3_plus",
-          "priority": "P3",
-          "title": "Waves 3–N toward 250",
-          "detail": "Repeat 15–50 stub waves; track counts in ops_state; avoid single bulk JSON dump."
+          "priority": "P2",
+          "title": "Waves 4–N toward 250",
+          "detail": "Repeat 15–50 stub waves; ops_state next_milestone 100; avoid single bulk JSON dump."
         }
       ]
     },
