@@ -68,63 +68,39 @@ class AgentManager:
             print(f"Error saving manager data: {e}")
     
     def activate_all_agents(self) -> Dict:
-        """Activate all agents using agent controller"""
+        """Register every service that already exists, and start stopped loops."""
         try:
-            from backend.services.agent_controller import agent_controller
-            from backend.services.agent_point_creator import agent_point_creator
-            
-            # Get all agents status
-            all_status = agent_controller.get_all_agents_status()
-            agents = all_status.get('agents', {})
-            
-            activated = []
-            failed = []
-            
-            for agent_id, agent_info in agents.items():
-                try:
-                    # Try to activate each agent
-                    if agent_info.get('status') != 'active':
-                        # Attempt activation based on agent type
-                        if agent_id == 'automation':
-                            from backend.services.agent_automation import agent_automation
-                            agent_automation.start()
-                        elif agent_id == 'activation':
-                            from backend.services.agent_activation_system import agent_activation_system
-                            agent_activation_system.start()
-                    
-                    activated.append(agent_id)
-                    
-                    # Award points for activation
-                    agent_point_creator.award_points_for_agent_action(
-                        agent_id='agent_manager',
-                        action='activate_all_agents',
-                        user_id='system',
-                        points={'xp': 5, 'activity_points': 2}
-                    )
-                except Exception as e:
-                    failed.append({'agent': agent_id, 'error': str(e)})
-            
-            self.data['agents_activated'] += len(activated)
-            self.data['last_activity'] = datetime.now().isoformat()
+            # Lazy: the roster attaches this manager, so importing it at module load loops.
+            from backend.services.agent_roster import live_activate
+
+            roster = live_activate(start_loops=True)
+            activated = list(roster.get("registered") or [])
+            failed = list(roster.get("errors") or [])
+            self.data["agents_activated"] = self.data.get("agents_activated", 0) + len(activated)
+            self.data["last_activity"] = datetime.now().isoformat()
             self.save_data()
-            
-            # Award points for successful activation
-            agent_point_creator.award_points_for_agent_action(
-                agent_id='agent_manager',
-                action='activate_all_agents',
-                user_id='system',
-                points={'xp': len(activated) * 2, 'activity_points': len(activated)}
-            )
-            
+            try:
+                from backend.services.agent_point_creator import agent_point_creator
+                if activated:
+                    agent_point_creator.award_points_for_agent_action(
+                        agent_id="agent_manager",
+                        action="activate_all_agents",
+                        user_id="system",
+                        points={"xp": len(activated) * 2, "activity_points": len(activated)},
+                    )
+            except Exception:
+                pass
             return {
-                'success': True,
-                'activated': len(activated),
-                'failed': len(failed),
-                'agents': activated,
-                'errors': failed
+                "success": bool(roster.get("success", True)),
+                "activated": len(activated),
+                "failed": len(failed),
+                "agents": activated,
+                "errors": failed,
+                "started": roster.get("started") or [],
+                "roster": (roster.get("recap") or {}).get("counts") or {},
             }
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
     
     def auto_fix_with_ai(self, issue_description: str) -> Dict:
         """Use AI to automatically fix issues"""

@@ -4986,16 +4986,15 @@ def auth_callback_direct(provider):
 @missing_endpoints_bp.route('/vidgenerator/agents/', methods=['GET'])
 @missing_endpoints_bp.route('/vidgenerator/agents/index.html', methods=['GET'])
 def serve_agents_page():
-    """Serve Agent Report under /vidgenerator/agents (legacy path).
+    """Serve the root Agent Report under the legacy /vidgenerator/agents path.
 
-    Root /agents and /agents/ are handled by all_page_routes.agents_page only — do not
-    register duplicate routes here or missing_endpoints registers second and overwrites,
-    pointing at vidgenerator/agents instead of project-root agents/ (fixes slow/wrong page).
+    Root /agents stays on all_page_routes.agents_page. This copy prefers that same
+    file so the vidgenerator mirror is not a second, older agents site.
     """
     try:
         for rel in (
-            os.path.join('vidgenerator', 'agents', 'index.html'),
             os.path.join('agents', 'index.html'),
+            os.path.join('vidgenerator', 'agents', 'index.html'),
         ):
             page_path = os.path.join(_BASE_DIR, rel)
             if os.path.exists(page_path):

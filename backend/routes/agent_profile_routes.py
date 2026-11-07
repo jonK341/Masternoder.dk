@@ -30,6 +30,28 @@ def _resolve():
     return 'default_user'
 
 
+@agent_profile_bp.route('/api/agents/roster', methods=['GET'])
+def agents_roster():
+    """Recap of runnable agents and which off-nav sites fold into an existing page."""
+    try:
+        from backend.services.agent_roster import live_recap
+        return jsonify(live_recap()), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 200
+
+
+@agent_profile_bp.route('/api/agents/roster/activate', methods=['POST'])
+def agents_roster_activate():
+    """Attach existing agent services. start_loops=true also starts stopped background loops."""
+    data = request.get_json(silent=True) or {}
+    start_loops = bool(data.get('start_loops'))
+    try:
+        from backend.services.agent_roster import live_activate
+        return jsonify(live_activate(start_loops=start_loops)), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 200
+
+
 @agent_profile_bp.route('/api/agents/my-agents', methods=['GET'])
 def get_my_agents():
     """Return all agents assigned to the current user with progress (level, XP, skills, last action)."""
