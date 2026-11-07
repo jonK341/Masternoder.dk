@@ -501,6 +501,14 @@ def performer_goal(performer_id: str):
     return jsonify(get_goal_status(performer_id)), 200
 
 
+@camgirls_bp.route("/api/camgirls/intel/top10", methods=["GET"])
+def camgirls_intel_top10():
+    user_id = _resolve_user_id(anonymous_ok=True)
+    from backend.services.camgirls_ui_intel_service import top10_performers
+
+    return jsonify(top10_performers(user_id=user_id)), 200
+
+
 @camgirls_bp.route("/api/camgirls/status", methods=["GET"])
 def platform_status_route():
     from backend.services.camgirls_status_service import platform_status

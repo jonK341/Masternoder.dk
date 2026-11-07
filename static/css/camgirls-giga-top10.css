@@ -1,0 +1,297 @@
+/* Camgirls Giga UI — Top 10 intelligence layer (10 upgrades) */
+html.cg-giga {
+  --cg-giga-bg: #04060c;
+  --cg-giga-cyan: #00e8ff;
+  --cg-giga-magenta: #ff2da8;
+  --cg-giga-lime: #9dff66;
+  --cg-giga-glass: rgba(12, 18, 32, 0.72);
+  --cg-giga-border: rgba(0, 232, 255, 0.22);
+}
+
+html.cg-giga .cg-giga-header-legacy {
+  display: none;
+}
+
+html.cg-giga body {
+  background: var(--cg-giga-bg);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 10% -20%, rgba(255, 45, 168, 0.18), transparent 55%),
+    radial-gradient(ellipse 90% 60% at 90% 0%, rgba(0, 232, 255, 0.15), transparent 50%),
+    linear-gradient(180deg, #060a14 0%, #04060c 40%, #020308 100%);
+  min-height: 100vh;
+}
+
+html.cg-giga .cg-page {
+  max-width: 1320px;
+}
+
+/* 1 — Giga hero command center */
+.cg-giga-hero {
+  position: relative;
+  border: 1px solid var(--cg-giga-border);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  margin-bottom: 22px;
+  background: var(--cg-giga-glass);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.cg-giga-hero::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(from 120deg, rgba(0, 232, 255, 0.08), transparent 35%, rgba(255, 45, 168, 0.1), transparent 70%);
+  animation: cg-giga-spin 28s linear infinite;
+  pointer-events: none;
+}
+@keyframes cg-giga-spin {
+  to { transform: rotate(360deg); }
+}
+.cg-giga-hero-inner { position: relative; z-index: 1; }
+.cg-giga-hero h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(105deg, var(--cg-giga-cyan), #fff 45%, var(--cg-giga-magenta));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.cg-giga-hero-sub { font-size: 1.05rem; opacity: 0.82; margin: 0 0 14px; max-width: 56ch; line-height: 1.5; }
+.cg-giga-telemetry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.78rem;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+}
+.cg-giga-stat {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+}
+.cg-giga-stat strong { color: var(--cg-giga-lime); font-weight: 600; }
+
+/* 2 — Top 10 board */
+.cg-top10-panel {
+  border: 1px solid rgba(255, 45, 168, 0.35);
+  border-radius: 18px;
+  padding: 18px 16px 14px;
+  margin-bottom: 20px;
+  background: linear-gradient(145deg, rgba(255, 45, 168, 0.06), rgba(0, 232, 255, 0.04));
+}
+.cg-top10-panel h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  color: var(--cg-giga-magenta);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cg-top10-panel h2 span { font-size: 0.72rem; color: var(--cg-giga-cyan); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+.cg-top10-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.cg-top10-row {
+  display: grid;
+  grid-template-columns: 32px 48px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s, border-color 0.15s;
+}
+.cg-top10-row:hover {
+  transform: translateX(4px);
+  border-color: rgba(0, 232, 255, 0.4);
+}
+.cg-top10-rank { font-size: 1.1rem; font-weight: 800; color: var(--cg-giga-cyan); text-align: center; }
+.cg-top10-avatar { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.15); }
+.cg-top10-meta strong { display: block; font-size: 0.95rem; }
+.cg-top10-meta small { opacity: 0.7; font-size: 0.75rem; }
+.cg-top10-tech { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 220px; }
+.cg-top10-chip { font-size: 0.62rem; padding: 2px 6px; border-radius: 4px; background: rgba(0, 232, 255, 0.12); color: var(--cg-giga-cyan); border: 1px solid rgba(0, 232, 255, 0.25); }
+
+/* 3 — Spotlight carousel */
+.cg-spotlight { margin-bottom: 20px; }
+.cg-spotlight-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 900px) { .cg-spotlight-track { grid-template-columns: 1fr; } }
+.cg-spotlight-card {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--cg-giga-border);
+  background: #0a0f1a;
+  position: relative;
+  min-height: 200px;
+}
+.cg-spotlight-card img.cg-spotlight-bg { width: 100%; height: 140px; object-fit: cover; display: block; filter: saturate(1.2); }
+.cg-spotlight-card .cg-spotlight-body { padding: 12px 14px; }
+.cg-spotlight-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--cg-giga-lime); }
+
+/* 6 — Intel ticker */
+.cg-intel-ticker {
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  background: rgba(0, 255, 136, 0.06);
+  margin-bottom: 16px;
+  padding: 8px 0;
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+  color: rgba(200, 255, 220, 0.9);
+}
+.cg-intel-ticker-inner {
+  display: flex;
+  gap: 48px;
+  width: max-content;
+  animation: cg-ticker 40s linear infinite;
+}
+@keyframes cg-ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* 4 — Neural vibe filters */
+.cg-giga-filters { margin-bottom: 14px; }
+.cg-giga-filters button {
+  border-color: rgba(255, 45, 168, 0.35) !important;
+}
+.cg-giga-filters .cg-filter-active {
+  background: rgba(255, 45, 168, 0.18) !important;
+  color: #ffb3e6 !important;
+  border-color: var(--cg-giga-magenta) !important;
+}
+
+/* 8 — Roster ring */
+.cg-roster-ring-wrap { width: 72px; height: 72px; position: relative; }
+.cg-roster-ring-wrap svg { transform: rotate(-90deg); }
+.cg-roster-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--cg-giga-lime);
+}
+
+/* 5 — Holographic cards */
+html.cg-giga .cg-card {
+  border: 1px solid rgba(0, 232, 255, 0.2);
+  background: linear-gradient(160deg, rgba(15, 22, 40, 0.9), rgba(5, 8, 16, 0.95));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s;
+  position: relative;
+}
+html.cg-giga .cg-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(0, 232, 255, 0.08), transparent 40%, rgba(255, 45, 168, 0.06));
+  opacity: 0.6;
+}
+html.cg-giga .cg-card:hover {
+  transform: translateY(-4px) perspective(800px) rotateX(1deg);
+  box-shadow: 0 20px 50px rgba(0, 232, 255, 0.15);
+}
+html.cg-giga .cg-card.cg-giga-hidden { display: none; }
+.cg-giga-rank-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 45, 168, 0.85);
+  color: #fff;
+}
+.cg-giga-vibe {
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* 10 — MN2 mesh rail on cards */
+.cg-mn2-rail {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 8px 0 0;
+  font-size: 0.68rem;
+}
+.cg-mn2-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #444;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.cg-mn2-dot.live { background: var(--cg-giga-lime); box-shadow: 0 0 8px var(--cg-giga-lime); }
+
+/* 7 — Command palette */
+.cg-cmd-palette {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+}
+.cg-cmd-palette.open { display: flex; }
+.cg-cmd-box {
+  width: min(520px, 92vw);
+  border-radius: 14px;
+  border: 1px solid var(--cg-giga-border);
+  background: #0d121c;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+.cg-cmd-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: none;
+  background: #161b28;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+}
+.cg-cmd-results { max-height: 280px; overflow-y: auto; }
+.cg-cmd-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.88rem;
+}
+.cg-cmd-item:hover, .cg-cmd-item.active { background: rgba(0, 232, 255, 0.12); }
+.cg-cmd-hint { font-size: 0.72rem; opacity: 0.55; text-align: center; padding: 8px; }
+
+/* 9 — Constellation strip */
+.cg-constellation {
+  font-size: 0.72rem;
+  opacity: 0.75;
+  margin-top: 8px;
+  line-height: 1.5;
+  font-family: ui-monospace, monospace;
+}
