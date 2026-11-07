@@ -7,6 +7,7 @@
 # Usage:
 #   ./scripts/mn2_repair_daemon.sh              # status only
 #   ./scripts/mn2_repair_daemon.sh --stop-orphan # kill non-systemd daemon, clear lock, start unit
+#   ./scripts/mn2_repair_daemon.sh --kill-all    # fast: kill every masternoder2d PID (see mn2_kill_all_daemons.sh)
 #   ./scripts/mn2_repair_daemon.sh --keep-orphan # stop/disable systemd; leave manual daemon running
 #
 # Env: MN2_DATADIR (default /var/www/html/config), MN2_UNIT (default masternoder2d)
@@ -99,7 +100,8 @@ case "$MODE" in
     unit_active="$(systemctl is-active "$UNIT" 2>/dev/null || true)"
     if [[ "$orphans" -gt 1 || ( "$orphans" -eq 1 && "$unit_active" == "active" ) ]]; then
       log "duplicate or conflicting daemon detected"
-      log "  --stop-orphan   kill manual daemon, start systemd unit"
+      log "  --kill-all      fast: stop unit, SIGTERM/SIGKILL all PIDs, clear lock, restart (recommended)"
+      log "  --stop-orphan   kill manual daemon, start systemd unit (slower)"
       log "  --keep-orphan   disable systemd, keep manual -reindex daemon"
       exit 1
     fi
@@ -107,11 +109,15 @@ case "$MODE" in
   --stop-orphan)
     stop_orphan_and_start_unit
     ;;
+  --kill-all)
+    ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+    exec bash "${ROOT}/scripts/mn2_kill_all_daemons.sh" --wait-rpc 45
+    ;;
   --keep-orphan)
     keep_orphan_disable_unit
     ;;
   *)
-    log "unknown mode: $MODE (use status, --stop-orphan, or --keep-orphan)"
+    log "unknown mode: $MODE (use status, --stop-orphan, --kill-all, or --keep-orphan)"
     exit 2
     ;;
 esac

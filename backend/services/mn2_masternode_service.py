@@ -18,7 +18,7 @@ import threading
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 _LOGGER = logging.getLogger(__name__)
 _LOCK = threading.RLock()
@@ -146,6 +146,142 @@ def purge_stale_provisioning_hosts(
         "removed_count": len(removed),
         "registry_count": len(kept) if not dry_run else len(hosts) - len(removed),
         "slots_used": _count_slots_used(kept if not dry_run else [h for h in hosts if h.get("id") not in removed]),
+    }
+
+
+_PENDING_DELETE_STATUSES = frozenset({"queued", "provisioning", "planned"})
+
+
+def remove_masternode_conf_aliases(
+    aliases: List[str],
+    *,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Drop masternode.conf lines for the given aliases (active fleet unchanged if omitted)."""
+    want = {str(a).strip() for a in aliases if str(a).strip()}
+    if not want:
+        return {"success": True, "dry_run": dry_run, "removed_aliases": [], "removed_count": 0}
+    path = _masternode_conf_path()
+    rows = _read_masternode_conf_entries()
+    if not rows and not os.path.isfile(path):
+        return {"success": True, "dry_run": dry_run, "removed_aliases": [], "removed_count": 0, "path": path}
+
+    preamble: List[str] = []
+    kept_entries: List[Dict[str, Any]] = []
+    removed_aliases: List[str] = []
+    for row in rows:
+        if row.get("kind") == "comment":
+            preamble.append(row["raw"])
+            continue
+        alias = str(row.get("alias") or "")
+        if alias in want:
+            removed_aliases.append(alias)
+            continue
+        kept_entries.append(row)
+
+    new_lines: List[str] = []
+    if preamble:
+        new_lines.extend(f"{ln}\n" if not ln.endswith("\n") else ln for ln in preamble)
+    for entry in kept_entries:
+        if entry.get("valid"):
+            new_lines.append(
+                _format_masternode_conf_line(
+                    entry["alias"],
+                    entry["ip_port"],
+                    entry["privkey"],
+                    entry["txid"],
+                    int(entry["vout"]),
+                )
+            )
+        else:
+            new_lines.append(entry["raw"] + ("\n" if not str(entry["raw"]).endswith("\n") else ""))
+
+    new_body = "".join(new_lines)
+    old_body = ""
+    if os.path.isfile(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                old_body = f.read()
+        except OSError:
+            old_body = ""
+
+    changed = new_body != old_body
+    if changed and not dry_run:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = f"{path}.tmp.{os.getpid()}"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(new_body)
+        os.replace(tmp, path)
+
+    return {
+        "success": True,
+        "dry_run": dry_run,
+        "changed": changed,
+        "path": path,
+        "removed_aliases": sorted(set(removed_aliases)),
+        "removed_count": len(set(removed_aliases)),
+        "kept_conf_entries": len(kept_entries),
+    }
+
+
+def delete_pending_provisioning_hosts(
+    *,
+    dry_run: bool = True,
+    remove_conf: bool = True,
+    statuses: Optional[Set[str]] = None,
+) -> Dict[str, Any]:
+    """
+    Remove rented-host registry rows that never reached ``active`` (queued / provisioning / planned).
+    Keeps ``active`` hosts. Optionally removes their masternode.conf aliases so collateral UTXOs
+    can re-enter the free pool (does not refund shop orders).
+    """
+    drop = {s.lower() for s in (statuses or _PENDING_DELETE_STATUSES)}
+    removed_rows: List[Dict[str, Any]] = []
+    aliases: List[str] = []
+    with _LOCK:
+        doc = _load_hosts_doc()
+        hosts: List[Dict[str, Any]] = list(doc.get("hosts") or [])
+        kept: List[Dict[str, Any]] = []
+        for h in hosts:
+            if not isinstance(h, dict):
+                continue
+            st = (h.get("status") or "").lower()
+            hid = str(h.get("id") or "")
+            if st in drop:
+                removed_rows.append(
+                    {
+                        "id": hid,
+                        "status": st,
+                        "owner_user_id": h.get("owner_user_id"),
+                        "has_collateral": bool(h.get("collateral_txid")),
+                    }
+                )
+                if hid:
+                    aliases.append(_alias_from_host_id(hid))
+            else:
+                kept.append(h)
+        if not dry_run and removed_rows:
+            _save_hosts_doc(kept)
+
+    conf_out: Dict[str, Any] = {"skipped": True}
+    if remove_conf and aliases:
+        conf_out = remove_masternode_conf_aliases(aliases, dry_run=dry_run)
+
+    removed_ids = {r["id"] for r in removed_rows}
+    sample = removed_rows[:20]
+    kept_for_slots = kept if not dry_run else [h for h in hosts if str(h.get("id") or "") not in removed_ids]
+    return {
+        "success": True,
+        "dry_run": dry_run,
+        "removed_count": len(removed_rows),
+        "removed_sample": sample,
+        "registry_count_after": len(kept) if not dry_run else len(hosts) - len(removed_rows),
+        "active_kept": sum(
+            1 for h in kept_for_slots if (h.get("status") or "").lower() == "active"
+        ),
+        "slots_used": _count_slots_used(kept_for_slots),
+        "masternode_conf": conf_out,
+        "note": "Shop/payment records unchanged; only fleet registry (+ optional conf lines) removed.",
     }
 
 
@@ -1505,7 +1641,7 @@ def maintain_ping_loop(*, skip_explorer: bool = False) -> Dict[str, Any]:
     }
 
 
-def sync_ping_targets() -> Dict[str, Any]:
+def sync_ping_targets(*, skip_heavy_status: bool = False) -> Dict[str, Any]:
     """
     Ops: unlock collateral and run ``startmasternode all`` so every masternode.conf
     alias joins the daemon multi-ping set (v1.3+). Used by fleet cron / SSH ops.
@@ -1518,6 +1654,13 @@ def sync_ping_targets() -> Dict[str, Any]:
             "multi_ping_enabled": False,
         }
     reg_err = _register_fleet_ping_targets()
+    if skip_heavy_status:
+        return {
+            "success": reg_err is None,
+            "error": reg_err,
+            "multi_ping_enabled": True,
+            "action": "startmasternode all (fleet ping register)",
+        }
     snap = get_service_status(fresh=True)
     daemon = snap.get("daemon") if isinstance(snap, dict) else {}
     return {
@@ -1719,19 +1862,65 @@ def provision_host(
     }
 
 
-def process_pending_hosts(limit: int = 20, *, skip_explorer: bool = False) -> Dict[str, Any]:
-    """Cron/ops: retry auto-provision for paid hosts still provisioning + maintain ping loop."""
-    ping = maintain_ping_loop(skip_explorer=skip_explorer)
+def _select_pending_for_provision(
+    hosts: List[Dict[str, Any]],
+    limit: int,
+    min_conf: int,
+) -> tuple[List[Dict[str, Any]], int]:
+    """Prefer hosts that can finish now; avoid re-hammering unconfirmed collateral every batch."""
     pending_status = {"queued", "provisioning", "planned"}
+    candidates = [h for h in hosts if isinstance(h, dict) and (h.get("status") or "").lower() in pending_status]
+    ready: List[Dict[str, Any]] = []
+    confirming: List[Dict[str, Any]] = []
+    for h in candidates:
+        txid = h.get("collateral_txid")
+        vout = h.get("collateral_vout")
+        if txid is None or vout is None:
+            ready.append(h)
+            continue
+        stored = _wallet_collateral_utxo(txid, vout)
+        if not stored:
+            ready.append(h)
+            continue
+        if int(stored.get("confirmations") or 0) >= min_conf:
+            ready.append(h)
+        else:
+            confirming.append(h)
+    cap = max(1, int(limit))
+    todo = ready[:cap]
+    if len(todo) < cap and confirming:
+        for h in confirming[: min(5, cap - len(todo))]:
+            todo.append(h)
+    return todo, len(confirming)
+
+
+def process_pending_hosts(
+    limit: int = 20,
+    *,
+    skip_explorer: bool = False,
+    skip_ping: bool = False,
+) -> Dict[str, Any]:
+    """Cron/ops: retry auto-provision for paid hosts still provisioning + maintain ping loop."""
+    min_conf = int(_ops_cfg().get("min_collateral_confirmations") or 10)
+    ping = None
+    if not skip_ping:
+        ping = maintain_ping_loop(skip_explorer=skip_explorer)
     hosts = list_hosts(include_internal=True)
-    todo = [h for h in hosts if (h.get("status") or "").lower() in pending_status][: max(1, int(limit))]
+    todo, waiting_conf = _select_pending_for_provision(hosts, limit, min_conf)
     results = []
     for h in todo:
         hid = h.get("id")
         if not hid:
             continue
         results.append({"host_id": hid, **provision_host(str(hid), skip_explorer=skip_explorer)})
-    return {"success": True, "processed": len(results), "results": results, "ping_loop": ping}
+    return {
+        "success": True,
+        "processed": len(results),
+        "results": results,
+        "ping_loop": ping,
+        "waiting_confirmations": waiting_conf,
+        "selected": len(todo),
+    }
 
 
 def start_rented_hosts_via_rpc(limit: int = 50) -> Dict[str, Any]:
@@ -1766,7 +1955,8 @@ def start_rented_hosts_via_rpc(limit: int = 50) -> Dict[str, Any]:
         err = _start_masternode(alias, skip_privkey_sync=True)
         results.append({"id": hid, "alias": alias, "error": err, "ok": err is None})
         n += 1
-        if n >= max(1, int(limit)):
+        lim = int(limit)
+        if lim > 0 and n >= lim:
             break
     return {
         "success": True,
@@ -1805,6 +1995,8 @@ def rented_masternodes_snapshot() -> Dict[str, Any]:
     except Exception as exc:
         daemon = {"status": "error", "error": str(exc)[:200]}
     healthy = bool(daemon.get("healthy") or (daemon.get("health") or {}).get("status") == "healthy")
+    hc_status = (daemon.get("health") or {}).get("status")
+    hc_error = (daemon.get("health") or {}).get("error")
     cfg = get_config()
     paid_orders = 0
     paid_slots = 0
@@ -1820,7 +2012,14 @@ def rented_masternodes_snapshot() -> Dict[str, Any]:
     blockers = []
     auto_provision = bool(cfg.get("auto_provision", True))
     if not healthy:
-        blockers.append("masternoder2d_rpc_unreachable")
+        if hc_status == "auth_failed":
+            blockers.append("masternoder2d_rpc_auth_failed")
+        elif hc_status == "work_queue_saturated":
+            blockers.append("masternoder2d_rpc_work_queue_saturated")
+        else:
+            blockers.append("masternoder2d_rpc_unreachable")
+        if hc_error:
+            blockers.append(str(hc_error)[:120])
     if not auto_provision:
         blockers.append("auto_provision_disabled")
     if not pending and not active and paid_orders == 0:
@@ -1898,6 +2097,156 @@ def bring_rented_masternodes_online(limit: int = 20) -> Dict[str, Any]:
     except Exception as exc:
         out["ping"] = {"success": False, "error": str(exc)[:300]}
     out["snapshot_after"] = rented_masternodes_snapshot()
+    return out
+
+
+def activate_all_rented_masternodes(
+    *,
+    batch_size: int = 250,
+    max_rounds: int = 200,
+    skip_drain: bool = False,
+    skip_explorer: bool = True,
+    progress_hook=None,
+) -> Dict[str, Any]:
+    """
+    Drain every pending/queued host in-process, then fleet ping + start all collateralized hosts.
+    One ops call instead of many cron batches. Stops early when no collateral remains.
+    """
+    restored: Dict[str, Any]
+    try:
+        from backend.services.mn2_masternode_hosting_service import ensure_paid_hosts_in_registry
+        restored = ensure_paid_hosts_in_registry()
+    except Exception as exc:
+        restored = {"success": False, "error": str(exc)[:300]}
+
+    snap = rented_masternodes_snapshot()
+    out: Dict[str, Any] = {
+        "success": True,
+        "order_sync": restored,
+        "snapshot_before": snap,
+        "drain_rounds": [],
+        "ping": None,
+        "starts": None,
+    }
+    if not snap.get("daemon_healthy"):
+        out["success"] = False
+        out["error"] = "Cannot activate rented masternodes: wallet daemon RPC is down."
+        return out
+    if not snap.get("auto_provision"):
+        out["success"] = False
+        out["error"] = "auto_provision disabled in mn2_masternode_config.json"
+        return out
+
+    batch_size = max(1, int(batch_size))
+    max_rounds = max(1, int(max_rounds))
+
+    if progress_hook:
+        try:
+            progress_hook({"phase": "order_sync"})
+        except Exception:
+            pass
+
+    if not skip_drain:
+        import time as _time
+
+        _unlock_wallet()
+        for rnd in range(max_rounds):
+            snap = rented_masternodes_snapshot()
+            if not snap.get("daemon_healthy"):
+                out["drain_rounds"].append({"round": rnd + 1, "skipped": "daemon_unhealthy"})
+                if progress_hook:
+                    try:
+                        progress_hook({"phase": "daemon_unhealthy", "round": rnd + 1})
+                    except Exception:
+                        pass
+                _time.sleep(15)
+                continue
+            pending = snap.get("pending") or []
+            if not pending:
+                break
+            if progress_hook:
+                try:
+                    progress_hook(
+                        {
+                            "phase": "batch_start",
+                            "round": rnd + 1,
+                            "pending_before": len(pending),
+                        }
+                    )
+                except Exception:
+                    pass
+            try:
+                batch = process_pending_hosts(
+                    limit=batch_size,
+                    skip_explorer=skip_explorer,
+                    skip_ping=True,
+                )
+            except Exception as exc:
+                out["success"] = False
+                out["error"] = str(exc)[:300]
+                out["snapshot_after"] = rented_masternodes_snapshot()
+                return out
+            processed = int(batch.get("processed") or 0)
+            progressed = sum(
+                1
+                for r in (batch.get("results") or [])
+                if isinstance(r, dict) and r.get("status") == "active"
+            )
+            round_info = {
+                "round": rnd + 1,
+                "pending_before": len(pending),
+                "processed": processed,
+                "activated": progressed,
+                "waiting_confirmations": batch.get("waiting_confirmations"),
+            }
+            out["drain_rounds"].append(round_info)
+            if progress_hook:
+                try:
+                    progress_hook(round_info)
+                except Exception:
+                    pass
+            if processed == 0:
+                break
+            if progressed == 0:
+                _time.sleep(20)
+            else:
+                _time.sleep(3)
+
+    try:
+        if progress_hook:
+            try:
+                progress_hook(
+                    {
+                        "phase": "fleet_ping_and_start",
+                        "message": "startmasternode all may take 5-30 min on large fleets; do not Ctrl+C",
+                    }
+                )
+            except Exception:
+                pass
+        if multi_ping_enabled():
+            out["ping"] = sync_ping_targets(skip_heavy_status=skip_drain)
+        else:
+            out["ping"] = maintain_ping_loop(skip_explorer=skip_explorer)
+    except Exception as exc:
+        out["ping"] = {"success": False, "error": str(exc)[:300]}
+
+    if skip_drain:
+        out["starts"] = {"skipped": True, "reason": "skip_drain_ping_only"}
+    else:
+        try:
+            out["starts"] = start_rented_hosts_via_rpc(limit=0)
+        except Exception as exc:
+            out["starts"] = {"success": False, "error": str(exc)[:300]}
+
+    out["snapshot_after"] = rented_masternodes_snapshot()
+    after = out["snapshot_after"]
+    pending_left = len(after.get("pending") or [])
+    if pending_left and out.get("success"):
+        blockers = after.get("blockers") or []
+        if any("collateral" in str(b) for b in blockers):
+            out["note"] = (
+                f"{pending_left} host(s) still pending — usually no free 5000 MN2 collateral UTXOs."
+            )
     return out
 
 

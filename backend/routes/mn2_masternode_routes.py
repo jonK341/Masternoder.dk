@@ -25,8 +25,10 @@ mn2_masternode_bp = Blueprint("mn2_masternode", __name__)
 
 
 def _ops_authorized() -> bool:
-    secret = (os.environ.get("MN2_OPS_SECRET") or os.environ.get("MN2_SCAN_SECRET") or "").strip()
-    if not secret:
+    keys = ("MN2_OPS_SECRET", "MN2_SCAN_SECRET", "DISCORD_OPS_SECRET", "ADMIN_OPS_SECRET")
+    configured = [(os.environ.get(k) or "").strip() for k in keys]
+    configured = [s for s in configured if s]
+    if not configured:
         return True
     token = (
         request.headers.get("X-Ops-Token")
@@ -35,7 +37,7 @@ def _ops_authorized() -> bool:
         or request.args.get("token")
         or ""
     ).strip()
-    return token == secret
+    return token in configured
 
 
 def _body() -> dict:
@@ -340,6 +342,25 @@ def masternode_purge_stale_hosts():
             max_age_hours=float(max_age),
             force_no_collateral=force,
             dry_run=dry_run,
+        )
+        return jsonify(result), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/delete-provisioning-hosts", methods=["POST"])
+def masternode_delete_provisioning_hosts():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        data = _body()
+        dry_run = bool(data.get("dry_run", True))
+        if request.args.get("apply") in ("1", "true", "yes"):
+            dry_run = False
+        remove_conf = not bool(data.get("keep_conf") or request.args.get("keep_conf"))
+        result = mn_service.delete_pending_provisioning_hosts(
+            dry_run=dry_run,
+            remove_conf=remove_conf,
         )
         return jsonify(result), 200
     except Exception as exc:
