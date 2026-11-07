@@ -7,17 +7,13 @@ import sys
 import threading
 from flask import Flask
 
-# Load .env from vidgenerator or project root (for DATABASE_URL etc.)
+# Load .env from project root (for DATABASE_URL etc.)
 try:
     from dotenv import load_dotenv
     _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    for env_path in [
-        os.path.join(_project_root, "vidgenerator", ".env"),
-        os.path.join(_project_root, ".env"),
-    ]:
-        if os.path.isfile(env_path):
-            load_dotenv(env_path)
-            break
+    env_path = os.path.join(_project_root, ".env")
+    if os.path.isfile(env_path):
+        load_dotenv(env_path)
 except ImportError:
     pass
 

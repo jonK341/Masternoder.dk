@@ -11,7 +11,6 @@ agent_battle_skills_bp = Blueprint('agent_battle_skills', __name__)
 
 
 @agent_battle_skills_bp.route('/api/agent/battle-skills', methods=['GET'])
-@agent_battle_skills_bp.route('/vidgenerator/api/agent/battle-skills', methods=['GET'])
 @rate_limit()
 def get_all_battle_skills():
     """Get all available battle skills"""
@@ -27,7 +26,6 @@ def get_all_battle_skills():
 
 
 @agent_battle_skills_bp.route('/api/agent/battle-skills/unlock', methods=['POST'])
-@agent_battle_skills_bp.route('/vidgenerator/api/agent/battle-skills/unlock', methods=['POST'])
 @rate_limit()
 def unlock_battle_skill():
     """Unlock a battle skill for an agent"""
@@ -57,7 +55,6 @@ def unlock_battle_skill():
 
 
 @agent_battle_skills_bp.route('/api/agent/battle-skills/user', methods=['GET'])
-@agent_battle_skills_bp.route('/vidgenerator/api/agent/battle-skills/user', methods=['GET'])
 @rate_limit()
 def get_user_battle_skills():
     """Get all unlocked battle skills for a user"""
@@ -74,7 +71,6 @@ def get_user_battle_skills():
 
 
 @agent_battle_skills_bp.route('/api/agent/battle-skills/level-up', methods=['POST'])
-@agent_battle_skills_bp.route('/vidgenerator/api/agent/battle-skills/level-up', methods=['POST'])
 @rate_limit()
 def level_up_battle_skill():
     """Level up a battle skill"""

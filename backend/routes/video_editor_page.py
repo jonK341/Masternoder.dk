@@ -7,9 +7,9 @@ import os
 video_editor_page_bp = Blueprint('video_editor_page', __name__)
 
 
-@video_editor_page_bp.route('/vidgenerator/editor', methods=['GET'], strict_slashes=False)
-@video_editor_page_bp.route('/vidgenerator/editor/', methods=['GET'], strict_slashes=False)
-@video_editor_page_bp.route('/vidgenerator/editor/index.html', methods=['GET'], strict_slashes=False)
+@video_editor_page_bp.route('/editor', methods=['GET'], strict_slashes=False)
+@video_editor_page_bp.route('/editor/', methods=['GET'], strict_slashes=False)
+@video_editor_page_bp.route('/editor/index.html', methods=['GET'], strict_slashes=False)
 def video_editor_page():
     """Serve video editor page"""
     try:

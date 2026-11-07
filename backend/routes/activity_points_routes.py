@@ -35,7 +35,6 @@ activity_points_bp = Blueprint('activity_points_bp', __name__)
 print(f"[ActivityPointsRoutes] Module loaded, blueprint created: {activity_points_bp.name}", flush=True)
 
 @activity_points_bp.route('/api/activity-points/test', methods=['GET'], strict_slashes=False)
-@activity_points_bp.route('/vidgenerator/api/activity-points/test', methods=['GET'], strict_slashes=False)
 def test_endpoint():
     """Simple test endpoint"""
     print("[ActivityPointsRoutes] test_endpoint called", flush=True)
@@ -43,7 +42,6 @@ def test_endpoint():
 
 
 @activity_points_bp.route('/api/activity-points/track', methods=['POST'])
-@activity_points_bp.route('/vidgenerator/api/activity-points/track', methods=['POST'])
 @rate_limit()
 def track_activity():
     """Track visitor activity and award points"""
@@ -71,7 +69,6 @@ def track_activity():
 
 
 @activity_points_bp.route('/api/activity-points/track-time', methods=['POST'])
-@activity_points_bp.route('/vidgenerator/api/activity-points/track-time', methods=['POST'])
 @rate_limit()
 def track_time_spent():
     """Track time spent on page"""
@@ -90,7 +87,6 @@ def track_time_spent():
 
 
 @activity_points_bp.route('/api/activity-points/stats/<visitor_id>', methods=['GET'])
-@activity_points_bp.route('/vidgenerator/api/activity-points/stats/<visitor_id>', methods=['GET'])
 @rate_limit()
 def get_visitor_stats(visitor_id):
     """Get visitor statistics"""
@@ -103,7 +99,6 @@ def get_visitor_stats(visitor_id):
 
 
 @activity_points_bp.route('/api/activity-points/leaderboard', methods=['GET'], strict_slashes=False)
-@activity_points_bp.route('/vidgenerator/api/activity-points/leaderboard', methods=['GET'], strict_slashes=False)
 def get_leaderboard():
     """Get activity points leaderboard"""
     try:

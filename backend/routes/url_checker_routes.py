@@ -126,7 +126,6 @@ def find_urls_in_content(content: str, file_path: str = "") -> Set[str]:
     return urls
 
 @url_checker_bp.route('/api/url-checker/check-navigation', methods=['GET'])
-@url_checker_bp.route('/vidgenerator/api/url-checker/check-navigation', methods=['GET'])
 def check_navigation_links():
     """Check all navigation links"""
     try:
@@ -163,7 +162,6 @@ def check_navigation_links():
         }), 500
 
 @url_checker_bp.route('/api/url-checker/check-api', methods=['GET'])
-@url_checker_bp.route('/vidgenerator/api/url-checker/check-api', methods=['GET'])
 def check_api_endpoints():
     """Check all API endpoints"""
     try:
@@ -200,7 +198,6 @@ def check_api_endpoints():
         }), 500
 
 @url_checker_bp.route('/api/url-checker/check-url', methods=['POST'])
-@url_checker_bp.route('/vidgenerator/api/url-checker/check-url', methods=['POST'])
 def check_single_url():
     """Check a single URL"""
     try:
@@ -230,7 +227,6 @@ def check_single_url():
         }), 500
 
 @url_checker_bp.route('/api/url-checker/check-all', methods=['GET'])
-@url_checker_bp.route('/vidgenerator/api/url-checker/check-all', methods=['GET'])
 def check_all_urls():
     """Check all navigation links and API endpoints"""
     try:
@@ -273,7 +269,6 @@ def check_all_urls():
         }), 500
 
 @url_checker_bp.route('/api/url-checker/scan-files', methods=['POST'])
-@url_checker_bp.route('/vidgenerator/api/url-checker/scan-files', methods=['POST'])
 def scan_files_for_urls():
     """Scan files for URLs (limited to safe directories)"""
     try:

@@ -12,7 +12,6 @@ task_planner_bp = Blueprint('task_planner', __name__)
 
 
 @task_planner_bp.route('/api/tasks/create', methods=['POST'])
-@task_planner_bp.route('/vidgenerator/api/tasks/create', methods=['POST'])
 def create_task():
     """Create a new task"""
     try:
@@ -43,7 +42,6 @@ def create_task():
 
 
 @task_planner_bp.route('/api/tasks/schedule', methods=['POST'])
-@task_planner_bp.route('/vidgenerator/api/tasks/schedule', methods=['POST'])
 def schedule_task():
     """Schedule a task"""
     try:
@@ -65,7 +63,6 @@ def schedule_task():
 
 
 @task_planner_bp.route('/api/tasks/start', methods=['POST'])
-@task_planner_bp.route('/vidgenerator/api/tasks/start', methods=['POST'])
 def start_task():
     """Start a task"""
     try:
@@ -82,7 +79,6 @@ def start_task():
 
 
 @task_planner_bp.route('/api/tasks/complete', methods=['POST'])
-@task_planner_bp.route('/vidgenerator/api/tasks/complete', methods=['POST'])
 def complete_task():
     """Complete a task"""
     try:
@@ -99,7 +95,6 @@ def complete_task():
 
 
 @task_planner_bp.route('/api/tasks/plan/<task_id>', methods=['GET'])
-@task_planner_bp.route('/vidgenerator/api/tasks/plan/<task_id>', methods=['GET'])
 def get_task_plan(task_id: str):
     """Get task plan with dependencies"""
     try:
@@ -110,7 +105,6 @@ def get_task_plan(task_id: str):
 
 
 @task_planner_bp.route('/api/tasks/schedule', methods=['GET'])
-@task_planner_bp.route('/vidgenerator/api/tasks/schedule', methods=['GET'])
 def get_schedule():
     """Get schedule for date range"""
     try:

@@ -55,7 +55,6 @@ def get_all_points():
         }), 500
 
 @unified_points_bp.route('/api/points/summary')
-@unified_points_bp.route('/vidgenerator/api/points/summary')
 def get_points_summary():
     """Get a summary of all points"""
     try:
@@ -75,7 +74,6 @@ def get_points_summary():
         }), 500
 
 @unified_points_bp.route('/api/points/batch', methods=['POST'])
-@unified_points_bp.route('/vidgenerator/api/points/batch', methods=['POST'])
 @rate_limit()
 def add_points_batch():
     """Add multiple points in a single batch operation"""
@@ -99,7 +97,6 @@ def add_points_batch():
         }), 500
 
 @unified_points_bp.route('/api/points/transfer', methods=['POST'])
-@unified_points_bp.route('/vidgenerator/api/points/transfer', methods=['POST'])
 @rate_limit()
 def transfer_points():
     """Transfer points from one user to another"""
@@ -129,7 +126,6 @@ def transfer_points():
         }), 500
 
 @unified_points_bp.route('/api/points/statistics', methods=['GET'])
-@unified_points_bp.route('/vidgenerator/api/points/statistics', methods=['GET'])
 @rate_limit()
 def get_point_statistics():
     """Get point statistics (alias for analytics/statistics)"""
@@ -170,7 +166,6 @@ def get_point_statistics():
         }), 200
 
 @unified_points_bp.route('/api/points/history/analytics', methods=['GET'])
-@unified_points_bp.route('/vidgenerator/api/points/history/analytics', methods=['GET'])
 @rate_limit()
 def get_point_history_analytics():
     """Get comprehensive point history analytics"""
@@ -213,7 +208,6 @@ def get_point_history_analytics():
         }), 200
 
 @unified_points_bp.route('/api/points/add', methods=['POST'])
-@unified_points_bp.route('/vidgenerator/api/points/add', methods=['POST'])
 @rate_limit()
 def add_points():
     """Add points to a user (enhanced with source and metadata)"""

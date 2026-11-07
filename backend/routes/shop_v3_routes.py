@@ -19,7 +19,6 @@ def get_user_id():
 
 
 @shop_v3_bp.route('/api/shop-v3/items')
-@shop_v3_bp.route('/vidgenerator/api/shop-v3/items')
 @rate_limit()
 def get_all_items():
     """Get all shop items"""
@@ -36,7 +35,6 @@ def get_all_items():
 
 
 @shop_v3_bp.route('/api/shop-v3/recommendations')
-@shop_v3_bp.route('/vidgenerator/api/shop-v3/recommendations')
 @rate_limit()
 def get_recommendations():
     """Get intelligent recommendations"""
@@ -54,7 +52,6 @@ def get_recommendations():
 
 
 @shop_v3_bp.route('/api/shop-v3/purchase', methods=['POST'])
-@shop_v3_bp.route('/vidgenerator/api/shop-v3/purchase', methods=['POST'])
 @rate_limit()
 def purchase_item():
     """Purchase item"""

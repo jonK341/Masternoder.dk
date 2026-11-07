@@ -11,7 +11,6 @@ enhanced_agent_bp = Blueprint('enhanced_agent', __name__)
 
 
 @enhanced_agent_bp.route('/api/agent/enhanced/create', methods=['POST'])
-@enhanced_agent_bp.route('/vidgenerator/api/agent/enhanced/create', methods=['POST'])
 @rate_limit()
 def create_enhanced_agent():
     """Create an enhanced game agent"""
@@ -36,7 +35,6 @@ def create_enhanced_agent():
 
 
 @enhanced_agent_bp.route('/api/agent/enhanced/<agent_id>/automated-gameplay', methods=['POST'])
-@enhanced_agent_bp.route('/vidgenerator/api/agent/enhanced/<agent_id>/automated-gameplay', methods=['POST'])
 @rate_limit()
 def automated_gameplay(agent_id: str):
     """Ability 1: Automated Gameplay"""
@@ -57,7 +55,6 @@ def automated_gameplay(agent_id: str):
 
 
 @enhanced_agent_bp.route('/api/agent/enhanced/<agent_id>/battle-automation', methods=['POST'])
-@enhanced_agent_bp.route('/vidgenerator/api/agent/enhanced/<agent_id>/battle-automation', methods=['POST'])
 @rate_limit()
 def battle_automation(agent_id: str):
     """Ability 2: Battle Automation"""
@@ -79,7 +76,6 @@ def battle_automation(agent_id: str):
 
 
 @enhanced_agent_bp.route('/api/agent/enhanced/<agent_id>/content-generation', methods=['POST'])
-@enhanced_agent_bp.route('/vidgenerator/api/agent/enhanced/<agent_id>/content-generation', methods=['POST'])
 @rate_limit()
 def content_generation(agent_id: str):
     """Ability 3: Content Generation"""
@@ -100,7 +96,6 @@ def content_generation(agent_id: str):
 
 
 @enhanced_agent_bp.route('/api/agent/enhanced/<agent_id>/stats', methods=['GET'])
-@enhanced_agent_bp.route('/vidgenerator/api/agent/enhanced/<agent_id>/stats', methods=['GET'])
 @rate_limit()
 def get_agent_stats(agent_id: str):
     """Get enhanced agent stats"""
@@ -117,7 +112,6 @@ def get_agent_stats(agent_id: str):
 
 
 @enhanced_agent_bp.route('/api/agent/enhanced/<agent_id>/reset', methods=['POST'])
-@enhanced_agent_bp.route('/vidgenerator/api/agent/enhanced/<agent_id>/reset', methods=['POST'])
 @rate_limit()
 def reset_agent_stats(agent_id: str):
     """Reset enhanced agent stats"""

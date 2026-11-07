@@ -16,7 +16,6 @@ import uuid
 battle_arena_gear_bp = Blueprint('battle_arena_gear', __name__)
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/definitions', methods=['GET'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/definitions', methods=['GET'])
 @rate_limit()
 def get_gear_definitions():
     """Get all gear definitions"""
@@ -51,7 +50,6 @@ def get_gear_definitions():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/definition/<gear_id>', methods=['GET'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/definition/<gear_id>', methods=['GET'])
 @rate_limit()
 def get_gear_definition(gear_id: str):
     """Get specific gear definition"""
@@ -76,7 +74,6 @@ def get_gear_definition(gear_id: str):
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/user/<user_id>', methods=['GET'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/user/<user_id>', methods=['GET'])
 @rate_limit()
 def get_user_gear(user_id: str):
     """Get user's equipped gear with calculated stats"""
@@ -111,7 +108,6 @@ def get_user_gear(user_id: str):
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/equip', methods=['POST'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/equip', methods=['POST'])
 @rate_limit()
 def equip_gear():
     """Equip gear to user"""
@@ -160,7 +156,6 @@ def equip_gear():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/unequip', methods=['POST'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/unequip', methods=['POST'])
 @rate_limit()
 def unequip_gear():
     """Unequip gear from user"""
@@ -209,7 +204,6 @@ def unequip_gear():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/inventory/<user_id>', methods=['GET'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/inventory/<user_id>', methods=['GET'])
 @rate_limit()
 def get_inventory(user_id: str):
     """Get user gear inventory"""
@@ -228,7 +222,6 @@ def get_inventory(user_id: str):
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/add', methods=['POST'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/add', methods=['POST'])
 @rate_limit()
 def add_gear():
     """Add gear to user inventory"""
@@ -271,7 +264,6 @@ def add_gear():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/calculate-stats', methods=['POST'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/calculate-stats', methods=['POST'])
 @rate_limit()
 def calculate_gear_stats():
     """Calculate gear stats using calculator and divisions"""
@@ -339,7 +331,6 @@ def calculate_gear_stats():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/divisions/<user_id>', methods=['GET'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/divisions/<user_id>', methods=['GET'])
 @rate_limit()
 def get_user_divisions(user_id: str):
     """Get user division data"""
@@ -358,7 +349,6 @@ def get_user_divisions(user_id: str):
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/generate', methods=['POST'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/generate', methods=['POST'])
 @rate_limit()
 def generate_gear():
     """Generate gear from user divisions using calculator"""
@@ -383,7 +373,6 @@ def generate_gear():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/points/<user_id>', methods=['GET'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/points/<user_id>', methods=['GET'])
 @rate_limit()
 def get_gear_points(user_id: str):
     """Get saved gear points for user"""
@@ -405,7 +394,6 @@ def get_gear_points(user_id: str):
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/agents/status', methods=['GET'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/agents/status', methods=['GET'])
 @rate_limit()
 def get_agents_status():
     """Get status of all battle arena agents"""
@@ -421,7 +409,6 @@ def get_agents_status():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/agents/recommend', methods=['POST'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/agents/recommend', methods=['POST'])
 @rate_limit()
 def recommend_gear():
     """Get gear recommendations from gear agent"""
@@ -450,7 +437,6 @@ def recommend_gear():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/agents/optimize', methods=['POST'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/agents/optimize', methods=['POST'])
 @rate_limit()
 def optimize_gear():
     """Optimize gear loadout using gear agent"""
@@ -478,7 +464,6 @@ def optimize_gear():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/agents/compare', methods=['POST'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/agents/compare', methods=['POST'])
 @rate_limit()
 def compare_gear():
     """Compare two pieces of gear using stats agent"""
@@ -508,7 +493,6 @@ def compare_gear():
 
 
 @battle_arena_gear_bp.route('/api/battle-arena-gear/events/history', methods=['GET'])
-@battle_arena_gear_bp.route('/vidgenerator/api/battle-arena-gear/events/history', methods=['GET'])
 @rate_limit()
 def get_event_history():
     """Get event history"""

@@ -35,7 +35,6 @@ battle_intelligence_bp = Blueprint('battle_intelligence_bp', __name__)
 print(f"[BattleIntelligenceRoutes] Module loaded, blueprint created: {battle_intelligence_bp.name}", flush=True)
 
 @battle_intelligence_bp.route('/api/battle/intelligence/test', methods=['GET'], strict_slashes=False)
-@battle_intelligence_bp.route('/vidgenerator/api/battle/intelligence/test', methods=['GET'], strict_slashes=False)
 def test_endpoint():
     """Simple test endpoint"""
     print("[BattleIntelligenceRoutes] test_endpoint called", flush=True)
@@ -50,7 +49,6 @@ def test_endpoint():
     }), 200
 
 @battle_intelligence_bp.route('/api/battle/calculator/win-probability', methods=['GET', 'POST'])
-@battle_intelligence_bp.route('/vidgenerator/api/battle/calculator/win-probability', methods=['GET', 'POST'])
 @rate_limit()
 def calculate_win_probability():
     """Calculate win probability for a battle"""
@@ -91,7 +89,6 @@ def calculate_win_probability():
         }), 500
 
 @battle_intelligence_bp.route('/api/battle/calculator/rewards', methods=['GET', 'POST'])
-@battle_intelligence_bp.route('/vidgenerator/api/battle/calculator/rewards', methods=['GET', 'POST'])
 @rate_limit()
 def calculate_battle_rewards():
     """Calculate point rewards for a battle"""
@@ -131,7 +128,6 @@ def calculate_battle_rewards():
         }), 500
 
 @battle_intelligence_bp.route('/api/battle/calculator/optimize-strategy', methods=['GET', 'POST'])
-@battle_intelligence_bp.route('/vidgenerator/api/battle/calculator/optimize-strategy', methods=['GET', 'POST'])
 @rate_limit()
 def optimize_battle_strategy():
     """Optimize battle strategy based on user history"""
@@ -171,7 +167,6 @@ def optimize_battle_strategy():
 
 
 @battle_intelligence_bp.route('/api/battle/intelligence/opponent/<opponent_id>', methods=['GET'])
-@battle_intelligence_bp.route('/vidgenerator/api/battle/intelligence/opponent/<opponent_id>', methods=['GET'])
 @rate_limit()
 def analyze_opponent(opponent_id):
     """Analyze opponent and provide intelligence"""
@@ -186,7 +181,6 @@ def analyze_opponent(opponent_id):
 
 
 @battle_intelligence_bp.route('/api/battle/intelligence/mode/<mode>', methods=['GET'], strict_slashes=False)
-@battle_intelligence_bp.route('/vidgenerator/api/battle/intelligence/mode/<mode>', methods=['GET'], strict_slashes=False)
 def get_mode_intelligence(mode):
     """Get intelligence for specific battle mode"""
     try:
@@ -210,7 +204,6 @@ def get_mode_intelligence(mode):
 
 
 @battle_intelligence_bp.route('/api/battle/intelligence/strategy', methods=['POST'])
-@battle_intelligence_bp.route('/vidgenerator/api/battle/intelligence/strategy', methods=['POST'])
 @rate_limit()
 def recommend_strategy():
     """Recommend optimal strategy"""
@@ -226,7 +219,6 @@ def recommend_strategy():
         return ErrorHandler.create_error_response(str(e), 500)
 
 @battle_intelligence_bp.route('/api/battle/intelligence/leaderboard', methods=['GET'])
-@battle_intelligence_bp.route('/vidgenerator/api/battle/intelligence/leaderboard', methods=['GET'])
 @rate_limit()
 def get_battle_leaderboard():
     """Get battle leaderboard"""
@@ -246,7 +238,6 @@ def get_battle_leaderboard():
         }), 500
 
 @battle_intelligence_bp.route('/api/battle/intelligence/recent-battles', methods=['GET'])
-@battle_intelligence_bp.route('/vidgenerator/api/battle/intelligence/recent-battles', methods=['GET'])
 @rate_limit()
 def get_recent_battles():
     """Get recent battles"""
@@ -265,7 +256,6 @@ def get_recent_battles():
         }), 500
 
 @battle_intelligence_bp.route('/api/battle/intelligence/statistics', methods=['GET'])
-@battle_intelligence_bp.route('/vidgenerator/api/battle/intelligence/statistics', methods=['GET'])
 @rate_limit()
 def get_battle_statistics():
     """Get battle statistics"""

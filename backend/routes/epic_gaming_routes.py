@@ -11,7 +11,6 @@ epic_gaming_bp = Blueprint('epic_gaming', __name__)
 
 
 @epic_gaming_bp.route('/api/game/epic/progress', methods=['GET'])
-@epic_gaming_bp.route('/vidgenerator/api/game/epic/progress', methods=['GET'])
 @rate_limit()
 def get_epic_progress():
     """Get user's epic gaming progress"""
@@ -25,8 +24,6 @@ def get_epic_progress():
 
 @epic_gaming_bp.route('/api/game/epic/track', methods=['POST'])
 @epic_gaming_bp.route('/api/game/epic/track-activity', methods=['POST'])
-@epic_gaming_bp.route('/vidgenerator/api/game/epic/track', methods=['POST'])
-@epic_gaming_bp.route('/vidgenerator/api/game/epic/track-activity', methods=['POST'])
 @rate_limit()
 def track_activity():
     """Track an activity and award XP"""
@@ -49,7 +46,6 @@ def track_activity():
 
 
 @epic_gaming_bp.route('/api/game/epic/timeline', methods=['GET'])
-@epic_gaming_bp.route('/vidgenerator/api/game/epic/timeline', methods=['GET'])
 @rate_limit()
 def get_timeline():
     """Get user's activity timeline"""
@@ -68,7 +64,6 @@ def get_timeline():
 
 
 @epic_gaming_bp.route('/api/game/epic/story', methods=['GET'])
-@epic_gaming_bp.route('/vidgenerator/api/game/epic/story', methods=['GET'])
 @rate_limit()
 def get_story():
     """Get story progress"""
@@ -84,7 +79,6 @@ def get_story():
 
 
 @epic_gaming_bp.route('/api/game/epic/level-info', methods=['GET'])
-@epic_gaming_bp.route('/vidgenerator/api/game/epic/level-info', methods=['GET'])
 @rate_limit()
 def get_level_info():
     """Get detailed level information"""

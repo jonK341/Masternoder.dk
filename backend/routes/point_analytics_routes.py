@@ -19,7 +19,6 @@ except ImportError:
 point_analytics_bp = Blueprint('point_analytics', __name__)
 
 @point_analytics_bp.route('/api/points/analytics/comprehensive', methods=['GET'])
-@point_analytics_bp.route('/vidgenerator/api/points/analytics/comprehensive', methods=['GET'])
 def get_comprehensive_analytics():
     """Get comprehensive point analytics"""
     try:
@@ -32,7 +31,6 @@ def get_comprehensive_analytics():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @point_analytics_bp.route('/api/points/analytics/point-type', methods=['GET'])
-@point_analytics_bp.route('/vidgenerator/api/points/analytics/point-type', methods=['GET'])
 def get_point_type_analytics():
     """Get analytics for a specific point type"""
     try:
@@ -49,7 +47,6 @@ def get_point_type_analytics():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @point_analytics_bp.route('/api/points/analytics/history', methods=['GET'])
-@point_analytics_bp.route('/vidgenerator/api/points/analytics/history', methods=['GET'])
 def get_point_history():
     """Get point history"""
     try:
@@ -68,8 +65,6 @@ def get_point_history():
 
 @point_analytics_bp.route('/api/points/statistics', methods=['GET'])
 @point_analytics_bp.route('/api/points/analytics/statistics', methods=['GET'])
-@point_analytics_bp.route('/vidgenerator/api/points/statistics', methods=['GET'])
-@point_analytics_bp.route('/vidgenerator/api/points/analytics/statistics', methods=['GET'])
 def get_point_statistics():
     """Get point statistics"""
     try:
@@ -83,7 +78,6 @@ def get_point_statistics():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @point_analytics_bp.route('/api/points/analytics/calculate', methods=['POST'])
-@point_analytics_bp.route('/vidgenerator/api/points/analytics/calculate', methods=['POST'])
 def calculate_points():
     """Calculate points with atomic precision"""
     try:
@@ -99,7 +93,6 @@ def calculate_points():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @point_analytics_bp.route('/api/points/analytics/calculate-bonuses', methods=['POST'])
-@point_analytics_bp.route('/vidgenerator/api/points/analytics/calculate-bonuses', methods=['POST'])
 def calculate_bonuses():
     """Calculate point bonuses"""
     try:
@@ -118,7 +111,6 @@ def calculate_bonuses():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @point_analytics_bp.route('/api/points/analytics/record-change', methods=['POST'])
-@point_analytics_bp.route('/vidgenerator/api/points/analytics/record-change', methods=['POST'])
 def record_point_change():
     """Record a point change in history"""
     try:

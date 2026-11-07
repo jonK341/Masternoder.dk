@@ -16,7 +16,6 @@ except ImportError:
 
 
 @production_debugger_bp.route('/api/debug/system/<system_name>', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/system/<system_name>', methods=['GET'])
 def debug_system(system_name):
     """Debug a specific system"""
     try:
@@ -40,7 +39,6 @@ def debug_system(system_name):
 
 
 @production_debugger_bp.route('/api/debug/route', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/route', methods=['GET'])
 def debug_route():
     """Debug a specific route"""
     try:
@@ -67,7 +65,6 @@ def debug_route():
 
 
 @production_debugger_bp.route('/api/debug/frontend', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/frontend', methods=['GET'])
 def debug_frontend():
     """Debug a frontend page"""
     try:
@@ -93,7 +90,6 @@ def debug_frontend():
 
 
 @production_debugger_bp.route('/api/debug/all-systems', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/all-systems', methods=['GET'])
 def debug_all_systems():
     """Debug all systems"""
     try:
@@ -118,7 +114,6 @@ def debug_all_systems():
 
 
 @production_debugger_bp.route('/api/debug/all-routes', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/all-routes', methods=['GET'])
 def debug_all_routes():
     """Debug all routes"""
     try:
@@ -143,7 +138,6 @@ def debug_all_routes():
 
 
 @production_debugger_bp.route('/api/debug/test-url', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/test-url', methods=['GET'])
 def test_url():
     """Test a URL endpoint"""
     try:
@@ -174,7 +168,6 @@ def test_url():
 
 
 @production_debugger_bp.route('/api/debug/test-all-routes', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/test-all-routes', methods=['GET'])
 def test_all_routes():
     """Test all registered routes"""
     try:
@@ -199,7 +192,6 @@ def test_all_routes():
 
 
 @production_debugger_bp.route('/api/debug/find-broken-urls', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/find-broken-urls', methods=['GET'])
 def find_broken_urls():
     """Find broken URLs from a list"""
     try:
@@ -234,7 +226,6 @@ def find_broken_urls():
 
 
 @production_debugger_bp.route('/api/debug/check-duplicates', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/check-duplicates', methods=['GET'])
 def check_duplicates():
     """Check for duplicate blueprint registrations"""
     try:
@@ -258,7 +249,6 @@ def check_duplicates():
 
 
 @production_debugger_bp.route('/api/debug/report', methods=['GET'])
-@production_debugger_bp.route('/vidgenerator/api/debug/report', methods=['GET'])
 def get_debug_report():
     """Get comprehensive debug report"""
     try:

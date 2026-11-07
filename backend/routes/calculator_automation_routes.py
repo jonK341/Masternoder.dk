@@ -11,7 +11,6 @@ calculator_automation_bp = Blueprint('calculator_automation', __name__)
 
 
 @calculator_automation_bp.route('/api/calculator-automation/start', methods=['POST'])
-@calculator_automation_bp.route('/vidgenerator/api/calculator-automation/start', methods=['POST'])
 @rate_limit()
 def start_automation():
     """Start calculator automation"""
@@ -25,7 +24,6 @@ def start_automation():
 
 
 @calculator_automation_bp.route('/api/calculator-automation/stop', methods=['POST'])
-@calculator_automation_bp.route('/vidgenerator/api/calculator-automation/stop', methods=['POST'])
 @rate_limit()
 def stop_automation():
     """Stop calculator automation"""
@@ -39,7 +37,6 @@ def stop_automation():
 
 
 @calculator_automation_bp.route('/api/calculator-automation/status')
-@calculator_automation_bp.route('/vidgenerator/api/calculator-automation/status')
 @rate_limit()
 def get_status():
     """Get automation status"""
@@ -56,7 +53,6 @@ def get_status():
 
 
 @calculator_automation_bp.route('/api/calculator-automation/calculate-now', methods=['POST'])
-@calculator_automation_bp.route('/vidgenerator/api/calculator-automation/calculate-now', methods=['POST'])
 @rate_limit()
 def calculate_now():
     """Trigger immediate calculation"""

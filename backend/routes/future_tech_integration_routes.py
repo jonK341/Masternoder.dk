@@ -12,7 +12,6 @@ import uuid
 future_tech_integration_bp = Blueprint('future_tech_integration', __name__)
 
 @future_tech_integration_bp.route('/api/future-tech/status', methods=['GET'])
-@future_tech_integration_bp.route('/vidgenerator/api/future-tech/status', methods=['GET'])
 @rate_limit()
 def get_integration_status():
     """Get integration status of all future tech and calculator systems"""
@@ -29,7 +28,6 @@ def get_integration_status():
 
 
 @future_tech_integration_bp.route('/api/future-tech/solve-equation', methods=['POST'])
-@future_tech_integration_bp.route('/vidgenerator/api/future-tech/solve-equation', methods=['POST'])
 @rate_limit()
 def solve_equation():
     """Solve equation using advanced intelligent calculator"""

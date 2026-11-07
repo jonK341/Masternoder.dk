@@ -17,7 +17,6 @@ game_bp = Blueprint('game', __name__)
 
 
 @game_bp.route('/static/<path:filename>')
-@game_bp.route('/vidgenerator/static/<path:filename>')
 def serve_static(filename):
     """Serve static files for game pages"""
     from flask import send_from_directory, current_app
@@ -27,7 +26,7 @@ def serve_static(filename):
         # Try multiple possible static file locations
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         static_paths = [
-            os.path.join(base_path, 'vidgenerator', 'static'),
+            os.path.join(base_path, 'static'),
             os.path.join(base_path, 'src', 'web', 'static'),
             os.path.join(base_path, 'backend', 'static'),
         ]
@@ -59,7 +58,7 @@ def battle_index():
     
     try:
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        battle_path = os.path.join(base_path, 'vidgenerator', 'battle')
+        battle_path = os.path.join(base_path, 'battle')
         index_file = os.path.join(battle_path, 'index.html')
         
         if os.path.exists(index_file):
@@ -81,7 +80,7 @@ def social_index():
     
     try:
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        social_path = os.path.join(base_path, 'vidgenerator', 'social')
+        social_path = os.path.join(base_path, 'social')
         index_file = os.path.join(social_path, 'index.html')
         
         if os.path.exists(index_file):
@@ -103,7 +102,7 @@ def shop_index():
     
     try:
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        shop_path = os.path.join(base_path, 'vidgenerator', 'shop')
+        shop_path = os.path.join(base_path, 'shop')
         index_file = os.path.join(shop_path, 'index.html')
         
         if os.path.exists(index_file):
@@ -144,10 +143,8 @@ def game_index():
     import os
     
     try:
-        # Priority 1: Serve from vidgenerator/game directory (production files)
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        vidgen_path = os.path.join(base_path, 'vidgenerator', 'game')
-        index_file = os.path.join(vidgen_path, 'index.html')
+        index_file = os.path.join(base_path, 'game', 'index.html')
         
         if os.path.exists(index_file):
             with open(index_file, 'r', encoding='utf-8') as f:
@@ -192,7 +189,7 @@ def game_index():
                 </div>
                 <div class="content">
                     <p>Game interface loading...</p>
-                    <p><a href="/vidgenerator">← Back to main page</a></p>
+                    <p><a href="/">← Back to main page</a></p>
                 </div>
             </div>
         </body>
@@ -340,7 +337,6 @@ def get_game_categories():
 
 
 @game_bp.route('/api/game/achievements')
-@game_bp.route('/vidgenerator/api/game/achievements')
 def get_achievements():
     """Get all achievements for current user"""
     try:
@@ -400,7 +396,6 @@ def get_milestones():
 
 
 @game_bp.route('/api/game/stats')
-@game_bp.route('/vidgenerator/api/game/stats')
 def get_game_stats():
     """Get comprehensive game statistics for a user"""
     try:
@@ -747,7 +742,6 @@ def get_xp_history():
 
 
 @game_bp.route('/api/game/rewards/claim', methods=['POST'])
-@game_bp.route('/vidgenerator/api/game/rewards/claim', methods=['POST'])
 def claim_game_reward():
     """Claim a game reward"""
     try:

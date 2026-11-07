@@ -42,7 +42,6 @@ def test_endpoint_with_client(path, method='GET', data=None):
         }
 
 @api_debugger_bp.route('/api/debugger', methods=['GET'], strict_slashes=False)
-@api_debugger_bp.route('/vidgenerator/api/debugger', methods=['GET'], strict_slashes=False)
 def api_debugger_page():
     """API Debugger HTML page"""
     try:
@@ -133,7 +132,6 @@ def api_debugger_page():
         """, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @api_debugger_bp.route('/api/debugger/test', methods=['GET', 'POST'], strict_slashes=False)
-@api_debugger_bp.route('/vidgenerator/api/debugger/test', methods=['GET', 'POST'], strict_slashes=False)
 def test_api_endpoints():
     """Test all API endpoints and return results"""
     from flask import current_app
@@ -201,7 +199,6 @@ def test_api_endpoints():
     })
 
 @api_debugger_bp.route('/api/debugger/fix-links', methods=['GET'], strict_slashes=False)
-@api_debugger_bp.route('/vidgenerator/api/debugger/fix-links', methods=['GET'], strict_slashes=False)
 def get_fixed_links():
     """Return corrected quick links with proper HTTP methods"""
     return jsonify({

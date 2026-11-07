@@ -173,10 +173,7 @@ def build_catalog(rules) -> dict:
 
 def _page_path() -> str:
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    primary = os.path.join(root, "api-lab", "index.html")
-    if os.path.isfile(primary):
-        return primary
-    return os.path.join(root, "vidgenerator", "api-lab", "index.html")
+    return os.path.join(root, "api-lab", "index.html")
 
 
 def _serve_page():

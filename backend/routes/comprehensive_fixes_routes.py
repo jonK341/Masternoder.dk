@@ -41,7 +41,6 @@ comprehensive_fixes_bp = Blueprint('comprehensive_fixes', __name__, url_prefix='
 
 # Fix: Battle status endpoint
 @comprehensive_fixes_bp.route('/api/battle/status', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/status', methods=['GET'])
 @rate_limit()
 def battle_status():
     """Get battle system status"""
@@ -60,54 +59,44 @@ def battle_status():
 
 # Fix: Common Battle endpoints (avoid 404s from audit/frontends)
 @comprehensive_fixes_bp.route('/api/battle/stats', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/stats', methods=['GET'])
 def battle_stats_alias():
     return jsonify({'success': True, 'stats': {'wins': 0, 'losses': 0, 'total_battles': 0, 'win_rate': 0.0}}), 200
 
 @comprehensive_fixes_bp.route('/api/battle/leaderboard', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/leaderboard', methods=['GET'])
 def battle_leaderboard_alias():
     return jsonify({'success': True, 'leaderboard': []}), 200
 
 @comprehensive_fixes_bp.route('/api/battle/history', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/history', methods=['GET'])
 def battle_history_alias():
     return jsonify({'success': True, 'history': []}), 200
 
 @comprehensive_fixes_bp.route('/api/battle/clans', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/clans', methods=['GET'])
 def battle_clans_alias():
     return jsonify({'success': True, 'clans': []}), 200
 
 @comprehensive_fixes_bp.route('/api/battle/fantasy/tournaments', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/fantasy/tournaments', methods=['GET'])
 def fantasy_tournaments_alias():
     return jsonify({'success': True, 'tournaments': []}), 200
 
 @comprehensive_fixes_bp.route('/api/battle/fantasy/history', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/fantasy/history', methods=['GET'])
 def fantasy_history_alias():
     return jsonify({'success': True, 'history': []}), 200
 
 @comprehensive_fixes_bp.route('/api/battle/fantasy/leaderboard', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/fantasy/leaderboard', methods=['GET'])
 def fantasy_leaderboard_alias():
     return jsonify({'success': True, 'leaderboard': []}), 200
 
 @comprehensive_fixes_bp.route('/api/battle/intelligence/statistics', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/intelligence/statistics', methods=['GET'])
 def battle_intelligence_statistics_alias():
     return jsonify({'success': True, 'statistics': {}}), 200
 
 @comprehensive_fixes_bp.route('/api/battle/tech-tree/all', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/battle/tech-tree/all', methods=['GET'])
 def battle_tech_tree_all_alias():
     return jsonify({'success': True, 'tech_tree': {}}), 200
 
 
 # Fix: AI generate endpoints (avoid audit 404/500; return docs on GET)
 @comprehensive_fixes_bp.route('/api/ai-video/generate', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/ai-video/generate', methods=['GET'])
 def ai_video_generate_get_alias():
     return jsonify({
         'success': False,
@@ -118,7 +107,6 @@ def ai_video_generate_get_alias():
     }), 200
 
 @comprehensive_fixes_bp.route('/api/ai-clips/generate', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/ai-clips/generate', methods=['GET'])
 def ai_clips_generate_get_alias():
     return jsonify({
         'success': False,
@@ -131,7 +119,6 @@ def ai_clips_generate_get_alias():
 
 # Fix: Epic Gaming track activity endpoint
 @comprehensive_fixes_bp.route('/api/game/epic/track-activity', methods=['POST'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/game/epic/track-activity', methods=['POST'])
 @rate_limit()
 def track_epic_activity():
     """Track activity for Epic Gaming Experience"""
@@ -175,7 +162,6 @@ def track_epic_activity():
 
 # Fix: Unified stats endpoint
 @comprehensive_fixes_bp.route('/api/unified/stats', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/unified/stats', methods=['GET'])
 @rate_limit()
 def get_unified_stats_fixed():
     """Get unified stats for generator and battle"""
@@ -214,7 +200,6 @@ def get_unified_stats_fixed():
 
 # Fix: Unified status endpoint
 @comprehensive_fixes_bp.route('/api/unified/status', methods=['GET'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/unified/status', methods=['GET'])
 def get_unified_status_fixed():
     """Get status of all integrated services"""
     try:
@@ -247,7 +232,6 @@ def get_unified_status_fixed():
 
 # Fix: Unified generate video endpoint
 @comprehensive_fixes_bp.route('/api/unified/generate-video', methods=['GET', 'POST'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/unified/generate-video', methods=['GET', 'POST'])
 @rate_limit()
 def generate_video_unified_fixed():
     """Generate video with Epic Gaming tracking"""
@@ -316,7 +300,6 @@ def generate_video_unified_fixed():
 
 # Fix: Unified create battle endpoint
 @comprehensive_fixes_bp.route('/api/unified/create-battle', methods=['GET', 'POST'])
-@comprehensive_fixes_bp.route('/vidgenerator/api/unified/create-battle', methods=['GET', 'POST'])
 @rate_limit()
 def create_battle_unified_fixed():
     """Create quick battle with Epic Gaming tracking"""
@@ -436,7 +419,6 @@ def generator_create_fixed():
 
 # Fix: Quick battle complete endpoint (override to return 200) - MUST be registered FIRST
 @comprehensive_fixes_bp.route('/api/quick-battle/complete', methods=['GET', 'POST', 'OPTIONS'], strict_slashes=False)
-@comprehensive_fixes_bp.route('/vidgenerator/api/quick-battle/complete', methods=['GET', 'POST', 'OPTIONS'], strict_slashes=False)
 @rate_limit()
 def quick_battle_complete_fixed():
     """Complete quick battle - always returns 200"""

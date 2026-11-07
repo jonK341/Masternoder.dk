@@ -23,7 +23,6 @@ def get_user_id():
 
 
 @knowledge_intelligence_bp.route('/api/178-systems/knowledge/<system_id>')
-@knowledge_intelligence_bp.route('/vidgenerator/api/178-systems/knowledge/<system_id>')
 @rate_limit()
 def get_system_knowledge(system_id: str):
     """Get knowledge for a system"""
@@ -37,7 +36,6 @@ def get_system_knowledge(system_id: str):
 
 
 @knowledge_intelligence_bp.route('/api/178-systems/intelligence/<system_id>')
-@knowledge_intelligence_bp.route('/vidgenerator/api/178-systems/intelligence/<system_id>')
 @rate_limit()
 def get_system_intelligence(system_id: str):
     """Get intelligence for a user's system"""
@@ -52,7 +50,6 @@ def get_system_intelligence(system_id: str):
 
 
 @knowledge_intelligence_bp.route('/api/178-systems/intelligence/<system_id>', methods=['POST'])
-@knowledge_intelligence_bp.route('/vidgenerator/api/178-systems/intelligence/<system_id>', methods=['POST'])
 @rate_limit()
 def update_intelligence(system_id: str):
     """Update intelligence data"""
@@ -71,7 +68,6 @@ def update_intelligence(system_id: str):
 
 
 @knowledge_intelligence_bp.route('/api/178-systems/knowledge/all')
-@knowledge_intelligence_bp.route('/vidgenerator/api/178-systems/knowledge/all')
 @rate_limit()
 def get_all_knowledge():
     """Get knowledge for all systems"""

@@ -70,7 +70,6 @@ def _get_api_lab_page_path():
     base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     candidates = [
         os.path.join(base, 'api-lab', 'index.html'),
-        os.path.join(base, 'vidgenerator', 'api-lab', 'index.html'),
     ]
     for p in candidates:
         if os.path.exists(p):

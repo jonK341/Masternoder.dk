@@ -19,7 +19,6 @@ aggregator_bp = Blueprint('aggregator', __name__)
 
 # Video Aggregator Routes
 @aggregator_bp.route('/api/aggregators/videos/all', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/videos/all', methods=['GET'])
 @rate_limit()
 def aggregate_all_videos():
     """Aggregate all videos and clips"""
@@ -41,7 +40,6 @@ def aggregate_all_videos():
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/videos/user/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/videos/user/<user_id>', methods=['GET'])
 @rate_limit()
 def aggregate_user_videos(user_id):
     """Aggregate videos by user"""
@@ -60,7 +58,6 @@ def aggregate_user_videos(user_id):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/videos/theme/<theme>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/videos/theme/<theme>', methods=['GET'])
 @rate_limit()
 def aggregate_theme_videos(theme):
     """Aggregate videos by theme"""
@@ -79,7 +76,6 @@ def aggregate_theme_videos(theme):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/videos/provider/<provider>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/videos/provider/<provider>', methods=['GET'])
 @rate_limit()
 def aggregate_provider_videos(provider):
     """Aggregate videos by provider"""
@@ -98,7 +94,6 @@ def aggregate_provider_videos(provider):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/videos/stats', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/videos/stats', methods=['GET'])
 @rate_limit()
 def get_video_statistics():
     """Get aggregated video statistics"""
@@ -111,7 +106,6 @@ def get_video_statistics():
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/videos/search', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/videos/search', methods=['GET'])
 @rate_limit()
 def search_videos():
     """Search videos"""
@@ -132,7 +126,6 @@ def search_videos():
 
 # Social Aggregator Routes
 @aggregator_bp.route('/api/aggregators/social/feed/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/social/feed/<user_id>', methods=['GET'])
 @rate_limit()
 def aggregate_social_feed(user_id):
     """Aggregate social feed for user"""
@@ -148,7 +141,6 @@ def aggregate_social_feed(user_id):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/social/activity/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/social/activity/<user_id>', methods=['GET'])
 @rate_limit()
 def aggregate_social_activity(user_id):
     """Aggregate user activity"""
@@ -163,7 +155,6 @@ def aggregate_social_activity(user_id):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/social/trending', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/social/trending', methods=['GET'])
 @rate_limit()
 def aggregate_trending():
     """Get trending posts"""
@@ -178,7 +169,6 @@ def aggregate_trending():
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/social/popular', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/social/popular', methods=['GET'])
 @rate_limit()
 def aggregate_popular():
     """Get popular posts"""
@@ -193,7 +183,6 @@ def aggregate_popular():
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/social/engagement/<post_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/social/engagement/<post_id>', methods=['GET'])
 @rate_limit()
 def aggregate_engagement(post_id):
     """Get post engagement metrics"""
@@ -209,7 +198,6 @@ def aggregate_engagement(post_id):
 
 # Stats Aggregator Routes
 @aggregator_bp.route('/api/aggregators/stats/user/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/stats/user/<user_id>', methods=['GET'])
 @rate_limit()
 def aggregate_user_stats(user_id):
     """Aggregate all user stats"""
@@ -224,7 +212,6 @@ def aggregate_user_stats(user_id):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/stats/progress/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/stats/progress/<user_id>', methods=['GET'])
 @rate_limit()
 def aggregate_progress(user_id):
     """Aggregate user progress"""
@@ -239,7 +226,6 @@ def aggregate_progress(user_id):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/stats/achievements/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/stats/achievements/<user_id>', methods=['GET'])
 @rate_limit()
 def aggregate_achievements(user_id):
     """Aggregate user achievements"""
@@ -254,7 +240,6 @@ def aggregate_achievements(user_id):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/stats/performance/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/stats/performance/<user_id>', methods=['GET'])
 @rate_limit()
 def aggregate_performance(user_id):
     """Aggregate user performance"""
@@ -269,7 +254,6 @@ def aggregate_performance(user_id):
         return error_response, status_code
 
 @aggregator_bp.route('/api/aggregators/stats/history/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/stats/history/<user_id>', methods=['GET'])
 @rate_limit()
 def aggregate_history(user_id):
     """Aggregate user history"""
@@ -286,7 +270,6 @@ def aggregate_history(user_id):
 
 # Unified Aggregator Routes
 @aggregator_bp.route('/api/aggregators/unified/dashboard/<user_id>', methods=['GET'])
-@aggregator_bp.route('/vidgenerator/api/aggregators/unified/dashboard/<user_id>', methods=['GET'])
 @rate_limit()
 def unified_dashboard(user_id):
     """Unified dashboard with all aggregated data"""

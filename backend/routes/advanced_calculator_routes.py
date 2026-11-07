@@ -21,7 +21,6 @@ def get_user_id():
 
 
 @advanced_calculator_bp.route('/api/advanced-calculator/calculate', methods=['POST'])
-@advanced_calculator_bp.route('/vidgenerator/api/advanced-calculator/calculate', methods=['POST'])
 @rate_limit()
 def calculate_with_intelligence():
     """Calculate points with advanced intelligence"""
@@ -42,7 +41,6 @@ def calculate_with_intelligence():
 
 
 @advanced_calculator_bp.route('/api/advanced-calculator/detect-loss/<user_id>')
-@advanced_calculator_bp.route('/vidgenerator/api/advanced-calculator/detect-loss/<user_id>')
 @rate_limit()
 def detect_point_loss(user_id: str):
     """Detect point loss for a user"""
@@ -60,7 +58,6 @@ def detect_point_loss(user_id: str):
 
 
 @advanced_calculator_bp.route('/api/advanced-calculator/repair-all/<user_id>')
-@advanced_calculator_bp.route('/vidgenerator/api/advanced-calculator/repair-all/<user_id>')
 @rate_limit()
 def repair_all_systems(user_id: str):
     """Comprehensive repair of all systems"""
@@ -77,7 +74,6 @@ def repair_all_systems(user_id: str):
 
 
 @advanced_calculator_bp.route('/api/advanced-calculator/comprehensive-repair/<user_id>')
-@advanced_calculator_bp.route('/vidgenerator/api/advanced-calculator/comprehensive-repair/<user_id>')
 @rate_limit()
 def comprehensive_repair(user_id: str):
     """Ultimate comprehensive repair"""
@@ -94,7 +90,6 @@ def comprehensive_repair(user_id: str):
 
 
 @advanced_calculator_bp.route('/api/advanced-calculator/predict/<user_id>')
-@advanced_calculator_bp.route('/vidgenerator/api/advanced-calculator/predict/<user_id>')
 @rate_limit()
 def predict_future(user_id: str):
     """Predict future points"""
@@ -112,7 +107,6 @@ def predict_future(user_id: str):
 
 
 @advanced_calculator_bp.route('/api/advanced-calculator/analyze-patterns/<user_id>')
-@advanced_calculator_bp.route('/vidgenerator/api/advanced-calculator/analyze-patterns/<user_id>')
 @rate_limit()
 def analyze_patterns(user_id: str):
     """Analyze user patterns"""
@@ -129,7 +123,6 @@ def analyze_patterns(user_id: str):
 
 
 @advanced_calculator_bp.route('/api/advanced-calculator/test')
-@advanced_calculator_bp.route('/vidgenerator/api/advanced-calculator/test')
 @rate_limit()
 def test_endpoint():
     """Test endpoint"""

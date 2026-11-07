@@ -13,7 +13,6 @@ battle_replay_bp = Blueprint('battle_replay', __name__, url_prefix='')
 
 
 @battle_replay_bp.route('/api/battle/replay/record', methods=['POST'])
-@battle_replay_bp.route('/vidgenerator/api/battle/replay/record', methods=['POST'])
 @rate_limit(endpoint='/api/battle/replay/record')
 def record_battle():
     """Record a battle for replay"""
@@ -38,7 +37,6 @@ def record_battle():
 
 
 @battle_replay_bp.route('/api/battle/replay/<replay_id>', methods=['GET'])
-@battle_replay_bp.route('/vidgenerator/api/battle/replay/<replay_id>', methods=['GET'])
 @rate_limit(endpoint='/api/battle/replay')
 def get_replay(replay_id: str):
     """Get replay data"""
@@ -61,7 +59,6 @@ def get_replay(replay_id: str):
 
 
 @battle_replay_bp.route('/api/battle/replay/user/<user_id>', methods=['GET'])
-@battle_replay_bp.route('/vidgenerator/api/battle/replay/user/<user_id>', methods=['GET'])
 @rate_limit(endpoint='/api/battle/replay/user')
 def get_user_replays(user_id: str):
     """Get all replays for a user"""
@@ -81,7 +78,6 @@ def get_user_replays(user_id: str):
 
 
 @battle_replay_bp.route('/api/battle/replay/share/<replay_id>', methods=['POST'])
-@battle_replay_bp.route('/vidgenerator/api/battle/replay/share/<replay_id>', methods=['POST'])
 @rate_limit(endpoint='/api/battle/replay/share')
 def share_replay(replay_id: str):
     """Generate shareable link for replay"""
@@ -98,7 +94,6 @@ def share_replay(replay_id: str):
 
 
 @battle_replay_bp.route('/api/battle/replay/<replay_id>', methods=['DELETE'])
-@battle_replay_bp.route('/vidgenerator/api/battle/replay/<replay_id>', methods=['DELETE'])
 @rate_limit(endpoint='/api/battle/replay/delete')
 def delete_replay(replay_id: str):
     """Delete a replay"""

@@ -17,7 +17,7 @@ comprehensive_vidgenerator_bp = Blueprint('comprehensive_vidgenerator', __name__
 # ============================================================================
 
 @comprehensive_vidgenerator_bp.route('/audit/run', methods=['GET'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/audit/run', methods=['GET'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/audit/run', methods=['GET'])
 def run_comprehensive_audit():
     """Run comprehensive audit of all vidgenerator pages"""
     try:
@@ -47,7 +47,7 @@ def run_comprehensive_audit():
 # ============================================================================
 
 @comprehensive_vidgenerator_bp.route('/trigger/register', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/trigger/register', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/trigger/register', methods=['POST'])
 def register_trigger():
     """Register a trigger that waits for expected pointers"""
     try:
@@ -80,7 +80,7 @@ def register_trigger():
 
 
 @comprehensive_vidgenerator_bp.route('/trigger/pointer', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/trigger/pointer', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/trigger/pointer', methods=['POST'])
 def catch_pointer():
     """Catch a pointer and check for matching triggers"""
     try:
@@ -109,7 +109,7 @@ def catch_pointer():
 
 
 @comprehensive_vidgenerator_bp.route('/trigger/status/<trigger_id>', methods=['GET'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/trigger/status/<trigger_id>', methods=['GET'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/trigger/status/<trigger_id>', methods=['GET'])
 def get_trigger_status(trigger_id: str):
     """Get status of a trigger"""
     try:
@@ -133,7 +133,7 @@ def get_trigger_status(trigger_id: str):
 
 
 @comprehensive_vidgenerator_bp.route('/trigger/pending', methods=['GET'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/trigger/pending', methods=['GET'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/trigger/pending', methods=['GET'])
 def list_pending_triggers():
     """List all pending triggers"""
     try:
@@ -157,7 +157,7 @@ def list_pending_triggers():
 # ============================================================================
 
 @comprehensive_vidgenerator_bp.route('/points/energy/award', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/points/energy/award', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/points/energy/award', methods=['POST'])
 def award_energy_points():
     """Award energy points through unified system"""
     try:
@@ -193,7 +193,7 @@ def award_energy_points():
 
 
 @comprehensive_vidgenerator_bp.route('/points/function/award', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/points/function/award', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/points/function/award', methods=['POST'])
 def award_function_points():
     """Award function points through unified system"""
     try:
@@ -226,7 +226,7 @@ def award_function_points():
 
 
 @comprehensive_vidgenerator_bp.route('/points/unified/get', methods=['GET'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/points/unified/get', methods=['GET'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/points/unified/get', methods=['GET'])
 def get_unified_points():
     """Get all points including energy and functions"""
     try:
@@ -256,7 +256,7 @@ def get_unified_points():
 # ============================================================================
 
 @comprehensive_vidgenerator_bp.route('/battle/trigger', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/battle/trigger', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/battle/trigger', methods=['POST'])
 def trigger_battle():
     """Trigger-based battle instead of instant"""
     try:
@@ -294,7 +294,7 @@ def trigger_battle():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/battle/agent/strategy', methods=['GET', 'POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/battle/agent/strategy', methods=['GET', 'POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/battle/agent/strategy', methods=['GET', 'POST'])
 def get_agent_battle_strategy():
     """Get battle strategy recommendations from agent"""
     try:
@@ -330,7 +330,7 @@ def get_agent_battle_strategy():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/battle/agent/recommendations', methods=['GET', 'POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/battle/agent/recommendations', methods=['GET', 'POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/battle/agent/recommendations', methods=['GET', 'POST'])
 def get_agent_battle_recommendations():
     """Get comprehensive battle recommendations from agent"""
     try:
@@ -360,7 +360,7 @@ def get_agent_battle_recommendations():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/battle/agent/analyze', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/battle/agent/analyze', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/battle/agent/analyze', methods=['POST'])
 def analyze_battle_with_agent():
     """Analyze a battle using agent intelligence"""
     try:
@@ -388,7 +388,7 @@ def analyze_battle_with_agent():
 
 
 @comprehensive_vidgenerator_bp.route('/hunter/agent/track-xp', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/hunter/agent/track-xp', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/hunter/agent/track-xp', methods=['POST'])
 def track_hunter_agent_xp():
     """Track XP for hunter game activities with agent integration"""
     try:
@@ -418,7 +418,7 @@ def track_hunter_agent_xp():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/hunter/agent/recommendations', methods=['GET', 'POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/hunter/agent/recommendations', methods=['GET', 'POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/hunter/agent/recommendations', methods=['GET', 'POST'])
 def get_hunter_agent_recommendations():
     """Get agent recommendations for hunter game activities"""
     try:
@@ -447,7 +447,7 @@ def get_hunter_agent_recommendations():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/hunter/agent/apply-bonuses', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/hunter/agent/apply-bonuses', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/hunter/agent/apply-bonuses', methods=['POST'])
 def apply_hunter_agent_bonuses():
     """Apply agent skill bonuses to XP calculation"""
     try:
@@ -473,7 +473,7 @@ def apply_hunter_agent_bonuses():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/hunter/calculator/xp-requirements', methods=['GET', 'POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/hunter/calculator/xp-requirements', methods=['GET', 'POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/hunter/calculator/xp-requirements', methods=['GET', 'POST'])
 def calculate_hunter_xp_requirements():
     """Calculate XP requirements to reach a target level"""
     try:
@@ -500,7 +500,7 @@ def calculate_hunter_xp_requirements():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/hunter/calculator/level-progression', methods=['GET', 'POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/hunter/calculator/level-progression', methods=['GET', 'POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/hunter/calculator/level-progression', methods=['GET', 'POST'])
 def calculate_hunter_level_progression():
     """Calculate level progression predictions"""
     try:
@@ -527,7 +527,7 @@ def calculate_hunter_level_progression():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/hunter/calculator/rewards', methods=['GET', 'POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/hunter/calculator/rewards', methods=['GET', 'POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/hunter/calculator/rewards', methods=['GET', 'POST'])
 def calculate_hunter_rewards():
     """Calculate rewards for a level or range of levels"""
     try:
@@ -552,7 +552,7 @@ def calculate_hunter_rewards():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/hunter/calculator/optimal-plan', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/hunter/calculator/optimal-plan', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/hunter/calculator/optimal-plan', methods=['POST'])
 def calculate_hunter_optimal_plan():
     """Calculate optimal activity plan to reach target level"""
     try:
@@ -574,7 +574,7 @@ def calculate_hunter_optimal_plan():
         }), 500
 
 @comprehensive_vidgenerator_bp.route('/generator/trigger', methods=['POST'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/generator/trigger', methods=['POST'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/generator/trigger', methods=['POST'])
 def trigger_generation():
     """Trigger-based generation instead of instant"""
     try:
@@ -623,7 +623,7 @@ def trigger_generation():
 # ============================================================================
 
 @comprehensive_vidgenerator_bp.route('/pages/list', methods=['GET'])
-@comprehensive_vidgenerator_bp.route('/vidgenerator/api/vidgenerator/pages/list', methods=['GET'])
+@comprehensive_vidgenerator_bp.route('/api/vidgenerator/pages/list', methods=['GET'])
 def list_all_pages():
     """List all pages in vidgenerator"""
     try:

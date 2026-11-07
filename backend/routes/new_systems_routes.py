@@ -21,7 +21,6 @@ new_systems_bp = Blueprint('new_systems', __name__)
 
 # Skill Reward Routes
 @new_systems_bp.route('/api/skill-reward/complete', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/skill-reward/complete', methods=['POST'])
 def record_completion():
     """Record completion and award skill"""
     try:
@@ -41,7 +40,6 @@ def record_completion():
 
 
 @new_systems_bp.route('/api/skill-reward/completions', methods=['GET'])
-@new_systems_bp.route('/vidgenerator/api/skill-reward/completions', methods=['GET'])
 def get_completions():
     """Get user completions"""
     try:
@@ -57,7 +55,6 @@ def get_completions():
 
 # Calendar Planner Routes
 @new_systems_bp.route('/api/calendar/plan/create', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/calendar/plan/create', methods=['POST'])
 def create_plan():
     """Create calendar plan"""
     try:
@@ -82,7 +79,6 @@ def create_plan():
 
 
 @new_systems_bp.route('/api/calendar/task/schedule', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/calendar/task/schedule', methods=['POST'])
 def schedule_task():
     """Schedule calendar task"""
     try:
@@ -101,7 +97,6 @@ def schedule_task():
 
 
 @new_systems_bp.route('/api/calendar/task/complete', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/calendar/task/complete', methods=['POST'])
 def complete_scheduled_task():
     """Complete scheduled task"""
     try:
@@ -126,7 +121,6 @@ def complete_scheduled_task():
 
 
 @new_systems_bp.route('/api/calendar/events', methods=['GET'])
-@new_systems_bp.route('/vidgenerator/api/calendar/events', methods=['GET'])
 def get_calendar_events():
     """Get calendar events"""
     try:
@@ -149,7 +143,6 @@ def get_calendar_events():
 
 # Groups Routes
 @new_systems_bp.route('/api/groups/create', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/groups/create', methods=['POST'])
 def create_group():
     """Create group"""
     try:
@@ -174,7 +167,6 @@ def create_group():
 
 
 @new_systems_bp.route('/api/groups/join', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/groups/join', methods=['POST'])
 def join_group():
     """Join group"""
     try:
@@ -198,7 +190,6 @@ def join_group():
 
 
 @new_systems_bp.route('/api/groups/user', methods=['GET'])
-@new_systems_bp.route('/vidgenerator/api/groups/user', methods=['GET'])
 def get_user_groups():
     """Get user groups"""
     try:
@@ -214,7 +205,6 @@ def get_user_groups():
 
 # Cognitive Behavior Scanner Routes
 @new_systems_bp.route('/api/scanner/scan', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/scanner/scan', methods=['POST'])
 def scan_user_behavior():
     """Scan user behavior"""
     try:
@@ -232,7 +222,6 @@ def scan_user_behavior():
 
 
 @new_systems_bp.route('/api/scanner/optimize', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/scanner/optimize', methods=['POST'])
 def apply_optimization():
     """Apply optimization"""
     try:
@@ -256,7 +245,6 @@ def apply_optimization():
 
 
 @new_systems_bp.route('/api/scanner/efficiency', methods=['GET'])
-@new_systems_bp.route('/vidgenerator/api/scanner/efficiency', methods=['GET'])
 def get_efficiency_report():
     """Get efficiency report"""
     try:
@@ -272,7 +260,6 @@ def get_efficiency_report():
 
 # Decision Trees Routes
 @new_systems_bp.route('/api/decision-trees/tech', methods=['GET'])
-@new_systems_bp.route('/vidgenerator/api/decision-trees/tech', methods=['GET'])
 def build_tech_decision_tree():
     """Build tech decision tree"""
     try:
@@ -287,7 +274,6 @@ def build_tech_decision_tree():
 
 
 @new_systems_bp.route('/api/decision-trees/recommendation', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/decision-trees/recommendation', methods=['POST'])
 def get_decision_recommendation():
     """Get decision recommendation"""
     try:
@@ -306,7 +292,6 @@ def get_decision_recommendation():
 
 # Todos and Pause Routes
 @new_systems_bp.route('/api/todos/create', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/todos/create', methods=['POST'])
 def create_todo():
     """Create todo"""
     try:
@@ -324,7 +309,6 @@ def create_todo():
 
 
 @new_systems_bp.route('/api/todos/pause', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/todos/pause', methods=['POST'])
 def pause_todo():
     """Pause todo"""
     try:
@@ -349,7 +333,6 @@ def pause_todo():
 
 
 @new_systems_bp.route('/api/todos/resume', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/todos/resume', methods=['POST'])
 def resume_todo():
     """Resume todo"""
     try:
@@ -373,7 +356,6 @@ def resume_todo():
 
 
 @new_systems_bp.route('/api/todos/complete', methods=['POST'])
-@new_systems_bp.route('/vidgenerator/api/todos/complete', methods=['POST'])
 def complete_todo():
     """Complete todo"""
     try:
@@ -397,7 +379,6 @@ def complete_todo():
 
 
 @new_systems_bp.route('/api/todos/list', methods=['GET'])
-@new_systems_bp.route('/vidgenerator/api/todos/list', methods=['GET'])
 def get_todos():
     """Get user todos"""
     try:

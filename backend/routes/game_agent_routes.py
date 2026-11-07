@@ -11,7 +11,6 @@ import uuid
 game_agent_bp = Blueprint('game_agent', __name__, url_prefix='')
 
 @game_agent_bp.route('/api/agent/create', methods=['POST'])
-@game_agent_bp.route('/vidgenerator/api/agent/create', methods=['POST'])
 @rate_limit()
 def create_agent():
     """Create a new game agent instance"""
@@ -35,7 +34,6 @@ def create_agent():
         }), 200
 
 @game_agent_bp.route('/api/agent/play', methods=['POST'])
-@game_agent_bp.route('/vidgenerator/api/agent/play', methods=['POST'])
 @rate_limit()
 def play_game():
     """Start automated game session"""
@@ -66,7 +64,6 @@ def play_game():
         }), 200
 
 @game_agent_bp.route('/api/agent/battle', methods=['POST'])
-@game_agent_bp.route('/vidgenerator/api/agent/battle', methods=['POST'])
 @rate_limit()
 def create_battle():
     """Create and execute a battle"""
@@ -106,7 +103,6 @@ def create_battle():
         }), 200
 
 @game_agent_bp.route('/api/agent/test-url', methods=['POST'])
-@game_agent_bp.route('/vidgenerator/api/agent/test-url', methods=['POST'])
 @rate_limit()
 def test_url():
     """Test a URL/endpoint"""
@@ -136,7 +132,6 @@ def test_url():
         }), 200
 
 @game_agent_bp.route('/api/agent/test-urls', methods=['POST'])
-@game_agent_bp.route('/vidgenerator/api/agent/test-urls', methods=['POST'])
 @rate_limit()
 def test_urls():
     """Test multiple URLs"""
@@ -164,7 +159,6 @@ def test_urls():
         }), 200
 
 @game_agent_bp.route('/api/agent/earn-points', methods=['POST'])
-@game_agent_bp.route('/vidgenerator/api/agent/earn-points', methods=['POST'])
 @rate_limit()
 def earn_points():
     """Earn points in a category"""
@@ -189,7 +183,6 @@ def earn_points():
         }), 200
 
 @game_agent_bp.route('/api/agent/stats', methods=['GET'])
-@game_agent_bp.route('/vidgenerator/api/agent/stats', methods=['GET'])
 def get_agent_stats():
     """Get agent statistics"""
     try:
@@ -209,7 +202,6 @@ def get_agent_stats():
         }), 200
 
 @game_agent_bp.route('/api/agent/reset', methods=['POST'])
-@game_agent_bp.route('/vidgenerator/api/agent/reset', methods=['POST'])
 @rate_limit()
 def reset_agent():
     """Reset agent statistics"""

@@ -17,7 +17,6 @@ nudging_fear_twister_bp = Blueprint('nudging_fear_twister', __name__)
 # ==================== NUDGING ROUTES ====================
 
 @nudging_fear_twister_bp.route('/api/nudging/set-target', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/nudging/set-target', methods=['POST'])
 @rate_limit()
 def set_behavior_target():
     """Set a behavior target for nudging"""
@@ -46,7 +45,6 @@ def set_behavior_target():
 
 
 @nudging_fear_twister_bp.route('/api/nudging/apply', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/nudging/apply', methods=['POST'])
 @rate_limit()
 def apply_nudge():
     """Apply a nudge to the user"""
@@ -65,7 +63,6 @@ def apply_nudge():
 
 
 @nudging_fear_twister_bp.route('/api/nudging/track-success', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/nudging/track-success', methods=['POST'])
 @rate_limit()
 def track_nudge_success():
     """Track if nudge was successful"""
@@ -93,7 +90,6 @@ def track_nudge_success():
 
 
 @nudging_fear_twister_bp.route('/api/nudging/user/<user_id>', methods=['GET'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/nudging/user/<user_id>', methods=['GET'])
 @rate_limit()
 def get_user_nudges(user_id: str):
     """Get all nudges and targets for a user"""
@@ -107,7 +103,6 @@ def get_user_nudges(user_id: str):
 
 
 @nudging_fear_twister_bp.route('/api/nudging/update-behavior', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/nudging/update-behavior', methods=['POST'])
 @rate_limit()
 def update_behavior_pattern():
     """Update behavior pattern tracking"""
@@ -137,7 +132,6 @@ def update_behavior_pattern():
 # ==================== FEAR TWISTER ROUTES ====================
 
 @nudging_fear_twister_bp.route('/api/fear-twister/initialize-scene', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/fear-twister/initialize-scene', methods=['POST'])
 @rate_limit()
 def initialize_scary_scene():
     """Initialize a scary scene with fear leveling"""
@@ -165,7 +159,6 @@ def initialize_scary_scene():
 
 
 @nudging_fear_twister_bp.route('/api/fear-twister/update-progress', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/fear-twister/update-progress', methods=['POST'])
 @rate_limit()
 def update_scene_progress():
     """Update scene progress with fear twister efficiency"""
@@ -194,7 +187,6 @@ def update_scene_progress():
 
 
 @nudging_fear_twister_bp.route('/api/fear-twister/twist-fear', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/fear-twister/twist-fear', methods=['POST'])
 @rate_limit()
 def twist_fear_level():
     """Twist/adjust fear level for more efficient leveling"""
@@ -225,7 +217,6 @@ def twist_fear_level():
 
 
 @nudging_fear_twister_bp.route('/api/fear-twister/optimize-generation', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/fear-twister/optimize-generation', methods=['POST'])
 @rate_limit()
 def optimize_generation_progress():
     """Optimize progress counter for entire generation"""
@@ -252,7 +243,6 @@ def optimize_generation_progress():
 
 
 @nudging_fear_twister_bp.route('/api/fear-twister/scene/<scene_id>/progress', methods=['GET'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/fear-twister/scene/<scene_id>/progress', methods=['GET'])
 @rate_limit()
 def get_scene_progress(scene_id: str):
     """Get current progress data for a scene"""
@@ -266,7 +256,6 @@ def get_scene_progress(scene_id: str):
 
 
 @nudging_fear_twister_bp.route('/api/fear-twister/generation/<generation_id>/optimization', methods=['GET'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/fear-twister/generation/<generation_id>/optimization', methods=['GET'])
 @rate_limit()
 def get_generation_optimization(generation_id: str):
     """Get optimization data for a generation"""
@@ -280,7 +269,6 @@ def get_generation_optimization(generation_id: str):
 
 
 @nudging_fear_twister_bp.route('/api/fear-twister/calculate-progress', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/fear-twister/calculate-progress', methods=['POST'])
 @rate_limit()
 def calculate_scary_scene_progress():
     """Calculate progress for scary scene with fear twister"""
@@ -305,7 +293,6 @@ def calculate_scary_scene_progress():
 
 
 @nudging_fear_twister_bp.route('/api/fear-twister/batch-optimize', methods=['POST'])
-@nudging_fear_twister_bp.route('/vidgenerator/api/fear-twister/batch-optimize', methods=['POST'])
 @rate_limit()
 def batch_optimize_scenes():
     """Batch optimize multiple scary scenes"""

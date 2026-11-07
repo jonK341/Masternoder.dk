@@ -12,7 +12,6 @@ import uuid
 future_tech_intel_bp = Blueprint('future_tech_intelligence', __name__)
 
 @future_tech_intel_bp.route('/api/future-tech-intel/upgrade', methods=['POST'])
-@future_tech_intel_bp.route('/vidgenerator/api/future-tech-intel/upgrade', methods=['POST'])
 @rate_limit()
 def upgrade_intelligence():
     """Upgrade intelligence level"""
@@ -29,7 +28,6 @@ def upgrade_intelligence():
 
 
 @future_tech_intel_bp.route('/api/future-tech-intel/technologies', methods=['GET'])
-@future_tech_intel_bp.route('/vidgenerator/api/future-tech-intel/technologies', methods=['GET'])
 @rate_limit()
 def get_enhanced_technologies():
     """Get enhanced future technologies"""
@@ -45,7 +43,6 @@ def get_enhanced_technologies():
 
 
 @future_tech_intel_bp.route('/api/future-tech-intel/install', methods=['POST'])
-@future_tech_intel_bp.route('/vidgenerator/api/future-tech-intel/install', methods=['POST'])
 @rate_limit()
 def install_technology():
     """Install a future technology"""
@@ -72,7 +69,6 @@ def install_technology():
 
 
 @future_tech_intel_bp.route('/api/future-tech-intel/re-entomb', methods=['POST'])
-@future_tech_intel_bp.route('/vidgenerator/api/future-tech-intel/re-entomb', methods=['POST'])
 @rate_limit()
 def re_entomb_technologies():
     """Re-entomb (reinitialize) all future technologies"""
@@ -89,7 +85,6 @@ def re_entomb_technologies():
 
 
 @future_tech_intel_bp.route('/api/future-tech-intel/guides', methods=['GET'])
-@future_tech_intel_bp.route('/vidgenerator/api/future-tech-intel/guides', methods=['GET'])
 @rate_limit()
 def get_installation_guides():
     """Get all installation guides"""
@@ -103,7 +98,6 @@ def get_installation_guides():
 
 
 @future_tech_intel_bp.route('/api/future-tech-intel/features', methods=['GET'])
-@future_tech_intel_bp.route('/vidgenerator/api/future-tech-intel/features', methods=['GET'])
 @rate_limit()
 def get_all_features():
     """Get all available features"""
@@ -117,7 +111,6 @@ def get_all_features():
 
 
 @future_tech_intel_bp.route('/api/future-tech-intel/status', methods=['GET'])
-@future_tech_intel_bp.route('/vidgenerator/api/future-tech-intel/status', methods=['GET'])
 @rate_limit()
 def get_status():
     """Get system status"""

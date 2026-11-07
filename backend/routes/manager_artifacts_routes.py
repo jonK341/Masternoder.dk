@@ -10,7 +10,6 @@ import traceback
 manager_artifacts_bp = Blueprint('manager_artifacts', __name__)
 
 @manager_artifacts_bp.route('/api/manager-artifacts/all', methods=['GET'])
-@manager_artifacts_bp.route('/vidgenerator/api/manager-artifacts/all', methods=['GET'])
 def get_all_manager_artifacts():
     """Get all available manager artifacts"""
     try:
@@ -22,7 +21,6 @@ def get_all_manager_artifacts():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @manager_artifacts_bp.route('/api/manager-artifacts/user-agent', methods=['GET'])
-@manager_artifacts_bp.route('/vidgenerator/api/manager-artifacts/user-agent', methods=['GET'])
 def get_user_agent_artifacts():
     """Get artifacts collected by a specific agent"""
     try:
@@ -40,7 +38,6 @@ def get_user_agent_artifacts():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @manager_artifacts_bp.route('/api/manager-artifacts/collect', methods=['POST'])
-@manager_artifacts_bp.route('/vidgenerator/api/manager-artifacts/collect', methods=['POST'])
 def collect_manager_artifact():
     """Collect a manager artifact for an agent"""
     try:
@@ -60,7 +57,6 @@ def collect_manager_artifact():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @manager_artifacts_bp.route('/api/manager-artifacts/activate', methods=['POST'])
-@manager_artifacts_bp.route('/vidgenerator/api/manager-artifacts/activate', methods=['POST'])
 def activate_manager_artifact():
     """Activate an artifact's effects"""
     try:
@@ -80,7 +76,6 @@ def activate_manager_artifact():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @manager_artifacts_bp.route('/api/manager-artifacts/deactivate', methods=['POST'])
-@manager_artifacts_bp.route('/vidgenerator/api/manager-artifacts/deactivate', methods=['POST'])
 def deactivate_manager_artifact():
     """Deactivate an artifact's effects"""
     try:
@@ -100,7 +95,6 @@ def deactivate_manager_artifact():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @manager_artifacts_bp.route('/api/manager-artifacts/active-effects', methods=['GET'])
-@manager_artifacts_bp.route('/vidgenerator/api/manager-artifacts/active-effects', methods=['GET'])
 def get_active_effects():
     """Get all active artifact effects for an agent"""
     try:

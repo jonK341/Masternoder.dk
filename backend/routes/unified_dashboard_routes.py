@@ -77,7 +77,6 @@ def unified_dashboard_page():
 
 
 @unified_dashboard_bp.route('/api/tech-tree', methods=['GET'])
-@unified_dashboard_bp.route('/vidgenerator/api/tech-tree', methods=['GET'])
 def get_tech_tree():
     """Get tech tree data for user"""
     try:
@@ -125,7 +124,6 @@ def get_tech_tree():
 
 
 @unified_dashboard_bp.route('/api/tech-tree/knowledge', methods=['GET'])
-@unified_dashboard_bp.route('/vidgenerator/api/tech-tree/knowledge', methods=['GET'])
 def get_knowledge():
     """Get knowledge tree data - fallback route if tech_tree blueprint fails"""
     try:
@@ -189,7 +187,6 @@ def get_knowledge():
 
 
 @unified_dashboard_bp.route('/api/unified-dashboard/data', methods=['GET'])
-@unified_dashboard_bp.route('/vidgenerator/api/unified-dashboard/data', methods=['GET'])
 def get_unified_dashboard_data():
     """Get all unified dashboard data"""
     try:

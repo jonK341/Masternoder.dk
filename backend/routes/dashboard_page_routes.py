@@ -13,9 +13,6 @@ trophies_page_bp = Blueprint('trophies_page', __name__)
 points_page_bp = Blueprint('points_page', __name__)
 analytics_page_bp = Blueprint('analytics_page', __name__)
 
-@dashboard_page_bp.route('/vidgenerator/dashboard', methods=['GET'])
-@dashboard_page_bp.route('/vidgenerator/dashboard/', methods=['GET'])
-@dashboard_page_bp.route('/vidgenerator/dashboard/index.html', methods=['GET'])
 @dashboard_page_bp.route('/dashboard', methods=['GET'])
 @dashboard_page_bp.route('/dashboard/', methods=['GET'])
 @dashboard_page_bp.route('/dashboard/index.html', methods=['GET'])
@@ -23,9 +20,6 @@ def dashboard_index():
     """Legacy dashboard URL → unified profile (activity tab)."""
     return redirect('/profile?tab=activity', code=301)
 
-@profile_page_bp.route('/vidgenerator/profile', methods=['GET'])
-@profile_page_bp.route('/vidgenerator/profile/', methods=['GET'])
-@profile_page_bp.route('/vidgenerator/profile/index.html', methods=['GET'])
 @profile_page_bp.route('/profile', methods=['GET'])
 @profile_page_bp.route('/profile/', methods=['GET'])
 @profile_page_bp.route('/profile/index.html', methods=['GET'])
@@ -87,9 +81,6 @@ def profile_index():
     except Exception as e:
         return f"Error loading profile page: {str(e)}", 500
 
-@stats_page_bp.route('/vidgenerator/stats', methods=['GET'])
-@stats_page_bp.route('/vidgenerator/stats/', methods=['GET'])
-@stats_page_bp.route('/vidgenerator/stats/index.html', methods=['GET'])
 @stats_page_bp.route('/stats', methods=['GET'])
 @stats_page_bp.route('/stats/', methods=['GET'])
 @stats_page_bp.route('/stats/index.html', methods=['GET'])
@@ -97,9 +88,6 @@ def stats_index():
     """Legacy stats URL → unified profile (points tab)."""
     return redirect('/profile?tab=points', code=301)
 
-@social_page_bp.route('/vidgenerator/social', methods=['GET'])
-@social_page_bp.route('/vidgenerator/social/', methods=['GET'])
-@social_page_bp.route('/vidgenerator/social/index.html', methods=['GET'])
 @social_page_bp.route('/social', methods=['GET'])
 @social_page_bp.route('/social/', methods=['GET'])
 @social_page_bp.route('/social/index.html', methods=['GET'])
@@ -176,9 +164,6 @@ def social_monitor_index():
     except Exception as e:
         return f"Error loading social monitor page: {str(e)}", 500
 
-@trophies_page_bp.route('/vidgenerator/trophies', methods=['GET'])
-@trophies_page_bp.route('/vidgenerator/trophies/', methods=['GET'])
-@trophies_page_bp.route('/vidgenerator/trophies/index.html', methods=['GET'])
 @trophies_page_bp.route('/trophies', methods=['GET'])
 @trophies_page_bp.route('/trophies/', methods=['GET'])
 @trophies_page_bp.route('/trophies/index.html', methods=['GET'])
@@ -233,9 +218,6 @@ def trophies_index():
     except Exception as e:
         return f"Error loading trophies page: {str(e)}", 500
 
-@points_page_bp.route('/vidgenerator/points', methods=['GET'])
-@points_page_bp.route('/vidgenerator/points/', methods=['GET'])
-@points_page_bp.route('/vidgenerator/points/index.html', methods=['GET'])
 @points_page_bp.route('/points', methods=['GET'])
 @points_page_bp.route('/points/', methods=['GET'])
 @points_page_bp.route('/points/index.html', methods=['GET'])
@@ -243,9 +225,6 @@ def points_index():
     """Legacy points URL → unified profile (points tab)."""
     return redirect('/profile?tab=points', code=301)
 
-@analytics_page_bp.route('/vidgenerator/analytics', methods=['GET'])
-@analytics_page_bp.route('/vidgenerator/analytics/', methods=['GET'])
-@analytics_page_bp.route('/vidgenerator/analytics/index.html', methods=['GET'])
 @analytics_page_bp.route('/analytics', methods=['GET'])
 @analytics_page_bp.route('/analytics/', methods=['GET'])
 @analytics_page_bp.route('/analytics/index.html', methods=['GET'])

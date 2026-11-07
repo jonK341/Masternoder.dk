@@ -13,7 +13,6 @@ advanced_battle_tech_bp = Blueprint('advanced_battle_tech', __name__)
 
 
 @advanced_battle_tech_bp.route('/api/battle/advanced-tech/available', methods=['GET'])
-@advanced_battle_tech_bp.route('/vidgenerator/api/battle/advanced-tech/available', methods=['GET'])
 @rate_limit()
 def get_advanced_tech_available():
     """Get available advanced battle tech"""
@@ -41,7 +40,6 @@ def get_advanced_tech_available():
 
 
 @advanced_battle_tech_bp.route('/api/battle/advanced-tech/unlock', methods=['POST'])
-@advanced_battle_tech_bp.route('/vidgenerator/api/battle/advanced-tech/unlock', methods=['POST'])
 @rate_limit()
 def unlock_advanced_tech():
     """Unlock advanced battle technology"""
@@ -67,7 +65,6 @@ def unlock_advanced_tech():
 
 
 @advanced_battle_tech_bp.route('/api/battle/advanced-tech/combine', methods=['POST'])
-@advanced_battle_tech_bp.route('/vidgenerator/api/battle/advanced-tech/combine', methods=['POST'])
 @rate_limit()
 def combine_tech():
     """Combine multiple advanced tech for battle"""
@@ -93,7 +90,6 @@ def combine_tech():
 
 
 @advanced_battle_tech_bp.route('/api/battle/advanced-tech/list', methods=['GET'])
-@advanced_battle_tech_bp.route('/vidgenerator/api/battle/advanced-tech/list', methods=['GET'])
 @rate_limit()
 def list_advanced_tech():
     """List all advanced tech with user unlock status"""
@@ -116,7 +112,6 @@ def list_advanced_tech():
 
 
 @advanced_battle_tech_bp.route('/api/battle/advanced-tech/<tech_name>/status', methods=['GET'])
-@advanced_battle_tech_bp.route('/vidgenerator/api/battle/advanced-tech/<tech_name>/status', methods=['GET'])
 @rate_limit()
 def get_tech_status(tech_name):
     """Get status of specific advanced tech"""
@@ -138,7 +133,6 @@ def get_tech_status(tech_name):
 
 
 @advanced_battle_tech_bp.route('/api/battle/impressiveness/<user_id>', methods=['GET'])
-@advanced_battle_tech_bp.route('/vidgenerator/api/battle/impressiveness/<user_id>', methods=['GET'])
 @rate_limit()
 def get_user_impressiveness(user_id):
     """Get user impressiveness score"""

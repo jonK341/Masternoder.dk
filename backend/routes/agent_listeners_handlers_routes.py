@@ -12,7 +12,6 @@ agent_listeners_bp = Blueprint('agent_listeners', __name__)
 
 
 @agent_listeners_bp.route('/api/agent/<agent_id>/attach-listeners', methods=['POST'])
-@agent_listeners_bp.route('/vidgenerator/api/agent/<agent_id>/attach-listeners', methods=['POST'])
 @rate_limit()
 def attach_listeners(agent_id: str):
     """Attach all event listeners to an agent"""
@@ -26,7 +25,6 @@ def attach_listeners(agent_id: str):
 
 
 @agent_listeners_bp.route('/api/agent/<agent_id>/attach-handlers', methods=['POST'])
-@agent_listeners_bp.route('/vidgenerator/api/agent/<agent_id>/attach-handlers', methods=['POST'])
 @rate_limit()
 def attach_handlers(agent_id: str):
     """Attach all error handlers to an agent"""
@@ -40,7 +38,6 @@ def attach_handlers(agent_id: str):
 
 
 @agent_listeners_bp.route('/api/agent/<agent_id>/listeners')
-@agent_listeners_bp.route('/vidgenerator/api/agent/<agent_id>/listeners')
 @rate_limit()
 def get_listeners(agent_id: str):
     """Get all listeners for an agent"""
@@ -54,7 +51,6 @@ def get_listeners(agent_id: str):
 
 
 @agent_listeners_bp.route('/api/agent/<agent_id>/handlers')
-@agent_listeners_bp.route('/vidgenerator/api/agent/<agent_id>/handlers')
 @rate_limit()
 def get_handlers(agent_id: str):
     """Get all handlers for an agent"""
@@ -68,7 +64,6 @@ def get_handlers(agent_id: str):
 
 
 @agent_listeners_bp.route('/api/agent/<agent_id>/cv')
-@agent_listeners_bp.route('/vidgenerator/api/agent/<agent_id>/cv')
 @rate_limit()
 def get_agent_cv(agent_id: str):
     """Get complete agent CV including listeners and handlers"""
@@ -82,7 +77,6 @@ def get_agent_cv(agent_id: str):
 
 
 @agent_listeners_bp.route('/api/agent/listeners/types')
-@agent_listeners_bp.route('/vidgenerator/api/agent/listeners/types')
 @rate_limit()
 def get_listener_types():
     """Get all available listener types"""
@@ -93,7 +87,6 @@ def get_listener_types():
 
 
 @agent_listeners_bp.route('/api/agent/handlers/types')
-@agent_listeners_bp.route('/vidgenerator/api/agent/handlers/types')
 @rate_limit()
 def get_handler_types():
     """Get all available handler types"""

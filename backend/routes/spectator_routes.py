@@ -13,7 +13,6 @@ spectator_bp = Blueprint('spectator', __name__, url_prefix='')
 
 
 @spectator_bp.route('/api/battle/spectator/join', methods=['POST'])
-@spectator_bp.route('/vidgenerator/api/battle/spectator/join', methods=['POST'])
 @rate_limit(endpoint='/api/battle/spectator/join')
 def join_spectator():
     """Join spectator queue for a battle"""
@@ -37,7 +36,6 @@ def join_spectator():
 
 
 @spectator_bp.route('/api/battle/spectator/leave', methods=['POST'])
-@spectator_bp.route('/vidgenerator/api/battle/spectator/leave', methods=['POST'])
 @rate_limit(endpoint='/api/battle/spectator/leave')
 def leave_spectator():
     """Leave spectator mode"""
@@ -54,7 +52,6 @@ def leave_spectator():
 
 
 @spectator_bp.route('/api/battle/spectator/battles', methods=['GET'])
-@spectator_bp.route('/vidgenerator/api/battle/spectator/battles', methods=['GET'])
 @rate_limit(endpoint='/api/battle/spectator/battles')
 def get_spectatable_battles():
     """Get list of battles that can be spectated"""
@@ -74,7 +71,6 @@ def get_spectatable_battles():
 
 
 @spectator_bp.route('/api/battle/spectator/<battle_id>/count', methods=['GET'])
-@spectator_bp.route('/vidgenerator/api/battle/spectator/<battle_id>/count', methods=['GET'])
 @rate_limit(endpoint='/api/battle/spectator/count')
 def get_spectator_count(battle_id: str):
     """Get number of spectators for a battle"""
@@ -95,7 +91,6 @@ def get_spectator_count(battle_id: str):
 
 
 @spectator_bp.route('/api/battle/spectator/activity', methods=['POST'])
-@spectator_bp.route('/vidgenerator/api/battle/spectator/activity', methods=['POST'])
 @rate_limit(endpoint='/api/battle/spectator/activity')
 def update_spectator_activity():
     """Update spectator activity (heartbeat)"""

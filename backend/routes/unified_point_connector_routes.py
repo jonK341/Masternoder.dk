@@ -9,7 +9,6 @@ import sys
 unified_connector_bp = Blueprint('unified_connector', __name__)
 
 @unified_connector_bp.route('/api/points/connect-all', methods=['POST'])
-@unified_connector_bp.route('/vidgenerator/api/points/connect-all', methods=['POST'])
 @rate_limit()
 def connect_all_points():
     """Connect all point systems"""
@@ -29,7 +28,6 @@ def connect_all_points():
         }), 500
 
 @unified_connector_bp.route('/api/points/unified', methods=['GET'])
-@unified_connector_bp.route('/vidgenerator/api/points/unified', methods=['GET'])
 @rate_limit()
 def get_unified_points():
     """Get unified points for user"""

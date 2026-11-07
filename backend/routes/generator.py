@@ -155,10 +155,8 @@ def generator_index():
     import os
     
     try:
-        # Priority 1: Try serving from vidgenerator/generator directory (production files)
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        vidgen_path = os.path.join(base_path, 'vidgenerator', 'generator')
-        index_file = os.path.join(vidgen_path, 'index.html')
+        index_file = os.path.join(base_path, 'generator', 'index.html')
         
         if os.path.exists(index_file):
             with open(index_file, 'r', encoding='utf-8') as f:
@@ -202,7 +200,7 @@ def generator_index():
             <div class="container">
                 <h1>AI Video Generator</h1>
                 <p>Generator interface loading...</p>
-                <p><a href="/vidgenerator">← Back to main page</a></p>
+                <p><a href="/">← Back to main page</a></p>
             </div>
         </body>
         </html>
@@ -824,7 +822,7 @@ def create_video_blueprint():
 def video_status(video_id):
     """Get video generation status (legacy endpoint - redirects to new endpoint)"""
     from flask import redirect
-    return redirect(f'/vidgenerator/api/documentary/progress/{video_id}', code=307)
+    return redirect(f'/api/documentary/progress/{video_id}', code=307)
 
 @generator_bp.route('/api/documentary/progress/<doc_id>', methods=['GET'], strict_slashes=False)
 def documentary_progress(doc_id):
@@ -932,14 +930,13 @@ def documentary_progress(doc_id):
             if doc.status == 'completed' and doc.video_path:
                 # Convert absolute path to relative URL if needed
                 video_path = doc.video_path
-                if video_path.startswith('/var/www/html/vidgenerator'):
-                    # Convert to relative path for serving
-                    video_path = video_path.replace('/var/www/html/vidgenerator', '/vidgenerator')
-                elif not video_path.startswith('/'):
-                    video_path = f'/vidgenerator/{video_path}'
+                if video_path.startswith('/var/www/html/'):
+                    video_path = video_path.replace('/var/www/html', '', 1)
+                if not video_path.startswith('/'):
+                    video_path = f'/{video_path}'
                 
                 response_data['video_path'] = video_path
-                response_data['video_url'] = f'/vidgenerator/api/documentary/video/{doc_id}'
+                response_data['video_url'] = f'/api/documentary/video/{doc_id}'
                 response_data['thumbnail_path'] = doc.thumbnail_path or ''
                 response_data['duration'] = doc.duration or 0
             

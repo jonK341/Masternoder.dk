@@ -10,7 +10,6 @@ atomic_calculator_bp = Blueprint('atomic_calculator', __name__)
 
 
 @atomic_calculator_bp.route('/api/atomic-calculator/calculate', methods=['POST'])
-@atomic_calculator_bp.route('/vidgenerator/api/atomic-calculator/calculate', methods=['POST'])
 def atomic_calculate():
     """Perform atomic calculation"""
     try:
@@ -29,7 +28,6 @@ def atomic_calculate():
 
 
 @atomic_calculator_bp.route('/api/atomic-calculator/financial-metrics', methods=['POST'])
-@atomic_calculator_bp.route('/vidgenerator/api/atomic-calculator/financial-metrics', methods=['POST'])
 def calculate_financial_metrics():
     """Calculate comprehensive financial metrics"""
     try:
@@ -47,7 +45,6 @@ def calculate_financial_metrics():
 
 
 @atomic_calculator_bp.route('/api/atomic-calculator/money-satan-returns', methods=['POST'])
-@atomic_calculator_bp.route('/vidgenerator/api/atomic-calculator/money-satan-returns', methods=['POST'])
 def calculate_money_satan_returns():
     """Calculate Money Satan returns on investment"""
     try:

@@ -203,13 +203,9 @@ def eligible_trophy_ids(metrics: dict, already_unlocked=None) -> list:
 
 trophies_bp = Blueprint('trophies', __name__)
 
-@trophies_bp.route('/vidgenerator/trophies')
-@trophies_bp.route('/vidgenerator/trophies/')
 @trophies_bp.route('/trophies')
 @trophies_bp.route('/trophies/')
 # Also support singular for backwards compatibility
-@trophies_bp.route('/vidgenerator/trophie')
-@trophies_bp.route('/vidgenerator/trophie/')
 @trophies_bp.route('/trophie')
 @trophies_bp.route('/trophie/')
 def trophies_index():

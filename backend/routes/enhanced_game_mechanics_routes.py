@@ -15,7 +15,6 @@ enhanced_game_mechanics.set_unified_points(unified_point_system)
 
 
 @enhanced_mechanics_bp.route('/api/game-mechanics/award-points', methods=['POST'])
-@enhanced_mechanics_bp.route('/vidgenerator/api/game-mechanics/award-points', methods=['POST'])
 @rate_limit()
 def award_comprehensive_points():
     """Award comprehensive points from all categories"""
@@ -40,7 +39,6 @@ def award_comprehensive_points():
 
 
 @enhanced_mechanics_bp.route('/api/game-mechanics/quest/create', methods=['POST'])
-@enhanced_mechanics_bp.route('/vidgenerator/api/game-mechanics/quest/create', methods=['POST'])
 @rate_limit()
 def create_quest():
     """Create a new quest for user"""
@@ -61,7 +59,6 @@ def create_quest():
 
 
 @enhanced_mechanics_bp.route('/api/game-mechanics/quest/complete', methods=['POST'])
-@enhanced_mechanics_bp.route('/vidgenerator/api/game-mechanics/quest/complete', methods=['POST'])
 @rate_limit()
 def complete_quest():
     """Complete a quest and award rewards"""
@@ -84,7 +81,6 @@ def complete_quest():
 
 
 @enhanced_mechanics_bp.route('/api/game-mechanics/quests', methods=['GET'])
-@enhanced_mechanics_bp.route('/vidgenerator/api/game-mechanics/quests', methods=['GET'])
 @rate_limit()
 def get_active_quests():
     """Get active quests for user"""
@@ -105,7 +101,6 @@ def get_active_quests():
 
 
 @enhanced_mechanics_bp.route('/api/game-mechanics/daily-challenges', methods=['GET', 'POST'])
-@enhanced_mechanics_bp.route('/vidgenerator/api/game-mechanics/daily-challenges', methods=['GET', 'POST'])
 @rate_limit()
 def daily_challenges():
     """Get or generate daily challenges"""
@@ -131,7 +126,6 @@ def daily_challenges():
 
 
 @enhanced_mechanics_bp.route('/api/game-mechanics/daily-challenge/complete', methods=['POST'])
-@enhanced_mechanics_bp.route('/vidgenerator/api/game-mechanics/daily-challenge/complete', methods=['POST'])
 @rate_limit()
 def complete_daily_challenge():
     """Complete a daily challenge"""
@@ -154,7 +148,6 @@ def complete_daily_challenge():
 
 
 @enhanced_mechanics_bp.route('/api/game-mechanics/streak', methods=['GET'])
-@enhanced_mechanics_bp.route('/vidgenerator/api/game-mechanics/streak', methods=['GET'])
 @rate_limit()
 def get_streak():
     """Get streak for user"""

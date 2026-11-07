@@ -11,9 +11,9 @@ aggregator_page_bp = Blueprint('aggregator_page', __name__)
 @aggregator_page_bp.route('/aggregator', methods=['GET'])
 @aggregator_page_bp.route('/aggregator/', methods=['GET'])
 def aggregator_index():
-    """Aggregator dashboard page - serves from vidgenerator/aggregator/index.html file"""
-    # Primary path - production
-    index_file = '/var/www/html/vidgenerator/vidgenerator/aggregator/index.html'
+    """Aggregator dashboard page — canonical root /aggregator/index.html."""
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    index_file = os.path.join(base_path, 'aggregator', 'index.html')
     
     try:
         if os.path.exists(index_file):

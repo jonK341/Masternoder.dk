@@ -14,7 +14,6 @@ profile_enhanced_bp = Blueprint('profile_enhanced', __name__, url_prefix='')
 
 
 @profile_enhanced_bp.route('/api/profile/<user_id>', methods=['GET'])
-@profile_enhanced_bp.route('/vidgenerator/api/profile/<user_id>', methods=['GET'])
 @rate_limit(endpoint='/api/profile')
 def get_profile(user_id: str):
     """Get comprehensive user profile"""
@@ -31,7 +30,6 @@ def get_profile(user_id: str):
 
 
 @profile_enhanced_bp.route('/api/profile/<user_id>/summary', methods=['GET'])
-@profile_enhanced_bp.route('/vidgenerator/api/profile/<user_id>/summary', methods=['GET'])
 @rate_limit(endpoint='/api/profile/summary')
 def get_profile_summary(user_id: str):
     """Get profile summary"""
@@ -48,7 +46,6 @@ def get_profile_summary(user_id: str):
 
 
 @profile_enhanced_bp.route('/api/profile/<user_id>/statistics', methods=['GET'])
-@profile_enhanced_bp.route('/vidgenerator/api/profile/<user_id>/statistics', methods=['GET'])
 @rate_limit(endpoint='/api/profile/statistics')
 def get_profile_statistics(user_id: str):
     """Get profile statistics"""
@@ -65,7 +62,6 @@ def get_profile_statistics(user_id: str):
 
 
 @profile_enhanced_bp.route('/api/profile/<user_id>/timeline', methods=['GET'])
-@profile_enhanced_bp.route('/vidgenerator/api/profile/<user_id>/timeline', methods=['GET'])
 @rate_limit(endpoint='/api/profile/timeline')
 def get_activity_timeline(user_id: str):
     """Get user activity timeline"""
@@ -85,7 +81,6 @@ def get_activity_timeline(user_id: str):
 
 
 @profile_enhanced_bp.route('/api/profile/<user_id>', methods=['PUT', 'PATCH'])
-@profile_enhanced_bp.route('/vidgenerator/api/profile/<user_id>', methods=['PUT', 'PATCH'])
 @rate_limit(endpoint='/api/profile/update')
 def update_profile(user_id: str):
     """Update user profile"""
@@ -115,7 +110,6 @@ def update_profile(user_id: str):
 
 
 @profile_enhanced_bp.route('/api/profile/<user_id>/avatar', methods=['POST'])
-@profile_enhanced_bp.route('/vidgenerator/api/profile/<user_id>/avatar', methods=['POST'])
 @rate_limit(endpoint='/api/profile/avatar')
 def upload_avatar(user_id: str):
     """Upload user avatar"""
@@ -151,7 +145,6 @@ def upload_avatar(user_id: str):
 
 
 @profile_enhanced_bp.route('/api/profile/<user_id>/avatar', methods=['DELETE'])
-@profile_enhanced_bp.route('/vidgenerator/api/profile/<user_id>/avatar', methods=['DELETE'])
 @rate_limit(endpoint='/api/profile/avatar/delete')
 def delete_avatar(user_id: str):
     """Delete user avatar"""
@@ -165,7 +158,6 @@ def delete_avatar(user_id: str):
 
 
 @profile_enhanced_bp.route('/api/profile/<user_id>/avatar', methods=['GET'])
-@profile_enhanced_bp.route('/vidgenerator/api/profile/<user_id>/avatar', methods=['GET'])
 @rate_limit(endpoint='/api/profile/avatar/get')
 def get_avatar(user_id: str):
     """Get user avatar URL"""

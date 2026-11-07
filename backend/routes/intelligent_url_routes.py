@@ -9,7 +9,6 @@ intelligent_url_bp = Blueprint('intelligent_url', __name__)
 
 
 @intelligent_url_bp.route('/api/url/process', methods=['POST'])
-@intelligent_url_bp.route('/vidgenerator/api/url/process', methods=['POST'])
 def process_url():
     """Process URL with intelligence and logic"""
     try:
@@ -34,7 +33,6 @@ def process_url():
 
 
 @intelligent_url_bp.route('/api/url/register', methods=['POST'])
-@intelligent_url_bp.route('/vidgenerator/api/url/register', methods=['POST'])
 def register_intelligent_route():
     """Register intelligent route"""
     try:

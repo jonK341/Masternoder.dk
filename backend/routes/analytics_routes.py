@@ -14,7 +14,6 @@ analytics_bp = Blueprint('analytics', __name__, url_prefix='')
 
 
 @analytics_bp.route('/api/analytics/overview', methods=['GET'])
-@analytics_bp.route('/vidgenerator/api/analytics/overview', methods=['GET'])
 @rate_limit(endpoint='/api/analytics/overview')
 def get_analytics_overview():
     """Get system analytics overview"""
@@ -31,7 +30,6 @@ def get_analytics_overview():
 
 
 @analytics_bp.route('/api/analytics/user-behavior', methods=['GET'])
-@analytics_bp.route('/vidgenerator/api/analytics/user-behavior', methods=['GET'])
 @rate_limit(endpoint='/api/analytics/user-behavior')
 def get_user_behavior():
     """Get user behavior analytics"""
@@ -50,7 +48,6 @@ def get_user_behavior():
 
 
 @analytics_bp.route('/api/analytics/revenue', methods=['GET'])
-@analytics_bp.route('/vidgenerator/api/analytics/revenue', methods=['GET'])
 @rate_limit(endpoint='/api/analytics/revenue')
 def get_revenue_analytics():
     """Get revenue analytics"""
@@ -67,7 +64,6 @@ def get_revenue_analytics():
 
 
 @analytics_bp.route('/api/analytics/leaderboard', methods=['GET'])
-@analytics_bp.route('/vidgenerator/api/analytics/leaderboard', methods=['GET'])
 @rate_limit(endpoint='/api/analytics/leaderboard')
 def get_leaderboard_analytics():
     """Get leaderboard analytics"""
@@ -84,7 +80,6 @@ def get_leaderboard_analytics():
 
 
 @analytics_bp.route('/api/analytics/export', methods=['GET'])
-@analytics_bp.route('/vidgenerator/api/analytics/export', methods=['GET'])
 @rate_limit(endpoint='/api/analytics/export')
 def export_analytics():
     """Export analytics data"""

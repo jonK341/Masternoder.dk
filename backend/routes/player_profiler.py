@@ -8,7 +8,6 @@ import sys
 profiler_bp = Blueprint('profiler', __name__)
 
 @profiler_bp.route('/api/profiler/profile', methods=['GET'])
-@profiler_bp.route('/vidgenerator/api/profiler/profile', methods=['GET'])
 def get_profile():
     """Get player profile"""
     try:
@@ -27,7 +26,6 @@ def get_profile():
         }), 500
 
 @profiler_bp.route('/api/profiler/update', methods=['POST'])
-@profiler_bp.route('/vidgenerator/api/profiler/update', methods=['POST'])
 def update_profile():
     """Update player profile"""
     try:
@@ -48,7 +46,6 @@ def update_profile():
         }), 500
 
 @profiler_bp.route('/api/profiler/track', methods=['POST'])
-@profiler_bp.route('/vidgenerator/api/profiler/track', methods=['POST'])
 def track_action():
     """Track a player action"""
     try:
@@ -72,7 +69,6 @@ def track_action():
         }), 500
 
 @profiler_bp.route('/api/profiler/triggers', methods=['GET'])
-@profiler_bp.route('/vidgenerator/api/profiler/triggers', methods=['GET'])
 def get_triggers():
     """Get available triggers"""
     try:
@@ -88,7 +84,6 @@ def get_triggers():
         }), 500
 
 @profiler_bp.route('/api/profiler/history', methods=['GET'])
-@profiler_bp.route('/vidgenerator/api/profiler/history', methods=['GET'])
 def get_trigger_history():
     """Get trigger history"""
     try:
@@ -108,7 +103,6 @@ def get_trigger_history():
 
 
 @profiler_bp.route('/api/profiler/pictures', methods=['GET'])
-@profiler_bp.route('/vidgenerator/api/profiler/pictures', methods=['GET'])
 def get_pictures():
     """Saved avatar + gallery plus camgirl studio portrait board."""
     try:
@@ -120,7 +114,6 @@ def get_pictures():
 
 
 @profiler_bp.route('/api/profiler/pictures', methods=['POST'])
-@profiler_bp.route('/vidgenerator/api/profiler/pictures', methods=['POST'])
 def add_picture():
     """Save a picture URL to the player gallery."""
     try:
@@ -136,7 +129,6 @@ def add_picture():
 
 
 @profiler_bp.route('/api/profiler/pictures/avatar', methods=['POST'])
-@profiler_bp.route('/vidgenerator/api/profiler/pictures/avatar', methods=['POST'])
 def set_profiler_avatar():
     """Set profiler avatar from a picture URL."""
     try:

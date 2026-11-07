@@ -39,7 +39,6 @@ def get_user_id():
 
 
 @point_calculator_bp.route('/api/points/calculator/calculate', methods=['GET'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/calculate', methods=['GET'])
 @rate_limit()
 def calculate_points():
     """Calculate points using hardcoded calculator"""
@@ -60,7 +59,6 @@ def calculate_points():
 
 
 @point_calculator_bp.route('/api/points/calculator/breakdown/<user_id>', methods=['GET'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/breakdown/<user_id>', methods=['GET'])
 @rate_limit()
 def get_breakdown(user_id: str):
     """Get detailed point breakdown from hardcoded calculator"""
@@ -83,7 +81,6 @@ def get_breakdown(user_id: str):
 
 
 @point_calculator_bp.route('/api/points/calculator/verify/<user_id>', methods=['GET'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/verify/<user_id>', methods=['GET'])
 @rate_limit()
 def verify_calculation(user_id: str):
     """Verify hardcoded calculation against database"""
@@ -97,7 +94,6 @@ def verify_calculation(user_id: str):
 
 
 @point_calculator_bp.route('/api/points/calculator/gather-data/<user_id>', methods=['GET'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/gather-data/<user_id>', methods=['GET'])
 @rate_limit()
 def gather_data(user_id: str):
     """Gather point data from all systems (for debugging)"""
@@ -115,7 +111,6 @@ def gather_data(user_id: str):
 
 
 @point_calculator_bp.route('/api/points/calculator/test', methods=['GET'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/test', methods=['GET'])
 @rate_limit()
 def test_endpoint():
     """Test endpoint"""
@@ -135,7 +130,6 @@ def test_endpoint():
     }), 200
 
 @point_calculator_bp.route('/api/points/calculator/predict', methods=['GET', 'POST'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/predict', methods=['GET', 'POST'])
 @rate_limit()
 def predict_points():
     """Predict future points based on activity patterns"""
@@ -175,7 +169,6 @@ def predict_points():
         }), 200
 
 @point_calculator_bp.route('/api/points/calculator/optimize', methods=['POST'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/optimize', methods=['POST'])
 @rate_limit()
 def optimize_multipliers():
     """Optimize multiplier combinations"""
@@ -201,7 +194,6 @@ def optimize_multipliers():
         return error_response, status_code
 
 @point_calculator_bp.route('/api/points/calculator/multiplier-combinations', methods=['POST'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/multiplier-combinations', methods=['POST'])
 @rate_limit()
 def calculate_multiplier_combinations():
     """Calculate all possible multiplier combinations"""
@@ -224,7 +216,6 @@ def calculate_multiplier_combinations():
         return error_response, status_code
 
 @point_calculator_bp.route('/api/points/calculator/suggest-optimization', methods=['GET', 'POST'])
-@point_calculator_bp.route('/vidgenerator/api/points/calculator/suggest-optimization', methods=['GET', 'POST'])
 @rate_limit()
 def suggest_optimization():
     """Get optimization suggestions for increasing points"""

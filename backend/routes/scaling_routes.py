@@ -16,7 +16,6 @@ scaling_bp = Blueprint('scaling', __name__)
 # ==================== EVENT SYSTEM ROUTES ====================
 
 @scaling_bp.route('/api/scaling/events/emit', methods=['POST'])
-@scaling_bp.route('/vidgenerator/api/scaling/events/emit', methods=['POST'])
 @rate_limit()
 def emit_event():
     """Emit an event"""
@@ -42,7 +41,6 @@ def emit_event():
 
 
 @scaling_bp.route('/api/scaling/events/register-handler', methods=['POST'])
-@scaling_bp.route('/vidgenerator/api/scaling/events/register-handler', methods=['POST'])
 @rate_limit()
 def register_handler():
     """Register an event handler (programmatic, requires handler function)"""
@@ -53,7 +51,6 @@ def register_handler():
 
 
 @scaling_bp.route('/api/scaling/events/stats', methods=['GET'])
-@scaling_bp.route('/vidgenerator/api/scaling/events/stats', methods=['GET'])
 @rate_limit()
 def get_event_stats():
     """Get event system statistics"""
@@ -70,7 +67,6 @@ def get_event_stats():
 
 
 @scaling_bp.route('/api/scaling/events/start-workers', methods=['POST'])
-@scaling_bp.route('/vidgenerator/api/scaling/events/start-workers', methods=['POST'])
 @rate_limit()
 def start_workers():
     """Start event processing workers"""
@@ -85,7 +81,6 @@ def start_workers():
 
 
 @scaling_bp.route('/api/scaling/events/stop-workers', methods=['POST'])
-@scaling_bp.route('/vidgenerator/api/scaling/events/stop-workers', methods=['POST'])
 @rate_limit()
 def stop_workers():
     """Stop event processing workers"""
@@ -101,7 +96,6 @@ def stop_workers():
 # ==================== CALCULATOR ROUTES ====================
 
 @scaling_bp.route('/api/scaling/calculator/calculate-async', methods=['POST'])
-@scaling_bp.route('/vidgenerator/api/scaling/calculator/calculate-async', methods=['POST'])
 @rate_limit()
 def calculate_async():
     """Calculate asynchronously (queued)"""
@@ -129,7 +123,6 @@ def calculate_async():
 
 
 @scaling_bp.route('/api/scaling/calculator/calculate-sync', methods=['POST'])
-@scaling_bp.route('/vidgenerator/api/scaling/calculator/calculate-sync', methods=['POST'])
 @rate_limit()
 def calculate_sync():
     """Calculate synchronously (immediate)"""
@@ -154,7 +147,6 @@ def calculate_sync():
 
 
 @scaling_bp.route('/api/scaling/calculator/result/<calculation_id>', methods=['GET'])
-@scaling_bp.route('/vidgenerator/api/scaling/calculator/result/<calculation_id>', methods=['GET'])
 @rate_limit()
 def get_calculation_result(calculation_id: str):
     """Get calculation result"""
@@ -168,7 +160,6 @@ def get_calculation_result(calculation_id: str):
 
 
 @scaling_bp.route('/api/scaling/calculator/stats', methods=['GET'])
-@scaling_bp.route('/vidgenerator/api/scaling/calculator/stats', methods=['GET'])
 @rate_limit()
 def get_calculator_stats():
     """Get calculator statistics"""
@@ -187,7 +178,6 @@ def get_calculator_stats():
 # ==================== CACHE ROUTES ====================
 
 @scaling_bp.route('/api/scaling/cache/stats', methods=['GET'])
-@scaling_bp.route('/vidgenerator/api/scaling/cache/stats', methods=['GET'])
 @rate_limit()
 def get_cache_stats():
     """Get cache statistics"""
@@ -210,7 +200,6 @@ def get_cache_stats():
 # ==================== QUEUE ROUTES ====================
 
 @scaling_bp.route('/api/scaling/queues/stats', methods=['GET'])
-@scaling_bp.route('/vidgenerator/api/scaling/queues/stats', methods=['GET'])
 @rate_limit()
 def get_queue_stats():
     """Get queue statistics"""
@@ -230,7 +219,6 @@ def get_queue_stats():
 
 
 @scaling_bp.route('/api/scaling/workers/start', methods=['POST'])
-@scaling_bp.route('/vidgenerator/api/scaling/workers/start', methods=['POST'])
 @rate_limit()
 def start_workers():
     """Start background workers"""
@@ -248,7 +236,6 @@ def start_workers():
 
 
 @scaling_bp.route('/api/scaling/workers/stop', methods=['POST'])
-@scaling_bp.route('/vidgenerator/api/scaling/workers/stop', methods=['POST'])
 @rate_limit()
 def stop_workers():
     """Stop background workers"""

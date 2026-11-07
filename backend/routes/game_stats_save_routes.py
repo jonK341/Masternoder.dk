@@ -14,7 +14,6 @@ game_stats_save_bp = Blueprint('game_stats_save', __name__)
 
 
 @game_stats_save_bp.route('/api/game/save-all-stats', methods=['POST'])
-@game_stats_save_bp.route('/vidgenerator/api/game/save-all-stats', methods=['POST'])
 @rate_limit()
 def save_all_game_stats():
     """Save all game stats and ensure they're connected to unified points"""

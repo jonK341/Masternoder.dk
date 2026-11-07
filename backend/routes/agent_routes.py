@@ -28,7 +28,6 @@ import uuid
 agent_bp = Blueprint('agent', __name__)
 
 @agent_bp.route('/api/agent/create', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/create', methods=['POST'])
 @rate_limit()
 def create_agent():
     """Create a new agent"""
@@ -53,7 +52,6 @@ def create_agent():
         }), 500
 
 @agent_bp.route('/api/agent/get', methods=['GET'])
-@agent_bp.route('/vidgenerator/api/agent/get', methods=['GET'])
 @rate_limit()
 def get_agent():
     """Get agent data"""
@@ -93,9 +91,6 @@ def get_agent():
 @agent_bp.route('/api/agent/get-all', methods=['GET'])
 @agent_bp.route('/api/agent/get_all', methods=['GET'])
 @agent_bp.route('/api/agent/all', methods=['GET'])
-@agent_bp.route('/vidgenerator/api/agent/get-all', methods=['GET'])
-@agent_bp.route('/vidgenerator/api/agent/get_all', methods=['GET'])
-@agent_bp.route('/vidgenerator/api/agent/all', methods=['GET'])
 @rate_limit()
 def get_all_agents():
     """Get all agents for a user"""
@@ -137,7 +132,6 @@ def get_all_agents():
         }), 200  # Return 200 with empty data instead of 500
 
 @agent_bp.route('/api/agent/copy-behavior', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/copy-behavior', methods=['POST'])
 @rate_limit()
 def copy_user_behavior():
     """Copy user behavior to agent"""
@@ -164,7 +158,6 @@ def copy_user_behavior():
         }), 500
 
 @agent_bp.route('/api/agent/calendar', methods=['GET'])
-@agent_bp.route('/vidgenerator/api/agent/calendar', methods=['GET'])
 @rate_limit()
 def get_calendar():
     """Get giga calendar for agent"""
@@ -190,7 +183,6 @@ def get_calendar():
         }), 500
 
 @agent_bp.route('/api/agent/video-opinion', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/video-opinion', methods=['POST'])
 @rate_limit()
 def get_video_opinion():
     """Get agent opinion on video generation"""
@@ -219,7 +211,6 @@ def get_video_opinion():
         }), 500
 
 @agent_bp.route('/api/agent/top-lists', methods=['GET'])
-@agent_bp.route('/vidgenerator/api/agent/top-lists', methods=['GET'])
 @rate_limit()
 def get_top_lists():
     """Get Top100/Top50/Top25/Top10 lists"""
@@ -253,7 +244,6 @@ def get_top_lists():
         }), 500
 
 @agent_bp.route('/api/agent/gps', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/gps', methods=['POST'])
 @rate_limit()
 def update_gps_location():
     """Update agent GPS location"""
@@ -280,7 +270,6 @@ def update_gps_location():
         }), 500
 
 @agent_bp.route('/api/agent/coordinate', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/coordinate', methods=['POST'])
 @rate_limit()
 def coordinate_agent():
     """Coordinate agent with service worker for production"""
@@ -308,7 +297,6 @@ def coordinate_agent():
         }), 500
 
 @agent_bp.route('/api/agent/award-xp', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/award-xp', methods=['POST'])
 @rate_limit()
 def award_agent_xp():
     """Award XP to agent"""
@@ -333,7 +321,6 @@ def award_agent_xp():
         }), 500
 
 @agent_bp.route('/api/agent/save-memory', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/save-memory', methods=['POST'])
 @rate_limit()
 def save_visual_memory():
     """Save visual memory for agent"""
@@ -358,7 +345,6 @@ def save_visual_memory():
         }), 500
 
 @agent_bp.route('/api/agent/learn-from-memory', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/learn-from-memory', methods=['POST'])
 @rate_limit()
 def learn_from_memory():
     """Agent learns from visual memory"""
@@ -382,7 +368,6 @@ def learn_from_memory():
         }), 500
 
 @agent_bp.route('/api/agent/predict-behavior', methods=['GET', 'POST'])
-@agent_bp.route('/vidgenerator/api/agent/predict-behavior', methods=['GET', 'POST'])
 @rate_limit()
 def predict_behavior():
     """Predict user behavior based on agent analysis"""
@@ -410,7 +395,6 @@ def predict_behavior():
         }), 500
 
 @agent_bp.route('/api/agent/generate-tasks', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/generate-tasks', methods=['POST'])
 @rate_limit()
 def generate_smart_tasks():
     """Auto-generate smart tasks"""
@@ -434,7 +418,6 @@ def generate_smart_tasks():
         }), 500
 
 @agent_bp.route('/api/agent/recommendations', methods=['GET', 'POST'])
-@agent_bp.route('/vidgenerator/api/agent/recommendations', methods=['GET', 'POST'])
 @rate_limit()
 def get_recommendations():
     """Get smart recommendations"""
@@ -515,7 +498,6 @@ def get_recommendations():
         }), 500
 
 @agent_bp.route('/api/agent/unified-points', methods=['GET'])
-@agent_bp.route('/vidgenerator/api/agent/unified-points', methods=['GET'])
 @rate_limit()
 def get_agent_with_points():
     """Get agent data with unified points integration"""
@@ -537,7 +519,6 @@ def get_agent_with_points():
         }), 500
 
 @agent_bp.route('/api/agent/recall-memory', methods=['GET', 'POST'])
-@agent_bp.route('/vidgenerator/api/agent/recall-memory', methods=['GET', 'POST'])
 @rate_limit()
 def recall_memory():
     """Recall visual memory by ID or category"""
@@ -567,7 +548,6 @@ def recall_memory():
         }), 500
 
 @agent_bp.route('/api/agent/apply-memory-decay', methods=['POST'])
-@agent_bp.route('/vidgenerator/api/agent/apply-memory-decay', methods=['POST'])
 @rate_limit()
 def apply_memory_decay():
     """Apply memory decay to agent memories"""

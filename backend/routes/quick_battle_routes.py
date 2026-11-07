@@ -35,7 +35,6 @@ def create_quick_battle():
 
 
 @quick_battle_bp.route('/api/quick-battle/complete', methods=['GET', 'POST'], strict_slashes=False)
-@quick_battle_bp.route('/vidgenerator/api/quick-battle/complete', methods=['GET', 'POST'])
 def complete_quick_battle():
     """Complete a quick battle and award points with detailed action counting"""
     try:
@@ -86,7 +85,6 @@ def complete_quick_battle():
         }), 500
 
 @quick_battle_bp.route('/api/quick-battle/track-action', methods=['POST'], strict_slashes=False)
-@quick_battle_bp.route('/vidgenerator/api/quick-battle/track-action', methods=['POST'])
 def track_battle_action():
     """Track a single action during battle (click, attack, defense, ability)"""
     try:
@@ -201,7 +199,6 @@ def get_intelligence():
 
 
 @quick_battle_bp.route('/api/quick-battle/join-queue', methods=['POST'], strict_slashes=False)
-@quick_battle_bp.route('/vidgenerator/api/quick-battle/join-queue', methods=['POST'])
 def join_matchmaking_queue():
     """Join matchmaking queue to find opponent"""
     try:
@@ -222,7 +219,6 @@ def join_matchmaking_queue():
         }), 500
 
 @quick_battle_bp.route('/api/quick-battle/leave-queue', methods=['POST'], strict_slashes=False)
-@quick_battle_bp.route('/vidgenerator/api/quick-battle/leave-queue', methods=['POST'])
 def leave_matchmaking_queue():
     """Leave matchmaking queue"""
     try:
@@ -239,7 +235,6 @@ def leave_matchmaking_queue():
         }), 500
 
 @quick_battle_bp.route('/api/quick-battle/queue-status', methods=['GET'], strict_slashes=False)
-@quick_battle_bp.route('/vidgenerator/api/quick-battle/queue-status', methods=['GET'])
 def get_queue_status():
     """Get queue status for user"""
     try:

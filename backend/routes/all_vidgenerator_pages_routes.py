@@ -1,6 +1,5 @@
 """
-All Vidgenerator Pages Routes
-Complete route coverage for all pages in vidgenerator subfolders
+Legacy page fallback routes — serve root index.html copies (vidgenerator/ tree removed).
 """
 from flask import Blueprint, Response
 import os
@@ -8,40 +7,19 @@ import os
 all_vidgenerator_pages_bp = Blueprint('all_vidgenerator_pages', __name__)
 
 def _serve_vidgenerator_page(page_name: str, page_title: str):
-    """Serve any vidgenerator page"""
+    """Serve a public page from the project root (canonical site paths)."""
     try:
-        # Get base path (project root)
-        # __file__ is backend/routes/all_vidgenerator_pages_routes.py
-        # Go up 2 levels to get project root
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        
-        # Try multiple possible paths
         possible_paths = [
-            # Local development path (most common)
-            os.path.join(base_path, 'vidgenerator', page_name, 'index.html'),
-            # Server path (if deployed)
-            f'/var/www/html/vidgenerator/vidgenerator/{page_name}/index.html',
-            f'/var/www/html/vidgenerator/{page_name}/index.html',
-            # Alternative local path
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vidgenerator', page_name, 'index.html'),
+            os.path.join(base_path, page_name, 'index.html'),
         ]
-        
-        # Debug: print paths being checked
-        import sys
-        print(f"[Trophies Route] Looking for page: {page_name}", file=sys.stderr, flush=True)
-        print(f"[Trophies Route] Base path: {base_path}", file=sys.stderr, flush=True)
-        
         for file_path in possible_paths:
-            print(f"[Trophies Route] Checking: {file_path}", file=sys.stderr, flush=True)
             if os.path.exists(file_path):
-                print(f"[Trophies Route] Found file at: {file_path}", file=sys.stderr, flush=True)
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 response = Response(content, mimetype='text/html; charset=utf-8')
                 response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
                 return response
-            else:
-                print(f"[Trophies Route] File not found: {file_path}", file=sys.stderr, flush=True)
         
         # Fallback HTML
         return f"""
@@ -58,7 +36,7 @@ def _serve_vidgenerator_page(page_name: str, page_title: str):
         <body>
             <h1>{page_title}</h1>
             <p>Page loading...</p>
-            <p><a href="/vidgenerator/">Back to Home</a></p>
+            <p><a href="/">Back to Home</a></p>
         </body>
         </html>
         """, 200

@@ -16,7 +16,6 @@ enhanced_systems_bp = Blueprint('enhanced_systems', __name__)
 
 # Enhanced Tech Tree Routes
 @enhanced_systems_bp.route('/api/tech-tree/quests/add', methods=['POST'])
-@enhanced_systems_bp.route('/vidgenerator/api/tech-tree/quests/add', methods=['POST'])
 def add_quest_to_tech():
     """Add quest to tech tree node"""
     try:
@@ -41,7 +40,6 @@ def add_quest_to_tech():
 
 
 @enhanced_systems_bp.route('/api/tech-tree/conclusion/add', methods=['POST'])
-@enhanced_systems_bp.route('/vidgenerator/api/tech-tree/conclusion/add', methods=['POST'])
 def add_research_conclusion():
     """Add research conclusion to tech tree node"""
     try:
@@ -65,7 +63,6 @@ def add_research_conclusion():
 
 
 @enhanced_systems_bp.route('/api/tech-tree/with-quests', methods=['GET'])
-@enhanced_systems_bp.route('/vidgenerator/api/tech-tree/with-quests', methods=['GET'])
 def get_tech_with_quests():
     """Get tech tree with quests and conclusions"""
     try:
@@ -164,7 +161,6 @@ def get_all_abilities_list():
 
 
 @enhanced_systems_bp.route('/api/skills/unlock', methods=['POST'])
-@enhanced_systems_bp.route('/vidgenerator/api/skills/unlock', methods=['POST'])
 def unlock_ability():
     """Unlock an ability"""
     try:
@@ -189,7 +185,6 @@ def unlock_ability():
 
 
 @enhanced_systems_bp.route('/api/skills/user', methods=['GET'])
-@enhanced_systems_bp.route('/vidgenerator/api/skills/user', methods=['GET'])
 def get_user_abilities():
     """Get user's abilities"""
     try:
@@ -205,7 +200,6 @@ def get_user_abilities():
 
 # Enhanced User Profile Routes
 @enhanced_systems_bp.route('/api/profile/get', methods=['GET'])
-@enhanced_systems_bp.route('/vidgenerator/api/profile/get', methods=['GET'])
 def get_user_profile():
     """Get user profile"""
     try:
@@ -223,7 +217,6 @@ def get_user_profile():
 
 
 @enhanced_systems_bp.route('/api/profile/update', methods=['POST'])
-@enhanced_systems_bp.route('/vidgenerator/api/profile/update', methods=['POST'])
 def update_user_profile():
     """Update user profile"""
     try:
@@ -245,7 +238,6 @@ def update_user_profile():
 
 # Unified Point System JSON Storage Routes
 @enhanced_systems_bp.route('/api/points/json/get', methods=['GET'])
-@enhanced_systems_bp.route('/vidgenerator/api/points/json/get', methods=['GET'])
 def get_points_json():
     """Get points from JSON storage (fast refresh)"""
     try:
@@ -265,7 +257,6 @@ def get_points_json():
 
 
 @enhanced_systems_bp.route('/api/points/json/increment', methods=['POST'])
-@enhanced_systems_bp.route('/vidgenerator/api/points/json/increment', methods=['POST'])
 def increment_point():
     """Increment a point type (fast refresh)"""
     try:

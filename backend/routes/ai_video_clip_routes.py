@@ -26,7 +26,6 @@ def get_providers():
 # Note: Middleware strips /vidgenerator, so /vidgenerator/api/* becomes /api/* before matching
 # Adding both variants to ensure route matching
 @ai_video_clip_bp.route('/api/ai-video/generate', methods=['POST', 'GET', 'OPTIONS'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-video/generate', methods=['POST', 'GET', 'OPTIONS'])
 @rate_limit()
 def generate_video():
     """Generate video with all AI"""
@@ -134,7 +133,6 @@ def generate_video():
 # Note: Middleware strips /vidgenerator, so /vidgenerator/api/* becomes /api/* before matching
 # Adding both variants to ensure route matching
 @ai_video_clip_bp.route('/api/ai-clips/generate', methods=['POST', 'GET', 'OPTIONS'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-clips/generate', methods=['POST', 'GET', 'OPTIONS'])
 @rate_limit()
 def generate_clips():
     """Generate multiple clips with all AI"""
@@ -245,7 +243,6 @@ def get_user_videos(user_id):
 
 
 @ai_video_clip_bp.route('/api/ai-video/video/<video_id>', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-video/video/<video_id>', methods=['GET'])
 def serve_video(video_id):
     """Serve AI-generated video file - Immortalized link"""
     try:
@@ -310,7 +307,6 @@ def serve_video(video_id):
 
 
 @ai_video_clip_bp.route('/api/ai-clip/video/<clip_id>', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-clip/video/<clip_id>', methods=['GET'])
 def serve_clip(clip_id):
     """Serve AI-generated clip file - Immortalized link"""
     try:
@@ -377,21 +373,18 @@ def serve_clip(clip_id):
 
 # Short permanent links for videos and clips
 @ai_video_clip_bp.route('/v/<video_id>', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/v/<video_id>', methods=['GET'])
 def serve_video_short(video_id):
     """Short permanent link for video - Immortalized"""
     return serve_video(video_id)
 
 
 @ai_video_clip_bp.route('/c/<clip_id>', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/c/<clip_id>', methods=['GET'])
 def serve_clip_short(clip_id):
     """Short permanent link for clip - Immortalized"""
     return serve_clip(clip_id)
 
 
 @ai_video_clip_bp.route('/api/ai-video/thumbnail/<video_id>', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-video/thumbnail/<video_id>', methods=['GET'])
 def serve_thumbnail(video_id):
     """Serve video thumbnail"""
     try:
@@ -424,7 +417,6 @@ def serve_thumbnail(video_id):
 
 
 @ai_video_clip_bp.route('/api/ai-video/metadata/<video_id>', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-video/metadata/<video_id>', methods=['GET'])
 def serve_metadata(video_id):
     """Serve video metadata"""
     try:
@@ -455,7 +447,6 @@ def serve_metadata(video_id):
 
 
 @ai_video_clip_bp.route('/api/ai-clip/thumbnail/<clip_id>', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-clip/thumbnail/<clip_id>', methods=['GET'])
 def serve_clip_thumbnail(clip_id):
     """Serve clip thumbnail"""
     try:
@@ -488,7 +479,6 @@ def serve_clip_thumbnail(clip_id):
 
 
 @ai_video_clip_bp.route('/api/ai-clip/metadata/<clip_id>', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-clip/metadata/<clip_id>', methods=['GET'])
 def serve_clip_metadata(clip_id):
     """Serve clip metadata"""
     try:
@@ -519,7 +509,6 @@ def serve_clip_metadata(clip_id):
 
 
 @ai_video_clip_bp.route('/api/ai-video/batch-status', methods=['GET'])
-@ai_video_clip_bp.route('/vidgenerator/api/ai-video/batch-status', methods=['GET'])
 @rate_limit()
 def batch_status():
     """Get status of multiple videos/clips"""

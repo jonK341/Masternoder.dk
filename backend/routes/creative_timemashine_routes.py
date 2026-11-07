@@ -15,7 +15,6 @@ import uuid
 creative_timemashine_bp = Blueprint('creative_timemashine', __name__)
 
 @creative_timemashine_bp.route('/api/timemashine/project', methods=['POST'])
-@creative_timemashine_bp.route('/vidgenerator/api/timemashine/project', methods=['POST'])
 @rate_limit()
 def project_to_future():
     """Project website into the future (500+ years)"""
@@ -40,7 +39,6 @@ def project_to_future():
 
 
 @creative_timemashine_bp.route('/api/timemashine/projection/<projection_id>', methods=['GET'])
-@creative_timemashine_bp.route('/vidgenerator/api/timemashine/projection/<projection_id>', methods=['GET'])
 @rate_limit()
 def get_projection(projection_id: str):
     """Get a specific future projection"""
@@ -54,7 +52,6 @@ def get_projection(projection_id: str):
 
 
 @creative_timemashine_bp.route('/api/timemashine/user/<user_id>/projections', methods=['GET'])
-@creative_timemashine_bp.route('/vidgenerator/api/timemashine/user/<user_id>/projections', methods=['GET'])
 @rate_limit()
 def get_user_projections(user_id: str):
     """Get all projections for a user"""
@@ -68,7 +65,6 @@ def get_user_projections(user_id: str):
 
 
 @creative_timemashine_bp.route('/api/timemashine/download-tech', methods=['POST'])
-@creative_timemashine_bp.route('/vidgenerator/api/timemashine/download-tech', methods=['POST'])
 @rate_limit()
 def download_future_tech():
     """Download future technology from projection"""
@@ -96,7 +92,6 @@ def download_future_tech():
 
 
 @creative_timemashine_bp.route('/api/timemashine/integrate-battle', methods=['POST'])
-@creative_timemashine_bp.route('/vidgenerator/api/timemashine/integrate-battle', methods=['POST'])
 @rate_limit()
 def integrate_to_battle():
     """Integrate downloaded technology intelligence into battle logic"""
@@ -130,7 +125,6 @@ def integrate_to_battle():
 
 
 @creative_timemashine_bp.route('/api/timemashine/battle-logic/<battle_id>', methods=['GET'])
-@creative_timemashine_bp.route('/vidgenerator/api/timemashine/battle-logic/<battle_id>', methods=['GET'])
 @rate_limit()
 def get_battle_logic(battle_id: str):
     """Get enhanced battle logic for a battle"""
@@ -144,7 +138,6 @@ def get_battle_logic(battle_id: str):
 
 
 @creative_timemashine_bp.route('/api/timemashine/downloaded-tech/<user_id>', methods=['GET'])
-@creative_timemashine_bp.route('/vidgenerator/api/timemashine/downloaded-tech/<user_id>', methods=['GET'])
 @rate_limit()
 def get_downloaded_tech(user_id: str):
     """Get all downloaded technologies for a user"""
@@ -158,7 +151,6 @@ def get_downloaded_tech(user_id: str):
 
 
 @creative_timemashine_bp.route('/api/timemashine/future-technologies', methods=['GET'])
-@creative_timemashine_bp.route('/vidgenerator/api/timemashine/future-technologies', methods=['GET'])
 @rate_limit()
 def get_future_technologies():
     """Get list of available future technologies"""
