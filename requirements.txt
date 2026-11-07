@@ -1,12 +1,12 @@
 # Phase 1: Core Foundation
-# Flask 2.2.5 and Werkzeug 2.2.3 are compatible and stable
-Flask==2.2.5
+# Keep core pins aligned with requirements-production.txt (Python 3.12+ on server) <!-- pragma: allowlist secret -->
+Flask==2.3.3
 click>=8.0.0  # Required for Flask 2.2.5 - ParameterSource import
 Flask-SQLAlchemy==3.0.5
 SQLAlchemy==1.4.23
 requests==2.31.0
 python-dotenv>=1.0.1
-Werkzeug==2.2.3
+Werkzeug>=2.3.8,<3.0
 
 # For testing and debugging
 urllib3>=1.26.0

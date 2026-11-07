@@ -14,9 +14,7 @@ function createStandardNavigation(currentPage = '') {
         { path: '/social', name: 'Social', icon: '👥', id: 'social' },
         { path: '/shop', name: 'Shop', icon: '🛒', id: 'shop' },
         { path: '/chat', name: 'Chat', icon: '💬', id: 'chat' },
-        { path: '/debugger', name: 'Debugger', icon: '🔧', id: 'debugger' },
-        { path: '/victory-tech-tree', name: 'Victory Tech Tree', icon: '🏆', id: 'victory-tech-tree' },
-        { path: '/danish-divine-tech-tree', name: 'Danish Tech Tree', icon: '🇩🇰', id: 'danish-divine-tech-tree' }
+        { path: '/debugger', name: 'Debugger', icon: '🔧', id: 'debugger' }
     ];
     
     return `
@@ -48,9 +46,7 @@ function createStandardFooter() {
         { path: '/social', name: 'Social', icon: 'fas fa-users' },
         { path: '/shop', name: 'Shop', icon: 'fas fa-shopping-cart' },
         { path: '/chat', name: 'Chat', icon: 'fas fa-comments' },
-        { path: '/debugger', name: 'Debugger', icon: 'fas fa-tools' },
-        { path: '/victory-tech-tree', name: 'Victory Tech Tree', icon: 'fas fa-trophy' },
-        { path: '/danish-divine-tech-tree', name: 'Danish Tech Tree', icon: 'fas fa-flag' }
+        { path: '/debugger', name: 'Debugger', icon: 'fas fa-tools' }
     ];
     
     return `

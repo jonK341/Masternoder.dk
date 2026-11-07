@@ -1,6 +1,5 @@
 ﻿/**
- * 50 Agent Technologies Frontend Integration
- * Connects all 50 techs to frontend dashboards
+ * Agent technologies the debugger actually calls.
  */
 class AgentTechsManager {
     constructor() {
@@ -16,56 +15,8 @@ class AgentTechsManager {
     async loadAllTechsStatus() {
         try {
             const techIds = [
-                'agent_activity_tracker',
-                'agent_adaptive_learner',
-                'agent_alert_monitor',
-                'agent_anomaly_detector',
-                'agent_api_gateway',
-                'agent_auto_scaler',
-                'agent_behavior_tracker',
-                'agent_blockchain_ledger',
-                'agent_cloud_sync',
-                'agent_code_analyzer',
-                'agent_code_formatter',
-                'agent_config_scanner',
-                'agent_container_orchestrator',
-                'agent_database_scanner',
-                'agent_decision_maker',
-                'agent_dependency_checker',
-                'agent_distributed_cache',
-                'agent_documentation_generator',
-                'agent_endpoint_scanner',
-                'agent_error_tracker',
-                'agent_event_driven_processor',
+                'agent_electric_magnet',
                 'agent_event_tracker',
-                'agent_file_scanner',
-                'agent_geofence_manager',
-                'agent_gps_coordinator',
-                'agent_health_monitor',
-                'agent_load_balancer',
-                'agent_location_tracker',
-                'agent_log_analyzer',
-                'agent_memory_debugger',
-                'agent_metric_monitor',
-                'agent_metric_tracker',
-                'agent_microservices',
-                'agent_ml_predictor',
-                'agent_navigation_system',
-                'agent_network_scanner',
-                'agent_neural_network',
-                'agent_optimization_engine',
-                'agent_pattern_matcher',
-                'agent_performance_profiler',
-                'agent_quantum_processor',
-                'agent_resource_monitor',
-                'agent_route_optimizer',
-                'agent_security_scanner',
-                'agent_self_healer',
-                'agent_service_mesh',
-                'agent_test_generator',
-                'agent_uptime_monitor',
-                'agent_vulnerability_scanner',
-                'agent_workflow_orchestrator',
             ];
             
             const promises = techIds.map(techId => 
@@ -126,7 +77,7 @@ class AgentTechsManager {
 
         const html = `
             <div class="agent-techs-dashboard">
-                <h2>50 Agent Technologies</h2>
+                <h2>Agent technologies</h2>
                 <div class="techs-grid" id="techs-grid">
                     <div class="loading">Loading technologies...</div>
                 </div>

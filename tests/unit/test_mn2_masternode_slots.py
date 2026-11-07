@@ -92,3 +92,32 @@ def test_purge_force_no_collateral(hosts_file):
     result = mn.purge_stale_provisioning_hosts(force_no_collateral=True, dry_run=False)
     assert result["removed"] == ["ghost"]
     assert result["slots_used"] == 0
+
+
+def test_delete_pending_provisioning_keeps_active(hosts_file, tmp_path, monkeypatch):
+    pending_id = "user-SanderSa-abc123"
+    active_id = "user-ActiveHost-1234"
+    pending_alias = mn._alias_from_host_id(pending_id)
+    active_alias = mn._alias_from_host_id(active_id)
+    conf = tmp_path / "masternode.conf"
+    conf.write_text(
+        f"{pending_alias} 1.2.3.4:17646 pk txid 0\n"
+        f"{active_alias} 1.2.3.4:17646 pk2 txid2 1\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(mn, "_masternode_conf_path", lambda: str(conf))
+    _write_hosts(hosts_file, [
+        {"id": pending_id, "status": "provisioning", "collateral_txid": "tx"},
+        {"id": active_id, "status": "active"},
+        {"id": "user-Queued-999", "status": "queued"},
+    ])
+    preview = mn.delete_pending_provisioning_hosts(dry_run=True)
+    assert preview["removed_count"] == 2
+    assert preview["active_kept"] == 1
+
+    applied = mn.delete_pending_provisioning_hosts(dry_run=False)
+    assert applied["removed_count"] == 2
+    assert applied["registry_count_after"] == 1
+    body = conf.read_text(encoding="utf-8")
+    assert active_alias in body
+    assert pending_alias not in body

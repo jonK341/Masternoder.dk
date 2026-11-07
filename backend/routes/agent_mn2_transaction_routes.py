@@ -16,6 +16,7 @@ def _authorized() -> bool:
     tok = (
         request.headers.get("X-Agent-Cron-Token")
         or request.headers.get("X-Ops-Token")
+        or request.headers.get("X-Ops-Secret")
         or request.headers.get("X-Scanner-Token")
         or request.args.get("token")
         or ""

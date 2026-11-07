@@ -2,7 +2,7 @@
 Unified Dashboard Routes
 API for the unified dashboard
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, redirect, request
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,63 +17,8 @@ unified_dashboard_bp = Blueprint('unified_dashboard', __name__)
 @unified_dashboard_bp.route('/unified_dashboard/', methods=['GET'], strict_slashes=False)
 @unified_dashboard_bp.route('/unified_dashboard/index.html', methods=['GET'], strict_slashes=False)
 def unified_dashboard_page():
-    """Serve the unified dashboard page"""
-    from flask import Response
-    import os
-    
-    # Try multiple possible paths (both server and local)
-    base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    possible_paths = [
-        '/var/www/html/vidgenerator/vidgenerator/unified_dashboard/index.html',
-        '/var/www/html/vidgenerator/unified_dashboard/index.html',
-        os.path.join(base_path, 'vidgenerator', 'unified_dashboard', 'index.html'),
-        os.path.join(base_path, 'vidgenerator', 'vidgenerator', 'unified_dashboard', 'index.html'),
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'vidgenerator', 'unified_dashboard', 'index.html'),
-        os.path.join('/var/www/html', 'vidgenerator', 'unified_dashboard', 'index.html'),
-    ]
-    
-    for dashboard_path in possible_paths:
-        try:
-            if os.path.exists(dashboard_path):
-                with open(dashboard_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                response = Response(content, mimetype='text/html; charset=utf-8')
-                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-                response.headers['Pragma'] = 'no-cache'
-                response.headers['Expires'] = '0'
-                return response
-        except Exception as e:
-            continue
-    
-    # Fallback: Return a basic HTML page instead of 404
-    fallback_html = """<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unified Dashboard - MasterNoder</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 40px; text-align: center; }
-        a { color: #00ff88; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
-    <h1>Unified Dashboard</h1>
-    <p>Loading dashboard...</p>
-    <p><a href="/vidgenerator/">← Back to Home</a></p>
-    <script>
-        // Try to load dashboard data
-        fetch('/vidgenerator/api/unified-dashboard/data?user_id=default_user')
-            .then(r => r.json())
-            .then(data => console.log('Dashboard data:', data))
-            .catch(e => console.error('Error loading dashboard:', e));
-    </script>
-</body>
-</html>"""
-    response = Response(fallback_html, mimetype='text/html; charset=utf-8')
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-    return response
+    """Retired dashboard URL. Points, level, and stats live on the profile."""
+    return redirect('/profile?tab=points', code=301)
 
 
 @unified_dashboard_bp.route('/api/tech-tree', methods=['GET'])

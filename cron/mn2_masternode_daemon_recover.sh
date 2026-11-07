@@ -33,11 +33,14 @@ done
 if [ -f "${SCRIPT_DIR}/mn2_read_ops_secret.sh" ]; then
   # shellcheck source=/dev/null
   source "${SCRIPT_DIR}/mn2_read_ops_secret.sh"
-  RESP=$(curl -s -w "\n%{http_code}" -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" \
-    "http://127.0.0.1:5000/api/mn2/masternode/recover?limit=50&restart_daemon=0")
-  CODE=$(echo "$RESP" | tail -1)
-  if [ "$CODE" = "404" ] || [ "$CODE" = "000" ]; then
-    curl -s -X POST -H "X-Ops-Secret: ${MN2_OPS_SECRET}" \
-      "http://127.0.0.1:5000/api/mn2/staking/ops/masternode-recover?limit=50&restart_daemon=0" >/dev/null || true
+  SECRET=$(mn2_read_ops_secret 2>/dev/null || true)
+  if [ -n "${SECRET:-}" ]; then
+    RESP=$(curl -s -w "\n%{http_code}" -X POST -H "X-Ops-Secret: ${SECRET}" \
+      "http://127.0.0.1:5000/api/mn2/masternode/recover?limit=50&restart_daemon=0")
+    CODE=$(echo "$RESP" | tail -1)
+    if [ "$CODE" = "404" ] || [ "$CODE" = "000" ]; then
+      curl -s -X POST -H "X-Ops-Secret: ${SECRET}" \
+        "http://127.0.0.1:5000/api/mn2/staking/ops/masternode-recover?limit=50&restart_daemon=0" >/dev/null || true
+    fi
   fi
 fi

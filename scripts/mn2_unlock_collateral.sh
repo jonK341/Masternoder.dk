@@ -22,8 +22,18 @@ unlock_wallet() {
   if [[ -z "$pw" ]]; then
     return 0
   fi
+  if [[ "$pw" == *your-passphrase* || "$pw" == *your-real-passphrase* ]]; then
+    log "SKIP walletpassphrase — replace MN2_WALLET_PASSPHRASE placeholder with the real wallet password"
+    return 0
+  fi
   log "walletpassphrase (120s, staking-only)"
-  "$CLI" $D walletpassphrase "$pw" 120 true 2>/dev/null || true
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 25 "$CLI" $D walletpassphrase "$pw" 120 true 2>/dev/null || {
+      log "WARN: walletpassphrase timed out or failed (daemon busy or wrong password)"
+    }
+  else
+    "$CLI" $D walletpassphrase "$pw" 120 true 2>/dev/null || true
+  fi
 }
 
 unlock_outputs() {
