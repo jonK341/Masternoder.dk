@@ -1,0 +1,270 @@
+{
+  "performers": {
+    "performer_wave3_nebula_prime": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548920Z"
+    },
+    "performer_wave3_cosmic_rift": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549026Z"
+    },
+    "performer_wave3_stellar_dawn": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549129Z"
+    },
+    "performer_wave3_lunar_cascade": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549232Z"
+    },
+    "performer_wave3_solar_flare": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549337Z"
+    },
+    "performer_wave3_orion_veil": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549440Z"
+    },
+    "performer_wave3_comet_whisper": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549543Z"
+    },
+    "performer_wave3_void_dancer": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549647Z"
+    },
+    "performer_wave3_pulsar_heart": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549749Z"
+    },
+    "performer_wave3_galaxy_silk": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549860Z"
+    },
+    "performer_wave3_drift_queen": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.549980Z"
+    },
+    "performer_wave3_cyber_rose": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.550086Z"
+    },
+    "performer_wave3_holo_muse": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.550190Z"
+    },
+    "performer_wave3_neon_siren": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.550294Z"
+    },
+    "performer_wave3_quantum_lace": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.550405Z"
+    },
+    "performer_wave3_midnight_orbit": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.550628Z"
+    },
+    "performer_wave3_coral_signal": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.550744Z"
+    },
+    "performer_wave3_mint_signal": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.550853Z"
+    },
+    "performer_wave3_amber_signal": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.550959Z"
+    },
+    "performer_wave3_azure_signal": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.551065Z"
+    },
+    "performer_wave3_violet_signal": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.551184Z"
+    },
+    "performer_wave3_chrome_vox": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.551293Z"
+    },
+    "performer_wave3_plasma_silk": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.551400Z"
+    },
+    "performer_wave3_rift_muse": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.551504Z"
+    },
+    "performer_wave3_nova_drift": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.551610Z"
+    },
+    "performer_nova": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.544497Z"
+    },
+    "performer_luna": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.544629Z"
+    },
+    "performer_sage": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.544743Z"
+    },
+    "performer_ember": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.544851Z"
+    },
+    "performer_iris": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.544957Z"
+    },
+    "performer_aurora": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545062Z"
+    },
+    "performer_jade": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545166Z"
+    },
+    "performer_velvet": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545271Z"
+    },
+    "performer_skylar": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545375Z"
+    },
+    "performer_rio": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545480Z"
+    },
+    "performer_mist": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545583Z"
+    },
+    "performer_honey": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545687Z"
+    },
+    "performer_storm": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545793Z"
+    },
+    "performer_pixie": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.545909Z"
+    },
+    "performer_venus": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546014Z"
+    },
+    "performer_wave2_studio_host_a": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546118Z"
+    },
+    "performer_wave2_studio_host_b": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546224Z"
+    },
+    "performer_wave2_studio_host_c": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546329Z"
+    },
+    "performer_wave2_studio_host_d": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546433Z"
+    },
+    "performer_wave2_studio_host_e": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546544Z"
+    },
+    "performer_wave2_studio_host_f": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546652Z"
+    },
+    "performer_wave2_studio_host_g": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546761Z"
+    },
+    "performer_wave2_studio_host_h": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546868Z"
+    },
+    "performer_wave2_studio_host_i": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.546971Z"
+    },
+    "performer_wave2_studio_host_j": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.547080Z"
+    },
+    "performer_wave2_studio_host_k": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.547203Z"
+    },
+    "performer_wave2_studio_host_l": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.547321Z"
+    },
+    "performer_wave2_studio_host_m": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.547437Z"
+    },
+    "performer_wave2_studio_host_n": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.547577Z"
+    },
+    "performer_wave2_studio_host_o": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.547702Z"
+    },
+    "performer_wave2_studio_host_p": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.547817Z"
+    },
+    "performer_wave2_studio_host_q": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.547935Z"
+    },
+    "performer_wave2_studio_host_r": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548050Z"
+    },
+    "performer_wave2_studio_host_s": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548167Z"
+    },
+    "performer_wave2_studio_host_t": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548278Z"
+    },
+    "performer_wave2_studio_host_u": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548386Z"
+    },
+    "performer_wave2_studio_host_v": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548491Z"
+    },
+    "performer_wave2_studio_host_w": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548595Z"
+    },
+    "performer_wave2_studio_host_x": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548699Z"
+    },
+    "performer_wave2_studio_host_y": {
+      "paypal_checkout_enabled": true,
+      "paypal_provisioned_at": "2026-11-07T22:34:20.548814Z"
+    }
+  },
+  "platform": {
+    "paypal_checkout": true,
+    "paypal_provisioned_at": "2026-11-07T22:34:20.551612Z"
+  },
+  "_schema": "camgirls_payout_v1",
+  "_note": "MN2 address field is set on server via camgirls_provision_payout_addresses.py; paypal_email from env at provision."
+}

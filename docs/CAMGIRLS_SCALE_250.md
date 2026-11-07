@@ -38,6 +38,20 @@ bash scripts/camgirls_batch_onboard.sh --file waves/wave2.json --batch 2 --wave-
 - On production: `bash scripts/camgirls_py.sh scripts/camgirls_provision_payout_addresses.py --check-rpc`
 - Per-id repair: `scripts/camgirls_provision_payout_addresses.py --performer performer_wave2_studio_host_a`
 
+### Scale paused — wallets, assignments, MN2 rewards
+
+Roster wave 4+ is paused (`data/camgirls_ops_state.json` → `scale_paused`). Ops focus:
+
+```bash
+.venv/bin/python scripts/camgirls_assign_and_reward.py --audit --no-rpc
+
+bash scripts/camgirls_py.sh scripts/camgirls_provision_payout_addresses.py --check-rpc
+bash scripts/camgirls_py.sh scripts/camgirls_assign_and_reward.py --provision --assign --reward --amount 0.0001
+```
+
+- State: `data/camgirls_assignments.json`, checkout flags in `data/camgirls_payout_addresses.json` (MN2 `address` filled on server)
+- Ops APIs: `GET/POST /api/camgirls/ops/wallet-audit`, `GET/POST /api/camgirls/ops/assign-agents`
+
 ### Media
 
 - `--generate-media` runs `scripts/camgirls_generate_performer_media.py` (WebP/SVG/preview ZIPs).

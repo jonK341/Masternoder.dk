@@ -901,7 +901,8 @@ MANIFESTS = {
         "data/camgirls_performers.json",
         "data/camgirls_agent_models.json",
         "data/camgirls_studio_catalog.json",
-        # Runtime: provision on server via camgirls_provision_payout_addresses.py — do not deploy empty file.
+        # Payout JSON: commit checkout flags only; MN2 address keys filled on server via camgirls_provision_payout_addresses.py.
+        "data/camgirls_payout_addresses.json",
         "data/camgirls_performers_production.json",
         "data/camgirls_performers_production.template.json",
         "scripts/camgirls_onboard_performers.py",
