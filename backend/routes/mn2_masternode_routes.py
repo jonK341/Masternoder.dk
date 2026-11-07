@@ -4,6 +4,7 @@ MN2 masternode hosting + unified services catalog routes.
 Public:
   GET /api/mn2/services           — all MN2 platform services in one place
   GET /api/mn2/masternode/service — hosting offer + live status
+  GET /api/mn2/masternode/hosting/config — alias of checkout/config (capacity + PayPal)
 
 Ops (X-Ops-Token / MN2_OPS_SECRET):
   GET  /api/mn2/masternode/hosts
@@ -122,6 +123,7 @@ def masternode_collateral_outputs():
 
 
 @mn2_masternode_bp.route("/api/mn2/masternode/checkout/config", methods=["GET"])
+@mn2_masternode_bp.route("/api/mn2/masternode/hosting/config", methods=["GET"])
 def masternode_checkout_config():
     try:
         result = mn_hosting.get_paypal_config()
