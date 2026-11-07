@@ -410,6 +410,32 @@ def masternode_sync_ping_targets():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/my-hosting-rewards", methods=["GET"])
+def masternode_my_hosting_rewards():
+    try:
+        user_id = resolve_user_id(from_body=False, from_query=True)
+        from backend.services.mn2_masternode_hosting_rewards_service import renter_rewards_summary
+
+        return jsonify(renter_rewards_summary(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/accrue-renter-rewards", methods=["POST"])
+def masternode_accrue_renter_rewards():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        data = _body()
+        dry_run = bool(data.get("dry_run") or request.args.get("dry_run"))
+        limit = data.get("limit") or request.args.get("limit") or 500
+        from backend.services.mn2_masternode_hosting_rewards_service import accrue_renter_rewards
+
+        return jsonify(accrue_renter_rewards(limit=int(limit), dry_run=dry_run)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/refresh-collateral", methods=["POST"])
 def masternode_refresh_collateral():
     """Ops: mark hosts whose collateral UTXO is spent/missing."""

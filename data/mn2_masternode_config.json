@@ -24,6 +24,14 @@
     "price_coins_per_slot": null,
     "comment": "null = derive from USD + coins_per_mn2 + live MN2/USD; override with fixed coin price per slot"
   },
+  "renter_rewards": {
+    "enabled": true,
+    "use_block_subsidy": true,
+    "masternode_share_of_block": 0.5,
+    "platform_fee_percent": 0,
+    "fallback_reward_mn2": 8.0,
+    "comment": "Cron POST /api/mn2/masternode/accrue-renter-rewards credits owner_user_id when listmasternodes lastpaid advances."
+  },
   "rental": {
     "enabled": true,
     "price_usd_monthly": 5.0,

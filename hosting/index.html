@@ -74,6 +74,14 @@
                     </div>
                 </div>
             </div>
+            <div class="host-panel" id="host-rewards-panel" hidden>
+                <div class="host-collapsible-head">
+                    <h2>Your masternode rewards</h2>
+                    <span class="host-muted">Credited when your leased node&apos;s on-chain payout advances</span>
+                </div>
+                <p class="host-muted">Total credited to your MN2 balance: <strong id="host-my-rewards-total">—</strong></p>
+                <div id="host-my-rewards-detail" class="host-muted"></div>
+            </div>
             <div class="host-panel">
                 <div class="host-collapsible-head">
                     <h2>Activity</h2>
@@ -196,7 +204,11 @@
                 </details>
                 <details>
                     <summary>Do I need my own server?</summary>
-                    <p>No — we operate the daemon and collateral workflow. You only pay for the slot; rewards accrue per MN2 tokenomics.</p>
+                    <p>No — we operate the daemon and collateral workflow. You only pay for the slot.</p>
+                </details>
+                <details>
+                    <summary>Do I get masternode payouts when I lease?</summary>
+                    <p>Yes. When your assigned node receives an on-chain masternode payout (<code>lastpaid</code> advances), we credit your in-app <strong>MN2 balance</strong>. Totals appear on <strong>Overview</strong> after you sign in. Hosted provision slots follow the same accrual once active on-chain.</p>
                 </details>
                 <details>
                     <summary>Explorer vs this page?</summary>
@@ -229,7 +241,7 @@
     <script src="/static/js/mn2-site-bridge.js?v=20261010" defer></script>
     <script src="/static/js/error-manager.js?v=20261010" defer></script>
     <script src="/static/js/navigation-toolbar.js" defer></script>
-    <script src="/static/js/hosting-hub.js?v=20261108" defer></script>
+    <script src="/static/js/hosting-hub.js?v=20261109" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="hosting" defer></script>
 </body>
 </html>

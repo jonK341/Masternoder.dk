@@ -38,8 +38,8 @@ def get_rental_config() -> Dict[str, Any]:
         "model": "pre_provisioned",
         "description": (
             rental.get("description")
-            or "Lease an already-enabled platform masternode — rewards accrue on-chain; "
-            "you get the slot for the billing period without waiting for collateral splits."
+            or "Lease a pre-enabled platform masternode — when your node earns a masternode payout, "
+            "we credit your in-app MN2 balance (tracked from on-chain lastpaid)."
         ),
     }
 
@@ -276,6 +276,12 @@ def assign_rental_hosts(user_id: str, slots: int, order_id: str) -> Dict[str, An
         )
         if res.get("success"):
             assigned.append(hid)
+            try:
+                from backend.services.mn2_masternode_hosting_rewards_service import seed_renter_reward_baseline
+
+                seed_renter_reward_baseline(hid)
+            except Exception:
+                pass
     if len(assigned) < slots:
         return {
             "success": False,

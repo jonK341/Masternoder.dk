@@ -481,6 +481,38 @@
     });
   }
 
+  function loadMyHostingRewards() {
+    var panel = q('host-rewards-panel');
+    var totalEl = q('host-my-rewards-total');
+    var detailEl = q('host-my-rewards-detail');
+    if (!panel || !totalEl) return;
+    if (!isAuthed()) {
+      panel.hidden = true;
+      return;
+    }
+    fetchJson('/api/mn2/masternode/my-hosting-rewards?user_id=' + encodeURIComponent(uid()))
+      .then(function (d) {
+        if (!d || !d.success) {
+          panel.hidden = true;
+          return;
+        }
+        var total = Number(d.rewards_total_mn2 || 0);
+        var hosts = d.hosts || [];
+        panel.hidden = false;
+        totalEl.textContent = fmtNum(total, 4) + ' MN2';
+        if (!detailEl) return;
+        if (!hosts.length) {
+          detailEl.textContent = 'No leased nodes yet — rent from the Rent tab to start earning payouts.';
+          return;
+        }
+        detailEl.innerHTML = hosts.map(function (h) {
+          return '<div>' + (h.label || h.host_id || 'Node') + ' · ' + fmtNum(h.rewards_total_mn2 || 0, 4) +
+            ' MN2 · lastpaid block ' + (h.rewards_lastpaid != null ? h.rewards_lastpaid : '—') + '</div>';
+        }).join('');
+      })
+      .catch(function () { if (panel) panel.hidden = true; });
+  }
+
   function loadMyOrders() {
     var tbody = q('host-orders-body');
     if (!tbody) return;
@@ -619,6 +651,7 @@
       toast(pay.message || okMsg, 'ok');
       if (msg) msg.textContent = pay.message || okMsg;
       loadService(true);
+      loadMyHostingRewards();
       loadRentalCatalog();
       loadMyOrders();
     });
@@ -692,6 +725,7 @@
             modal.hidden = true;
             toast('Payment confirmed — provisioning started', 'ok');
             loadService(true);
+            loadMyHostingRewards();
             loadMyOrders();
           } else if (s.status === 'expired' && q('host-onchain-status')) {
             q('host-onchain-status').textContent = 'Payment expired.';
@@ -754,6 +788,7 @@
       if (d && d.success) {
         toast(d.message || 'Payment confirmed', 'ok');
         loadService(true);
+        loadMyHostingRewards();
         loadMyOrders();
       } else toast((d && d.error) || 'Capture failed', 'err');
       try {
@@ -812,6 +847,7 @@
       }
       if (ev.key === 'r' || ev.key === 'R') {
         loadService(true);
+        loadMyHostingRewards();
         loadNetwork();
         toast('Refreshed', 'ok');
       }
@@ -905,6 +941,7 @@
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(function () {
       loadService(true);
+      loadMyHostingRewards();
       loadRentalCatalog();
       if (currentTab === 'network') loadNetwork();
     }, 30000);
@@ -926,6 +963,7 @@
     loadCheckoutConfig().then(function () { return loadRentalCatalog(); });
     loadHealth();
     loadService(true);
+    loadMyHostingRewards();
     loadNetwork();
     startPolling();
   }

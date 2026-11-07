@@ -562,6 +562,19 @@ def register_host(payload: Dict[str, Any]) -> Dict[str, Any]:
         else:
             prev = hosts[existing_idx]
             row["created_at"] = prev.get("created_at") or _iso()
+            for mk in (
+                "collateral_address",
+                "collateral_txid",
+                "collateral_vout",
+                "broadcast_address",
+                "rewards_lastpaid",
+                "rewards_total_mn2",
+                "lease_until",
+            ):
+                if row.get(mk) is None and prev.get(mk) is not None:
+                    row[mk] = prev[mk]
+            if not row.get("owner_user_id") and prev.get("owner_user_id"):
+                row["owner_user_id"] = prev.get("owner_user_id")
             hosts[existing_idx] = row
 
         _save_hosts_doc(hosts)
