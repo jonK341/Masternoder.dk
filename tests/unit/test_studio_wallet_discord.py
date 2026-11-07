@@ -150,6 +150,21 @@ def test_spiderbot_calculated_reply_uses_live_cap(monkeypatch):
     assert "floor.mp3" in out["text"]
 
 
+def test_hosting_config_alias_matches_checkout_config():
+    from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+    from flask import Flask
+
+    app = Flask(__name__)
+    app.config["TESTING"] = True
+    app.register_blueprint(mn2_masternode_bp)
+    client = app.test_client()
+    checkout = client.get("/api/mn2/masternode/checkout/config").get_json()
+    hosting = client.get("/api/mn2/masternode/hosting/config").get_json()
+    assert checkout["success"] is True
+    assert hosting["success"] is True
+    assert hosting["max_hosted_nodes"] == checkout["max_hosted_nodes"] == 500
+
+
 def test_discord_spider_slash_command(monkeypatch):
     from backend.routes.discord_routes import discord_bp
     from flask import Flask
