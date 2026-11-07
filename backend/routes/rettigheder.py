@@ -15,7 +15,6 @@ except ImportError:
 rettigheder_bp = Blueprint('rettigheder', __name__)
 
 @rettigheder_bp.route('/api/rettigheder/slaa', methods=['POST'])
-@rettigheder_bp.route('/vidgenerator/api/rettigheder/slaa', methods=['POST'])
 def slaa_rettigheder():
     """Slå valgte rettigheder"""
     try:
@@ -75,7 +74,6 @@ def slaa_rettigheder():
         }), 500
 
 @rettigheder_bp.route('/api/rettigheder/list', methods=['GET'])
-@rettigheder_bp.route('/vidgenerator/api/rettigheder/list', methods=['GET'])
 def list_rettigheder():
     """List alle tilgængelige rettigheder"""
     rettigheder = [
@@ -91,7 +89,6 @@ def list_rettigheder():
     })
 
 @rettigheder_bp.route('/api/rettigheder/status', methods=['GET'])
-@rettigheder_bp.route('/vidgenerator/api/rettigheder/status', methods=['GET'])
 def get_rettigheder_status():
     """Hent status for alle rettigheder"""
     try:

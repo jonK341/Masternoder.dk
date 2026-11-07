@@ -35,7 +35,6 @@ monetization_top50_bp = Blueprint('monetization_top50', __name__)
 
 
 @monetization_top50_bp.route('/api/monetization/generate-cash', methods=['POST'])
-@monetization_top50_bp.route('/vidgenerator/api/monetization/generate-cash', methods=['POST'])
 def generate_cash():
     """Generate cash from source"""
     try:
@@ -53,8 +52,6 @@ def generate_cash():
 
 @monetization_top50_bp.route('/api/monetization/top50', methods=['GET'])
 @monetization_top50_bp.route('/api/monetization/top-50', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/monetization/top50', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/monetization/top-50', methods=['GET'])
 def get_top_50():
     """Get top 50 earners"""
     try:
@@ -98,7 +95,6 @@ def get_top_50():
 
 
 @monetization_top50_bp.route('/api/monetization/top-6', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/monetization/top-6', methods=['GET'])
 def get_top_6():
     """Get top 6 earners with trophies and resources"""
     try:
@@ -119,8 +115,6 @@ def get_top_6():
 
 @monetization_top50_bp.route('/api/monetization/cash', methods=['GET'])
 @monetization_top50_bp.route('/api/monetization/user-cash', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/monetization/cash', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/monetization/user-cash', methods=['GET'])
 def get_user_cash():
     """Get user cash status"""
     try:
@@ -153,7 +147,6 @@ def get_user_cash():
 
 
 @monetization_top50_bp.route('/api/trophies/generate', methods=['POST'])
-@monetization_top50_bp.route('/vidgenerator/api/trophies/generate', methods=['POST'])
 def generate_trophies():
     """Generate trophies and resources"""
     try:
@@ -168,7 +161,6 @@ def generate_trophies():
 
 
 @monetization_top50_bp.route('/api/trophies/user', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/trophies/user', methods=['GET'])
 def get_user_trophies():
     """Get user trophies"""
     try:
@@ -180,7 +172,6 @@ def get_user_trophies():
 
 
 @monetization_top50_bp.route('/api/knowledge/unlock', methods=['POST'])
-@monetization_top50_bp.route('/vidgenerator/api/knowledge/unlock', methods=['POST'])
 def unlock_knowledge():
     """Unlock knowledge node"""
     try:
@@ -199,8 +190,6 @@ def unlock_knowledge():
 
 @monetization_top50_bp.route('/api/tech-tree/knowledge', methods=['GET'])
 @monetization_top50_bp.route('/api/knowledge/user', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/tech-tree/knowledge', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/knowledge/user', methods=['GET'])
 def get_user_knowledge():
     """Get user knowledge"""
     try:
@@ -229,7 +218,6 @@ def get_user_knowledge():
 
 
 @monetization_top50_bp.route('/api/battles/insane/create', methods=['POST'])
-@monetization_top50_bp.route('/vidgenerator/api/battles/insane/create', methods=['POST'])
 def create_insane_battle():
     """Create insane battle"""
     try:
@@ -244,7 +232,6 @@ def create_insane_battle():
 
 
 @monetization_top50_bp.route('/api/battles/insane/complete', methods=['POST'])
-@monetization_top50_bp.route('/vidgenerator/api/battles/insane/complete', methods=['POST'])
 def complete_insane_battle():
     """Complete insane battle"""
     try:
@@ -262,7 +249,6 @@ def complete_insane_battle():
 
 
 @monetization_top50_bp.route('/api/battles/insane/user', methods=['GET'])
-@monetization_top50_bp.route('/vidgenerator/api/battles/insane/user', methods=['GET'])
 def get_user_insane_battles():
     """Get user insane battles"""
     try:

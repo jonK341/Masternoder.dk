@@ -18,7 +18,6 @@ def get_user_id():
 
 
 @battle_v3_bp.route('/api/battle-v3/create', methods=['POST'])
-@battle_v3_bp.route('/vidgenerator/api/battle-v3/create', methods=['POST'])
 @rate_limit()
 def create_battle():
     """Create a new battle"""
@@ -50,7 +49,6 @@ def create_battle():
 
 
 @battle_v3_bp.route('/api/battle-v3/<battle_id>', methods=['GET'])
-@battle_v3_bp.route('/vidgenerator/api/battle-v3/<battle_id>', methods=['GET'])
 @rate_limit()
 def get_battle(battle_id: str):
     """Get battle details"""
@@ -76,7 +74,6 @@ def get_battle(battle_id: str):
 
 
 @battle_v3_bp.route('/api/battle-v3/<battle_id>/round', methods=['POST'])
-@battle_v3_bp.route('/vidgenerator/api/battle-v3/<battle_id>/round', methods=['POST'])
 @rate_limit()
 def execute_round(battle_id: str):
     """Execute a battle round"""
@@ -105,7 +102,6 @@ def execute_round(battle_id: str):
 
 
 @battle_v3_bp.route('/api/battle-v3/types')
-@battle_v3_bp.route('/vidgenerator/api/battle-v3/types')
 @rate_limit()
 def get_battle_types():
     """Get all battle types"""
@@ -116,7 +112,6 @@ def get_battle_types():
 
 
 @battle_v3_bp.route('/api/battle-v3/strategies')
-@battle_v3_bp.route('/vidgenerator/api/battle-v3/strategies')
 @rate_limit()
 def get_strategies():
     """Get all battle strategies"""

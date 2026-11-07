@@ -13,7 +13,6 @@ ip_mac_user_bp = Blueprint('ip_mac_user', __name__, url_prefix='')
 
 
 @ip_mac_user_bp.route('/api/user/current', methods=['GET'])
-@ip_mac_user_bp.route('/vidgenerator/api/user/current', methods=['GET'])
 @rate_limit(endpoint='/api/user/current')
 def get_current_user():
     """Get current user based on IP/MAC"""
@@ -47,7 +46,6 @@ def get_current_user():
 
 
 @ip_mac_user_bp.route('/api/user/register-mac', methods=['POST'])
-@ip_mac_user_bp.route('/vidgenerator/api/user/register-mac', methods=['POST'])
 @rate_limit(endpoint='/api/user/register-mac')
 def register_mac_address():
     """Register MAC address for current user"""
@@ -83,7 +81,6 @@ def register_mac_address():
 
 
 @ip_mac_user_bp.route('/api/user/statistics', methods=['GET'])
-@ip_mac_user_bp.route('/vidgenerator/api/user/statistics', methods=['GET'])
 @rate_limit(endpoint='/api/user/statistics')
 def get_user_statistics():
     """Get user statistics"""
@@ -100,7 +97,6 @@ def get_user_statistics():
 
 
 @ip_mac_user_bp.route('/api/user/list', methods=['GET'])
-@ip_mac_user_bp.route('/vidgenerator/api/user/list', methods=['GET'])
 @rate_limit(endpoint='/api/user/list')
 def list_users():
     """List all users (admin function)"""

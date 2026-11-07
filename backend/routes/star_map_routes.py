@@ -2026,7 +2026,6 @@ def _load_agent_calendar():
         "appointments": [],
         "agents": [
             "content_generator_agent",
-            "learning_agent",
             "analytics_agent",
             "reporter_agent",
         ],

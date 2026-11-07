@@ -10,8 +10,6 @@ trophie_bp = Blueprint('trophie', __name__)
 
 @trophie_bp.route('/trophie')
 @trophie_bp.route('/trophie/')
-@trophie_bp.route('/vidgenerator/trophie')
-@trophie_bp.route('/vidgenerator/trophie/')
 def trophie_index():
     """Trophie/Trophy page with full template engine integration"""
     try:
@@ -173,7 +171,6 @@ def trophie_index():
         return f"Error loading trophie page: {str(e)}", 500
 
 @trophie_bp.route('/api/trophie/list')
-@trophie_bp.route('/vidgenerator/api/trophie/list')
 def list_trophies_api():
     """List all trophies API with leaderboard integration"""
     try:
@@ -201,7 +198,6 @@ def list_trophies_api():
         }), 500
 
 @trophie_bp.route('/api/trophie/award', methods=['POST'])
-@trophie_bp.route('/vidgenerator/api/trophie/award', methods=['POST'])
 def award_trophy_api():
     """Award a trophy to a user"""
     try:

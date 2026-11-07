@@ -38,7 +38,6 @@ import uuid
 tech_tree_bp = Blueprint('tech_tree', __name__)
 
 @tech_tree_bp.route('/api/tech-tree', methods=['GET'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree', methods=['GET'])
 @rate_limit()
 def get_tech_tree():
     """Get technology tree with user progress"""
@@ -76,7 +75,6 @@ def get_tech_tree():
         }), 200  # Return 200 with empty data instead of 500
 
 @tech_tree_bp.route('/api/tech-tree/research/start', methods=['POST'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/research/start', methods=['POST'])
 @rate_limit()
 def start_research():
     """Start researching a technology"""
@@ -96,7 +94,6 @@ def start_research():
         return error_response, status_code
 
 @tech_tree_bp.route('/api/tech-tree/research/complete', methods=['POST'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/research/complete', methods=['POST'])
 @rate_limit()
 def complete_research():
     """Complete a research"""
@@ -116,7 +113,6 @@ def complete_research():
         return error_response, status_code
 
 @tech_tree_bp.route('/api/tech-tree/research/progress', methods=['POST'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/research/progress', methods=['POST'])
 @rate_limit()
 def update_research_progress():
     """Update research progress"""
@@ -137,7 +133,6 @@ def update_research_progress():
         return error_response, status_code
 
 @tech_tree_bp.route('/api/tech-tree/user/<user_id>', methods=['GET'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/user/<user_id>', methods=['GET'])
 @rate_limit()
 def get_user_research(user_id: str):
     """Get user's research progress"""
@@ -150,7 +145,6 @@ def get_user_research(user_id: str):
         return error_response, status_code
 
 @tech_tree_bp.route('/api/tech-tree/bonuses/<user_id>', methods=['GET'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/bonuses/<user_id>', methods=['GET'])
 @rate_limit()
 def get_research_bonuses(user_id: str):
     """Get user's research bonuses"""
@@ -163,7 +157,6 @@ def get_research_bonuses(user_id: str):
         return error_response, status_code
 
 @tech_tree_bp.route('/api/tech-tree/learn', methods=['POST'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/learn', methods=['POST'])
 @rate_limit()
 def learn_from_tech_research():
     """Learn from tech research - process visual memories"""
@@ -180,7 +173,6 @@ def learn_from_tech_research():
         return error_response, status_code
 
 @tech_tree_bp.route('/api/tech-tree/knowledge', methods=['GET'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/knowledge', methods=['GET'])
 @rate_limit()
 def get_knowledge():
     """Get knowledge tree data"""
@@ -233,7 +225,6 @@ def get_knowledge():
         }), 200  # Return 200 with empty data instead of 500
 
 @tech_tree_bp.route('/api/tech-tree/agent-learning', methods=['GET'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/agent-learning', methods=['GET'])
 @rate_limit()
 def get_agent_tech_learning():
     """Get agent's tech learning progress"""
@@ -252,7 +243,6 @@ def get_agent_tech_learning():
         return error_response, status_code
 
 @tech_tree_bp.route('/api/tech-tree/skills', methods=['GET'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/skills', methods=['GET'])
 @rate_limit()
 def get_tech_skills():
     """Get skills unlocked from tech research"""
@@ -268,7 +258,6 @@ def get_tech_skills():
         return error_response, status_code
 
 @tech_tree_bp.route('/api/tech-tree/learning-data', methods=['GET'])
-@tech_tree_bp.route('/vidgenerator/api/tech-tree/learning-data', methods=['GET'])
 @rate_limit()
 def get_progressive_learning_data():
     """Get progressive learning data for user"""

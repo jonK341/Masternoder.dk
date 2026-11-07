@@ -9,7 +9,6 @@ import sys
 frontpage_init_bp = Blueprint('frontpage_init', __name__)
 
 @frontpage_init_bp.route('/api/frontpage/init', methods=['GET', 'POST'])
-@frontpage_init_bp.route('/vidgenerator/api/frontpage/init', methods=['GET', 'POST'])
 def initialize_all_systems():
     """Initialize all systems: Points, Game, Battles"""
     try:
@@ -42,7 +41,6 @@ def initialize_all_systems():
         }), 200  # Return 200 to avoid breaking frontend
 
 @frontpage_init_bp.route('/api/frontpage/status', methods=['GET'])
-@frontpage_init_bp.route('/vidgenerator/api/frontpage/status', methods=['GET'])
 def get_init_status():
     """Get initialization status"""
     try:

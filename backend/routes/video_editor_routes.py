@@ -24,7 +24,6 @@ except ImportError as e:
 video_editor_bp = Blueprint('video_editor', __name__)
 
 @video_editor_bp.route('/api/video-editor/trim', methods=['POST'])
-@video_editor_bp.route('/vidgenerator/api/video-editor/trim', methods=['POST'])
 @rate_limit()
 def trim_video():
     """Trim video - cut start and/or end"""
@@ -133,7 +132,6 @@ def trim_video():
         return error_response, status_code
 
 @video_editor_bp.route('/api/video-editor/enhance', methods=['POST'])
-@video_editor_bp.route('/vidgenerator/api/video-editor/enhance', methods=['POST'])
 @rate_limit()
 def enhance_video():
     """Enhance video quality: upscale, color correction, etc."""
@@ -254,7 +252,6 @@ def enhance_video():
         return error_response, status_code
 
 @video_editor_bp.route('/api/video-editor/subtitle', methods=['POST'])
-@video_editor_bp.route('/vidgenerator/api/video-editor/subtitle', methods=['POST'])
 @rate_limit()
 def add_subtitle():
     """Add subtitles/text overlays to video"""
@@ -384,7 +381,6 @@ def add_subtitle():
         return error_response, status_code
 
 @video_editor_bp.route('/api/video-editor/preview/<video_id>', methods=['GET'])
-@video_editor_bp.route('/vidgenerator/api/video-editor/preview/<video_id>', methods=['GET'])
 @rate_limit()
 def preview_video(video_id: str):
     """Get video for preview in editor"""

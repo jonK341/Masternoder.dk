@@ -11,7 +11,6 @@ competitive_battle_bp = Blueprint('competitive_battle', __name__)
 
 
 @competitive_battle_bp.route('/api/battle/tournament/create', methods=['POST'])
-@competitive_battle_bp.route('/vidgenerator/api/battle/tournament/create', methods=['POST'])
 @rate_limit()
 def create_tournament():
     """Create a new tournament"""
@@ -33,7 +32,6 @@ def create_tournament():
 
 
 @competitive_battle_bp.route('/api/battle/tournament/join', methods=['POST'])
-@competitive_battle_bp.route('/vidgenerator/api/battle/tournament/join', methods=['POST'])
 @rate_limit()
 def join_tournament():
     """Join a tournament"""
@@ -53,7 +51,6 @@ def join_tournament():
 
 
 @competitive_battle_bp.route('/api/battle/tournament/<tournament_id>', methods=['GET'])
-@competitive_battle_bp.route('/vidgenerator/api/battle/tournament/<tournament_id>', methods=['GET'])
 @rate_limit()
 def get_tournament(tournament_id: str):
     """Get tournament details"""
@@ -66,7 +63,6 @@ def get_tournament(tournament_id: str):
 
 
 @competitive_battle_bp.route('/api/battle/tournaments', methods=['GET'])
-@competitive_battle_bp.route('/vidgenerator/api/battle/tournaments', methods=['GET'])
 @rate_limit()
 def list_tournaments():
     """List tournaments"""
@@ -80,7 +76,6 @@ def list_tournaments():
 
 
 @competitive_battle_bp.route('/api/battle/season/create', methods=['POST'])
-@competitive_battle_bp.route('/vidgenerator/api/battle/season/create', methods=['POST'])
 @rate_limit()
 def create_season():
     """Create a new season"""
@@ -97,7 +92,6 @@ def create_season():
 
 
 @competitive_battle_bp.route('/api/battle/season/<season_id>/leaderboard', methods=['GET'])
-@competitive_battle_bp.route('/vidgenerator/api/battle/season/<season_id>/leaderboard', methods=['GET'])
 @rate_limit()
 def get_season_leaderboard(season_id: str):
     """Get season leaderboard"""
@@ -111,7 +105,6 @@ def get_season_leaderboard(season_id: str):
 
 
 @competitive_battle_bp.route('/api/battle/challenges', methods=['GET'])
-@competitive_battle_bp.route('/vidgenerator/api/battle/challenges', methods=['GET'])
 @rate_limit()
 def list_challenges():
     """List active challenges"""
@@ -124,7 +117,6 @@ def list_challenges():
 
 
 @competitive_battle_bp.route('/api/battle/leaderboard/<leaderboard_type>', methods=['GET'])
-@competitive_battle_bp.route('/vidgenerator/api/battle/leaderboard/<leaderboard_type>', methods=['GET'])
 @rate_limit()
 def get_leaderboard(leaderboard_type: str):
     """Get leaderboard"""

@@ -10,7 +10,6 @@ import sys
 agent_skills_payment_bp = Blueprint('agent_skills_payment', __name__)
 
 @agent_skills_payment_bp.route('/api/agent-skills-payment/assign-skills', methods=['POST'])
-@agent_skills_payment_bp.route('/vidgenerator/api/agent-skills-payment/assign-skills', methods=['POST'])
 @rate_limit()
 def assign_skill_set():
     """Assign a skill set to an agent"""
@@ -41,7 +40,6 @@ def assign_skill_set():
         }), 500
 
 @agent_skills_payment_bp.route('/api/agent-skills-payment/set-working-hours', methods=['POST'])
-@agent_skills_payment_bp.route('/vidgenerator/api/agent-skills-payment/set-working-hours', methods=['POST'])
 @rate_limit()
 def set_working_hours():
     """Set working hours for an agent"""
@@ -66,7 +64,6 @@ def set_working_hours():
         }), 500
 
 @agent_skills_payment_bp.route('/api/agent-skills-payment/track-hours', methods=['POST'])
-@agent_skills_payment_bp.route('/vidgenerator/api/agent-skills-payment/track-hours', methods=['POST'])
 @rate_limit()
 def track_work_hours():
     """Track hours worked by an agent"""
@@ -96,7 +93,6 @@ def track_work_hours():
         }), 500
 
 @agent_skills_payment_bp.route('/api/agent-skills-payment/calculate-payment', methods=['GET'])
-@agent_skills_payment_bp.route('/vidgenerator/api/agent-skills-payment/calculate-payment', methods=['GET'])
 @rate_limit()
 def calculate_payment():
     """Calculate payment for an agent"""
@@ -120,7 +116,6 @@ def calculate_payment():
         }), 500
 
 @agent_skills_payment_bp.route('/api/agent-skills-payment/process-payment', methods=['POST'])
-@agent_skills_payment_bp.route('/vidgenerator/api/agent-skills-payment/process-payment', methods=['POST'])
 @rate_limit()
 def process_payment():
     """Process payment and award points"""
@@ -145,7 +140,6 @@ def process_payment():
         }), 500
 
 @agent_skills_payment_bp.route('/api/agent-skills-payment/summary/<agent_id>', methods=['GET'])
-@agent_skills_payment_bp.route('/vidgenerator/api/agent-skills-payment/summary/<agent_id>', methods=['GET'])
 @rate_limit()
 def get_payment_summary(agent_id):
     """Get payment summary for an agent"""
@@ -159,7 +153,6 @@ def get_payment_summary(agent_id):
         }), 500
 
 @agent_skills_payment_bp.route('/api/agent-skills-payment/skill-categories', methods=['GET'])
-@agent_skills_payment_bp.route('/vidgenerator/api/agent-skills-payment/skill-categories', methods=['GET'])
 @rate_limit()
 def get_skill_categories():
     """Get all skill categories"""
@@ -173,7 +166,6 @@ def get_skill_categories():
         }), 500
 
 @agent_skills_payment_bp.route('/api/agent-skills-payment/working-hours-presets', methods=['GET'])
-@agent_skills_payment_bp.route('/vidgenerator/api/agent-skills-payment/working-hours-presets', methods=['GET'])
 @rate_limit()
 def get_working_hours_presets():
     """Get all working hours presets"""

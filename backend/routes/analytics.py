@@ -40,11 +40,9 @@ def analytics_index():
     from flask import send_from_directory, Response
     import os
     
-    # Try serving from vidgenerator directory first (direct file serve)
     try:
         base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        vidgen_path = os.path.join(base_path, 'vidgenerator', 'analytics')
-        index_file = os.path.join(vidgen_path, 'index.html')
+        index_file = os.path.join(base_path, 'analytics', 'index.html')
         
         if os.path.exists(index_file):
             # Read file and return as response
@@ -65,7 +63,7 @@ def analytics_index():
     <body>
         <h1>Analytics & Monitoring Dashboard</h1>
         <p>Analytics page - loading...</p>
-        <p><a href="/vidgenerator">Back to main page</a></p>
+        <p><a href="/">Back to main page</a></p>
     </body>
     </html>
     """, 200

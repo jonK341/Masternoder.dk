@@ -19,7 +19,6 @@ def get_user_id():
 
 
 @vidgenerator_v3_bp.route('/api/vidgenerator-v3/generate', methods=['POST'])
-@vidgenerator_v3_bp.route('/vidgenerator/api/vidgenerator-v3/generate', methods=['POST'])
 @rate_limit()
 def generate_with_intelligence():
     """Generate content with intelligence"""
@@ -45,7 +44,6 @@ def generate_with_intelligence():
 
 
 @vidgenerator_v3_bp.route('/api/vidgenerator-v3/quality-presets')
-@vidgenerator_v3_bp.route('/vidgenerator/api/vidgenerator-v3/quality-presets')
 @rate_limit()
 def get_quality_presets():
     """Get all quality presets"""
@@ -56,7 +54,6 @@ def get_quality_presets():
 
 
 @vidgenerator_v3_bp.route('/api/vidgenerator-v3/generation-types')
-@vidgenerator_v3_bp.route('/vidgenerator/api/vidgenerator-v3/generation-types')
 @rate_limit()
 def get_generation_types():
     """Get all generation types"""

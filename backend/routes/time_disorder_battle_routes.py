@@ -91,7 +91,6 @@ def create_tech_hole():
 
 
 @time_disorder_battle_bp.route('/api/battle/tech-hole/<hole_id>/receive-tech', methods=['POST'])
-@time_disorder_battle_bp.route('/vidgenerator/api/battle/tech-hole/<hole_id>/receive-tech', methods=['POST'])
 @rate_limit
 def receive_new_tech(hole_id):
     """Receive new technology through hole"""
@@ -110,7 +109,6 @@ def receive_new_tech(hole_id):
 
 
 @time_disorder_battle_bp.route('/api/battle/tech-hole', methods=['GET'])
-@time_disorder_battle_bp.route('/vidgenerator/api/battle/tech-hole', methods=['GET'])
 def get_tech_holes():
     """Get all tech holes"""
     try:

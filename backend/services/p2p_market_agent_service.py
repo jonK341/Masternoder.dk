@@ -100,7 +100,7 @@ def _record_activity(action: str, metadata: Optional[Dict[str, Any]] = None) -> 
         from backend.services.agent_db_service import agent_db_service
         agent_db_service.record_agent_activity(
             user_id="platform_p2p",
-            agent_id="workflow_agent",
+            agent_id="integration_agent",
             action=action,
             skill="p2p_market",
             xp_gained=2,

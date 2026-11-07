@@ -13,7 +13,6 @@ guild_bp = Blueprint('guild', __name__, url_prefix='')
 
 
 @guild_bp.route('/api/guild/create', methods=['POST'])
-@guild_bp.route('/vidgenerator/api/guild/create', methods=['POST'])
 @rate_limit(endpoint='/api/guild/create')
 def create_guild():
     """Create a new guild"""
@@ -40,7 +39,6 @@ def create_guild():
 
 
 @guild_bp.route('/api/guild/join', methods=['POST'])
-@guild_bp.route('/vidgenerator/api/guild/join', methods=['POST'])
 @rate_limit(endpoint='/api/guild/join')
 def join_guild():
     """Join a guild"""
@@ -64,7 +62,6 @@ def join_guild():
 
 
 @guild_bp.route('/api/guild/leave', methods=['POST'])
-@guild_bp.route('/vidgenerator/api/guild/leave', methods=['POST'])
 @rate_limit(endpoint='/api/guild/leave')
 def leave_guild():
     """Leave current guild"""
@@ -81,7 +78,6 @@ def leave_guild():
 
 
 @guild_bp.route('/api/guild/<guild_id>', methods=['GET'])
-@guild_bp.route('/vidgenerator/api/guild/<guild_id>', methods=['GET'])
 @rate_limit(endpoint='/api/guild/get')
 def get_guild(guild_id: str):
     """Get guild information"""
@@ -107,7 +103,6 @@ def get_guild(guild_id: str):
 
 
 @guild_bp.route('/api/guild/user/<user_id>', methods=['GET'])
-@guild_bp.route('/vidgenerator/api/guild/user/<user_id>', methods=['GET'])
 @rate_limit(endpoint='/api/guild/user')
 def get_user_guild(user_id: str):
     """Get user's current guild"""
@@ -135,7 +130,6 @@ def get_user_guild(user_id: str):
 
 
 @guild_bp.route('/api/guild/leaderboard', methods=['GET'])
-@guild_bp.route('/vidgenerator/api/guild/leaderboard', methods=['GET'])
 @rate_limit(endpoint='/api/guild/leaderboard')
 def get_guild_leaderboard():
     """Get guild leaderboard"""

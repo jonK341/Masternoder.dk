@@ -66,6 +66,14 @@
         .mn2-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
         .mn2-links a { padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 0.85em; font-weight: 700; color: #041018; background: linear-gradient(135deg, #00d4ff, #00ff88); }
         .mn2-links a.secondary { color: #00d4ff; background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.35); }
+        .roster-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+        .roster-pill { border-radius: 999px; padding: 4px 10px; font-size: 0.8em; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
+        .roster-pill.active { color: #00ff88; border-color: rgba(0,255,136,0.4); }
+        .roster-pill.idle { color: #ffd60a; border-color: rgba(255,214,10,0.4); }
+        .roster-pill.unused, .roster-pill.blocked { color: #ff8888; border-color: rgba(255,136,136,0.35); }
+        .roster-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
+        .roster-actions button { padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0,255,136,0.35); background: rgba(0,255,136,0.12); color: #00ff88; font-weight: 700; cursor: pointer; }
+        .state-tag { font-size: 0.72em; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.8; }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -110,7 +118,7 @@
             <div class="summary-card"><div class="val" id="sum-total-xp">—</div><div class="lbl">Total Agent XP</div></div>
             <div class="summary-card"><div class="val" id="sum-actions">—</div><div class="lbl">Total Actions</div></div>
             <div class="summary-card"><div class="val" id="sum-skills">—</div><div class="lbl">Total Skills</div></div>
-            <div class="summary-card"><div class="val" id="sum-system">31</div><div class="lbl">System Agents</div></div>
+            <div class="summary-card"><div class="val" id="sum-system">—</div><div class="lbl">Runnable agents</div></div>
             <div class="summary-card"><div class="val" id="sum-techs">50</div><div class="lbl">Agent Technologies</div></div>
         </div>
 
@@ -119,6 +127,7 @@
             <button class="tab-btn active" data-tab="my-agents">My Agents</button>
             <button class="tab-btn" data-tab="activity">Activity Feed</button>
             <button class="tab-btn" data-tab="system">System Agents</button>
+            <button class="tab-btn" data-tab="roster">Roster</button>
             <button class="tab-btn" data-tab="mn2">MN2 &amp; Treasury</button>
             <button class="tab-btn" data-tab="report">Summary Report</button>
         </div>
@@ -147,7 +156,7 @@
 
         <!-- System Agents Tab -->
         <div class="tab-content" id="tab-system">
-            <p style="opacity:0.7;margin-bottom:16px;font-size:0.9em;">All 31 system agents running on MasterNoder. These agents operate globally across all users.</p>
+            <p id="system-agents-intro" style="opacity:0.7;margin-bottom:16px;font-size:0.9em;">Agents that have a real service. Names with no service stay off this list.</p>
             <div id="system-agents-grid" class="system-agents-grid">
                 <div class="loading">Loading system agents...</div>
             </div>
@@ -202,6 +211,35 @@
             </div>
         </div>
 
+        <!-- Roster Tab -->
+        <div class="tab-content" id="tab-roster">
+            <p style="opacity:0.75;margin:0 0 8px;font-size:0.9em;">Existing services are attached when you activate. Background loops stay stopped until you start them, and a start does not fire every repair at once.</p>
+            <div class="roster-actions">
+                <button type="button" id="roster-activate">Activate existing</button>
+                <button type="button" id="roster-loops">Start background loops</button>
+            </div>
+            <p id="roster-status" style="min-height:1.2em;font-size:0.85em;color:#00ff88;"></p>
+            <div id="roster-summary" class="roster-pills"></div>
+            <div class="report-section">
+                <h3>Agents</h3>
+                <table>
+                    <tr><th>Agent</th><th>State</th><th>Note</th></tr>
+                    <tbody id="roster-agents"><tr><td colspan="3" style="opacity:0.5;">Loading…</td></tr></tbody>
+                </table>
+            </div>
+            <div class="report-section">
+                <h3>Sites narrowed</h3>
+                <p id="roster-site-counts" style="opacity:0.75;font-size:0.88em;"></p>
+                <h4 style="margin:12px 0 6px;">Still their own page</h4>
+                <div id="roster-keep" class="mn2-links"></div>
+                <h4 style="margin:12px 0 6px;">Use an existing page</h4>
+                <table>
+                    <tr><th>Page</th><th>Use instead</th><th>Why</th></tr>
+                    <tbody id="roster-folded"><tr><td colspan="3" style="opacity:0.5;">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Summary Report Tab -->
         <div class="tab-content" id="tab-report">
             <div id="report-content">
@@ -244,6 +282,7 @@
             document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
             if (btn.dataset.tab === 'activity') loadActivity();
             if (btn.dataset.tab === 'system') loadSystemAgents();
+            if (btn.dataset.tab === 'roster') loadRoster();
             if (btn.dataset.tab === 'mn2') loadMn2Treasury();
             if (btn.dataset.tab === 'report') loadReport();
         });
@@ -366,11 +405,8 @@
     const SYSTEM_AGENTS = [
         {id:'master_fix_agent',icon:'🔧',name:'Master Fix Agent',role:'Diagnostics & self-repair'},
         {id:'monitoring_agent',icon:'👁️',name:'Monitoring Agent',role:'System health monitoring'},
-        {id:'scanner_agent',icon:'🔍',name:'Scanner Agent',role:'Vulnerability & network scans'},
-        {id:'tester_agent',icon:'🧪',name:'Tester Agent',role:'Automated testing & QA'},
         {id:'ai_intelligence_agent',icon:'🤖',name:'AI Intelligence',role:'AI reasoning & predictions'},
         {id:'error_migration_agent',icon:'🔄',name:'Migration Agent',role:'Error cleanup & migrations'},
-        {id:'master_dashboard_agent',icon:'📊',name:'Dashboard Agent',role:'Dashboard aggregation'},
         {id:'content_generator_agent',icon:'🎬',name:'Content Generator',role:'Video & content generation'},
         {id:'analytics_agent',icon:'📈',name:'Analytics Agent',role:'User behavior analytics'},
         {id:'battle_strategy_agent',icon:'⚔️',name:'Battle Strategy',role:'Game battle strategies'},
@@ -379,27 +415,153 @@
         {id:'performance_optimizer_agent',icon:'⚡',name:'Performance Agent',role:'Query & cache optimization'},
         {id:'user_experience_agent',icon:'✨',name:'UX Agent',role:'UX improvement'},
         {id:'integration_agent',icon:'🔗',name:'Integration Agent',role:'API integration'},
-        {id:'learning_agent',icon:'🧠',name:'Learning Agent',role:'Skill progression'},
         {id:'reporter_agent',icon:'📡',name:'Reporter Agent',role:'Broadcast & knowledge-sharing reports'},
-        {id:'workflow_agent',icon:'🔀',name:'Workflow Agent',role:'Workflow orchestration'},
-        {id:'ai_trainer_agent',icon:'🏋️',name:'AI Trainer',role:'Model training & tuning'},
-        {id:'quality_assurance_agent',icon:'✅',name:'QA Agent',role:'Quality checks'},
-        {id:'deployment_agent',icon:'🚀',name:'Deployment Agent',role:'Deploy & release management'},
-        {id:'backup_agent',icon:'💾',name:'Backup Agent',role:'Data backup & recovery'},
-        {id:'resource_manager_agent',icon:'📦',name:'Resource Manager',role:'Resource allocation'},
-        {id:'compliance_agent',icon:'⚖️',name:'Compliance Agent',role:'Policy & compliance checks'},
-        {id:'communication_agent',icon:'💬',name:'Communication Agent',role:'Messaging & notifications'},
         {id:'research_agent',icon:'🔬',name:'Research Agent',role:'Research & data gathering'},
-        {id:'innovation_agent',icon:'💡',name:'Innovation Agent',role:'New feature ideation'},
-        {id:'collaboration_agent',icon:'🤝',name:'Collaboration Agent',role:'Team coordination'},
-        {id:'data_processor_agent',icon:'⚙️',name:'Data Processor',role:'Data processing & ETL'},
-        {id:'notification_agent',icon:'🔔',name:'Notification Agent',role:'Alerts & notifications'},
         {id:'agent_judge',icon:'⚖️',name:'Agent Judge',role:'Quality evaluation & rating'},
     ];
 
+    function esc(value) {
+        return String(value || '').replace(/[&<>"']/g, function (ch) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+        });
+    }
+
+    function rosterStateClass(state) {
+        if (state === 'active' || state === 'idle' || state === 'unused' || state === 'blocked') return state;
+        return 'unused';
+    }
+
+    function renderRosterTable(agents) {
+        const body = document.getElementById('roster-agents');
+        if (!body) return;
+        const rows = (agents || []).filter(a => a.state !== 'alias');
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="3" style="opacity:0.5;">No roster yet.</td></tr>';
+            return;
+        }
+        body.innerHTML = rows.map(a => `
+            <tr>
+                <td>${esc(a.name || a.agent_id)}</td>
+                <td><span class="state-tag ${rosterStateClass(a.state)}">${esc(a.state)}</span></td>
+                <td style="opacity:0.75;font-size:0.85em;">${esc(a.note || a.error || (a.alias_of ? 'Same as ' + a.alias_of : ''))}</td>
+            </tr>`).join('');
+    }
+
+    function renderRosterSites(sites) {
+        const counts = (sites && sites.counts) || {};
+        const countEl = document.getElementById('roster-site-counts');
+        if (countEl) {
+            countEl.textContent = [
+                (counts.linked || 0) + ' in the main nav',
+                (counts.folded || 0) + ' covered by an existing page',
+                (counts.archived || 0) + ' lore pages left out of the map',
+                (counts.keep || 0) + ' still their own page',
+                (counts.mirrors || 0) + ' legacy mirror paths (redirect to root)'
+            ].join(' · ');
+        }
+        const keep = document.getElementById('roster-keep');
+        if (keep) {
+            const detail = (sites && sites.keep_detail) || [];
+            keep.innerHTML = detail.length
+                ? detail.map(row => `<a class="secondary" href="/${esc(row.path)}">${esc(row.title || row.path)}</a>`).join('')
+                : '<span style="opacity:0.6;">No extra pages outside the nav.</span>';
+        }
+        const folded = document.getElementById('roster-folded');
+        if (folded) {
+            const rows = (sites && sites.folded) || [];
+            folded.innerHTML = rows.length
+                ? rows.map(row => `<tr><td>/${esc(row.path)}</td><td><a href="/${esc(row.into)}" style="color:#00d4ff;">/${esc(row.into)}</a></td><td style="opacity:0.75;">${esc(row.reason || '')}</td></tr>`).join('')
+                : '<tr><td colspan="3" style="opacity:0.5;">Nothing to fold.</td></tr>';
+        }
+    }
+
+    async function loadRoster() {
+        const statusEl = document.getElementById('roster-status');
+        try {
+            const roster = await fetchJsonWithRetry(`${API}/agents/roster`);
+            if (!roster.success) throw new Error(roster.error || 'Roster failed');
+            const counts = roster.counts || {};
+            const pills = document.getElementById('roster-summary');
+            if (pills) {
+                pills.innerHTML = ['active', 'idle', 'unused', 'alias', 'blocked'].map(key =>
+                    `<span class="roster-pill ${rosterStateClass(key)}">${counts[key] || 0} ${key}</span>`
+                ).join('');
+            }
+            const runnable = (counts.active || 0) + (counts.idle || 0);
+            const sum = document.getElementById('sum-system');
+            if (sum) sum.textContent = String(runnable);
+            renderRosterTable(roster.agents || []);
+            renderRosterSites(roster.sites || {});
+            if (statusEl && !statusEl.dataset.hold) statusEl.textContent = '';
+        } catch (e) {
+            if (statusEl) {
+                statusEl.textContent = 'Could not load the roster.';
+                statusEl.style.color = '#ff8888';
+            }
+        }
+    }
+
+    async function postRoster(startLoops) {
+        const statusEl = document.getElementById('roster-status');
+        if (statusEl) {
+            statusEl.dataset.hold = '1';
+            statusEl.style.color = '#00d4ff';
+            statusEl.textContent = startLoops ? 'Starting loops…' : 'Activating existing services…';
+        }
+        try {
+            const response = await fetch(`${API}/agents/roster/activate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start_loops: startLoops })
+            });
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Activate failed');
+            const started = (data.started || []).length;
+            const registered = (data.registered || []).length;
+            if (statusEl) {
+                statusEl.style.color = '#00ff88';
+                statusEl.textContent = startLoops
+                    ? `Started ${started} loop${started === 1 ? '' : 's'}. ${registered} services are attached.`
+                    : `Attached ${registered} existing services. Background loops are still stopped.`;
+            }
+            if (data.recap) {
+                const counts = data.recap.counts || {};
+                const sum = document.getElementById('sum-system');
+                if (sum) sum.textContent = String((counts.active || 0) + (counts.idle || 0));
+            }
+            await loadRoster();
+        } catch (e) {
+            if (statusEl) {
+                statusEl.style.color = '#ff8888';
+                statusEl.textContent = 'Could not activate agents.';
+            }
+        }
+    }
+
     async function loadSystemAgents() {
         const grid = document.getElementById('system-agents-grid');
-        // Load value data from point creator
+        try {
+            const roster = await fetchJsonWithRetry(`${API}/agents/roster`);
+            const runnable = (roster.agents || []).filter(a => a.state === 'active' || a.state === 'idle');
+            if (roster.success && runnable.length) {
+                const intro = document.getElementById('system-agents-intro');
+                if (intro) {
+                    const unused = (roster.counts && roster.counts.unused) || 0;
+                    intro.textContent = runnable.length + ' services can run. ' + unused + ' catalog names have no service and stay unused.';
+                }
+                grid.innerHTML = runnable.map(a => `
+                    <div class="sys-agent-row">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                            ${agentAvatar(a.agent_id, '🤖')}
+                            <div class="sname">${esc(a.name)}</div>
+                        </div>
+                        <div class="smeta">${a.state === 'idle' ? 'Loaded, loop stopped' : 'Ready'}</div>
+                    </div>`).join('');
+                const sum = document.getElementById('sum-system');
+                if (sum) sum.textContent = String(runnable.length);
+                return;
+            }
+        } catch (e) {}
         let agentValues = {};
         try {
             const r = await fetch(`${API}/agent-points/all-value`).then(x => x.json());
@@ -599,6 +761,11 @@
         // Sync agent assignments to DB first, then load
         fetch(`${API}/agents/sync`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: userId})}).catch(()=>{});
         loadMyAgents();
+        loadRoster();
+        const activateBtn = document.getElementById('roster-activate');
+        const loopsBtn = document.getElementById('roster-loops');
+        if (activateBtn) activateBtn.addEventListener('click', () => postRoster(false));
+        if (loopsBtn) loopsBtn.addEventListener('click', () => postRoster(true));
     });
     </script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>

@@ -81,7 +81,7 @@ TAB_POINTS = {
 }
 
 # Free agents for rulebook / starmap25 todo assignments (round-robin)
-FREE_AGENTS = ['content_generator_agent', 'learning_agent', 'analytics_agent', 'reporter_agent']
+FREE_AGENTS = ['content_generator_agent', 'analytics_agent', 'reporter_agent']
 
 # Rulebook Todo 25 (from docs/RULEBOOK_TODO_25.md) — task_id, description, tab
 RULEBOOK_TODO_TASKS = [
@@ -754,7 +754,7 @@ def assign_rulebook_todo():
 
 @debugger_agent_tasks_bp.route('/api/debugger/tasks/assign-starmap50', methods=['POST'])
 def assign_starmap50():
-    """Assign all 50 Star Map 25 projects to AIs + agents (content_generator_agent, learning_agent, analytics_agent).
+    """Assign all 50 Star Map 25 projects to AIs + agents (content_generator_agent, analytics_agent).
     Each project is assigned to its suggested_agent from data/starmap25_agent_projects.json."""
     try:
         projects = _load_starmap50_projects()

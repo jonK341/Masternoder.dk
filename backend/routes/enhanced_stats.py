@@ -190,7 +190,6 @@ def upgrade_stat():
 
 
 @enhanced_stats_bp.route('/api/game/stats/refresh', methods=['POST'])
-@enhanced_stats_bp.route('/vidgenerator/api/game/stats/refresh', methods=['POST'])
 def refresh_stats():
     """Force refresh of all stats counts"""
     try:

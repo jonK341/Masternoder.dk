@@ -13,7 +13,6 @@ dna_monster_calendar_bp = Blueprint("dna_monster_calendar", __name__)
 
 
 @dna_monster_calendar_bp.route("/dna/manipulate", methods=["POST"])
-@dna_monster_calendar_bp.route("/vidgenerator/dna/manipulate", methods=["POST"])
 @dna_monster_calendar_bp.route("/api/dna/manipulate", methods=["POST"])
 def dna_manipulate():
     data = request.get_json() or {}
@@ -28,7 +27,6 @@ def dna_manipulate():
 
 
 @dna_monster_calendar_bp.route("/dna/giga-clone", methods=["POST"])
-@dna_monster_calendar_bp.route("/vidgenerator/dna/giga-clone", methods=["POST"])
 @dna_monster_calendar_bp.route("/api/dna/clone", methods=["POST"])
 def dna_clone():
     data = request.get_json() or {}

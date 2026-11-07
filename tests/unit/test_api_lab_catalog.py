@@ -23,10 +23,12 @@ def lite_app_client():
 
 
 def test_lite_app_serves_api_lab_page_and_catalog(lite_app_client):
-    for path in ("/api-lab/", "/vidgenerator/api-lab/"):
-        resp = lite_app_client.get(path)
-        assert resp.status_code == 200
-        assert b"API Lab" in resp.data
+    resp = lite_app_client.get("/api-lab/")
+    assert resp.status_code == 200
+    assert b"API Lab" in resp.data
+    legacy = lite_app_client.get("/vidgenerator/api-lab/")
+    assert legacy.status_code in (301, 302, 308)
+    assert legacy.headers.get("Location", "").endswith("/api-lab/")
     catalog = lite_app_client.get("/api/lab/catalog")
     assert catalog.status_code == 200
     payload = catalog.get_json()

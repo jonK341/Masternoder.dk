@@ -60,14 +60,11 @@ _AGENT_DISPLAY = {
     'social_engagement_agent': ('👥', 'Social Agent', '#a855f7'),
     'master_fix_agent': ('🔧', 'Master Fix Agent', '#fbbf24'),
     'monitoring_agent': ('👁️', 'Monitoring Agent', '#60a5fa'),
-    'scanner_agent': ('🔍', 'Scanner Agent', '#34d399'),
     'security_agent': ('🛡️', 'Security Agent', '#f87171'),
     'performance_optimizer_agent': ('⚡', 'Performance Agent', '#fb923c'),
     'user_experience_agent': ('✨', 'UX Agent', '#c084fc'),
-    'learning_agent': ('🧠', 'Learning Agent', '#38bdf8'),
     'reporter_agent': ('📡', 'Reporter Agent', '#f472b6'),
     'ai_intelligence_agent': ('🤖', 'AI Intelligence', '#818cf8'),
-    'tester_agent': ('🧪', 'Tester Agent', '#4ade80'),
     'error_migration_agent': ('🔄', 'Migration Agent', '#facc15'),
 }
 

@@ -13,7 +13,6 @@ comprehensive_auto_save_bp = Blueprint('comprehensive_auto_save', __name__)
 
 
 @comprehensive_auto_save_bp.route('/api/auto-save/points', methods=['POST'])
-@comprehensive_auto_save_bp.route('/vidgenerator/api/auto-save/points', methods=['POST'])
 def auto_save_points():
     """Auto-save points"""
     try:
@@ -32,7 +31,6 @@ def auto_save_points():
 
 
 @comprehensive_auto_save_bp.route('/api/auto-save/energy', methods=['POST'])
-@comprehensive_auto_save_bp.route('/vidgenerator/api/auto-save/energy', methods=['POST'])
 def auto_save_energy():
     """Auto-save energy"""
     try:
@@ -51,7 +49,6 @@ def auto_save_energy():
 
 
 @comprehensive_auto_save_bp.route('/api/auto-save/progress', methods=['POST'])
-@comprehensive_auto_save_bp.route('/vidgenerator/api/auto-save/progress', methods=['POST'])
 def auto_save_progress():
     """Auto-save progress"""
     try:
@@ -70,7 +67,6 @@ def auto_save_progress():
 
 
 @comprehensive_auto_save_bp.route('/api/auto-save/full', methods=['POST'])
-@comprehensive_auto_save_bp.route('/vidgenerator/api/auto-save/full', methods=['POST'])
 def auto_save_full():
     """Auto-save complete user data snapshot"""
     try:
@@ -94,7 +90,6 @@ def auto_save_full():
 
 
 @comprehensive_auto_save_bp.route('/api/auto-save/state', methods=['POST'])
-@comprehensive_auto_save_bp.route('/vidgenerator/api/auto-save/state', methods=['POST'])
 def auto_save_state():
     """Auto-save state"""
     try:
@@ -109,7 +104,6 @@ def auto_save_state():
 
 
 @comprehensive_auto_save_bp.route('/api/auto-save/status', methods=['GET'])
-@comprehensive_auto_save_bp.route('/vidgenerator/api/auto-save/status', methods=['GET'])
 def get_auto_save_status():
     """Get auto-save status"""
     try:
@@ -121,7 +115,6 @@ def get_auto_save_status():
 
 
 @comprehensive_auto_save_bp.route('/api/auto-save/load', methods=['GET'])
-@comprehensive_auto_save_bp.route('/vidgenerator/api/auto-save/load', methods=['GET'])
 def load_auto_save():
     """Load auto-saved data"""
     try:

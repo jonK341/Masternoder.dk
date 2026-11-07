@@ -173,7 +173,7 @@ def build_catalog(rules) -> dict:
 
 def _page_path() -> str:
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    return os.path.join(root, "vidgenerator", "api-lab", "index.html")
+    return os.path.join(root, "api-lab", "index.html")
 
 
 def _serve_page():
@@ -189,14 +189,11 @@ def _serve_page():
 
 @api_lab_bp.route("/api-lab", methods=["GET"])
 @api_lab_bp.route("/api-lab/", methods=["GET"])
-@api_lab_bp.route("/vidgenerator/api-lab", methods=["GET"])
-@api_lab_bp.route("/vidgenerator/api-lab/", methods=["GET"])
 def api_lab_page():
     return _serve_page()
 
 
 @api_lab_bp.route("/api/lab/catalog", methods=["GET"])
-@api_lab_bp.route("/vidgenerator/api/lab/catalog", methods=["GET"])
 def api_lab_catalog():
     catalog = build_catalog(current_app.url_map.iter_rules())
     query = (request.args.get("q") or "").strip().lower()

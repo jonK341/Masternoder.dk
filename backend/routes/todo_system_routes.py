@@ -11,7 +11,6 @@ todo_system_bp = Blueprint('todo_system', __name__)
 
 
 @todo_system_bp.route('/api/todos/create', methods=['POST'])
-@todo_system_bp.route('/vidgenerator/api/todos/create', methods=['POST'])
 def create_todo():
     """Create a new TODO"""
     try:
@@ -40,7 +39,6 @@ def create_todo():
 
 
 @todo_system_bp.route('/api/todos/update', methods=['POST'])
-@todo_system_bp.route('/vidgenerator/api/todos/update', methods=['POST'])
 def update_todo():
     """Update TODO"""
     try:
@@ -58,7 +56,6 @@ def update_todo():
 
 
 @todo_system_bp.route('/api/todos/complete', methods=['POST'])
-@todo_system_bp.route('/vidgenerator/api/todos/complete', methods=['POST'])
 def complete_todo():
     """Complete TODO"""
     try:
@@ -75,7 +72,6 @@ def complete_todo():
 
 
 @todo_system_bp.route('/api/todos/start', methods=['POST'])
-@todo_system_bp.route('/vidgenerator/api/todos/start', methods=['POST'])
 def start_todo():
     """Start working on TODO"""
     try:
@@ -92,7 +88,6 @@ def start_todo():
 
 
 @todo_system_bp.route('/api/todos/list', methods=['GET'])
-@todo_system_bp.route('/vidgenerator/api/todos/list', methods=['GET'])
 def list_todos():
     """List TODOs with filters"""
     try:
@@ -115,7 +110,6 @@ def list_todos():
 
 
 @todo_system_bp.route('/api/todos/statistics', methods=['GET'])
-@todo_system_bp.route('/vidgenerator/api/todos/statistics', methods=['GET'])
 def get_statistics():
     """Get TODO statistics"""
     try:

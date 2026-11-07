@@ -41,7 +41,6 @@ unified_generator_battle_bp = Blueprint('unified_generator_battle', __name__, ur
 
 
 @unified_generator_battle_bp.route('/api/unified/generate-video', methods=['POST'])
-@unified_generator_battle_bp.route('/vidgenerator/api/unified/generate-video', methods=['POST'])
 @rate_limit()
 def generate_video_unified():
     """Generate video with Epic Gaming tracking"""
@@ -78,7 +77,6 @@ def generate_video_unified():
 
 
 @unified_generator_battle_bp.route('/api/unified/create-battle', methods=['POST'])
-@unified_generator_battle_bp.route('/vidgenerator/api/unified/create-battle', methods=['POST'])
 @rate_limit()
 def create_battle_unified():
     """Create quick battle with Epic Gaming tracking"""
@@ -107,7 +105,6 @@ def create_battle_unified():
 
 
 @unified_generator_battle_bp.route('/api/unified/complete-battle', methods=['POST'])
-@unified_generator_battle_bp.route('/vidgenerator/api/unified/complete-battle', methods=['POST'])
 @rate_limit()
 def complete_battle_unified():
     """Complete battle with Epic Gaming tracking"""
@@ -146,7 +143,6 @@ def complete_battle_unified():
 
 
 @unified_generator_battle_bp.route('/api/unified/stats', methods=['GET'])
-@unified_generator_battle_bp.route('/vidgenerator/api/unified/stats', methods=['GET'])
 @rate_limit()
 def get_unified_stats():
     """Get unified stats for generator and battle"""
@@ -172,7 +168,6 @@ def get_unified_stats():
 
 
 @unified_generator_battle_bp.route('/api/unified/status', methods=['GET'])
-@unified_generator_battle_bp.route('/vidgenerator/api/unified/status', methods=['GET'])
 def get_services_status():
     """Get status of all integrated services"""
     try:

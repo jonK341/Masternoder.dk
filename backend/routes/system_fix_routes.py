@@ -9,7 +9,6 @@ import sys
 system_fix_bp = Blueprint('system_fix', __name__, url_prefix='')
 
 @system_fix_bp.route('/api/debug/routes', methods=['GET'])
-@system_fix_bp.route('/vidgenerator/api/debug/routes', methods=['GET'])
 def debug_routes():
     """
     Production-safe route map inspector.
@@ -48,7 +47,6 @@ def debug_routes():
 
 
 @system_fix_bp.route('/api/debug/module-paths', methods=['GET'])
-@system_fix_bp.route('/vidgenerator/api/debug/module-paths', methods=['GET'])
 def debug_module_paths():
     """Expose module __file__ locations and whether key routes exist (for prod debugging)."""
     try:

@@ -90,13 +90,13 @@ class AgentSupportService:
                 'monitoring': {
                     'name': 'Monitoring Service',
                     'status': 'active',
-                    'agents': ['monitoring_agent', 'scanner_agent'],
+                    'agents': ['monitoring_agent', 'security_agent'],
                     'capabilities': ['system_monitoring', 'performance_tracking', 'alerting']
                 },
                 'development': {
                     'name': 'Development Service',
                     'status': 'active',
-                    'agents': ['scanner_agent'],
+                    'agents': ['integration_agent'],
                     'capabilities': ['code_generation', 'api_scanning', 'method_generation']
                 },
                 'support': {
@@ -123,9 +123,9 @@ class AgentSupportService:
                     '/api/agent/support/resources',
                 ],
                 'tools': [
-                    {'label': 'Debugger', 'url': '/vidgenerator/debugger'},
-                    {'label': 'AI Agents', 'url': '/vidgenerator/agents'},
-                    {'label': 'Aggregator', 'url': '/vidgenerator/aggregator'},
+                    {'label': 'Debugger', 'url': '/debugger'},
+                    {'label': 'AI Agents', 'url': '/agents'},
+                    {'label': 'Aggregator', 'url': '/aggregator'},
                 ]
             }
         }

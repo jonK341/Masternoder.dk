@@ -11,7 +11,6 @@ model_operator_bp = Blueprint('model_operator', __name__)
 
 
 @model_operator_bp.route('/api/model-operator/models', methods=['GET'])
-@model_operator_bp.route('/vidgenerator/api/model-operator/models', methods=['GET'])
 @rate_limit()
 def get_all_models():
     """Get all models"""
@@ -27,7 +26,6 @@ def get_all_models():
 
 
 @model_operator_bp.route('/api/model-operator/operate', methods=['POST'])
-@model_operator_bp.route('/vidgenerator/api/model-operator/operate', methods=['POST'])
 @rate_limit()
 def operate_model():
     """Operate a model"""
@@ -54,7 +52,6 @@ def operate_model():
 
 
 @model_operator_bp.route('/api/model-operator/stats', methods=['GET'])
-@model_operator_bp.route('/vidgenerator/api/model-operator/stats', methods=['GET'])
 @rate_limit()
 def get_model_stats():
     """Get model statistics"""

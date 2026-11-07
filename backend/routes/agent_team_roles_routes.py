@@ -10,7 +10,6 @@ import sys
 agent_team_roles_bp = Blueprint('agent_team_roles', __name__)
 
 @agent_team_roles_bp.route('/api/agent-team-roles/types', methods=['GET'])
-@agent_team_roles_bp.route('/vidgenerator/api/agent-team-roles/types', methods=['GET'])
 @rate_limit()
 def get_agent_types():
     """Get all available agent types"""
@@ -25,7 +24,6 @@ def get_agent_types():
         }), 500
 
 @agent_team_roles_bp.route('/api/agent-team-roles/type/<agent_type_id>', methods=['GET'])
-@agent_team_roles_bp.route('/vidgenerator/api/agent-team-roles/type/<agent_type_id>', methods=['GET'])
 @rate_limit()
 def get_agent_type(agent_type_id):
     """Get specific agent type definition"""
@@ -48,7 +46,6 @@ def get_agent_type(agent_type_id):
         }), 500
 
 @agent_team_roles_bp.route('/api/agent-team-roles/create', methods=['POST'])
-@agent_team_roles_bp.route('/vidgenerator/api/agent-team-roles/create', methods=['POST'])
 @rate_limit()
 def create_team_role_agent():
     """Create a new team role agent (Team Manager or Secretary)"""
@@ -76,7 +73,6 @@ def create_team_role_agent():
         }), 500
 
 @agent_team_roles_bp.route('/api/agent-team-roles/<agent_id>/activity', methods=['POST'])
-@agent_team_roles_bp.route('/vidgenerator/api/agent-team-roles/<agent_id>/activity', methods=['POST'])
 @rate_limit()
 def perform_activity(agent_id):
     """Agent performs an activity"""
@@ -99,7 +95,6 @@ def perform_activity(agent_id):
         }), 500
 
 @agent_team_roles_bp.route('/api/agent-team-roles/<agent_id>/ability', methods=['POST'])
-@agent_team_roles_bp.route('/vidgenerator/api/agent-team-roles/<agent_id>/ability', methods=['POST'])
 @rate_limit()
 def use_ability(agent_id):
     """Agent uses an ability"""
@@ -122,7 +117,6 @@ def use_ability(agent_id):
         }), 500
 
 @agent_team_roles_bp.route('/api/agent-team-roles/<agent_id>/battle-action', methods=['POST'])
-@agent_team_roles_bp.route('/vidgenerator/api/agent-team-roles/<agent_id>/battle-action', methods=['POST'])
 @rate_limit()
 def use_battle_action(agent_id):
     """Agent uses a battle action"""
@@ -146,7 +140,6 @@ def use_battle_action(agent_id):
         }), 500
 
 @agent_team_roles_bp.route('/api/agent-team-roles/<agent_id>', methods=['GET'])
-@agent_team_roles_bp.route('/vidgenerator/api/agent-team-roles/<agent_id>', methods=['GET'])
 @rate_limit()
 def get_agent_info(agent_id):
     """Get full agent information"""
@@ -160,7 +153,6 @@ def get_agent_info(agent_id):
         }), 500
 
 @agent_team_roles_bp.route('/api/agent-team-roles/user/<user_id>', methods=['GET'])
-@agent_team_roles_bp.route('/vidgenerator/api/agent-team-roles/user/<user_id>', methods=['GET'])
 @rate_limit()
 def get_user_agents(user_id):
     """Get all team role agents for a user"""

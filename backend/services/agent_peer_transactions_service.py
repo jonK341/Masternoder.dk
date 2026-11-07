@@ -23,7 +23,6 @@ _MESH_AGENT_IDS = (
     "battle_strategy_agent",
     "analytics_agent",
     "content_generator_agent",
-    "workflow_agent",
     "security_agent",
     "ai_intelligence_agent",
     "mn2_scout",

@@ -57,7 +57,6 @@ def _get_lab_page_path():
     """Resolve lab index.html path (works from project root or vidgenerator subdir)."""
     base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     candidates = [
-        os.path.join(base, 'vidgenerator', 'lab', 'index.html'),
         os.path.join(base, 'lab', 'index.html'),
     ]
     for p in candidates:
@@ -67,12 +66,10 @@ def _get_lab_page_path():
 
 
 def _get_api_lab_page_path():
-    """Resolve API Lab index.html (vidgenerator/api-lab/)."""
+    """Resolve API Lab index.html at site root /api-lab/."""
     base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     candidates = [
-        os.path.join(base, 'vidgenerator', 'api-lab', 'index.html'),
-        '/var/www/html/vidgenerator/api-lab/index.html',
-        '/var/www/html/vidgenerator/vidgenerator/api-lab/index.html',
+        os.path.join(base, 'api-lab', 'index.html'),
     ]
     for p in candidates:
         if os.path.exists(p):
@@ -96,7 +93,7 @@ def _serve_api_lab_html():
     return (
         '<!DOCTYPE html><html><head><title>API Lab</title></head><body>'
         '<h1>API Lab</h1><p>Page files missing on server — run git pull on main.</p>'
-        '<a href="/vidgenerator/">Home</a></body></html>',
+        '<a href="/">Home</a></body></html>',
         200,
         {'Content-Type': 'text/html; charset=utf-8'},
     )
@@ -440,40 +437,8 @@ def frontpage_init():
     return jsonify({'success': True, 'ready': True}), 200
 
 
-# ========== LAB PAGE ==========
-
-@missing_endpoints_bp.route('/vidgenerator/lab', methods=['GET'])
-@missing_endpoints_bp.route('/vidgenerator/lab/', methods=['GET'])
-@missing_endpoints_bp.route('/vidgenerator/lab/index.html', methods=['GET'])
-def lab_page():
-    """Serve the Lab page - ensures lab works even if all_page_routes is unavailable."""
-    page_path = _get_lab_page_path()
-    if page_path and os.path.exists(page_path):
-        try:
-            with open(page_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            headers = {
-                'Content-Type': 'text/html; charset=utf-8',
-                'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-                'Pragma': 'no-cache',
-            }
-            return content, 200, headers
-        except Exception:
-            pass
-    return (
-        '<!DOCTYPE html><html><head><title>Lab</title></head><body>'
-        '<h1>Lab</h1><p>Lab page could not be loaded.</p>'
-        '<a href="/vidgenerator/">Back to Home</a></body></html>',
-        200,
-        {'Content-Type': 'text/html; charset=utf-8'},
-    )
-
-
 # ========== API LAB PAGE ==========
 
-@missing_endpoints_bp.route('/vidgenerator/api-lab', methods=['GET'])
-@missing_endpoints_bp.route('/vidgenerator/api-lab/', methods=['GET'])
-@missing_endpoints_bp.route('/vidgenerator/api-lab/index.html', methods=['GET'])
 @missing_endpoints_bp.route('/api-lab', methods=['GET'])
 @missing_endpoints_bp.route('/api-lab/', methods=['GET'])
 @missing_endpoints_bp.route('/api-lab/index.html', methods=['GET'])
@@ -483,7 +448,6 @@ def api_lab_page_fallback():
 
 
 @missing_endpoints_bp.route('/api/lab/catalog', methods=['GET'])
-@missing_endpoints_bp.route('/vidgenerator/api/lab/catalog', methods=['GET'])
 def api_lab_catalog_fallback():
     """Catalog JSON when api_lab blueprint is not registered (e.g. before deploy restart)."""
     from backend.routes.api_lab_routes import build_catalog
@@ -514,24 +478,24 @@ def api_lab_catalog_fallback():
 
 # Point type → (category, label, icon, earn_link) for comprehensive table + earning buttons
 POINT_CATEGORIES = {
-    'xp_total': ('Core', 'Total XP', '⭐', '/vidgenerator/generator'),
-    'level': ('Core', 'Level', '📊', '/vidgenerator/generator'),
-    'generation_points': ('Generation', 'Generation Points', '🎬', '/vidgenerator/generator'),
-    'battle_points': ('Battle', 'Battle Points', '⚔️', '/vidgenerator/battle'),
-    'game_points': ('Game', 'Game Points', '🎮', '/vidgenerator/game'),
-    'trophy_points': ('Trophies', 'Trophy Points', '🏆', '/vidgenerator/trophies'),
-    'social_points': ('Social', 'Social Points', '👥', '/vidgenerator/game'),
-    'quest_points': ('Quests', 'Quest Points', '🎯', '/vidgenerator/game'),
-    'achievement_points': ('Achievements', 'Achievement Points', '🏅', '/vidgenerator/profile'),
-    'communication_psychology_points': ('Comm. Psych', 'Comm. Psychology', '🧠', '/vidgenerator/compendium'),
-    'compendium_points': ('Compendium', 'Compendium Points', '📚', '/vidgenerator/compendium'),
-    'dna_manipulation_points': ('DNA Tech', 'DNA Manipulation', '🧬', '/vidgenerator/generator'),
-    'dna_cloning_points': ('DNA Tech', 'DNA Cloning', '🧬', '/vidgenerator/generator'),
-    'knowledge_points': ('Learning', 'Knowledge Points', '📖', '/vidgenerator/compendium'),
-    'coins': ('Economy', 'Coins', '💰', '/vidgenerator/shop'),
-    'credits': ('Economy', 'Credits', '💎', '/vidgenerator/shop'),
-    'stats_points_total': ('Stats', 'Stats Points', '📈', '/vidgenerator/stats'),
-    'milestones_reached': ('Progress', 'Milestones', '🎯', '/vidgenerator/profile'),
+    'xp_total': ('Core', 'Total XP', '⭐', '/generator'),
+    'level': ('Core', 'Level', '📊', '/generator'),
+    'generation_points': ('Generation', 'Generation Points', '🎬', '/generator'),
+    'battle_points': ('Battle', 'Battle Points', '⚔️', '/battle'),
+    'game_points': ('Game', 'Game Points', '🎮', '/game'),
+    'trophy_points': ('Trophies', 'Trophy Points', '🏆', '/trophies'),
+    'social_points': ('Social', 'Social Points', '👥', '/game'),
+    'quest_points': ('Quests', 'Quest Points', '🎯', '/game'),
+    'achievement_points': ('Achievements', 'Achievement Points', '🏅', '/profile'),
+    'communication_psychology_points': ('Comm. Psych', 'Comm. Psychology', '🧠', '/compendium'),
+    'compendium_points': ('Compendium', 'Compendium Points', '📚', '/compendium'),
+    'dna_manipulation_points': ('DNA Tech', 'DNA Manipulation', '🧬', '/generator'),
+    'dna_cloning_points': ('DNA Tech', 'DNA Cloning', '🧬', '/generator'),
+    'knowledge_points': ('Learning', 'Knowledge Points', '📖', '/compendium'),
+    'coins': ('Economy', 'Coins', '💰', '/shop'),
+    'credits': ('Economy', 'Credits', '💎', '/shop'),
+    'stats_points_total': ('Stats', 'Stats Points', '📈', '/stats'),
+    'milestones_reached': ('Progress', 'Milestones', '🎯', '/profile'),
 }
 
 @missing_endpoints_bp.route('/api/points/comprehensive', methods=['GET'])
@@ -565,7 +529,7 @@ def points_comprehensive():
                     if pt_key in ('accuracy_grade', 'systems'):
                         continue
                     val = float(val or 0) if isinstance(val, (int, float)) else 0
-                    cat_info = POINT_CATEGORIES.get(pt_key, ('Other', pt_key.replace('_', ' ').title(), '💎', '/vidgenerator'))
+                    cat_info = POINT_CATEGORIES.get(pt_key, ('Other', pt_key.replace('_', ' ').title(), '💎', '/'))
                     cat_key, label, icon, earn_link = cat_info
                     if cat_key not in categories:
                         categories[cat_key] = {
@@ -1195,12 +1159,12 @@ def monetization_ai_recommendations():
 
 @missing_endpoints_bp.route('/api/monetization/levers/<lever_id>/assign-agent', methods=['POST'])
 def monetization_lever_assign_agent(lever_id):
-    """Assign an agent (content_generator_agent, learning_agent, analytics_agent, reporter_agent) to a monetization lever."""
+    """Assign an agent (content_generator_agent, analytics_agent, reporter_agent) to a monetization lever."""
     try:
         data = request.get_json(silent=True) or {}
         user_id = data.get('user_id') or request.args.get('user_id', 'default_user')
         agent_id = (data.get('agent_id') or '').strip() or 'content_generator_agent'
-        if agent_id not in ('content_generator_agent', 'learning_agent', 'analytics_agent', 'reporter_agent'):
+        if agent_id not in ('content_generator_agent', 'analytics_agent', 'reporter_agent'):
             agent_id = 'content_generator_agent'
         from backend.services.monetization_levers_service import assign_agent_to_lever
         result = assign_agent_to_lever(user_id, lever_id, agent_id)
@@ -3721,24 +3685,26 @@ def themes_list():
     """Get list of available themes with metadata — unlock levels, colors, descriptions."""
     try:
         _THEMES = [
-            {'id': 'default',      'theme_id': 'default',    'name': 'Classic',        'unlock_level': 1, 'primary_color': '#4f8ef7', 'description': 'Clean and minimal',            'preview': '/vidgenerator/static/img/themes/default.png', 'category': 'all'},
-            {'id': 'nature',       'theme_id': 'nature',     'name': 'Nature',         'unlock_level': 1, 'primary_color': '#2d7a4f', 'description': 'Earthy organic palette',        'preview': '/vidgenerator/static/img/themes/nature.png', 'category': 'all'},
-            {'id': 'cinematic',    'theme_id': 'cinematic',  'name': 'Cinematic Dark',  'unlock_level': 3, 'primary_color': '#c0392b', 'description': 'Film-noir drama',               'preview': '/vidgenerator/static/img/themes/cinematic.png', 'category': 'apocalyptic'},
-            {'id': 'sci-fi',       'theme_id': 'sci-fi',     'name': 'Sci-Fi',          'unlock_level': 5, 'primary_color': '#00d2ff', 'description': 'Neon futurist aesthetic',        'preview': '/vidgenerator/static/img/themes/sci-fi.png', 'category': 'tech'},
-            {'id': 'documentary',  'theme_id': 'documentary','name': 'Documentary',    'unlock_level': 1, 'primary_color': '#8e44ad', 'description': 'Professional broadcast style',   'preview': '/vidgenerator/static/img/themes/documentary.png', 'category': 'all'},
-            {'id': 'gold',         'theme_id': 'gold',      'name': 'Elite Gold',     'unlock_level': 10,'primary_color': '#f1c40f', 'description': 'Prestige master tier',           'preview': '/vidgenerator/static/img/themes/gold.png', 'category': 'all'},
-            {'id': 'carchase',     'theme_id': 'carchase',  'name': 'Car Chase',      'unlock_level': 2, 'primary_color': '#e74c3c', 'description': 'High-speed pursuit, chases, and vehicular action', 'preview': '/vidgenerator/static/img/themes/carchase.png', 'category': 'action'},
-            {'id': 'fire',         'theme_id': 'fire',      'name': 'Fire',           'unlock_level': 2, 'primary_color': '#e67e22', 'description': 'Flames, explosions, and intense heat', 'preview': '/vidgenerator/static/img/themes/fire.png', 'category': 'action'},
-            {'id': 'blood',        'theme_id': 'blood',     'name': 'Blood',           'unlock_level': 3, 'primary_color': '#c0392b', 'description': 'Gritty, visceral action and conflict', 'preview': '/vidgenerator/static/img/themes/blood.png', 'category': 'action'},
-            {'id': 'action',       'theme_id': 'action',    'name': 'Action',         'unlock_level': 2, 'primary_color': '#e74c3c', 'description': 'Explosive action, stunts, and intensity', 'preview': '/vidgenerator/static/img/themes/action.png', 'category': 'action'},
-            {'id': 'metallica',    'theme_id': 'metallica', 'name': 'Metallica',      'unlock_level': 6, 'primary_color': '#1a1a1a', 'description': 'Heavy metal energy, arena scale, thunderous rhythm', 'preview': '/vidgenerator/static/img/themes/cinematic.png', 'category': 'music'},
-            {'id': 'ww1',          'theme_id': 'ww1',       'name': 'World War I',    'unlock_level': 5, 'primary_color': '#5d4e37', 'description': 'Trenches, early aviation, industrial warfare', 'preview': '/vidgenerator/static/img/themes/documentary.png', 'category': 'historical'},
-            {'id': 'ww2',          'theme_id': 'ww2',       'name': 'World War II',   'unlock_level': 5, 'primary_color': '#34495e', 'description': 'Front lines, resistance, global conflict', 'preview': '/vidgenerator/static/img/themes/documentary.png', 'category': 'historical'},
+            {'id': 'default',      'theme_id': 'default',    'name': 'Classic',        'unlock_level': 1, 'primary_color': '#4f8ef7', 'description': 'Clean and minimal',            'preview': '/static/img/themes/default.png', 'category': 'all'},
+            {'id': 'nature',       'theme_id': 'nature',     'name': 'Nature',         'unlock_level': 1, 'primary_color': '#2d7a4f', 'description': 'Earthy organic palette',        'preview': '/static/img/themes/nature.png', 'category': 'all'},
+            {'id': 'cinematic',    'theme_id': 'cinematic',  'name': 'Cinematic Dark',  'unlock_level': 3, 'primary_color': '#c0392b', 'description': 'Film-noir drama',               'preview': '/static/img/themes/cinematic.png', 'category': 'apocalyptic'},
+            {'id': 'sci-fi',       'theme_id': 'sci-fi',     'name': 'Sci-Fi',          'unlock_level': 5, 'primary_color': '#00d2ff', 'description': 'Neon futurist aesthetic',        'preview': '/static/img/themes/sci-fi.png', 'category': 'tech'},
+            {'id': 'documentary',  'theme_id': 'documentary','name': 'Documentary',    'unlock_level': 1, 'primary_color': '#8e44ad', 'description': 'Professional broadcast style',   'preview': '/static/img/themes/documentary.png', 'category': 'all'},
+            {'id': 'gold',         'theme_id': 'gold',      'name': 'Elite Gold',     'unlock_level': 10,'primary_color': '#f1c40f', 'description': 'Prestige master tier',           'preview': '/static/img/themes/gold.png', 'category': 'all'},
+            {'id': 'carchase',     'theme_id': 'carchase',  'name': 'Car Chase',      'unlock_level': 2, 'primary_color': '#e74c3c', 'description': 'High-speed pursuit, chases, and vehicular action', 'preview': '/static/img/themes/carchase.png', 'category': 'action'},
+            {'id': 'fire',         'theme_id': 'fire',      'name': 'Fire',           'unlock_level': 2, 'primary_color': '#e67e22', 'description': 'Flames, explosions, and intense heat', 'preview': '/static/img/themes/fire.png', 'category': 'action'},
+            {'id': 'blood',        'theme_id': 'blood',     'name': 'Blood',           'unlock_level': 3, 'primary_color': '#c0392b', 'description': 'Gritty, visceral action and conflict', 'preview': '/static/img/themes/blood.png', 'category': 'action'},
+            {'id': 'action',       'theme_id': 'action',    'name': 'Action',         'unlock_level': 2, 'primary_color': '#e74c3c', 'description': 'Explosive action, stunts, and intensity', 'preview': '/static/img/themes/action.png', 'category': 'action'},
+            {'id': 'metallica',    'theme_id': 'metallica', 'name': 'Metallica',      'unlock_level': 6, 'primary_color': '#1a1a1a', 'description': 'Heavy metal energy, arena scale, thunderous rhythm', 'preview': '/static/img/themes/cinematic.png', 'category': 'music'},
+            {'id': 'ww1',          'theme_id': 'ww1',       'name': 'World War I',    'unlock_level': 5, 'primary_color': '#5d4e37', 'description': 'Trenches, early aviation, industrial warfare', 'preview': '/static/img/themes/documentary.png', 'category': 'historical'},
+            {'id': 'ww2',          'theme_id': 'ww2',       'name': 'World War II',   'unlock_level': 5, 'primary_color': '#34495e', 'description': 'Front lines, resistance, global conflict', 'preview': '/static/img/themes/documentary.png', 'category': 'historical'},
         ]
         # Also scan CSS directory for dynamic themes
         seen_ids = {t['id'] for t in _THEMES}
         base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        themes_path = os.path.join(base, 'vidgenerator', 'static', 'themes')
+        themes_path = os.path.join(base, 'static', 'themes')
+        if not os.path.isdir(themes_path):
+            themes_path = os.path.join(base, 'vidgenerator', 'static', 'themes')
         if os.path.isdir(themes_path):
             for f in os.listdir(themes_path):
                 if f.endswith('.css'):
@@ -4336,7 +4302,7 @@ def hunters_walkthroughs_compat():
                     "name": "Getting Started",
                     "rulebook": "V2",
                     "steps": [
-                        {"order": 1, "action": "Open Trophy Hunt", "detail": "Start from /vidgenerator/game.", "reward": "+XP baseline"},
+                        {"order": 1, "action": "Open Trophy Hunt", "detail": "Start from /game.", "reward": "+XP baseline"},
                         {"order": 2, "action": "Run first actions", "detail": "Use gameplay actions to gain points.", "reward": "+points progression"},
                         {"order": 3, "action": "Open Compendium", "detail": "Review rulebook references for strategy.", "reward": "+knowledge points"},
                     ],
@@ -4372,7 +4338,7 @@ def hunters_guides_compat():
                     "rulebook": "V2",
                     "icon": "📚",
                     "steps": ["Open game overview", "Run one action", "Check points and rewards"],
-                    "link": "/vidgenerator/compendium/",
+                    "link": "/compendium/",
                 }
             ]
         },
@@ -4501,14 +4467,14 @@ def rulebook_agent_context_compat():
     return jsonify({"success": True, "agent_context": result, "versions": versions, "sections": sections}), 200
 
 
-@missing_endpoints_bp.route('/vidgenerator/compendium/rulebook-v<int:n>.html', methods=['GET'])
-@missing_endpoints_bp.route('/vidgenerator/compendium/rulebook-v<int:n>', methods=['GET'])
+@missing_endpoints_bp.route('/compendium/rulebook-v<int:n>.html', methods=['GET'])
+@missing_endpoints_bp.route('/compendium/rulebook-v<int:n>', methods=['GET'])
 def compendium_rulebook_viewer_compat(n):
     """Compatibility page route for Rulebook V1-V15 viewer."""
     if n < 1 or n > 16:
         return "Invalid rulebook version", 404
     try:
-        page_path = os.path.join(_BASE_DIR, 'vidgenerator', 'compendium', 'rulebook-viewer.html')
+        page_path = os.path.join(_BASE_DIR, 'compendium', 'rulebook-viewer.html')
         if os.path.exists(page_path):
             with open(page_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -4978,41 +4944,3 @@ def auth_callback_direct(provider):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
-# ---------------------------------------------------------------------------
-# Agent Report page — served directly here to guarantee routing works
-# ---------------------------------------------------------------------------
-@missing_endpoints_bp.route('/vidgenerator/agents', methods=['GET'])
-@missing_endpoints_bp.route('/vidgenerator/agents/', methods=['GET'])
-@missing_endpoints_bp.route('/vidgenerator/agents/index.html', methods=['GET'])
-def serve_agents_page():
-    """Serve Agent Report under /vidgenerator/agents (legacy path).
-
-    Root /agents and /agents/ are handled by all_page_routes.agents_page only — do not
-    register duplicate routes here or missing_endpoints registers second and overwrites,
-    pointing at vidgenerator/agents instead of project-root agents/ (fixes slow/wrong page).
-    """
-    try:
-        for rel in (
-            os.path.join('vidgenerator', 'agents', 'index.html'),
-            os.path.join('agents', 'index.html'),
-        ):
-            page_path = os.path.join(_BASE_DIR, rel)
-            if os.path.exists(page_path):
-                with open(page_path, 'r', encoding='utf-8') as fh:
-                    content = fh.read()
-                return content, 200, {
-                    'Content-Type': 'text/html; charset=utf-8',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-                    'Pragma': 'no-cache',
-                    'Expires': '0',
-                }
-    except Exception as exc:
-        return f"Error loading agents page: {exc}", 500
-    return (
-        '<!DOCTYPE html><html><head><meta charset="UTF-8">'
-        '<title>Agent Report - MasterNoder</title></head>'
-        '<body><h1>Agent Report</h1><p>Page file not found.</p></body></html>',
-        200,
-        {'Content-Type': 'text/html; charset=utf-8'},
-    )

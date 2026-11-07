@@ -17,7 +17,6 @@ test_data_debugger_bp = Blueprint('test_data_debugger', __name__)
 app = create_app()
 
 @test_data_debugger_bp.route('/api/debugger/test-data/generate-user', methods=['POST'])
-@test_data_debugger_bp.route('/vidgenerator/api/debugger/test-data/generate-user', methods=['POST'])
 def generate_single_user():
     """Generate a single test user"""
     try:
@@ -85,7 +84,6 @@ def generate_single_user():
         }), 500
 
 @test_data_debugger_bp.route('/api/debugger/test-data/generate-agent', methods=['POST'])
-@test_data_debugger_bp.route('/vidgenerator/api/debugger/test-data/generate-agent', methods=['POST'])
 def generate_single_agent():
     """Generate a single test agent"""
     try:
@@ -176,7 +174,6 @@ def generate_single_agent():
         }), 500
 
 @test_data_debugger_bp.route('/api/debugger/test-data/stats', methods=['GET'])
-@test_data_debugger_bp.route('/vidgenerator/api/debugger/test-data/stats', methods=['GET'])
 def get_test_data_stats():
     """Get statistics about test data"""
     try:
@@ -199,7 +196,6 @@ def get_test_data_stats():
         }), 500
 
 @test_data_debugger_bp.route('/api/debugger/test-data/list-users', methods=['GET'])
-@test_data_debugger_bp.route('/vidgenerator/api/debugger/test-data/list-users', methods=['GET'])
 def list_test_users():
     """List test users"""
     try:
@@ -224,7 +220,6 @@ def list_test_users():
         }), 500
 
 @test_data_debugger_bp.route('/api/debugger/test-data/list-agents', methods=['GET'])
-@test_data_debugger_bp.route('/vidgenerator/api/debugger/test-data/list-agents', methods=['GET'])
 def list_test_agents():
     """List test agents"""
     try:

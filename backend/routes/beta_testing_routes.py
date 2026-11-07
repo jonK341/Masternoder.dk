@@ -21,7 +21,6 @@ def get_user_id():
 
 
 @beta_testing_bp.route('/api/beta-testing/create', methods=['POST'])
-@beta_testing_bp.route('/vidgenerator/api/beta-testing/create', methods=['POST'])
 @rate_limit()
 def create_beta_test():
     """Create a new beta test"""
@@ -44,7 +43,6 @@ def create_beta_test():
 
 
 @beta_testing_bp.route('/api/beta-testing/register/<test_id>', methods=['POST'])
-@beta_testing_bp.route('/vidgenerator/api/beta-testing/register/<test_id>', methods=['POST'])
 @rate_limit()
 def register_tester(test_id: str):
     """Register as a beta tester"""
@@ -59,7 +57,6 @@ def register_tester(test_id: str):
 
 
 @beta_testing_bp.route('/api/beta-testing/feedback/<test_id>', methods=['POST'])
-@beta_testing_bp.route('/vidgenerator/api/beta-testing/feedback/<test_id>', methods=['POST'])
 @rate_limit()
 def submit_feedback(test_id: str):
     """Submit feedback for a beta test"""
@@ -81,7 +78,6 @@ def submit_feedback(test_id: str):
 
 
 @beta_testing_bp.route('/api/beta-testing/results/<test_id>', methods=['POST'])
-@beta_testing_bp.route('/vidgenerator/api/beta-testing/results/<test_id>', methods=['POST'])
 @rate_limit()
 def submit_test_result(test_id: str):
     """Submit test results"""
@@ -99,7 +95,6 @@ def submit_test_result(test_id: str):
 
 
 @beta_testing_bp.route('/api/beta-testing/tests')
-@beta_testing_bp.route('/vidgenerator/api/beta-testing/tests')
 @rate_limit()
 def get_all_tests():
     """Get all beta tests"""
@@ -113,7 +108,6 @@ def get_all_tests():
 
 
 @beta_testing_bp.route('/api/beta-testing/test/<test_id>')
-@beta_testing_bp.route('/vidgenerator/api/beta-testing/test/<test_id>')
 @rate_limit()
 def get_test(test_id: str):
     """Get beta test details"""
@@ -127,7 +121,6 @@ def get_test(test_id: str):
 
 
 @beta_testing_bp.route('/api/beta-testing/my-tests')
-@beta_testing_bp.route('/vidgenerator/api/beta-testing/my-tests')
 @rate_limit()
 def get_my_tests():
     """Get tests for current user"""
@@ -142,7 +135,6 @@ def get_my_tests():
 
 
 @beta_testing_bp.route('/api/beta-testing/feedback/<test_id>')
-@beta_testing_bp.route('/vidgenerator/api/beta-testing/feedback/<test_id>')
 @rate_limit()
 def get_test_feedback(test_id: str):
     """Get feedback for a test"""

@@ -5,7 +5,7 @@
     ? window.APP_BASE
     : (function () {
       var p = (typeof window !== "undefined" && window.location && window.location.pathname) || "";
-      return p.indexOf("/vidgenerator/") === 0 ? "/vidgenerator" : "";
+      return "";
     })();
 
   var state = { catalog: null, category: "all", selected: null };

@@ -325,9 +325,7 @@ pause
 @debugger_download_bp.route('/api/debugger/download/<tool_type>')
 @debugger_download_bp.route('/api/fixer/download/<tool_type>')
 @debugger_download_bp.route('/download/fixer/<tool_type>')
-@debugger_download_bp.route('/vidgenerator/download/fixer/<tool_type>')
 @debugger_download_bp.route('/tools/<tool_type>')
-@debugger_download_bp.route('/vidgenerator/tools/<tool_type>')
 def download_debugger(tool_type):
     """Download debugger tool - Multiple paths for resistance"""
     if tool_type not in DEBUGGER_TOOLS:

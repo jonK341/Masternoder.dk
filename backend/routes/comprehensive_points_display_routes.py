@@ -11,7 +11,6 @@ comprehensive_points_display_bp = Blueprint('comprehensive_points_display', __na
 
 
 @comprehensive_points_display_bp.route('/api/points/comprehensive', methods=['GET'])
-@comprehensive_points_display_bp.route('/vidgenerator/api/points/comprehensive', methods=['GET'])
 @rate_limit()
 def get_comprehensive_points():
     """Get comprehensive points from all categories structured for tables and grids"""
@@ -458,7 +457,6 @@ def get_comprehensive_points():
 
 
 @comprehensive_points_display_bp.route('/api/points/category/<category>', methods=['GET'])
-@comprehensive_points_display_bp.route('/vidgenerator/api/points/category/<category>', methods=['GET'])
 @rate_limit()
 def get_category_points(category: str):
     """Get points for a specific category"""

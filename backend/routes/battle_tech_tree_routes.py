@@ -9,7 +9,6 @@ import sys
 battle_tech_tree_bp = Blueprint('battle_tech_tree', __name__)
 
 @battle_tech_tree_bp.route('/api/battle/tech-tree/all', methods=['GET'])
-@battle_tech_tree_bp.route('/vidgenerator/api/battle/tech-tree/all', methods=['GET'])
 def get_all_tech_tree():
     """Get complete tech tree with all technologies"""
     try:
@@ -63,7 +62,6 @@ def get_all_tech_tree():
         }), 500
 
 @battle_tech_tree_bp.route('/api/battle/tech-tree/research', methods=['POST'])
-@battle_tech_tree_bp.route('/vidgenerator/api/battle/tech-tree/research', methods=['POST'])
 def research_tech():
     """Research a technology"""
     try:

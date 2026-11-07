@@ -52,7 +52,6 @@ def ensure_point_counting():
 
 
 @point_connection_bp.route('/api/points/get-all-connected', methods=['GET'], strict_slashes=False)
-@point_connection_bp.route('/vidgenerator/api/points/get-all-connected', methods=['GET'], strict_slashes=False)
 def get_all_connected_points():
     """Get all connected points for a user"""
     try:

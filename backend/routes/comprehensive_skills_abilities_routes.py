@@ -120,7 +120,6 @@ def get_all_abilities_list():
 
 # Alias: points -> skills/abilities (fixes /api/points/skills-abilities 404)
 @comprehensive_skills_abilities_bp.route('/api/points/skills-abilities', methods=['GET'])
-@comprehensive_skills_abilities_bp.route('/vidgenerator/api/points/skills-abilities', methods=['GET'])
 @rate_limit()
 def get_points_skills_abilities_alias():
     """Return skills & abilities in a points-oriented wrapper"""

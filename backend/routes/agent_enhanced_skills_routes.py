@@ -12,7 +12,6 @@ agent_enhanced_skills_bp = Blueprint('agent_enhanced_skills', __name__)
 
 
 @agent_enhanced_skills_bp.route('/api/agent/enhanced-skills', methods=['GET'])
-@agent_enhanced_skills_bp.route('/vidgenerator/api/agent/enhanced-skills', methods=['GET'])
 @rate_limit()
 def get_all_enhanced_skills():
     """Get all enhanced skills for an agent"""
@@ -29,7 +28,6 @@ def get_all_enhanced_skills():
         }), 500
 
 @agent_enhanced_skills_bp.route('/api/agent/manager-roles', methods=['GET'])
-@agent_enhanced_skills_bp.route('/vidgenerator/api/agent/manager-roles', methods=['GET'])
 @rate_limit()
 def get_all_manager_roles():
     """Get all available manager roles"""
@@ -43,7 +41,6 @@ def get_all_manager_roles():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @agent_enhanced_skills_bp.route('/api/agent/manager-roles/agent', methods=['GET'])
-@agent_enhanced_skills_bp.route('/vidgenerator/api/agent/manager-roles/agent', methods=['GET'])
 @rate_limit()
 def get_agent_manager_roles():
     """Get manager roles for a specific agent"""
@@ -60,7 +57,6 @@ def get_agent_manager_roles():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @agent_enhanced_skills_bp.route('/api/agent/manager-roles/unlock', methods=['POST'])
-@agent_enhanced_skills_bp.route('/vidgenerator/api/agent/manager-roles/unlock', methods=['POST'])
 @rate_limit()
 def unlock_manager_role():
     """Unlock a manager role for an agent"""

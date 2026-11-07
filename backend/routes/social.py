@@ -12,7 +12,6 @@ import uuid
 social_bp = Blueprint('social', __name__)
 
 @social_bp.route('/api/social/friends/add', methods=['POST'])
-@social_bp.route('/vidgenerator/api/social/friends/add', methods=['POST'])
 @rate_limit(endpoint='/api/social/friends/add')
 def add_friend():
     """Add a friend"""
@@ -40,7 +39,6 @@ def add_friend():
         return error_response, status_code
 
 @social_bp.route('/api/social/friends/remove', methods=['POST'])
-@social_bp.route('/vidgenerator/api/social/friends/remove', methods=['POST'])
 @rate_limit(endpoint='/api/social/friends/remove')
 def remove_friend():
     """Remove a friend"""
@@ -68,7 +66,6 @@ def remove_friend():
         return error_response, status_code
 
 @social_bp.route('/api/social/follow', methods=['POST'])
-@social_bp.route('/vidgenerator/api/social/follow', methods=['POST'])
 @rate_limit(endpoint='/api/social/follow')
 def follow_user():
     """Follow a user"""
@@ -96,7 +93,6 @@ def follow_user():
         return error_response, status_code
 
 @social_bp.route('/api/social/posts', methods=['POST'])
-@social_bp.route('/vidgenerator/api/social/posts', methods=['POST'])
 @rate_limit(endpoint='/api/social/posts')
 def create_post():
     """Create a post"""
@@ -133,7 +129,6 @@ def create_post():
         return error_response, status_code
 
 @social_bp.route('/api/social/posts/<post_id>/like', methods=['POST'])
-@social_bp.route('/vidgenerator/api/social/posts/<post_id>/like', methods=['POST'])
 @rate_limit(endpoint='/api/social/posts/like')
 def like_post(post_id):
     """Like a post"""
@@ -153,7 +148,6 @@ def like_post(post_id):
         return error_response, status_code
 
 @social_bp.route('/api/social/posts/<post_id>/comment', methods=['POST'])
-@social_bp.route('/vidgenerator/api/social/posts/<post_id>/comment', methods=['POST'])
 @rate_limit(endpoint='/api/social/posts/comment')
 def comment_post(post_id):
     """Comment on a post"""
@@ -191,7 +185,6 @@ def comment_post(post_id):
         return error_response, status_code
 
 @social_bp.route('/api/social/posts/<post_id>/media', methods=['POST'])
-@social_bp.route('/vidgenerator/api/social/posts/<post_id>/media', methods=['POST'])
 @rate_limit(endpoint='/api/social/posts/media')
 def upload_post_media(post_id):
     """Upload media to a post"""
@@ -232,7 +225,6 @@ def upload_post_media(post_id):
 
 
 @social_bp.route('/api/social/posts/<post_id>/comments', methods=['GET'])
-@social_bp.route('/vidgenerator/api/social/posts/<post_id>/comments', methods=['GET'])
 @rate_limit(endpoint='/api/social/posts/comments')
 def get_post_comments(post_id):
     """Get comments for a post"""
@@ -259,7 +251,6 @@ def get_post_comments(post_id):
 
 
 @social_bp.route('/api/social/posts/<post_id>', methods=['DELETE'])
-@social_bp.route('/vidgenerator/api/social/posts/<post_id>', methods=['DELETE'])
 @rate_limit(endpoint='/api/social/posts/delete')
 def delete_post(post_id):
     """Delete a post"""
@@ -290,7 +281,6 @@ def delete_post(post_id):
 
 
 @social_bp.route('/api/social/feed', methods=['GET'])
-@social_bp.route('/vidgenerator/api/social/feed', methods=['GET'])
 def get_feed():
     """Get social feed"""
     try:
@@ -317,7 +307,6 @@ def get_feed():
         return error_response, status_code
 
 @social_bp.route('/api/social/friends', methods=['GET'])
-@social_bp.route('/vidgenerator/api/social/friends', methods=['GET'])
 def get_friends():
     """Get friends list"""
     try:
@@ -342,7 +331,6 @@ def get_friends():
         return error_response, status_code
 
 @social_bp.route('/api/social/followers', methods=['GET'])
-@social_bp.route('/vidgenerator/api/social/followers', methods=['GET'])
 def get_followers():
     """Get followers list"""
     try:
@@ -358,7 +346,6 @@ def get_followers():
         return error_response, status_code
 
 @social_bp.route('/api/social/following', methods=['GET'])
-@social_bp.route('/vidgenerator/api/social/following', methods=['GET'])
 def get_following():
     """Get following list"""
     try:

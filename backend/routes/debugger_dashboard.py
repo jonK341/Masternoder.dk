@@ -7,8 +7,6 @@ debugger_dashboard_bp = Blueprint('debugger_dashboard', __name__)
 
 @debugger_dashboard_bp.route('/debugger/dashboard')
 @debugger_dashboard_bp.route('/debugger/dashboard/')
-@debugger_dashboard_bp.route('/vidgenerator/debugger/dashboard')
-@debugger_dashboard_bp.route('/vidgenerator/debugger/dashboard/')
 def debugger_dashboard():
     """Enhanced debugger dashboard with editable tools"""
     html_content = """

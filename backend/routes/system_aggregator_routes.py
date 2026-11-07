@@ -16,7 +16,6 @@ except ImportError:
 
 
 @system_aggregator_bp.route('/api/aggregator/all', methods=['GET'])
-@system_aggregator_bp.route('/vidgenerator/api/aggregator/all', methods=['GET'])
 def get_all_systems_data():
     """Get aggregated data from all systems"""
     try:
@@ -44,7 +43,6 @@ def get_all_systems_data():
 
 
 @system_aggregator_bp.route('/api/aggregator/dashboard', methods=['GET'])
-@system_aggregator_bp.route('/vidgenerator/api/aggregator/dashboard', methods=['GET'])
 def get_dashboard_data():
     """Get data formatted for unified dashboard"""
     try:
@@ -69,7 +67,6 @@ def get_dashboard_data():
 
 
 @system_aggregator_bp.route('/api/aggregator/frontend', methods=['GET'])
-@system_aggregator_bp.route('/vidgenerator/api/aggregator/frontend', methods=['GET'])
 def get_all_frontend_data():
     """Get all data needed for frontend pages"""
     try:
@@ -94,7 +91,6 @@ def get_all_frontend_data():
 
 
 @system_aggregator_bp.route('/api/aggregator/battle', methods=['GET'])
-@system_aggregator_bp.route('/vidgenerator/api/aggregator/battle', methods=['GET'])
 def get_battle_data():
     """Get aggregated battle data"""
     try:
@@ -122,7 +118,6 @@ def get_battle_data():
 
 
 @system_aggregator_bp.route('/api/aggregator/shop', methods=['GET'])
-@system_aggregator_bp.route('/vidgenerator/api/aggregator/shop', methods=['GET'])
 def get_shop_data():
     """Get aggregated shop data"""
     try:
@@ -150,7 +145,6 @@ def get_shop_data():
 
 
 @system_aggregator_bp.route('/api/aggregator/quest', methods=['GET'])
-@system_aggregator_bp.route('/vidgenerator/api/aggregator/quest', methods=['GET'])
 def get_quest_data():
     """Get aggregated quest data"""
     try:

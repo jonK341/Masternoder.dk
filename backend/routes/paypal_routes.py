@@ -446,13 +446,3 @@ def paypal_ops_finish_pending():
         dry_run=dry_run,
     )
     return jsonify(result), 200
-
-
-@paypal_bp.route("/vidgenerator/api/paypal/create-order", methods=["POST"])
-def paypal_create_order_vid():
-    return paypal_create_order()
-
-
-@paypal_bp.route("/vidgenerator/api/paypal/capture", methods=["POST"])
-def paypal_capture_vid():
-    return paypal_capture()

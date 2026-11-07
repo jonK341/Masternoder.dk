@@ -49,6 +49,23 @@ def test_retired_page_aliases_redirect_to_served_pages():
         assert response.headers["Location"].endswith(target), path
 
 
+def test_legacy_vidgenerator_paths_redirect_to_root_site():
+    client = _app().test_client()
+
+    cases = {
+        "/vidgenerator": "/",
+        "/vidgenerator/": "/",
+        "/vidgenerator/generator": "/generator",
+        "/vidgenerator/api-lab/": "/api-lab/",
+        "/vidgenerator/static/js/navigation-toolbar.js": "/static/js/navigation-toolbar.js",
+    }
+    for path, target in cases.items():
+        response = client.get(path)
+        assert response.status_code in (301, 302, 308), path
+        location = response.headers.get("Location") or ""
+        assert location.endswith(target), (path, location, target)
+
+
 def test_wallet_and_staking_pages_are_first_class():
     client = _app().test_client()
 

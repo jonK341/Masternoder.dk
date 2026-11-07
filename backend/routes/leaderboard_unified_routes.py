@@ -35,19 +35,16 @@ leaderboard_unified_bp = Blueprint('leaderboard_unified', __name__)
 
 # Alias routes for backward compatibility
 @leaderboard_unified_bp.route('/api/178-systems/leaderboard/all')
-@leaderboard_unified_bp.route('/vidgenerator/api/178-systems/leaderboard/all')
 def get_all_systems_leaderboard_alias():
     """Alias for /api/leaderboard/all"""
     return get_all_systems_leaderboard()
 
 @leaderboard_unified_bp.route('/api/178-systems/leaderboard/<system_id>')
-@leaderboard_unified_bp.route('/vidgenerator/api/178-systems/leaderboard/<system_id>')
 def get_system_leaderboard_alias(system_id):
     """Alias for /api/leaderboard/<system_id>"""
     return get_system_leaderboard(system_id)
 
 @leaderboard_unified_bp.route('/api/leaderboard/stats')
-@leaderboard_unified_bp.route('/vidgenerator/api/leaderboard/stats')
 def get_leaderboard_stats():
     """Get leaderboard statistics"""
     try:
@@ -81,7 +78,6 @@ def get_leaderboard_stats():
         }), 200
 
 @leaderboard_unified_bp.route('/api/leaderboard/<system_id>')
-@leaderboard_unified_bp.route('/vidgenerator/api/leaderboard/<system_id>')
 def get_system_leaderboard(system_id):
     """Get leaderboard for a specific point system"""
     try:
@@ -107,7 +103,6 @@ def get_system_leaderboard(system_id):
         }), 200
 
 @leaderboard_unified_bp.route('/api/leaderboard/all')
-@leaderboard_unified_bp.route('/vidgenerator/api/leaderboard/all')
 def get_all_systems_leaderboard():
     """Get combined leaderboard across all 178 systems"""
     try:
@@ -133,7 +128,6 @@ def get_all_systems_leaderboard():
         }), 200
 
 @leaderboard_unified_bp.route('/api/leaderboard/trophies')
-@leaderboard_unified_bp.route('/vidgenerator/api/leaderboard/trophies')
 def get_trophy_leaderboard():
     """Get trophy leaderboard"""
     try:
@@ -194,7 +188,6 @@ def get_trophy_leaderboard():
         }), 200
 
 @leaderboard_unified_bp.route('/api/leaderboard/battle')
-@leaderboard_unified_bp.route('/vidgenerator/api/leaderboard/battle')
 def get_battle_leaderboard():
     """Get battle/quick battle leaderboard"""
     try:
@@ -251,7 +244,6 @@ def get_battle_leaderboard():
         }), 200
 
 @leaderboard_unified_bp.route('/api/leaderboard/user/<user_id>/rank')
-@leaderboard_unified_bp.route('/vidgenerator/api/leaderboard/user/<user_id>/rank')
 def get_user_rank(user_id):
     """Get user's rank across all systems"""
     try:
@@ -299,7 +291,6 @@ def get_user_rank(user_id):
         }), 200
 
 @leaderboard_unified_bp.route('/api/leaderboard/categories')
-@leaderboard_unified_bp.route('/vidgenerator/api/leaderboard/categories')
 def get_leaderboard_categories():
     """Get all available leaderboard categories"""
     try:

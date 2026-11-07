@@ -9,7 +9,6 @@ import sys
 mind_energy_bp = Blueprint('mind_energy', __name__)
 
 @mind_energy_bp.route('/api/mind-energy/get', methods=['GET'])
-@mind_energy_bp.route('/vidgenerator/api/mind-energy/get', methods=['GET'])
 @rate_limit()
 def get_mind_energy():
     """Get mind energy for user"""
@@ -27,7 +26,6 @@ def get_mind_energy():
         }), 500
 
 @mind_energy_bp.route('/api/mind-energy/boost', methods=['POST'])
-@mind_energy_bp.route('/vidgenerator/api/mind-energy/boost', methods=['POST'])
 @rate_limit()
 def boost_energy():
     """Boost energy (purchasable)"""
@@ -45,7 +43,6 @@ def boost_energy():
         }), 500
 
 @mind_energy_bp.route('/api/mind-energy/upgrade', methods=['POST'])
-@mind_energy_bp.route('/vidgenerator/api/mind-energy/upgrade', methods=['POST'])
 @rate_limit()
 def upgrade_max_energy():
     """Upgrade max energy capacity"""
@@ -63,7 +60,6 @@ def upgrade_max_energy():
         }), 500
 
 @mind_energy_bp.route('/api/mind-energy/upgrade-generator', methods=['POST'])
-@mind_energy_bp.route('/vidgenerator/api/mind-energy/upgrade-generator', methods=['POST'])
 @rate_limit()
 def upgrade_generator():
     """Upgrade a specific generator"""
@@ -81,7 +77,6 @@ def upgrade_generator():
         }), 500
 
 @mind_energy_bp.route('/api/mind-energy/unlock-generator', methods=['POST'])
-@mind_energy_bp.route('/vidgenerator/api/mind-energy/unlock-generator', methods=['POST'])
 @rate_limit()
 def unlock_generator():
     """Unlock a new generator type"""
@@ -99,7 +94,6 @@ def unlock_generator():
         }), 500
 
 @mind_energy_bp.route('/api/mind-energy/set-active', methods=['POST'])
-@mind_energy_bp.route('/vidgenerator/api/mind-energy/set-active', methods=['POST'])
 @rate_limit()
 def set_active_generator():
     """Set the active generator"""

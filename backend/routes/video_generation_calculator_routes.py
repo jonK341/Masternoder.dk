@@ -10,7 +10,6 @@ calculator_bp = Blueprint('video_generation_calculator', __name__)
 
 
 @calculator_bp.route('/api/video-generation/calculate', methods=['POST'])
-@calculator_bp.route('/vidgenerator/api/video-generation/calculate', methods=['POST'])
 def calculate_process():
     """Calculate and validate video generation process"""
     try:

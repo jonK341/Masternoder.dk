@@ -1081,7 +1081,6 @@ def shop_v3_categories():
 
 
 @shop_bp.route('/api/shop/discord/promo/redeem', methods=['POST'])
-@shop_bp.route('/vidgenerator/api/shop/discord/promo/redeem', methods=['POST'])
 def shop_discord_promo_redeem():
     """Redeem M8 #52 shop-wide Discord promo code."""
     data = request.get_json(silent=True) or {}

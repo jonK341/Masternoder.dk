@@ -13,7 +13,6 @@ friend_bp = Blueprint('friend', __name__, url_prefix='')
 
 
 @friend_bp.route('/api/friends/request', methods=['POST'])
-@friend_bp.route('/vidgenerator/api/friends/request', methods=['POST'])
 @rate_limit(endpoint='/api/friends/request')
 def send_friend_request():
     """Send a friend request"""
@@ -38,7 +37,6 @@ def send_friend_request():
 
 
 @friend_bp.route('/api/friends/accept', methods=['POST'])
-@friend_bp.route('/vidgenerator/api/friends/accept', methods=['POST'])
 @rate_limit(endpoint='/api/friends/accept')
 def accept_friend_request():
     """Accept a friend request"""
@@ -62,7 +60,6 @@ def accept_friend_request():
 
 
 @friend_bp.route('/api/friends/reject', methods=['POST'])
-@friend_bp.route('/vidgenerator/api/friends/reject', methods=['POST'])
 @rate_limit(endpoint='/api/friends/reject')
 def reject_friend_request():
     """Reject a friend request"""
@@ -86,7 +83,6 @@ def reject_friend_request():
 
 
 @friend_bp.route('/api/friends/list/<user_id>', methods=['GET'])
-@friend_bp.route('/vidgenerator/api/friends/list/<user_id>', methods=['GET'])
 @rate_limit(endpoint='/api/friends/list')
 def get_friends(user_id: str):
     """Get user's friends list"""
@@ -104,7 +100,6 @@ def get_friends(user_id: str):
 
 
 @friend_bp.route('/api/friends/requests/<user_id>', methods=['GET'])
-@friend_bp.route('/vidgenerator/api/friends/requests/<user_id>', methods=['GET'])
 @rate_limit(endpoint='/api/friends/requests')
 def get_friend_requests(user_id: str):
     """Get pending friend requests"""
@@ -122,7 +117,6 @@ def get_friend_requests(user_id: str):
 
 
 @friend_bp.route('/api/friends/remove', methods=['POST'])
-@friend_bp.route('/vidgenerator/api/friends/remove', methods=['POST'])
 @rate_limit(endpoint='/api/friends/remove')
 def remove_friend():
     """Remove a friend"""
@@ -146,7 +140,6 @@ def remove_friend():
 
 
 @friend_bp.route('/api/friends/activity/<user_id>', methods=['GET'])
-@friend_bp.route('/vidgenerator/api/friends/activity/<user_id>', methods=['GET'])
 @rate_limit(endpoint='/api/friends/activity')
 def get_friend_activity(user_id: str):
     """Get friend activity feed"""

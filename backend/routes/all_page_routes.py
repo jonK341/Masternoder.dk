@@ -51,6 +51,7 @@ PAGES = [
     'market', 'nft', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
     'wallets', 'podcast', 'create-app', 'business-control',
+    'api-lab',
 ]
 
 # Legacy page aliases that no longer have standalone index.html files.
@@ -111,8 +112,7 @@ def root_index():
     """Serve index.html at project root for /."""
     try:
         base_path = _base_path()
-        # Prefer root index.html (after move); fallback to legacy vidgenerator/index.html
-        for dir_name, file_name in [('', 'index.html'), ('vidgenerator', 'index.html')]:
+        for dir_name, file_name in [('', 'index.html')]:
             page_path = os.path.join(base_path, dir_name, file_name) if dir_name else os.path.join(base_path, file_name)
             if os.path.exists(page_path):
                 directory = os.path.join(base_path, dir_name) if dir_name else base_path

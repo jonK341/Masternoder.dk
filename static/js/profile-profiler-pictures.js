@@ -7,7 +7,7 @@
   function apiBase() {
     if (global.APP_BASE) return String(global.APP_BASE);
     var path = global.location && global.location.pathname ? global.location.pathname : '';
-    return path.indexOf('/vidgenerator/') === 0 ? '/vidgenerator' : '';
+    return '';
   }
 
   function userId() {

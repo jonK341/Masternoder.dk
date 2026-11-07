@@ -9,7 +9,6 @@ point_generation_bp = Blueprint('point_generation', __name__)
 
 
 @point_generation_bp.route('/api/points/generate-from-activity', methods=['POST'])
-@point_generation_bp.route('/vidgenerator/api/points/generate-from-activity', methods=['POST'])
 def generate_points_from_activity():
     """Generate points from an activity"""
     try:
@@ -30,7 +29,6 @@ def generate_points_from_activity():
 
 
 @point_generation_bp.route('/api/points/activity-history', methods=['GET'])
-@point_generation_bp.route('/vidgenerator/api/points/activity-history', methods=['GET'])
 def get_activity_history():
     """Get activity history"""
     try:
@@ -44,7 +42,6 @@ def get_activity_history():
 
 
 @point_generation_bp.route('/api/points/activity-statistics', methods=['GET'])
-@point_generation_bp.route('/vidgenerator/api/points/activity-statistics', methods=['GET'])
 def get_activity_statistics():
     """Get activity statistics"""
     try:

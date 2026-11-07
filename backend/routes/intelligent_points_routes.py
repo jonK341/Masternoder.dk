@@ -71,7 +71,6 @@ def sync_all_points():
 # Note: Middleware strips /vidgenerator, so /vidgenerator/api/* becomes /api/* before matching
 # Adding both variants to ensure route matching
 @intelligent_points_bp.route('/api/points/skills-abilities', methods=['GET', 'POST'])
-@intelligent_points_bp.route('/vidgenerator/api/points/skills-abilities', methods=['GET', 'POST'])
 def skills_abilities_endpoint():
     """Get or update skills and abilities"""
     if request.method == 'GET':

@@ -44,7 +44,6 @@ logger = logging.getLogger(__name__)
 battle_bp = Blueprint('battle', __name__)
 
 @battle_bp.route('/api/battle/status', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/status', methods=['GET'])
 @rate_limit()
 def get_battle_status():
     """Get battle system status and statistics"""
@@ -80,7 +79,6 @@ def get_battle_status():
 # Note: Middleware strips /vidgenerator, so /vidgenerator/api/* becomes /api/* before matching
 # Only need /api/* route - middleware handles the prefix
 @battle_bp.route('/api/battle/clans', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/clans', methods=['GET'])
 def list_clans():
     """List all clans"""
     try:
@@ -102,7 +100,6 @@ def list_clans():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/battles/<battle_id>/match', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/battles/<battle_id>/match', methods=['POST'])
 @rate_limit()
 def submit_match_result(battle_id: str):
     """Submit a match result"""
@@ -123,7 +120,6 @@ def submit_match_result(battle_id: str):
         return error_response, status_code
 
 @battle_bp.route('/api/battle/battles/<battle_id>/all-matches-complete', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/battles/<battle_id>/all-matches-complete', methods=['GET'])
 @rate_limit()
 def check_all_matches_complete(battle_id: str):
     """Check if all matches are complete"""
@@ -136,7 +132,6 @@ def check_all_matches_complete(battle_id: str):
         return error_response, status_code
 
 @battle_bp.route('/api/battle/pvp/win-streak', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/pvp/win-streak', methods=['POST'])
 @rate_limit()
 def update_win_streak():
     """Update win streak for PVP trophy tracking"""
@@ -154,7 +149,6 @@ def update_win_streak():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/pvp/trophies', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/pvp/trophies', methods=['GET'])
 @rate_limit()
 def get_pvp_trophies():
     """Get PVP trophies for a user"""
@@ -171,7 +165,6 @@ def get_pvp_trophies():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/pvp/win-streaks', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/pvp/win-streaks', methods=['GET'])
 @rate_limit()
 def get_win_streaks():
     """Get win streak information"""
@@ -188,7 +181,6 @@ def get_win_streaks():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/death/handle', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/death/handle', methods=['POST'])
 @rate_limit()
 def handle_death():
     """Handle death and bring ID information"""
@@ -205,7 +197,6 @@ def handle_death():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/ids/<id_key>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/ids/<id_key>', methods=['GET'])
 @rate_limit()
 def get_id_info(id_key: str):
     """Get ID system information"""
@@ -227,7 +218,6 @@ def get_id_info(id_key: str):
         return error_response, status_code
 
 @battle_bp.route('/api/battle/ids', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/ids', methods=['GET'])
 @rate_limit()
 def get_all_ids():
     """Get all ID system information"""
@@ -243,7 +233,6 @@ def get_all_ids():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/battles/<battle_id>/timelock', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/battles/<battle_id>/timelock', methods=['GET'])
 @rate_limit()
 def check_timelock(battle_id: str):
     """Check timelock status"""
@@ -305,7 +294,6 @@ def create_clan():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/clans/<clan_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/clans/<clan_id>', methods=['GET'])
 def get_clan(clan_id):
     """Get clan information"""
     try:
@@ -328,7 +316,6 @@ def get_clan(clan_id):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/clans/<clan_id>/join', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/clans/<clan_id>/join', methods=['POST'])
 def join_clan(clan_id):
     """Join a clan"""
     try:
@@ -354,7 +341,6 @@ def join_clan(clan_id):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/battles', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/battles', methods=['GET'])
 def list_battles():
     """List active battles"""
     try:
@@ -371,7 +357,6 @@ def list_battles():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/quick', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/quick', methods=['POST'])
 @rate_limit(endpoint='/api/battle/quick')
 def create_quick_battle():
     """Create a quick battle without requiring clans - instant battle start"""
@@ -397,7 +382,6 @@ def create_quick_battle():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/battles', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/battles', methods=['POST'])
 @rate_limit(endpoint='/api/battle/battles')
 def create_battle():
     """Create a new battle - auto-creates clans if they don't exist"""
@@ -430,7 +414,6 @@ def create_battle():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/battles/<battle_id>/action', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/battles/<battle_id>/action', methods=['POST'])
 @rate_limit(endpoint='/api/battle/battles/action')
 def submit_battle_action(battle_id):
     """Submit an action in a battle"""
@@ -465,7 +448,6 @@ def submit_battle_action(battle_id):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/battles/<battle_id>/end', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/battles/<battle_id>/end', methods=['POST'])
 @rate_limit(endpoint='/api/battle/battles/end')
 def end_battle(battle_id):
     """End a battle"""
@@ -485,7 +467,6 @@ def end_battle(battle_id):
 # Note: Middleware strips /vidgenerator, so /vidgenerator/api/* becomes /api/* before matching
 # Only need /api/* route - middleware handles the prefix
 @battle_bp.route('/api/battle/leaderboard', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/leaderboard', methods=['GET'])
 def get_leaderboard():
     """Get clan leaderboard"""
     try:
@@ -510,7 +491,6 @@ def get_leaderboard():
 # Note: Middleware strips /vidgenerator, so /vidgenerator/api/* becomes /api/* before matching
 # Only need /api/* route - middleware handles the prefix
 @battle_bp.route('/api/battle/history', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/history', methods=['GET'])
 def get_battle_history():
     """Get battle history"""
     try:
@@ -534,7 +514,6 @@ def get_battle_history():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/find-opponents', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/find-opponents', methods=['POST'])
 @rate_limit(endpoint='/api/battle/find-opponents')
 def find_opponents():
     """Find intelligent opponents using battle network and fight intelligence"""
@@ -560,7 +539,6 @@ def find_opponents():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/opponent-intelligence', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/opponent-intelligence', methods=['POST'])
 @rate_limit(endpoint='/api/battle/opponent-intelligence')
 def get_opponent_intelligence():
     """Get detailed fight and aggression intelligence for opponent"""
@@ -597,7 +575,6 @@ def get_opponent_intelligence():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/download-opponent', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/download-opponent', methods=['POST'])
 @rate_limit(endpoint='/api/battle/download-opponent')
 def download_opponent():
     """Download opponent data from battle network"""
@@ -631,7 +608,6 @@ def download_opponent():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/tournaments', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/tournaments', methods=['GET'])
 def get_fantasy_tournaments():
     """Get fantasy-themed tournaments"""
     try:
@@ -649,7 +625,6 @@ def get_fantasy_tournaments():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/history', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/history', methods=['GET'])
 def get_fantasy_history():
     """Get fantasy-themed battle history"""
     try:
@@ -673,7 +648,6 @@ def get_fantasy_history():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/leaderboard', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/leaderboard', methods=['GET'])
 def get_fantasy_leaderboard():
     """Get fantasy-themed leaderboard"""
     try:
@@ -692,7 +666,6 @@ def get_fantasy_leaderboard():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/resources', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/resources', methods=['GET'])
 def get_fantasy_resources():
     """Get fantasy-themed resources"""
     try:
@@ -710,7 +683,6 @@ def get_fantasy_resources():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/intelligence', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/intelligence', methods=['GET'])
 def get_fantasy_intelligence():
     """Get fantasy-themed intelligence"""
     try:
@@ -728,7 +700,6 @@ def get_fantasy_intelligence():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/tournaments/<tournament_id>/join', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/tournaments/<tournament_id>/join', methods=['POST'])
 @rate_limit(endpoint='/api/battle/fantasy/tournaments/join')
 def join_fantasy_tournament(tournament_id):
     """Join a fantasy tournament"""
@@ -750,7 +721,6 @@ def join_fantasy_tournament(tournament_id):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/power', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/power', methods=['GET'])
 def get_fantasy_power():
     """Calculate fantasy power from resources"""
     try:
@@ -768,7 +738,6 @@ def get_fantasy_power():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/find-opponent', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/find-opponent', methods=['POST'])
 @rate_limit(endpoint='/api/battle/fantasy/find-opponent')
 def find_fantasy_opponent():
     """Find a suitable opponent for fantasy battle"""
@@ -792,7 +761,6 @@ def find_fantasy_opponent():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/fantasy/execute', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/fantasy/execute', methods=['POST'])
 @rate_limit(endpoint='/api/battle/fantasy/execute')
 def execute_fantasy_battle():
     """Execute a fantasy battle"""
@@ -830,9 +798,7 @@ def execute_fantasy_battle():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/rulebooks', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/rulebooks', methods=['GET'])
 @battle_bp.route('/api/battle/rule-books', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/rule-books', methods=['GET'])
 @rate_limit()
 def get_rule_books():
     """Get available rule books"""
@@ -855,7 +821,6 @@ def get_rule_books():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/rule-books/<book_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/rule-books/<book_id>', methods=['GET'])
 @rate_limit()
 def get_rule_book(book_id: str):
     """Get specific rule book"""
@@ -880,7 +845,6 @@ def get_rule_book(book_id: str):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/rule-books/<book_id>/progress', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/rule-books/<book_id>/progress', methods=['POST'])
 @rate_limit()
 def update_rule_book_progress(book_id: str):
     """Update rule book progress"""
@@ -899,7 +863,6 @@ def update_rule_book_progress(book_id: str):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/series', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/series', methods=['GET'])
 @rate_limit()
 def get_battle_series():
     """Get available battle series"""
@@ -923,7 +886,6 @@ def get_battle_series():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/series/<series_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/series/<series_id>', methods=['GET'])
 @rate_limit()
 def get_series_details(series_id: str):
     """Get specific series details"""
@@ -951,7 +913,6 @@ def get_series_details(series_id: str):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/series/<series_id>/join', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/series/<series_id>/join', methods=['POST'])
 @rate_limit()
 def join_series(series_id: str):
     """Join a battle series"""
@@ -972,7 +933,6 @@ def join_series(series_id: str):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/gps/location', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/gps/location', methods=['POST'])
 @rate_limit()
 def update_gps_location():
     """Update user GPS location"""
@@ -992,7 +952,6 @@ def update_gps_location():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/gps/nearby', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/gps/nearby', methods=['GET'])
 @rate_limit()
 def get_nearby_battles():
     """Get nearby battles"""
@@ -1011,14 +970,12 @@ def get_nearby_battles():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/gps', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/gps', methods=['GET'])
 @rate_limit()
 def get_gps():
     """Get GPS data - alias for get_battle_locations"""
     return get_battle_locations()
 
 @battle_bp.route('/api/battle/gps/locations', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/gps/locations', methods=['GET'])
 @rate_limit()
 def get_battle_locations():
     """Get all battle locations"""
@@ -1041,7 +998,6 @@ def get_battle_locations():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/news', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/news', methods=['GET'])
 @rate_limit()
 def get_battle_news():
     """Get battle news"""
@@ -1066,7 +1022,6 @@ def get_battle_news():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/peers', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/peers', methods=['GET'])
 @rate_limit()
 def get_peers():
     """Get all peers in network"""
@@ -1090,7 +1045,6 @@ def get_peers():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/peers/<peer_id>/connect', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/peers/<peer_id>/connect', methods=['POST'])
 @rate_limit()
 def connect_peer(peer_id: str):
     """Connect to a peer"""
@@ -1111,7 +1065,6 @@ def connect_peer(peer_id: str):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/peers/<peer_id>/disconnect', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/peers/<peer_id>/disconnect', methods=['POST'])
 @rate_limit()
 def disconnect_peer(peer_id: str):
     """Disconnect from a peer"""
@@ -1132,7 +1085,6 @@ def disconnect_peer(peer_id: str):
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/peers/network/topology', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/peers/network/topology', methods=['GET'])
 @rate_limit()
 def get_network_topology():
     """Get network topology graph"""
@@ -1154,7 +1106,6 @@ def get_network_topology():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/peers/network/stats', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/peers/network/stats', methods=['GET'])
 @rate_limit()
 def get_network_stats():
     """Get network statistics"""
@@ -1176,7 +1127,6 @@ def get_network_stats():
 
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 @battle_bp.route('/api/battle/peers/<peer_id>/behavior', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/peers/<peer_id>/behavior', methods=['GET'])
 @rate_limit()
 def get_peer_behavior(peer_id: str):
     """Get peer behavior logs"""
@@ -1196,7 +1146,6 @@ def get_peer_behavior(peer_id: str):
 # Enhanced Battle Features - Match Tracking, PVP Trophies, ID System
 
 @battle_bp.route('/api/battle/trading/offer/create', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/trading/offer/create', methods=['POST'])
 @rate_limit()
 def create_trade_offer():
     try:
@@ -1215,7 +1164,6 @@ def create_trade_offer():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/trading/offers', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/trading/offers', methods=['GET'])
 @rate_limit()
 def get_trade_offers():
     try:
@@ -1231,7 +1179,6 @@ def get_trade_offers():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/trading/offer/<offer_id>/accept', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/trading/offer/<offer_id>/accept', methods=['POST'])
 @rate_limit()
 def accept_trade_offer(offer_id: str):
     try:
@@ -1248,7 +1195,6 @@ def accept_trade_offer(offer_id: str):
         return error_response, status_code
 
 @battle_bp.route('/api/battle/collectibles/create', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/collectibles/create', methods=['POST'])
 @rate_limit()
 def create_collectible_card():
     try:
@@ -1266,7 +1212,6 @@ def create_collectible_card():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/collectibles/collection', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/collectibles/collection', methods=['GET'])
 @rate_limit()
 def get_collection():
     try:
@@ -1282,7 +1227,6 @@ def get_collection():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/collectibles/<card_id>/valuation', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/collectibles/<card_id>/valuation', methods=['GET'])
 @rate_limit()
 def get_card_valuation(card_id: str):
     try:
@@ -1299,7 +1243,6 @@ def get_card_valuation(card_id: str):
 from backend.services.mission_quest_system import mission_quest_system
 
 @battle_bp.route('/api/battle/missions/daily-quests', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/missions/daily-quests', methods=['GET'])
 @rate_limit()
 def get_daily_quests():
     try:
@@ -1312,7 +1255,6 @@ def get_daily_quests():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/missions/daily-quests/refresh', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/missions/daily-quests/refresh', methods=['POST'])
 @rate_limit()
 def refresh_daily_quests():
     try:
@@ -1325,7 +1267,6 @@ def refresh_daily_quests():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/missions/timeline', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/missions/timeline', methods=['GET'])
 @rate_limit()
 def get_timeline_missions():
     try:
@@ -1338,7 +1279,6 @@ def get_timeline_missions():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/missions/progress/update', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/missions/progress/update', methods=['POST'])
 @rate_limit()
 def update_mission_progress():
     try:
@@ -1362,7 +1302,6 @@ def update_mission_progress():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/missions/mtg-id/<mtg_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/missions/mtg-id/<mtg_id>', methods=['GET'])
 @rate_limit()
 def get_mtg_id(mtg_id: str):
     try:
@@ -1387,7 +1326,6 @@ def get_mtg_id(mtg_id: str):
 from backend.services.ai_research_system import ai_research_system
 
 @battle_bp.route('/api/battle/ai-research/search', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/ai-research/search', methods=['POST'])
 @rate_limit()
 def search_ai_options():
     try:
@@ -1402,7 +1340,6 @@ def search_ai_options():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/ai-research/prompt-template/<template_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/ai-research/prompt-template/<template_id>', methods=['GET'])
 @rate_limit()
 def get_prompt_template(template_id: str):
     try:
@@ -1417,7 +1354,6 @@ def get_prompt_template(template_id: str):
         return error_response, status_code
 
 @battle_bp.route('/api/battle/ai-research/creative-art-styles', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/ai-research/creative-art-styles', methods=['GET'])
 @rate_limit()
 def get_creative_art_styles():
     try:
@@ -1429,7 +1365,6 @@ def get_creative_art_styles():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/ai-research/enhance-video', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/ai-research/enhance-video', methods=['POST'])
 @rate_limit()
 def enhance_video_with_ai():
     try:
@@ -1448,7 +1383,6 @@ def enhance_video_with_ai():
 from backend.services.rewards_system import rewards_system
 
 @battle_bp.route('/api/battle/rewards', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/rewards', methods=['GET'])
 @rate_limit()
 def get_rewards():
     try:
@@ -1461,7 +1395,6 @@ def get_rewards():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/rewards/<reward_id>/claim', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/rewards/<reward_id>/claim', methods=['POST'])
 @rate_limit()
 def claim_reward(reward_id: str):
     try:
@@ -1475,7 +1408,6 @@ def claim_reward(reward_id: str):
         return error_response, status_code
 
 @battle_bp.route('/api/battle/rewards/claim-all', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/rewards/claim-all', methods=['POST'])
 @rate_limit()
 def claim_all_rewards():
     try:
@@ -1492,7 +1424,6 @@ def claim_all_rewards():
 from backend.services.fantasy_leaderboard_rulebook import fantasy_leaderboard_rulebook
 
 @battle_bp.route('/api/battle/leaderboard/rulebook', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/leaderboard/rulebook', methods=['GET'])
 @rate_limit()
 def get_fantasy_rulebook():
     try:
@@ -1504,7 +1435,6 @@ def get_fantasy_rulebook():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/leaderboard/rulebook/chapter/<chapter_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/leaderboard/rulebook/chapter/<chapter_id>', methods=['GET'])
 @rate_limit()
 def get_rulebook_chapter(chapter_id: str):
     try:
@@ -1519,7 +1449,6 @@ def get_rulebook_chapter(chapter_id: str):
         return error_response, status_code
 
 @battle_bp.route('/api/battle/leaderboard/rulebook/chapter/<chapter_id>/complete', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/leaderboard/rulebook/chapter/<chapter_id>/complete', methods=['POST'])
 @rate_limit()
 def complete_rulebook_chapter(chapter_id: str):
     try:
@@ -1533,7 +1462,6 @@ def complete_rulebook_chapter(chapter_id: str):
         return error_response, status_code
 
 @battle_bp.route('/api/battle/leaderboard/rulebook/progress', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/leaderboard/rulebook/progress', methods=['GET'])
 @rate_limit()
 def get_rulebook_progress():
     try:
@@ -1547,7 +1475,6 @@ def get_rulebook_progress():
 
 # GPS Missions
 @battle_bp.route('/api/battle/missions/gps/create', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/missions/gps/create', methods=['POST'])
 @rate_limit()
 def create_gps_mission():
     try:
@@ -1564,7 +1491,6 @@ def create_gps_mission():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/missions/gps', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/missions/gps', methods=['GET'])
 @rate_limit()
 def get_gps_missions():
     try:
@@ -1577,7 +1503,6 @@ def get_gps_missions():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/missions/gps/check', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/missions/gps/check', methods=['POST'])
 @rate_limit()
 def check_gps_location():
     try:
@@ -1604,7 +1529,6 @@ def check_gps_location():
 from backend.services.mtg_hash_operation import mtg_hash_operation
 
 @battle_bp.route('/api/battle/mtg-hash/status', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/mtg-hash/status', methods=['GET'])
 @rate_limit()
 def get_mtg_hash_status():
     try:
@@ -1617,7 +1541,6 @@ def get_mtg_hash_status():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/mtg-hash/execute', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/mtg-hash/execute', methods=['POST'])
 @rate_limit()
 def execute_mtg_hash_operation():
     try:
@@ -1635,7 +1558,6 @@ def execute_mtg_hash_operation():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/mtg-hash/clips-movie', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/mtg-hash/clips-movie', methods=['GET'])
 @rate_limit()
 def get_mtg_clips_movie():
     try:
@@ -1652,7 +1574,6 @@ def get_mtg_clips_movie():
 from backend.services.battle_techno_tunnel_magi import battle_techno_tunnel_magi
 
 @battle_bp.route('/api/battle/techno-tunnel/territories', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/techno-tunnel/territories', methods=['GET'])
 @rate_limit()
 def get_techno_territories():
     try:
@@ -1665,7 +1586,6 @@ def get_techno_territories():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/techno-tunnel/create', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/techno-tunnel/create', methods=['POST'])
 @rate_limit()
 def create_techno_tunnel():
     try:
@@ -1683,7 +1603,6 @@ def create_techno_tunnel():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/techno-tunnel/quick-expansion', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/techno-tunnel/quick-expansion', methods=['POST'])
 @rate_limit()
 def quick_battle_expansion():
     try:
@@ -1702,7 +1621,6 @@ def quick_battle_expansion():
 # Note: Middleware strips /vidgenerator, so /vidgenerator/api/* becomes /api/* before matching
 # Only need /api/* route - middleware handles the prefix
 @battle_bp.route('/api/battle/stats', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/stats', methods=['GET'])
 @rate_limit()
 def get_battle_stats():
     """Get battle statistics for user"""
@@ -1752,7 +1670,6 @@ def get_battle_stats():
         }), 200
 
 @battle_bp.route('/api/battle/intelligence', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/intelligence', methods=['GET'])
 @rate_limit()
 def get_battle_intelligence():
     """Get battle intelligence for user"""
@@ -1785,7 +1702,6 @@ def get_battle_intelligence():
 # This endpoint is now handled by advanced_battle_tech_bp blueprint
 
 @battle_bp.route('/api/battle/techno-tunnel/expansions', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/techno-tunnel/expansions', methods=['GET'])
 @rate_limit()
 def get_user_expansions():
     try:
@@ -1798,7 +1714,6 @@ def get_user_expansions():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/techno-tunnel/resources', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/techno-tunnel/resources', methods=['GET'])
 @rate_limit()
 def get_techno_resources():
     try:
@@ -1811,7 +1726,6 @@ def get_techno_resources():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/techno-tunnel/add-energy', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/techno-tunnel/add-energy', methods=['POST'])
 @rate_limit()
 def add_techno_energy():
     try:
@@ -1827,7 +1741,6 @@ def add_techno_energy():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/techno-tunnel/integrate-intelligence', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/techno-tunnel/integrate-intelligence', methods=['POST'])
 @rate_limit()
 def integrate_intelligence():
     try:
@@ -1847,7 +1760,6 @@ def integrate_intelligence():
 from backend.services.technology_science_leveling import technology_science_leveling
 
 @battle_bp.route('/api/battle/technology-science/levels', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/technology-science/levels', methods=['GET'])
 @rate_limit()
 def get_technology_science_levels():
     try:
@@ -1860,7 +1772,6 @@ def get_technology_science_levels():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/technology-science/death-teleport', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/technology-science/death-teleport', methods=['POST'])
 @rate_limit()
 def use_death_teleport_leveling():
     try:
@@ -1877,7 +1788,6 @@ def use_death_teleport_leveling():
 from backend.services.death_teleport_operator import death_teleport_operator
 
 @battle_bp.route('/api/battle/death-teleport/create', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/death-teleport/create', methods=['POST'])
 @rate_limit()
 def create_death_teleport_operator():
     try:
@@ -1894,7 +1804,6 @@ def create_death_teleport_operator():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/death-teleport/use', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/death-teleport/use', methods=['POST'])
 @rate_limit()
 def use_death_teleport_operator():
     try:
@@ -1910,7 +1819,6 @@ def use_death_teleport_operator():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/quest-mission-operators', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/quest-mission-operators', methods=['GET'])
 @rate_limit()
 def get_quest_mission_operators():
     try:
@@ -1926,7 +1834,6 @@ def get_quest_mission_operators():
 from backend.services.autoplay_recording import autoplay_recording
 
 @battle_bp.route('/api/battle/autoplay/start', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/autoplay/start', methods=['POST'])
 @rate_limit()
 def start_autoplay_recording():
     try:
@@ -1943,7 +1850,6 @@ def start_autoplay_recording():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/autoplay/stop', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/autoplay/stop', methods=['POST'])
 @rate_limit()
 def stop_autoplay_recording():
     try:
@@ -1959,7 +1865,6 @@ def stop_autoplay_recording():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/recordings', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/recordings', methods=['GET'])
 @rate_limit()
 def get_recordings():
     try:
@@ -1972,7 +1877,6 @@ def get_recordings():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/recordings/<recording_id>/download', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/recordings/<recording_id>/download', methods=['GET'])
 @rate_limit()
 def download_recording(recording_id: str):
     try:
@@ -1998,7 +1902,6 @@ def download_recording(recording_id: str):
 
 # Social Battle Integration Routes
 @battle_bp.route('/api/battle/social/friend-request', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/social/friend-request', methods=['POST'])
 @rate_limit()
 def send_friend_request_battle():
     try:
@@ -2013,7 +1916,6 @@ def send_friend_request_battle():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/social/friend-request/respond', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/social/friend-request/respond', methods=['POST'])
 @rate_limit()
 def respond_friend_request_battle():
     try:
@@ -2029,7 +1931,6 @@ def respond_friend_request_battle():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/social/friend-requests', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/social/friend-requests', methods=['GET'])
 @rate_limit()
 def get_friend_requests_battle():
     try:
@@ -2042,7 +1943,6 @@ def get_friend_requests_battle():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/social/challenge', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/social/challenge', methods=['POST'])
 @rate_limit()
 def challenge_friend_battle():
     try:
@@ -2057,7 +1957,6 @@ def challenge_friend_battle():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/social/leaderboard', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/social/leaderboard', methods=['GET'])
 @rate_limit()
 def get_social_leaderboard():
     try:
@@ -2069,7 +1968,6 @@ def get_social_leaderboard():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/social/activity', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/social/activity', methods=['GET'])
 @rate_limit()
 def get_friend_activity():
     try:
@@ -2081,7 +1979,6 @@ def get_friend_activity():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/social/guild', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/social/guild', methods=['GET'])
 @rate_limit()
 def get_user_guild():
     try:
@@ -2095,7 +1992,6 @@ def get_user_guild():
 
 # Teams Routes
 @battle_bp.route('/api/battle/teams/create', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/teams/create', methods=['POST'])
 @rate_limit()
 def create_team():
     try:
@@ -2112,7 +2008,6 @@ def create_team():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/teams', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/teams', methods=['GET'])
 @rate_limit()
 def get_user_teams():
     try:
@@ -2125,7 +2020,6 @@ def get_user_teams():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/teams/match', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/teams/match', methods=['POST'])
 @rate_limit()
 def find_team_match():
     try:
@@ -2140,7 +2034,6 @@ def find_team_match():
 
 # Alliances Routes
 @battle_bp.route('/api/battle/alliances/create', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/alliances/create', methods=['POST'])
 @rate_limit()
 def create_alliance():
     try:
@@ -2156,7 +2049,6 @@ def create_alliance():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/alliances', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/alliances', methods=['GET'])
 @rate_limit()
 def get_user_alliances():
     try:
@@ -2169,7 +2061,6 @@ def get_user_alliances():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/alliances/wars', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/alliances/wars', methods=['GET'])
 @rate_limit()
 def get_alliance_wars():
     try:
@@ -2183,7 +2074,6 @@ def get_alliance_wars():
 
 # Group Destruction Routes
 @battle_bp.route('/api/battle/groups/destroy', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/groups/destroy', methods=['POST'])
 @rate_limit()
 def destroy_group():
     try:
@@ -2199,7 +2089,6 @@ def destroy_group():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/groups/merge', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/groups/merge', methods=['POST'])
 @rate_limit()
 def merge_groups():
     try:
@@ -2216,7 +2105,6 @@ def merge_groups():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/groups/takeover', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/groups/takeover', methods=['POST'])
 @rate_limit()
 def takeover_group():
     try:
@@ -2232,7 +2120,6 @@ def takeover_group():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/groups/conquer-territory', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/battle/groups/conquer-territory', methods=['POST'])
 @rate_limit()
 def conquer_territory():
     try:
@@ -2248,7 +2135,6 @@ def conquer_territory():
         return error_response, status_code
 
 @battle_bp.route('/api/battle/groups/destruction-history', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/groups/destruction-history', methods=['GET'])
 @rate_limit()
 def get_destruction_history():
     try:
@@ -2267,7 +2153,6 @@ def get_destruction_history():
 
 # Rulebooks alias (frontend calls /rulebooks, backend has /rule-books)
 @battle_bp.route('/api/battle/rulebooks', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/rulebooks', methods=['GET'])
 @rate_limit()
 def get_rulebooks_alias():
     """Get rulebooks - alias for get_rule_books"""
@@ -2275,7 +2160,6 @@ def get_rulebooks_alias():
 
 # Timepocket realtime endpoint
 @battle_bp.route('/api/battle/timepocket/realtime', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/timepocket/realtime', methods=['GET'])
 @rate_limit()
 def get_timepocket_realtime():
     """Get timepocket real-time data"""
@@ -2308,7 +2192,6 @@ def get_timepocket_realtime():
 
 # Trophy trading endpoint
 @battle_bp.route('/api/battle/trophy-trading', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/trophy-trading', methods=['GET'])
 @rate_limit()
 def get_trophy_trading():
     """Get trophy trading data"""
@@ -2339,7 +2222,6 @@ def get_trophy_trading():
 
 # Collectibles endpoint
 @battle_bp.route('/api/battle/collectibles', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/collectibles', methods=['GET'])
 @rate_limit()
 def get_collectibles():
     """Get collectibles"""
@@ -2367,7 +2249,6 @@ def get_collectibles():
 
 # Missions endpoints
 @battle_bp.route('/api/missions/daily', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/missions/daily', methods=['GET'])
 @rate_limit()
 def get_daily_missions():
     """Get daily missions"""
@@ -2392,7 +2273,6 @@ def get_daily_missions():
         }), 200
 
 @battle_bp.route('/api/missions/timeline', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/missions/timeline', methods=['GET'])
 @rate_limit()
 def get_missions_timeline():
     """Get timeline missions"""
@@ -2418,7 +2298,6 @@ def get_missions_timeline():
 
 # AI Research endpoint
 @battle_bp.route('/api/ai-research', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/ai-research', methods=['GET'])
 @rate_limit()
 def get_ai_research():
     """Get AI research data"""
@@ -2452,7 +2331,6 @@ def get_ai_research():
 
 # Autoplay endpoint
 @battle_bp.route('/api/autoplay/status', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/autoplay/status', methods=['GET'])
 @rate_limit()
 def get_autoplay_status():
     """Get autoplay status"""
@@ -2486,7 +2364,6 @@ def get_autoplay_status():
 
 # Teams endpoint
 @battle_bp.route('/api/teams/user', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/teams/user', methods=['GET'])
 @rate_limit()
 def get_teams_user():
     """Get user teams"""
@@ -2508,7 +2385,6 @@ def get_teams_user():
 
 # Alliances endpoint
 @battle_bp.route('/api/alliances/user', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/alliances/user', methods=['GET'])
 @rate_limit()
 def get_alliances_user():
     """Get user alliances"""
@@ -2530,7 +2406,6 @@ def get_alliances_user():
 
 # Groups destruction history endpoint (alias)
 @battle_bp.route('/api/groups/destruction-history', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/groups/destruction-history', methods=['GET'])
 @rate_limit()
 def get_destruction_history_alias():
     """Get group destruction history - alias"""
@@ -2538,7 +2413,6 @@ def get_destruction_history_alias():
 
 # Bonus levels endpoint
 @battle_bp.route('/api/bonus-levels', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/bonus-levels', methods=['GET'])
 @rate_limit()
 def get_bonus_levels():
     """Get bonus levels"""
@@ -2572,7 +2446,6 @@ def get_bonus_levels():
 
 # Death teleport status endpoint
 @battle_bp.route('/api/death-teleport/status/<user_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/death-teleport/status/<user_id>', methods=['GET'])
 @rate_limit()
 def get_death_teleport_status(user_id: str):
     """Get death teleport status"""
@@ -2597,7 +2470,6 @@ def get_death_teleport_status(user_id: str):
 
 # Militia forces endpoint
 @battle_bp.route('/api/militia/forces', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/militia/forces', methods=['GET'])
 @rate_limit()
 def get_militia_forces():
     """Get militia forces"""
@@ -2623,7 +2495,6 @@ def get_militia_forces():
 
 # Legal content endpoint
 @battle_bp.route('/api/legal/content', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/legal/content', methods=['GET'])
 @rate_limit()
 def get_legal_content():
     """Get legal content"""
@@ -2660,7 +2531,6 @@ def get_legal_content():
 
 # Tech hardware progress endpoint
 @battle_bp.route('/api/tech-hardware/progress/<user_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/tech-hardware/progress/<user_id>', methods=['GET'])
 @rate_limit()
 def get_tech_hardware_progress(user_id: str):
     """Get tech hardware progress"""
@@ -2693,7 +2563,6 @@ def get_tech_hardware_progress(user_id: str):
 
 # Death portal status endpoint (legacy)
 @battle_bp.route('/api/death-portal/status', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/death-portal/status', methods=['GET'])
 @rate_limit()
 def get_death_portal_status_legacy():
     """Get death portal status - legacy endpoint"""
@@ -2719,7 +2588,6 @@ def get_death_portal_status_legacy():
 
 # Experience recount status endpoint
 @battle_bp.route('/api/experience/recount-status/<user_id>', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/experience/recount-status/<user_id>', methods=['GET'])
 @rate_limit()
 def get_experience_recount_status(user_id: str):
     """Get experience recount status"""
@@ -2751,7 +2619,6 @@ def get_experience_recount_status(user_id: str):
         }), 200
 
 @battle_bp.route('/api/experience/recount/<user_id>', methods=['POST'])
-@battle_bp.route('/vidgenerator/api/experience/recount/<user_id>', methods=['POST'])
 @rate_limit()
 def start_experience_recount(user_id: str):
     """Start experience recount"""
@@ -2776,7 +2643,6 @@ def start_experience_recount(user_id: str):
 
 # Enhanced system - points endpoint
 @battle_bp.route('/api/points/get-all-connected', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/points/get-all-connected', methods=['GET'])
 @rate_limit()
 def get_all_connected_points():
     """Get all connected points"""
@@ -2816,7 +2682,6 @@ def get_all_connected_points():
 
 # Tech tree endpoint
 @battle_bp.route('/api/battle/tech-tree/all', methods=['GET'])
-@battle_bp.route('/vidgenerator/api/battle/tech-tree/all', methods=['GET'])
 @rate_limit()
 def get_tech_tree_all():
     """Get all tech tree data"""
