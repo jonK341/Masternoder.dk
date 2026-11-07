@@ -11,7 +11,7 @@
   "stale_provisioning_hours": 6,
   "paypal": {
     "enabled": true,
-    "price_usd_per_slot": 4.99,
+    "price_usd_per_slot": 5.0,
     "currency": "USD",
     "billing_label": "MN2 Masternode Hosting (30 days)",
     "quote_ttl_seconds": 900,
@@ -24,9 +24,18 @@
     "price_coins_per_slot": null,
     "comment": "null = derive from USD + coins_per_mn2 + live MN2/USD; override with fixed coin price per slot"
   },
+  "rental": {
+    "enabled": true,
+    "price_usd_monthly": 5.0,
+    "billing_period_days": 30,
+    "billing_label": "MN2 Masternode lease — 30 days",
+    "max_slots_per_order": 10,
+    "inventory_host_prefix": "platform-mn",
+    "description": "Lease a pre-enabled platform masternode for about $5/month (30-day period). Instant assignment from fleet inventory."
+  },
   "paypal_monthly": {
     "enabled": true,
-    "price_usd_monthly": 4.99,
+    "price_usd_monthly": 5.0,
     "label": "MN2 Masternode hosting — monthly",
     "plan_note": "Use PayPal subscription plan P-PLACEHOLDER-MN-HOST from monetization_config when live.",
     "subscription_plan_key": "P-PLACEHOLDER-MN-HOST"

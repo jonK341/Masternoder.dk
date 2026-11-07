@@ -415,7 +415,29 @@ def _mark_paid(order: Dict[str, Any], payment_ref: str, source: str, payment_met
             "message": "Already paid — your slot(s) are on the fleet list.",
         }
 
-    fulfilled = _register_and_provision(order)
+    product = str(order.get("product") or "").strip()
+    if product == "masternode_inventory_lease":
+        from backend.services.mn2_masternode_rental_service import assign_rental_hosts
+
+        fulfilled = assign_rental_hosts(
+            str(order.get("user_id") or ""),
+            int(order.get("slots") or 1),
+            str(order.get("order_id") or ""),
+        )
+        if not fulfilled.get("success"):
+            return {
+                "success": False,
+                "error": fulfilled.get("error", "inventory lease assignment failed"),
+                "host_ids": fulfilled.get("host_ids") or [],
+            }
+        provisions = [{"host_id": hid, "status": "leased"} for hid in (fulfilled.get("host_ids") or [])]
+        fulfilled = {
+            "host_ids": fulfilled.get("host_ids") or [],
+            "provisions": provisions,
+            "message": fulfilled.get("message"),
+        }
+    else:
+        fulfilled = _register_and_provision(order)
     order["status"] = "paid"
     order["payment_method"] = payment_method
     order["payment_ref"] = payment_ref
