@@ -41,8 +41,7 @@
     strip.innerHTML =
       '<div class="platform-upgrade-progress">' +
       '<strong>Batch 2</strong> — ' + done + '/' + total + ' (' + pct + '%)' +
-      '<div class="platform-upgrade-bar"><span style="width:' + pct + '%"></span></div></div>' +
-      '<a href="/docs/PLATFORM_UPGRADES_BATCH2.md" target="_blank" rel="noopener">Batch 2 roadmap</a>';
+      '<div class="platform-upgrade-bar"><span style="width:' + pct + '%"></span></div></div>';
     mount.appendChild(strip);
   }
 

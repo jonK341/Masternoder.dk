@@ -22,23 +22,12 @@ class ComprehensivePageIntegration {
             {name: 'analytics', url: '/analytics/', title: 'Analytics'},
             {name: 'dashboard', url: '/dashboard/', title: 'Dashboard'},
             {name: 'aggregator', url: '/aggregator/', title: 'Aggregator'},
-            {name: 'metal', url: '/metal/', title: 'Metal'},
-            {name: 'theme-points', url: '/theme-points/', title: 'Theme Points'},
             {name: 'rights-law', url: '/rights-law/', title: 'Rights Law'},
             {name: 'quests', url: '/quests/', title: 'Quests'},
             {name: 'battlegrounds', url: '/battlegrounds/', title: 'Battlegrounds'},
             {name: 'champions-league', url: '/champions-league/', title: 'Champions League'},
-            {name: 'victory-tech-tree', url: '/victory-tech-tree/', title: 'Victory Tech Tree'},
-            {name: 'danish-divine-tech-tree', url: '/danish-divine-tech-tree/', title: 'Danish Divine Tech Tree'},
-            {name: 'academic-perspective', url: '/academic-perspective/', title: 'Academic Perspective'},
-            {name: 'milkyway', url: '/milkyway/', title: 'Milkyway'},
-            {name: 'editor', url: '/editor/', title: 'Editor'},
-            {name: 'monetization', url: '/monetization/', title: 'Monetization'},
-            {name: 'beta_testing', url: '/beta_testing/', title: 'Beta Testing'},
-            {name: 'advanced_calculator', url: '/advanced_calculator/', title: 'Advanced Calculator'},
             {name: 'theme_premium', url: '/theme_premium/', title: 'Theme Premium'},
             {name: 'leaderboards', url: '/leaderboards/', title: 'Leaderboards'},
-            {name: 'time-achievement-guides', url: '/time-achievement-guides/', title: 'Time Achievement Guides'},
         ];
     }
 
