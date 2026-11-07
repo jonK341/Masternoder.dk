@@ -172,6 +172,23 @@ def masternode_rentals_quote():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/rentals/subscribe", methods=["POST"])
+def masternode_rentals_subscribe():
+    """PayPal monthly auto-renew for inventory masternode lease."""
+    try:
+        data = _body()
+        user_id = resolve_user_id(from_body=True, from_query=True)
+        result = mn_rental.create_rental_subscription(
+            user_id,
+            return_url=data.get("return_url"),
+            cancel_url=data.get("cancel_url"),
+            plan_id=(data.get("plan_id") or "").strip() or None,
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/rentals/order", methods=["POST"])
 def masternode_rentals_order():
     """PayPal approve URL for an inventory lease quote (quote_id from rentals/quote)."""

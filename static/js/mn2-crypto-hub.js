@@ -17,6 +17,8 @@
   var mnLoaded = false;
   var mnPayPalReturnDone = false;
   var mnCheckoutConfig = null;
+  var mnRentalCatalog = null;
+  var mnCheckoutMode = 'lease';
   var mnOnChainPollTimer = null;
 
   function uid() {
@@ -434,8 +436,43 @@
         }
       }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-crypto-hub.js', context: 'catch' }); }});
 
+    fetch('/api/mn2/masternode/rentals/catalog', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (cat) {
+        if (!cat || !cat.success) return;
+        mnRentalCatalog = cat;
+        if (q('mn-inventory-count')) q('mn-inventory-count').textContent = String(cat.inventory_available || 0);
+        if (q('mn-inventory-price')) q('mn-inventory-price').textContent = '$' + fmtNum(cat.price_usd_monthly || 5, 2);
+        if (cat.inventory_available > 0) mnCheckoutMode = 'lease';
+        applyMnCheckoutModeUI();
+        applyMasternodeCheckoutPricing();
+      }).catch(function () { /* ignore */ });
+
     setupMasternodeCheckout();
     loadMasternodeMyOrders();
+  }
+
+  function mnInventoryAvail() {
+    if (mnRentalCatalog && mnRentalCatalog.inventory_available != null) {
+      return Number(mnRentalCatalog.inventory_available) || 0;
+    }
+    var r = (mnCheckoutConfig && mnCheckoutConfig.rental) || {};
+    return Number(r.inventory_available) || 0;
+  }
+
+  function applyMnCheckoutModeUI() {
+    var lease = mnCheckoutMode === 'lease';
+    document.querySelectorAll('[data-mn-checkout-mode]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-mn-checkout-mode') === mnCheckoutMode);
+    });
+    if (q('mn-checkout-title')) q('mn-checkout-title').textContent = lease ? 'Lease enabled node' : 'Reserve a slot';
+    if (q('mn-checkout-lead')) {
+      q('mn-checkout-lead').textContent = lease
+        ? 'Assigns a pre-enabled platform masternode after payment (inventory pool).'
+        : 'Pay with PayPal, coins, in-wallet MN2, or on-chain MN2 — we lock 5,000 MN2 collateral and provision automatically.';
+    }
+    var sub = q('mn-subscribe-monthly');
+    if (sub) sub.style.display = lease ? '' : 'none';
   }
 
   function loadMasternodeMyOrders() {
@@ -481,7 +518,10 @@
     var pp = (mnCheckoutConfig && mnCheckoutConfig.price_usd_per_slot != null)
       ? mnCheckoutConfig
       : {};
-    var usd = Number(pp.price_usd_per_slot || sample.usd_per_slot || 4.99);
+    var rentalUsd = mnRentalCatalog && mnRentalCatalog.price_usd_monthly;
+    var usd = mnCheckoutMode === 'lease'
+      ? Number(rentalUsd || (pp.rental && pp.rental.price_usd_monthly) || 5)
+      : Number(pp.price_usd_per_slot || sample.usd_per_slot || 5);
     var coins = Number(sample.coins_per_slot || Math.max(1, Math.round(usd * 100)));
     var mn2v = Number(sample.mn2_per_slot || (sample.mn2_total && sample.slots ? sample.mn2_total / sample.slots : coins / 100));
     if (q('mn-price-label')) q('mn-price-label').textContent = '$' + fmtNum(usd, 2);
@@ -489,10 +529,11 @@
   }
 
   function applyMasternodeCheckoutSoldOut(openSlots) {
-    var soldOut = openSlots != null && Number(openSlots) <= 0;
+    var lease = mnCheckoutMode === 'lease';
+    var soldOut = lease ? (mnInventoryAvail() <= 0) : (openSlots != null && Number(openSlots) <= 0);
     var banner = q('mn-hosting-sold-out');
     var card = q('mn-checkout-card');
-    if (banner) banner.hidden = !soldOut;
+    if (banner) banner.hidden = !soldOut || lease;
     if (card) card.classList.toggle('mn-checkout-card--sold-out', soldOut);
     var actions = q('mn-checkout-actions');
     if (actions) {
@@ -525,7 +566,10 @@
   }
 
   function fetchHostingQuote(slots) {
-    return fetch('/api/mn2/masternode/checkout/quote', {
+    var path = mnCheckoutMode === 'lease'
+      ? '/api/mn2/masternode/rentals/quote'
+      : '/api/mn2/masternode/checkout/quote';
+    return fetch(path, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
@@ -538,7 +582,10 @@
     if (msg) msg.textContent = 'Opening PayPal…';
     var returnUrl = window.location.origin + '/explorer?tab=masternodes&paypal=success&mn_quote=' + encodeURIComponent(quote.quote_id);
     var cancelUrl = window.location.origin + '/explorer?tab=masternodes&paypal=cancel';
-    return fetch('/api/mn2/masternode/checkout/order', {
+    var orderPath = mnCheckoutMode === 'lease'
+      ? '/api/mn2/masternode/rentals/order'
+      : '/api/mn2/masternode/checkout/order';
+    return fetch(orderPath, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
@@ -647,13 +694,38 @@
     });
   }
 
+  function runMnMonthlySubscribe() {
+    var returnUrl = window.location.origin + '/explorer?tab=masternodes&paypal_subscription=success';
+    var cancelUrl = window.location.origin + '/explorer?tab=masternodes&paypal_subscription=cancel';
+    fetch('/api/mn2/masternode/rentals/subscribe', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: uid(), return_url: returnUrl, cancel_url: cancelUrl })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.success && d.approve_url) {
+        window.location.href = d.approve_url;
+        return;
+      }
+      var msg = q('mn-checkout-msg');
+      if (msg) msg.textContent = (d && d.message) || (d && d.error) || 'Subscription unavailable';
+    });
+  }
+
   function runMasternodeHostingCheckout(method) {
     var msg = q('mn-checkout-msg');
-    var openEl = q('mn-open-slots');
-    var open = openEl ? Number(openEl.textContent) : null;
-    if (open != null && !isNaN(open) && open <= 0) {
-      if (msg) msg.textContent = 'Sold out — no hosting slots available right now.';
-      return;
+    if (mnCheckoutMode === 'lease') {
+      if (mnInventoryAvail() <= 0) {
+        if (msg) msg.textContent = 'No inventory — switch to Provision new.';
+        return;
+      }
+    } else {
+      var openEl = q('mn-open-slots');
+      var open = openEl ? Number(openEl.textContent) : null;
+      if (open != null && !isNaN(open) && open <= 0) {
+        if (msg) msg.textContent = 'Sold out — no hosting slots available right now.';
+        return;
+      }
     }
     var slots = parseInt((q('mn-checkout-slots') || {}).value, 10) || 1;
     setCheckoutBusy(true);
@@ -693,6 +765,17 @@
       if (!btn || !actions.contains(btn)) return;
       runMasternodeHostingCheckout(btn.getAttribute('data-mn-pay') || 'paypal');
     });
+    document.querySelectorAll('[data-mn-checkout-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        mnCheckoutMode = btn.getAttribute('data-mn-checkout-mode') || 'lease';
+        applyMnCheckoutModeUI();
+        applyMasternodeCheckoutPricing();
+        var openEl = q('mn-open-slots');
+        applyMasternodeCheckoutSoldOut(openEl ? Number(openEl.textContent) : 0);
+      });
+    });
+    var subBtn = q('mn-subscribe-monthly');
+    if (subBtn) subBtn.addEventListener('click', runMnMonthlySubscribe);
     var closeBtn = q('mn2-onchain-close');
     var modal = q('mn2-onchain-modal');
     if (closeBtn && modal) {

@@ -182,7 +182,7 @@
       },
       "P-PLACEHOLDER-MN-HOST": {
         "label": "Masternode hosting monthly",
-        "price_usd_monthly": 4.99,
+        "price_usd_monthly": 5.0,
         "monthly_generation_credits": 0,
         "tier": "creator"
       }

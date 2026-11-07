@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="/static/css/mn2-crypto-hub.css?v=20260625a">
 
     <link rel="stylesheet" href="/static/css/mn2-page-strip.css?v=20260614d">
-    <link rel="stylesheet" href="/hosting/hosting-ui.css?v=20261107">
+    <link rel="stylesheet" href="/hosting/hosting-ui.css?v=20261108">
 
 </head>
 
@@ -196,7 +196,7 @@
             <p class="sub-note">Live view of all staking processes across users. Identifiers are anonymized.</p>
 
             <div class="mn-revenue-cta" style="display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 16px;">
-                <a href="/explorer?tab=masternodes" style="padding:10px 16px;border-radius:10px;background:linear-gradient(135deg,#ffc439,#ffaa00);color:#111;font-weight:800;text-decoration:none;font-size:0.88rem;">🏛️ Run a masternode · $4.99/slot</a>
+                <a href="/explorer?tab=masternodes" style="padding:10px 16px;border-radius:10px;background:linear-gradient(135deg,#ffc439,#ffaa00);color:#111;font-weight:800;text-decoration:none;font-size:0.88rem;">🏛️ Rent enabled node · $5/mo</a>
                 <a href="/shop?category=boosts" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,212,255,0.45);color:#9ec5ff;text-decoration:none;font-size:0.88rem;">⚡ Staking boosters in shop</a>
                 <a href="/shop?tab=coins" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,255,136,0.35);color:#5dffb0;text-decoration:none;font-size:0.88rem;">💰 Buy coins</a>
             </div>
@@ -373,13 +373,22 @@
                 <div class="ex-tile"><div class="label">Daemon</div><div class="value" id="mn-daemon">--</div><div class="sub" id="mn-daemon-sub">minting status</div></div>
             </div>
 
+            <div class="mn-checkout-card host-checkout-card--featured" id="mn-inventory-lease-card" style="margin-bottom:16px;">
+                <h3>⚡ Rent an enabled masternode</h3>
+                <p class="mn-checkout-lead">Instant lease from platform inventory — <strong id="mn-inventory-count">—</strong> ready · <strong id="mn-inventory-price">$5.00</strong> / 30 days · <a href="/hosting/?host_tab=rent" style="color:#00d4ff">full hub</a></p>
+                <div class="host-checkout-mode" role="group" aria-label="Checkout mode">
+                    <button type="button" class="host-mode-btn active" data-mn-checkout-mode="lease" id="mn-mode-lease">Lease inventory</button>
+                    <button type="button" class="host-mode-btn" data-mn-checkout-mode="provision" id="mn-mode-provision">Provision new</button>
+                </div>
+                <button type="button" class="mn-checkout-btn mn-checkout-btn--paypal" id="mn-subscribe-monthly" style="margin-top:8px;background:linear-gradient(135deg,#ffc439,#ffaa00);color:#111;font-weight:800;">Subscribe $5/mo (PayPal)</button>
+            </div>
             <div class="mn-checkout-card" id="mn-checkout-card">
-                <h3>Reserve a slot</h3>
-                <p class="mn-checkout-lead">Fully automated — pay with PayPal, coins, in-wallet MN2, or on-chain MN2. We reserve your slot, lock <strong>5,000 MN2</strong> collateral, and bring your node online without manual steps. Full hub: <a href="/hosting/?host_tab=rent" style="color:#00d4ff">/hosting/</a>.</p>
+                <h3 id="mn-checkout-title">Reserve a slot</h3>
+                <p class="mn-checkout-lead" id="mn-checkout-lead">Fully automated — pay with PayPal, coins, in-wallet MN2, or on-chain MN2. We reserve your slot, lock <strong>5,000 MN2</strong> collateral, and bring your node online without manual steps.</p>
                 <div class="mn-checkout-row">
                     <label>Slots <input type="number" id="mn-checkout-slots" min="1" max="5" value="1"></label>
                     <div class="mn-checkout-price">
-                        <span id="mn-price-label">$4.99</span> <small>/ slot · 30 days</small>
+                        <span id="mn-price-label">$5.00</span> <small>/ slot · 30 days</small>
                         <div class="mn-checkout-alt" id="mn-price-alt">— coins · — MN2</div>
                     </div>
                 </div>
@@ -544,10 +553,10 @@
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="explorer" defer></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-    <script src="/static/js/mn2-crypto-hub.js?v=20260621b" defer></script>
+    <script src="/static/js/mn2-crypto-hub.js?v=20261108" defer></script>
 
     <script src="/static/js/mn2-explorer-overview.js?v=20260621a" defer></script>
-    <script src="/static/js/hosting-hub.js?v=20261107" defer></script>
+    <script src="/static/js/hosting-hub.js?v=20261108" defer></script>
 
     <script src="/static/js/mn2-staking-monitor.js?v=20260617b" defer></script>
 

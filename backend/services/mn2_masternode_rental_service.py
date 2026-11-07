@@ -135,6 +135,7 @@ def rental_catalog() -> Dict[str, Any]:
             "capture": "POST /api/mn2/masternode/checkout/capture",
             "pay_coins": "POST /api/mn2/masternode/checkout/pay-coins",
             "pay_mn2": "POST /api/mn2/masternode/checkout/pay-mn2",
+            "subscribe": "POST /api/mn2/masternode/rentals/subscribe",
             "subscription_info": "GET /api/mn2/masternode/hosting/subscription",
         },
     }
@@ -286,6 +287,91 @@ def assign_rental_hosts(user_id: str, slots: int, order_id: str) -> Dict[str, An
         "host_ids": assigned,
         "lease_until": lease_until,
         "message": f"{len(assigned)} masternode(s) assigned — already on the platform fleet.",
+    }
+
+
+def create_rental_subscription(
+    user_id: str,
+    *,
+    return_url: Optional[str] = None,
+    cancel_url: Optional[str] = None,
+    plan_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """PayPal billing subscription for recurring masternode lease (~$5/mo)."""
+    uid = str(user_id or "").strip()
+    if not uid or uid.lower() in ("default_user", "anon"):
+        return {"success": False, "error": "ACCOUNT_REQUIRED", "code": "auth_required"}
+
+    rcfg = get_rental_config()
+    if not rcfg.get("enabled"):
+        return {"success": False, "error": "Masternode rental is disabled"}
+
+    inv = list_rental_inventory(limit=500)
+    if int(inv.get("assignable_count") or 0) < 1:
+        return {
+            "success": False,
+            "error": "No pre-enabled masternodes available to lease right now.",
+            "code": "inventory_exhausted",
+        }
+
+    from backend.services.monetization_config_service import (
+        get_subscription_plan,
+        resolve_subscription_plan_id,
+        subscription_plan_is_subscribable,
+    )
+
+    cfg = __import__("backend.services.mn2_masternode_service", fromlist=["get_config"]).get_config()
+    monthly = cfg.get("paypal_monthly") if isinstance(cfg.get("paypal_monthly"), dict) else {}
+    plan = (plan_id or monthly.get("subscription_plan_key") or "P-PLACEHOLDER-MN-HOST").strip()
+    if not subscription_plan_is_subscribable(plan):
+        return {
+            "success": False,
+            "error": "plan_not_live",
+            "message": "Set a live PayPal billing plan id for MN2 hosting (P-PLACEHOLDER-MN-HOST).",
+            "plan_id": plan,
+        }
+    plan = resolve_subscription_plan_id(plan)
+    pinfo = get_subscription_plan(plan)
+    if not pinfo:
+        return {"success": False, "error": "unknown_plan_id", "plan_id": plan}
+
+    import os
+    import urllib.parse
+
+    from backend.services.paypal_service import create_billing_subscription
+
+    base = (os.environ.get("BASE_URL") or "").rstrip("/")
+    if not return_url:
+        if not base:
+            return {"success": False, "error": "return_url required (or set BASE_URL on server)"}
+        q = urllib.parse.urlencode({
+            "paypal_subscription": "success",
+            "plan_id": plan,
+            "user_id": uid,
+            "product": PRODUCT_INVENTORY_LEASE,
+        })
+        return_url = f"{base}/hosting/?{q}"
+    if not cancel_url:
+        if not base:
+            return {"success": False, "error": "cancel_url required (or set BASE_URL on server)"}
+        cancel_url = f"{base}/hosting/?paypal_subscription=cancel&plan_id={urllib.parse.quote(plan, safe='')}"
+
+    result = create_billing_subscription(
+        plan_id=plan,
+        return_url=return_url,
+        cancel_url=cancel_url,
+        custom_id=uid,
+    )
+    if not result.get("success"):
+        return result
+    return {
+        "success": True,
+        "plan_id": plan,
+        "plan_label": pinfo.get("label"),
+        "price_usd_monthly": pinfo.get("price_usd_monthly") or rcfg.get("price_usd_monthly"),
+        "approve_url": result.get("approve_url"),
+        "subscription_id": result.get("subscription_id"),
+        "product": PRODUCT_INVENTORY_LEASE,
     }
 
 
