@@ -806,6 +806,7 @@ MANIFESTS = {
         "static/js/mn2-internal-market.js",
         "static/js/mn2-crypto-hub.js",
         "static/css/mn2-crypto-hub.css",
+        "static/css/mn2-explorer-ww2.css",
         "scripts/_verify_trader_market_remote.py",
         "cron/discord_market_fanout.sh",
         "cron/discord_promo_rotator.sh",
