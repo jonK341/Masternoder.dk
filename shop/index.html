@@ -395,6 +395,13 @@
             <h2 style="margin: 0 0 10px; font-size: 1.05rem; color: var(--primary);">MN2 platform services</h2>
             <p style="margin: 0 0 8px; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.55;">Hosted masternode slots, PayPal on-ramp, staking pool, and P2P/trader market. Masternode hosting checks out here with PayPal — no need to leave the shop.</p>
             <p id="mn2-hosting-slot-meter" style="margin: 0 0 14px; font-size: 0.85rem; color: var(--secondary);">Loading slot availability…</p>
+            <div id="mn2-inventory-lease-bar" style="margin:0 0 14px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,196,57,0.45);background:rgba(255,196,57,0.08);font-size:0.86rem;">
+                <strong style="color:#ffc439;">Rent enabled node</strong> — <span id="mn2-inventory-count">—</span> in inventory · <strong id="mn2-inventory-price">$5</strong>/30d
+                <span style="margin-left:8px;">
+                    <button type="button" class="btn btn-secondary btn-mn-lease-pay" data-pay="paypal" style="font-size:0.78rem;padding:4px 10px;">PayPal lease</button>
+                    <a href="/hosting/?host_tab=rent" style="margin-left:6px;color:var(--secondary);">Hosting hub →</a>
+                </span>
+            </div>
             <p id="mn2-hosting-checkout-msg" style="margin: 0 0 10px; font-size: 0.85rem; color: var(--text-secondary); min-height: 1.2em;"></p>
             <div id="mn2-services-shop-grid" class="shop-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));"></div>
         </div>
@@ -711,6 +718,8 @@
         let mn2UsdPrice = null;
         let mn2HostingStatus = null;
         let mn2HostingCheckoutConfig = null;
+        let mn2RentalCatalog = null;
+        let mn2HostingLeaseMode = true;
         let useShopV3 = true;  // From GET /api/shop/config
 
         let shopUiVersion = '9.2.0';
@@ -1581,28 +1590,50 @@
         async function loadMn2HostingStatus() {
             const meter = document.getElementById('mn2-hosting-slot-meter');
             try {
-                const [r, cfgR] = await Promise.all([
+                const [r, cfgR, rentR] = await Promise.all([
                     fetch(`${BASE_URL}/api/mn2/masternode/service`, { credentials: 'same-origin' }),
-                    fetch(`${BASE_URL}/api/mn2/masternode/checkout/config`, { credentials: 'same-origin' })
+                    fetch(`${BASE_URL}/api/mn2/masternode/checkout/config`, { credentials: 'same-origin' }),
+                    fetch(`${BASE_URL}/api/mn2/masternode/rentals/catalog`, { credentials: 'same-origin' })
                 ]);
                 const d = r.ok ? await r.json() : {};
                 mn2HostingStatus = d;
                 mn2HostingCheckoutConfig = cfgR.ok ? await cfgR.json() : null;
+                mn2RentalCatalog = rentR.ok ? await rentR.json() : null;
+                const inv = mn2RentalCatalog && mn2RentalCatalog.inventory_available != null
+                    ? mn2RentalCatalog.inventory_available : '—';
+                const ic = document.getElementById('mn2-inventory-count');
+                const ip = document.getElementById('mn2-inventory-price');
+                if (ic) ic.textContent = String(inv);
+                if (ip && mn2RentalCatalog) {
+                    ip.textContent = '$' + Number(mn2RentalCatalog.price_usd_monthly || 5).toFixed(2);
+                }
                 const avail = d.slots_available != null ? d.slots_available : '—';
                 const max = d.max_hosted_nodes != null ? d.max_hosted_nodes : 350;
                 const hosted = d.hosted_count != null ? d.hosted_count : '—';
-                const price = d.paypal && d.paypal.price_usd_per_slot != null ? d.paypal.price_usd_per_slot : 4.99;
+                const price = d.paypal && d.paypal.price_usd_per_slot != null ? d.paypal.price_usd_per_slot : 5;
                 if (meter) {
-                    meter.textContent = `Hosting slots: ${avail} available · ${hosted}/${max} in use · $${Number(price).toFixed(2)}/slot`;
-                    meter.style.color = Number(avail) > 0 ? 'var(--primary)' : '#ffaa00';
+                    meter.textContent = `Lease inventory: ${inv} · Provision slots: ${avail} · ${hosted}/${max} in use · $${Number(price).toFixed(2)}/slot`;
+                    meter.style.color = (Number(inv) > 0 || Number(avail) > 0) ? 'var(--primary)' : '#ffaa00';
                 }
             } catch (_) {
                 if (meter) meter.textContent = 'Could not load slot availability — try again from Explorer.';
             }
+            document.querySelectorAll('.btn-mn-lease-pay:not([data-bound])').forEach(btn => {
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', () => {
+                    startMasternodeHostingCheckout(1, btn.getAttribute('data-pay') || 'paypal', { lease: true });
+                });
+            });
         }
 
-        async function fetchMasternodeHostingQuote(slots) {
-            const quoteRes = await fetch(`${BASE_URL}/api/mn2/masternode/checkout/quote`, {
+        async function fetchMasternodeHostingQuote(slots, opts) {
+            opts = opts || {};
+            const useLease = opts.lease !== false && mn2HostingLeaseMode
+                && (mn2RentalCatalog ? mn2RentalCatalog.inventory_available > 0 : true);
+            const path = useLease
+                ? '/api/mn2/masternode/rentals/quote'
+                : '/api/mn2/masternode/checkout/quote';
+            const quoteRes = await fetch(`${BASE_URL}${path}`, {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
@@ -1611,14 +1642,15 @@
             return quoteRes.json();
         }
 
-        async function startMasternodeHostingCheckout(slots, method) {
+        async function startMasternodeHostingCheckout(slots, method, opts) {
+            opts = opts || {};
             const msgEl = document.getElementById('mn2-hosting-checkout-msg');
             const setMsg = (t) => { if (msgEl) msgEl.textContent = t || ''; };
             slots = Math.max(1, parseInt(slots, 10) || 1);
             method = method || 'paypal';
             setMsg('Creating quote…');
             try {
-                const quote = await fetchMasternodeHostingQuote(slots);
+                const quote = await fetchMasternodeHostingQuote(slots, opts);
                 if (!quote.success) {
                     setMsg(quote.error || 'Quote failed');
                     if (typeof toast !== 'undefined') toast.error(quote.error || 'Quote failed');
@@ -1690,7 +1722,12 @@
                 setMsg('Opening PayPal…');
                 const returnUrl = shopMn2ReturnBase() + '&paypal=success&mn_quote=' + encodeURIComponent(quote.quote_id) + '&user_id=' + encodeURIComponent(userId);
                 const cancelUrl = shopMn2ReturnBase() + '&paypal=cancel';
-                const orderRes = await fetch(`${BASE_URL}/api/mn2/masternode/checkout/order`, {
+                const useLease = opts.lease !== false && mn2HostingLeaseMode
+                    && (mn2RentalCatalog ? mn2RentalCatalog.inventory_available > 0 : false);
+                const orderPath = useLease
+                    ? '/api/mn2/masternode/rentals/order'
+                    : '/api/mn2/masternode/checkout/order';
+                const orderRes = await fetch(`${BASE_URL}${orderPath}`, {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },

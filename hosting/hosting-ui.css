@@ -35,6 +35,42 @@
   max-width: 42rem;
 }
 
+.host-checkout-card--featured {
+  border-color: var(--host-gold);
+  box-shadow: 0 0 0 1px rgba(255, 196, 57, 0.25);
+  margin-bottom: 16px;
+}
+
+.host-checkout-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.host-mode-btn {
+  flex: 1 1 160px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--host-accent-border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.host-mode-btn.active {
+  background: var(--host-accent-dim);
+  border-color: var(--host-accent);
+  color: var(--host-accent);
+}
+
+.host-btn--subscribe {
+  background: linear-gradient(135deg, #ffc439, #ffaa00);
+  color: #111;
+  font-weight: 800;
+}
+
 .host-muted {
   color: var(--text-secondary);
   font-size: 0.88rem;

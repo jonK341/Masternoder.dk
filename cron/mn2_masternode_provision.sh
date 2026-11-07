@@ -16,3 +16,5 @@ if [ -z "${SECRET:-}" ]; then
 fi
 curl -s -X POST -H "X-Ops-Secret: ${SECRET}" \
   "http://127.0.0.1:5000/api/mn2/masternode/provision-pending?limit=50"
+curl -s -X POST -H "X-Ops-Secret: ${SECRET}" \
+  "http://127.0.0.1:5000/api/mn2/masternode/accrue-renter-rewards?limit=500" >/dev/null || true

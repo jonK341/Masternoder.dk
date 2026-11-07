@@ -19,6 +19,7 @@ from flask import Blueprint, jsonify, request
 from backend.services.account_resolution_service import resolve_user_id
 from backend.services import mn2_masternode_service as mn_service
 from backend.services import mn2_masternode_hosting_service as mn_hosting
+from backend.services import mn2_masternode_rental_service as mn_rental
 from backend.services import mn2_services_hub as services_hub
 
 mn2_masternode_bp = Blueprint("mn2_masternode", __name__)
@@ -136,6 +137,100 @@ def masternode_collateral_outputs():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/rentals/catalog", methods=["GET"])
+def masternode_rentals_catalog():
+    """Pre-provisioned fleet available for ~$5/month lease."""
+    try:
+        return jsonify(mn_rental.rental_catalog()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/rentals/inventory", methods=["GET"])
+def masternode_rentals_inventory():
+    try:
+        limit = int(request.args.get("limit", 100))
+    except (TypeError, ValueError):
+        limit = 100
+    try:
+        return jsonify(mn_rental.list_rental_inventory(limit=limit)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/rentals/quote", methods=["GET", "POST"])
+def masternode_rentals_quote():
+    try:
+        user_id = resolve_user_id(from_body=True, from_query=True)
+        if request.method == "POST":
+            slots = (_body() or {}).get("slots", 1)
+        else:
+            slots = request.args.get("slots", 1)
+        result = mn_rental.create_rental_quote(slots, user_id)
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/rentals/subscribe", methods=["POST"])
+def masternode_rentals_subscribe():
+    """PayPal monthly auto-renew for inventory masternode lease."""
+    try:
+        data = _body()
+        user_id = resolve_user_id(from_body=True, from_query=True)
+        result = mn_rental.create_rental_subscription(
+            user_id,
+            return_url=data.get("return_url"),
+            cancel_url=data.get("cancel_url"),
+            plan_id=(data.get("plan_id") or "").strip() or None,
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/rentals/order", methods=["POST"])
+def masternode_rentals_order():
+    """PayPal approve URL for an inventory lease quote (quote_id from rentals/quote)."""
+    try:
+        data = _body()
+        user_id = resolve_user_id(from_body=True, from_query=True)
+        result = mn_hosting.create_order(
+            quote_id=(data.get("quote_id") or "").strip(),
+            user_id=user_id,
+            return_url=data.get("return_url"),
+            cancel_url=data.get("cancel_url"),
+            promo_code=(data.get("promo_code") or "").strip() or None,
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/ops/generate", methods=["POST"])
+def masternode_ops_generate():
+    """Ops: provision the next platform inventory masternode (on-chain enable)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        data = _body()
+        host_id = (data.get("host_id") or request.args.get("host_id") or "").strip() or None
+        count = data.get("count")
+        if count is not None:
+            try:
+                count = max(1, min(int(count), 25))
+            except (TypeError, ValueError):
+                count = 1
+            results = []
+            for _ in range(count):
+                results.append(mn_rental.ops_generate_enabled_masternode(host_id=host_id))
+                host_id = None
+            return jsonify({"success": True, "batch": results, "count": len(results)}), 200
+        return jsonify(mn_rental.ops_generate_enabled_masternode(host_id=host_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/checkout/config", methods=["GET"])
 @mn2_masternode_bp.route("/api/mn2/masternode/hosting/config", methods=["GET"])
 def masternode_checkout_config():
@@ -143,6 +238,7 @@ def masternode_checkout_config():
         result = mn_hosting.get_paypal_config()
         st = mn_service.get_service_status()
         sample = mn_hosting.pricing_for_slots(1)
+        rental = mn_rental.rental_catalog()
         return jsonify({
             "success": True,
             **result,
@@ -150,6 +246,12 @@ def masternode_checkout_config():
             "hosted_count": st.get("hosted_count"),
             "collateral_mn2": st.get("collateral_mn2"),
             "pricing_sample": sample,
+            "rental": {
+                "enabled": rental.get("enabled"),
+                "price_usd_monthly": rental.get("price_usd_monthly"),
+                "inventory_available": rental.get("inventory_available"),
+                "catalog_url": "/api/mn2/masternode/rentals/catalog",
+            },
         }), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
@@ -304,6 +406,32 @@ def masternode_sync_ping_targets():
         result = mn_service.sync_ping_targets()
         code = 200 if result.get("success") or result.get("skipped") else 400
         return jsonify(result), code
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/my-hosting-rewards", methods=["GET"])
+def masternode_my_hosting_rewards():
+    try:
+        user_id = resolve_user_id(from_body=False, from_query=True)
+        from backend.services.mn2_masternode_hosting_rewards_service import renter_rewards_summary
+
+        return jsonify(renter_rewards_summary(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@mn2_masternode_bp.route("/api/mn2/masternode/accrue-renter-rewards", methods=["POST"])
+def masternode_accrue_renter_rewards():
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        data = _body()
+        dry_run = bool(data.get("dry_run") or request.args.get("dry_run"))
+        limit = data.get("limit") or request.args.get("limit") or 500
+        from backend.services.mn2_masternode_hosting_rewards_service import accrue_renter_rewards
+
+        return jsonify(accrue_renter_rewards(limit=int(limit), dry_run=dry_run)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

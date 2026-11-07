@@ -16,6 +16,8 @@
   var pollTimer = null;
   var quoteTimer = null;
   var checkoutConfig = null;
+  var rentalCatalog = null;
+  var checkoutMode = 'lease';
   var lastService = null;
   var fleetCache = [];
   var netCache = [];
@@ -316,13 +318,48 @@
     });
   }
 
+  function inventoryAvail() {
+    if (rentalCatalog && rentalCatalog.inventory_available != null) {
+      return Number(rentalCatalog.inventory_available) || 0;
+    }
+    var r = (checkoutConfig && checkoutConfig.rental) || {};
+    return Number(r.inventory_available) || 0;
+  }
+
+  function applyCheckoutModeUI() {
+    var lease = checkoutMode === 'lease';
+    var inv = inventoryAvail();
+    var invBanner = q('host-inventory-sold-out');
+    if (invBanner) invBanner.hidden = !(lease && inv <= 0);
+    document.querySelectorAll('[data-host-checkout-mode]').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-host-checkout-mode') === checkoutMode);
+    });
+    var title = q('host-checkout-title');
+    var lead = q('host-checkout-lead');
+    if (title) title.textContent = lease ? 'Lease enabled node' : 'Reserve hosting';
+    if (lead) {
+      lead.textContent = lease
+        ? 'Assigns a pre-enabled platform masternode to your account immediately after payment.'
+        : '30-day hosting slot. Provisioning starts automatically after payment clears.';
+    }
+    var subBtn = q('host-subscribe-monthly');
+    if (subBtn) subBtn.style.display = lease ? '' : 'none';
+    applySoldOut(lastService ? lastService.slots_available : null);
+  }
+
   function applySoldOut(open) {
-    var soldOut = open != null && Number(open) <= 0;
+    var inv = inventoryAvail();
+    var lease = checkoutMode === 'lease';
+    var soldOut = lease ? (inv <= 0) : (open != null && Number(open) <= 0);
     var banner = q('host-sold-out');
     var card = q('host-checkout-card');
-    if (banner) banner.hidden = !soldOut;
+    if (banner) banner.hidden = !soldOut || lease;
     if (card) card.classList.toggle('host-checkout-card--sold-out', soldOut);
     document.querySelectorAll('#host-checkout-actions .host-btn').forEach(function (btn) {
+      if (btn.id === 'host-subscribe-monthly') {
+        btn.disabled = lease && inv <= 0;
+        return;
+      }
       btn.disabled = soldOut;
     });
     var slotsInput = q('host-checkout-slots');
@@ -333,7 +370,10 @@
     var sample = (checkoutConfig && checkoutConfig.pricing_sample) || {};
     var pp = checkoutConfig || {};
     var slots = parseInt((q('host-checkout-slots') || {}).value, 10) || 1;
-    var usd = Number(pp.price_usd_per_slot || sample.usd_per_slot || 4.99);
+    var rentalUsd = rentalCatalog && rentalCatalog.price_usd_monthly;
+    var usd = checkoutMode === 'lease'
+      ? Number(rentalUsd || pp.rental && pp.rental.price_usd_monthly || 5)
+      : Number(pp.price_usd_per_slot || sample.usd_per_slot || 5);
     var coins = Number(sample.coins_per_slot || Math.round(usd * 100));
     var mn2v = Number(sample.mn2_per_slot || coins / 100);
     if (q('host-price-usd')) q('host-price-usd').textContent = '$' + fmtNum(usd * slots, 2);
@@ -412,11 +452,65 @@
         checkoutConfig = cfg;
         applyPricing();
         applyCheckoutRails();
-        if (q('host-checkout-slots') && cfg.max_slots_per_order) {
-          q('host-checkout-slots').max = String(cfg.max_slots_per_order);
+        var maxSlots = (cfg.rental && cfg.rental.enabled && checkoutMode === 'lease')
+          ? (rentalCatalog && rentalCatalog.max_slots_per_order) || 10
+          : cfg.max_slots_per_order;
+        if (q('host-checkout-slots') && maxSlots) {
+          q('host-checkout-slots').max = String(maxSlots);
         }
       }
     });
+  }
+
+  function loadRentalCatalog() {
+    return fetchJson('/api/mn2/masternode/rentals/catalog').then(function (cat) {
+      if (!cat || !cat.success) return cat;
+      rentalCatalog = cat;
+      if (q('host-inventory-count')) {
+        q('host-inventory-count').textContent = String(cat.inventory_available || 0);
+      }
+      if (q('host-inventory-price')) {
+        q('host-inventory-price').textContent = '$' + fmtNum(cat.price_usd_monthly || 5, 2);
+      }
+      if (cat.inventory_available > 0 && checkoutMode !== 'provision') {
+        checkoutMode = 'lease';
+      }
+      applyCheckoutModeUI();
+      applyPricing();
+      return cat;
+    });
+  }
+
+  function loadMyHostingRewards() {
+    var panel = q('host-rewards-panel');
+    var totalEl = q('host-my-rewards-total');
+    var detailEl = q('host-my-rewards-detail');
+    if (!panel || !totalEl) return;
+    if (!isAuthed()) {
+      panel.hidden = true;
+      return;
+    }
+    fetchJson('/api/mn2/masternode/my-hosting-rewards?user_id=' + encodeURIComponent(uid()))
+      .then(function (d) {
+        if (!d || !d.success) {
+          panel.hidden = true;
+          return;
+        }
+        var total = Number(d.rewards_total_mn2 || 0);
+        var hosts = d.hosts || [];
+        panel.hidden = false;
+        totalEl.textContent = fmtNum(total, 4) + ' MN2';
+        if (!detailEl) return;
+        if (!hosts.length) {
+          detailEl.textContent = 'No leased nodes yet — rent from the Rent tab to start earning payouts.';
+          return;
+        }
+        detailEl.innerHTML = hosts.map(function (h) {
+          return '<div>' + (h.label || h.host_id || 'Node') + ' · ' + fmtNum(h.rewards_total_mn2 || 0, 4) +
+            ' MN2 · lastpaid block ' + (h.rewards_lastpaid != null ? h.rewards_lastpaid : '—') + '</div>';
+        }).join('');
+      })
+      .catch(function () { if (panel) panel.hidden = true; });
   }
 
   function loadMyOrders() {
@@ -463,9 +557,13 @@
 
   function confirmCheckout(method, slots) {
     var labels = { paypal: 'PayPal', coins: 'shop coins', mn2: 'MN2 wallet', onchain: 'on-chain MN2' };
+    var mode = checkoutMode === 'lease' ? 'Lease enabled masternode(s)' : 'Reserve new hosting slot(s)';
     return window.confirm(
-      'Confirm masternode hosting checkout?\n\n' +
-      slots + ' slot(s) via ' + (labels[method] || method) + '.\n\nProvisioning starts automatically after payment.'
+      mode + '\n\n' +
+      slots + ' slot(s) via ' + (labels[method] || method) + '.\n\n' +
+      (checkoutMode === 'lease'
+        ? 'Assigns inventory immediately after payment.'
+        : 'Provisioning starts automatically after payment.')
     );
   }
 
@@ -476,7 +574,10 @@
   }
 
   function fetchQuote(slots) {
-    return fetchJson('/api/mn2/masternode/checkout/quote', {
+    var path = checkoutMode === 'lease'
+      ? '/api/mn2/masternode/rentals/quote'
+      : '/api/mn2/masternode/checkout/quote';
+    return fetchJson(path, {
       method: 'POST',
       body: JSON.stringify({ slots: slots, user_id: uid() }),
     });
@@ -487,11 +588,18 @@
       toast('Sign in at Profile to rent a slot', 'warn');
       return;
     }
-    var openEl = q('host-slots-open');
-    var open = openEl ? Number(openEl.textContent) : null;
-    if (open != null && !isNaN(open) && open <= 0) {
-      toast('Sold out — no slots available', 'warn');
-      return;
+    if (checkoutMode === 'lease') {
+      if (inventoryAvail() <= 0) {
+        toast('No enabled inventory — switch to Provision new or try later', 'warn');
+        return;
+      }
+    } else {
+      var openEl = q('host-slots-open');
+      var open = openEl ? Number(openEl.textContent) : null;
+      if (open != null && !isNaN(open) && open <= 0) {
+        toast('Sold out — no slots available', 'warn');
+        return;
+      }
     }
     var slots = parseInt((q('host-checkout-slots') || {}).value, 10) || 1;
     if (!confirmCheckout(method, slots)) return;
@@ -543,6 +651,8 @@
       toast(pay.message || okMsg, 'ok');
       if (msg) msg.textContent = pay.message || okMsg;
       loadService(true);
+      loadMyHostingRewards();
+      loadRentalCatalog();
       loadMyOrders();
     });
   }
@@ -552,7 +662,10 @@
     if (msg) msg.textContent = 'Opening PayPal…';
     var returnUrl = window.location.origin + '/hosting/?paypal=success&mn_quote=' + encodeURIComponent(quote.quote_id);
     var cancelUrl = window.location.origin + '/hosting/?paypal=cancel';
-    return fetchJson('/api/mn2/masternode/checkout/order', {
+    var orderPath = checkoutMode === 'lease'
+      ? '/api/mn2/masternode/rentals/order'
+      : '/api/mn2/masternode/checkout/order';
+    return fetchJson(orderPath, {
       method: 'POST',
       body: JSON.stringify({
         quote_id: quote.quote_id,
@@ -612,6 +725,7 @@
             modal.hidden = true;
             toast('Payment confirmed — provisioning started', 'ok');
             loadService(true);
+            loadMyHostingRewards();
             loadMyOrders();
           } else if (s.status === 'expired' && q('host-onchain-status')) {
             q('host-onchain-status').textContent = 'Payment expired.';
@@ -619,6 +733,45 @@
           }
         });
     }, 10000);
+  }
+
+  function runMonthlySubscribe() {
+    if (!isAuthed()) {
+      toast('Sign in at Profile to subscribe', 'warn');
+      return;
+    }
+    if (inventoryAvail() <= 0) {
+      toast('No inventory for monthly lease', 'warn');
+      return;
+    }
+    var returnUrl = window.location.origin + '/hosting/?paypal_subscription=success';
+    var cancelUrl = window.location.origin + '/hosting/?paypal_subscription=cancel';
+    fetchJson('/api/mn2/masternode/rentals/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: uid(), return_url: returnUrl, cancel_url: cancelUrl }),
+    }).then(function (d) {
+      if (d && d.success && d.approve_url) {
+        window.location.href = d.approve_url;
+        return;
+      }
+      var err = (d && d.message) || (d && d.error) || 'Subscription unavailable';
+      if (d && d.error === 'plan_not_live') {
+        toast('PayPal monthly plan not live yet — use one-time lease', 'warn');
+      } else toast(err, 'err');
+    });
+  }
+
+  function handlePayPalSubscriptionReturn() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('paypal_subscription') !== 'success') return;
+    toast('Subscription started — open Shop to confirm binding if prompted', 'ok');
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.delete('paypal_subscription');
+      url.searchParams.delete('subscription_id');
+      url.searchParams.delete('plan_id');
+      window.history.replaceState({}, document.title, url.pathname + url.search);
+    } catch (e) { /* ignore */ }
   }
 
   function handlePayPalReturn() {
@@ -635,6 +788,7 @@
       if (d && d.success) {
         toast(d.message || 'Payment confirmed', 'ok');
         loadService(true);
+        loadMyHostingRewards();
         loadMyOrders();
       } else toast((d && d.error) || 'Capture failed', 'err');
       try {
@@ -693,6 +847,7 @@
       }
       if (ev.key === 'r' || ev.key === 'R') {
         loadService(true);
+        loadMyHostingRewards();
         loadNetwork();
         toast('Refreshed', 'ok');
       }
@@ -715,6 +870,15 @@
         runCheckout(btn.getAttribute('data-host-pay') || 'paypal');
       });
     });
+    document.querySelectorAll('[data-host-checkout-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        checkoutMode = btn.getAttribute('data-host-checkout-mode') || 'lease';
+        applyCheckoutModeUI();
+        applyPricing();
+      });
+    });
+    var subBtn = q('host-subscribe-monthly');
+    if (subBtn) subBtn.addEventListener('click', runMonthlySubscribe);
     var slotsInput = q('host-checkout-slots');
     if (slotsInput) {
       slotsInput.addEventListener('input', applyPricing);
@@ -777,6 +941,8 @@
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(function () {
       loadService(true);
+      loadMyHostingRewards();
+      loadRentalCatalog();
       if (currentTab === 'network') loadNetwork();
     }, 30000);
   }
@@ -793,9 +959,11 @@
     renderSecurityBar();
     renderRecent();
     handlePayPalReturn();
-    loadCheckoutConfig();
+    handlePayPalSubscriptionReturn();
+    loadCheckoutConfig().then(function () { return loadRentalCatalog(); });
     loadHealth();
     loadService(true);
+    loadMyHostingRewards();
     loadNetwork();
     startPolling();
   }

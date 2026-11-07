@@ -74,6 +74,14 @@
                     </div>
                 </div>
             </div>
+            <div class="host-panel" id="host-rewards-panel" hidden>
+                <div class="host-collapsible-head">
+                    <h2>Your masternode rewards</h2>
+                    <span class="host-muted">Credited when your leased node&apos;s on-chain payout advances</span>
+                </div>
+                <p class="host-muted">Total credited to your MN2 balance: <strong id="host-my-rewards-total">—</strong></p>
+                <div id="host-my-rewards-detail" class="host-muted"></div>
+            </div>
             <div class="host-panel">
                 <div class="host-collapsible-head">
                     <h2>Activity</h2>
@@ -87,14 +95,23 @@
 
         <!-- Rent -->
         <section class="host-tab-shell" data-host-tab="rent" hidden aria-label="Rent a slot">
+            <div class="host-checkout-card host-checkout-card--featured" id="host-inventory-lease-card">
+                <h3>Rent an enabled masternode</h3>
+                <p class="host-muted">Instant assignment from the platform fleet — already on-chain when inventory is available. <strong id="host-inventory-count">—</strong> ready · <strong id="host-inventory-price">$5.00</strong>/30 days</p>
+                <div class="host-checkout-mode" role="group" aria-label="Checkout mode">
+                    <button type="button" class="host-mode-btn active" data-host-checkout-mode="lease" id="host-mode-lease">⚡ Lease inventory</button>
+                    <button type="button" class="host-mode-btn" data-host-checkout-mode="provision" id="host-mode-provision">🆕 Provision new</button>
+                </div>
+                <p class="host-sold-out" id="host-inventory-sold-out" hidden>No enabled nodes in inventory — try Provision new or check back soon.</p>
+            </div>
             <div class="host-checkout-card" id="host-checkout-card">
-                <h3>Reserve hosting</h3>
-                <p class="host-muted">30-day hosting slot. Provisioning starts automatically after payment clears.</p>
+                <h3 id="host-checkout-title">Reserve hosting</h3>
+                <p class="host-muted" id="host-checkout-lead">30-day hosting slot. Provisioning starts automatically after payment clears.</p>
                 <p class="host-sold-out" id="host-sold-out" hidden>Sold out — all slots are reserved. Check back soon.</p>
                 <div class="host-checkout-row">
                     <label>Slots <input type="number" id="host-checkout-slots" min="1" max="5" value="1" inputmode="numeric"></label>
                     <div>
-                        <span id="host-price-usd">$4.99</span>
+                        <span id="host-price-usd">$5.00</span>
                         <div class="host-muted" id="host-price-alt">— coins · — MN2</div>
                         <div class="host-muted" id="host-quote-ttl"></div>
                     </div>
@@ -110,6 +127,7 @@
                     <button type="button" class="host-btn host-btn--coins" data-host-pay="coins">Shop coins</button>
                     <button type="button" class="host-btn host-btn--mn2" data-host-pay="mn2">MN2 wallet</button>
                     <button type="button" class="host-btn host-btn--onchain" data-host-pay="onchain">On-chain MN2</button>
+                    <button type="button" class="host-btn host-btn--subscribe" id="host-subscribe-monthly">Subscribe $5/mo</button>
                 </div>
                 <p class="host-muted" id="host-checkout-msg" aria-live="polite"></p>
                 <div class="host-recent-row">
@@ -186,7 +204,11 @@
                 </details>
                 <details>
                     <summary>Do I need my own server?</summary>
-                    <p>No — we operate the daemon and collateral workflow. You only pay for the slot; rewards accrue per MN2 tokenomics.</p>
+                    <p>No — we operate the daemon and collateral workflow. You only pay for the slot.</p>
+                </details>
+                <details>
+                    <summary>Do I get masternode payouts when I lease?</summary>
+                    <p>Yes. When your assigned node receives an on-chain masternode payout (<code>lastpaid</code> advances), we credit your in-app <strong>MN2 balance</strong>. Totals appear on <strong>Overview</strong> after you sign in. Hosted provision slots follow the same accrual once active on-chain.</p>
                 </details>
                 <details>
                     <summary>Explorer vs this page?</summary>
@@ -219,7 +241,7 @@
     <script src="/static/js/mn2-site-bridge.js?v=20261010" defer></script>
     <script src="/static/js/error-manager.js?v=20261010" defer></script>
     <script src="/static/js/navigation-toolbar.js" defer></script>
-    <script src="/static/js/hosting-hub.js?v=20261107" defer></script>
+    <script src="/static/js/hosting-hub.js?v=20261109" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="hosting" defer></script>
 </body>
 </html>

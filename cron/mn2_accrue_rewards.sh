@@ -7,6 +7,7 @@ TOKEN=$(grep '^MN2_OPS_SECRET=' "$ENV" 2>/dev/null | cut -d= -f2- | tr -d '\r"')
 [ -n "${TOKEN:-}" ] || exit 0
 # Accrue staking rewards, then clear matured on-ramp / P2P holds (releases withdrawals + seller payouts).
 curl -s -S -X POST -H "X-Ops-Token: $TOKEN" "http://127.0.0.1:5000/api/mn2/staking/ops/accrue" >/dev/null
+curl -s -S -X POST -H "X-Ops-Token: $TOKEN" "http://127.0.0.1:5000/api/mn2/masternode/accrue-renter-rewards" >/dev/null
 curl -s -S -X POST -H "X-Ops-Token: $TOKEN" "http://127.0.0.1:5000/api/mn2/onramp/ops/clear-matured" >/dev/null
 curl -s -S -X POST -H "X-Ops-Token: $TOKEN" "http://127.0.0.1:5000/api/mn2/p2p/ops/clear-matured" >/dev/null
 # Drive the autonomous staking personas one policy step (heartbeat, auto-restake, rebalance within caps).
