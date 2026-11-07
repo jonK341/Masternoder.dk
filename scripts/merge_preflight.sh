@@ -92,7 +92,11 @@ if [[ "$WITH_SERVER" -eq 1 ]]; then
   if [[ -z "${DEPLOY_PASS:-}" ]]; then
     echo "  SKIP: DEPLOY_PASS unset"
   else
-    python3 - <<'PY' || fail=1
+    PY_RUN="python3"
+    if [[ -x "$ROOT/.venv/bin/python" ]]; then
+      PY_RUN="$ROOT/.venv/bin/python"
+    fi
+    "$PY_RUN" - <<'PY' || fail=1
 import os, sys
 sys.path.insert(0, os.getcwd())
 from deploy_ssh_env import connect_deploy_ssh, require_deploy_pass
