@@ -346,6 +346,19 @@ def masternode_purge_stale_hosts():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@mn2_masternode_bp.route("/api/mn2/masternode/reconcile-paid-orders", methods=["POST"])
+def masternode_reconcile_paid_orders():
+    """Ops: restore paid order host_ids into the fleet registry (when reconcile_paid_orders is enabled)."""
+    if not _ops_authorized():
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    try:
+        result = mn_service.maybe_ensure_paid_hosts_in_registry()
+        code = 200 if result.get("success") or result.get("skipped") else 400
+        return jsonify(result), code
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @mn2_masternode_bp.route("/api/mn2/masternode/delete-provisioning-hosts", methods=["POST"])
 def masternode_delete_provisioning_hosts():
     if not _ops_authorized():

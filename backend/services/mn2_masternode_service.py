@@ -587,6 +587,27 @@ def _ops_cfg() -> Dict[str, Any]:
     return ops
 
 
+def reconcile_paid_orders_enabled() -> bool:
+    """When false, skip bulk restore of paid orders into the fleet registry (post-reset ops)."""
+    ops = _ops_cfg()
+    if "reconcile_paid_orders" not in ops:
+        return True
+    return bool(ops.get("reconcile_paid_orders"))
+
+
+def maybe_ensure_paid_hosts_in_registry() -> Dict[str, Any]:
+    """Call hosting order sync only when ops.reconcile_paid_orders allows it."""
+    if not reconcile_paid_orders_enabled():
+        return {
+            "success": True,
+            "skipped": True,
+            "reason": "reconcile_paid_orders_disabled",
+        }
+    from backend.services.mn2_masternode_hosting_service import ensure_paid_hosts_in_registry
+
+    return ensure_paid_hosts_in_registry()
+
+
 def _masternode_conf_path() -> str:
     ops = _ops_cfg()
     datadir = (ops.get("datadir") or os.environ.get("MN2_DATADIR") or "/var/www/html/config").strip()
@@ -2024,8 +2045,10 @@ def rented_masternodes_snapshot() -> Dict[str, Any]:
         blockers.append("auto_provision_disabled")
     if not pending and not active and paid_orders == 0:
         blockers.append("no_rented_hosts_in_registry")
-    if missing_host_rows:
+    if missing_host_rows and reconcile_paid_orders_enabled():
         blockers.append("paid_orders_missing_registry_hosts")
+    elif missing_host_rows and not reconcile_paid_orders_enabled():
+        blockers.append("historical_paid_orders_not_in_registry")
     if pending and healthy:
         for p in pending:
             if not p.get("has_collateral"):
@@ -2044,7 +2067,10 @@ def rented_masternodes_snapshot() -> Dict[str, Any]:
         "paid_slots": paid_slots,
         "missing_host_rows": missing_host_rows,
         "auto_provision": auto_provision,
-        "can_bring_online": healthy and auto_provision and need_work,
+        "reconcile_paid_orders": reconcile_paid_orders_enabled(),
+        "can_bring_online": healthy and auto_provision and need_work and not (
+            missing_host_rows > 0 and not reconcile_paid_orders_enabled()
+        ),
         "blockers": list(dict.fromkeys(blockers)),
     }
 
@@ -2057,8 +2083,7 @@ def bring_rented_masternodes_online(limit: int = 20) -> Dict[str, Any]:
     """
     restored: Dict[str, Any]
     try:
-        from backend.services.mn2_masternode_hosting_service import ensure_paid_hosts_in_registry
-        restored = ensure_paid_hosts_in_registry()
+        restored = maybe_ensure_paid_hosts_in_registry()
     except Exception as exc:
         restored = {"success": False, "error": str(exc)[:300]}
     snap = rented_masternodes_snapshot()
@@ -2114,8 +2139,7 @@ def activate_all_rented_masternodes(
     """
     restored: Dict[str, Any]
     try:
-        from backend.services.mn2_masternode_hosting_service import ensure_paid_hosts_in_registry
-        restored = ensure_paid_hosts_in_registry()
+        restored = maybe_ensure_paid_hosts_in_registry()
     except Exception as exc:
         restored = {"success": False, "error": str(exc)[:300]}
 
@@ -2372,8 +2396,23 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         and (h.get("status") or "").lower() == "collateral_missing"
     )
     slots_by_cap = max(0, max_nodes - slots_used)
+    waiting_slots = sum(
+        1 for h in registry_hosts
+        if isinstance(h, dict)
+        and (h.get("status") or "").lower() in ("queued", "provisioning", "planned")
+    )
     # New provisions need a free 5k UTXO; do not oversell past wallet inventory.
     slots_available = min(slots_by_cap, max(0, avail_outputs)) if enabled else 0
+    paid_stats: Dict[str, Any] = {}
+    try:
+        from backend.services import mn2_masternode_hosting_service as hosting
+
+        paid_stats = hosting.paid_rental_stats(
+            existing_host_ids={str(h.get("id")) for h in registry_hosts if isinstance(h, dict) and h.get("id")}
+        )
+    except Exception:
+        paid_stats = {}
+    reconcile_on = reconcile_paid_orders_enabled()
     out = {
         "success": True,
         "enabled": enabled,
@@ -2389,9 +2428,27 @@ def get_service_status(*, fresh: bool = False) -> Dict[str, Any]:
         "slots_by_capacity": slots_by_cap,
         "platform_enabled_on_chain": enabled_platform,
         "collateral_outputs_available": avail_outputs,
+        "waiting_slots": waiting_slots,
+        "reconcile_paid_orders": reconcile_on,
+        "paid_rental_stats": paid_stats,
         "hosting_fee_percent": float(cfg.get("hosting_fee_percent") or 0),
         "public_notes": cfg.get("public_notes"),
         "checkout_open": bool(enabled and slots_available > 0),
+        "checkout_closed_reason": (
+            None
+            if enabled and slots_available > 0
+            else (
+                "service_disabled"
+                if not enabled
+                else (
+                    "no_collateral_utxos"
+                    if avail_outputs <= 0
+                    else "capacity_full"
+                    if slots_by_cap <= 0
+                    else "unknown"
+                )
+            )
+        ),
         "network": {
             "total": net.get("total", 0),
             "enabled": net.get("enabled", 0),

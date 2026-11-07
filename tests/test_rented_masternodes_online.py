@@ -154,5 +154,17 @@ class TestPaidOrderRegistryRestore(unittest.TestCase):
         self.assertEqual(stats["missing_host_rows"], 2)
 
 
+    def test_reconcile_disabled_skips_order_sync(self):
+        from backend.services import mn2_masternode_service as mn
+
+        with patch.object(mn, "reconcile_paid_orders_enabled", return_value=False):
+            with patch(
+                "backend.services.mn2_masternode_hosting_service.ensure_paid_hosts_in_registry",
+            ) as ensure:
+                out = mn.maybe_ensure_paid_hosts_in_registry()
+        self.assertTrue(out.get("skipped"))
+        ensure.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

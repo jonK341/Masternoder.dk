@@ -224,7 +224,7 @@
       if (rpcErr) staleEl.textContent = 'RPC stale: ' + rpcErr;
     }
 
-    applySoldOut(open);
+    applySoldOut(d.checkout_open !== false ? open : 0, d.checkout_closed_reason);
     applyPricing();
     fleetCache = d.hosts || [];
     renderFleet(fleetCache);
@@ -316,11 +316,18 @@
     });
   }
 
-  function applySoldOut(open) {
+  function applySoldOut(open, reason) {
     var soldOut = open != null && Number(open) <= 0;
     var banner = q('host-sold-out');
     var card = q('host-checkout-card');
-    if (banner) banner.hidden = !soldOut;
+    if (banner) {
+      banner.hidden = !soldOut;
+      if (soldOut && reason === 'no_collateral_utxos') {
+        banner.textContent = 'Checkout paused — no free 5,000 MN2 collateral outputs in the ops wallet.';
+      } else if (soldOut) {
+        banner.textContent = 'No hosting slots open right now — check back after ops adds capacity.';
+      }
+    }
     if (card) card.classList.toggle('host-checkout-card--sold-out', soldOut);
     document.querySelectorAll('#host-checkout-actions .host-btn').forEach(function (btn) {
       btn.disabled = soldOut;
