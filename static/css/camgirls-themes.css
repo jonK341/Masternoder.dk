@@ -1,9 +1,10 @@
 /**
- * Camgirls studio themes — tokens + picker chrome.
- * Set on <html class="cg-giga" data-cg-theme="cosmic|velvet|signal|aurora|champagne">
+ * Studio themes (camgirls + aggregator) — tokens + picker chrome.
+ * html.cg-giga (camgirls) or html.agg-themed (aggregator) + data-cg-theme=…
  */
 
-html.cg-giga {
+html.cg-giga,
+html.agg-themed {
   --cg-bg: #04060c;
   --cg-bg-elevated: #0a0f1a;
   --cg-surface: rgba(0, 0, 0, 0.35);
@@ -34,12 +35,14 @@ html.cg-giga {
 }
 
 /* Cosmic (default intelligence) */
-html.cg-giga[data-cg-theme="cosmic"] {
+html.cg-giga[data-cg-theme="cosmic"],
+html.agg-themed[data-cg-theme="cosmic"] {
   color-scheme: dark;
 }
 
 /* Velvet noir */
-html.cg-giga[data-cg-theme="velvet"] {
+html.cg-giga[data-cg-theme="velvet"],
+html.agg-themed[data-cg-theme="velvet"] {
   --cg-bg: #0a0308;
   --cg-bg-elevated: #140a12;
   --cg-glass: rgba(28, 10, 22, 0.82);
@@ -55,7 +58,8 @@ html.cg-giga[data-cg-theme="velvet"] {
 }
 
 /* Signal neon (telemetry / mesh) */
-html.cg-giga[data-cg-theme="signal"] {
+html.cg-giga[data-cg-theme="signal"],
+html.agg-themed[data-cg-theme="signal"] {
   --cg-bg: #020806;
   --cg-bg-elevated: #041210;
   --cg-glass: rgba(4, 24, 18, 0.85);
@@ -71,7 +75,8 @@ html.cg-giga[data-cg-theme="signal"] {
 }
 
 /* Aurora frost */
-html.cg-giga[data-cg-theme="aurora"] {
+html.cg-giga[data-cg-theme="aurora"],
+html.agg-themed[data-cg-theme="aurora"] {
   --cg-bg: #060c14;
   --cg-bg-elevated: #0c1624;
   --cg-glass: rgba(12, 28, 48, 0.75);
@@ -85,7 +90,8 @@ html.cg-giga[data-cg-theme="aurora"] {
 }
 
 /* Champagne light (readable light studio) */
-html.cg-giga[data-cg-theme="champagne"] {
+html.cg-giga[data-cg-theme="champagne"],
+html.agg-themed[data-cg-theme="champagne"] {
   --cg-bg: #f6f2eb;
   --cg-bg-elevated: #fff;
   --cg-surface: rgba(255, 255, 255, 0.92);
@@ -105,7 +111,8 @@ html.cg-giga[data-cg-theme="champagne"] {
   color-scheme: light;
 }
 
-html.cg-giga[data-cg-theme="champagne"] body {
+html.cg-giga[data-cg-theme="champagne"] body,
+html.agg-themed[data-cg-theme="champagne"] body {
   color: var(--cg-text);
 }
 
@@ -118,8 +125,9 @@ html.cg-giga[data-cg-theme="champagne"] .cg-filter-bar button {
   color: var(--cg-text);
 }
 
-/* Theme dock */
-.cg-theme-dock {
+/* Theme dock (camgirls + aggregator) */
+.cg-theme-dock,
+.agg-theme-dock {
   position: sticky;
   top: 0;
   z-index: 900;
