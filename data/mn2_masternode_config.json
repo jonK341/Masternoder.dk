@@ -32,6 +32,7 @@
     "subscription_plan_key": "P-PLACEHOLDER-MN-HOST"
   },
     "ops": {
+    "preferred_wallet_user_id": "user_jon_ulrik",
     "capacity_planning": "2026-10: max_hosted_nodes=500. Full fleet needs 2,500,000 MN2 collateral + cron provision-pending. Multi-ping enabled (daemon >= v1.3.0.0) — all masternode.conf aliases get activetime from one masternoder2d.",
     "capacity_alert_threshold": 5,
     "capacity_alert_cooldown_hours": 6,
