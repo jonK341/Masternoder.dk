@@ -150,6 +150,19 @@ def test_spiderbot_calculated_reply_uses_live_cap(monkeypatch):
     assert "floor.mp3" in out["text"]
 
 
+def test_masternode_hosting_health_endpoint():
+    from backend.routes.mn2_masternode_routes import mn2_masternode_bp
+    from flask import Flask
+
+    app = Flask(__name__)
+    app.config["TESTING"] = True
+    app.register_blueprint(mn2_masternode_bp)
+    client = app.test_client()
+    data = client.get("/api/mn2/masternode/health").get_json()
+    assert data.get("success") is True
+    assert "status" in data
+
+
 def test_hosting_config_alias_matches_checkout_config():
     from backend.routes.mn2_masternode_routes import mn2_masternode_bp
     from flask import Flask
