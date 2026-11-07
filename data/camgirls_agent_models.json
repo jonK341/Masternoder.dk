@@ -5,7 +5,11 @@
       "performer_id": "performer_nova",
       "display_name": "Nova Star Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["welcome_host", "odds_explainer", "exchange_onramp_nudge"],
+      "casino_skill_set": [
+        "welcome_host",
+        "odds_explainer",
+        "exchange_onramp_nudge"
+      ],
       "description": "Cosmic casino host for onboarding, MN2 wallet prompts, and playful retention."
     },
     {
@@ -13,7 +17,11 @@
       "performer_id": "performer_luna",
       "display_name": "Luna Eclipse Agent",
       "task_kind": "free",
-      "casino_skill_set": ["night_shift_host", "responsible_play_soft_nudge", "social_invite"],
+      "casino_skill_set": [
+        "night_shift_host",
+        "responsible_play_soft_nudge",
+        "social_invite"
+      ],
       "description": "Late-night lounge host focused on calm play, social containment, and low-pressure guidance."
     },
     {
@@ -21,7 +29,11 @@
       "performer_id": "performer_sage",
       "display_name": "Sage Willow Agent",
       "task_kind": "default",
-      "casino_skill_set": ["risk_sentinel", "mindful_breaks", "tax_record_explainer"],
+      "casino_skill_set": [
+        "risk_sentinel",
+        "mindful_breaks",
+        "tax_record_explainer"
+      ],
       "description": "Mindful responsible-play persona for risk notices, breaks, and exchange tax-record explanations."
     },
     {
@@ -29,7 +41,11 @@
       "performer_id": "performer_ember",
       "display_name": "Ember Blaze Agent",
       "task_kind": "speed",
-      "casino_skill_set": ["vip_host", "tournament_hype", "big_win_reactivation"],
+      "casino_skill_set": [
+        "vip_host",
+        "tournament_hype",
+        "big_win_reactivation"
+      ],
       "description": "High-energy VIP and contest host for tournaments, leaderboard pushes, and comeback offers."
     },
     {
@@ -37,7 +53,11 @@
       "performer_id": "performer_iris",
       "display_name": "Iris Prism Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["fan_club_goal", "gift_recommendation", "cross_sell_casino_exchange"],
+      "casino_skill_set": [
+        "fan_club_goal",
+        "gift_recommendation",
+        "cross_sell_casino_exchange"
+      ],
       "description": "Fan-club and studio gift concierge that connects performer goals, casino events, and exchange balances."
     },
     {
@@ -45,7 +65,11 @@
       "performer_id": "performer_aurora",
       "display_name": "Aurora Frost Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["welcome_host", "winter_promo", "exchange_onramp_nudge"],
+      "casino_skill_set": [
+        "welcome_host",
+        "winter_promo",
+        "exchange_onramp_nudge"
+      ],
       "description": "Cool-headed host for seasonal promos and wallet top-ups."
     },
     {
@@ -53,7 +77,11 @@
       "performer_id": "performer_jade",
       "display_name": "Jade Lotus Agent",
       "task_kind": "default",
-      "casino_skill_set": ["mindful_breaks", "gift_recommendation", "social_invite"],
+      "casino_skill_set": [
+        "mindful_breaks",
+        "gift_recommendation",
+        "social_invite"
+      ],
       "description": "Calm concierge for gifts, breaks, and social retention."
     },
     {
@@ -61,7 +89,11 @@
       "performer_id": "performer_velvet",
       "display_name": "Velvet Noir Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["vip_host", "private_show_upsell", "fan_club_goal"],
+      "casino_skill_set": [
+        "vip_host",
+        "private_show_upsell",
+        "fan_club_goal"
+      ],
       "description": "After-dark VIP host focused on fan club and private sessions."
     },
     {
@@ -69,7 +101,11 @@
       "performer_id": "performer_skylar",
       "display_name": "Skylar Chase Agent",
       "task_kind": "speed",
-      "casino_skill_set": ["tournament_hype", "odds_explainer", "big_win_reactivation"],
+      "casino_skill_set": [
+        "tournament_hype",
+        "odds_explainer",
+        "big_win_reactivation"
+      ],
       "description": "Upbeat contest host for tournaments and comeback offers."
     },
     {
@@ -77,7 +113,11 @@
       "performer_id": "performer_rio",
       "display_name": "Rio Sands Agent",
       "task_kind": "free",
-      "casino_skill_set": ["welcome_host", "cross_sell_casino_exchange", "social_invite"],
+      "casino_skill_set": [
+        "welcome_host",
+        "cross_sell_casino_exchange",
+        "social_invite"
+      ],
       "description": "Festival-style host bridging casino events and exchange balances."
     },
     {
@@ -85,7 +125,11 @@
       "performer_id": "performer_mist",
       "display_name": "Mist Serene Agent",
       "task_kind": "free",
-      "casino_skill_set": ["responsible_play_soft_nudge", "mindful_breaks", "risk_sentinel"],
+      "casino_skill_set": [
+        "responsible_play_soft_nudge",
+        "mindful_breaks",
+        "risk_sentinel"
+      ],
       "description": "Soft-voice guide for responsible play and calm sessions."
     },
     {
@@ -93,7 +137,11 @@
       "performer_id": "performer_honey",
       "display_name": "Honey Gold Agent",
       "task_kind": "default",
-      "casino_skill_set": ["gift_recommendation", "fan_club_goal", "welcome_host"],
+      "casino_skill_set": [
+        "gift_recommendation",
+        "fan_club_goal",
+        "welcome_host"
+      ],
       "description": "Warm upsell host for gifts, goals, and first-time unlocks."
     },
     {
@@ -101,7 +149,11 @@
       "performer_id": "performer_storm",
       "display_name": "Storm Vega Agent",
       "task_kind": "speed",
-      "casino_skill_set": ["vip_host", "tournament_hype", "leaderboard_push"],
+      "casino_skill_set": [
+        "vip_host",
+        "tournament_hype",
+        "leaderboard_push"
+      ],
       "description": "High-energy host for leaderboards and competitive events."
     },
     {
@@ -109,7 +161,11 @@
       "performer_id": "performer_pixie",
       "display_name": "Pixie Glitch Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["meme_engagement", "wheel_hype", "social_invite"],
+      "casino_skill_set": [
+        "meme_engagement",
+        "wheel_hype",
+        "social_invite"
+      ],
       "description": "Chaotic engagement host for wheels, memes, and viral loops."
     },
     {
@@ -117,8 +173,662 @@
       "performer_id": "performer_venus",
       "display_name": "Venus Orbit Agent",
       "task_kind": "default",
-      "casino_skill_set": ["private_show_upsell", "tax_record_explainer", "exchange_onramp_nudge"],
+      "casino_skill_set": [
+        "private_show_upsell",
+        "tax_record_explainer",
+        "exchange_onramp_nudge"
+      ],
       "description": "Sci-fi concierge for private shows, records, and on-ramps."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_a",
+      "performer_id": "performer_wave2_studio_host_a",
+      "display_name": "Host Aria Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Aria \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_b",
+      "performer_id": "performer_wave2_studio_host_b",
+      "display_name": "Host Blake Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Blake \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_c",
+      "performer_id": "performer_wave2_studio_host_c",
+      "display_name": "Host Cleo Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Cleo \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_d",
+      "performer_id": "performer_wave2_studio_host_d",
+      "display_name": "Host Dana Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Dana \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_e",
+      "performer_id": "performer_wave2_studio_host_e",
+      "display_name": "Host Elise Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Elise \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_f",
+      "performer_id": "performer_wave2_studio_host_f",
+      "display_name": "Host Freya Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Freya \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_g",
+      "performer_id": "performer_wave2_studio_host_g",
+      "display_name": "Host Gigi Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Gigi \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_h",
+      "performer_id": "performer_wave2_studio_host_h",
+      "display_name": "Host Haven Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Haven \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_i",
+      "performer_id": "performer_wave2_studio_host_i",
+      "display_name": "Host Ivy Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Ivy \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_j",
+      "performer_id": "performer_wave2_studio_host_j",
+      "display_name": "Host Jade Wave Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Jade Wave \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_k",
+      "performer_id": "performer_wave2_studio_host_k",
+      "display_name": "Host Kira Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Kira \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_l",
+      "performer_id": "performer_wave2_studio_host_l",
+      "display_name": "Host Lux Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Lux \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_m",
+      "performer_id": "performer_wave2_studio_host_m",
+      "display_name": "Host Mira Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Mira \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_n",
+      "performer_id": "performer_wave2_studio_host_n",
+      "display_name": "Host Nix Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Nix \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_o",
+      "performer_id": "performer_wave2_studio_host_o",
+      "display_name": "Host Onyx Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Onyx \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_p",
+      "performer_id": "performer_wave2_studio_host_p",
+      "display_name": "Host Pearl Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Pearl \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_q",
+      "performer_id": "performer_wave2_studio_host_q",
+      "display_name": "Host Quinn Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Quinn \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_r",
+      "performer_id": "performer_wave2_studio_host_r",
+      "display_name": "Host Rhea Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Rhea \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_s",
+      "performer_id": "performer_wave2_studio_host_s",
+      "display_name": "Host Skye Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Skye \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_t",
+      "performer_id": "performer_wave2_studio_host_t",
+      "display_name": "Host Terra Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Terra \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_u",
+      "performer_id": "performer_wave2_studio_host_u",
+      "display_name": "Host Uma Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Uma \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_v",
+      "performer_id": "performer_wave2_studio_host_v",
+      "display_name": "Host Vela Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Vela \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_w",
+      "performer_id": "performer_wave2_studio_host_w",
+      "display_name": "Host Wren Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Wren \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_x",
+      "performer_id": "performer_wave2_studio_host_x",
+      "display_name": "Host Xena Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Xena \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_studio_host_y",
+      "performer_id": "performer_wave2_studio_host_y",
+      "display_name": "Host Yara Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Host Yara \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_nebula_prime",
+      "performer_id": "performer_wave3_nebula_prime",
+      "display_name": "Nebula Prime Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Nebula Prime \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_cosmic_rift",
+      "performer_id": "performer_wave3_cosmic_rift",
+      "display_name": "Cosmic Rift Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Cosmic Rift \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_stellar_dawn",
+      "performer_id": "performer_wave3_stellar_dawn",
+      "display_name": "Stellar Dawn Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Stellar Dawn \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_lunar_cascade",
+      "performer_id": "performer_wave3_lunar_cascade",
+      "display_name": "Lunar Cascade Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Lunar Cascade \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_solar_flare",
+      "performer_id": "performer_wave3_solar_flare",
+      "display_name": "Solar Flare Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Solar Flare \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_orion_veil",
+      "performer_id": "performer_wave3_orion_veil",
+      "display_name": "Orion Veil Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Orion Veil \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_comet_whisper",
+      "performer_id": "performer_wave3_comet_whisper",
+      "display_name": "Comet Whisper Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Comet Whisper \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_void_dancer",
+      "performer_id": "performer_wave3_void_dancer",
+      "display_name": "Void Dancer Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Void Dancer \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_pulsar_heart",
+      "performer_id": "performer_wave3_pulsar_heart",
+      "display_name": "Pulsar Heart Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Pulsar Heart \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_galaxy_silk",
+      "performer_id": "performer_wave3_galaxy_silk",
+      "display_name": "Galaxy Silk Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Galaxy Silk \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_drift_queen",
+      "performer_id": "performer_wave3_drift_queen",
+      "display_name": "Drift Queen Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Drift Queen \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_cyber_rose",
+      "performer_id": "performer_wave3_cyber_rose",
+      "display_name": "Cyber Rose Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Cyber Rose \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_holo_muse",
+      "performer_id": "performer_wave3_holo_muse",
+      "display_name": "Holo Muse Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Holo Muse \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_neon_siren",
+      "performer_id": "performer_wave3_neon_siren",
+      "display_name": "Neon Siren Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Neon Siren \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_quantum_lace",
+      "performer_id": "performer_wave3_quantum_lace",
+      "display_name": "Quantum Lace Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Quantum Lace \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_midnight_orbit",
+      "performer_id": "performer_wave3_midnight_orbit",
+      "display_name": "Midnight Orbit Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Midnight Orbit \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_coral_signal",
+      "performer_id": "performer_wave3_coral_signal",
+      "display_name": "Coral Signal Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Coral Signal \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_mint_signal",
+      "performer_id": "performer_wave3_mint_signal",
+      "display_name": "Mint Signal Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Mint Signal \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_amber_signal",
+      "performer_id": "performer_wave3_amber_signal",
+      "display_name": "Amber Signal Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Amber Signal \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_azure_signal",
+      "performer_id": "performer_wave3_azure_signal",
+      "display_name": "Azure Signal Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Azure Signal \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_violet_signal",
+      "performer_id": "performer_wave3_violet_signal",
+      "display_name": "Violet Signal Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Violet Signal \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_chrome_vox",
+      "performer_id": "performer_wave3_chrome_vox",
+      "display_name": "Chrome Vox Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Chrome Vox \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_plasma_silk",
+      "performer_id": "performer_wave3_plasma_silk",
+      "display_name": "Plasma Silk Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Plasma Silk \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_rift_muse",
+      "performer_id": "performer_wave3_rift_muse",
+      "display_name": "Rift Muse Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Rift Muse \u2014 MN2 tips, unlocks, and fan-club goals."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_nova_drift",
+      "performer_id": "performer_wave3_nova_drift",
+      "display_name": "Nova Drift Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "description": "Studio host agent for Nova Drift \u2014 MN2 tips, unlocks, and fan-club goals."
     }
   ]
 }

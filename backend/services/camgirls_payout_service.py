@@ -129,6 +129,157 @@ def provision_payout_rails(performer_ids: Optional[List[str]] = None) -> Dict[st
     }
 
 
+def validate_payout_address_on_chain(address: str) -> Dict[str, Any]:
+    addr = (address or "").strip()
+    if not addr:
+        return {"checked": False, "address": None, "isvalid": False, "error": "empty_address"}
+    try:
+        from backend.services.mn2_rpc_client import validateaddress
+
+        r = validateaddress(addr)
+    except Exception as exc:
+        return {"checked": False, "address": addr, "error": str(exc)}
+    if r.get("error"):
+        return {"checked": False, "address": addr, "error": r.get("error")}
+    res = r.get("result") if isinstance(r.get("result"), dict) else {}
+    out = {
+        "checked": True,
+        "address": addr,
+        "isvalid": bool(res.get("isvalid")),
+    }
+    if "ismine" in res:
+        out["ismine"] = bool(res.get("ismine"))
+    return out
+
+
+def audit_performer_wallets(
+    performer_ids: Optional[List[str]] = None,
+    *,
+    check_rpc: bool = True,
+    sync_catalog: bool = True,
+) -> Dict[str, Any]:
+    """Report MN2 payout address coverage and optional daemon validateaddress per profile."""
+    from backend.services.camgirls_service import list_active_performer_ids, get_performer_row
+
+    targets = performer_ids or list_active_performer_ids()
+    data = _read()
+    bucket = data.get("performers") or {}
+    rows: List[Dict[str, Any]] = []
+    missing = 0
+    invalid = 0
+    for pid in targets:
+        row = bucket.get(pid) if isinstance(bucket.get(pid), dict) else {}
+        addr = (row.get("address") or "").strip() or None
+        perf = get_performer_row(pid) or {}
+        entry: Dict[str, Any] = {
+            "performer_id": pid,
+            "display_name": perf.get("display_name"),
+            "payout_address": addr,
+            "has_address": bool(addr),
+            "paypal_checkout_enabled": bool(row.get("paypal_checkout_enabled")),
+        }
+        if not addr:
+            missing += 1
+        elif check_rpc:
+            v = validate_payout_address_on_chain(addr)
+            entry["on_chain"] = v
+            if v.get("checked") and not v.get("isvalid"):
+                invalid += 1
+        rows.append(entry)
+        if sync_catalog and addr and perf:
+            merged = {**perf, "payout_address": addr}
+            try:
+                from backend.services.camgirls_catalog_sync_service import upsert_performer_db
+
+                upsert_performer_db(merged)
+            except Exception:
+                pass
+    return {
+        "success": True,
+        "total": len(targets),
+        "with_address": len(targets) - missing,
+        "missing_address": missing,
+        "invalid_on_chain": invalid,
+        "rpc_checked": bool(check_rpc),
+        "performers": rows,
+    }
+
+
+def payout_performer_reward_on_chain(
+    performer_id: str,
+    amount: float,
+    *,
+    source: str,
+    reference: str,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Treasury sendtoaddress to the performer's daemon payout address (not in-app balance)."""
+    amt = float(amount or 0)
+    if amt <= 0:
+        return {"success": False, "error": "amount_must_be_positive"}
+    pa = get_payout_address(performer_id)
+    address = (pa.get("address") or "").strip()
+    if not address:
+        return {"success": False, "error": "no_payout_address", "performer_id": performer_id}
+
+    ref = (reference or f"camgirl-reward:{performer_id}").strip()
+    if dry_run:
+        return {
+            "success": True,
+            "dry_run": True,
+            "performer_id": performer_id,
+            "address": address,
+            "amount": amt,
+            "reference": ref,
+        }
+
+    from backend.services.mn2_chain_rewards_service import chain_payouts_enabled, _min_payout
+
+    if not chain_payouts_enabled():
+        return {"success": True, "skipped": True, "reason": "chain_payouts_disabled"}
+    if amt < _min_payout():
+        return {"success": True, "skipped": True, "reason": "below_min_payout"}
+
+    from backend.services.mn2_ledger import append_entry, is_txid_processed
+
+    ref_key = f"chain-reward:{ref}"
+    if is_txid_processed(ref_key):
+        return {"success": True, "duplicate": True, "reference": ref}
+
+    from backend.services.mn2_rpc_client import sendtoaddress
+
+    send = sendtoaddress(address, round(amt, 8))
+    if send.get("error"):
+        return {"success": False, "error": send.get("error"), "reference": ref, "address": address}
+    txid = (send.get("result") or "").strip()
+    if not txid:
+        return {"success": False, "error": "rpc_no_txid", "reference": ref}
+
+    meta = {
+        "reference": ref,
+        "performer_id": performer_id,
+        "source": source,
+        "chain_paid": True,
+        "chain_txid": txid,
+    }
+    append_entry(
+        user_id=f"camgirl:{performer_id}",
+        entry_type="camgirls_chain_reward",
+        amount=amt,
+        txid=txid,
+        address=address,
+        metadata=meta,
+    )
+    return {
+        "success": True,
+        "txid": txid,
+        "address": address,
+        "amount": amt,
+        "reference": ref,
+        "performer_id": performer_id,
+    }
+
+
 def provision_payout_addresses(performer_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     from backend.services.camgirls_service import _load_performers_raw
     from backend.services.mn2_wallet_service import generate_daemon_address

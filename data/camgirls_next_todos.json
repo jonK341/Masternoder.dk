@@ -250,9 +250,15 @@
         },
         {
           "id": "scale_wave3_plus",
-          "priority": "P2",
-          "title": "Waves 4–N toward 250",
-          "detail": "Repeat 15–50 stub waves; ops_state next_milestone 100; avoid single bulk JSON dump."
+          "priority": "paused",
+          "title": "Waves 4–N toward 250 (paused)",
+          "detail": "Roster scale paused — run camgirls_assign_and_reward.py for wallet audit, assignments, and MN2 chain rewards first."
+        },
+        {
+          "id": "camgirls_wallet_assign_rewards",
+          "priority": "P1",
+          "title": "Wallet audit + agent assignments + MN2 rewards",
+          "detail": "camgirls_assign_and_reward.py / POST /api/camgirls/ops/wallet-audit + assign-agents; profile wallet via GET performer detail."
         }
       ]
     },

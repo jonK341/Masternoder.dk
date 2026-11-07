@@ -66,6 +66,8 @@ def _roster_scale_snapshot(performer_count: int) -> Dict[str, Any]:
         "next_milestone": next_milestone,
         "milestone_reached": performer_count >= next_milestone,
         "waves": waves,
+        "scale_paused": bool(ops.get("scale_paused")),
+        "scale_pause_reason": ops.get("scale_pause_reason"),
     }
 
 

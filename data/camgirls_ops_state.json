@@ -1,5 +1,7 @@
 {
   "updated_at": "2026-11-07",
+  "scale_paused": true,
+  "scale_pause_reason": "Focus: verify MN2 payout wallets per profile, platform agent assignments, on-chain assignment rewards.",
   "roster_target": 250,
   "waves": [
     {
