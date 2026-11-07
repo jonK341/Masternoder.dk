@@ -18,12 +18,12 @@ _AGENT_MAP = {
     "scan": "monitoring_agent",
     "aggregator": "analytics_agent",
     "generator": "content_generator_agent",
-    "casino": "workflow_agent",
-    "staking": "workflow_agent",
+    "casino": "integration_agent",
+    "staking": "integration_agent",
     "reconcile": "security_agent",
     "activity": "ai_intelligence_agent",
     "masternodes": "monitoring_agent",
-    "shop": "workflow_agent",
+    "shop": "integration_agent",
     "micro": "monitoring_agent",
 }
 

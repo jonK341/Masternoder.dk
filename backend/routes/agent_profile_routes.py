@@ -94,7 +94,7 @@ def record_follow_action():
     """
     Record that an agent followed the user's action. Optional win=True awards extra XP.
     Body: { "user_action": "generated_video" | "quest_done" | "battle_won" | ..., "win": false, "agent_id": null }.
-    When agent_id is omitted, the first assigned agent (or learning_agent) is used.
+    When agent_id is omitted, the first assigned agent that still exists is used.
     """
     user_id = _resolve()
     data = request.get_json() or {}
@@ -103,11 +103,13 @@ def record_follow_action():
     agent_id = data.get('agent_id') or ''
     try:
         from backend.services.agent_db_service import agent_db_service
+        from backend.services.agent_roster import RETIRED_AGENT_IDS
         from backend.services.user_agent_skills import user_agent_skills
         if not agent_id:
             skills_data = user_agent_skills.get_user_skills(user_id)
             assigned = skills_data.get('assigned_agents', [])
-            agent_id = next((a for a in assigned if 'learning' in a), assigned[0] if assigned else 'learning_agent')
+            live = [a for a in assigned if a not in RETIRED_AGENT_IDS]
+            agent_id = live[0] if live else 'content_generator_agent'
         result = agent_db_service.record_user_action_followed(
             user_id=user_id, agent_id=agent_id,
             user_action=user_action, win=win,
@@ -180,12 +182,14 @@ def tech_unlock_skill():
     if not tech_id:
         return jsonify({'success': False, 'error': 'tech_id required'}), 400
     try:
-        from backend.services.user_agent_skills import user_agent_skills
         from backend.services.agent_db_service import agent_db_service
+        from backend.services.agent_roster import RETIRED_AGENT_IDS
+        from backend.services.user_agent_skills import user_agent_skills
 
         skills_data = user_agent_skills.get_user_skills(user_id)
         assigned = skills_data.get('assigned_agents', [])
-        target_agent = assigned[0] if assigned else 'content_generator_agent'
+        live = [a for a in assigned if a not in RETIRED_AGENT_IDS]
+        target_agent = live[0] if live else 'content_generator_agent'
 
         skill_name = f"tech_{tech_id}"
         user_agent_skills.add_skill(user_id, target_agent, skill_name, level=1)

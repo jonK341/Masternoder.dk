@@ -1195,12 +1195,12 @@ def monetization_ai_recommendations():
 
 @missing_endpoints_bp.route('/api/monetization/levers/<lever_id>/assign-agent', methods=['POST'])
 def monetization_lever_assign_agent(lever_id):
-    """Assign an agent (content_generator_agent, learning_agent, analytics_agent, reporter_agent) to a monetization lever."""
+    """Assign an agent (content_generator_agent, analytics_agent, reporter_agent) to a monetization lever."""
     try:
         data = request.get_json(silent=True) or {}
         user_id = data.get('user_id') or request.args.get('user_id', 'default_user')
         agent_id = (data.get('agent_id') or '').strip() or 'content_generator_agent'
-        if agent_id not in ('content_generator_agent', 'learning_agent', 'analytics_agent', 'reporter_agent'):
+        if agent_id not in ('content_generator_agent', 'analytics_agent', 'reporter_agent'):
             agent_id = 'content_generator_agent'
         from backend.services.monetization_levers_service import assign_agent_to_lever
         result = assign_agent_to_lever(user_id, lever_id, agent_id)

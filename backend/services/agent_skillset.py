@@ -7,6 +7,8 @@ import json
 from typing import Dict, List, Optional
 from datetime import datetime
 
+from backend.services.agent_roster import RETIRED_AGENT_IDS
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_UNIQUE_SKILLS_PER_AGENT = 500
 DEFAULT_BATTLE_SKILLS_PER_AGENT = 30
@@ -35,7 +37,7 @@ class AgentSkillset:
                 self.skillsets = self._default_skillsets()
         else:
             self.skillsets = self._default_skillsets()
-        self._ensure_tester_agent_skillset()
+        self._drop_retired_agents()
         self._ensure_unique_skillsets_for_agents()
         self.ensure_battle_skills_per_agent(count=DEFAULT_BATTLE_SKILLS_PER_AGENT)
         self.ensure_sales_skillsets_per_agent(count=DEFAULT_SALES_SKILLS_PER_AGENT)
@@ -49,43 +51,15 @@ class AgentSkillset:
         self.ensure_api_service_skills_per_agent()
         self.save_skillsets()
 
-    def _ensure_tester_agent_skillset(self):
-        """Ensure tester agent exists in persistent skillsets for production quality audits."""
-        agents = self.skillsets.setdefault('agents', {})
-        tester_defaults = {
-            'name': 'Tester Agent',
-            'skills': [
-                'ui_smoke_test',
-                'cross_browser_test',
-                'mobile_responsive_audit',
-                'accessibility_audit',
-                'performance_lighthouse_check',
-                'api_contract_validation',
-                'visual_regression_check',
-                'error_reproduction',
-                'test_plan_generation',
-                'release_quality_gate',
-                'ai_quality_check',
-                'ai_suggest_fix',
-                'ai_auto_validate',
-                'ai_nice_and_easy',
-            ],
-            'level': 4,
-            'experience': 1200
-        }
-
-        existing = agents.get('tester_agent')
-        if not isinstance(existing, dict):
-            agents['tester_agent'] = tester_defaults
+    def _drop_retired_agents(self):
+        """Remove catalog agents that have no service, including ones saved earlier."""
+        agents = self.skillsets.get('agents')
+        if not isinstance(agents, dict):
             return
+        for agent_id in list(agents):
+            if agent_id in RETIRED_AGENT_IDS:
+                agents.pop(agent_id, None)
 
-        existing.setdefault('name', tester_defaults['name'])
-        existing.setdefault('level', tester_defaults['level'])
-        existing.setdefault('experience', tester_defaults['experience'])
-        existing_skills = existing.setdefault('skills', [])
-        for skill in tester_defaults['skills']:
-            if skill not in existing_skills:
-                existing_skills.append(skill)
 
     def _generate_sales_skill_profiles(self, agent_id: str, count: int = DEFAULT_SALES_SKILLS_PER_AGENT) -> List[Dict]:
         """
@@ -137,6 +111,7 @@ class AgentSkillset:
 
         self.save_skillsets()
         return {'success': True, 'agents_updated': updated, 'sales_skills_per_agent': count}
+
 
     def _generate_paypal_skill_profiles(self, agent_id: str, count: int = DEFAULT_PAYPAL_SKILLS_PER_AGENT) -> List[Dict]:
         """Generate PayPal-focused monetization skills for an agent."""
@@ -779,17 +754,6 @@ class AgentSkillset:
                     'level': 3,
                     'experience': 500
                 },
-                'scanner_agent': {
-                    'name': 'Scanner Agent',
-                    'skills': [
-                        'scan_blueprints',
-                        'scan_routes',
-                        'scan_services',
-                        'find_missing_methods'
-                    ],
-                    'level': 2,
-                    'experience': 300
-                },
                 'content_generator_agent': {
                     'name': 'Content Generator Agent',
                     'skills': [
@@ -822,21 +786,6 @@ class AgentSkillset:
                     ],
                     'level': 2,
                     'experience': 500
-                },
-                'master_dashboard_agent': {
-                    'name': 'Master Dashboard Agent',
-                    'skills': [
-                        'generate_top10_insights',  # NEW: Generate top 10 insights
-                        'aggregate_system_stats',  # NEW: Aggregate system statistics
-                        'real_time_monitoring',  # NEW: Real-time monitoring
-                        'dashboard_optimization',  # NEW: Dashboard optimization
-                        'data_visualization',  # NEW: Data visualization
-                        'performance_tracking',  # NEW: Performance tracking
-                        'trend_analysis',  # NEW: Trend analysis
-                        'predictive_analytics'  # NEW: Predictive analytics
-                    ],
-                    'level': 3,
-                    'experience': 750
                 },
                 'ai_intelligence_agent': {
                     'name': 'AI Intelligence Agent',
@@ -977,188 +926,6 @@ class AgentSkillset:
                     'level': 1,
                     'experience': 0
                 },
-                'data_processor_agent': {
-                    'name': 'Data Processor Agent',
-                    'skills': [
-                        'process_data',
-                        'transform_data',
-                        'validate_data',
-                        'clean_data',
-                        'aggregate_data',
-                        'export_data',
-                        'import_data',
-                        'data_migration'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'notification_agent': {
-                    'name': 'Notification Agent',
-                    'skills': [
-                        'send_notifications',
-                        'schedule_notifications',
-                        'manage_channels',
-                        'template_notifications',
-                        'track_deliveries',
-                        'handle_responses',
-                        'notification_analytics',
-                        'batch_notifications'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'workflow_agent': {
-                    'name': 'Workflow Agent',
-                    'skills': [
-                        'create_workflow',
-                        'execute_workflow',
-                        'monitor_workflow',
-                        'optimize_workflow',
-                        'schedule_workflow',
-                        'handle_errors',
-                        'workflow_analytics',
-                        'automate_tasks'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'ai_trainer_agent': {
-                    'name': 'AI Trainer Agent',
-                    'skills': [
-                        'train_models',
-                        'fine_tune_models',
-                        'evaluate_models',
-                        'optimize_models',
-                        'deploy_models',
-                        'monitor_models',
-                        'update_models',
-                        'model_analytics'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'tester_agent': {
-                    'name': 'Tester Agent',
-                    'skills': [
-                        'ui_smoke_test',
-                        'cross_browser_test',
-                        'mobile_responsive_audit',
-                        'accessibility_audit',
-                        'performance_lighthouse_check',
-                        'api_contract_validation',
-                        'visual_regression_check',
-                        'error_reproduction',
-                        'test_plan_generation',
-                        'release_quality_gate'
-                    ],
-                    'level': 4,
-                    'experience': 1200
-                },
-                'quality_assurance_agent': {
-                    'name': 'Quality Assurance Agent',
-                    'skills': [
-                        'run_tests',
-                        'generate_tests',
-                        'code_review',
-                        'bug_detection',
-                        'performance_testing',
-                        'security_testing',
-                        'regression_testing',
-                        'test_automation'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'deployment_agent': {
-                    'name': 'Deployment Agent',
-                    'skills': [
-                        'deploy_code',
-                        'manage_releases',
-                        'rollback_deployments',
-                        'monitor_deployments',
-                        'environment_management',
-                        'version_control',
-                        'ci_cd_integration',
-                        'deployment_automation'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'backup_agent': {
-                    'name': 'Backup Agent',
-                    'skills': [
-                        'create_backups',
-                        'restore_backups',
-                        'schedule_backups',
-                        'verify_backups',
-                        'manage_backup_storage',
-                        'backup_encryption',
-                        'disaster_recovery',
-                        'backup_analytics'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'resource_manager_agent': {
-                    'name': 'Resource Manager Agent',
-                    'skills': [
-                        'monitor_resources',
-                        'allocate_resources',
-                        'optimize_resources',
-                        'scale_resources',
-                        'manage_capacity',
-                        'cost_optimization',
-                        'resource_planning',
-                        'resource_analytics'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'compliance_agent': {
-                    'name': 'Compliance Agent',
-                    'skills': [
-                        'check_compliance',
-                        'enforce_policies',
-                        'audit_logs',
-                        'generate_reports',
-                        'regulatory_tracking',
-                        'policy_management',
-                        'compliance_monitoring',
-                        'risk_assessment'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'learning_agent': {
-                    'name': 'Learning Agent',
-                    'skills': [
-                        'learn_from_data',
-                        'adapt_behavior',
-                        'pattern_recognition',
-                        'knowledge_extraction',
-                        'skill_improvement',
-                        'experience_learning',
-                        'meta_learning',
-                        'continuous_improvement'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'communication_agent': {
-                    'name': 'Communication Agent',
-                    'skills': [
-                        'handle_communications',
-                        'translate_languages',
-                        'summarize_content',
-                        'generate_responses',
-                        'context_understanding',
-                        'sentiment_analysis',
-                        'communication_analytics',
-                        'multi_modal_communication'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
                 'research_agent': {
                     'name': 'Research Agent',
                     'skills': [
@@ -1170,36 +937,6 @@ class AgentSkillset:
                         'validate_claims',
                         'research_automation',
                         'knowledge_management'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'innovation_agent': {
-                    'name': 'Innovation Agent',
-                    'skills': [
-                        'generate_ideas',
-                        'evaluate_concepts',
-                        'prototype_solutions',
-                        'test_innovations',
-                        'identify_opportunities',
-                        'creative_problem_solving',
-                        'innovation_analytics',
-                        'trend_spotting'
-                    ],
-                    'level': 1,
-                    'experience': 0
-                },
-                'collaboration_agent': {
-                    'name': 'Collaboration Agent',
-                    'skills': [
-                        'facilitate_collaboration',
-                        'coordinate_teams',
-                        'manage_projects',
-                        'resolve_conflicts',
-                        'share_knowledge',
-                        'team_analytics',
-                        'collaboration_tools',
-                        'relationship_management'
                     ],
                     'level': 1,
                     'experience': 0
@@ -1240,42 +977,6 @@ class AgentSkillset:
                     'experience': 600,
                     'style': 'cinema',
                     'accent_color': '#ff6b35',
-                    'design': 'card'
-                },
-                'tts_narration_agent': {
-                    'name': 'TTS Narration Agent',
-                    'skills': [
-                        'piper_tts_local',
-                        'elevenlabs_tts',
-                        'gtts_fallback',
-                        'pyttsx3_offline',
-                        'audio_enhance_deepfilter',
-                        'audio_enhance_loudnorm',
-                        'generate_narration_segments',
-                        'voice_consistency'
-                    ],
-                    'level': 3,
-                    'experience': 500,
-                    'style': 'warm',
-                    'accent_color': '#9d4edd',
-                    'design': 'compact'
-                },
-                'intelligence_aggregator_agent': {
-                    'name': 'Intelligence Aggregator Agent',
-                    'skills': [
-                        'get_research_papers',
-                        'get_news_tech',
-                        'get_trending',
-                        'arxiv_category_fetch',
-                        'cache_research_6h',
-                        'cache_news_1h',
-                        'intelligence_all_endpoint',
-                        'insight_synthesis'
-                    ],
-                    'level': 3,
-                    'experience': 550,
-                    'style': 'dashboard',
-                    'accent_color': '#06ffa5',
                     'design': 'card'
                 },
                 'agent_research_tracker_agent': {

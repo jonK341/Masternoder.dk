@@ -42,35 +42,35 @@ class UserAgentSkills:
         # Determine skill path
         if 'creator' in behavior_pattern or 'generate' in str(preferences).lower():
             assigned_skills['skill_path'] = 'creator'
-            assigned_skills['assigned_agents'] = ['content_generator_agent', 'learning_agent']
+            assigned_skills['assigned_agents'] = ['content_generator_agent']
             assigned_skills['skills'] = [
                 {'agent_id': 'content_generator_agent', 'skill': 'generate_video', 'level': 1},
                 {'agent_id': 'content_generator_agent', 'skill': 'generate_image', 'level': 1},
                 {'agent_id': 'content_generator_agent', 'skill': 'create_template', 'level': 1},
                 {'agent_id': 'content_generator_agent', 'skill': 'ai_assist_task', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_follow_user_action', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
+                {'agent_id': 'content_generator_agent', 'skill': 'ai_follow_user_action', 'level': 1},
+                {'agent_id': 'content_generator_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
             ]
         elif 'battle' in behavior_pattern or 'battle' in str(preferences).lower():
             assigned_skills['skill_path'] = 'battle'
-            assigned_skills['assigned_agents'] = ['battle_strategy_agent', 'learning_agent']
+            assigned_skills['assigned_agents'] = ['battle_strategy_agent']
             assigned_skills['skills'] = [
                 {'agent_id': 'battle_strategy_agent', 'skill': 'analyze_battle', 'level': 1},
                 {'agent_id': 'battle_strategy_agent', 'skill': 'create_strategy', 'level': 1},
                 {'agent_id': 'battle_strategy_agent', 'skill': 'optimize_tactics', 'level': 1},
                 {'agent_id': 'battle_strategy_agent', 'skill': 'ai_win_with_user', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_follow_user_action', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
+                {'agent_id': 'battle_strategy_agent', 'skill': 'ai_follow_user_action', 'level': 1},
+                {'agent_id': 'battle_strategy_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
             ]
         elif 'social' in behavior_pattern or 'social' in str(preferences).lower():
             assigned_skills['skill_path'] = 'social'
-            assigned_skills['assigned_agents'] = ['social_engagement_agent', 'learning_agent']
+            assigned_skills['assigned_agents'] = ['social_engagement_agent']
             assigned_skills['skills'] = [
                 {'agent_id': 'social_engagement_agent', 'skill': 'manage_friends', 'level': 1},
                 {'agent_id': 'social_engagement_agent', 'skill': 'coordinate_events', 'level': 1},
                 {'agent_id': 'social_engagement_agent', 'skill': 'build_community', 'level': 1},
                 {'agent_id': 'social_engagement_agent', 'skill': 'ai_suggest_next', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_follow_user_action', 'level': 1},
+                {'agent_id': 'social_engagement_agent', 'skill': 'ai_follow_user_action', 'level': 1},
             ]
         elif 'analytics' in behavior_pattern or 'stats' in str(preferences).lower():
             assigned_skills['skill_path'] = 'analytics'
@@ -85,20 +85,20 @@ class UserAgentSkills:
             ]
         elif 'ai' in behavior_pattern or 'assist' in str(preferences).lower():
             assigned_skills['skill_path'] = 'ai'
-            assigned_skills['assigned_agents'] = ['content_generator_agent', 'ai_intelligence_agent', 'learning_agent']
+            assigned_skills['assigned_agents'] = ['content_generator_agent', 'ai_intelligence_agent']
             assigned_skills['skills'] = [
                 {'agent_id': 'content_generator_agent', 'skill': 'generate_video', 'level': 1},
                 {'agent_id': 'ai_intelligence_agent', 'skill': 'intelligence_aggregation', 'level': 1},
                 {'agent_id': 'ai_intelligence_agent', 'skill': 'pattern_recognition', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'learn_from_data', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_follow_user_action', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
+                {'agent_id': 'ai_intelligence_agent', 'skill': 'learn_from_data', 'level': 1},
+                {'agent_id': 'ai_intelligence_agent', 'skill': 'ai_follow_user_action', 'level': 1},
+                {'agent_id': 'ai_intelligence_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
             ]
         else:
             # Balanced path — content, analytics, learning, reporter (broadcast + knowledge-sharing ingredients); 10 skills
             assigned_skills['skill_path'] = 'balanced'
             assigned_skills['assigned_agents'] = [
-                'content_generator_agent', 'analytics_agent', 'learning_agent', 'reporter_agent',
+                'content_generator_agent', 'analytics_agent', 'reporter_agent',
             ]
             assigned_skills['skills'] = [
                 {'agent_id': 'content_generator_agent', 'skill': 'generate_video', 'level': 1},
@@ -106,9 +106,9 @@ class UserAgentSkills:
                 {'agent_id': 'analytics_agent', 'skill': 'track_metrics', 'level': 1},
                 {'agent_id': 'analytics_agent', 'skill': 'analyze_user_behavior', 'level': 1},
                 {'agent_id': 'analytics_agent', 'skill': 'ai_suggest_next', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_follow_user_action', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_win_with_user', 'level': 1},
-                {'agent_id': 'learning_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
+                {'agent_id': 'analytics_agent', 'skill': 'ai_follow_user_action', 'level': 1},
+                {'agent_id': 'analytics_agent', 'skill': 'ai_win_with_user', 'level': 1},
+                {'agent_id': 'analytics_agent', 'skill': 'ai_nice_and_easy', 'level': 1},
                 {'agent_id': 'reporter_agent', 'skill': 'broadcast', 'level': 1},
                 {'agent_id': 'reporter_agent', 'skill': 'news_report_ingredients', 'level': 1},
             ]

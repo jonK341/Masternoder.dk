@@ -179,6 +179,23 @@ def test_roster_route_returns_recap(monkeypatch):
     assert response.get_json()["counts"]["active"] == 1
 
 
+def test_retired_agents_are_gone_from_the_default_catalog():
+    import os
+    os.environ["AGENT_SKILLSET_LITE_INIT"] = "1"
+    from backend.services.agent_roster import RETIRED_AGENT_IDS, without_retired
+    from backend.services.agent_skillset import AgentSkillset
+
+    defaults = AgentSkillset._default_skillsets(None)["agents"]
+    assert "learning_agent" in RETIRED_AGENT_IDS
+    assert "scanner_agent" in RETIRED_AGENT_IDS
+    assert RETIRED_AGENT_IDS.isdisjoint(defaults)
+    kept = without_retired({
+        "scanner_agent": {"name": "Scanner"},
+        "security_agent": {"name": "Security"},
+    })
+    assert list(kept) == ["security_agent"]
+
+
 def test_discover_site_pages_reads_index_titles(tmp_path):
     page = tmp_path / "lab"
     page.mkdir()

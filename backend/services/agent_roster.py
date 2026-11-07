@@ -34,6 +34,39 @@ _SKIP_DIRS = {
     "tests",
 }
 
+# Catalog names with no service. Dropped from the skillset and the roster.
+RETIRED_AGENT_IDS = frozenset({
+    "ai_trainer_agent",
+    "backup_agent",
+    "collaboration_agent",
+    "communication_agent",
+    "compliance_agent",
+    "data_processor_agent",
+    "deployment_agent",
+    "innovation_agent",
+    "intelligence_aggregator_agent",
+    "learning_agent",
+    "master_dashboard_agent",
+    "notification_agent",
+    "quality_assurance_agent",
+    "resource_manager_agent",
+    "scanner_agent",
+    "tester_agent",
+    "tts_narration_agent",
+    "workflow_agent",
+})
+
+
+def without_retired(catalog, retired=None):
+    """Return catalog entries that still have a reason to exist."""
+    blocked = RETIRED_AGENT_IDS if retired is None else retired
+    return {
+        agent_id: meta
+        for agent_id, meta in (catalog or {}).items()
+        if agent_id not in blocked
+    }
+
+
 # skillset id -> the agent that already does this job
 AGENT_ALIASES = {
     "content_ai_agent": "content_generator_agent",
@@ -449,7 +482,7 @@ def _live_catalog(probes):
         catalog = _names_only(AgentSkillset._default_skillsets(None).get("agents"))
     for agent_id, probe in probes.items():
         catalog.setdefault(agent_id, {"name": probe.get("name") or agent_id})
-    return catalog
+    return without_retired(catalog)
 
 
 def _live_pages_and_nav():

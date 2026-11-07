@@ -31,7 +31,7 @@ TASK_ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
         "description": "Code generation / fix",
     },
     "chat_general": {
-        "agent_id": "learning_agent",
+        "agent_id": "ai_intelligence_agent",
         "skill_name": "ai_nice_and_easy",
         "task_type": "default",
         "description": "General assistant chat",
@@ -43,7 +43,7 @@ TASK_ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
         "description": "Summarize metrics / stats",
     },
     "deep_reasoning": {
-        "agent_id": "learning_agent",
+        "agent_id": "ai_intelligence_agent",
         "skill_name": "ai_follow_user_action",
         "task_type": "reason",
         "description": "Strategy / long reasoning",
@@ -73,7 +73,7 @@ TASK_ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
         "description": "Triage logs and error clusters",
     },
     "support_copilot": {
-        "agent_id": "learning_agent",
+        "agent_id": "ai_intelligence_agent",
         "skill_name": "ai_nice_and_easy",
         "task_type": "default",
         "description": "Support copilot reply",
@@ -85,7 +85,7 @@ TASK_ROUTING_TABLE: Dict[str, Dict[str, Any]] = {
         "description": "Pricing suggestion",
     },
     "debugger_challenge": {
-        "agent_id": "learning_agent",
+        "agent_id": "master_fix_agent",
         "skill_name": "ai_follow_user_action",
         "task_type": "reason",
         "description": "Debugger challenge grading",

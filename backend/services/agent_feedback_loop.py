@@ -110,7 +110,7 @@ def record_llm_outcome(
                 xp_result = {"success": False, "skipped": True, "reason": "skill_not_assigned"}
             agent_db_service.record_agent_activity(
                 user_id=user_id,
-                agent_id=agent_id or "learning_agent",
+                agent_id=agent_id or "content_generator_agent",
                 action="skill_execution",
                 skill=skill_name,
                 xp_gained=xp if has else 0,
