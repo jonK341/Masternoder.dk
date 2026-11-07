@@ -19,6 +19,16 @@ Ten front-end upgrades shipped with `camgirls-giga-top10.css` + `camgirls-giga-i
 
 `GET /api/camgirls/intel/top10` — returns `top10[]` with `score`, `vibe`, `technologies`, `intel_summary`, plus `scale` and `intel_stack`.
 
+## Studio themes (5 palettes)
+
+Sticky **Theme** dock: **Cosmic** (default), **Velvet**, **Signal**, **Aurora**, **Champagne** (light). Persists in `localStorage` (`cg_studio_theme_v1`). Styles split across:
+
+- `static/css/camgirls-themes.css` — tokens + dock + `data-cg-theme` overrides
+- `static/css/camgirls-studio-base.css` — catalog cards, chat, studio controls (replaces inline CSS in `camgirls/index.html`)
+- `static/css/camgirls-giga-top10.css` — intel layer (uses shared tokens)
+
+Early boot script in `camgirls/index.html` sets `html.cg-giga[data-cg-theme]` before paint. JS: `static/js/camgirls-themes.js`.
+
 ## Deploy
 
 Included in `python scripts/deploy.py camgirls` manifest (CSS, JS, `camgirls_ui_intel_service.py`).

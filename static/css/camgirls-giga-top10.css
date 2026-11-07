@@ -1,23 +1,15 @@
-/* Camgirls Giga UI — Top 10 intelligence layer (10 upgrades) */
-html.cg-giga {
-  --cg-giga-bg: #04060c;
-  --cg-giga-cyan: #00e8ff;
-  --cg-giga-magenta: #ff2da8;
-  --cg-giga-lime: #9dff66;
-  --cg-giga-glass: rgba(12, 18, 32, 0.72);
-  --cg-giga-border: rgba(0, 232, 255, 0.22);
-}
+/* Camgirls Giga UI — Top 10 intelligence layer (tokens from camgirls-themes.css) */
 
 html.cg-giga .cg-giga-header-legacy {
   display: none;
 }
 
 html.cg-giga body {
-  background: var(--cg-giga-bg);
+  background: var(--cg-bg);
   background-image:
-    radial-gradient(ellipse 120% 80% at 10% -20%, rgba(255, 45, 168, 0.18), transparent 55%),
-    radial-gradient(ellipse 90% 60% at 90% 0%, rgba(0, 232, 255, 0.15), transparent 50%),
-    linear-gradient(180deg, #060a14 0%, #04060c 40%, #020308 100%);
+    radial-gradient(ellipse 120% 80% at 10% -20%, var(--cg-body-gradient-a), transparent 55%),
+    radial-gradient(ellipse 90% 60% at 90% 0%, var(--cg-body-gradient-b), transparent 50%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cg-bg) 92%, #000), var(--cg-bg) 40%, #020308 100%);
   min-height: 100vh;
 }
 
@@ -41,7 +33,7 @@ html.cg-giga .cg-page {
   content: "";
   position: absolute;
   inset: -40%;
-  background: conic-gradient(from 120deg, rgba(0, 232, 255, 0.08), transparent 35%, rgba(255, 45, 168, 0.1), transparent 70%);
+  background: conic-gradient(from 120deg, var(--cg-hero-conic-a), transparent 35%, var(--cg-hero-conic-b), transparent 70%);
   animation: cg-giga-spin 28s linear infinite;
   pointer-events: none;
 }
@@ -77,11 +69,15 @@ html.cg-giga .cg-page {
 
 /* 2 — Top 10 board */
 .cg-top10-panel {
-  border: 1px solid rgba(255, 45, 168, 0.35);
+  border: 1px solid color-mix(in srgb, var(--cg-accent-secondary) 40%, transparent);
   border-radius: 18px;
   padding: 18px 16px 14px;
   margin-bottom: 20px;
-  background: linear-gradient(145deg, rgba(255, 45, 168, 0.06), rgba(0, 232, 255, 0.04));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--cg-accent-secondary) 8%, transparent),
+    color-mix(in srgb, var(--cg-accent-primary) 6%, transparent)
+  );
 }
 .cg-top10-panel h2 {
   margin: 0 0 4px;
@@ -106,14 +102,21 @@ html.cg-giga .cg-page {
 }
 .cg-top10-row:hover {
   transform: translateX(4px);
-  border-color: rgba(0, 232, 255, 0.4);
+  border-color: color-mix(in srgb, var(--cg-accent-primary) 45%, transparent);
 }
 .cg-top10-rank { font-size: 1.1rem; font-weight: 800; color: var(--cg-giga-cyan); text-align: center; }
 .cg-top10-avatar { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255, 255, 255, 0.15); }
 .cg-top10-meta strong { display: block; font-size: 0.95rem; }
 .cg-top10-meta small { opacity: 0.7; font-size: 0.75rem; }
 .cg-top10-tech { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 220px; }
-.cg-top10-chip { font-size: 0.62rem; padding: 2px 6px; border-radius: 4px; background: rgba(0, 232, 255, 0.12); color: var(--cg-giga-cyan); border: 1px solid rgba(0, 232, 255, 0.25); }
+.cg-top10-chip {
+  font-size: 0.62rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--cg-accent-primary) 14%, transparent);
+  color: var(--cg-accent-primary);
+  border: 1px solid color-mix(in srgb, var(--cg-accent-primary) 28%, transparent);
+}
 
 /* 3 — Spotlight carousel */
 .cg-spotlight { margin-bottom: 20px; }
@@ -127,7 +130,7 @@ html.cg-giga .cg-page {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--cg-giga-border);
-  background: #0a0f1a;
+  background: var(--cg-bg-elevated);
   position: relative;
   min-height: 200px;
 }
@@ -139,8 +142,8 @@ html.cg-giga .cg-page {
 .cg-intel-ticker {
   overflow: hidden;
   border-radius: 999px;
-  border: 1px solid rgba(0, 255, 136, 0.25);
-  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid color-mix(in srgb, var(--cg-accent-success) 30%, transparent);
+  background: color-mix(in srgb, var(--cg-accent-success) 8%, transparent);
   margin-bottom: 16px;
   padding: 8px 0;
   font-size: 0.75rem;
@@ -161,12 +164,12 @@ html.cg-giga .cg-page {
 /* 4 — Neural vibe filters */
 .cg-giga-filters { margin-bottom: 14px; }
 .cg-giga-filters button {
-  border-color: rgba(255, 45, 168, 0.35) !important;
+  border-color: color-mix(in srgb, var(--cg-accent-secondary) 38%, transparent) !important;
 }
 .cg-giga-filters .cg-filter-active {
-  background: rgba(255, 45, 168, 0.18) !important;
-  color: #ffb3e6 !important;
-  border-color: var(--cg-giga-magenta) !important;
+  background: color-mix(in srgb, var(--cg-accent-secondary) 20%, transparent) !important;
+  color: color-mix(in srgb, var(--cg-accent-secondary) 75%, var(--cg-text)) !important;
+  border-color: var(--cg-accent-secondary) !important;
 }
 
 /* 8 — Roster ring */
@@ -185,8 +188,8 @@ html.cg-giga .cg-page {
 
 /* 5 — Holographic cards */
 html.cg-giga .cg-card {
-  border: 1px solid rgba(0, 232, 255, 0.2);
-  background: linear-gradient(160deg, rgba(15, 22, 40, 0.9), rgba(5, 8, 16, 0.95));
+  border: 1px solid color-mix(in srgb, var(--cg-accent-primary) 22%, transparent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--cg-bg-elevated) 95%, transparent), var(--cg-surface));
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   transition: transform 0.2s ease, box-shadow 0.2s;
   position: relative;
@@ -197,12 +200,17 @@ html.cg-giga .cg-card::after {
   inset: 0;
   border-radius: 12px;
   pointer-events: none;
-  background: linear-gradient(135deg, rgba(0, 232, 255, 0.08), transparent 40%, rgba(255, 45, 168, 0.06));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--cg-accent-primary) 10%, transparent),
+    transparent 40%,
+    color-mix(in srgb, var(--cg-accent-secondary) 8%, transparent)
+  );
   opacity: 0.6;
 }
 html.cg-giga .cg-card:hover {
   transform: translateY(-4px) perspective(800px) rotateX(1deg);
-  box-shadow: 0 20px 50px rgba(0, 232, 255, 0.15);
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--cg-accent-primary) 18%, transparent);
 }
 html.cg-giga .cg-card.cg-giga-hidden { display: none; }
 .cg-giga-rank-badge {
@@ -214,7 +222,7 @@ html.cg-giga .cg-card.cg-giga-hidden { display: none; }
   font-weight: 800;
   padding: 4px 8px;
   border-radius: 6px;
-  background: rgba(255, 45, 168, 0.85);
+  background: color-mix(in srgb, var(--cg-accent-secondary) 88%, transparent);
   color: #fff;
 }
 .cg-giga-vibe {
@@ -263,7 +271,7 @@ html.cg-giga .cg-card.cg-giga-hidden { display: none; }
   width: min(520px, 92vw);
   border-radius: 14px;
   border: 1px solid var(--cg-giga-border);
-  background: #0d121c;
+  background: var(--cg-bg-elevated);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
   overflow: hidden;
 }
@@ -272,8 +280,8 @@ html.cg-giga .cg-card.cg-giga-hidden { display: none; }
   box-sizing: border-box;
   padding: 14px 16px;
   border: none;
-  background: #161b28;
-  color: #fff;
+  background: var(--cg-input-bg);
+  color: var(--cg-text);
   font-size: 1rem;
   outline: none;
 }
@@ -284,7 +292,9 @@ html.cg-giga .cg-card.cg-giga-hidden { display: none; }
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 0.88rem;
 }
-.cg-cmd-item:hover, .cg-cmd-item.active { background: rgba(0, 232, 255, 0.12); }
+.cg-cmd-item:hover, .cg-cmd-item.active {
+  background: color-mix(in srgb, var(--cg-accent-primary) 14%, transparent);
+}
 .cg-cmd-hint { font-size: 0.72rem; opacity: 0.55; text-align: center; padding: 8px; }
 
 /* 9 — Constellation strip */
