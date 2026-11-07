@@ -677,6 +677,7 @@ MANIFESTS = {
         "scripts/mn2_free_exchange_liquidity_remote.py",
         "scripts/mn2_probe_wallet_dat_backups_remote.py",
         "scripts/mn2_server_wallet_audit.py",
+        "scripts/mn2_hosting_post_merge_gate_remote.py",
         "static/js/hosting-hub.js",
         "static/js/mn2-crypto-hub.js",
         "backend/services/mn2_services_hub.py",
