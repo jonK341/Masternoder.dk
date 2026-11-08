@@ -801,12 +801,38 @@
                 var d = await r.json();
                 var sel = document.getElementById('configCategory');
                 if (!sel || !d.categories) return;
-                sel.innerHTML = d.categories.map(function(c) {
+                var sections = (d.sections || []).slice().sort(function(a, b) {
+                    return (a.order || 0) - (b.order || 0);
+                });
+                var bySection = {};
+                d.categories.forEach(function(c) {
+                    var sid = c.section_id || 'general';
+                    if (!bySection[sid]) bySection[sid] = [];
+                    bySection[sid].push(c);
+                });
+                function optionHtml(c) {
                     var id = c.id || c.name || 'general';
                     var name = c.name || id;
                     var bonus = c.bonus_unified_points ? (' (+' + c.bonus_unified_points + ' pts)') : '';
                     return '<option value="' + id + '">' + name + bonus + '</option>';
-                }).join('');
+                }
+                var html = [];
+                var used = {};
+                sections.forEach(function(sec) {
+                    var items = bySection[sec.id];
+                    if (!items || !items.length) return;
+                    used[sec.id] = true;
+                    html.push('<optgroup label="' + (sec.name || sec.id) + '">');
+                    items.forEach(function(c) { html.push(optionHtml(c)); });
+                    html.push('</optgroup>');
+                });
+                Object.keys(bySection).forEach(function(sid) {
+                    if (used[sid]) return;
+                    html.push('<optgroup label="' + sid + '">');
+                    bySection[sid].forEach(function(c) { html.push(optionHtml(c)); });
+                    html.push('</optgroup>');
+                });
+                sel.innerHTML = html.join('');
             } catch (e) {}
         }
 

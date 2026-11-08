@@ -88,6 +88,71 @@ def test_content_categories_has_conspiracy_methods():
     assert len(found) >= 1, "Expected at least one known conspiracy method id"
 
 
+# Top 25 everyday topics. Each id maps to the section it must live in.
+TOPIC_CATEGORY_SECTIONS = {
+    "science": "science_nature",
+    "space_astronomy": "science_nature",
+    "nature_wildlife": "science_nature",
+    "environment": "science_nature",
+    "technology": "science_nature",
+    "history": "history_society",
+    "biography": "history_society",
+    "culture": "history_society",
+    "true_crime": "history_society",
+    "news_explainer": "history_society",
+    "education": "daily_life",
+    "health": "daily_life",
+    "food": "daily_life",
+    "travel": "daily_life",
+    "sports": "daily_life",
+    "entertainment": "creative",
+    "music": "creative",
+    "gaming": "creative",
+    "art_design": "creative",
+    "storytelling": "creative",
+    "business": "work_place",
+    "finance": "work_place",
+    "ai_future": "work_place",
+    "nordic_local": "work_place",
+    "rights_society": "work_place",
+}
+
+
+def test_topic_categories_top_25():
+    """The next catalog is 25 unique topic ids, each in a real section, bonus 3 on topic_points."""
+    path = _content_categories_path()
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    assert len(TOPIC_CATEGORY_SECTIONS) == 25
+    by_id = {}
+    for cat in data.get("categories", []):
+        cid = cat.get("id")
+        assert cid not in by_id, f"Duplicate category id: {cid}"
+        by_id[cid] = cat
+    section_ids = {sec.get("id") for sec in data.get("sections", [])}
+    for cid, section_id in TOPIC_CATEGORY_SECTIONS.items():
+        assert cid in by_id, f"Missing topic category: {cid}"
+        cat = by_id[cid]
+        assert section_id in section_ids, f"Unknown section for {cid}: {section_id}"
+        assert cat.get("section_id") == section_id, f"{cid} section_id {cat.get('section_id')} != {section_id}"
+        assert cat.get("bonus_unified_points") == 3, f"{cid} bonus {cat.get('bonus_unified_points')} != 3"
+        assert cat.get("unified_point_type") == "topic_points"
+    tracked = data.get("unified_point_system", {}).get("point_types_tracked", [])
+    assert "topic_points" in tracked
+
+
+def test_science_and_technology_resolve_to_topic_points():
+    """science and technology, sent by generator scripts, resolve to topic_points with bonus 3."""
+    from backend.services.video_generator_service import _load_content_categories
+    data = _load_content_categories()
+    by_id = {c.get("id"): c for c in data.get("categories", [])}
+    for cid in ("science", "technology"):
+        cat = by_id.get(cid)
+        assert cat is not None, f"Loader did not return {cid}"
+        assert cat.get("unified_point_type") == "topic_points"
+        assert cat.get("bonus_unified_points") == 3
+
+
 def test_video_generator_load_content_categories():
     """_load_content_categories() returns dict with 'categories' key."""
     from backend.services.video_generator_service import _load_content_categories
