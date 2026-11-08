@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fast desk</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0c1118; color: #e7edf4; font: 16px/1.45 "Segoe UI", sans-serif; }
+  header { display: flex; align-items: baseline; gap: 16px; padding: 18px 22px; border-bottom: 1px solid #243041; }
+  h1 { font-size: 20px; margin: 0; }
+  .mode { padding: 3px 10px; border-radius: 999px; background: #1a2a44; color: #8eb6ff; font-weight: 700; font-size: 13px; }
+  .mode.live { background: #3a1622; color: #ff8fa3; }
+  a { color: #8eb6ff; }
+  main { max-width: 880px; margin: 0 auto; padding: 18px 22px 48px; }
+  .note { color: #93a0b0; margin: 0 0 16px; }
+  .cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .card { background: #141b26; border: 1px solid #243041; border-radius: 12px; padding: 12px 14px; }
+  .card b { font-size: 18px; }
+  .wait { color: #d7dee8; }
+  .ready { color: #7ddeb8; }
+  .meta { color: #93a0b0; font-size: 13px; margin-top: 4px; }
+  h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: #93a0b0; margin: 22px 0 8px; }
+  ol { list-style: none; margin: 0; padding: 0; }
+  li { padding: 10px 0; border-top: 1px solid #243041; }
+  time { display: block; color: #93a0b0; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fast desk</h1>
+  <span id="mode" class="mode">paper</span>
+  <span id="when" class="note"></span>
+  <a href="/" style="margin-left:auto">Full board</a>
+  <a href="/logout">Lock</a>
+</header>
+<main>
+  <p id="note" class="note">Loading the latest pass…</p>
+  <div id="cards" class="cards"></div>
+  <h2>What it did</h2>
+  <ol id="lines"></ol>
+</main>
+<script>
+function money(n) { return "$" + Number(n || 0).toFixed(2); }
+function paint(d) {
+  var mode = document.getElementById("mode");
+  var live = !!d.live_orders;
+  mode.textContent = live ? "live" : "paper";
+  mode.className = "mode" + (live ? " live" : "");
+  document.getElementById("when").textContent = d.updated_at ? ("updated " + d.updated_at.replace("T", " ").slice(0, 19) + " UTC") : "";
+  document.getElementById("note").textContent = d.note || "";
+  var cards = document.getElementById("cards");
+  cards.innerHTML = (d.coins || []).map(function (c) {
+    var ready = c.decision === "paper_candidate";
+    var net = c.net_bps == null ? "—" : c.net_bps + " bps";
+    return '<article class="card"><b>' + c.symbol + '</b> <span class="' + (ready ? "ready" : "wait") + '">'
+      + (ready ? "ready" : "waiting") + '</span>'
+      + '<div class="wait">' + (c.route || "no route") + " · " + net + " · book " + money(c.executable_usd) + '</div>'
+      + '<div class="meta">credit about ' + c.credit_sec + 's · ' + (c.nonkyc_pair || "") + '</div></article>';
+  }).join("");
+  var lines = (d.lines || []).slice().reverse();
+  document.getElementById("lines").innerHTML = lines.map(function (row) {
+    return "<li><time>" + (row.ts || "").replace("T", " ").slice(0, 19) + " UTC</time>" + row.text + "</li>";
+  }).join("") || "<li>No pass yet.</li>";
+}
+function load() {
+  fetch("/api/desk").then(function (r) { return r.json(); }).then(paint).catch(function () {
+    document.getElementById("note").textContent = "The desk could not be read.";
+  });
+}
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>
