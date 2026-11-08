@@ -16,5 +16,5 @@ export EXCHANGE_FORCE_IPV4=1
 export EXCHANGE_ARBITRAGE_LIVE=1
 export EXCHANGE_CROSS_TRADE_LIVE=1
 
-exec flock -n /var/run/masternoder-cross-trade-limit.lock \
+exec flock -n /tmp/masternoder-cross-trade-limit.lock \
   "$PYTHON_BIN" scripts/cross_trade_limit_tick.py

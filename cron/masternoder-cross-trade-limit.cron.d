@@ -3,4 +3,4 @@
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-* * * * * root /var/www/html/cron/cross_trade_limit_tick.sh >> /var/log/masternoder-cross-trade-limit.log 2>&1
+* * * * * www-data /var/www/html/cron/cross_trade_limit_tick.sh >> /var/www/html/logs/cross_trade_limit.log 2>&1
