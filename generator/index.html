@@ -26,6 +26,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/theme-timeline.css?v=20260614a">
+    <link rel="stylesheet" href="/static/css/mn2-explorer-ww2.css?v=20261108b">
+    <link rel="stylesheet" href="/static/css/mn2-generator-ww2.css?v=20261108b">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #0d1117; color: #fff; }
@@ -223,7 +228,7 @@
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
-<body class="gen-page-body">
+<body class="gen-page-body explorer-theme-ww2">
 
     <div class="gen-page">
         <header class="gen-header">
@@ -238,6 +243,26 @@
             <div class="gen-stat-pill"><span>Themes used</span><strong id="genStatThemes">—</strong></div>
             <div class="gen-stat-pill"><span>LLM providers</span><strong id="genStatProviders">—</strong></div>
             <span class="gen-health-pill" id="genHealthPill" title="Generation pipeline">Health: …</span>
+        </section>
+
+        <section class="gen-daemon-terminal" id="genDaemonTerminal" aria-label="MN2 daemon field terminal">
+            <h2>MN2 field terminal</h2>
+            <p class="gen-daemon-upd" id="gen-daemon-updated">Loading daemon…</p>
+            <div class="gen-daemon-grid">
+                <div><span class="k">Block</span><span class="v" id="gen-d-block">—</span></div>
+                <div><span class="k">Peers</span><span class="v" id="gen-d-peers">—</span></div>
+                <div><span class="k">Mempool</span><span class="v" id="gen-d-mempool">—</span></div>
+                <div><span class="k">MN2 USD</span><span class="v" id="gen-d-price">—</span></div>
+                <div><span class="k">Version</span><span class="v" id="gen-d-ver">—</span></div>
+                <div><span class="k">Staking</span><span class="v" id="gen-d-stake">—</span></div>
+                <div><span class="k">MN sync</span><span class="v" id="gen-d-mnsync">—</span></div>
+                <div><span class="k">Header lag</span><span class="v" id="gen-d-lag">—</span></div>
+                <div><span class="k">Relay fee</span><span class="v" id="gen-d-relay">—</span></div>
+            </div>
+            <div class="gen-daemon-links">
+                <a href="/explorer/">Explorer ↗</a>
+                <a href="/aggregator/">Aggregator ↗</a>
+            </div>
         </section>
 
         <div class="gen-queue-bar" id="genQueueBar" aria-live="polite"></div>
@@ -1678,6 +1703,7 @@
     </script>
     <script src="/static/js/unified-point-counters.js?v=20260617b" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
+    <script src="/static/js/generator-mn2-daemon.js?v=20261108b" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             if (typeof UnifiedPointCounters !== 'undefined' && !window.unifiedPointCounters) {
