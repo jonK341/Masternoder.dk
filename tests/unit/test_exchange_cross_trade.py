@@ -248,6 +248,60 @@ def test_force_live_hook_asks_for_a_real_order(ct, monkeypatch):
     assert calls[0]["opp"]["order_style"] == "limit"
 
 
+def test_calculate_cross_subtracts_the_fee_stack(ct):
+    math = ct.calculate_cross(buy_ask=1.0, sell_bid=1.02, fee_bps=36.0, notional_usd=25.0)
+    assert math["gross_bps"] == pytest.approx(200.0)
+    assert math["net_bps"] == pytest.approx(164.0)
+    assert math["est_profit_usd"] == pytest.approx(0.41)
+
+
+def test_calculate_cross_is_a_loss_when_the_sell_is_under_the_buy(ct):
+    math = ct.calculate_cross(buy_ask=1.1628, sell_bid=1.1619, fee_bps=36.0, notional_usd=25.0)
+    assert math["gross_bps"] < 0
+    assert math["net_bps"] == pytest.approx(math["gross_bps"] - 36.0)
+    assert math["est_profit_usd"] < 0
+
+
+def test_search_log_writes_the_calculation_block(ct, tmp_path):
+    report = {
+        "ts": "2026-11-08T08:00:00Z",
+        "notional_usd": 25.0,
+        "min_net_bps": 18.0,
+        "fee_bps": 36.0,
+        "binance_taker_bps": 10.0,
+        "nonkyc_taker_bps": 20.0,
+        "transfer_bps": 6.0,
+        "best_symbol": "XRP",
+        "best_route": "nonkyc→binance",
+        "best_net_bps": -40.2,
+        "best_decision": "below_fees",
+        "coins": [{
+            "symbol": "XRP",
+            "directions": [{
+                "route": "nonkyc→binance",
+                "buy_ask": 1.1628,
+                "sell_bid": 1.1619,
+                "gross_bps": -7.74,
+                "net_bps": -43.74,
+                "est_profit_usd": -0.1094,
+                "touch_usd": 0.08,
+                "executable_usd": 0.0,
+                "decision": "below_fees",
+            }],
+        }],
+    }
+    paths = ct.write_search_logs(report, root=str(tmp_path))
+    assert paths["ok"] is True
+    text = (tmp_path / "logs" / "cross_trade" / "calculations.log").read_text(encoding="utf-8")
+    assert "fees=36.00bps" in text
+    assert "binance 10 + nonkyc 20 + transfer 6" in text
+    assert "gross -7.74 net -43.74" in text
+    assert "pnl $-0.1094" in text
+    latest = json.loads((tmp_path / "logs" / "cross_trade" / "latest.json").read_text(encoding="utf-8"))
+    assert latest["best_symbol"] == "XRP"
+    assert (tmp_path / "logs" / "cross_trade" / "search.jsonl").read_text(encoding="utf-8").strip()
+
+
 def test_limit_fill_qty_reads_the_ack():
     from backend.services.exchange_live_execution_service import limit_fill_qty
 

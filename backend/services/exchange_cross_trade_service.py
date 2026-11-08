@@ -17,6 +17,7 @@ Safety:
 """
 from __future__ import annotations
 
+import json
 import os
 import time
 from datetime import datetime, timezone
@@ -126,14 +127,57 @@ def fast_usdt_coins() -> List[Dict[str, Any]]:
     ]
 
 
-def _cross_fee_bps() -> float:
-    """Binance taker + NonKYC taker + the prefunded buffer. No chain fee in this number."""
+def fee_parts() -> Dict[str, float]:
+    """Taker fees plus the prefunded buffer. No chain fee in this number."""
     cfg = conn.load_connectors_config()
     vmap = conn._venue_map(cfg)
     binance = float((vmap.get("binance") or {}).get("fee_taker_bps") or 10)
     nonkyc = float((vmap.get("nonkyc") or {}).get("fee_taker_bps") or 20)
     transfer = float(cfg.get("prefunded_transfer_cost_bps") or cfg.get("transfer_cost_bps") or 6)
-    return binance + nonkyc + transfer
+    return {
+        "binance_taker_bps": binance,
+        "nonkyc_taker_bps": nonkyc,
+        "transfer_bps": transfer,
+        "fee_bps": binance + nonkyc + transfer,
+    }
+
+
+def _cross_fee_bps() -> float:
+    """Binance taker + NonKYC taker + the prefunded buffer. No chain fee in this number."""
+    return fee_parts()["fee_bps"]
+
+
+def calculate_cross(
+    *,
+    buy_ask: float,
+    sell_bid: float,
+    fee_bps: float,
+    notional_usd: float,
+) -> Dict[str, Optional[float]]:
+    """Gross gap, gap after fees, and dollar result on one clip."""
+    ask = float(buy_ask or 0)
+    bid = float(sell_bid or 0)
+    if ask <= 0 or bid <= 0:
+        return {"gross_bps": None, "net_bps": None, "est_profit_usd": None}
+    gross = (bid - ask) / ask * 10000.0
+    net = gross - float(fee_bps)
+    profit = float(notional_usd) * net / 10000.0
+    return {
+        "gross_bps": round(gross, 2),
+        "net_bps": round(net, 2),
+        "est_profit_usd": round(profit, 4),
+    }
+
+
+def search_log_paths(root: Optional[str] = None) -> Dict[str, str]:
+    base = root or ex._BASE
+    folder = os.path.join(base, "logs", "cross_trade")
+    return {
+        "dir": folder,
+        "jsonl": os.path.join(folder, "search.jsonl"),
+        "calculations": os.path.join(folder, "calculations.log"),
+        "latest": os.path.join(folder, "latest.json"),
+    }
 
 
 def walk_quote_usd(
@@ -311,6 +355,188 @@ def preview_fast_usdt(*, notional_usd: float = 25.0, min_net_bps: float = 18.0) 
         "coins": rows,
         "tradable_count": len(tradable),
     }
+
+
+def _best_levels(levels: Sequence[Tuple[float, float]], *, high_first: bool) -> List[Tuple[float, float]]:
+    rows = [(float(p), float(q)) for p, q in levels if float(p) > 0 and float(q) > 0]
+    return sorted(rows, key=lambda row: row[0], reverse=high_first)
+
+
+def _touch_usd(levels: Sequence[Tuple[float, float]]) -> float:
+    if not levels:
+        return 0.0
+    price, qty = levels[0]
+    return price * qty
+
+
+def _direction_row(
+    *,
+    route: str,
+    buy_ask: float,
+    sell_bid: float,
+    book_side: Sequence[Tuple[float, float]],
+    walk_side: str,
+    counter_price: float,
+    fee_bps: float,
+    hurdle_bps: float,
+    notional_usd: float,
+    min_net_bps: float,
+) -> Dict[str, Any]:
+    math = calculate_cross(
+        buy_ask=buy_ask, sell_bid=sell_bid, fee_bps=fee_bps, notional_usd=notional_usd,
+    )
+    touch = _touch_usd(book_side)
+    depth = walk_quote_usd(book_side, side=walk_side, counter_price=counter_price, hurdle_bps=hurdle_bps)
+    net = math.get("net_bps")
+    if net is None:
+        decision = "no_book"
+    elif net >= min_net_bps and depth >= notional_usd:
+        decision = "ready"
+    elif net >= min_net_bps:
+        decision = "book_too_thin"
+    else:
+        decision = "below_fees"
+    return {
+        "route": route,
+        "buy_ask": round(float(buy_ask), 8) if buy_ask else None,
+        "sell_bid": round(float(sell_bid), 8) if sell_bid else None,
+        "gross_bps": math.get("gross_bps"),
+        "net_bps": net,
+        "est_profit_usd": math.get("est_profit_usd"),
+        "touch_usd": round(touch, 2),
+        "executable_usd": round(depth, 2),
+        "decision": decision,
+    }
+
+
+def search_fast_books(
+    *,
+    notional_usd: Optional[float] = None,
+    min_net_bps: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Read both books for every fast coin and calculate both directions. Places no order."""
+    cfg = load_config()
+    notional = float(notional_usd if notional_usd is not None else cfg["notional_usd"])
+    min_net = float(min_net_bps if min_net_bps is not None else cfg["min_net_bps"])
+    parts = fee_parts()
+    fee_bps = float(parts["fee_bps"])
+    hurdle = fee_bps + min_net
+    coins: List[Dict[str, Any]] = []
+    for spec in fast_usdt_coins():
+        sym = spec["symbol"]
+        top = _binance_top(sym) or {}
+        book = fetch_nonkyc_book(sym)
+        bids = _best_levels(book.get("bids") or [], high_first=True)
+        asks = _best_levels(book.get("asks") or [], high_first=False)
+        directions: List[Dict[str, Any]] = []
+        if top.get("ask") and bids:
+            directions.append(_direction_row(
+                route="binance→nonkyc",
+                buy_ask=float(top["ask"]),
+                sell_bid=bids[0][0],
+                book_side=bids,
+                walk_side="sell",
+                counter_price=float(top["ask"]),
+                fee_bps=fee_bps,
+                hurdle_bps=hurdle,
+                notional_usd=notional,
+                min_net_bps=min_net,
+            ))
+        if top.get("bid") and asks:
+            directions.append(_direction_row(
+                route="nonkyc→binance",
+                buy_ask=asks[0][0],
+                sell_bid=float(top["bid"]),
+                book_side=asks,
+                walk_side="buy",
+                counter_price=float(top["bid"]),
+                fee_bps=fee_bps,
+                hurdle_bps=hurdle,
+                notional_usd=notional,
+                min_net_bps=min_net,
+            ))
+        best = None
+        if directions:
+            best = max(
+                directions,
+                key=lambda row: float(row["net_bps"]) if row.get("net_bps") is not None else -1e9,
+            )
+        coins.append({
+            "symbol": sym,
+            "binance_bid": top.get("bid"),
+            "binance_ask": top.get("ask"),
+            "nonkyc_bid": bids[0][0] if bids else None,
+            "nonkyc_ask": asks[0][0] if asks else None,
+            "directions": directions,
+            "decision": (best or {}).get("decision") or "no_book",
+            "best_route": (best or {}).get("route"),
+            "best_net_bps": (best or {}).get("net_bps"),
+        })
+    ranked = [c for c in coins if c.get("best_net_bps") is not None]
+    winner = max(ranked, key=lambda row: float(row["best_net_bps"])) if ranked else None
+    return {
+        "success": True,
+        "ts": _iso(),
+        "notional_usd": notional,
+        "min_net_bps": min_net,
+        **parts,
+        "coins": coins,
+        "best_symbol": (winner or {}).get("symbol"),
+        "best_route": (winner or {}).get("best_route"),
+        "best_net_bps": (winner or {}).get("best_net_bps"),
+        "best_decision": (winner or {}).get("decision"),
+    }
+
+
+def format_search_block(report: Dict[str, Any]) -> str:
+    """One human block: fee math, then every direction."""
+    lines = [
+        (
+            f"{report.get('ts')} clip=${float(report.get('notional_usd') or 0):.2f} "
+            f"min_net={float(report.get('min_net_bps') or 0):.2f}bps "
+            f"fees={float(report.get('fee_bps') or 0):.2f}bps "
+            f"(binance {float(report.get('binance_taker_bps') or 0):.0f} + "
+            f"nonkyc {float(report.get('nonkyc_taker_bps') or 0):.0f} + "
+            f"transfer {float(report.get('transfer_bps') or 0):.0f})"
+        )
+    ]
+    for coin in report.get("coins") or []:
+        directions = coin.get("directions") or []
+        if not directions:
+            lines.append(f"{coin.get('symbol')} no_book")
+            continue
+        for row in directions:
+            profit = row.get("est_profit_usd")
+            profit_txt = "n/a" if profit is None else f"${float(profit):.4f}"
+            lines.append(
+                f"{coin.get('symbol')} {row.get('route')} "
+                f"buy {row.get('buy_ask')} sell {row.get('sell_bid')} "
+                f"gross {row.get('gross_bps')} net {row.get('net_bps')} "
+                f"pnl {profit_txt} touch ${float(row.get('touch_usd') or 0):.2f} "
+                f"depth ${float(row.get('executable_usd') or 0):.2f} {row.get('decision')}"
+            )
+    lines.append(
+        f"best {report.get('best_symbol') or '-'} {report.get('best_route') or '-'} "
+        f"net {report.get('best_net_bps')} {report.get('best_decision') or 'no_book'}"
+    )
+    return "\n".join(lines) + "\n"
+
+
+def write_search_logs(report: Dict[str, Any], *, root: Optional[str] = None) -> Dict[str, Any]:
+    """Append the search and its calculations. Returns the file paths."""
+    paths = search_log_paths(root)
+    try:
+        os.makedirs(paths["dir"], exist_ok=True)
+        with open(paths["jsonl"], "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(report, default=str) + "\n")
+        with open(paths["calculations"], "a", encoding="utf-8") as handle:
+            handle.write(format_search_block(report))
+        with open(paths["latest"], "w", encoding="utf-8") as handle:
+            json.dump(report, handle, default=str)
+            handle.write("\n")
+    except OSError as exc:
+        return {"ok": False, "error": str(exc), **paths}
+    return {"ok": True, **paths}
 
 
 def cron_hook_ok(presented: str) -> bool:
