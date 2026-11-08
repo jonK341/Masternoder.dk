@@ -1,0 +1,17 @@
+{
+  "execute": false,
+  "symbols": ["XRP", "XLM", "ALGO", "TRX", "SOL"],
+  "notional_usd": 25.0,
+  "strategies": [
+    "trend",
+    "momentum",
+    "breakout",
+    "swing",
+    "range",
+    "scalp",
+    "reversal",
+    "news",
+    "gap",
+    "pairs"
+  ]
+}
