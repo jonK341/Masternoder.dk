@@ -23,8 +23,13 @@
     <link rel="stylesheet" href="/static/css/image-support.css">
     <link rel="stylesheet" href="/static/css/template-effects.css">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
+    <link rel="stylesheet" href="/static/css/mn2-explorer-ww2.css?v=20261108c">
+    <link rel="stylesheet" href="/static/css/mn2-hub-ww2.css?v=20261108c">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="explorer-theme-ww2">
 
     <!-- Top 50 Monetization Frame -->
     <div id="top50-monetization-frame-container">
@@ -61,6 +66,26 @@
             <p class="manifesto">Built to set a new standard: no grind pressure, no FOMO. Every tab is a way to play your way—trophies, quests, Star Map 25, and more.</p>
             <span class="hunter-game-badge">Industry-leading design</span>
         </header>
+
+        <section class="hub-daemon-terminal" aria-label="MN2 field terminal" style="max-width:1200px;margin:0 auto 16px;">
+            <h2>MN2 field terminal</h2>
+            <p class="hub-daemon-upd" id="hub-daemon-updated">Loading daemon…</p>
+            <div class="hub-daemon-grid">
+                <div><span class="k">Block</span><span class="v" id="hub-d-block">—</span></div>
+                <div><span class="k">Peers</span><span class="v" id="hub-d-peers">—</span></div>
+                <div><span class="k">Mempool</span><span class="v" id="hub-d-mempool">—</span></div>
+                <div><span class="k">MN2 USD</span><span class="v" id="hub-d-price">—</span></div>
+                <div><span class="k">Version</span><span class="v" id="hub-d-ver">—</span></div>
+                <div><span class="k">Staking</span><span class="v" id="hub-d-stake">—</span></div>
+                <div><span class="k">MN sync</span><span class="v" id="hub-d-mnsync">—</span></div>
+                <div><span class="k">Header lag</span><span class="v" id="hub-d-lag">—</span></div>
+                <div><span class="k">Relay fee</span><span class="v" id="hub-d-relay">—</span></div>
+            </div>
+            <div class="hub-daemon-links">
+                <a href="/explorer/">Explorer ↗</a>
+                <a href="/aggregator/">Aggregator ↗</a>
+            </div>
+        </section>
 
         <section id="game-at-a-glance" style="max-width:1200px;margin:0 auto 20px;padding:16px 20px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,255,136,0.28);border-radius:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;align-items:center;">
             <div style="grid-column:span 1;">
@@ -5713,5 +5738,7 @@
     });
     </script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="game" defer></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
+    <script src="/static/js/mn2-hub-daemon.js?v=20261108c" defer></script>
 </body>
 </html>

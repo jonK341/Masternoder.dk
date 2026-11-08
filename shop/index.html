@@ -24,8 +24,13 @@
     <link rel="stylesheet" href="/static/css/image-support.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/template-effects.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/static/css/mn2-explorer-ww2.css?v=20261108c">
+    <link rel="stylesheet" href="/static/css/mn2-hub-ww2.css?v=20261108c">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="layout-standard mn-no-hypnotic shop-frontpage-match">
+<body class="layout-standard mn-no-hypnotic shop-frontpage-match explorer-theme-ww2">
     <div class="frontpage-bg" aria-hidden="true"></div>
     <div class="bg-animated" aria-hidden="true"></div>
     <div class="particles" id="particles" aria-hidden="true"></div>
@@ -81,6 +86,26 @@
             <div class="fp-stat"><div class="v" id="shop-glance-inventory">—</div><div class="l">Owned</div></div>
             <div class="fp-stat"><div class="v" id="shop-glance-xp">—</div><div class="l">XP</div></div>
             <div class="fp-stat"><div class="v" id="shop-glance-level">—</div><div class="l">Level</div></div>
+        </section>
+
+        <section class="hub-daemon-terminal" aria-label="MN2 field terminal">
+            <h2>MN2 field terminal</h2>
+            <p class="hub-daemon-upd" id="hub-daemon-updated">Loading daemon…</p>
+            <div class="hub-daemon-grid">
+                <div><span class="k">Block</span><span class="v" id="hub-d-block">—</span></div>
+                <div><span class="k">Peers</span><span class="v" id="hub-d-peers">—</span></div>
+                <div><span class="k">Mempool</span><span class="v" id="hub-d-mempool">—</span></div>
+                <div><span class="k">MN2 USD</span><span class="v" id="hub-d-price">—</span></div>
+                <div><span class="k">Version</span><span class="v" id="hub-d-ver">—</span></div>
+                <div><span class="k">Staking</span><span class="v" id="hub-d-stake">—</span></div>
+                <div><span class="k">MN sync</span><span class="v" id="hub-d-mnsync">—</span></div>
+                <div><span class="k">Header lag</span><span class="v" id="hub-d-lag">—</span></div>
+                <div><span class="k">Relay fee</span><span class="v" id="hub-d-relay">—</span></div>
+            </div>
+            <div class="hub-daemon-links">
+                <a href="/explorer/">Explorer ↗</a>
+                <a href="/aggregator/">Aggregator ↗</a>
+            </div>
         </section>
 
         <div class="shop-account-bar">
@@ -3659,6 +3684,8 @@
         }
     });
     </script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
+    <script src="/static/js/mn2-hub-daemon.js?v=20261108c" defer></script>
 </body>
 </html>
 
