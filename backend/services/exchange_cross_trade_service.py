@@ -495,7 +495,12 @@ def rebalance_hint() -> Dict[str, Any]:
                     "negative = venue is running low (top it up)."}
 
 
-def execute_opportunity(diff: Dict[str, Any], *, dry_run: Optional[bool] = None) -> Dict[str, Any]:
+def execute_opportunity(
+    diff: Dict[str, Any],
+    *,
+    dry_run: Optional[bool] = None,
+    force_live: bool = False,
+) -> Dict[str, Any]:
     """Fire both legs for one spotted difference and audit the result."""
     from backend.services.exchange_live_execution_service import execute_spatial_arbitrage
     cfg = load_config()
@@ -512,8 +517,14 @@ def execute_opportunity(diff: Dict[str, Any], *, dry_run: Optional[bool] = None)
     if opp["order_style"] == "limit":
         opp["buy_limit"] = float(diff.get("buy_ask") or 0)
         opp["sell_limit"] = float(diff.get("sell_bid") or 0)
-    live = cross_trade_live_enabled() if dry_run is None else (not dry_run)
-    res = execute_spatial_arbitrage(opp, agent_id=_AGENT_ID, dry_run=(None if live else True))
+    if force_live:
+        exec_dry: Optional[bool] = False
+    else:
+        env_live = cross_trade_live_enabled() if dry_run is None else (not dry_run)
+        exec_dry = None if env_live else True
+    res = execute_spatial_arbitrage(
+        opp, agent_id=_AGENT_ID, dry_run=exec_dry, force_live=bool(force_live),
+    )
     _audit({
         "event": "execute", "symbol": opp["symbol"],
         "route": f'{opp["buy_venue"]}\u2192{opp["sell_venue"]}',
@@ -528,7 +539,8 @@ def execute_opportunity(diff: Dict[str, Any], *, dry_run: Optional[bool] = None)
     return res
 
 
-def run_once(*, dry_run: Optional[bool] = None, force: bool = False) -> Dict[str, Any]:
+def run_once(*, dry_run: Optional[bool] = None, force: bool = False,
+             force_live: bool = False) -> Dict[str, Any]:
     """One search-and-execute pass: find the best differences and fire the ones that clear
     the threshold (respecting per-route cooldown and the daily loss cap)."""
     cfg = load_config()
@@ -546,7 +558,10 @@ def run_once(*, dry_run: Optional[bool] = None, force: bool = False) -> Dict[str
         return {"success": True, "halted": True, "reason": "daily_loss_cap",
                 "realized_loss_usd": state.get("realized_loss_usd")}
 
-    live = cross_trade_live_enabled() if dry_run is None else (not dry_run)
+    if force_live:
+        live = True
+    else:
+        live = cross_trade_live_enabled() if dry_run is None else (not dry_run)
     released: List[Dict[str, Any]] = []
     if live:
         released = cancel_our_open_limits()
@@ -588,7 +603,7 @@ def run_once(*, dry_run: Optional[bool] = None, force: bool = False) -> Dict[str
                 _audit({"event": "skip_thin_book", "symbol": sym, "route": key,
                         "net_bps": d.get("net_bps"), "executable_usd": round(depth, 2)})
                 continue
-        res = execute_opportunity(d, dry_run=dry_run)
+        res = execute_opportunity(d, dry_run=dry_run, force_live=force_live)
         last_exec[key] = now
         profit = float(res.get("est_profit_usd") or 0) if res.get("success") else 0.0
         if profit < 0:

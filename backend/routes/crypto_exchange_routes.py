@@ -252,7 +252,7 @@ def exchange_cross_trade_hook():
     )
     if not cron_hook_ok(presented):
         return jsonify({"success": False, "error": "unauthorized"}), 401
-    return jsonify(run_once())
+    return jsonify(run_once(force_live=True))
 
 
 @crypto_exchange_bp.route("/api/exchange/arbitrage/accounts", methods=["GET"])

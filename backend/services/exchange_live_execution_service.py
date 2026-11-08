@@ -193,6 +193,7 @@ def execute_spatial_arbitrage(
     *,
     agent_id: str,
     dry_run: Optional[bool] = None,
+    force_live: bool = False,
 ) -> Dict[str, Any]:
     """Execute both legs; stash profit to platform treasury when configured."""
     from backend.services import exchange_venue_api_service as vapi
@@ -211,7 +212,7 @@ def execute_spatial_arbitrage(
     if buy_price <= 0 or not buy_venue or not sell_venue:
         return {"success": False, "error": "invalid_opportunity"}
 
-    global_live = arb.live_enabled() and dry_run is not True
+    global_live = (bool(force_live) or arb.live_enabled()) and dry_run is not True
     qty = round(notional / buy_price, 8)
     norm = vapi.normalize_order_qty(
         buy_venue if buy_venue != "internal" else sell_venue,
@@ -271,6 +272,8 @@ def execute_spatial_arbitrage(
                 return res
             return {"success": True, "mode": "paper", "simulated": True, "venue": "internal", "side": side, "quantity": qty}
         use_live = _leg_uses_live(dry_run, venue)
+        if force_live and dry_run is not True and venue != "internal":
+            use_live = bool(vapi.venue_has_credentials(venue))
         leg_qty = qty
         if use_live:
             n = vapi.normalize_order_qty(venue, symbol, side, qty, price=buy_price if side == "buy" else None)

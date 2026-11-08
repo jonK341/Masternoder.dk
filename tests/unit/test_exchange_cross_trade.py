@@ -38,7 +38,7 @@ def _stub_exec(ct, monkeypatch, *, profit=0.05, ok=True, mode="paper"):
     import backend.services.exchange_live_execution_service as lx
     calls = []
 
-    def fake_exec(opp, *, agent_id, dry_run=None):
+    def fake_exec(opp, *, agent_id, dry_run=None, **_kwargs):
         calls.append({"opp": opp, "dry_run": dry_run})
         return {"success": ok, "mode": mode, "est_profit_usd": profit,
                 "buy_order": {"order_id": "b1"}, "sell_order": {"order_id": "s1"}}
@@ -135,7 +135,7 @@ def test_hedged_fill_tracks_inventory_skew(ct, monkeypatch):
     import backend.services.exchange_live_execution_service as lx
     # return a quantity so skew can be tracked (notional 25 / 0.10 = 250)
     monkeypatch.setattr(lx, "execute_spatial_arbitrage",
-                        lambda opp, *, agent_id, dry_run=None: {"success": True, "mode": "paper",
+                        lambda opp, *, agent_id, dry_run=None, **_k: {"success": True, "mode": "paper",
                         "est_profit_usd": 0.05, "quantity": 250.0,
                         "buy_order": {"order_id": "b"}, "sell_order": {"order_id": "s"}})
     ct.run_once(dry_run=True)
@@ -232,6 +232,20 @@ def test_open_order_rows_keep_only_dicts(ct):
     assert ct._open_order_rows([{"id": 1}, "skip"]) == [{"id": 1}]
     assert ct._open_order_rows({"orders": [{"id": 2}]}) == [{"id": 2}]
     assert ct._open_order_rows({"nope": 1}) == []
+
+
+def test_force_live_hook_asks_for_a_real_order(ct, monkeypatch):
+    monkeypatch.setattr(ct, "cancel_our_open_limits", lambda: [])
+    ct.save_config({"fast_withdraw_only": False, "cooldown_seconds": 0, "order_style": "limit"})
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "XRP", "buy_venue": "nonkyc", "sell_venue": "binance",
+         "buy_ask": 1.0, "sell_bid": 1.02, "net_bps": 40.0},
+    ])
+    calls = _stub_exec(ct, monkeypatch)
+    r = ct.run_once(force_live=True)
+    assert r["live"] is True
+    assert calls[0]["dry_run"] is False
+    assert calls[0]["opp"]["order_style"] == "limit"
 
 
 def test_limit_fill_qty_reads_the_ack():
