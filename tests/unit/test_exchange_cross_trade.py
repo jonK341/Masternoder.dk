@@ -204,3 +204,39 @@ def test_live_gate_requires_both_flags(ct, monkeypatch):
     assert ct.cross_trade_live_enabled() is False   # still needs the cross-trade flag
     monkeypatch.setenv("EXCHANGE_CROSS_TRADE_LIVE", "1")
     assert ct.cross_trade_live_enabled() is True
+
+
+def test_limit_style_sends_the_touch_prices(ct, monkeypatch):
+    ct.save_config({"order_style": "limit", "fast_withdraw_only": False, "cooldown_seconds": 0})
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "XRP", "buy_venue": "nonkyc", "sell_venue": "binance",
+         "buy_ask": 1.10, "sell_bid": 1.16, "net_bps": 40.0},
+    ])
+    calls = _stub_exec(ct, monkeypatch)
+    ct.run_once(dry_run=True)
+    opp = calls[0]["opp"]
+    assert opp["order_style"] == "limit"
+    assert opp["buy_limit"] == pytest.approx(1.10)
+    assert opp["sell_limit"] == pytest.approx(1.16)
+
+
+def test_cron_hook_requires_a_matching_key(ct, monkeypatch):
+    assert ct.cron_hook_ok("") is False
+    assert ct.cron_hook_ok("nope") is False
+    monkeypatch.setenv("EXCHANGE_CRON_HOOK_KEY", "hook-secret")
+    assert ct.cron_hook_ok("hook-secret") is True
+    assert ct.cron_hook_ok("other") is False
+
+
+def test_open_order_rows_keep_only_dicts(ct):
+    assert ct._open_order_rows([{"id": 1}, "skip"]) == [{"id": 1}]
+    assert ct._open_order_rows({"orders": [{"id": 2}]}) == [{"id": 2}]
+    assert ct._open_order_rows({"nope": 1}) == []
+
+
+def test_limit_fill_qty_reads_the_ack():
+    from backend.services.exchange_live_execution_service import limit_fill_qty
+
+    assert limit_fill_qty({"simulated": True, "success": True, "quantity": 3}) == pytest.approx(3)
+    assert limit_fill_qty({"body": {"executedQty": "1.5", "status": "EXPIRED"}}) == pytest.approx(1.5)
+    assert limit_fill_qty({"body": {"status": "EXPIRED", "executedQty": "0"}}) == pytest.approx(0)

@@ -3,8 +3,10 @@ profitable price difference appears across Binance / NonKYC / XeggeX.
 
 Unlike the read-only scanner, this acts: on every pass it finds the best cross-venue price
 difference (buy cheap on one venue, sell dear on another), and if the edge clears the
-configured threshold (net of both venues' fees) it fires both legs as market orders — as
-fast as possible — via ``exchange_live_execution_service.execute_spatial_arbitrage``.
+configured threshold (net of both venues' fees) it fires both legs. ``order_style=limit``
+caps each leg at the price that produced the edge (Binance IOC, other venues cancelled if
+still resting). ``order_style=market`` sends market orders. Both go through
+``exchange_live_execution_service.execute_spatial_arbitrage``.
 
 Safety:
   * Paper by default. Places REAL orders only when BOTH ``EXCHANGE_ARBITRAGE_LIVE=1`` and
@@ -59,6 +61,7 @@ def _default_config() -> Dict[str, Any]:
         "daily_loss_cap_usd": 10.0,  # halt when realized losses for the day exceed this
         "fast_withdraw_only": False,
         "symbols": list(FAST_USDT_COINS),
+        "order_style": "market",     # market | limit (price-capped)
     }
 
 
@@ -89,6 +92,8 @@ def load_config() -> Dict[str, Any]:
         base["symbols"] = list(FAST_USDT_COINS)
     else:
         base["symbols"] = [str(s).upper() for s in symbols if str(s).strip()]
+    style = str(base.get("order_style") or "market").lower()
+    base["order_style"] = style if style in ("market", "limit") else "market"
     return base
 
 
@@ -308,6 +313,67 @@ def preview_fast_usdt(*, notional_usd: float = 25.0, min_net_bps: float = 18.0) 
     }
 
 
+def cron_hook_ok(presented: str) -> bool:
+    """True when the caller presented the cron hook key or the exchange admin key."""
+    got = str(presented or "").strip()
+    if not got:
+        return False
+    secret = str(os.environ.get("EXCHANGE_CRON_HOOK_KEY") or "").strip()
+    admin = str(
+        os.environ.get("EXCHANGE_ADMIN_KEY") or os.environ.get("COGS_ADMIN_REPORT_KEY") or ""
+    ).strip()
+    if secret and got == secret:
+        return True
+    return bool(admin) and got == admin
+
+
+def _open_order_rows(body: Any) -> List[Dict[str, Any]]:
+    if isinstance(body, list):
+        return [row for row in body if isinstance(row, dict)]
+    if isinstance(body, dict):
+        for key in ("orders", "data", "result"):
+            rows = body.get(key)
+            if isinstance(rows, list):
+                return [row for row in rows if isinstance(row, dict)]
+    return []
+
+
+def cancel_our_open_limits() -> List[Dict[str, Any]]:
+    """Cancel resting limits this bot placed (client id starts with ``arb-``)."""
+    from backend.services import exchange_venue_api_service as vapi
+
+    cfg = load_config()
+    released: List[Dict[str, Any]] = []
+    for venue in cfg.get("venues") or []:
+        for sym in cfg.get("symbols") or []:
+            try:
+                res = vapi.get_open_orders(str(venue), str(sym), dry_run=False)
+            except Exception:
+                continue
+            if not res.get("success") or res.get("simulated"):
+                continue
+            for od in _open_order_rows(res.get("body")):
+                coid = str(
+                    od.get("clientOrderId")
+                    or od.get("origClientOrderId")
+                    or od.get("userProvidedId")
+                    or od.get("client_order_id")
+                    or ""
+                )
+                if not coid.startswith("arb-"):
+                    continue
+                oid = od.get("orderId") or od.get("id") or od.get("_id")
+                if oid in (None, ""):
+                    continue
+                try:
+                    vapi.cancel_order(str(venue), str(sym), str(oid), dry_run=False)
+                except Exception:
+                    continue
+                released.append({"venue": str(venue), "symbol": str(sym), "order_id": str(oid)})
+                _audit({"event": "cancel_resting_limit", "venue": venue, "symbol": sym, "order_id": str(oid)})
+    return released
+
+
 def cross_trade_live_enabled() -> bool:
     """Real cross-venue orders require BOTH the arbitrage gate and the dedicated cross-trade
     gate. Missing either -> paper (search + simulate, no real orders)."""
@@ -441,14 +507,20 @@ def execute_opportunity(diff: Dict[str, Any], *, dry_run: Optional[bool] = None)
         "sell_bid": diff.get("sell_bid"),
         "net_bps": diff.get("net_bps"),
         "notional_usd": float(cfg["notional_usd"]),
+        "order_style": cfg.get("order_style") or "market",
     }
+    if opp["order_style"] == "limit":
+        opp["buy_limit"] = float(diff.get("buy_ask") or 0)
+        opp["sell_limit"] = float(diff.get("sell_bid") or 0)
     live = cross_trade_live_enabled() if dry_run is None else (not dry_run)
     res = execute_spatial_arbitrage(opp, agent_id=_AGENT_ID, dry_run=(None if live else True))
     _audit({
         "event": "execute", "symbol": opp["symbol"],
         "route": f'{opp["buy_venue"]}\u2192{opp["sell_venue"]}',
         "net_bps": opp["net_bps"], "notional_usd": opp["notional_usd"],
+        "order_style": opp.get("order_style"),
         "mode": res.get("mode"), "success": res.get("success"), "error": res.get("error"),
+        "unhedged": res.get("unhedged"),
         "est_profit_usd": res.get("est_profit_usd"),
         "buy_order_id": (res.get("buy_order") or {}).get("order_id"),
         "sell_order_id": (res.get("sell_order") or {}).get("order_id"),
@@ -474,13 +546,16 @@ def run_once(*, dry_run: Optional[bool] = None, force: bool = False) -> Dict[str
         return {"success": True, "halted": True, "reason": "daily_loss_cap",
                 "realized_loss_usd": state.get("realized_loss_usd")}
 
+    live = cross_trade_live_enabled() if dry_run is None else (not dry_run)
+    released: List[Dict[str, Any]] = []
+    if live:
+        released = cancel_our_open_limits()
     scan = find_opportunities()
     if not scan.get("success"):
         _audit({"event": "search_error", "error": scan.get("error")})
         return {"success": False, "error": scan.get("error") or "search_failed",
                 "searched": 0, "executed": []}
     diffs = scan.get("differences") or []
-    live = cross_trade_live_enabled() if dry_run is None else (not dry_run)
 
     now = time.time()
     last_exec = dict(state.get("last_exec") or {})
@@ -538,6 +613,8 @@ def run_once(*, dry_run: Optional[bool] = None, force: bool = False) -> Dict[str
     _write_state(state)
     return {"success": True, "searched": scan.get("count"), "candidates": len(diffs),
             "executed": executed, "skipped_thin": skipped_thin, "live": live,
+            "order_style": cfg.get("order_style"),
+            "released_limits": released,
             "min_net_bps": min_bps, "withdrawal_broadcast": False}
 
 
@@ -574,7 +651,7 @@ def status() -> Dict[str, Any]:
         "config": {k: cfg.get(k) for k in ("venues", "symbols", "fast_withdraw_only",
                                            "min_net_bps", "notional_usd",
                                            "cooldown_seconds", "max_trades_per_run",
-                                           "daily_loss_cap_usd")},
+                                           "daily_loss_cap_usd", "order_style")},
         "fast_usdt_coins": [c["symbol"] for c in fast_usdt_coins()],
         "last_run_at": state.get("last_run_at"),
         "realized_loss_usd_today": state.get("realized_loss_usd"),

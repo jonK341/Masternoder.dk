@@ -10,6 +10,7 @@ goes live; other legs stay paper-simulated until credentialed.
 from __future__ import annotations
 
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -41,6 +42,30 @@ def _leg_uses_live(dry_run: Optional[bool], venue: str) -> bool:
     if venue == "internal":
         return True
     return venue_live_ready(venue)
+
+
+def limit_fill_qty(res: Dict[str, Any]) -> float:
+    """Base filled by a limit ack. Paper simulations count as filled."""
+    if res.get("simulated") and res.get("success"):
+        try:
+            return float(res.get("quantity") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    body = res.get("body") if isinstance(res.get("body"), dict) else {}
+    for key in ("executedQty", "executedQuantity", "cumQty", "filledQuantity"):
+        if body.get(key) in (None, ""):
+            continue
+        try:
+            return float(body[key])
+        except (TypeError, ValueError):
+            return 0.0
+    status = str(body.get("status") or body.get("state") or "").upper()
+    if status == "FILLED":
+        try:
+            return float(res.get("quantity") or body.get("quantity") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+    return 0.0
 
 
 def _estimate_profit_usd(opp: Dict[str, Any], notional: float) -> float:
@@ -178,6 +203,11 @@ def execute_spatial_arbitrage(
     sell_venue = str(opp.get("sell_venue") or "")
     notional = float(opp.get("notional_usd") or opp.get("sized_notional_usd") or 250)
     buy_price = float(opp.get("buy_ask") or 0)
+    order_style = str(opp.get("order_style") or "market").lower()
+    if order_style not in ("market", "limit"):
+        order_style = "market"
+    buy_limit = float(opp.get("buy_limit") or buy_price or 0)
+    sell_limit = float(opp.get("sell_limit") or opp.get("sell_bid") or 0)
     if buy_price <= 0 or not buy_venue or not sell_venue:
         return {"success": False, "error": "invalid_opportunity"}
 
@@ -247,11 +277,52 @@ def execute_spatial_arbitrage(
             if not n.get("ok"):
                 return {"success": False, "error": n.get("error"), "venue": venue, "side": side, "normalize": n}
             leg_qty = float(n["quantity"])
+        if order_style == "limit":
+            px = buy_limit if side == "buy" else sell_limit
+            if px <= 0:
+                return {"success": False, "error": "invalid_limit_price", "venue": venue, "side": side}
+            coid = f"arb-{symbol}-{side}-{int(time.time() * 1000)}"
+            tif = "IOC" if venue == "binance" else "GTC"
+            res = vapi.place_limit_order(
+                venue, symbol, side, leg_qty, px,
+                dry_run=not use_live,
+                client_order_id=coid,
+                time_in_force=tif,
+            )
+            if not use_live:
+                return res
+            filled = limit_fill_qty(res)
+            status = ""
+            if isinstance(res.get("body"), dict):
+                status = str(res["body"].get("status") or res["body"].get("state") or "").upper()
+            if filled <= 0 and res.get("order_id") and status not in ("FILLED", "EXPIRED", "CANCELED", "CANCELLED"):
+                try:
+                    st = vapi.get_order_status(venue, symbol, res.get("order_id"), dry_run=False)
+                    filled = max(filled, float(st.get("executed_qty") or 0))
+                    if st.get("resting") or filled <= 0:
+                        vapi.cancel_order(venue, symbol, str(res.get("order_id")), dry_run=False)
+                        res["cancelled_resting"] = True
+                except Exception:
+                    try:
+                        vapi.cancel_order(venue, symbol, str(res.get("order_id")), dry_run=False)
+                        res["cancelled_resting"] = True
+                    except Exception:
+                        pass
+            res["executed_qty"] = filled
+            if filled <= 0:
+                res["success"] = False
+                res["error"] = res.get("error") or "limit_not_filled"
+            return res
         return vapi.place_market_order(venue, symbol, side, leg_qty, dry_run=not use_live)
 
     buy_res = _leg(buy_venue, "buy")
     sell_res = _leg(sell_venue, "sell")
     ok = bool(buy_res.get("success")) and bool(sell_res.get("success"))
+    if order_style == "limit" and ok:
+        bq = float(buy_res.get("executed_qty") or buy_res.get("quantity") or 0)
+        sq = float(sell_res.get("executed_qty") or sell_res.get("quantity") or 0)
+        if bq > 0 and sq > 0:
+            qty = min(bq, sq)
 
     mode = _execution_mode(buy_res, sell_res, buy_venue=buy_venue, sell_venue=sell_venue)
 
@@ -291,9 +362,13 @@ def execute_spatial_arbitrage(
             except Exception:
                 pass
 
+    unhedged = order_style == "limit" and (
+        bool(buy_res.get("success")) ^ bool(sell_res.get("success"))
+    )
     return {
         "success": ok,
         "mode": mode,
+        "order_style": order_style,
         "symbol": symbol,
         "quantity": qty,
         "notional_usd": notional,
@@ -302,6 +377,7 @@ def execute_spatial_arbitrage(
         "sell_venue": sell_venue,
         "buy_order": buy_res,
         "sell_order": sell_res,
+        "unhedged": unhedged,
         "stash": stash,
         "executed_at": _iso(),
     }
