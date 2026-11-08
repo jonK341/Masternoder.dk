@@ -16,6 +16,24 @@ def _rise(n=40, start=1.0, step=0.01, volume=10.0):
     return rows
 
 
+def test_two_best_orders_skip_minus_strategies():
+    from backend.services.exchange_strategy_service import select_strategy_orders
+
+    scores = {"momentum": 0.694, "news": 0.584, "trend": -1.523, "pairs": -5.939}
+    rows = [
+        {"strategy": "trend", "symbol": "ALGO", "signal": "long", "ready": True},
+        {"strategy": "pairs", "symbol": "XRP/XLM", "signal": "sell", "ready": True},
+        {"strategy": "momentum", "symbol": "ALGO", "signal": "flat", "ready": True},
+        {"strategy": "news", "symbol": "ALGO", "signal": "long", "ready": True},
+        {"strategy": "momentum", "symbol": "XRP", "signal": "long", "ready": True},
+    ]
+    picked = select_strategy_orders(rows, scores, max_orders=2)
+    assert [(row["strategy"], row["symbol"]) for row in picked] == [
+        ("momentum", "XRP"),
+        ("news", "ALGO"),
+    ]
+
+
 def test_orders_stay_off_until_the_flag_is_switched():
     from backend.services.exchange_strategy_service import load_config
 

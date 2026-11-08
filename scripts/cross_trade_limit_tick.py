@@ -61,6 +61,12 @@ def main() -> int:
     result["strategies"] = {
         "actionable": strategies.get("actionable"),
         "execute": strategies.get("execute"),
+        "best": strategies.get("best"),
+        "skipped_minus": strategies.get("skipped_minus"),
+        "orders": [
+            {"strategy": row.get("strategy"), "symbol": row.get("symbol"), "signal": row.get("signal")}
+            for row in (strategies.get("orders") or [])
+        ],
         "log": strategy_logs.get("calculations"),
     }
     print(json.dumps(result, default=str))

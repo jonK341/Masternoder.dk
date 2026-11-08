@@ -67,7 +67,45 @@ def load_config() -> Dict[str, Any]:
         base["notional_usd"] = max(1.0, float(base.get("notional_usd") or 25.0))
     except (TypeError, ValueError):
         base["notional_usd"] = 25.0
+    raw_scores = base.get("strategy_score_pct") if isinstance(base.get("strategy_score_pct"), dict) else {}
+    scores: Dict[str, float] = {}
+    for key, _name in STRATEGIES:
+        if key not in raw_scores:
+            continue
+        try:
+            scores[key] = float(raw_scores[key])
+        except (TypeError, ValueError):
+            continue
+    base["strategy_score_pct"] = scores
+    raw_clips = base.get("strategy_notional") if isinstance(base.get("strategy_notional"), dict) else {}
+    clips: Dict[str, float] = {}
+    for key, _name in STRATEGIES:
+        raw = raw_clips.get(key, base["notional_usd"])
+        try:
+            clips[key] = max(1.0, float(raw))
+        except (TypeError, ValueError):
+            clips[key] = base["notional_usd"]
+    base["strategy_notional"] = clips
     return base
+
+
+def select_strategy_orders(
+    rows: Sequence[Dict[str, Any]],
+    scores: Dict[str, float],
+    *,
+    max_orders: int = 2,
+) -> List[Dict[str, Any]]:
+    """Keep at most two live signals from strategies whose measured return is above zero."""
+    picked: List[Dict[str, Any]] = []
+    for row in rows or []:
+        name = str(row.get("strategy") or "")
+        if name not in scores or float(scores[name]) <= 0:
+            continue
+        if not row.get("ready") or row.get("signal") not in ("long", "sell"):
+            continue
+        picked.append(row)
+    picked.sort(key=lambda row: float(scores[str(row.get("strategy") or "")]), reverse=True)
+    return picked[: max(0, int(max_orders))]
 
 
 def sma(values: Sequence[float], length: int) -> Optional[float]:
@@ -341,13 +379,18 @@ def _parse_klines(rows: Any) -> List[Candle]:
         if not isinstance(row, (list, tuple)) or len(row) < 6:
             continue
         try:
-            out.append({
+            candle = {
                 "open": float(row[1]),
                 "high": float(row[2]),
                 "low": float(row[3]),
                 "close": float(row[4]),
                 "volume": float(row[5]),
-            })
+            }
+            try:
+                candle["open_time"] = int(row[0])
+            except (TypeError, ValueError):
+                pass
+            out.append(candle)
         except (TypeError, ValueError):
             continue
     return out
@@ -376,12 +419,18 @@ def run_strategies(
     market: Dict[str, Dict[str, Any]],
     *,
     notional_usd: float = 25.0,
+    strategy_notional: Optional[Dict[str, float]] = None,
     enabled: Optional[Sequence[str]] = None,
 ) -> Dict[str, Any]:
     """Evaluate the ten strategies on an in-memory market. No orders."""
     wanted = set(enabled) if enabled is not None else {key for key, _name in STRATEGIES}
+    clips = dict(strategy_notional or {})
     rows: List[Dict[str, Any]] = []
     symbols = [sym for sym in FAST_USDT_COINS if sym in market]
+
+    def _keep(row: Dict[str, Any]) -> None:
+        row["notional_usd"] = float(clips.get(str(row.get("strategy") or "")) or notional_usd)
+        rows.append(row)
 
     def candles_of(sym: str, key: str = "hourly") -> List[Candle]:
         raw = (market.get(sym) or {}).get(key) or []
@@ -392,33 +441,33 @@ def run_strategies(
         daily = candles_of(sym, "daily")
         book = market.get(sym) or {}
         if "trend" in wanted:
-            rows.append(eval_trend(sym, hourly))
+            _keep(eval_trend(sym, hourly))
         if "momentum" in wanted:
-            rows.append(eval_momentum(sym, hourly))
+            _keep(eval_momentum(sym, hourly))
         if "breakout" in wanted:
-            rows.append(eval_breakout(sym, hourly))
+            _keep(eval_breakout(sym, hourly))
         if "swing" in wanted:
-            rows.append(eval_swing(sym, hourly))
+            _keep(eval_swing(sym, hourly))
         if "range" in wanted:
-            rows.append(eval_range(sym, hourly))
+            _keep(eval_range(sym, hourly))
         if "scalp" in wanted:
-            rows.append(eval_scalp(
+            _keep(eval_scalp(
                 sym,
                 bid=float(book.get("bid") or 0),
                 ask=float(book.get("ask") or 0),
                 touch_usd=float(book.get("touch_usd") or 0),
-                notional_usd=notional_usd,
+                notional_usd=float(clips.get("scalp") or notional_usd),
             ))
         if "reversal" in wanted:
-            rows.append(eval_reversal(sym, hourly))
+            _keep(eval_reversal(sym, hourly))
         if "news" in wanted:
-            rows.append(eval_news(sym, hourly))
+            _keep(eval_news(sym, hourly))
         if "gap" in wanted:
-            rows.append(eval_gap(sym, daily))
+            _keep(eval_gap(sym, daily))
     if "pairs" in wanted and len(symbols) >= 2:
         for i, left in enumerate(symbols):
             for right in symbols[i + 1:]:
-                rows.append(eval_pairs(left, right, candles_of(left), candles_of(right)))
+                _keep(eval_pairs(left, right, candles_of(left), candles_of(right)))
     actionable = [row for row in rows if row.get("ready") and row.get("signal") in ("long", "sell")]
     return {
         "success": True,
@@ -471,7 +520,17 @@ def search_strategies(book_report: Optional[Dict[str, Any]] = None) -> Dict[str,
         notional_usd=float(cfg["notional_usd"]), min_net_bps=0.0,
     )
     _apply_book(market, books)
-    report = run_strategies(market, notional_usd=float(cfg["notional_usd"]), enabled=cfg["strategies"])
+    report = run_strategies(
+        market,
+        notional_usd=float(cfg["notional_usd"]),
+        strategy_notional=cfg.get("strategy_notional"),
+        enabled=cfg["strategies"],
+    )
+    scores = cfg.get("strategy_score_pct") or {}
+    report["strategy_score_pct"] = scores
+    report["orders"] = select_strategy_orders(report["rows"], scores, max_orders=2)
+    report["best"] = [key for key, _score in sorted(scores.items(), key=lambda item: item[1], reverse=True) if _score > 0]
+    report["skipped_minus"] = [key for key, _score in scores.items() if _score < 0]
     report["execute"] = bool(cfg["execute"])
     report["ts"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     return report
@@ -491,7 +550,13 @@ def format_strategy_block(report: Dict[str, Any]) -> str:
         best = max(picked, key=lambda row: (row.get("signal") != "flat", abs(float((row.get("calc") or {}).get("z") or (row.get("calc") or {}).get("gap_pct") or (row.get("calc") or {}).get("return_10_pct") or 0))))
         calc = best.get("calc") or {}
         detail = calc.get("z", calc.get("rsi_14", calc.get("gap_pct", calc.get("spread_bps", calc.get("return_10_pct", calc.get("fast_minus_slow", ""))))))
-        lines.append(f"{key} {name} {best.get('symbol')} {best.get('signal')} {detail}")
+        clip = float(best.get("notional_usd") or report.get("notional_usd") or 0)
+        lines.append(f"{key} {name} {best.get('symbol')} {best.get('signal')} {detail} clip=${clip:.2f}")
+    best = ",".join(report.get("best") or []) or "none"
+    skipped = ",".join(report.get("skipped_minus") or []) or "none"
+    lines.append(
+        f"orders selected={len(report.get('orders') or [])} best={best} skipped_minus={skipped}"
+    )
     return "\n".join(lines) + "\n"
 
 

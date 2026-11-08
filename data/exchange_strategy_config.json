@@ -2,6 +2,23 @@
   "execute": false,
   "symbols": ["XRP", "XLM", "ALGO", "TRX", "SOL"],
   "notional_usd": 25.0,
+  "max_orders": 2,
+  "strategy_score_pct": {
+    "momentum": 0.694,
+    "news": 0.584,
+    "gap": 0.0,
+    "swing": -0.775,
+    "breakout": -1.015,
+    "reversal": -1.020,
+    "trend": -1.523,
+    "range": -5.227,
+    "pairs": -5.939
+  },
+  "strategy_notional": {
+    "momentum": 50.0,
+    "news": 50.0,
+    "pairs": 12.5
+  },
   "strategies": [
     "trend",
     "momentum",
