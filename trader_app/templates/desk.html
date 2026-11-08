@@ -38,6 +38,8 @@
 <main>
   <p id="note" class="note">Loading the latest pass…</p>
   <div id="cards" class="cards"></div>
+  <h2>Ledgers</h2>
+  <div id="ledgers" class="cards"></div>
   <h2>What it did</h2>
   <ol id="lines"></ol>
 </main>
@@ -58,6 +60,16 @@ function paint(d) {
       + (ready ? "ready" : "waiting") + '</span>'
       + '<div class="wait">' + (c.route || "no route") + " · " + net + " · book " + money(c.executable_usd) + '</div>'
       + '<div class="meta">credit about ' + c.credit_sec + 's · ' + (c.nonkyc_pair || "") + '</div></article>';
+  }).join("");
+  var books = d.ledgers || {};
+  document.getElementById("ledgers").innerHTML = ["binance", "nonkyc"].map(function (venue) {
+    var rows = books[venue] || [];
+    var last = rows.length ? rows[rows.length - 1] : null;
+    if (!last) return '<article class="card"><b>' + venue + '</b><div class="wait">No ledger line yet.</div></article>';
+    var body = last.order_body || {};
+    return '<article class="card"><b>' + venue + '</b> <span class="wait">' + (last.symbol || "") + " " + (last.side || "") + '</span>'
+      + '<div class="wait">' + (last.endpoint || "") + " · " + (body.symbol || "") + " · qty " + (last.quantity || 0) + '</div>'
+      + '<div class="meta">' + (last.reason || "") + " · placed " + (last.placed ? "yes" : "no") + " · " + (last.channel_detail || "channel not probed this pass") + '</div></article>';
   }).join("");
   var lines = (d.lines || []).slice().reverse();
   document.getElementById("lines").innerHTML = lines.map(function (row) {

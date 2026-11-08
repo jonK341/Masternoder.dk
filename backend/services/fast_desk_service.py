@@ -115,5 +115,11 @@ def tick(*, notional_usd: float = 25.0, min_net_bps: float = 18.0) -> Dict[str, 
             "A line is written every pass. No withdrawal is sent from this desk."
         ),
     }
+    try:
+        from backend.services.venue_search_ledger_service import ledger_snapshot, run_search
+        run_search(probe=False, notional_usd=notional_usd, scan=scan)
+        state["ledgers"] = ledger_snapshot(limit=6)
+    except Exception as exc:
+        state["ledgers"] = {"error": str(exc)[:180]}
     _write_state(state)
     return state

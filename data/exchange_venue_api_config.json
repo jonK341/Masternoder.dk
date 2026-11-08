@@ -11,6 +11,7 @@
       "endpoints": {
         "account": {"method": "GET", "path": "/api/v3/account"},
         "order_market": {"method": "POST", "path": "/api/v3/order"},
+        "order_test": {"method": "POST", "path": "/api/v3/order/test"},
         "order_limit": {"method": "POST", "path": "/api/v3/order"},
         "cancel_order": {"method": "DELETE", "path": "/api/v3/order"},
         "open_orders": {"method": "GET", "path": "/api/v3/openOrders"},
