@@ -28,6 +28,7 @@ from backend.services.exchange_cross_trade_service import (
     write_search_logs,
 )
 from backend.services.exchange_strategy_service import (
+    dispatch_strategy_orders,
     format_strategy_block,
     search_strategies,
     write_strategy_logs,
@@ -40,6 +41,7 @@ def main() -> int:
     print(format_search_block(search), end="")
     try:
         strategies = search_strategies(book_report=search)
+        strategies["sent"] = dispatch_strategy_orders(strategies, search)
         strategy_logs = write_strategy_logs(strategies)
         print(format_strategy_block(strategies), end="")
     except Exception as exc:
@@ -66,6 +68,10 @@ def main() -> int:
         "orders": [
             {"strategy": row.get("strategy"), "symbol": row.get("symbol"), "signal": row.get("signal")}
             for row in (strategies.get("orders") or [])
+        ],
+        "sent": [
+            {"strategy": row.get("strategy"), "symbol": row.get("symbol"), "venue": row.get("venue"), "success": row.get("success"), "order_id": row.get("order_id"), "error": row.get("error"), "skipped": row.get("skipped")}
+            for row in (strategies.get("sent") or [])
         ],
         "log": strategy_logs.get("calculations"),
     }

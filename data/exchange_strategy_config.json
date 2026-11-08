@@ -1,8 +1,8 @@
 {
-  "execute": false,
+  "execute": true,
   "symbols": ["XRP", "XLM", "ALGO", "TRX", "SOL"],
   "notional_usd": 25.0,
-  "max_orders": 2,
+  "max_orders": 10,
   "strategy_score_pct": {
     "momentum": 0.694,
     "news": 0.584,

@@ -34,12 +34,72 @@ def test_two_best_orders_skip_minus_strategies():
     ]
 
 
-def test_orders_stay_off_until_the_flag_is_switched():
+def test_execute_flag_sends_live_signals():
     from backend.services.exchange_strategy_service import load_config
 
     cfg = load_config()
-    assert cfg["execute"] is False
+    assert cfg["execute"] is True
     assert len(cfg["strategies"]) == 10
+
+
+def test_a_signal_is_sent_once_and_a_flat_pass_sends_nothing(tmp_path):
+    from backend.services.exchange_strategy_service import dispatch_strategy_orders
+
+    calls = []
+
+    def place(venue, symbol, side, qty, price, tif):
+        calls.append((venue, symbol, side, tif))
+        if symbol == "ALGO" and venue == "binance":
+            return {"success": False, "error": "Symbol not whitelisted for API key."}
+        return {"success": True, "mode": "live", "order_id": f"{venue}-{symbol}"}
+
+    report = {
+        "execute": True,
+        "max_orders": 10,
+        "rows": [
+            {"strategy": "trend", "symbol": "ALGO", "signal": "long", "ready": True, "notional_usd": 25},
+            {"strategy": "swing", "symbol": "XRP", "signal": "long", "ready": True, "notional_usd": 25},
+            {"strategy": "range", "symbol": "XRP", "signal": "sell", "ready": True, "notional_usd": 25},
+        ],
+    }
+    quotes = {
+        "ALGO": {"bid": 0.09, "ask": 0.1, "nonkyc_bid": 0.09, "nonkyc_ask": 0.1},
+        "XRP": {"bid": 1.16, "ask": 1.17, "nonkyc_bid": 1.15, "nonkyc_ask": 1.16},
+    }
+    balances = {"binance": {"USDC": 40.0, "XRP": 0.0}, "nonkyc": {"USDT": 12.0, "XRP": 30.0}}
+    path = str(tmp_path / "state.json")
+    sent = dispatch_strategy_orders(
+        report, place=place, balances=balances, quotes=quotes,
+        walk_book=lambda _symbol, _usd: 0.1, state_path=path,
+    )
+    assert ("binance", "XRP", "buy", "IOC") in calls
+    assert ("nonkyc", "ALGO", "buy", "GTC") in calls
+    assert not any(call[0] == "nonkyc" and call[1] == "XRP" and call[2] == "sell" for call in calls)
+    assert any(row.get("order_id") == "binance-XRP" for row in sent)
+    again = dispatch_strategy_orders(
+        report, place=place, balances=balances, quotes=quotes,
+        walk_book=lambda _symbol, _usd: 0.1, state_path=path,
+    )
+    assert again == []
+    assert len(calls) == 3
+
+def test_execute_off_places_nothing(tmp_path):
+    from backend.services.exchange_strategy_service import dispatch_strategy_orders
+
+    calls = []
+    report = {
+        "execute": False,
+        "rows": [{"strategy": "swing", "symbol": "XRP", "signal": "long", "ready": True, "notional_usd": 25}],
+    }
+    sent = dispatch_strategy_orders(
+        report,
+        place=lambda *args: calls.append(args),
+        balances={"binance": {"USDC": 40}, "nonkyc": {}},
+        quotes={"XRP": {"bid": 1, "ask": 1.1, "nonkyc_bid": 1, "nonkyc_ask": 1.1}},
+        state_path=str(tmp_path / "state.json"),
+    )
+    assert sent == []
+    assert calls == []
 
 
 def test_all_ten_strategies_are_registered():
