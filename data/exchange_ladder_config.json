@@ -10,8 +10,11 @@
   "step_bps": 40.0,
   "exit_bps": 100.0,
   "fee_bps": 20.0,
-  "recenter_bps": 150.0,
-  "max_age_minutes": 360.0,
+  "recenter_bps": 30.0,
+  "refresh_minutes": 10.0,
+  "reprice_bps": 5.0,
+  "min_exit_bps": 55.0,
+  "exit_decay_minutes": 120.0,
   "binance": {
     "execute": true,
     "symbols": ["XRP", "ALGO", "XLM", "TRX", "SOL"],
@@ -23,7 +26,8 @@
     "step_bps": 30.0,
     "exit_bps": 50.0,
     "fee_bps": 10.0,
-    "recenter_bps": 100.0,
+    "recenter_bps": 20.0,
+    "min_exit_bps": 35.0,
     "quote_reserve": 5.0
   }
 }

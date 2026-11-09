@@ -35,6 +35,8 @@ class FakeVenue:
     def place(self, symbol, side, qty, price, coid):
         if self.reject:
             return {"success": False, "error": self.reject.pop(0)}
+        if any(p["coid"] == coid for p in self.placed):
+            return {"success": False, "error": "Bad userProvidedId. This value should be either unique or null"}
         self.next_id += 1
         self.open[coid] = f"o{self.next_id}"
         self.placed.append({"symbol": symbol, "side": side, "qty": qty, "price": price, "coid": coid})
@@ -224,3 +226,53 @@ def test_binance_ladder_spends_usdc_above_the_reserve(tmp_path):
     )
     exit_order = venue.placed[-1]
     assert exit_order["side"] == "sell" and exit_order["price"] >= buys[0]["price"] * 1.005
+
+
+def test_refresh_every_ten_minutes_only_replaces_rungs_whose_price_moved(tmp_path):
+    venue = FakeVenue()
+    cfg = _cfg(sides=["sell"], levels=3)
+    _run(venue, tmp_path, cfg=cfg)
+    rep = _run(venue, tmp_path, cfg=cfg, mid=0.093001, now=1000.0 + 10 * 60)
+    assert venue.cancelled == [] and rep["kept"] == 3
+    rep = _run(venue, tmp_path, cfg=cfg, mid=0.0934, now=1000.0 + 11 * 60)
+    assert len(venue.cancelled) == 3 and len(venue.open) == 3
+    assert sorted(p["price"] for p in venue.placed[-3:]) == [entry_price(0.0934, "sell", k, cfg, 6) for k in range(3)]
+
+
+def test_unfilled_exit_steps_toward_market_but_keeps_its_profit(tmp_path):
+    venue = FakeVenue()
+    cfg = _cfg(sides=["sell"], levels=1)
+    _run(venue, tmp_path, cfg=cfg)
+    entry = venue.placed[0]
+    venue.fill(entry["coid"])
+    _run(venue, tmp_path, cfg=cfg, now=1060.0, bal={"ALGO": 260.0, "USDT": 3.5})
+    first_exit = venue.placed[-1]
+    assert first_exit["price"] <= entry["price"] * (1 - 0.008)
+
+    rep = _run(venue, tmp_path, cfg=cfg, now=1060.0 + 61 * 60, bal={"ALGO": 260.0, "USDT": 0.0})
+    mid_exit = venue.placed[-1]
+    assert rep["repriced"] == [first_exit["coid"]]
+    assert first_exit["price"] < mid_exit["price"] < entry["price"] * (1 - 0.0055)
+
+    _run(venue, tmp_path, cfg=cfg, now=1060.0 + 200 * 60, bal={"ALGO": 260.0, "USDT": 0.0})
+    last_exit = venue.placed[-1]
+    assert last_exit["price"] <= entry["price"] * (1 - 0.0055)
+    assert last_exit["price"] > mid_exit["price"]
+    _run(venue, tmp_path, cfg=cfg, now=1060.0 + 300 * 60, bal={"ALGO": 260.0, "USDT": 0.0})
+    assert venue.placed[-1] == last_exit  # floor reached, no further moves
+
+    venue.fill(last_exit["coid"])
+    rep = _run(venue, tmp_path, cfg=cfg, now=1060.0 + 301 * 60)
+    assert rep["fills"][0]["kind"] == "exit" and rep["fills"][0]["pnl_usd"] > 0
+
+
+def test_entry_and_exit_on_the_same_rung_get_distinct_tags(tmp_path):
+    venue = FakeVenue()
+    cfg = _cfg(levels=1)
+    _run(venue, tmp_path, cfg=cfg)
+    venue.fill(_by(venue, "sell")[0]["coid"])
+    rep = _run(venue, tmp_path, cfg=cfg, mid=0.0925, now=1000.0 + 11 * 60, bal={"ALGO": 300.0, "USDT": 8.0})
+    assert rep["errors"] == []
+    kinds = sorted((p["kind"], p["side"]) for p in rep["placed"])
+    assert kinds == [("entry", "buy"), ("exit", "buy")]
+    assert len({p["coid"] for p in venue.placed}) == len(venue.placed)

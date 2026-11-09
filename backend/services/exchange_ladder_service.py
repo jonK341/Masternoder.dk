@@ -7,8 +7,11 @@ Entry rungs rest around the Binance mid: sells above it and buys below it,
 fills, its rung gets a paired exit on the other side ``exit_bps`` away (a
 buy-back under a filled sell, a take-profit over a filled buy), so a completed
 pair nets about ``exit_bps - 2 * fee_bps``. The rung only opens again after
-its exit fills. Entries re-centre when the mid drifts ``recenter_bps`` from the
-anchor; exits are never moved. Orders are tagged ``ld-``.
+its exit fills. Entries are refreshed to the current mid every ``refresh_minutes``
+or when it drifts ``recenter_bps``; a rung is only replaced when its price moves
+``reprice_bps``. Unfilled exits step toward the market over ``exit_decay_minutes``,
+down to ``min_exit_bps`` from their entry, so each pair stays profitable.
+Orders are tagged ``ld-``.
 """
 from __future__ import annotations
 
@@ -47,7 +50,8 @@ _BINANCE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo?symbol={symbol}
 LOST_AFTER_SEC = 600.0
 
 _FLOAT_KEYS = ("order_usd", "min_order_usd", "first_bps", "step_bps", "exit_bps", "fee_bps",
-               "recenter_bps", "max_age_minutes", "quote_reserve")
+               "recenter_bps", "refresh_minutes", "reprice_bps", "min_exit_bps", "exit_decay_minutes",
+               "quote_reserve")
 
 
 def _default_config() -> Dict[str, Any]:
@@ -63,8 +67,11 @@ def _default_config() -> Dict[str, Any]:
         "step_bps": 40.0,
         "exit_bps": 80.0,
         "fee_bps": 20.0,
-        "recenter_bps": 150.0,
-        "max_age_minutes": 360.0,
+        "recenter_bps": 30.0,
+        "refresh_minutes": 10.0,
+        "reprice_bps": 5.0,
+        "min_exit_bps": 55.0,
+        "exit_decay_minutes": 120.0,
         "quote_reserve": 0.0,
     }
 
@@ -227,20 +234,31 @@ def entry_price(ref: float, side: str, level: int, cfg: Dict[str, Any], decimals
     return round_price(ref * (1 + off) if side == "sell" else ref * (1 - off), side, decimals)
 
 
-def exit_for(order: Dict[str, Any], filled: float, cfg: Dict[str, Any], mk: Dict[str, float]) -> Dict[str, Any]:
+def exit_bps_at(cfg: Dict[str, Any], age_sec: float) -> float:
+    """Exit distance shrinks linearly from ``exit_bps`` to ``min_exit_bps`` over ``exit_decay_minutes``."""
+    far, near = cfg["exit_bps"], min(cfg["min_exit_bps"], cfg["exit_bps"])
+    decay = cfg["exit_decay_minutes"] * 60
+    frac = min(1.0, max(0.0, age_sec) / decay) if decay > 0 else 1.0
+    return far - (far - near) * frac
+
+
+def exit_spec(entry_side: str, entry: float, filled: float, bps: float,
+              cfg: Dict[str, Any], mk: Dict[str, float]) -> Dict[str, Any]:
     fee = cfg["fee_bps"] / 1e4
-    entry = float(order["price"])
-    if order["side"] == "sell":
-        price = round_price(entry * (1 - cfg["exit_bps"] / 1e4), "buy", mk["price_decimals"])
+    if entry_side == "sell":
+        price = round_price(entry * (1 - bps / 1e4), "buy", mk["price_decimals"])
         # Proceeds net of the entry sell's fee, leaving room for the buy-back's own fee.
         qty = floor_qty(filled * entry * (1 - fee) ** 2 / price, mk["qty_decimals"])
-        side = "buy"
-    else:
-        price = round_price(entry * (1 + cfg["exit_bps"] / 1e4), "sell", mk["price_decimals"])
-        qty = floor_qty(filled * (1 - fee), mk["qty_decimals"])
-        side = "sell"
-    return {"symbol": order["symbol"], "side": side, "price": price, "qty": qty, "level": order["level"],
-            "entry_side": order["side"], "entry_price": entry, "entry_qty": filled}
+        return {"side": "buy", "price": price, "qty": qty}
+    price = round_price(entry * (1 + bps / 1e4), "sell", mk["price_decimals"])
+    return {"side": "sell", "price": price, "qty": floor_qty(filled * (1 - fee), mk["qty_decimals"])}
+
+
+def exit_for(order: Dict[str, Any], filled: float, cfg: Dict[str, Any], mk: Dict[str, float]) -> Dict[str, Any]:
+    entry = float(order["price"])
+    return {"symbol": order["symbol"], "level": order["level"], "entry_side": order["side"],
+            "entry_price": entry, "entry_qty": filled,
+            **exit_spec(order["side"], entry, filled, cfg["exit_bps"], cfg, mk)}
 
 
 def pair_pnl(order: Dict[str, Any], filled: float, fee_bps: float) -> float:
@@ -297,7 +315,7 @@ def run_ladder(
     cfg = cfg or load_config(venue)
     venue = cfg.get("venue") or venue
     report: Dict[str, Any] = {"venue": venue, "execute": cfg["execute"], "placed": [], "fills": [],
-                              "cancelled": [], "skipped": [], "errors": []}
+                              "cancelled": [], "repriced": [], "kept": 0, "skipped": [], "errors": []}
     if not cfg["execute"]:
         return report
     defaults = _venue_defaults(venue)
@@ -334,7 +352,8 @@ def run_ladder(
         for coid in missing:
             row = closed_rows.get(coid)
             if row is None:
-                if now - float(orders[coid].get("placed_at") or now) >= LOST_AFTER_SEC:
+                seen = max(float(orders[coid].get("placed_at") or now), float(orders[coid].get("cancelled_at") or 0))
+                if now - seen >= LOST_AFTER_SEC:
                     report["errors"].append({"symbol": symbol, "coid": coid, "error": "lost"})
                     orders.pop(coid)
                 continue
@@ -346,39 +365,65 @@ def run_ladder(
                     "order_id": _order_id(row), "qty": filled, "price": float(o["price"]),
                     "usd": round(filled * float(o["price"]), 4)}
             if o["kind"] == "entry":
-                pending.append(exit_for(o, filled, cfg, mk))
+                pending.append({**exit_for(o, filled, cfg, mk), "exit_since": now})
             else:
                 fill["pnl_usd"] = round(pair_pnl(o, filled, cfg["fee_bps"]), 6)
                 state["realized_usd"] = round(state["realized_usd"] + fill["pnl_usd"], 6)
             report["fills"].append(fill)
 
+        def _pull(coid: str, o: Dict[str, Any]) -> bool:
+            res = cancel(symbol, live[coid])
+            if not res.get("success"):
+                report["errors"].append({"symbol": symbol, "coid": coid, "error": str(res.get("error") or "cancel_failed")})
+                return False
+            o["cancelled"], o["cancelled_at"] = True, now
+            if o["side"] == "sell":
+                bal[symbol] = bal.get(symbol, 0.0) + float(o["qty"])
+            else:
+                bal[quote] = bal.get(quote, 0.0) + float(o["qty"]) * float(o["price"])
+            return True
+
+        def _moved(target: float, current: float) -> bool:
+            return abs(target / current - 1) * 1e4 >= cfg["reprice_bps"]
+
         mid = (float(book["bid"]) + float(book["ask"])) / 2
         anchor = state["anchors"].get(symbol) or {}
         drift = abs(mid / float(anchor["ref"]) - 1) * 1e4 if anchor.get("ref") else None
         age_min = (now - float(anchor.get("at") or now)) / 60
-        if drift is None or drift > cfg["recenter_bps"] or age_min > cfg["max_age_minutes"]:
-            for coid, o in orders.items():
+        if drift is None or drift > cfg["recenter_bps"] or age_min >= cfg["refresh_minutes"]:
+            for coid, o in list(orders.items()):
                 if o["symbol"] != symbol or o["kind"] != "entry" or o.get("cancelled") or coid not in live:
                     continue
-                res = cancel(symbol, live[coid])
-                if not res.get("success"):
-                    report["errors"].append({"symbol": symbol, "coid": coid, "error": str(res.get("error") or "cancel_failed")})
+                target = entry_price(mid, o["side"], int(o["level"]), cfg, int(mk["price_decimals"]))
+                if not _moved(target, float(o["price"])):
+                    report["kept"] += 1
                     continue
-                o["cancelled"] = True
-                report["cancelled"].append(coid)
-                if o["side"] == "sell":
-                    bal[symbol] = bal.get(symbol, 0.0) + float(o["qty"])
-                else:
-                    bal[quote] = bal.get(quote, 0.0) + float(o["qty"]) * float(o["price"])
+                if _pull(coid, o):
+                    report["cancelled"].append(coid)
             state["anchors"][symbol] = {"ref": mid, "at": now}
         refs[symbol] = float(state["anchors"][symbol]["ref"])
+
+        # Aged exits step toward the market, never inside min_exit_bps of their entry.
+        for coid, o in list(orders.items()):
+            if o["symbol"] != symbol or o["kind"] != "exit" or o.get("cancelled") or coid not in live:
+                continue
+            since = float(o.get("exit_since") or o.get("placed_at") or now)
+            spec = exit_spec(o["entry_side"], float(o["entry_price"]), float(o["entry_qty"]),
+                             exit_bps_at(cfg, now - since), cfg, mk)
+            price = float(o["price"])
+            closer = spec["price"] < price if o["side"] == "sell" else spec["price"] > price
+            if not closer or not _moved(spec["price"], price) or not _pull(coid, o):
+                continue
+            report["repriced"].append(coid)
+            pending.append({k: o[k] for k in ("symbol", "level", "entry_side", "entry_price", "entry_qty")}
+                           | spec | {"exit_since": since})
 
     open_count = sum(1 for o in orders.values() if not o.get("cancelled"))
 
     def _try_place(spec: Dict[str, Any], kind: str) -> Optional[str]:
         nonlocal open_count
         symbol, side, price, qty = spec["symbol"], spec["side"], float(spec["price"]), float(spec["qty"])
-        coid = f"{TAG}{symbol[:4]}-{side[:1]}{spec['level']}{kind[:1]}-{int(now * 1000) % 10**9}"
+        coid = f"{TAG}{symbol[:4]}-{side[:1]}{spec['level']}{'x' if kind == 'exit' else 'n'}-{int(now * 1000) % 10**9}"
         res = place_with_retry(place, symbol, side, qty, price, coid, sleep=sleep)
         if not _accepted(res):
             report["errors"].append({"symbol": symbol, "side": side, "kind": kind, "price": price,
@@ -463,8 +508,9 @@ def format_ladder_block(report: Dict[str, Any]) -> str:
         lines.append(f"{name} FILL {f['symbol']} {f['kind']} {f['side']} L{f['level']} {f['qty']} @ {f['price']} (${f['usd']}){pnl}")
     for p in report.get("placed") or []:
         lines.append(f"{name} placed {p['symbol']} {p['kind']} {p['side']} L{p['level']} {p['qty']} @ {p['price']} (${p['usd']})")
-    if report.get("cancelled"):
-        lines.append(f"{name} recentred, cancelled {len(report['cancelled'])}")
+    if report.get("cancelled") or report.get("repriced"):
+        lines.append(f"{name} refresh moved {len(report.get('cancelled') or [])} entries "
+                     f"(kept {report.get('kept', 0)}), stepped {len(report.get('repriced') or [])} exits closer")
     for e in report.get("errors") or []:
         lines.append(f"{name} error {e.get('symbol')} {e.get('side', '')} {e.get('error')}")
     for s in report.get("skipped") or []:
