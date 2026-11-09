@@ -50,6 +50,15 @@ PROFILE_INTERVALS = {
 _LIVE_PROFIT_MAX_INTERVALS = {"exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90}
 
 
+def resolve_profile(name: Optional[str]) -> str:
+    # A stale EXCHANGE_PROFIT_PROFILE in .env (e.g. the retired "paypal") must not crash-loop systemd.
+    profile = (name or "").strip().lower() or "max"
+    if profile not in PROFILE_INTERVALS:
+        print(f"[all-profit] WARN unknown profile {profile!r}; using 'max'", flush=True)
+        return "max"
+    return profile
+
+
 def _resolve_intervals(profile: str, iv: dict) -> dict:
     if os.environ.get("EXCHANGE_LIVE_PROFIT_MAX", "").strip().lower() in ("1", "true", "yes", "on"):
         if profile in ("max", "fast", "live-only"):
@@ -687,8 +696,9 @@ def _warm_flask_for_daemons() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="All profit daemons in one process")
     parser.add_argument("--once", action="store_true", help="Single tick and exit")
-    parser.add_argument("--profile", choices=["max", "standard", "fast", "live-only"], default="max",
-                        help="Profit strategy profile (default: max = everything)")
+    parser.add_argument("--profile", default="max",
+                        help="Profit strategy profile: max, standard, fast, live-only "
+                             "(default: max = everything; unknown values fall back to max)")
     parser.add_argument("--interval", type=int, default=0, help="Override main exchange interval")
     parser.add_argument("--exchange-interval", type=int, default=0, help="Override exchange interval")
     parser.add_argument("--casino-interval", type=int, default=0, help="Override casino interval")
@@ -706,9 +716,9 @@ def main() -> int:
     args = parser.parse_args()
 
     load_dotenv()
-    profile = os.environ.get("EXCHANGE_PROFIT_PROFILE") or args.profile
+    profile = resolve_profile(os.environ.get("EXCHANGE_PROFIT_PROFILE") or args.profile)
     os.environ["EXCHANGE_PROFIT_PROFILE"] = profile
-    iv = _resolve_intervals(profile, PROFILE_INTERVALS.get(profile, PROFILE_INTERVALS["standard"]))
+    iv = _resolve_intervals(profile, PROFILE_INTERVALS[profile])
     ex_iv = args.exchange_interval or args.interval or iv["exchange"]
     cas_iv = args.casino_interval or args.interval or int(os.environ.get("CASINO_AGENT_INTERVAL") or 0) or iv["casino"]
     fast_iv = iv.get("fast") or 0
