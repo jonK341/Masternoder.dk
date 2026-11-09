@@ -113,6 +113,32 @@ def test_execute_off_and_missing_book_place_nothing(tmp_path):
     assert venue.placed == []
 
 
+def test_reprice_retries_while_cancelled_funds_are_freed(tmp_path):
+    venue = FakeVenue()
+    _run(venue, tmp_path)
+    real_place, answers, sleeps = venue.place, [{"success": False, "error": "Insufficient funds for order creation"}], []
+
+    def flaky(*args):
+        return answers.pop(0) if answers else real_place(*args)
+
+    run_maker_quotes(
+        cfg=_cfg(), top=lambda _s: {"bid": 0.0934, "ask": 0.0935}, balances={"ALGO": 586.5},
+        open_ids=venue.open_ids, status=venue.status, place=flaky, cancel=venue.cancel,
+        clock=lambda: 1060.0, path=str(tmp_path / "maker.json"), sleep=sleeps.append,
+    )
+    assert sleeps == [1.5]
+    assert venue.cancelled == ["o1"] and list(venue.open.values()) == ["o2"]
+
+
+def test_symbol_removed_from_config_is_cancelled(tmp_path):
+    venue = FakeVenue()
+    _run(venue, tmp_path)
+    rep = _run(venue, tmp_path, now=1060.0, cfg=_cfg(symbols=[]))
+    assert venue.cancelled == ["o1"] and venue.open == {}
+    assert rep["quotes"][0]["retired"] == venue.placed[0][4]
+    assert own_sell_price("ALGO", str(tmp_path / "maker.json")) is None
+
+
 def test_strategy_buy_never_crosses_our_resting_sell(tmp_path):
     from backend.services.exchange_strategy_service import dispatch_strategy_orders
 

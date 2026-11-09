@@ -133,6 +133,24 @@ def _accepted(res: Dict[str, Any]) -> bool:
     return bool(res.get("success")) and not res.get("simulated") and str(res.get("mode") or "").lower() != "paper"
 
 
+def place_with_retry(
+    place: Callable[..., Dict[str, Any]],
+    *args: Any,
+    sleep: Callable[[float], None] = time.sleep,
+    tries: int = 3,
+    wait: float = 1.5,
+) -> Dict[str, Any]:
+    """NonKYC frees a cancelled order's funds a moment after the cancel returns."""
+    res: Dict[str, Any] = {}
+    for attempt in range(tries):
+        res = place(*args)
+        if _accepted(res) or "insufficient" not in str(res.get("error") or "").lower():
+            return res
+        if attempt < tries - 1:
+            sleep(wait)
+    return res
+
+
 def run_maker_quotes(
     *,
     cfg: Optional[Dict[str, Any]] = None,
@@ -144,6 +162,7 @@ def run_maker_quotes(
     cancel: Optional[Callable[[str, str], Dict[str, Any]]] = None,
     clock: Optional[Callable[[], float]] = None,
     path: Optional[str] = None,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> Dict[str, Any]:
     cfg = cfg or load_config()
     report: Dict[str, Any] = {"execute": cfg["execute"], "quotes": [], "fills": []}
@@ -214,7 +233,7 @@ def run_maker_quotes(
                 item["skipped"] = "inventory" if side == "sell" else "budget"
                 continue
             coid = f"mk-{symbol[:4]}-{side[:1]}-{int(now * 1000) % 10**10}"
-            res = place(symbol, side, qty, target, coid)
+            res = place_with_retry(place, symbol, side, qty, target, coid, sleep=sleep)
             item.update({"qty": qty, "price": target, "success": _accepted(res), "coid": coid})
             if not _accepted(res):
                 item["error"] = str(res.get("error") or "")
@@ -224,6 +243,18 @@ def run_maker_quotes(
                 bal[symbol] = bal.get(symbol, 0.0) - qty
             else:
                 bal["USDT"] = bal.get("USDT", 0.0) - qty * target
+
+    wanted = {f"{s}:{side}" for s in cfg["symbols"] for side in cfg["sides"]}
+    for key in [k for k in state if k not in wanted]:
+        symbol = key.split(":", 1)[0]
+        coid = str(state[key].get("coid") or "")
+        live_ids = open_ids(symbol)
+        if live_ids is None:
+            continue
+        if coid in live_ids and not cancel(symbol, live_ids[coid]).get("success"):
+            continue
+        report["quotes"].append({"symbol": symbol, "side": key.split(":", 1)[1], "retired": coid})
+        state.pop(key, None)
     _save_state(spath, state)
     return report
 
@@ -232,6 +263,9 @@ def format_maker_block(report: Dict[str, Any]) -> str:
     ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     lines = [f"{ts} maker execute={report.get('execute')}"]
     for q in report.get("quotes") or []:
+        if q.get("retired") is not None:
+            lines.append(f"maker {q.get('symbol')} {q.get('side')} retired {q.get('retired')}")
+            continue
         state = q.get("skipped") or ("resting " + str(q.get("resting")) if q.get("resting") else
                                      ("placed " + str(q.get("coid")) if q.get("success") else "error " + str(q.get("error"))))
         lines.append(f"maker {q.get('symbol')} {q.get('side')} ref {q.get('ref')} target {q.get('target')} {state}")
