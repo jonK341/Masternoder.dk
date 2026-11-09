@@ -24,6 +24,7 @@ from backend.services.exchange_cross_trade_service import (
     search_fast_books,
     search_log_paths,
 )
+from backend.services.exchange_ladder_service import lowest_own_sell
 from backend.services.exchange_maker_quote_service import own_sell_price
 from backend.services.exchange_venue_api_service import parse_spot_balances, place_limit_order
 
@@ -282,6 +283,7 @@ def dispatch_strategy_orders(
     state_path: Optional[str] = None,
     clock: Optional[Callable[[], float]] = None,
     maker_state_path: Optional[str] = None,
+    ladder_state_path: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Send one live order per new long/sell signal. Repeat signals stay locked.
 
@@ -426,7 +428,9 @@ def dispatch_strategy_orders(
             sent.append({**base, "skipped": "book_too_thin", "error": bn_error})
             open_keys.append(key)
             return
-        own_sell = own_sell_price(symbol, maker_state_path)
+        own_sells = [p for p in (own_sell_price(symbol, maker_state_path), lowest_own_sell(symbol, ladder_state_path))
+                     if p is not None]
+        own_sell = min(own_sells) if own_sells else None
         if own_sell is not None and float(nk_price) >= own_sell:
             sent.append({**base, "skipped": "own_maker_sell", "error": bn_error})
             return

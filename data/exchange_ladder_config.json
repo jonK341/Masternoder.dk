@@ -1,0 +1,29 @@
+{
+  "execute": true,
+  "symbols": ["ALGO", "XRP", "DOGE", "ADA", "TRX", "SOL"],
+  "sides": ["sell", "buy"],
+  "order_usd": 3.5,
+  "min_order_usd": 3.0,
+  "levels": 12,
+  "max_open_orders": 60,
+  "first_bps": 30.0,
+  "step_bps": 40.0,
+  "exit_bps": 100.0,
+  "fee_bps": 20.0,
+  "recenter_bps": 150.0,
+  "max_age_minutes": 360.0,
+  "binance": {
+    "execute": true,
+    "symbols": ["XRP", "ALGO", "XLM", "TRX", "SOL"],
+    "order_usd": 5.5,
+    "min_order_usd": 5.1,
+    "levels": 10,
+    "max_open_orders": 40,
+    "first_bps": 20.0,
+    "step_bps": 30.0,
+    "exit_bps": 50.0,
+    "fee_bps": 10.0,
+    "recenter_bps": 100.0,
+    "quote_reserve": 5.0
+  }
+}

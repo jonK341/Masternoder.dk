@@ -1,6 +1,6 @@
 {
   "execute": true,
-  "symbols": ["ALGO", "XRP"],
+  "symbols": [],
   "sides": ["sell"],
   "clip_usd": 25.0,
   "fee_bps": 30.0,

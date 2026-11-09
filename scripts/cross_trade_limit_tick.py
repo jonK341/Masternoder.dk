@@ -27,6 +27,12 @@ from backend.services.exchange_cross_trade_service import (
     search_fast_books,
     write_search_logs,
 )
+from backend.services.exchange_ladder_service import (
+    VENUES as LADDER_VENUES,
+    format_ladder_block,
+    run_ladder,
+    write_ladder_log,
+)
 from backend.services.exchange_maker_quote_service import (
     format_maker_block,
     run_maker_quotes,
@@ -60,6 +66,16 @@ def main() -> int:
     except Exception as exc:
         maker = {"execute": False, "error": str(exc)}
         print(f"maker failed: {exc}")
+    ladders = {}
+    for venue in LADDER_VENUES:
+        try:
+            ladder = run_ladder(venue=venue)
+            write_ladder_log(ladder)
+            print(format_ladder_block(ladder), end="")
+        except Exception as exc:
+            ladder = {"execute": False, "error": str(exc)}
+            print(f"ladder {venue} failed: {exc}")
+        ladders[venue] = ladder
     result = run_once()
     result["arbitrage_live"] = bool(live_enabled())
     result["cross_trade_live"] = bool(cross_trade_live_enabled())
@@ -92,6 +108,13 @@ def main() -> int:
         "quotes": maker.get("quotes"),
         "fills": maker.get("fills"),
         "error": maker.get("error"),
+    }
+    result["ladder"] = {
+        venue: {
+            key: ladder.get(key)
+            for key in ("execute", "open_orders", "pending_exits", "realized_usd", "placed", "fills", "errors", "error")
+        }
+        for venue, ladder in ladders.items()
     }
     print(json.dumps(result, default=str))
     return 0
