@@ -83,6 +83,80 @@ def test_a_signal_is_sent_once_and_a_flat_pass_sends_nothing(tmp_path):
     assert again == []
     assert len(calls) == 3
 
+def test_negative_score_strategies_stay_paper(tmp_path):
+    from backend.services.exchange_strategy_service import dispatch_strategy_orders
+
+    calls = []
+    report = {
+        "execute": True,
+        "strategy_score_pct": {"momentum": 0.69, "trend": -1.5, "swing": -0.8},
+        "rows": [
+            {"strategy": "trend", "symbol": "ALGO", "signal": "long", "ready": True, "notional_usd": 25},
+            {"strategy": "swing", "symbol": "XLM", "signal": "long", "ready": True, "notional_usd": 25},
+            {"strategy": "momentum", "symbol": "XRP", "signal": "long", "ready": True, "notional_usd": 25},
+        ],
+    }
+    sent = dispatch_strategy_orders(
+        report,
+        place=lambda venue, symbol, side, qty, price, tif: calls.append((venue, symbol, side))
+        or {"success": True, "mode": "live", "order_id": "x"},
+        balances={"binance": {"USDC": 40}, "nonkyc": {}},
+        quotes={"XRP": {"bid": 1.16, "ask": 1.17}},
+        state_path=str(tmp_path / "state.json"),
+    )
+    assert calls == [("binance", "XRP", "buy")]
+    assert [row["strategy"] for row in sent] == ["momentum"]
+
+
+def test_empty_binance_buys_on_nonkyc_after_usdc_top_up(tmp_path):
+    from backend.services.exchange_strategy_service import dispatch_strategy_orders
+
+    calls = []
+
+    def place(venue, symbol, side, qty, price, tif):
+        calls.append((venue, symbol, side, round(qty * price, 2)))
+        return {"success": True, "mode": "live", "order_id": f"{venue}-{symbol}"}
+
+    report = {
+        "execute": True,
+        "strategy_score_pct": {"momentum": 0.69},
+        "rows": [{"strategy": "momentum", "symbol": "ALGO", "signal": "long", "ready": True, "notional_usd": 50}],
+    }
+    sent = dispatch_strategy_orders(
+        report, place=place,
+        balances={"binance": {"USDC": 0.0}, "nonkyc": {"USDT": 0.11, "USDC": 79.0}},
+        quotes={"ALGO": {"bid": 0.093, "ask": 0.0931}},
+        walk_book=lambda _symbol, _usd: 0.0935,
+        usdc_bid=lambda: 1.0008,
+        state_path=str(tmp_path / "state.json"),
+    )
+    assert [call[:3] for call in calls] == [("nonkyc", "USDC", "sell"), ("nonkyc", "ALGO", "buy")]
+    assert 49.9 <= calls[0][3] <= 50.5
+    assert sent[0]["convert"] == "USDC->USDT"
+    assert sent[1]["order_id"] == "nonkyc-ALGO"
+
+
+def test_top_up_keeps_usdc_reserve_and_skips_when_short(tmp_path):
+    from backend.services.exchange_strategy_service import dispatch_strategy_orders
+
+    calls = []
+    report = {
+        "execute": True,
+        "rows": [{"strategy": "momentum", "symbol": "ALGO", "signal": "long", "ready": True, "notional_usd": 50}],
+    }
+    sent = dispatch_strategy_orders(
+        report,
+        place=lambda *args: calls.append(args) or {"success": True, "mode": "live"},
+        balances={"binance": {"USDC": 0.0}, "nonkyc": {"USDT": 0.11, "USDC": 20.0}},
+        quotes={"ALGO": {"bid": 0.093, "ask": 0.0931}},
+        walk_book=lambda _symbol, _usd: 0.0935,
+        usdc_bid=lambda: 1.0,
+        state_path=str(tmp_path / "state.json"),
+    )
+    assert calls == []
+    assert sent[0]["skipped"] == "budget"
+
+
 def test_execute_off_places_nothing(tmp_path):
     from backend.services.exchange_strategy_service import dispatch_strategy_orders
 

@@ -46,6 +46,8 @@ _KLINE_URLS = (
     "https://api.binance.com/api/v3/klines",
 )
 _CFG_PATH = os.path.join(ex._BASE, "data", "exchange_strategy_config.json")
+# NonKYC USDC kept back when converting to USDT for strategy buys.
+USDC_RESERVE = 5.0
 
 
 def _default_config() -> Dict[str, Any]:
@@ -246,6 +248,19 @@ def _default_place(venue: str, symbol: str, side: str, qty: float, price: float,
     )
 
 
+def _nonkyc_usdc_bid() -> Optional[float]:
+    bids = [price for price, qty in (fetch_nonkyc_book("USDC").get("bids") or []) if price > 0 and qty > 0]
+    return max(bids) if bids else None
+
+
+def tradable_rows(rows: Sequence[Dict[str, Any]], scores: Dict[str, float]) -> List[Dict[str, Any]]:
+    """Drop rows from strategies whose walk-forward return is below zero; they stay paper-only."""
+    return [
+        row for row in (rows or [])
+        if float(scores.get(str(row.get("strategy") or ""), 0.0)) >= 0
+    ]
+
+
 def dispatch_strategy_orders(
     report: Dict[str, Any],
     book_report: Optional[Dict[str, Any]] = None,
@@ -254,12 +269,19 @@ def dispatch_strategy_orders(
     balances: Optional[Dict[str, Dict[str, float]]] = None,
     quotes: Optional[Dict[str, Dict[str, float]]] = None,
     walk_book: Optional[Callable[[str, float], Optional[float]]] = None,
+    usdc_bid: Optional[Callable[[], Optional[float]]] = None,
     state_path: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Send one live order per new long/sell signal. Repeat signals stay locked."""
+    """Send one live order per new long/sell signal. Repeat signals stay locked.
+
+    Buys go to Binance USDC first. When Binance has no budget or rejects the
+    symbol, the buy goes to the NonKYC USDT book, topping USDT up from NonKYC
+    USDC (USDC/USDT market) when needed.
+    """
     if not report.get("execute"):
         return []
     sender = place or _default_place
+    usdc_bid_fn = usdc_bid or _nonkyc_usdc_bid
     path = _order_state_path(state_path)
     quotes = quotes if quotes is not None else _book_quotes(book_report)
     if balances is None:
@@ -269,7 +291,11 @@ def dispatch_strategy_orders(
         }
     binance = {str(k).upper(): float(v or 0) for k, v in (balances.get("binance") or {}).items()}
     nonkyc = {str(k).upper(): float(v or 0) for k, v in (balances.get("nonkyc") or {}).items()}
-    live_rows = signal_orders(report.get("rows") or report.get("orders") or [], max_orders=int(report.get("max_orders") or 10))
+    scores = report.get("strategy_score_pct") or {}
+    live_rows = signal_orders(
+        tradable_rows(report.get("rows") or report.get("orders") or [], scores),
+        max_orders=int(report.get("max_orders") or 10),
+    )
     live_keys = {_signal_key(row) for row in live_rows}
     try:
         open_keys = [key for key in _load_open_keys(path) if key in live_keys]
@@ -322,42 +348,71 @@ def dispatch_strategy_orders(
             res = sender("binance", symbol, "sell", qty, price, "IOC")
             _finish(row, res, "binance", "sell")
             return
-        clip = min(float(row.get("notional_usd") or 25), each)
+        want = float(row.get("notional_usd") or 25)
+        clip = min(want, each)
         ask = float(quote.get("ask") or 0)
-        if clip < 5.0 or ask <= 0:
-            sent.append({"strategy": row.get("strategy"), "symbol": symbol, "signal": "long", "skipped": "budget"})
-            return
-        price = _on_tick(ask, _binance_tick(symbol), up=True) if place is None else ask
-        res = sender("binance", symbol, "buy", clip / price, price, "IOC")
-        if _accepted(res):
-            _finish(row, res, "binance", "buy")
-            return
-        err = _error_text(res).lower()
-        if "whitelist" not in err:
-            _finish(row, res, "binance", "buy")
-            return
+        bn_error = ""
+        if clip >= 5.0 and ask > 0:
+            price = _on_tick(ask, _binance_tick(symbol), up=True) if place is None else ask
+            res = sender("binance", symbol, "buy", clip / price, price, "IOC")
+            if _accepted(res):
+                _finish(row, res, "binance", "buy")
+                return
+            bn_error = _error_text(res)
+            if "whitelist" not in bn_error.lower():
+                _finish(row, res, "binance", "buy")
+                return
+        _nonkyc_buy(row, symbol, want, key, bn_error)
+
+    def _top_up_usdt(need: float) -> Optional[str]:
         usdt = float(nonkyc.get("USDT") or 0)
-        nk_clip = min(clip, usdt - 0.05)
-        if nk_clip < 5.0:
-            sent.append({
-                "strategy": row.get("strategy"), "symbol": symbol, "signal": "long",
-                "venue": "binance", "success": False, "error": _error_text(res), "fallback": "no_usdt",
-            })
-            open_keys.append(key)
+        short = need + 0.05 - usdt
+        if short <= 0:
+            return None
+        usdc = float(nonkyc.get("USDC") or 0)
+        if usdc - USDC_RESERVE < short:
+            return "no_usdt"
+        bid = usdc_bid_fn()
+        if not bid or bid < 0.99:
+            return "usdc_book"
+        px = round(bid * 0.999, 5)
+        qty = round(min(usdc - USDC_RESERVE, short * 1.003 / px + 0.01), 2)
+        res = sender("nonkyc", "USDC", "sell", qty, px, "GTC")
+        sent.append({
+            "convert": "USDC->USDT", "venue": "nonkyc", "qty": qty, "price": px,
+            "success": _accepted(res), "order_id": res.get("order_id"), "error": _error_text(res),
+        })
+        if not _accepted(res):
+            return "convert_failed"
+        nonkyc["USDC"] = usdc - qty
+        nonkyc["USDT"] = usdt + qty * px
+        return None
+
+    def _nonkyc_buy(row: Dict[str, Any], symbol: str, want: float, key: str, bn_error: str) -> None:
+        base = {"strategy": row.get("strategy"), "symbol": symbol, "signal": "long"}
+        blocked = _top_up_usdt(want)
+        if blocked == "no_usdt":
+            usdt = float(nonkyc.get("USDT") or 0)
+            if usdt - 0.05 >= 5.0:
+                want = usdt - 0.05
+            else:
+                sent.append({**base, "skipped": "budget", "error": bn_error})
+                if bn_error:
+                    open_keys.append(key)
+                return
+        elif blocked:
+            sent.append({**base, "skipped": blocked, "error": bn_error})
             return
         walker = walk_book if walk_book is not None else _walk_nonkyc_buy
-        nk_price = walker(symbol, nk_clip)
+        nk_price = walker(symbol, want)
         if not nk_price:
-            sent.append({
-                "strategy": row.get("strategy"), "symbol": symbol, "signal": "long",
-                "skipped": "book_too_thin", "error": _error_text(res),
-            })
+            sent.append({**base, "skipped": "book_too_thin", "error": bn_error})
             open_keys.append(key)
             return
-        nk_res = sender("nonkyc", symbol, "buy", round(nk_clip / float(nk_price), 4), float(nk_price), "GTC")
+        nk_res = sender("nonkyc", symbol, "buy", round(want / float(nk_price), 4), float(nk_price), "GTC")
         _finish(row, nk_res, "nonkyc", "buy")
         if _accepted(nk_res):
-            nonkyc["USDT"] = max(0.0, usdt - nk_clip)
+            nonkyc["USDT"] = max(0.0, float(nonkyc.get("USDT") or 0) - want)
 
     for row in todo:
         symbol = str(row.get("symbol") or "")
@@ -799,7 +854,7 @@ def search_strategies(book_report: Optional[Dict[str, Any]] = None) -> Dict[str,
     report["strategy_score_pct"] = scores
     report["max_orders"] = int(cfg.get("max_orders") or 10)
     if cfg["execute"]:
-        report["orders"] = signal_orders(report["rows"], max_orders=report["max_orders"])
+        report["orders"] = signal_orders(tradable_rows(report["rows"], scores), max_orders=report["max_orders"])
     else:
         report["orders"] = select_strategy_orders(report["rows"], scores, max_orders=report["max_orders"])
     report["best"] = [key for key, _score in sorted(scores.items(), key=lambda item: item[1], reverse=True) if _score > 0]
