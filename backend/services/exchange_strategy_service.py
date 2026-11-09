@@ -24,6 +24,7 @@ from backend.services.exchange_cross_trade_service import (
     search_fast_books,
     search_log_paths,
 )
+from backend.services.exchange_maker_quote_service import own_sell_price
 from backend.services.exchange_venue_api_service import parse_spot_balances, place_limit_order
 
 Candle = Dict[str, float]
@@ -280,6 +281,7 @@ def dispatch_strategy_orders(
     usdc_bid: Optional[Callable[[], Optional[float]]] = None,
     state_path: Optional[str] = None,
     clock: Optional[Callable[[], float]] = None,
+    maker_state_path: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Send one live order per new long/sell signal. Repeat signals stay locked.
 
@@ -423,6 +425,10 @@ def dispatch_strategy_orders(
         if not nk_price:
             sent.append({**base, "skipped": "book_too_thin", "error": bn_error})
             open_keys.append(key)
+            return
+        own_sell = own_sell_price(symbol, maker_state_path)
+        if own_sell is not None and float(nk_price) >= own_sell:
+            sent.append({**base, "skipped": "own_maker_sell", "error": bn_error})
             return
         nk_res = sender("nonkyc", symbol, "buy", round(want / float(nk_price), 4), float(nk_price), "GTC")
         _finish(row, nk_res, "nonkyc", "buy")

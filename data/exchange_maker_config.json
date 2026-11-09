@@ -1,0 +1,10 @@
+{
+  "execute": true,
+  "symbols": ["ALGO", "XRP"],
+  "sides": ["sell"],
+  "clip_usd": 25.0,
+  "fee_bps": 30.0,
+  "edge_bps": 18.0,
+  "reprice_bps": 5.0,
+  "max_age_minutes": 30.0
+}

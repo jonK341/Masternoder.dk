@@ -27,6 +27,11 @@ from backend.services.exchange_cross_trade_service import (
     search_fast_books,
     write_search_logs,
 )
+from backend.services.exchange_maker_quote_service import (
+    format_maker_block,
+    run_maker_quotes,
+    write_maker_log,
+)
 from backend.services.exchange_strategy_service import (
     dispatch_strategy_orders,
     format_strategy_block,
@@ -48,6 +53,13 @@ def main() -> int:
         strategies = {"actionable": 0, "execute": False, "error": str(exc)}
         strategy_logs = {}
         print(f"strategies failed: {exc}")
+    try:
+        maker = run_maker_quotes()
+        write_maker_log(maker)
+        print(format_maker_block(maker), end="")
+    except Exception as exc:
+        maker = {"execute": False, "error": str(exc)}
+        print(f"maker failed: {exc}")
     result = run_once()
     result["arbitrage_live"] = bool(live_enabled())
     result["cross_trade_live"] = bool(cross_trade_live_enabled())
@@ -74,6 +86,12 @@ def main() -> int:
             for row in (strategies.get("sent") or [])
         ],
         "log": strategy_logs.get("calculations"),
+    }
+    result["maker"] = {
+        "execute": maker.get("execute"),
+        "quotes": maker.get("quotes"),
+        "fills": maker.get("fills"),
+        "error": maker.get("error"),
     }
     print(json.dumps(result, default=str))
     return 0
