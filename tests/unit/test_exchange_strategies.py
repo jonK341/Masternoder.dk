@@ -157,6 +157,33 @@ def test_top_up_keeps_usdc_reserve_and_skips_when_short(tmp_path):
     assert sent[0]["skipped"] == "budget"
 
 
+def test_flip_flat_and_back_waits_for_reentry_window(tmp_path):
+    from backend.services.exchange_strategy_service import dispatch_strategy_orders
+
+    calls = []
+    clock = {"now": 1_000_000.0}
+    live = {"strategy": "scalp", "symbol": "ALGO", "signal": "long", "ready": True, "notional_usd": 25}
+    flat = {**live, "signal": "flat"}
+    kwargs = dict(
+        place=lambda venue, symbol, side, qty, price, tif: calls.append((venue, symbol))
+        or {"success": True, "mode": "live", "order_id": "x"},
+        balances={"binance": {"USDC": 40}, "nonkyc": {}},
+        quotes={"ALGO": {"bid": 0.093, "ask": 0.0931}},
+        state_path=str(tmp_path / "state.json"),
+        clock=lambda: clock["now"],
+    )
+    dispatch_strategy_orders({"execute": True, "rows": [live]}, **kwargs)
+    clock["now"] += 60
+    dispatch_strategy_orders({"execute": True, "rows": [flat]}, **kwargs)
+    clock["now"] += 60
+    assert dispatch_strategy_orders({"execute": True, "rows": [live]}, **kwargs) == []
+    assert len(calls) == 1
+    clock["now"] += 241 * 60
+    dispatch_strategy_orders({"execute": True, "rows": [flat]}, **kwargs)
+    dispatch_strategy_orders({"execute": True, "rows": [live]}, **kwargs)
+    assert len(calls) == 2
+
+
 def test_execute_off_places_nothing(tmp_path):
     from backend.services.exchange_strategy_service import dispatch_strategy_orders
 

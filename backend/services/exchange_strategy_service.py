@@ -48,6 +48,8 @@ _KLINE_URLS = (
 _CFG_PATH = os.path.join(ex._BASE, "data", "exchange_strategy_config.json")
 # NonKYC USDC kept back when converting to USDT for strategy buys.
 USDC_RESERVE = 5.0
+# A strategy that flips flat and back within this window does not buy the same coin again.
+REENTRY_MINUTES = 240.0
 
 
 def _default_config() -> Dict[str, Any]:
@@ -143,17 +145,23 @@ def _order_state_path(path: Optional[str] = None) -> str:
     return os.path.join(ex._BASE, "data", "crypto_exchange", "strategy_order_state.json")
 
 
-def _load_open_keys(path: str) -> List[str]:
+def _load_order_state(path: str) -> Tuple[List[str], Dict[str, float]]:
     raw = ex._read_json(path, None)
     if not isinstance(raw, dict):
-        return []
-    return [str(key) for key in (raw.get("open") or [])]
+        return [], {}
+    sent_at: Dict[str, float] = {}
+    for key, ts in (raw.get("sent_at") or {}).items():
+        try:
+            sent_at[str(key)] = float(ts)
+        except (TypeError, ValueError):
+            continue
+    return [str(key) for key in (raw.get("open") or [])], sent_at
 
 
-def _save_open_keys(path: str, keys: Sequence[str]) -> None:
+def _save_order_state(path: str, keys: Sequence[str], sent_at: Dict[str, float]) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as handle:
-        json.dump({"open": list(keys)}, handle)
+        json.dump({"open": list(keys), "sent_at": sent_at}, handle)
         handle.write("\n")
 
 
@@ -271,6 +279,7 @@ def dispatch_strategy_orders(
     walk_book: Optional[Callable[[str, float], Optional[float]]] = None,
     usdc_bid: Optional[Callable[[], Optional[float]]] = None,
     state_path: Optional[str] = None,
+    clock: Optional[Callable[[], float]] = None,
 ) -> List[Dict[str, Any]]:
     """Send one live order per new long/sell signal. Repeat signals stay locked.
 
@@ -298,10 +307,14 @@ def dispatch_strategy_orders(
     )
     live_keys = {_signal_key(row) for row in live_rows}
     try:
-        open_keys = [key for key in _load_open_keys(path) if key in live_keys]
+        stored_keys, sent_at = _load_order_state(path)
     except OSError:
-        open_keys = []
-    todo = [row for row in live_rows if _signal_key(row) not in set(open_keys)]
+        stored_keys, sent_at = [], {}
+    open_keys = [key for key in stored_keys if key in live_keys]
+    now = time.time() if clock is None else clock()
+    cooldown_s = max(0.0, float(report.get("reentry_minutes", REENTRY_MINUTES))) * 60
+    sent_at = {key: ts for key, ts in sent_at.items() if now - ts < cooldown_s}
+    todo = [row for row in live_rows if _signal_key(row) not in set(open_keys) and _signal_key(row) not in sent_at]
     buys = [row for row in todo if row.get("signal") == "long"]
     usdc = float(binance.get("USDC") or 0)
     each = ((usdc - 1.0) / len(buys)) if buys and usdc > 1.0 else 0.0
@@ -322,6 +335,8 @@ def dispatch_strategy_orders(
         err = item["error"].lower()
         if item["success"] or "whitelist" in err or "insufficient" in err:
             open_keys.append(_signal_key(row))
+        if item["success"]:
+            sent_at[_signal_key(row)] = now
 
     def _send_row(row: Dict[str, Any], symbol: str, quote: Dict[str, float], key: str) -> None:
         if row.get("signal") == "sell":
@@ -426,7 +441,7 @@ def dispatch_strategy_orders(
                 "success": False, "error": str(exc),
             })
     try:
-        _save_open_keys(path, open_keys)
+        _save_order_state(path, open_keys, sent_at)
     except OSError:
         pass
     return sent
@@ -853,6 +868,7 @@ def search_strategies(book_report: Optional[Dict[str, Any]] = None) -> Dict[str,
     scores = cfg.get("strategy_score_pct") or {}
     report["strategy_score_pct"] = scores
     report["max_orders"] = int(cfg.get("max_orders") or 10)
+    report["reentry_minutes"] = float(cfg.get("reentry_minutes") or REENTRY_MINUTES)
     if cfg["execute"]:
         report["orders"] = signal_orders(tradable_rows(report["rows"], scores), max_orders=report["max_orders"])
     else:
