@@ -207,3 +207,23 @@ def test_balance_cache_refresh_and_age(monkeypatch):
     assert calls["n"] == 2
     assert vapi.balance_cache_age_sec("nonkyc") is not None
 
+
+
+def test_binance_cancel_sends_delete(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    seen = {}
+
+    def fake_http(method, url, *, headers=None, data=None, timeout=8.0):
+        seen["method"] = method
+        seen["url"] = url
+        return {"success": True, "status_code": 200, "body": {"status": "CANCELED"}}
+
+    monkeypatch.setattr(vapi, "venue_credentials", lambda vid: {"api_key": "k", "api_secret": "s"})
+    monkeypatch.setattr(vapi, "_http_request", fake_http)
+
+    out = vapi.cancel_order("binance", "XLM", "401471991", dry_run=False, quote="USDC")
+    assert out["success"] is True
+    assert seen["method"] == "DELETE"
+    assert "/api/v3/order?" in seen["url"]
+    assert "orderId=401471991" in seen["url"]
