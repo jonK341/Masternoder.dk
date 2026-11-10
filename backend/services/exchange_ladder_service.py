@@ -439,8 +439,14 @@ def run_ladder(
         if not injected_balances:
             refresh_venue_fees()
             if venue == "nonkyc" and cfg.get("execute"):
+                # Target enough quote for ~3 ladder orders / pending exits.
+                topup_target = max(
+                    float(cfg.get("min_order_usd") or 3.0) * 3.0,
+                    float(cfg.get("order_usd") or 3.5) * 3.0,
+                    12.0,
+                )
                 report["quote_topup"] = top_up_nonkyc_quote(
-                    min_quote_usd=max(float(cfg.get("min_order_usd") or 3.0), 3.0),
+                    min_quote_usd=topup_target,
                     dry_run=False,
                 )
                 if not (report["quote_topup"] or {}).get("skipped"):
@@ -457,6 +463,7 @@ def run_ladder(
     report["_fill_prob_l0"] = cfg.get("_fill_prob_l0")
     report["_dynamic_cap"] = cfg.get("_dynamic_cap")
     report["_ppp_filter"] = cfg.get("_ppp_filter")
+    report["_exit_first"] = cfg.get("_exit_first")
     skews: Dict[str, float] = {}
 
     markets: Dict[str, Dict[str, float]] = {}

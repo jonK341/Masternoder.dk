@@ -1,5 +1,6 @@
 from backend.services.exchange_ladder_strategy_improve import (
     apply_dynamic_level_cap,
+    apply_exit_first_sides,
     apply_fee_table_to_cfg,
     filter_symbols_by_ppp_edge,
     refresh_venue_fees,
@@ -54,3 +55,22 @@ def test_topup_dry_run_without_creds(monkeypatch):
     )
     out = top_up_nonkyc_quote(dry_run=True)
     assert out["success"] is False
+
+
+def test_exit_first_strips_buys_when_quote_thin():
+    cfg = {"sides": ["buy", "sell"], "order_usd": 3.5}
+    thin = apply_exit_first_sides(cfg, free_quote=2.0)
+    assert thin["_exit_first"]["active"] is True
+    assert "buy" not in thin["sides"]
+    assert "sell" in thin["sides"]
+    fat = apply_exit_first_sides(cfg, free_quote=20.0)
+    assert fat["_exit_first"]["active"] is False
+    assert "buy" in fat["sides"]
+
+
+def test_reduce_notional_cap_fits_free_quote():
+    from backend.services.exchange_swap_rotation_service import _reduce_notional_action
+
+    act = _reduce_notional_action("binance", "USDC", 6.0, 25.0, score=1.0)
+    assert act["suggested_notional_usd"] <= 6.0
+    assert act["suggested_notional_usd"] >= 5.0

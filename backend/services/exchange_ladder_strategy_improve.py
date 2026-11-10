@@ -149,24 +149,49 @@ def filter_symbols_by_ppp_edge(cfg: Dict[str, Any], *, min_hit_rate: float = 15.
     return out
 
 
+def apply_exit_first_sides(cfg: Dict[str, Any], *, free_quote: float) -> Dict[str, Any]:
+    """When quote is thin, stop new buy entries so sells/exits can recycle capital.
+
+    Live learning: NonKYC filled many buy entries while exits starved (empty USDT),
+    locking inventory. Sell-only mode until quote recovers.
+    """
+    out = dict(cfg)
+    order = max(float(out.get("order_usd") or 1.0), 0.01)
+    # Need ~1.5 orders of free quote before opening new buy entries.
+    thin = float(free_quote) < order * 1.5
+    if thin and "buy" in list(out.get("sides") or []):
+        sides = [s for s in (out.get("sides") or []) if s != "buy"]
+        out["sides"] = sides or ["sell"]
+        out["_exit_first"] = {
+            "active": True,
+            "free_quote": free_quote,
+            "order_usd": order,
+            "sides": out["sides"],
+        }
+    else:
+        out["_exit_first"] = {"active": False, "free_quote": free_quote}
+    return out
+
+
 def top_up_nonkyc_quote(
     *,
-    min_quote_usd: float = 3.0,
-    max_sells: int = 3,
+    min_quote_usd: float = 12.0,
+    max_sells: int = 6,
     dry_run: bool = False,
 ) -> Dict[str, Any]:
-    """Sell NonKYC dust/base into USDT when free quote is below min_quote_usd."""
+    """Sell NonKYC base inventory into USDT when free quote is below min_quote_usd."""
     if not venue_has_credentials("nonkyc"):
         return {"success": False, "error": "no_credentials"}
     bal = parse_spot_balances("nonkyc", dry_run=False, force_refresh=True) or {}
     usdt = float(bal.get("USDT") or 0)
     if usdt >= min_quote_usd:
         return {"success": True, "skipped": True, "usdt": usdt, "reason": "quote_ok"}
-    # Prefer ladder symbols with free inventory
+    # Prefer liquid ladder symbols; skip obvious meme dust.
     candidates = ["ALGO", "DOGE", "XRP", "ADA", "TRX", "SOL", "XLM"]
     sells: List[Dict[str, Any]] = []
+    need = max(min_quote_usd - usdt, 1.0)
     for sym in candidates:
-        if len(sells) >= max_sells:
+        if len(sells) >= max_sells or need <= 0.5:
             break
         qty = float(bal.get(sym) or 0)
         if qty <= 0:
@@ -175,16 +200,17 @@ def top_up_nonkyc_quote(
         bid = float(top.get("bid") or 0)
         if bid <= 0:
             continue
-        # Sell up to ~$4 notional or 40% of free qty
-        target_usd = min(4.0, max(min_quote_usd - usdt, 1.0))
-        sell_qty = min(qty * 0.4, target_usd / bid)
+        # More aggressive: up to 80% of free qty / $12 per clip toward the shortfall.
+        target_usd = min(12.0, need)
+        sell_qty = min(qty * 0.8, target_usd / bid)
         if sell_qty * bid < 0.5:
             continue
-        price = round(bid * 0.998, 8)  # slight undercut for fill
+        price = round(bid * 0.997, 8)  # slight undercut for fill
         row = {"symbol": sym, "qty": sell_qty, "price": price, "usd": round(sell_qty * price, 4)}
         if dry_run:
             row["dry_run"] = True
             sells.append(row)
+            need -= float(row["usd"])
             continue
         res = place_limit_order(
             "nonkyc",
@@ -199,10 +225,12 @@ def top_up_nonkyc_quote(
         sells.append(row)
         if res.get("success"):
             usdt += sell_qty * price
+            need = max(min_quote_usd - usdt, 0.0)
     payload = {
         "success": True,
         "usdt_before": float(bal.get("USDT") or 0),
         "usdt_est_after": usdt,
+        "target_usd": min_quote_usd,
         "sells": sells,
         "updated_at": time.time(),
         "dry_run": dry_run,
@@ -212,10 +240,11 @@ def top_up_nonkyc_quote(
 
 
 def enhance_ladder_cfg(cfg: Dict[str, Any], *, venue: str, balances: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
-    """Apply fee table, dynamic caps, and PPP symbol filter."""
+    """Apply fee table, dynamic caps, exit-first sides, and PPP symbol filter."""
     quote = str(cfg.get("quote") or ("USDC" if venue == "binance" else "USDT"))
     free_quote = float((balances or {}).get(quote) or 0)
     out = apply_fee_table_to_cfg(cfg, venue)
     out = apply_dynamic_level_cap(out, free_quote=free_quote)
+    out = apply_exit_first_sides(out, free_quote=free_quote)
     out = filter_symbols_by_ppp_edge(out)
     return out

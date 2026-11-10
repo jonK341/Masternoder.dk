@@ -1045,7 +1045,12 @@ def _reduce_notional_action(
     *,
     score: float,
 ) -> Dict[str, Any]:
-    cap = round(max(10.0, free_usd * 0.95), 2)
+    # Cap must actually fit free quote (old floor of $10 broke ~$6 USDC books).
+    venue_min = 5.0 if str(venue_id).lower() == "binance" else 3.0
+    if free_usd < venue_min:
+        cap = round(max(0.0, free_usd * 0.9), 2)
+    else:
+        cap = round(min(float(configured_usd or free_usd), max(venue_min, free_usd * 0.9)), 2)
     return {
         "type": "reduce_notional",
         "priority": "medium",
