@@ -533,6 +533,53 @@ def notional_buffer_for_latency_tier(venue_id: str, *, base_buffer_pct: float = 
     return float(tiers.get(str(venue_id or "").lower(), base_buffer_pct))
 
 
+def opportunity_latency_buffer_pct(opp: Dict[str, Any], *, base_buffer_pct: float = 0.03) -> float:
+    """Wider of buy/sell venue latency buffers — slow legs size the cushion."""
+    buy = notional_buffer_for_latency_tier(str(opp.get("buy_venue") or ""), base_buffer_pct=base_buffer_pct)
+    sell = notional_buffer_for_latency_tier(str(opp.get("sell_venue") or ""), base_buffer_pct=base_buffer_pct)
+    return max(float(base_buffer_pct), buy, sell)
+
+
+def evaluate_chain_rebalance(
+    *,
+    move_usd: float,
+    fee_usd: float = 1.5,
+    max_fee_bps: float = 30.0,
+    min_move_usd: float = 500.0,
+    premium_open_sec: float = 0.0,
+    min_premium_sec: float = 600.0,
+) -> Dict[str, Any]:
+    """Withdraw-latency gate: chain moves only when fee is cheap and premium is sticky.
+
+    Never broadcasts a withdrawal — inventory repair stays advisory. At ~$70/side a
+    $1.50 TRC20 fee is hundreds of bps; prefer the next prefunded arb to rebalance.
+    """
+    move = max(0.0, float(move_usd or 0))
+    fee = max(0.0, float(fee_usd or 0))
+    fee_bps = (fee / move) * 1e4 if move > 0 else 1e9
+    reasons: List[str] = []
+    if move < float(min_move_usd):
+        reasons.append("move_below_min")
+    if fee_bps > float(max_fee_bps):
+        reasons.append("fee_bps_too_high")
+    if float(premium_open_sec or 0) < float(min_premium_sec):
+        reasons.append("premium_not_persistent")
+    allowed = not reasons
+    return {
+        "allowed": allowed,
+        "broadcast": False,
+        "move_usd": round(move, 4),
+        "fee_usd": round(fee, 4),
+        "fee_bps": round(fee_bps, 2),
+        "max_fee_bps": float(max_fee_bps),
+        "min_move_usd": float(min_move_usd),
+        "premium_open_sec": float(premium_open_sec or 0),
+        "min_premium_sec": float(min_premium_sec),
+        "reasons": reasons,
+        "prefer_inventory_arb": True,
+    }
+
+
 def triangular_live_allowed() -> Dict[str, Any]:
     """Triangular arb live gate — paper-only until SPORK OK."""
     try:
@@ -555,20 +602,54 @@ def check_slippage_guard(
     if os.environ.get("EXCHANGE_SLIPPAGE_GUARD", "1").strip().lower() in ("0", "false", "no", "off"):
         return {"ok": True, "skipped": True, "reason": "disabled"}
     symbol = str(opp.get("symbol") or "").upper()
-    buy_v = str(opp.get("buy_venue") or "")
-    sell_v = str(opp.get("sell_venue") or "")
     ask = float(opp.get("buy_ask") or opp.get("ask") or 0)
     bid = float(opp.get("sell_bid") or opp.get("bid") or 0)
     if not symbol or ask <= 0:
         return {"ok": False, "reason": "invalid_opportunity"}
-    buy_depth_usd = float(opp.get("buy_depth_usd") or opp.get("depth_usd") or notional_usd * 3)
-    sell_depth_usd = float(opp.get("sell_depth_usd") or opp.get("depth_usd") or notional_usd * 3)
+    raw_buy = opp.get("buy_depth_usd")
+    raw_sell = opp.get("sell_depth_usd")
+    raw_depth = opp.get("depth_usd")
+    depth_known = raw_buy is not None or raw_sell is not None or raw_depth is not None
+    if not depth_known:
+        # Unknown book: pass softly unless ops demand measured depth.
+        if os.environ.get("EXCHANGE_SLIPPAGE_REQUIRE_DEPTH", "").strip().lower() in ("1", "true", "yes", "on"):
+            return {"ok": False, "reason": "depth_unknown"}
+        return {"ok": True, "depth_unknown": True, "notional_usd": float(notional_usd)}
+    buy_depth_usd = float(raw_buy if raw_buy is not None else (raw_depth or 0))
+    sell_depth_usd = float(raw_sell if raw_sell is not None else (raw_depth or 0))
     need = float(notional_usd) * min_depth_multiplier
     if buy_depth_usd < need:
         return {"ok": False, "reason": "insufficient_buy_depth", "depth_usd": buy_depth_usd, "required_usd": need}
     if bid > 0 and sell_depth_usd < need:
         return {"ok": False, "reason": "insufficient_sell_depth", "depth_usd": sell_depth_usd, "required_usd": need}
     return {"ok": True, "buy_depth_usd": buy_depth_usd, "sell_depth_usd": sell_depth_usd}
+
+
+def cap_notional_to_book_depth(
+    opp: Dict[str, Any],
+    notional_usd: float,
+    *,
+    min_depth_multiplier: float = 2.0,
+) -> Dict[str, Any]:
+    """Shrink clip so 2× notional still fits inside measured top-of-book depth."""
+    notion = max(0.0, float(notional_usd or 0))
+    depths = []
+    for key in ("buy_depth_usd", "sell_depth_usd", "depth_usd"):
+        if opp.get(key) is not None:
+            try:
+                depths.append(float(opp[key]))
+            except (TypeError, ValueError):
+                pass
+    if not depths:
+        return {"ok": True, "notional_usd": notion, "depth_unknown": True}
+    usable = min(d for d in depths if d >= 0) / max(float(min_depth_multiplier), 1.0)
+    capped = min(notion, max(0.0, usable))
+    return {
+        "ok": capped > 0,
+        "notional_usd": round(capped, 4),
+        "depth_usd": min(depths),
+        "capped": capped + 1e-9 < notion,
+    }
 
 
 def ppp_timeseries_export(*, hours: float = 24) -> Dict[str, Any]:

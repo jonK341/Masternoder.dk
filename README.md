@@ -108,3 +108,10 @@ txid). Idempotent across re-runs; `--reset` reproduces identical counts.
   `derivation_path` but backfill records legacy/custodial only.
 - **Pre-existing FK orphans:** 52 `user_profiles` rows reference missing `user_accounts`
   (unrelated to this migration; backfill sets `foreign_keys=OFF` so they don't block).
+
+## The Profit Daemon Jon
+
+Downloadable profit daemon (ladders, arb, grid, metrics, sales). See
+`profit_daemon_jon/README.md` — install with `bash profit_daemon_jon/install.sh`,
+or grab Release zips from the GitHub Actions workflow
+`profit-daemon-jon-release.yml`.

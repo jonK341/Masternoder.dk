@@ -240,6 +240,21 @@ def exchange_arbitrage_run():
     return jsonify(run_paper_tick())
 
 
+@crypto_exchange_bp.route("/api/exchange/cross-trade/hook", methods=["POST"])
+def exchange_cross_trade_hook():
+    """Cron hook. Sends limit orders only when the process live gates are on."""
+    from backend.services.exchange_cross_trade_service import cron_hook_ok, run_once
+
+    presented = (
+        request.headers.get("X-Cron-Hook-Key")
+        or request.headers.get("X-Exchange-Admin-Key")
+        or ""
+    )
+    if not cron_hook_ok(presented):
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+    return jsonify(run_once(force_live=True))
+
+
 @crypto_exchange_bp.route("/api/exchange/arbitrage/accounts", methods=["GET"])
 def exchange_arbitrage_accounts():
     if not _admin_authorized():

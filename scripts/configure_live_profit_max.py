@@ -105,6 +105,11 @@ def _tune_connectors(*, xeggex_ok: bool = False, xeggex_reason: str = "") -> Non
         vid = str(v.get("id") or "")
         if vid == "binance":
             v["quote"] = binance_quote
+            v["live_trading"] = True
+            v["enabled"] = True
+        elif vid == "nonkyc":
+            v["live_trading"] = True
+            v["enabled"] = True
         elif vid == "xeggex":
             if xeggex_ok:
                 v["live_trading"] = True
@@ -258,16 +263,26 @@ def main() -> int:
 
     load_dotenv()
     _ensure_env_flag("EXCHANGE_ARBITRAGE_LIVE", "1")
+    _ensure_env_flag("EXCHANGE_CROSS_TRADE_LIVE", "1")
+    _ensure_env_flag("EXCHANGE_GRID_LIVE", "1")
     _ensure_env_flag("EXCHANGE_ROTATION_LIVE", "1")
     _ensure_env_flag("EXCHANGE_PROFIT_PAIR_SEARCH", "1")
     _ensure_env_flag("EXCHANGE_PAYOUT_PAYPAL_LIVE", "1")
     _ensure_env_flag("EXCHANGE_PAYOUT_BINANCE_LIVE", "1")
+    _ensure_env_flag("EXCHANGE_DAEMON_MODE", "live")
     _ensure_env_flag("EXCHANGE_PROFIT_PROFILE", "max")
     _ensure_env_flag("EXCHANGE_LIVE_PROFIT_MAX", "1")
     _ensure_env_flag("EXCHANGE_LIVE_MICRO_USD", os.environ.get("EXCHANGE_LIVE_MICRO_USD", "75"))
     _ensure_env_flag("BINANCE_QUOTE", os.environ.get("BINANCE_QUOTE", "USDC"))
     _ensure_env_flag("EXCHANGE_AUTO_PAYPAL_SWEEP", os.environ.get("EXCHANGE_AUTO_PAYPAL_SWEEP", "0"))
     _ensure_env_flag("EXCHANGE_FORCE_IPV4", os.environ.get("EXCHANGE_FORCE_IPV4", "1"))
+    _ensure_env_flag(
+        "MN2_SPORK_OVERRIDE_JSON",
+        os.environ.get(
+            "MN2_SPORK_OVERRIDE_JSON",
+            '{"SPORK_112_EXCHANGE_LIVE_TRADING":1703122560,"SPORK_114_PAYOUT_LIVE":1703122560}',
+        ),
+    )
 
     imported = _import_vault_keys()
     xeggex_ok, xeggex_reason = _probe_xeggex()

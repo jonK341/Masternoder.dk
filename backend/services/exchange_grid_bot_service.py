@@ -1274,14 +1274,70 @@ def grid_targets(cfg: Optional[Dict[str, Any]] = None) -> List[tuple]:
     return targets
 
 
+def apply_quote_and_loss_guards(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Pause venues that are quote-starved or deeply underwater so ladder/fast can use capital.
+
+    Live learning: grid ran ~39 opens at −$6.57 while Binance USDC was ~$6 and NonKYC USDT
+    was empty — starving the profitable ladder. Thin-quote and aggregate-loss pauses free that.
+    """
+    cfg = cfg or load_config()
+    events: List[Dict[str, Any]] = []
+    order_sz = float(cfg.get("order_size_usd") or 6.0)
+    hard_cap = float(cfg.get("hard_loss_cap_usd") or 5.0)
+    targets = grid_targets(cfg)
+    venues = sorted({v for v, _a in targets})
+    profit = grid_profit()
+    by_asset = profit.get("assets") or {}
+    try:
+        from backend.services import exchange_venue_api_service as vapi
+    except Exception as exc:
+        return {"success": False, "error": str(exc), "events": events}
+
+    for venue in venues:
+        try:
+            quote = str(vapi.venue_quote_asset(venue) or "").upper()
+            bals = vapi.parse_spot_balances(venue, dry_run=False, force_refresh=True) or {}
+            free = float(bals.get(quote) or 0) if quote else 0.0
+        except Exception as exc:
+            events.append({"venue": venue, "ok": False, "error": str(exc)})
+            continue
+        venue_realized = round(sum(
+            float(pnl or 0) for key, pnl in by_asset.items()
+            if str(key).upper().startswith(str(venue).upper() + ":")
+        ), 6)
+        reason = None
+        if free < order_sz * 2.0:
+            reason = "thin_quote"
+        elif hard_cap > 0 and venue_realized <= -hard_cap:
+            reason = "aggregate_hard_loss"
+        if not reason:
+            continue
+        pause_venue(venue, reason=reason, manual=False, realized_usd=venue_realized)
+        cleared = reset_open_orders(venue)
+        events.append({
+            "venue": venue,
+            "paused": True,
+            "reason": reason,
+            "free_quote": free,
+            "quote": quote,
+            "venue_realized_usd": venue_realized,
+            "cleared_orders": cleared.get("cleared_orders"),
+        })
+    return {"success": True, "events": events}
+
+
 def run_all(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
     """Daemon entry: tick every configured (venue, asset) when enabled. Venues tripped by the
     circuit breaker (persistent realized loss) are skipped until they auto-resume."""
     cfg = load_config()
     if not cfg.get("enabled"):
         return {"success": True, "skipped": True, "reason": "disabled"}
+    guards = apply_quote_and_loss_guards(cfg)
     cb = check_circuit_breakers()
     paused = set((cb.get("paused") or {}).keys())
+    for ev in guards.get("events") or []:
+        if ev.get("paused") and ev.get("venue"):
+            paused.add(str(ev["venue"]).lower())
     results = []
     for venue, asset in grid_targets(cfg):
         if venue in paused:
@@ -1294,4 +1350,5 @@ def run_all(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
             results.append({"success": False, "venue": venue, "asset": asset, "error": str(exc)})
     return {"success": True, "ticks": results,
             "paused_venues": sorted(paused), "circuit_breaker_events": cb.get("events") or [],
+            "quote_loss_guards": guards.get("events") or [],
             "realized_pnl_usd": grid_profit()["realized_pnl_usd"]}

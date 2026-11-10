@@ -1,0 +1,18 @@
+{
+  "name": "The Profit Daemon Jon",
+  "slug": "the-profit-daemon-jon",
+  "version": "1.1.2",
+  "description": "Downloadable profit daemon for MasterNoder \u2014 multi-exchange registry, local control, ladders, arb, grid, metrics, sales reports.",
+  "entrypoint": "run.py",
+  "brand": "The Profit Daemon Jon",
+  "author": "jonK341",
+  "repository": "github-releases",
+  "releases_path": "dist/TheProfitDaemonJon/",
+  "profiles": [
+    "paper",
+    "standard",
+    "max",
+    "live-only"
+  ],
+  "top25_catalog": "top25_technologies.json"
+}

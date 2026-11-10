@@ -17,6 +17,7 @@ Profiles (EXCHANGE_PROFIT_PROFILE env or --profile):
   standard  — core extended strategies (default)
   fast      — shorter intervals, aggressive scans
   live-only — exchange live farm only, no casino
+  paypal    — alias of max with PayPal sweep armed (server profile)
 """
 from __future__ import annotations
 
@@ -40,19 +41,37 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "desk": 120},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "desk": 300},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "desk": 90},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "desk": 60},
+    # Host .env alias: max engines + PayPal sweep + faster order sender (withdraw plan).
+    "paypal": {"exchange": 30, "casino": 300, "fast": 20, "grid": 25, "stuck": 480, "micro": 90, "desk": 60},
 }
 
-# Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
-_LIVE_PROFIT_MAX_INTERVALS = {"exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90}
+_PROFILE_ALIASES = {"paypal": "max"}
+
+# Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env).
+# Prefunded gaps die in seconds — keep the order sender near 15–30s (withdraw plan).
+_LIVE_PROFIT_MAX_INTERVALS = {
+    "exchange": 20,
+    "casino": 300,
+    "fast": 20,
+    "grid": 25,
+    "stuck": 480,
+    "micro": 90,
+    "desk": 60,
+}
+
+
+def _normalize_profile(profile: str) -> str:
+    raw = str(profile or "max").strip().lower() or "max"
+    return _PROFILE_ALIASES.get(raw, raw)
 
 
 def _resolve_intervals(profile: str, iv: dict) -> dict:
     if os.environ.get("EXCHANGE_LIVE_PROFIT_MAX", "").strip().lower() in ("1", "true", "yes", "on"):
-        if profile in ("max", "fast", "live-only"):
+        if profile in ("max", "fast", "live-only", "paypal"):
             return {**iv, **_LIVE_PROFIT_MAX_INTERVALS}
     return iv
 
@@ -581,6 +600,28 @@ def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
             _write_heartbeat("fast", summary)
         except Exception as exc:
             print(f"[all-profit] fast error: {exc}", flush=True)
+        stop.wait(max(15, interval))
+
+
+def _desk_once() -> Dict[str, Any]:
+    from backend.services.exchange_ladder_strategy_improve import run_desk_maintenance_tick
+
+    return run_desk_maintenance_tick()
+
+
+def _desk_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] desk maintenance loop interval={interval}s", flush=True)
+    while not stop.is_set():
+        try:
+            res = _desk_once()
+            tops = res.get("topups") or []
+            sold = sum(1 for t in tops if (t.get("sells") or []) and not t.get("skipped"))
+            fm = res.get("fill_model") or {}
+            summary = f"topups={len(tops)} sold={sold} fill_model={fm.get('status') or fm.get('reason') or fm.get('error') or '?'}"
+            print(f"[all-profit] desk {summary}", flush=True)
+            _write_heartbeat("desk", summary)
+        except Exception as exc:
+            print(f"[all-profit] desk error: {exc}", flush=True)
         stop.wait(max(30, interval))
 
 
@@ -687,8 +728,8 @@ def _warm_flask_for_daemons() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="All profit daemons in one process")
     parser.add_argument("--once", action="store_true", help="Single tick and exit")
-    parser.add_argument("--profile", choices=["max", "standard", "fast", "live-only"], default="max",
-                        help="Profit strategy profile (default: max = everything)")
+    parser.add_argument("--profile", choices=["max", "standard", "fast", "live-only", "paypal"], default="max",
+                        help="Profit strategy profile (default: max = everything; paypal = max + sweep)")
     parser.add_argument("--interval", type=int, default=0, help="Override main exchange interval")
     parser.add_argument("--exchange-interval", type=int, default=0, help="Override exchange interval")
     parser.add_argument("--casino-interval", type=int, default=0, help="Override casino interval")
@@ -697,6 +738,7 @@ def main() -> int:
     parser.add_argument("--skip-grid", action="store_true", help="Do not run grid bot loop")
     parser.add_argument("--skip-stuck", action="store_true", help="Do not run stuck-inventory strategy")
     parser.add_argument("--skip-micro-chain", action="store_true", help="Do not run portal micro-chain loop")
+    parser.add_argument("--skip-desk", action="store_true", help="Do not run desk dust/fill-model maintenance")
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
@@ -706,20 +748,28 @@ def main() -> int:
     args = parser.parse_args()
 
     load_dotenv()
-    profile = os.environ.get("EXCHANGE_PROFIT_PROFILE") or args.profile
+    requested_profile = str(os.environ.get("EXCHANGE_PROFIT_PROFILE") or args.profile or "max").strip().lower()
+    profile = _normalize_profile(requested_profile)
     os.environ["EXCHANGE_PROFIT_PROFILE"] = profile
-    iv = _resolve_intervals(profile, PROFILE_INTERVALS.get(profile, PROFILE_INTERVALS["standard"]))
+    iv = _resolve_intervals(
+        requested_profile if requested_profile in PROFILE_INTERVALS else profile,
+        PROFILE_INTERVALS.get(requested_profile)
+        or PROFILE_INTERVALS.get(profile)
+        or PROFILE_INTERVALS["standard"],
+    )
     ex_iv = args.exchange_interval or args.interval or iv["exchange"]
     cas_iv = args.casino_interval or args.interval or int(os.environ.get("CASINO_AGENT_INTERVAL") or 0) or iv["casino"]
     fast_iv = iv.get("fast") or 0
     grid_iv = int(os.environ.get("EXCHANGE_GRID_INTERVAL") or 0) or iv.get("grid") or 30
     stuck_iv = int(os.environ.get("EXCHANGE_STUCK_INTERVAL") or 0) or iv.get("stuck") or 600
     micro_iv = int(os.environ.get("MN2_MICRO_CHAIN_INTERVAL") or 0) or iv.get("micro") or 120
+    desk_iv = int(os.environ.get("EXCHANGE_DESK_INTERVAL") or 0) or iv.get("desk") or 120
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
 
-    auto_sweep = _auto_sweep_default(args.auto_sweep) or profile == "live-only"
+    # paypal alias keeps max engines but arms sweep like the server profile.
+    auto_sweep = _auto_sweep_default(args.auto_sweep) or profile == "live-only" or requested_profile == "paypal"
     skip_casino = args.skip_casino or profile == "live-only"
 
     if args.once:
@@ -733,6 +783,8 @@ def main() -> int:
                 out["stuck"] = _stuck_once(apply_grid=True)
             if not args.skip_micro_chain:
                 out["micro_chain"] = _micro_chain_once()
+            if not args.skip_desk:
+                out["desk"] = _desk_once()
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -752,14 +804,27 @@ def main() -> int:
                 print(f"[all-profit] stuck {_summarize_stuck(out['stuck'])}", flush=True)
             if "micro_chain" in out:
                 print(f"[all-profit] micro_chain {_summarize_micro(out['micro_chain'])}", flush=True)
+            if "desk" in out:
+                fm = (out["desk"].get("fill_model") or {})
+                print(
+                    f"[all-profit] desk topups={len(out['desk'].get('topups') or [])} "
+                    f"fill_model={fm.get('status') or fm.get('reason') or fm.get('error') or '?'}",
+                    flush=True,
+                )
         return 0 if out else 1
 
     stop = threading.Event()
     threads: list[threading.Thread] = []
 
     unified = os.environ.get("UNIFIED_TRADING_DAEMON", "").strip() in ("1", "true", "yes")
+    brand = (os.environ.get("PROFIT_DAEMON_BRAND") or "").strip()
+    if not brand and os.environ.get("PROFIT_DAEMON_JON", "").strip() in ("1", "true", "yes"):
+        brand = "The Profit Daemon Jon"
     print("=" * 72)
-    print("MasterNoder — UNIFIED trading daemon (single process)" if unified else "MasterNoder — ALL profit daemons (single process)")
+    if brand:
+        print(f"{brand} — UNIFIED trading daemon" if unified else f"{brand} — ALL profit engines")
+    else:
+        print("MasterNoder — UNIFIED trading daemon (single process)" if unified else "MasterNoder — ALL profit daemons (single process)")
     print(f"  profile={profile} mode={daemon_mode_label()} auto_sweep={auto_sweep}")
     if not args.skip_exchange:
         print("  exchange engines:")
@@ -773,6 +838,8 @@ def main() -> int:
             print(f"  stuck inventory → grid strategy interval={stuck_iv}s")
         if not args.skip_micro_chain:
             print(f"  portal micro-chain (MN2) interval={micro_iv}s")
+        if not args.skip_desk:
+            print(f"  desk dust/fill-model interval={desk_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -797,6 +864,10 @@ def main() -> int:
         if not args.skip_micro_chain:
             threads.append(threading.Thread(
                 target=_micro_chain_loop, args=(micro_iv, stop), name="micro_chain", daemon=True,
+            ))
+        if not args.skip_desk:
+            threads.append(threading.Thread(
+                target=_desk_loop, args=(desk_iv, stop), name="desk", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fast desk</title>
+<style>
+  :root { color-scheme: dark; --bg:#0c1118; --card:#141b26; --line:#243041; --txt:#e7edf4; --mut:#93a0b0; --acc:#8eb6ff; --pos:#7ddeb8; --neg:#ff8fa3; --warn:#e6c07b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--txt); font: 15px/1.45 "Segoe UI", sans-serif; }
+  header { display: flex; align-items: baseline; gap: 14px; padding: 16px 22px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  h1 { font-size: 20px; margin: 0; }
+  .mode { padding: 3px 10px; border-radius: 999px; background: #1a2a44; color: var(--acc); font-weight: 700; font-size: 12px; }
+  .mode.live { background: #3a1622; color: var(--neg); }
+  a { color: var(--acc); }
+  main { max-width: 1080px; margin: 0 auto; padding: 16px 22px 48px; }
+  .note { color: var(--mut); margin: 0 0 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .kpi { background: linear-gradient(160deg, #152032 0%, var(--card) 70%); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .kpi .l { color: var(--mut); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .kpi .v { font-size: 22px; font-weight: 750; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi .s { color: var(--mut); font-size: 12px; margin-top: 2px; }
+  .pos { color: var(--pos); } .neg { color: var(--neg); } .warn { color: var(--warn); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card b { font-size: 17px; }
+  .wait { color: #d7dee8; }
+  .ready { color: var(--pos); }
+  .meta { color: var(--mut); font-size: 12px; margin-top: 4px; }
+  h2 { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--mut); margin: 22px 0 8px; }
+  .split { display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px; }
+  @media (max-width: 800px) { .split { grid-template-columns: 1fr; } }
+  .barwrap { height: 44px; display: flex; align-items: flex-end; gap: 3px; margin-top: 8px; }
+  .barwrap i { flex: 1; min-width: 4px; background: #2a3b55; border-radius: 3px 3px 1px 1px; display: block; }
+  .barwrap i.on { background: var(--pos); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  th { color: var(--mut); font-weight: 600; } td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  ol { list-style: none; margin: 0; padding: 0; }
+  li { padding: 10px 0; border-top: 1px solid var(--line); }
+  time { display: block; color: var(--mut); font-size: 12px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: #1e2a3d; color: var(--acc); }
+  .pill.ok { background: #12332a; color: var(--pos); }
+  .pill.bad { background: #3a1622; color: var(--neg); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fast desk</h1>
+  <span id="mode" class="mode">paper</span>
+  <span id="when" class="note"></span>
+  <a href="/" style="margin-left:auto">Full board</a>
+  <a href="/logout">Lock</a>
+</header>
+<main>
+  <p id="note" class="note">Loading the latest pass…</p>
+  <div id="kpis" class="kpis"></div>
+  <div class="split">
+    <div>
+      <h2>Gap board</h2>
+      <div id="cards" class="cards"></div>
+    </div>
+    <div>
+      <h2>Ready pulse</h2>
+      <article class="card">
+        <div class="meta">Tradable coins per recent pass</div>
+        <div id="spark" class="barwrap"></div>
+        <div id="gapmeta" class="meta"></div>
+      </article>
+      <h2>Arb threshold</h2>
+      <article class="card" id="threshold"></article>
+    </div>
+  </div>
+  <h2>Ladders</h2>
+  <div id="ladders" class="cards"></div>
+  <h2>Maker quotes</h2>
+  <div id="maker" class="cards"></div>
+  <div class="split">
+    <div>
+      <h2>Daemon loops</h2>
+      <article class="card" id="daemon"></article>
+    </div>
+    <div>
+      <h2>Fill model / desk care</h2>
+      <article class="card" id="care"></article>
+    </div>
+  </div>
+  <h2>Ledgers</h2>
+  <div id="ledgers" class="cards"></div>
+  <h2>What it did</h2>
+  <ol id="lines"></ol>
+</main>
+<script>
+function money(n) { return "$" + Number(n || 0).toFixed(2); }
+function num(n, d) { if (n == null || n === "") return "—"; return Number(n).toFixed(d == null ? 1 : d); }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+  return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c];
+}); }
+function paint(d) {
+  var mode = document.getElementById("mode");
+  var live = !!d.live_orders;
+  mode.textContent = live ? "live" : "paper";
+  mode.className = "mode" + (live ? " live" : "");
+  document.getElementById("when").textContent = d.updated_at ? ("updated " + d.updated_at.replace("T", " ").slice(0, 19) + " UTC") : "";
+  document.getElementById("note").textContent = d.note || "";
+
+  var st = d.stats || {};
+  var k = st.kpis || {};
+  var best = k.best_net_bps;
+  var bestCls = best == null ? "" : (best >= (d.min_net_bps || 18) ? "pos" : (best > 0 ? "warn" : "neg"));
+  document.getElementById("kpis").innerHTML = [
+    ["Ready", k.ready != null ? k.ready : (d.tradable_count || 0), "clips clearing fees"],
+    ["Best net", best == null ? "—" : (num(best, 1) + " bps"), (st.gap && st.gap.best_symbol) || "across watched coins", bestCls],
+    ["Ladder open", k.ladder_open != null ? k.ladder_open : "—", "ld- resting"],
+    ["Ladder PnL", money(k.ladder_realized_usd || 0), "realized on books"],
+    ["Maker open", k.maker_open != null ? k.maker_open : "—", ((st.maker || {}).venue || "maker") + " quotes"],
+    ["Zero-fill", k.zero_fill_streak != null ? k.zero_fill_streak : "—", "arb dry streak"]
+  ].map(function (row) {
+    return '<div class="kpi"><div class="l">' + row[0] + '</div><div class="v ' + (row[3] || "") + '">' + row[1] + '</div><div class="s">' + row[2] + '</div></div>';
+  }).join("");
+
+  document.getElementById("cards").innerHTML = (d.coins || []).map(function (c) {
+    var ready = c.decision === "paper_candidate";
+    var thin = c.decision === "book_too_thin";
+    var net = c.net_bps == null ? "—" : c.net_bps + " bps";
+    var tag = ready ? "ready" : (thin ? "thin" : "waiting");
+    return '<article class="card"><b>' + esc(c.symbol) + '</b> <span class="' + (ready ? "ready" : "wait") + '">'
+      + tag + '</span>'
+      + '<div class="wait">' + esc(c.route || "no route") + " · " + net + " · book " + money(c.executable_usd) + '</div>'
+      + '<div class="meta">credit ~' + esc(c.credit_sec) + 's · ' + esc(c.nonkyc_pair || "") + '</div></article>';
+  }).join("") || '<article class="card"><div class="wait">No coin rows yet.</div></article>';
+
+  var series = ((st.gap || {}).tradable_series) || [];
+  var maxT = Math.max(1, series.reduce(function (m, r) { return Math.max(m, Number(r.tradable || 0)); }, 0));
+  document.getElementById("spark").innerHTML = series.map(function (r) {
+    var h = Math.max(4, Math.round(40 * Number(r.tradable || 0) / maxT));
+    return '<i class="' + (r.tradable > 0 ? "on" : "") + '" style="height:' + h + 'px" title="' + esc((r.ts || "").slice(11, 19)) + ' · ' + r.tradable + '"></i>';
+  }).join("") || '<span class="meta">No pulse yet.</span>';
+  document.getElementById("gapmeta").textContent =
+    "Ready " + ((st.gap || {}).ready_count || 0)
+    + " · thin " + ((st.gap || {}).thin_count || 0)
+    + " · fee-blocked " + ((st.gap || {}).fee_blocked || 0)
+    + " · fee stack " + (d.fee_bps != null ? d.fee_bps + " bps" : "—");
+
+  var th = st.threshold || {};
+  document.getElementById("threshold").innerHTML =
+    '<div><span class="pill ' + (th.ready ? "ok" : "bad") + '">' + (th.ready ? "ready" : "waiting") + '</span> '
+    + esc(th.top_symbol || "—") + '</div>'
+    + '<div class="wait" style="margin-top:6px">best ' + num(th.best_net_bps, 1) + " bps · threshold "
+    + num(th.threshold_bps, 1) + " · est " + money(th.est_profit_usd) + "</div>"
+    + '<div class="meta">' + esc((th.buy_venue || "?") + " → " + (th.sell_venue || "?"))
+    + (th.updated_at ? " · " + String(th.updated_at).replace("T", " ").slice(0, 19) : "") + "</div>";
+
+  var ladders = st.ladders || {};
+  document.getElementById("ladders").innerHTML = ["nonkyc", "binance"].map(function (venue) {
+    var L = ladders[venue] || {};
+    if (L.error) return '<article class="card"><b>' + venue + '</b><div class="wait">' + esc(L.error) + '</div></article>';
+    var syms = Object.keys(L.symbols || {}).map(function (s) { return s + "×" + L.symbols[s]; }).join(" · ") || "flat";
+    return '<article class="card"><b>' + venue + '</b> ladder'
+      + '<div class="wait">open ' + (L.open || 0) + " · buys " + (L.buys || 0) + " · sells " + (L.sells || 0)
+      + " · exits " + (L.pending_exits || 0) + "</div>"
+      + '<div class="wait">realized ' + money(L.realized_usd) + "</div>"
+      + '<div class="meta">' + esc(syms) + '</div></article>';
+  }).join("");
+
+  var mk = st.maker || {};
+  if (mk.error) {
+    document.getElementById("maker").innerHTML = '<article class="card"><div class="wait">' + esc(mk.error) + '</div></article>';
+  } else {
+    var rows = (mk.quotes || []).map(function (q) {
+      return "<tr><td>" + esc(q.symbol) + "</td><td>" + esc(q.side) + "</td><td class='r'>" + num(q.price, 6)
+        + "</td><td class='r'>" + num(q.qty, 4) + "</td></tr>";
+    }).join("");
+    document.getElementById("maker").innerHTML =
+      '<article class="card" style="grid-column:1/-1"><b>' + esc(mk.venue || "maker") + '</b> '
+      + '<span class="pill">' + (mk.execute ? "execute on" : "paper") + '</span>'
+      + '<div class="meta">' + esc((mk.symbols || []).join(", ")) + " · sides " + esc((mk.sides || []).join("/"))
+      + " · clip " + money(mk.clip_usd) + " · edge " + num(mk.edge_bps, 0) + " bps</div>"
+      + (rows
+        ? "<table style='margin-top:8px'><thead><tr><th>Symbol</th><th>Side</th><th class='r'>Price</th><th class='r'>Qty</th></tr></thead><tbody>"
+          + rows + "</tbody></table>"
+        : '<div class="wait" style="margin-top:8px">No resting maker quotes.</div>')
+      + "</article>";
+  }
+
+  var dm = st.daemon || {};
+  var loops = dm.loops || {};
+  var loopHtml = Object.keys(loops).slice(0, 8).map(function (name) {
+    var row = loops[name] || {};
+    return "<tr><td>" + esc(name) + "</td><td>" + esc(row.summary || "—") + "</td></tr>";
+  }).join("");
+  document.getElementById("daemon").innerHTML =
+    '<div class="meta">profile ' + esc(dm.profile || "—") + " · mode " + esc(dm.mode || "—")
+    + (dm.updated_at ? " · hb " + String(dm.updated_at).replace("T", " ").slice(0, 19) : "") + "</div>"
+    + (loopHtml
+      ? "<table style='margin-top:8px'><thead><tr><th>Loop</th><th>Last</th></tr></thead><tbody>" + loopHtml + "</tbody></table>"
+      : '<div class="wait" style="margin-top:8px">No daemon heartbeat yet.</div>');
+
+  var fm = st.fill_model || {};
+  var care = st.desk_maintenance || {};
+  document.getElementById("care").innerHTML =
+    '<div class="wait">fill model <b>' + esc(fm.status || "—") + "</b> · n=" + esc(fm.n != null ? fm.n : "—")
+    + (fm.score != null ? " · score " + num(fm.score, 3) : "") + "</div>"
+    + '<div class="meta" style="margin-top:6px">desk care '
+    + esc((care.last && care.last.fill_model) || "—")
+    + (care.updated_at ? " · " + new Date(Number(care.updated_at) * 1000).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "")
+    + "</div>";
+
+  var books = d.ledgers || {};
+  document.getElementById("ledgers").innerHTML = ["binance", "nonkyc"].map(function (venue) {
+    var rows = books[venue] || [];
+    var last = rows.length ? rows[rows.length - 1] : null;
+    if (!last) return '<article class="card"><b>' + venue + '</b><div class="wait">No ledger line yet.</div></article>';
+    var body = last.order_body || {};
+    return '<article class="card"><b>' + venue + '</b> <span class="wait">' + esc(last.symbol || "") + " " + esc(last.side || "") + '</span>'
+      + '<div class="wait">' + esc(last.endpoint || "") + " · " + esc(body.symbol || "") + " · qty " + esc(last.quantity || 0) + '</div>'
+      + '<div class="meta">' + esc(last.reason || "") + " · placed " + (last.placed ? "yes" : "no") + " · " + esc(last.channel_detail || "channel not probed this pass") + '</div></article>';
+  }).join("");
+
+  var lines = (d.lines || []).slice().reverse();
+  document.getElementById("lines").innerHTML = lines.map(function (row) {
+    var tip = row.best_symbol ? (" · best " + row.best_symbol + " " + num(row.best_net_bps, 1) + " bps") : "";
+    return "<li><time>" + (row.ts || "").replace("T", " ").slice(0, 19) + " UTC" + tip + "</time>" + esc(row.text) + "</li>";
+  }).join("") || "<li>No pass yet.</li>";
+}
+function load() {
+  fetch("/api/desk").then(function (r) { return r.json(); }).then(paint).catch(function () {
+    document.getElementById("note").textContent = "The desk could not be read.";
+  });
+}
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>

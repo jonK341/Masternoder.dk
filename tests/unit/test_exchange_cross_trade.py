@@ -38,7 +38,7 @@ def _stub_exec(ct, monkeypatch, *, profit=0.05, ok=True, mode="paper"):
     import backend.services.exchange_live_execution_service as lx
     calls = []
 
-    def fake_exec(opp, *, agent_id, dry_run=None):
+    def fake_exec(opp, *, agent_id, dry_run=None, **_kwargs):
         calls.append({"opp": opp, "dry_run": dry_run})
         return {"success": ok, "mode": mode, "est_profit_usd": profit,
                 "buy_order": {"order_id": "b1"}, "sell_order": {"order_id": "s1"}}
@@ -135,7 +135,7 @@ def test_hedged_fill_tracks_inventory_skew(ct, monkeypatch):
     import backend.services.exchange_live_execution_service as lx
     # return a quantity so skew can be tracked (notional 25 / 0.10 = 250)
     monkeypatch.setattr(lx, "execute_spatial_arbitrage",
-                        lambda opp, *, agent_id, dry_run=None: {"success": True, "mode": "paper",
+                        lambda opp, *, agent_id, dry_run=None, **_k: {"success": True, "mode": "paper",
                         "est_profit_usd": 0.05, "quantity": 250.0,
                         "buy_order": {"order_id": "b"}, "sell_order": {"order_id": "s"}})
     ct.run_once(dry_run=True)
@@ -145,9 +145,166 @@ def test_hedged_fill_tracks_inventory_skew(ct, monkeypatch):
     assert by[("nonkyc", "DOGE")] == pytest.approx(-250.0)  # sell venue depletes coin
 
 
+def test_fast_usdt_coins_are_the_short_credit_set(ct):
+    symbols = [c["symbol"] for c in ct.fast_usdt_coins()]
+    assert symbols == ["XRP", "XLM", "ALGO", "TRX", "SOL"]
+    assert all(c["quote"] == "USDT" for c in ct.fast_usdt_coins())
+    assert "DOGE" not in symbols
+
+
+def test_walk_quote_ignores_dust_above_the_fee_hurdle(ct):
+    # Bids look rich at the touch, but only ten cents sits there. The rest is through the hurdle.
+    levels = [(1.20, 0.08), (1.00, 100.0)]
+    usd = ct.walk_quote_usd(levels, side="sell", counter_price=1.0, hurdle_bps=54.0)
+    assert usd == pytest.approx(1.20 * 0.08)
+    deep = ct.walk_quote_usd([(1.20, 30.0)], side="sell", counter_price=1.0, hurdle_bps=54.0)
+    assert deep == pytest.approx(36.0)
+
+
+def test_fast_mode_skips_thin_book_and_does_not_send_an_order(ct, monkeypatch):
+    ct.save_config({"fast_withdraw_only": True, "symbols": ["XRP", "XLM", "ALGO", "TRX", "SOL"],
+                    "min_net_bps": 18.0, "notional_usd": 25.0})
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "XLM", "buy_venue": "binance", "sell_venue": "nonkyc",
+         "buy_ask": 0.1503, "sell_bid": 0.15192, "net_bps": 71.8, "fee_bps": 36.0},
+        {"symbol": "DOGE", "buy_venue": "binance", "sell_venue": "nonkyc",
+         "buy_ask": 0.1, "sell_bid": 0.2, "net_bps": 500.0, "fee_bps": 36.0},
+    ])
+    calls = _stub_exec(ct, monkeypatch)
+    monkeypatch.setattr(ct, "fetch_nonkyc_book", lambda symbol: {"bids": [(0.15192, 0.64)], "asks": []})
+    r = ct.run_once(dry_run=True)
+    assert calls == []
+    assert r["executed"] == []
+    assert r["withdrawal_broadcast"] is False
+    assert r["skipped_thin"] and r["skipped_thin"][0]["symbol"] == "XLM"
+    assert r["skipped_thin"][0]["reason"] == "book_too_thin"
+
+
+def test_fast_mode_papers_a_book_that_covers_the_clip(ct, monkeypatch):
+    ct.save_config({"fast_withdraw_only": True, "symbols": ["XRP"],
+                    "min_net_bps": 18.0, "notional_usd": 25.0, "cooldown_seconds": 0.0})
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "XRP", "buy_venue": "binance", "sell_venue": "nonkyc",
+         "buy_ask": 1.0, "sell_bid": 1.02, "net_bps": 40.0, "fee_bps": 36.0},
+    ])
+    calls = _stub_exec(ct, monkeypatch)
+    # 40 XRP at 1.02 is about $40, above the $25 clip, and 1.02 clears a 54 bps hurdle on a $1 ask.
+    monkeypatch.setattr(ct, "fetch_nonkyc_book", lambda symbol: {"bids": [(1.02, 40.0)], "asks": []})
+    r = ct.run_once(dry_run=True)
+    assert len(calls) == 1
+    assert calls[0]["dry_run"] is True
+    assert r["executed"][0]["symbol"] == "XRP"
+    assert r["executed"][0]["mode"] == "paper"
+    assert r["withdrawal_broadcast"] is False
+
+
 def test_live_gate_requires_both_flags(ct, monkeypatch):
     assert ct.cross_trade_live_enabled() is False
     monkeypatch.setenv("EXCHANGE_ARBITRAGE_LIVE", "1")
     assert ct.cross_trade_live_enabled() is False   # still needs the cross-trade flag
     monkeypatch.setenv("EXCHANGE_CROSS_TRADE_LIVE", "1")
     assert ct.cross_trade_live_enabled() is True
+
+
+def test_limit_style_sends_the_touch_prices(ct, monkeypatch):
+    ct.save_config({"order_style": "limit", "fast_withdraw_only": False, "cooldown_seconds": 0})
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "XRP", "buy_venue": "nonkyc", "sell_venue": "binance",
+         "buy_ask": 1.10, "sell_bid": 1.16, "net_bps": 40.0},
+    ])
+    calls = _stub_exec(ct, monkeypatch)
+    ct.run_once(dry_run=True)
+    opp = calls[0]["opp"]
+    assert opp["order_style"] == "limit"
+    assert opp["buy_limit"] == pytest.approx(1.10)
+    assert opp["sell_limit"] == pytest.approx(1.16)
+
+
+def test_cron_hook_requires_a_matching_key(ct, monkeypatch):
+    assert ct.cron_hook_ok("") is False
+    assert ct.cron_hook_ok("nope") is False
+    monkeypatch.setenv("EXCHANGE_CRON_HOOK_KEY", "hook-secret")
+    assert ct.cron_hook_ok("hook-secret") is True
+    assert ct.cron_hook_ok("other") is False
+
+
+def test_open_order_rows_keep_only_dicts(ct):
+    assert ct._open_order_rows([{"id": 1}, "skip"]) == [{"id": 1}]
+    assert ct._open_order_rows({"orders": [{"id": 2}]}) == [{"id": 2}]
+    assert ct._open_order_rows({"nope": 1}) == []
+
+
+def test_force_live_hook_asks_for_a_real_order(ct, monkeypatch):
+    monkeypatch.setattr(ct, "cancel_our_open_limits", lambda: [])
+    ct.save_config({"fast_withdraw_only": False, "cooldown_seconds": 0, "order_style": "limit"})
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "XRP", "buy_venue": "nonkyc", "sell_venue": "binance",
+         "buy_ask": 1.0, "sell_bid": 1.02, "net_bps": 40.0},
+    ])
+    calls = _stub_exec(ct, monkeypatch)
+    r = ct.run_once(force_live=True)
+    assert r["live"] is True
+    assert calls[0]["dry_run"] is False
+    assert calls[0]["opp"]["order_style"] == "limit"
+
+
+def test_calculate_cross_subtracts_the_fee_stack(ct):
+    math = ct.calculate_cross(buy_ask=1.0, sell_bid=1.02, fee_bps=36.0, notional_usd=25.0)
+    assert math["gross_bps"] == pytest.approx(200.0)
+    assert math["net_bps"] == pytest.approx(164.0)
+    assert math["est_profit_usd"] == pytest.approx(0.41)
+
+
+def test_calculate_cross_is_a_loss_when_the_sell_is_under_the_buy(ct):
+    math = ct.calculate_cross(buy_ask=1.1628, sell_bid=1.1619, fee_bps=36.0, notional_usd=25.0)
+    assert math["gross_bps"] < 0
+    assert math["net_bps"] == pytest.approx(math["gross_bps"] - 36.0)
+    assert math["est_profit_usd"] < 0
+
+
+def test_search_log_writes_the_calculation_block(ct, tmp_path):
+    report = {
+        "ts": "2026-11-08T08:00:00Z",
+        "notional_usd": 25.0,
+        "min_net_bps": 18.0,
+        "fee_bps": 36.0,
+        "binance_taker_bps": 10.0,
+        "nonkyc_taker_bps": 20.0,
+        "transfer_bps": 6.0,
+        "best_symbol": "XRP",
+        "best_route": "nonkyc→binance",
+        "best_net_bps": -40.2,
+        "best_decision": "below_fees",
+        "coins": [{
+            "symbol": "XRP",
+            "directions": [{
+                "route": "nonkyc→binance",
+                "buy_ask": 1.1628,
+                "sell_bid": 1.1619,
+                "gross_bps": -7.74,
+                "net_bps": -43.74,
+                "est_profit_usd": -0.1094,
+                "touch_usd": 0.08,
+                "executable_usd": 0.0,
+                "decision": "below_fees",
+            }],
+        }],
+    }
+    paths = ct.write_search_logs(report, root=str(tmp_path))
+    assert paths["ok"] is True
+    text = (tmp_path / "logs" / "cross_trade" / "calculations.log").read_text(encoding="utf-8")
+    assert "fees=36.00bps" in text
+    assert "binance 10 + nonkyc 20 + transfer 6" in text
+    assert "gross -7.74 net -43.74" in text
+    assert "pnl $-0.1094" in text
+    latest = json.loads((tmp_path / "logs" / "cross_trade" / "latest.json").read_text(encoding="utf-8"))
+    assert latest["best_symbol"] == "XRP"
+    assert (tmp_path / "logs" / "cross_trade" / "search.jsonl").read_text(encoding="utf-8").strip()
+
+
+def test_limit_fill_qty_reads_the_ack():
+    from backend.services.exchange_live_execution_service import limit_fill_qty
+
+    assert limit_fill_qty({"simulated": True, "success": True, "quantity": 3}) == pytest.approx(3)
+    assert limit_fill_qty({"body": {"executedQty": "1.5", "status": "EXPIRED"}}) == pytest.approx(1.5)
+    assert limit_fill_qty({"body": {"status": "EXPIRED", "executedQty": "0"}}) == pytest.approx(0)

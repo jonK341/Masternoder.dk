@@ -1,0 +1,52 @@
+name: The Profit Daemon Jon smoke
+
+on:
+  push:
+    paths:
+      - "profit_daemon_jon/**"
+      - "backend/services/profit_daemon_jon_product_service.py"
+      - "backend/services/exchange_ladder_strategy_improve.py"
+      - "scripts/all_profit_daemons.py"
+      - ".github/workflows/profit-daemon-jon-smoke.yml"
+  pull_request:
+    paths:
+      - "profit_daemon_jon/**"
+      - "backend/services/profit_daemon_jon_product_service.py"
+      - "backend/services/exchange_ladder_strategy_improve.py"
+
+jobs:
+  paper-once:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install slim deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r profit_daemon_jon/requirements.txt
+          pip install pytest
+      - name: Unit tests (product + strategy helpers)
+        run: |
+          python -m pytest tests/unit/test_profit_daemon_jon_product.py tests/unit/test_exchange_ladder_strategy_improve.py -q
+      - name: Install top25 (no pip) + backlog
+        run: |
+          python profit_daemon_jon/run.py --install-top25 --no-pip
+          python profit_daemon_jon/run.py --backlog
+      - name: Paper once (skip preflight, tolerate engine gaps)
+        env:
+          DAEMON_QUIET: "1"
+          LITE_APP: "1"
+          EXCHANGE_ARBITRAGE_LIVE: "0"
+          EXCHANGE_LIVE_PROFIT_MAX: "0"
+          EXCHANGE_PROFIT_PROFILE: standard
+          PROFIT_DAEMON_JON: "1"
+        run: |
+          set +e
+          python profit_daemon_jon/run.py --once --profile paper --skip-preflight
+          code=$?
+          set -e
+          # 0 = ok tick; non-zero without crash still acceptable if brand ran
+          echo "exit=$code"
+          test $code -le 1

@@ -250,9 +250,7 @@ def venue_api_request(
         query = urllib.parse.urlencode(params)
         url = f"{api_base}{path}?{query}"
         headers = {"X-MBX-APIKEY": api_key}
-        if method == "POST":
-            return _http_request("POST", url, headers=headers, timeout=timeout)
-        return _http_request("GET", url, headers=headers, timeout=timeout)
+        return _http_request(method, url, headers=headers, timeout=timeout)
 
     if auth == "okx_hmac":
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -1004,6 +1002,7 @@ def place_limit_order(
     quote: Optional[str] = None,
     market: Optional[str] = None,
     client_order_id: Optional[str] = None,
+    time_in_force: str = "GTC",
 ) -> Dict[str, Any]:
     """Place a spot LIMIT (maker) order on a venue (paper-simulated unless live + credentialed)."""
     resolved = resolve_market(venue_id, symbol.upper(), quote)
@@ -1036,8 +1035,11 @@ def place_limit_order(
         tick = float((norm.get("filters") or {}).get("tick_size") or 0)
         if tick > 0:
             px = _quantize_down(px, tick)
-        params: Dict[str, Any] = {
-            "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": "GTC",
+        tif = str(time_in_force or "GTC").upper()
+        if tif not in ("GTC", "IOC", "FOK"):
+            tif = "GTC"
+        params = {
+            "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": tif,
             "quantity": qty, "price": px, "newClientOrderId": coid,
         }
     elif venue_id in ("nonkyc", "xeggex"):

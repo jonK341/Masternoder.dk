@@ -67,6 +67,11 @@ def prepare_live_opportunity(
 ) -> Dict[str, Any]:
     """Scale notional to live balances and verify both arb legs can fund."""
     from backend.services import exchange_venue_api_service as vapi
+    from backend.services.profit_daemon_ops_service import (
+        cap_notional_to_book_depth,
+        check_slippage_guard,
+        opportunity_latency_buffer_pct,
+    )
 
     symbol = str(opp.get("symbol") or "").upper()
     buy_v = str(opp.get("buy_venue") or "")
@@ -75,10 +80,21 @@ def prepare_live_opportunity(
     if buy_ask <= 0 or not symbol or not buy_v or not sell_v:
         return {"ok": False, "reason": "invalid_opportunity"}
 
+    buffer = max(float(buffer_pct), opportunity_latency_buffer_pct(opp, base_buffer_pct=buffer_pct))
+    depth_cap = cap_notional_to_book_depth(opp, float(configured_usd))
+    target_usd = float(depth_cap.get("notional_usd") or configured_usd)
+    if depth_cap.get("ok") is False or target_usd < min_live_usd:
+        return {
+            "ok": False,
+            "reason": "insufficient_book_depth",
+            "depth": depth_cap,
+            "best": opp,
+        }
+
     cap = vapi.max_funded_notional_usd(
-        symbol, buy_v, sell_v, buy_ask, configured_usd=float(configured_usd), buffer_pct=buffer_pct,
+        symbol, buy_v, sell_v, buy_ask, configured_usd=target_usd, buffer_pct=buffer,
     )
-    scaled_notional = min(float(configured_usd), cap)
+    scaled_notional = min(target_usd, cap)
     if scaled_notional < min_live_usd:
         return {
             "ok": False,
@@ -88,14 +104,14 @@ def prepare_live_opportunity(
         }
 
     scaled = _scale_opportunity_notional(opp, scaled_notional)
-    funding = vapi.opportunity_funded(scaled, buffer_pct=buffer_pct)
+    funding = vapi.opportunity_funded(scaled, buffer_pct=buffer)
     if not funding.get("ok") and cap >= min_live_usd and scaled_notional > min_live_usd:
         for factor in (0.85, 0.7, 0.55):
             retry_notional = max(min_live_usd, round(scaled_notional * factor, 2))
             if retry_notional >= scaled_notional:
                 continue
             scaled = _scale_opportunity_notional(opp, retry_notional)
-            funding = vapi.opportunity_funded(scaled, buffer_pct=buffer_pct)
+            funding = vapi.opportunity_funded(scaled, buffer_pct=buffer)
             if funding.get("ok"):
                 break
     if not funding.get("ok"):
@@ -106,11 +122,23 @@ def prepare_live_opportunity(
             "funding": funding,
             "best": scaled,
         }
+    slip = check_slippage_guard(scaled, notional_usd=float(scaled.get("notional_usd") or scaled_notional))
+    if not slip.get("ok"):
+        return {
+            "ok": False,
+            "reason": slip.get("reason") or "insufficient_book_depth",
+            "slippage": slip,
+            "max_funded_usd": round(cap, 2),
+            "best": scaled,
+        }
     return {
         "ok": True,
         "opportunity": scaled,
         "max_funded_usd": round(cap, 2),
         "funding": funding,
+        "slippage": slip,
+        "latency_buffer_pct": buffer,
+        "depth": depth_cap,
     }
 
 
@@ -779,8 +807,13 @@ def agent_accounts() -> Dict[str, Any]:
 
 
 def run_rebalance_tick(*, imbalance_ratio: float = 2.0) -> Dict[str, Any]:
-    """Scan credentialed venue quote balances and flag cross-venue rebalance needs."""
+    """Scan credentialed venue quote balances and flag cross-venue rebalance needs.
+
+    Chain withdrawals stay advisory: fee/move must clear ~30 bps and the move must
+    be large enough that TRC20 fees do not erase the desk (see evaluate_chain_rebalance).
+    """
     from backend.services import exchange_venue_api_service as vapi
+    from backend.services.profit_daemon_ops_service import evaluate_chain_rebalance
 
     cfg = conn.load_connectors_config()
     venue_ids = [
@@ -814,6 +847,13 @@ def run_rebalance_tick(*, imbalance_ratio: float = 2.0) -> Dict[str, Any]:
     ratio = (rich["free_quote"] / poor["free_quote"]) if poor["free_quote"] > 0 else float("inf")
     move_usd = round(max(0.0, rich["free_quote"] - avg), 4)
     rebalance_needed = ratio >= imbalance_ratio and move_usd >= 10.0
+    fee_usd = 1.5
+    try:
+        from backend.services.exchange_binance_withdraw_service import _DEFAULT_TRC20_FEE_USDT
+        fee_usd = float(_DEFAULT_TRC20_FEE_USDT)
+    except Exception:
+        pass
+    chain = evaluate_chain_rebalance(move_usd=move_usd if rebalance_needed else 0.0, fee_usd=fee_usd)
     result = {
         "success": True,
         "live": live_enabled(),
@@ -824,6 +864,8 @@ def run_rebalance_tick(*, imbalance_ratio: float = 2.0) -> Dict[str, Any]:
         "from_venue": rich if rebalance_needed else None,
         "to_venue": poor if rebalance_needed else None,
         "venues": quotes,
+        "chain_transfer": chain,
+        "withdraw_executed": False,
         "ticked_at": _iso(),
     }
     if rebalance_needed:
@@ -833,7 +875,11 @@ def run_rebalance_tick(*, imbalance_ratio: float = 2.0) -> Dict[str, Any]:
             to_venue=poor["venue_id"],
             move_usd=move_usd,
             ratio=round(ratio, 4),
+            chain_allowed=bool(chain.get("allowed")),
+            fee_bps=chain.get("fee_bps"),
         )
+        # Never broadcast a chain withdrawal from this tick — inventory walks back
+        # via the next prefunded arb when the fee gate fails (typical at ~$70/side).
         if not live_enabled() and "internal" in {rich["venue_id"], poor["venue_id"]}:
             try:
                 from backend.services.exchange_live_execution_service import _internal_swap
