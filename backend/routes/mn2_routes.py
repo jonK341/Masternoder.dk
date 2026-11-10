@@ -267,8 +267,10 @@ def _build_releases_payload() -> dict:
         sys.path.insert(0, scripts_dir)
     from mn2_release_config import (  # type: ignore
         MANIFEST_URL,
+        PUBLIC_VERSION,
         RELEASE_BASE,
-        TARGET_VERSION,
+        SOURCE_TARBALL_NAME,
+        SOURCE_URL,
         TARBALL_NAME,
     )
 
@@ -345,10 +347,18 @@ def _build_releases_payload() -> dict:
             "sha256": _sha_from_manifest(android_manifest, android_name),
             "platform": "android",
         },
+        {
+            "id": "source",
+            "label": "Source code",
+            "filename": SOURCE_TARBALL_NAME,
+            "url": SOURCE_URL,
+            "sha256": None,
+            "platform": "source",
+        },
     ]
     payload = {
         "success": True,
-        "version": TARGET_VERSION,
+        "version": PUBLIC_VERSION,
         "release_base": RELEASE_BASE,
         "manifest_unavailable": unavailable,
         "assets": assets,

@@ -74,7 +74,7 @@ def test_releases_from_fixture_manifests(monkeypatch):
     assert r.status_code == 200
     data = r.get_json()
     assert data["success"] is True
-    assert data["version"] == cfg.TARGET_VERSION
+    assert data["version"] == cfg.PUBLIC_VERSION
     assert data["manifest_unavailable"] is False
     assert "v1.2.2.0" not in str(data)
     by_id = {a["id"]: a for a in data["assets"]}
@@ -84,6 +84,8 @@ def test_releases_from_fixture_manifests(monkeypatch):
     assert by_id["daemon-flatpak"]["sha256"] == "ddd444"
     assert by_id["android"]["sha256"] == "eee555"
     assert by_id["android"]["platform"] == "android"
+    assert by_id["source"]["url"] == cfg.SOURCE_URL
+    assert by_id["source"]["platform"] == "source"
     assert by_id["daemon"]["url"].startswith(cfg.RELEASE_BASE)
     assert data["platform_ui_version"] == "9.2.6.5"
 
@@ -98,7 +100,7 @@ def test_releases_manifest_error_keeps_target_version(monkeypatch):
     monkeypatch.setattr("backend.routes.mn2_routes._fetch_release_manifest", lambda *a, **k: {})
     c = _app().test_client()
     data = c.get("/api/mn2/releases").get_json()
-    assert data["version"] == cfg.TARGET_VERSION
+    assert data["version"] == cfg.PUBLIC_VERSION
     assert data["manifest_unavailable"] is True
     assert "v1.2.2.0" not in str(data)
     assert all(a["url"].startswith(cfg.RELEASE_BASE) for a in data["assets"])

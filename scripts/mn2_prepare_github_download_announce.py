@@ -3,7 +3,7 @@
 Prepare GitHub download-page readiness + Discord announcement for MN2 releases.
 
 Does NOT compile the daemon (that lives in external/MasterNoder2). It:
-  1. Reads TARGET_VERSION from mn2_release_config.py
+  1. Reads DOWNLOAD_TAG / RELEASE_BASE from mn2_release_config.py
   2. Checks whether GitHub release assets exist (gh api)
   3. Writes a Discord announcement markdown draft
   4. Optionally posts via discord_service when --post and assets are ready
@@ -35,9 +35,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from mn2_release_config import (  # noqa: E402
+    DOWNLOAD_REPO,
+    DOWNLOAD_TAG,
+    PROFIT_DAEMON_JON_URL,
+    PUBLIC_VERSION,
     RELEASE_BASE,
-    REPO,
-    TARGET_VERSION,
+    RELEASE_PAGE_URL,
+    SOURCE_TARBALL_NAME,
     TARBALL_NAME,
 )
 
@@ -47,6 +51,7 @@ REQUIRED_ASSETS = (
     "MasterNoder2-qt-linux.tar.gz",
     "MasterNoder2-qt-win.zip",
     "QT_RELEASE_MANIFEST.json",
+    SOURCE_TARBALL_NAME,
 )
 
 # Extended packages — linked in Discord when present; do not block READY.
@@ -69,9 +74,9 @@ def _gh_json(args: list[str]) -> dict | list | None:
 
 
 def release_asset_names() -> tuple[bool, list[str], str]:
-    data = _gh_json(["api", f"repos/{REPO}/releases/tags/{TARGET_VERSION}"])
+    data = _gh_json(["api", f"repos/{DOWNLOAD_REPO}/releases/tags/{DOWNLOAD_TAG}"])
     if not isinstance(data, dict):
-        return False, [], f"GitHub release {TARGET_VERSION} not found (or gh unavailable)"
+        return False, [], f"GitHub release {DOWNLOAD_TAG} not found (or gh unavailable)"
     assets = data.get("assets") or []
     names = [str(a.get("name") or "") for a in assets if isinstance(a, dict)]
     missing = [n for n in REQUIRED_ASSETS if n not in names]
@@ -91,38 +96,32 @@ def build_discord_payload(*, ready: bool, asset_note: str, present: list[str] | 
     )
     status = "READY" if ready else "PENDING BUILD"
     body = (
-        f"**MasterNoder2 {TARGET_VERSION} — wallet & daemon downloads ({status})**\n\n"
-        f"Platform UI **9.2.6.5** now paints **on-chain** balance and creates deposit addresses "
-        f"so website users feed the network with real receive paths.\n\n"
-        f"**GitHub release:** https://github.com/{REPO}/releases/tag/{TARGET_VERSION}\n"
+        f"**The new wallet has arrived** — and **The Profit Daemon Jon** is released.\n\n"
+        f"MasterNoder2 **{PUBLIC_VERSION}** wallet & daemon packages are live ({status}).\n"
+        f"Platform UI **9.2.6.5** paints on-chain balance and creates deposit addresses.\n\n"
+        f"**Wallet release:** {RELEASE_PAGE_URL}\n"
+        f"**Profit Daemon Jon:** {PROFIT_DAEMON_JON_URL}\n"
         f"**Asset check:** {asset_note}\n\n"
         f"**Core downloads**\n{core_links}\n\n"
         f"**Extended**\n{extra_links}\n\n"
-        f"**Compile (when source updates)**\n"
-        f"1. `bash scripts/mn2_build_release.sh` → daemon tarball + `RELEASE_MANIFEST.json`\n"
-        f"2. `bash scripts/mn2_build_qt_release.sh --target all` → Linux/Windows Qt\n"
-        f"3. `bash scripts/mn2_build_flatpak.sh` → daemon Flatpak bundle\n"
-        f"4. `bash scripts/mn2_build_android_wallet.sh` → Android APK (needs SDK)\n"
-        f"5. `python scripts/mn2_publish_release.py --tarball … --manifest … --qt-assets --extra-assets`\n"
-        f"6. Re-run this script with `--post` once assets are live.\n\n"
         f"Site portal: /wallets\n"
         f"Spork gates 112/114 stay OFF until an operator signs them."
     )
     return {
-        "id": f"mn2-release-{TARGET_VERSION}-downloads",
-        "title": f"MasterNoder2 {TARGET_VERSION} downloads",
+        "id": f"mn2-release-{DOWNLOAD_TAG}-downloads",
+        "title": "The new wallet has arrived — Profit Daemon Jon is released",
         "description": body[:4000],
-        "url": f"https://github.com/{REPO}/releases/tag/{TARGET_VERSION}",
+        "url": RELEASE_PAGE_URL,
         "color": 0x00D4FF if ready else 0xFFAA00,
     }
 
 
 def write_announcement(payload: dict, *, ready: bool, names: list[str], note: str) -> Path:
     ANNOUNCE_DIR.mkdir(parents=True, exist_ok=True)
-    path = ANNOUNCE_DIR / f"mn2-{TARGET_VERSION}-discord.md"
+    path = ANNOUNCE_DIR / f"mn2-{DOWNLOAD_TAG}-discord.md"
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     md = (
-        f"# Discord announcement — MasterNoder2 {TARGET_VERSION}\n\n"
+        f"# Discord announcement — MasterNoder2 {PUBLIC_VERSION}\n\n"
         f"Generated: {ts}\n"
         f"Ready: **{ready}** ({note})\n"
         f"Assets seen: {', '.join(names) if names else '(none)'}\n\n"
@@ -160,7 +159,7 @@ def main() -> int:
     payload = build_discord_payload(ready=ready, asset_note=note, present=names)
     path = write_announcement(payload, ready=ready, names=names, note=note)
     print(f"Announcement draft: {path}")
-    print(f"Release {TARGET_VERSION}: ready={ready} ({note})")
+    print(f"Release {DOWNLOAD_TAG}: ready={ready} ({note})")
 
     if args.post and not ready and not args.force_post:
         print("Refusing --post until all required assets exist (use --force-post to override).", file=sys.stderr)
