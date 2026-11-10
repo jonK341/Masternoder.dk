@@ -214,6 +214,16 @@ build_linux_qt() {
   else
     ./autogen.sh
     CONFIGURE_FLAGS=(--with-gui --disable-tests --disable-bench --with-unsupported-ssl)
+    # Prefer distro protobuf over a stale /usr/local protoc 3.0 + mismatched headers.
+    export PATH="/usr/bin:${PATH}"
+    if [[ -z "${PROTOBUF_CFLAGS:-}" ]] && [[ -d /usr/include/google/protobuf ]]; then
+      export PROTOBUF_CFLAGS="-I/usr/include"
+    fi
+    if [[ -z "${PROTOBUF_LIBS:-}" ]] && { [[ -e /usr/lib/x86_64-linux-gnu/libprotobuf.so ]] || [[ -e /usr/lib/libprotobuf.so ]]; }; then
+      export PROTOBUF_LIBS="-lprotobuf"
+    fi
+    # Force regeneration against the selected protoc/headers.
+    rm -f src/qt/paymentrequest.pb.cc src/qt/paymentrequest.pb.h
   fi
 
   ./configure "${CONFIGURE_FLAGS[@]}"
