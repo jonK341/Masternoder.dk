@@ -345,13 +345,15 @@ def run_ladder(
     if balances is None:
         balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
-    bal[quote] = bal.get(quote, 0.0) - cfg["quote_reserve"]
+    # quote_reserve is for new entries only — exits must spend the reserved quote.
+    reserve = float(cfg.get("quote_reserve") or 0.0)
     cfg = tune_ladder_cfg(cfg, venue=venue, min_prob=float(cfg.get("fill_model_min_prob") or 0.18))
     report["_fill_prob_l0"] = cfg.get("_fill_prob_l0")
     skews: Dict[str, float] = {}
 
     markets: Dict[str, Dict[str, float]] = {}
     refs: Dict[str, float] = {}
+    lives: Dict[str, Dict[str, Any]] = {}
     for symbol in cfg["symbols"]:
         book, live, mk = top(symbol), open_ids(symbol), market(symbol)
         if not book or live is None or not mk:
@@ -359,6 +361,7 @@ def run_ladder(
             report["skipped"].append({"symbol": symbol, "reason": reason})
             continue
         live = {k: v for k, v in live.items() if k.startswith(TAG)}
+        lives[symbol] = live
         markets[symbol] = mk
         missing = [c for c, o in orders.items() if o["symbol"] == symbol and c not in live]
         closed_rows = closed(symbol, missing) if missing else {}
@@ -458,6 +461,46 @@ def run_ladder(
     def _fundable(symbol: str, side: str, qty: float, price: float) -> bool:
         return bal.get(symbol, 0.0) >= qty if side == "sell" else bal.get(quote, 0.0) >= qty * price
 
+    def _cancel_entry(coid: str, o: Dict[str, Any]) -> bool:
+        live = lives.get(str(o.get("symbol") or ""), {})
+        if coid not in live:
+            return False
+        res = cancel(str(o["symbol"]), live[coid])
+        if not res.get("success"):
+            report["errors"].append({"symbol": o["symbol"], "coid": coid, "error": str(res.get("error") or "cancel_failed")})
+            return False
+        o["cancelled"], o["cancelled_at"] = True, now
+        if o["side"] == "sell":
+            bal[str(o["symbol"])] = bal.get(str(o["symbol"]), 0.0) + float(o["qty"])
+        else:
+            bal[quote] = bal.get(quote, 0.0) + float(o["qty"]) * float(o["price"])
+        report["cancelled"].append(coid)
+        report.setdefault("freed_for_exit", []).append(coid)
+        return True
+
+    def _free_capital_for_exit(spec: Dict[str, Any]) -> bool:
+        """Cancel farthest entry rungs that lock the asset an exit needs."""
+        symbol, side = str(spec["symbol"]), str(spec["side"])
+        qty, price = float(spec["qty"]), float(spec["price"])
+        if _fundable(symbol, side, qty, price):
+            return True
+        lock_side = "buy" if side == "buy" else "sell"  # buy exit needs quote ← cancel buy entries
+        candidates = [
+            (coid, o) for coid, o in orders.items()
+            if not o.get("cancelled") and o.get("kind") == "entry" and o.get("side") == lock_side
+            and coid in lives.get(str(o.get("symbol") or ""), {})
+        ]
+        # Prefer same-symbol first, then farthest levels.
+        candidates.sort(key=lambda item: (
+            0 if item[1].get("symbol") == symbol else 1,
+            -int(item[1].get("level") or 0),
+        ))
+        for coid, o in candidates:
+            if _fundable(symbol, side, qty, price):
+                break
+            _cancel_entry(coid, o)
+        return _fundable(symbol, side, qty, price)
+
     still: List[Dict[str, Any]] = []
     for spec in pending:
         mk = markets.get(spec["symbol"])
@@ -473,12 +516,20 @@ def run_ladder(
             still.append(spec)
             continue
         if not _fundable(spec["symbol"], spec["side"], qty, price):
-            report["skipped"].append({"symbol": spec["symbol"], "reason": "exit_unfunded", "qty": qty, "price": price})
-            still.append(spec)
-            continue
+            if not _free_capital_for_exit(spec):
+                report["skipped"].append({"symbol": spec["symbol"], "reason": "exit_unfunded", "qty": qty, "price": price})
+                still.append(spec)
+                continue
         if _try_place(spec, "exit") is None:
             still.append(spec)
     state["pending"] = pending = still
+
+    pending_quote = sum(float(s["qty"]) * float(s["price"]) for s in pending if s.get("side") == "buy")
+    pending_base: Dict[str, float] = {}
+    for s in pending:
+        if s.get("side") == "sell":
+            sym = str(s["symbol"])
+            pending_base[sym] = pending_base.get(sym, 0.0) + float(s["qty"])
 
     candidates: List[Tuple[int, int, str, str]] = []
     for pos, symbol in enumerate(cfg["symbols"]):
@@ -499,9 +550,11 @@ def run_ladder(
         if _crosses(state, symbol, side, price, maker_sell(symbol)):
             continue
         if side == "sell":
-            qty = floor_qty(min(cfg["order_usd"] / price, bal.get(symbol, 0.0) * 0.995), int(mk["qty_decimals"]))
+            avail = max(0.0, bal.get(symbol, 0.0) - pending_base.get(symbol, 0.0))
+            qty = floor_qty(min(cfg["order_usd"] / price, avail * 0.995), int(mk["qty_decimals"]))
         else:
-            qty = floor_qty(min(cfg["order_usd"], bal.get(quote, 0.0) - 0.02) / price, int(mk["qty_decimals"]))
+            avail_quote = max(0.0, bal.get(quote, 0.0) - reserve - pending_quote)
+            qty = floor_qty(min(cfg["order_usd"], max(0.0, avail_quote - 0.02)) / price, int(mk["qty_decimals"]))
         if qty * price < max(cfg["min_order_usd"], mk["min_quote"]) or qty < mk["min_qty"]:
             continue
         _try_place({"symbol": symbol, "side": side, "level": level, "entry_side": side, "price": price, "qty": qty},

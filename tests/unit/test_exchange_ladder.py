@@ -277,3 +277,32 @@ def test_entry_and_exit_on_the_same_rung_get_distinct_tags(tmp_path):
     kinds = sorted((p["kind"], p["side"]) for p in rep["placed"])
     assert kinds == [("entry", "buy"), ("exit", "buy")]
     assert len({p["coid"] for p in venue.placed}) == len(venue.placed)
+
+
+def test_quote_reserve_does_not_starve_buy_exits(tmp_path):
+    """Reserved quote is for new entries; pending buy-backs may spend it."""
+    venue = FakeVenue()
+    cfg = _cfg(sides=["sell"], levels=1, quote_reserve=3.0)
+    _run(venue, tmp_path, cfg=cfg, bal={"ALGO": 300.0, "USDT": 3.5})
+    entry = venue.placed[0]
+    venue.fill(entry["coid"])
+    # Free USDT equals the reserve only — previously this stayed exit_unfunded.
+    rep = _run(venue, tmp_path, cfg=cfg, now=1060.0, bal={"ALGO": 260.0, "USDT": 3.5})
+    assert rep["pending_exits"] == 0
+    assert venue.placed[-1]["side"] == "buy"
+    assert not any(s.get("reason") == "exit_unfunded" for s in rep["skipped"])
+
+
+def test_unfunded_exit_cancels_far_buy_entry_to_free_quote(tmp_path):
+    venue = FakeVenue()
+    cfg = _cfg(levels=2)
+    _run(venue, tmp_path, cfg=cfg, bal={"ALGO": 300.0, "USDT": 8.0})
+    sell = _by(venue, "sell")[0]
+    buys = _by(venue, "buy")
+    assert len(buys) >= 1
+    venue.fill(sell["coid"])
+    # After the sell fill, free USDT is zero but resting buy entries still lock quote.
+    free_usdt = 0.0
+    rep = _run(venue, tmp_path, cfg=cfg, now=1060.0, bal={"ALGO": 300.0 - sell["qty"], "USDT": free_usdt})
+    assert any(p.get("kind") == "exit" and p.get("side") == "buy" for p in rep["placed"]) or rep["pending_exits"] == 0
+    assert rep.get("freed_for_exit") or not any(s.get("reason") == "exit_unfunded" for s in rep["skipped"])

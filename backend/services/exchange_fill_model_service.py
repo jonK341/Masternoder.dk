@@ -84,7 +84,7 @@ def train_and_save(fills: Optional[List[Dict[str, Any]]] = None, path: Optional[
         meta["error"] = str(exc)
         _save_meta(meta)
         return meta
-    model = LogisticRegression(max_iter=200)
+    model = LogisticRegression(max_iter=400, class_weight="balanced", C=0.7)
     model.fit(X, y)
     os.makedirs(os.path.dirname(path or _MODEL_PATH), exist_ok=True)
     import joblib
@@ -113,6 +113,10 @@ def _load_model(path: Optional[str] = None):
         return None
 
 
+def _heuristic_prob(level: int, distance_bps: float) -> float:
+    return max(0.02, min(0.95, 0.85 - 0.07 * level - 0.002 * max(0.0, distance_bps - 30.0)))
+
+
 def predict_fill_prob(
     *,
     level: int,
@@ -122,19 +126,23 @@ def predict_fill_prob(
     venue: str,
     model_path: Optional[str] = None,
 ) -> float:
+    heur = _heuristic_prob(level, distance_bps)
     model = _load_model(model_path)
     feats = _features(level, side, distance_bps, fee_bps, venue)
     if model is None:
-        # Heuristic: closer + fewer fees → higher fill odds.
-        return max(0.02, min(0.95, 0.85 - 0.07 * level - 0.002 * max(0.0, distance_bps - 30.0)))
+        return heur
     try:
         proba = model.predict_proba([feats])[0]
         # class 1 = fill
         classes = list(getattr(model, "classes_", [0, 1]))
         idx = classes.index(1) if 1 in classes else -1
-        return float(proba[idx])
+        raw = float(proba[idx])
+        # Blend extremes — a saturated 0/1 model was widening the book every tick.
+        if raw >= 0.92 or raw <= 0.08:
+            return round(0.35 * raw + 0.65 * heur, 6)
+        return round(0.6 * raw + 0.4 * heur, 6)
     except Exception:
-        return max(0.02, min(0.95, 0.8 - 0.08 * level))
+        return heur
 
 
 def tune_ladder_cfg(cfg: Dict[str, Any], *, venue: str, min_prob: float = 0.18) -> Dict[str, Any]:
@@ -151,7 +159,7 @@ def tune_ladder_cfg(cfg: Dict[str, Any], *, venue: str, min_prob: float = 0.18) 
     if p0 < min_prob:
         out["first_bps"] = float(out["first_bps"]) * 0.85
         out["step_bps"] = float(out["step_bps"]) * 0.9
-    elif p0 > 0.55:
+    elif 0.55 < p0 < 0.9:
         out["first_bps"] = float(out["first_bps"]) * 1.05
         out["step_bps"] = min(float(out["step_bps"]) * 1.05, float(out["first_bps"]) * 2)
     return out
