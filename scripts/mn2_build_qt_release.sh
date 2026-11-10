@@ -129,21 +129,33 @@ checkout_source() {
   PATCHED=1
 }
 
-COMPAT_PATCH_DIR="${COMPAT_PATCH_DIR:-/tmp/mn2-patches}"
+# Prefer in-repo gcc15 / modern-host patches; /tmp/mn2-patches is a legacy override.
+COMPAT_PATCH_DIR="${COMPAT_PATCH_DIR:-${REPO_ROOT}/docs/patches}"
+COMPAT_PATCH_FILE="${COMPAT_PATCH_FILE:-${REPO_ROOT}/docs/patches/mn2-daemon-build-compat-modern-host.patch}"
 
 apply_compat_patches() {
   local f
-  if [[ ! -d "${COMPAT_PATCH_DIR}" ]]; then
-    return 0
-  fi
   cd "${SRC_DIR}"
-  for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
-    [[ -f "${f}" ]] || continue
-    echo "=== Applying compat patch $(basename "${f}") ==="
-    if ! patch -p1 --forward < "${f}"; then
-      echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
+
+  # basename()/extension() removal + UPNP / filetime fixes for modern Boost/GCC
+  if [[ -f "${COMPAT_PATCH_FILE}" ]]; then
+    echo "=== Applying modern-host compat patch $(basename "${COMPAT_PATCH_FILE}") ==="
+    if ! patch -p1 --forward < "${COMPAT_PATCH_FILE}"; then
+      echo "WARN: modern-host compat patch failed or already applied" >&2
     fi
-  done
+  else
+    echo "WARN: modern-host compat patch missing: ${COMPAT_PATCH_FILE}" >&2
+  fi
+
+  if [[ -d "${COMPAT_PATCH_DIR}" ]]; then
+    for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
+      [[ -f "${f}" ]] || continue
+      echo "=== Applying compat patch $(basename "${f}") ==="
+      if ! patch -p1 --forward < "${f}"; then
+        echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
+      fi
+    done
+  fi
   # GCC 15+: libstdc++ no longer pulls <deque> transitively
   if ! grep -q '#include <deque>' src/httpserver.cpp 2>/dev/null; then
     sed -i '/#include <sys\/types.h>/a #include <deque>' src/httpserver.cpp
