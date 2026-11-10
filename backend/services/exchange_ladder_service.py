@@ -455,6 +455,7 @@ def run_ladder(
         report["strategy_improve_error"] = str(exc)
     cfg = tune_ladder_cfg(cfg, venue=venue, min_prob=float(cfg.get("fill_model_min_prob") or 0.18))
     report["_fill_prob_l0"] = cfg.get("_fill_prob_l0")
+    report["_spread_bps"] = cfg.get("_spread_bps")
     report["_dynamic_cap"] = cfg.get("_dynamic_cap")
     report["_ppp_filter"] = cfg.get("_ppp_filter")
     report["_exit_first"] = cfg.get("_exit_first")
@@ -785,7 +786,11 @@ def write_ladder_log(report: Dict[str, Any], *, root: Optional[str] = None) -> s
     with open(path, "a", encoding="utf-8") as handle:
         handle.write(format_ladder_block(report))
     if report.get("fills"):
+        spread = report.get("_spread_bps")
         with open(os.path.join(base, "ladder_fills.jsonl"), "a", encoding="utf-8") as handle:
             for fill in report["fills"]:
-                handle.write(json.dumps({"ts": time.time(), "venue": report.get("venue") or "nonkyc", **fill}) + "\n")
+                row = {"ts": time.time(), "venue": report.get("venue") or "nonkyc", **fill}
+                if spread is not None and "spread_bps" not in row:
+                    row["spread_bps"] = spread
+                handle.write(json.dumps(row) + "\n")
     return path

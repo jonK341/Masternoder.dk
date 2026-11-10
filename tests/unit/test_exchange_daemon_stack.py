@@ -58,20 +58,46 @@ def test_inventory_skew_pulls_sells_in_when_long_base():
 def test_fill_model_trains_and_tunes(tmp_path, monkeypatch):
     fills = []
     for level in range(6):
-        fills.append({"kind": "entry", "level": level, "side": "sell", "venue": "nonkyc"})
-        fills.append({"kind": "entry", "level": level, "side": "buy", "venue": "binance"})
+        fills.append({"kind": "entry", "level": level, "side": "sell", "venue": "nonkyc", "spread_bps": 4.0})
+        fills.append({"kind": "entry", "level": level, "side": "buy", "venue": "binance", "spread_bps": 6.0})
     monkeypatch.setattr(fill, "_MODEL_PATH", str(tmp_path / "model.joblib"))
     monkeypatch.setattr(fill, "_META_PATH", str(tmp_path / "meta.json"))
     meta = fill.train_and_save(fills)
     assert meta["status"] == "trained" and meta["n"] >= fill.MIN_SAMPLES
+    assert meta.get("feature_version") == fill.FEATURE_VERSION
+    assert meta.get("algo") in ("logistic_regression", "hist_gradient_boosting")
     p0 = fill.predict_fill_prob(level=0, side="sell", distance_bps=30, fee_bps=20, venue="nonkyc",
-                                model_path=str(tmp_path / "model.joblib"))
+                                spread_bps=4.0, model_path=str(tmp_path / "model.joblib"))
     p5 = fill.predict_fill_prob(level=5, side="sell", distance_bps=230, fee_bps=20, venue="nonkyc",
-                                model_path=str(tmp_path / "model.joblib"))
+                                spread_bps=4.0, model_path=str(tmp_path / "model.joblib"))
     assert 0 < p5 <= p0 <= 1
     tuned = fill.tune_ladder_cfg({**_default_config(), "fill_model_enabled": True, "first_bps": 30, "step_bps": 40},
                                  venue="nonkyc")
     assert "_fill_prob_l0" in tuned
+
+
+def test_fill_model_hgb_when_enough_samples(tmp_path, monkeypatch):
+    fills = []
+    for i in range(50):
+        fills.append({"kind": "entry", "level": i % 6, "side": "sell", "venue": "binance", "spread_bps": 3 + (i % 3)})
+        fills.append({"kind": "entry", "level": i % 6, "side": "buy", "venue": "nonkyc", "spread_bps": 5 + (i % 2)})
+    monkeypatch.setattr(fill, "_MODEL_PATH", str(tmp_path / "model.joblib"))
+    monkeypatch.setattr(fill, "_META_PATH", str(tmp_path / "meta.json"))
+    meta = fill.train_and_save(fills)
+    assert meta["status"] == "trained"
+    assert meta.get("algo") == "hist_gradient_boosting"
+    assert meta.get("n_features") == 6
+
+
+def test_fast_json_and_tech_pack():
+    from backend.services import exchange_fast_json as fj
+    from backend.services.exchange_market_feed_service import tech_pack_status
+
+    raw = fj.dumps({"a": 1, "b": [2, 3]})
+    assert fj.loads(raw)["a"] == 1
+    pack = tech_pack_status()
+    assert pack["json"] in ("orjson", "json")
+    assert "redis" in pack and "websockets" in pack
 
 
 def test_metrics_observe_does_not_crash():

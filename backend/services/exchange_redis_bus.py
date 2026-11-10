@@ -5,12 +5,13 @@ answers), every get/set lands under ``data/crypto_exchange/bus/``.
 """
 from __future__ import annotations
 
-import json
 import os
 import time
 from typing import Any, Dict, Optional
 
 from backend.services import crypto_exchange_service as ex
+from backend.services.exchange_fast_json import dumps as _json_dumps
+from backend.services.exchange_fast_json import try_loads as _json_try_loads
 
 PREFIX = "mn:xchg:"
 _FALLBACK_DIR = os.path.join(ex._BASE, "data", "crypto_exchange", "bus")
@@ -58,7 +59,7 @@ def reset_client() -> None:
 
 def bus_set(key: str, value: Any, *, ttl_sec: Optional[float] = None) -> str:
     payload = {"ts": time.time(), "value": value}
-    raw = json.dumps(payload, default=str)
+    raw = _json_dumps(payload)
     client = get_client()
     full = PREFIX + key
     if client is not None:
@@ -95,10 +96,7 @@ def bus_get(key: str, *, max_age_sec: Optional[float] = None) -> Optional[Any]:
             raw = open(path, encoding="utf-8").read()
         except Exception:
             return None
-    try:
-        payload = json.loads(raw)
-    except Exception:
-        return None
+    payload = _json_try_loads(raw)
     if not isinstance(payload, dict) or "value" not in payload:
         return None
     if max_age_sec is not None:
@@ -133,10 +131,7 @@ def bus_get_meta(key: str) -> Optional[Dict[str, Any]]:
             raw = open(path, encoding="utf-8").read()
         except Exception:
             return None
-    try:
-        payload = json.loads(raw)
-    except Exception:
-        return None
+    payload = _json_try_loads(raw)
     if not isinstance(payload, dict) or "value" not in payload:
         return None
     return {"ts": float(payload.get("ts") or 0), "value": payload["value"], "backend": backend}

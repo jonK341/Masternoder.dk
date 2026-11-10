@@ -727,13 +727,25 @@ def _summarize_book(res: Dict[str, Any]) -> str:
 
 def _feed_loop(stop: threading.Event) -> None:
     """Binance bookTicker → Redis/file bus (blocks until process exit)."""
-    from backend.services.exchange_market_feed_service import DEFAULT_SYMBOLS, run_feed_forever
+    from backend.services.exchange_market_feed_service import (
+        DEFAULT_SYMBOLS,
+        run_feed_forever,
+        tech_pack_status,
+    )
     from backend.services.exchange_redis_bus import backend_name
 
     symbols = [s.strip().upper() for s in (os.environ.get("EXCHANGE_FEED_SYMBOLS") or "").split(",") if s.strip()]
     symbols = symbols or list(DEFAULT_SYMBOLS)
-    print(f"[all-profit] market-feed bus={backend_name()} symbols={','.join(symbols)}", flush=True)
-    _write_heartbeat("feed", f"bus={backend_name()} symbols={len(symbols)}")
+    pack = tech_pack_status()
+    speed = ",".join(
+        name for name in ("orjson", "uvloop", "aiohttp") if (pack.get(name) or {}).get("ok")
+    ) or "stdlib"
+    print(
+        f"[all-profit] market-feed bus={backend_name()} json={pack.get('json')} "
+        f"speed=[{speed}] symbols={','.join(symbols)}",
+        flush=True,
+    )
+    _write_heartbeat("feed", f"bus={backend_name()} json={pack.get('json')} speed={speed} symbols={len(symbols)}")
     # run_feed_forever never returns; daemon thread dies with the process.
     while not stop.is_set():
         try:
@@ -1004,6 +1016,18 @@ def main() -> int:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
     print("=" * 72)
+
+    # Optional Prometheus scrape endpoint (no-op when prometheus_client missing).
+    try:
+        from backend.services.exchange_metrics_service import start_metrics_server
+
+        metrics = start_metrics_server()
+        if metrics.get("ok"):
+            print(f"  metrics :{metrics.get('port')} (prometheus)", flush=True)
+        else:
+            print(f"  metrics skipped ({metrics.get('error')})", flush=True)
+    except Exception as exc:
+        print(f"  metrics skipped ({exc})", flush=True)
 
     if not args.skip_exchange:
         threads.append(threading.Thread(

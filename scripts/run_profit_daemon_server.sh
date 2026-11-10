@@ -48,4 +48,11 @@ if [[ -z "$PYTHON_BIN" ]]; then
   fi
 fi
 
-exec "$PYTHON_BIN" "$ROOT/scripts/all_profit_daemons.py" --profile "${EXCHANGE_PROFIT_PROFILE}" "${AUTO_SWEEP_ARGS[@]}"
+# Prefer the dedicated feed unit when it is already running (avoids a second WS).
+EXTRA_ARGS=()
+if [[ "${EXCHANGE_SKIP_EMBEDDED_FEED:-}" =~ ^(1|true|yes|on)$ ]] \
+  || systemctl is-active --quiet masternoder-exchange-feed.service 2>/dev/null; then
+  EXTRA_ARGS+=(--skip-feed)
+fi
+
+exec "$PYTHON_BIN" "$ROOT/scripts/all_profit_daemons.py" --profile "${EXCHANGE_PROFIT_PROFILE}" "${AUTO_SWEEP_ARGS[@]}" "${EXTRA_ARGS[@]}"
