@@ -20,7 +20,15 @@ profit_daemon_jon\install.cmd
 .venv\Scripts\python profit_daemon_jon\run.py --once --profile paper
 ```
 
-Paper mode is the default. Edit `.env` (copied from `profit_daemon_jon/.env.example`) before enabling live trading.
+Paper mode is the default. Prefer the wizard before going live:
+
+```bash
+.venv/bin/python profit_daemon_jon/run.py --wizard
+.venv/bin/python profit_daemon_jon/run.py --tray          # http://127.0.0.1:8787/
+docker compose -f profit_daemon_jon/docker-compose.yml up -d
+```
+
+5-minute guide: `profit_daemon_jon/docs/INSTALL_5MIN.md`
 
 ## Download compiled builds (GitHub Releases)
 

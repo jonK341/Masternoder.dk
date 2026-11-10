@@ -24,8 +24,7 @@ jobs:
         run: |
           cd dist
           zip -r "TheProfitDaemonJon-linux-x64.zip" TheProfitDaemonJon
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: TheProfitDaemonJon-linux-x64
           path: dist/TheProfitDaemonJon-linux-x64.zip
@@ -40,18 +39,56 @@ jobs:
       - name: Build
         shell: cmd
         run: profit_daemon_jon\build_release.cmd
+      - name: Optional Authenticode sign
+        if: ${{ secrets.WINDOWS_CERT_PFX != '' }}
+        shell: pwsh
+        env:
+          WINDOWS_CERT_PFX: ${{ secrets.WINDOWS_CERT_PFX }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "pdj.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERT_PFX))
+          $exe = Get-ChildItem -Path dist\TheProfitDaemonJon -Filter TheProfitDaemonJon.exe -Recurse | Select-Object -First 1
+          if ($exe) {
+            & signtool sign /f $pfx /p $env:WINDOWS_CERT_PASSWORD /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $exe.FullName
+            "SIGNED" | Out-File dist\TheProfitDaemonJon\SIGNED.txt
+          }
       - name: Zip artifact
         shell: pwsh
-        run: |
-          Compress-Archive -Path dist\TheProfitDaemonJon -DestinationPath dist\TheProfitDaemonJon-windows-x64.zip
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        run: Compress-Archive -Path dist\TheProfitDaemonJon -DestinationPath dist\TheProfitDaemonJon-windows-x64.zip
+      - uses: actions/upload-artifact@v4
         with:
           name: TheProfitDaemonJon-windows-x64
           path: dist/TheProfitDaemonJon-windows-x64.zip
 
+  build-macos:
+    strategy:
+      matrix:
+        os: [macos-14, macos-13]
+        include:
+          - os: macos-14
+            arch: arm64
+          - os: macos-13
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build
+        run: bash profit_daemon_jon/build_release.sh
+      - name: Zip artifact
+        run: |
+          cd dist
+          zip -r "TheProfitDaemonJon-macos-${{ matrix.arch }}.zip" TheProfitDaemonJon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TheProfitDaemonJon-macos-${{ matrix.arch }}
+          path: dist/TheProfitDaemonJon-macos-${{ matrix.arch }}.zip
+
   publish-release:
-    needs: [build-linux, build-windows]
+    needs: [build-linux, build-windows, build-macos]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
@@ -65,13 +102,17 @@ jobs:
           files: |
             artifacts/TheProfitDaemonJon-linux-x64/TheProfitDaemonJon-linux-x64.zip
             artifacts/TheProfitDaemonJon-windows-x64/TheProfitDaemonJon-windows-x64.zip
+            artifacts/TheProfitDaemonJon-macos-arm64/TheProfitDaemonJon-macos-arm64.zip
+            artifacts/TheProfitDaemonJon-macos-x64/TheProfitDaemonJon-macos-x64.zip
           body: |
-            **The Profit Daemon Jon** standalone builds.
+            **The Profit Daemon Jon** standalone builds (Linux / Windows / macOS).
 
             1. Download the zip for your OS
             2. Unzip
-            3. Run `./TheProfitDaemonJon --status` then `--once --profile paper`
+            3. `./TheProfitDaemonJon --wizard` then `--once --profile paper`
 
-            Source install: `bash profit_daemon_jon/install.sh`
+            Source: `bash profit_daemon_jon/install.sh`
+            Docker: `docker compose -f profit_daemon_jon/docker-compose.yml up -d`
+            Windows zip is Authenticode-signed when `WINDOWS_CERT_PFX` secret is configured.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

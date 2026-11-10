@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: masternoder-exchange
+    static_configs:
+      - targets: ["profit-daemon:9108", "host.docker.internal:9108", "127.0.0.1:9108"]
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

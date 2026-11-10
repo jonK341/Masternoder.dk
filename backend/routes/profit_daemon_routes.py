@@ -356,6 +356,16 @@ def profit_daemon_status():
     return jsonify(monitor_status())
 
 
+@profit_daemon_bp.route("/api/profit-daemon/sales", methods=["GET"])
+def profit_daemon_sales():
+    """HTTP sales report for The Profit Daemon Jon (last N hours)."""
+    from scripts.exchange_sales_report import build_report
+    hours = request.args.get("hours", 3, type=float) or 3.0
+    hours = max(0.1, min(float(hours), 168.0))
+    report = build_report(hours)
+    return jsonify({"success": True, "product": "The Profit Daemon Jon", **report})
+
+
 @profit_daemon_bp.route("/api/profit-daemon/news", methods=["GET"])
 def profit_daemon_news():
     from backend.routes.platform_news_routes import _load_news

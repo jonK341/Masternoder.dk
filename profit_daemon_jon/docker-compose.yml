@@ -1,0 +1,48 @@
+# The Profit Daemon Jon — one-liner stack
+#   docker compose -f profit_daemon_jon/docker-compose.yml up -d
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SERVER_HTTP_PORT: "3030"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../data/grafana/exchange_daemon_dashboard.json:/var/lib/grafana/dashboards/exchange.json:ro
+    ports: ["3030:3030"]
+    depends_on: [prometheus]
+    restart: unless-stopped
+
+  profit-daemon:
+    build:
+      context: ..
+      dockerfile: profit_daemon_jon/Dockerfile
+    environment:
+      PROFIT_DAEMON_JON: "1"
+      PROFIT_DAEMON_BRAND: The Profit Daemon Jon
+      EXCHANGE_PROFIT_PROFILE: standard
+      EXCHANGE_ARBITRAGE_LIVE: "0"
+      EXCHANGE_LIVE_PROFIT_MAX: "0"
+      EXCHANGE_REDIS_URL: redis://redis:6379/0
+      EXCHANGE_METRICS_PORT: "9108"
+      DAEMON_QUIET: "1"
+      LITE_APP: "1"
+    ports: ["9108:9108", "8787:8787"]
+    depends_on: [redis]
+    restart: unless-stopped
+    profiles: ["daemon"]

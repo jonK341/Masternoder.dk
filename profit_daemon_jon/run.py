@@ -38,6 +38,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--backlog", action="store_true", help="Show finished-product improvement backlog")
     parser.add_argument("--sales", action="store_true", help="Print sales report")
     parser.add_argument("--hours", type=float, default=3.0, help="Sales window hours")
+    parser.add_argument("--wizard", action="store_true", help="First-run setup wizard")
+    parser.add_argument("--tray", action="store_true", help="Desktop status page / tray")
     parser.add_argument("--json", action="store_true", help="JSON output for status/sales/backlog")
     parser.add_argument("--once", action="store_true", help="Single daemon tick then exit")
     parser.add_argument("--profile", default=None, help="Profit profile (paper/standard/max/live-only)")
@@ -97,6 +99,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  {venue}: {data['fills']} fills | ${data['notional_usd']} | pnl ${data['realized_pnl_usd']}")
         return 0
 
+    if args.wizard:
+        from profit_daemon_jon.wizard import main as wizard_main
+        return int(wizard_main() or 0)
+
+    if args.tray:
+        from profit_daemon_jon.tray_status import main as tray_main
+        return int(tray_main() or 0)
+
     # Default: run the unified profit daemon
     profile = args.profile or os.environ.get("EXCHANGE_PROFIT_PROFILE") or "standard"
     if profile == "paper":
@@ -104,6 +114,26 @@ def main(argv: list[str] | None = None) -> int:
         os.environ.setdefault("EXCHANGE_LIVE_PROFIT_MAX", "0")
         profile = "standard"
     os.environ["EXCHANGE_PROFIT_PROFILE"] = profile
+
+    # Forced vault for live keys in downloadable / branded builds
+    live = os.environ.get("EXCHANGE_ARBITRAGE_LIVE", "").strip() in ("1", "true", "yes")
+    force_vault = os.environ.get("PROFIT_DAEMON_FORCE_VAULT", "").strip() in ("1", "true", "yes") or live
+    if force_vault and live:
+        from backend.services.exchange_secrets_vault_service import encryption_available
+        if not encryption_available():
+            print("ERROR: live mode requires EXCHANGE_VAULT_KEY (run --wizard). Refusing to start.")
+            return 3
+        # Prefer vault-backed secrets when present
+        try:
+            from backend.services.exchange_secrets_vault_service import get_secret
+            for env_name in ("BINANCE_API_KEY", "BINANCE_API_SECRET", "NONKYC_API_KEY", "NONKYC_API_SECRET"):
+                if not os.environ.get(env_name):
+                    got = get_secret(env_name)
+                    if got:
+                        os.environ[env_name] = str(got)
+        except Exception:
+            pass
+
     _banner(f"profile={profile} once={bool(args.once)}")
 
     forwarded = list(unknown)

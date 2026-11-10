@@ -24,7 +24,8 @@ def test_install_top25_marks_state(tmp_path, monkeypatch):
     assert status["installed"] == 25
     backlog = prod.product_improvement_backlog()
     assert backlog["total"] >= 20
-    assert backlog["done"] >= 10
+    assert backlog["done"] == backlog["total"]
+    assert backlog["open"] == 0
 
 
 def test_runner_brand_constant():

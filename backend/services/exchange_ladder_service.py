@@ -26,6 +26,11 @@ from backend.services import crypto_exchange_service as ex
 from backend.services.exchange_cross_trade_service import _binance_top, _get_json, _open_order_rows
 from backend.services.exchange_fill_model_service import tune_ladder_cfg
 from backend.services.exchange_inventory_skew import skewed_entry_offset_bps, skew_factor
+from backend.services.exchange_ladder_strategy_improve import (
+    enhance_ladder_cfg,
+    refresh_venue_fees,
+    top_up_nonkyc_quote,
+)
 from backend.services.exchange_market_feed_service import prefer_cached_binance_top
 from backend.services.exchange_metrics_service import observe_ladder
 from backend.services.exchange_maker_quote_service import (
@@ -347,8 +352,30 @@ def run_ladder(
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
     # quote_reserve is for new entries only — exits must spend the reserved quote.
     reserve = float(cfg.get("quote_reserve") or 0.0)
+    injected_balances = balances is not None
+    try:
+        # Network top-up / fee refresh only on the live balance path (not unit tests).
+        if not injected_balances:
+            refresh_venue_fees()
+            if venue == "nonkyc" and cfg.get("execute"):
+                report["quote_topup"] = top_up_nonkyc_quote(
+                    min_quote_usd=max(float(cfg.get("min_order_usd") or 3.0), 3.0),
+                    dry_run=False,
+                )
+                if not (report["quote_topup"] or {}).get("skipped"):
+                    try:
+                        balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
+                        bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
+                    except Exception:
+                        pass
+        cfg = enhance_ladder_cfg(cfg, venue=venue, balances=bal)
+        reserve = float(cfg.get("quote_reserve") or 0.0)
+    except Exception as exc:
+        report["strategy_improve_error"] = str(exc)
     cfg = tune_ladder_cfg(cfg, venue=venue, min_prob=float(cfg.get("fill_model_min_prob") or 0.18))
     report["_fill_prob_l0"] = cfg.get("_fill_prob_l0")
+    report["_dynamic_cap"] = cfg.get("_dynamic_cap")
+    report["_ppp_filter"] = cfg.get("_ppp_filter")
     skews: Dict[str, float] = {}
 
     markets: Dict[str, Dict[str, float]] = {}
