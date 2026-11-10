@@ -5,6 +5,8 @@
 # Core: Redis bus, Binance WS feed, sklearn fill model.
 # Speed: orjson (bus/WS parse), uvloop (async feed), aiohttp (REST fan-out),
 #        prometheus-client (scrape gauges on :9108).
+# Microstructure: msgpack (mid rings), cachetools (exchangeInfo TTL cache),
+#                 Binance depth5 imbalance + mid regime for ladder/maker.
 redis>=5.0.1,<8.0
 websockets>=12.0,<16.0
 scikit-learn>=1.3.2,<2.0
@@ -13,3 +15,5 @@ orjson>=3.9.0,<4.0
 uvloop>=0.19.0,<1.0
 aiohttp>=3.9.0,<4.0
 prometheus-client>=0.20.0,<1.0
+msgpack>=1.0.0,<2.0
+cachetools>=5.3.0,<7.0

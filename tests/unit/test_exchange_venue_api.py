@@ -186,7 +186,8 @@ def test_fetch_binance_symbol_filters_includes_tick_size(monkeypatch):
     from backend.services import exchange_venue_api_service as vapi
 
     vapi._BINANCE_FILTER_CACHE.clear()
-    vapi._BINANCE_FILTER_CACHE_TS.clear()
+    if hasattr(vapi, "_BINANCE_FILTER_CACHE_TS"):
+        vapi._BINANCE_FILTER_CACHE_TS.clear()
 
     def fake_http(method, url, *, headers=None, data=None, timeout=8.0):
         return {

@@ -115,9 +115,19 @@ def price_decimals(price: float, *, venue: str = "nonkyc") -> int:
     return 4 if price >= 1 else 6
 
 
-def quote_price(ref: float, side: str, cfg: Dict[str, Any]) -> float:
-    """Sell rounds up and buy rounds down, so rounding never eats the edge."""
-    margin = (float(cfg["fee_bps"]) + float(cfg["edge_bps"])) / 1e4
+def quote_price(ref: float, side: str, cfg: Dict[str, Any], *, imbalance: float = 0.0) -> float:
+    """Sell rounds up and buy rounds down, so rounding never eats the edge.
+
+    When order-book imbalance is available, bid-heavy books tighten buy edges
+    and widen sell edges (and the reverse for ask-heavy).
+    """
+    try:
+        from backend.services.exchange_microstructure_service import maker_edge_bps
+
+        edge = maker_edge_bps(float(cfg["edge_bps"]), side, imbalance)
+    except Exception:
+        edge = float(cfg["edge_bps"])
+    margin = (float(cfg["fee_bps"]) + float(edge)) / 1e4
     raw = ref * (1 + margin) if side == "sell" else ref * (1 - margin)
     scale = 10 ** price_decimals(ref, venue=str(cfg.get("venue") or "nonkyc"))
     return (math.ceil(raw * scale) if side == "sell" else math.floor(raw * scale)) / scale
@@ -262,16 +272,22 @@ def run_maker_quotes(
     for symbol in cfg["symbols"]:
         book = top(symbol)
         live_ids = open_ids(symbol)
+        try:
+            from backend.services.exchange_microstructure_service import cached_imbalance
+
+            imbalance = cached_imbalance(symbol)
+        except Exception:
+            imbalance = 0.0
         for side in cfg["sides"]:
             key = f"{symbol}:{side}"
             row = state.get(key) or {}
-            item: Dict[str, Any] = {"symbol": symbol, "side": side}
+            item: Dict[str, Any] = {"symbol": symbol, "side": side, "imbalance": round(imbalance, 4)}
             report["quotes"].append(item)
             if not book or live_ids is None:
                 item["skipped"] = "no_book" if not book else "no_open_orders"
                 continue
             ref = float(book["ask"] if side == "sell" else book["bid"])
-            target = quote_price(ref, side, cfg)
+            target = quote_price(ref, side, cfg, imbalance=imbalance)
             item.update({"ref": ref, "target": target})
             coid = str(row.get("coid") or "")
             if coid and coid not in live_ids:

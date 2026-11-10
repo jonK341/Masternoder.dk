@@ -35,6 +35,10 @@ def stream_name(symbol: str, quote: str = QUOTE) -> str:
     return f"{symbol.lower()}{quote.lower()}@bookTicker"
 
 
+def depth_stream_name(symbol: str, quote: str = QUOTE) -> str:
+    return f"{symbol.lower()}{quote.lower()}@depth5@100ms"
+
+
 def feed_key(symbol: str) -> str:
     return f"mid:{str(symbol).upper()}"
 
@@ -48,6 +52,12 @@ def _spread_bps(bid: float, ask: float) -> float:
 
 def publish_top(symbol: str, bid: float, ask: float, *, source: str = "binance_ws") -> str:
     mid = (bid + ask) / 2.0
+    try:
+        from backend.services.exchange_microstructure_service import push_mid
+
+        push_mid(symbol, mid)
+    except Exception:
+        pass
     return bus_set(
         feed_key(symbol),
         {
@@ -119,10 +129,15 @@ def tech_pack_status() -> Dict[str, Any]:
         ("aiohttp", "aiohttp"),
         ("sklearn", "sklearn"),
         ("prometheus_client", "prometheus_client"),
+        ("msgpack", "msgpack"),
+        ("cachetools", "cachetools"),
     ):
         try:
             m = __import__(mod)
-            out[name] = {"ok": True, "version": getattr(m, "__version__", "?")}
+            ver = getattr(m, "__version__", None)
+            if ver is None and name == "msgpack":
+                ver = ".".join(str(x) for x in getattr(m, "version", ()))
+            out[name] = {"ok": True, "version": ver or "?"}
         except Exception as exc:
             out[name] = {"ok": False, "error": type(exc).__name__}
     return out
@@ -198,12 +213,27 @@ async def _poll_rest_aiohttp(symbols: List[str], *, on_tick=None) -> int:
 
 async def _run_ws(symbols: List[str], *, url: str, on_tick=None) -> None:
     import websockets
+    from backend.services.exchange_microstructure_service import publish_depth
 
     async with websockets.connect(url, ping_interval=20, ping_timeout=20, max_queue=1024) as ws:
         async for message in ws:
             payload = json_try_loads(message)
-            data = payload.get("data") if isinstance(payload, dict) else None
-            if not isinstance(data, dict):
+            if not isinstance(payload, dict):
+                continue
+            stream = str(payload.get("stream") or "")
+            data = payload.get("data") if isinstance(payload.get("data"), dict) else None
+            if data is None:
+                continue
+            # Combined depth5 stream: stream ends with @depth5@100ms, data has bids/asks.
+            if "@depth5" in stream:
+                pair = stream.split("@", 1)[0].upper()
+                if not pair.endswith(QUOTE):
+                    continue
+                symbol = pair[: -len(QUOTE)]
+                bids = data.get("bids") or data.get("b") or []
+                asks = data.get("asks") or data.get("a") or []
+                if isinstance(bids, list) and isinstance(asks, list) and bids and asks:
+                    publish_depth(symbol, bids, asks)
                 continue
             pair = str(data.get("s") or "")
             if not pair.endswith(QUOTE):
@@ -238,12 +268,18 @@ def run_feed_forever(symbols: Optional[List[str]] = None, *, reconnect_sec: floa
     a 1s REST poll against ``data-api.binance.vision``.
     """
     symbols = [str(s).upper() for s in (symbols or list(DEFAULT_SYMBOLS))]
-    streams = "/".join(stream_name(s) for s in symbols)
+    # bookTicker for mids + depth5 for imbalance (microstructure pack).
+    parts: List[str] = []
+    for s in symbols:
+        parts.append(stream_name(s))
+        parts.append(depth_stream_name(s))
+    streams = "/".join(parts)
     ws_failures = 0
     pack = tech_pack_status()
     print(
         f"[market-feed] json={pack.get('json')} uvloop={pack.get('uvloop', {}).get('ok')} "
-        f"aiohttp={pack.get('aiohttp', {}).get('ok')}",
+        f"aiohttp={pack.get('aiohttp', {}).get('ok')} msgpack={pack.get('msgpack', {}).get('ok')} "
+        f"depth5=on",
         flush=True,
     )
     while True:

@@ -460,6 +460,9 @@ def run_ladder(
     report["_ppp_filter"] = cfg.get("_ppp_filter")
     report["_exit_first"] = cfg.get("_exit_first")
     skews: Dict[str, float] = {}
+    regime_bps: Dict[str, Dict[str, float]] = {}
+    base_first_bps = float(cfg.get("first_bps") or 30.0)
+    base_step_bps = float(cfg.get("step_bps") or 40.0)
 
     markets: Dict[str, Dict[str, float]] = {}
     refs: Dict[str, float] = {}
@@ -528,7 +531,28 @@ def run_ladder(
 
         mid = (float(book["bid"]) + float(book["ask"])) / 2
         # Available bal already excludes locked quote reserve; include locked base approx via open sells.
-        skews[symbol] = skew_factor(bal, symbol, mid, quote)
+        inv_skew = skew_factor(bal, symbol, mid, quote)
+        # Restore untuned distances before per-symbol regime so multipliers do not compound.
+        cfg["first_bps"] = base_first_bps
+        cfg["step_bps"] = base_step_bps
+        try:
+            from backend.services.exchange_microstructure_service import (
+                apply_regime_to_cfg,
+                blend_skew,
+                cached_imbalance,
+            )
+
+            imb = cached_imbalance(symbol)
+            skews[symbol] = blend_skew(inv_skew, imb)
+            tuned = apply_regime_to_cfg(cfg, symbol=symbol)
+            cfg["first_bps"] = float(tuned.get("first_bps") or base_first_bps)
+            cfg["step_bps"] = float(tuned.get("step_bps") or base_step_bps)
+            regime_bps[symbol] = {"first_bps": cfg["first_bps"], "step_bps": cfg["step_bps"]}
+            report.setdefault("_regimes", {})[symbol] = tuned.get("_regime")
+            report.setdefault("_imbalances", {})[symbol] = round(imb, 4)
+        except Exception:
+            skews[symbol] = inv_skew
+            regime_bps[symbol] = {"first_bps": base_first_bps, "step_bps": base_step_bps}
         cfg["_inventory_skew"] = skews[symbol]
         anchor = state["anchors"].get(symbol) or {}
         drift = abs(mid / float(anchor["ref"]) - 1) * 1e4 if anchor.get("ref") else None
@@ -721,6 +745,9 @@ def run_ladder(
         mk = markets[symbol]
         skew = float(skews.get(symbol, 0.0))
         cfg["_inventory_skew"] = skew
+        bps = regime_bps.get(symbol) or {"first_bps": base_first_bps, "step_bps": base_step_bps}
+        cfg["first_bps"] = float(bps["first_bps"])
+        cfg["step_bps"] = float(bps["step_bps"])
         # Heavy base inventory: skip new buy entries when skew pricing is on (unload first).
         if (
             side == "buy"

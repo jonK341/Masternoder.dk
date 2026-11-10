@@ -384,9 +384,16 @@ def venue_supports_symbol(venue_id: str, symbol: str, *, quote: Optional[str] = 
     return tick is not None
 
 
-_BINANCE_FILTER_CACHE: Dict[str, Dict[str, Any]] = {}
-_BINANCE_FILTER_CACHE_TS: Dict[str, float] = {}
 _BINANCE_FILTER_TTL_SEC = 3600.0
+try:
+    from cachetools import TTLCache
+
+    _BINANCE_FILTER_CACHE: Any = TTLCache(maxsize=256, ttl=int(_BINANCE_FILTER_TTL_SEC))
+    _BINANCE_FILTER_USE_TTL = True
+except Exception:
+    _BINANCE_FILTER_CACHE = {}
+    _BINANCE_FILTER_CACHE_TS: Dict[str, float] = {}
+    _BINANCE_FILTER_USE_TTL = False
 
 
 def _quantize_down(value: float, step: float) -> float:
@@ -412,8 +419,11 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
         return {"ok": False, "error": "missing_market"}
     now = time.time()
     cached = _BINANCE_FILTER_CACHE.get(pair)
-    if cached and not force_refresh and (now - _BINANCE_FILTER_CACHE_TS.get(pair, 0)) < _BINANCE_FILTER_TTL_SEC:
-        return cached
+    if cached and not force_refresh:
+        if _BINANCE_FILTER_USE_TTL:
+            return cached
+        if (now - _BINANCE_FILTER_CACHE_TS.get(pair, 0)) < _BINANCE_FILTER_TTL_SEC:
+            return cached
 
     vcfg = _venue_api_cfg("binance") or {}
     api_base = str(vcfg.get("api_base") or "https://api.binance.com").rstrip("/")
@@ -460,7 +470,8 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
 
     out = {"ok": True, "market": pair, **filters}
     _BINANCE_FILTER_CACHE[pair] = out
-    _BINANCE_FILTER_CACHE_TS[pair] = now
+    if not _BINANCE_FILTER_USE_TTL:
+        _BINANCE_FILTER_CACHE_TS[pair] = now
     return out
 
 
