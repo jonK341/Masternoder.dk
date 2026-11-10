@@ -1,7 +1,7 @@
-"""Fast MN2 ledger read for wallet chrome (no chain scan / Chainz)."""
+"""On-chain chrome balance: create deposit address + UTXO sum (no ledger)."""
 from __future__ import annotations
 
-from flask import Flask, session
+from flask import Flask
 
 
 def _app_with_lifecycle():
@@ -9,121 +9,148 @@ def _app_with_lifecycle():
     from backend.routes.mn2_routes import mn2_bp
 
     app = Flask(__name__)
-    app.secret_key = "test-mn2-balance-fast"
+    app.secret_key = "test-mn2-balance-onchain"
     app.register_blueprint(mn2_bp)
     register_ai_user_lifecycle_middleware(app)
     return app
 
 
-def test_fast_balance_session_user_no_unspent(monkeypatch):
-    calls = {"chain": 0, "reconcile": 0, "chainz": 0}
-
+def test_onchain_chrome_creates_address_and_returns_utxo(monkeypatch):
     monkeypatch.setattr(
-        "backend.services.mn2_wallet_service.get_balance",
-        lambda user_id: {"success": True, "user_id": user_id, "mn2_balance": 12.5},
+        "backend.services.mn2_onchain_wallet.ensure_user_address",
+        lambda user_id, **kwargs: {
+            "success": True,
+            "deposit_address": "MNaddrAlice",
+            "user_id": user_id,
+            "created": True,
+            "generated": True,
+        },
     )
-
-    def boom_chain(*_a, **_k):
-        calls["chain"] += 1
-        raise AssertionError("chain_balance_for_user must not run on fast path")
-
-    def boom_reconcile(*_a, **_k):
-        calls["reconcile"] += 1
-        raise AssertionError("reconcile_user must not run on fast path")
-
-    def boom_chainz(*_a, **_k):
-        calls["chainz"] += 1
-        raise AssertionError("chainz must not run on fast path")
-
     monkeypatch.setattr(
         "backend.services.mn2_onchain_wallet.chain_balance_for_user",
-        boom_chain,
+        lambda user_id: {
+            "available": True,
+            "confirmed_mn2": 12.5,
+            "unconfirmed_mn2": 0.0,
+            "addresses": ["MNaddrAlice"],
+        },
     )
+    # Ledger must not be consulted for chrome paint.
     monkeypatch.setattr(
-        "backend.services.mn2_onchain_wallet.reconcile_user",
-        boom_reconcile,
-    )
-    monkeypatch.setattr(
-        "backend.services.mn2_chainz.chainz_ticker_usd_with_updated",
-        boom_chainz,
+        "backend.routes.mn2_routes.get_balance",
+        lambda user_id: (_ for _ in ()).throw(AssertionError("ledger get_balance")),
     )
 
     app = _app_with_lifecycle()
     with app.test_client() as client:
         with client.session_transaction() as sess:
             sess["user_id"] = "alice"
-        r = client.get("/api/mn2/balance/fast")
+        r = client.get("/api/mn2/balance/onchain")
     assert r.status_code == 200
     data = r.get_json()
     assert data["success"] is True
     assert data["mn2_balance"] == 12.5
     assert data["signed_in"] is True
-    assert "wallet_mode" in data
+    assert data["balance_source"] == "onchain"
+    assert data["deposit_address"] == "MNaddrAlice"
+    assert data["onchain"]["confirmed_mn2"] == 12.5
     assert "mn2_usd_price" not in data
-    assert "price_usd" not in data
-    assert "onchain" not in data
-    assert calls["chain"] == 0
-    assert calls["reconcile"] == 0
-    assert calls["chainz"] == 0
     assert "private" in (r.headers.get("Cache-Control") or "")
-    assert "no-store" in (r.headers.get("Cache-Control") or "")
 
 
-def test_fast_balance_query_user_signed_in_false(monkeypatch):
+def test_fast_alias_uses_onchain(monkeypatch):
     monkeypatch.setattr(
-        "backend.services.mn2_wallet_service.get_balance",
-        lambda user_id: {"success": True, "user_id": user_id, "mn2_balance": 12.5},
+        "backend.services.mn2_onchain_wallet.ensure_user_address",
+        lambda user_id, **kwargs: {"success": True, "deposit_address": "MNq", "user_id": user_id, "created": False},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_onchain_wallet.chain_balance_for_user",
+        lambda user_id: {"available": True, "confirmed_mn2": 3.0, "unconfirmed_mn2": 0, "addresses": ["MNq"]},
     )
     app = _app_with_lifecycle()
     with app.test_client() as client:
-        r = client.get("/api/mn2/balance/fast?user_id=alice")
+        r = client.get("/api/mn2/balance/fast?user_id=bob")
     data = r.get_json()
-    assert data["mn2_balance"] == 12.5
+    assert data["mn2_balance"] == 3.0
     assert data["signed_in"] is False
+    assert data["balance_source"] == "onchain"
 
 
-def test_fast_balance_anonymous_omits_balance(monkeypatch):
-    called = {"bal": 0}
+def test_onchain_chrome_anonymous_omits_balance(monkeypatch):
+    called = {"n": 0}
 
-    def no_balance(_user_id):
-        called["bal"] += 1
-        return {"success": True, "mn2_balance": 99}
+    def no_ensure(_user_id, **kwargs):
+        called["n"] += 1
+        return {"success": True, "deposit_address": "x"}
 
-    monkeypatch.setattr("backend.services.mn2_wallet_service.get_balance", no_balance)
+    monkeypatch.setattr("backend.services.mn2_onchain_wallet.ensure_user_address", no_ensure)
     app = _app_with_lifecycle()
     with app.test_client() as client:
-        r = client.get("/api/mn2/balance/fast")
+        r = client.get("/api/mn2/balance/onchain")
     data = r.get_json()
     assert data["signed_in"] is False
     assert "mn2_balance" not in data
-    assert called["bal"] == 0
+    assert called["n"] == 0
 
 
-def test_fast_balance_survives_rpc_failure(monkeypatch):
+def test_onchain_chrome_address_failure_surfaces_error(monkeypatch):
     monkeypatch.setattr(
-        "backend.services.mn2_wallet_service.get_balance",
-        lambda user_id: {"success": True, "user_id": user_id, "mn2_balance": 12.5},
-    )
-    monkeypatch.setattr(
-        "backend.services.mn2_rpc_client._call",
-        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("daemon down")),
+        "backend.services.mn2_onchain_wallet.ensure_user_address",
+        lambda user_id, **kwargs: {
+            "success": False,
+            "error": "Wallet is locked. Set MN2_WALLET_PASSPHRASE so a new address can be created.",
+            "code": "wallet_unlock_needed",
+        },
     )
     app = _app_with_lifecycle()
     with app.test_client() as client:
         with client.session_transaction() as sess:
             sess["user_id"] = "alice"
-        r = client.get("/api/mn2/balance/fast")
-    assert r.get_json()["mn2_balance"] == 12.5
+        r = client.get("/api/mn2/balance/onchain")
+    data = r.get_json()
+    assert data["success"] is False
+    assert data["code"] == "wallet_unlock_needed"
+    assert "passphrase" in data["error"].lower() or "locked" in data["error"].lower()
+
+
+def test_onchain_chrome_rpc_scan_failure_no_ledger_fallback(monkeypatch):
+    monkeypatch.setattr(
+        "backend.services.mn2_onchain_wallet.ensure_user_address",
+        lambda user_id, **kwargs: {"success": True, "deposit_address": "MNaddr", "user_id": user_id, "created": False},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_onchain_wallet.chain_balance_for_user",
+        lambda user_id: {
+            "available": False,
+            "confirmed_mn2": None,
+            "unconfirmed_mn2": None,
+            "addresses": ["MNaddr"],
+            "error": "connection refused",
+        },
+    )
+    monkeypatch.setattr(
+        "backend.routes.mn2_routes.get_balance",
+        lambda user_id: {"success": True, "mn2_balance": 99.0},
+    )
+    app = _app_with_lifecycle()
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["user_id"] = "alice"
+        r = client.get("/api/mn2/balance/onchain")
+    data = r.get_json()
+    assert data["success"] is False
+    assert data["deposit_address"] == "MNaddr"
+    assert "mn2_balance" not in data or data.get("mn2_balance") != 99.0
 
 
 def test_detail_balance_still_includes_onchain(monkeypatch):
     monkeypatch.setattr(
-        "backend.services.mn2_wallet_service.get_balance",
+        "backend.routes.mn2_routes.get_balance",
         lambda user_id: {"success": True, "user_id": user_id, "mn2_balance": 3.0},
     )
     monkeypatch.setattr(
         "backend.services.mn2_onchain_wallet.chain_balance_for_user",
-        lambda user_id: {"available": True, "confirmed": 1.0},
+        lambda user_id: {"available": True, "confirmed": 1.0, "confirmed_mn2": 1.0},
     )
     monkeypatch.setattr(
         "backend.services.mn2_onchain_wallet.reconcile_user",
@@ -139,11 +166,11 @@ def test_detail_balance_still_includes_onchain(monkeypatch):
             sess["user_id"] = "alice"
         r = client.get("/api/mn2/balance")
     data = r.get_json()
-    assert data["onchain"]["confirmed"] == 1.0
+    assert data["onchain"]["confirmed_mn2"] == 1.0
     assert data["reconcile"]["ok"] is True
 
 
-def test_fast_path_skips_ensure_user_address(monkeypatch):
+def test_onchain_path_skips_lifecycle_identify(monkeypatch):
     ensure_calls = {"n": 0}
 
     def fake_identify(request):
@@ -154,21 +181,9 @@ def test_fast_path_skips_ensure_user_address(monkeypatch):
         "backend.services.user_identification.user_identification.identify_or_create_user",
         fake_identify,
     )
-    # Also guard deposit address creation if anything still calls it
-    monkeypatch.setattr(
-        "backend.services.mn2_wallet_service.ensure_user_address",
-        lambda *a, **k: (_ for _ in ()).throw(AssertionError("ensure_user_address")),
-        raising=False,
-    )
-    monkeypatch.setattr(
-        "backend.services.mn2_wallet_service.get_or_create_deposit_address",
-        lambda *a, **k: (_ for _ in ()).throw(AssertionError("deposit")),
-        raising=False,
-    )
-
     app = _app_with_lifecycle()
     with app.test_client() as client:
-        r = client.get("/api/mn2/balance/fast")
+        r = client.get("/api/mn2/balance/onchain")
     assert r.status_code == 200
     assert ensure_calls["n"] == 0
     assert r.get_json()["signed_in"] is False

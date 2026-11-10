@@ -327,8 +327,10 @@ def listunspent(minconf: int = 1, maxconf: int = 9999999, *, timeout_sec: Option
     return _call("listunspent", [int(minconf), int(maxconf)], timeout_sec=timeout_sec)
 
 
-def getnewaddress() -> Dict[str, Any]:
+def getnewaddress(*, timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Generate a new receive address in the daemon wallet."""
+    if timeout_sec is not None:
+        return _call("getnewaddress", timeout_sec=timeout_sec)
     return _call("getnewaddress")
 
 

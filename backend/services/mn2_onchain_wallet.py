@@ -96,7 +96,7 @@ def describe_send_support() -> Dict[str, Any]:
     if _SUPPORT_CACHE is not None:
         return dict(_SUPPORT_CACHE)
 
-    from backend.services.mn2_rpc_client import rpc_help
+    from backend.services import mn2_rpc_client as rpc
 
     names = (
         "setlabel",
@@ -111,7 +111,8 @@ def describe_send_support() -> Dict[str, Any]:
     )
     methods: Dict[str, bool] = {}
     for name in names:
-        probed = rpc_help(name)
+        # Short timeout: unreachable daemons must not stall wallet chrome.
+        probed = rpc._call("help", [name], timeout_sec=2.0)
         err = str(probed.get("error") or "")
         body = str(probed.get("result") or "")
         methods[name] = not _method_missing(err, body) and name.lower() in body.lower()
@@ -153,19 +154,25 @@ def _user_addresses(user_id: str) -> List[str]:
     return _all_addresses_for_entry(entry)
 
 
-def ensure_user_address(user_id: str) -> Dict[str, Any]:
-    """Create the user's daemon address if missing, and label it when the RPC exists."""
+def ensure_user_address(user_id: str, *, label: bool = True, quick: bool = False) -> Dict[str, Any]:
+    """Create the user's daemon address if missing, and optionally label it.
+
+    quick=True skips validateaddress / help probes so chrome paint stays responsive
+    when the daemon is slow or unreachable.
+    """
     uid = str(user_id or "").strip()
     if not uid or uid == "default_user":
         return {"success": False, "error": "user_id required"}
     from backend.services.mn2_wallet_service import get_or_create_deposit_address
 
-    created = get_or_create_deposit_address(uid)
+    created = get_or_create_deposit_address(uid, quick=quick)
     if not created.get("success"):
         return created
     address = str(created.get("deposit_address") or "")
-    label = _try_label(address, uid)
-    return {**created, "label": label}
+    if not label or quick:
+        return {**created, "label": {"labeled": False, "method": None, "skipped": True}}
+    label_info = _try_label(address, uid)
+    return {**created, "label": label_info}
 
 
 def _try_label(address: str, user_id: str) -> Dict[str, Any]:

@@ -152,12 +152,13 @@
       var shortId = uid.length > 18 ? uid.slice(0, 8) + '…' + uid.slice(-4) : uid;
       pill.textContent = String(display).slice(0, 24) + (String(display).length > 24 ? '…' : '') + ' · ' + shortId;
     }
-    fetch('/api/mn2/balance?user_id=' + encodeURIComponent(uid))
-      .then(function (r) {
-        return r.json();
-      })
+    var glanceUrl = '/api/mn2/balance/fast?user_id=' + encodeURIComponent(uid);
+    var glanceFetch = (global.Mn2SiteBridge && global.Mn2SiteBridge.loadFastBalance)
+      ? global.Mn2SiteBridge.loadFastBalance()
+      : fetch(glanceUrl, { credentials: 'same-origin' }).then(function (r) { return r.json(); });
+    glanceFetch
       .then(function (b) {
-        var bal = b && b.success ? Number(b.mn2_balance) : NaN;
+        var bal = b && b.mn2_balance != null ? Number(b.mn2_balance) : NaN;
         updateMn2Glow(bal);
         if (isFinite(bal)) animateStat('profile-glance-mn2', bal, statOpts);
         else setElText('profile-glance-mn2', '—');

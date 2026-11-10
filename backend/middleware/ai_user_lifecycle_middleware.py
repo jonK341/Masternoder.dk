@@ -17,6 +17,7 @@ _API_PREFIX = "/api/"
 # Fast chrome ledger read must not create accounts or on-chain addresses.
 _SKIP_LIFECYCLE_PREFIXES = (
     "/api/mn2/balance/fast",
+    "/api/mn2/balance/onchain",
     "/api/mn2/sporks",
     "/api/mn2/releases",
 )

@@ -55,7 +55,10 @@
     tg.checked = localStorage.getItem('mn2_fiat_display') === '1';
     tg.addEventListener('change', function () {
       localStorage.setItem('mn2_fiat_display', tg.checked ? '1' : '0');
-      fetchJson(base() + '/api/mn2/balance?user_id=' + encodeURIComponent(uid())).then(function (res) {
+      var fast = (global.Mn2SiteBridge && global.Mn2SiteBridge.loadFastBalance)
+        ? global.Mn2SiteBridge.loadFastBalance().then(function (d) { return { data: d }; })
+        : fetchJson(base() + '/api/mn2/balance/fast?user_id=' + encodeURIComponent(uid()));
+      fast.then(function (res) {
         renderBalance(res.data);
       });
     });
@@ -345,6 +348,28 @@
     }
   }
 
+  var WALLET_TAB_ALLOW = {
+    deposit: 1, withdraw: 1, trusted: 1, transactions: 1, security: 1, nft: 1, settings: 1
+  };
+
+  function selectWalletTab(tab) {
+    var nav = document.getElementById('profile-wallet-subnav');
+    if (!nav || !tab || !WALLET_TAB_ALLOW[tab]) return;
+    var panels = document.querySelectorAll('[data-wallet-panel]');
+    var btn = nav.querySelector('[data-wallet-tab="' + tab + '"]');
+    nav.querySelectorAll('[data-wallet-tab]').forEach(function (b) {
+      var on = b === btn || b.getAttribute('data-wallet-tab') === tab;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    panels.forEach(function (p) {
+      p.style.display = p.getAttribute('data-wallet-panel') === tab ? 'block' : 'none';
+    });
+    if (tab === 'deposit') {
+      requestDepositAddress();
+    }
+  }
+
   function initWalletSubTabs() {
     var nav = document.getElementById('profile-wallet-subnav');
     if (!nav || nav._wired) return;
@@ -354,14 +379,12 @@
       var btn = e.target.closest('[data-wallet-tab]');
       if (!btn) return;
       var tab = btn.getAttribute('data-wallet-tab');
-      nav.querySelectorAll('[data-wallet-tab]').forEach(function (b) {
-        b.classList.toggle('active', b === btn);
-        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
-      });
-      panels.forEach(function (p) {
-        p.style.display = p.getAttribute('data-wallet-panel') === tab ? 'block' : 'none';
-      });
+      selectWalletTab(tab);
     });
+    try {
+      var q = new URLSearchParams(global.location.search).get('wallet');
+      if (q && WALLET_TAB_ALLOW[q]) selectWalletTab(q);
+    } catch (err) { /* ignore */ }
   }
 
   function renderNftWallet(data) {
@@ -435,22 +458,38 @@
     wireFiatToggle();
     initWalletSubTabs();
 
-    fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
+    // First paint: fast ledger only (no chain scan / address create).
+    var fastPromise = (global.Mn2SiteBridge && global.Mn2SiteBridge.loadFastBalance)
+      ? global.Mn2SiteBridge.loadFastBalance().then(function (d) { return { data: d }; })
+      : fetchJson(base() + '/api/mn2/balance/fast?user_id=' + q);
+    fastPromise.then(function (res) {
       renderBalance(res.data);
     });
-    fetchJson(base() + '/api/mn2/wallet-frame?user_id=' + q, { timeout: 18000 }).then(function (res) {
-      renderDeposit(res.data);
-    });
-    fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
-      renderTransactions(res.data);
-    });
-    fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
-      renderActivity(res.data);
-    });
-    fetchJson(base() + '/api/nft/wallet?user_id=' + q).then(function (res) {
-      renderNftWallet(res.data);
-    });
+
+    // Detail + secondary data after the card is in the document (non-blocking).
+    // Always ensure on-chain deposit address so users can receive network txs.
+    var startDetail = function () {
+      fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
+        renderBalance(res.data);
+      });
+      fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
+        renderTransactions(res.data);
+      });
+      fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
+        renderActivity(res.data);
+      });
+      fetchJson(base() + '/api/nft/wallet?user_id=' + q).then(function (res) {
+        renderNftWallet(res.data);
+      });
+      requestDepositAddress();
+    };
+
+    if (typeof global.requestAnimationFrame === 'function') {
+      global.requestAnimationFrame(function () { setTimeout(startDetail, 0); });
+    } else {
+      setTimeout(startDetail, 0);
+    }
   }
 
-  global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress };
+  global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress, selectWalletTab: selectWalletTab };
 })(window);

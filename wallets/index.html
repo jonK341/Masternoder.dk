@@ -4,65 +4,266 @@
     <script>window.APP_BASE = '';</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MasterNoder wallet portal for MN2 balance, deposits, withdrawals, trusted addresses, and wallet downloads.">
-    <title>Wallets - MasterNoder</title>
-    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=20260429a">
-    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=20260617a">
-    <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
-    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <meta name="description" content="MasterNoder wallet portal for MN2 balance, deposits, withdrawals, spork status, and daemon downloads.">
+    <title>Wallets - MasterNoder 9.2.6.5</title>
+    <link rel="stylesheet" href="/static/css/modern-design-system.css?v=9.2.6.5">
+    <link rel="stylesheet" href="/static/css/navigation-toolbar.css?v=9.2.6.5">
+    <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=9.2.6.5">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=9.2.6.5">
     <style>
-        body { min-height: 100vh; margin: 0; background: radial-gradient(circle at top, rgba(0,212,255,0.18), transparent 34%), #080b12; color: #fff; }
-        .wallet-page { max-width: 1100px; margin: 0 auto; padding: 42px 18px 64px; }
-        .wallet-hero, .wallet-card { border: 1px solid rgba(0,212,255,0.28); background: rgba(255,255,255,0.055); border-radius: 20px; }
-        .wallet-hero { padding: 34px; margin-bottom: 18px; }
-        .wallet-hero h1 { margin: 0 0 10px; color: #00d4ff; font-size: clamp(2rem, 5vw, 3.4rem); }
-        .wallet-muted { color: rgba(255,255,255,0.76); line-height: 1.55; }
-        .wallet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-        .wallet-card { padding: 22px; }
-        .wallet-card h2 { margin: 0 0 10px; color: #00ff88; font-size: 1.2rem; }
+        :root {
+            --w-ink: #e8f7ff;
+            --w-mute: rgba(232,247,255,0.72);
+            --w-cyan: #00d4ff;
+            --w-mint: #00ff88;
+            --w-panel: rgba(10,18,28,0.72);
+            --w-line: rgba(0,212,255,0.28);
+        }
+        body {
+            min-height: 100vh; margin: 0; color: var(--w-ink);
+            background:
+                radial-gradient(ellipse 80% 50% at 10% -10%, rgba(0,212,255,0.22), transparent 55%),
+                radial-gradient(ellipse 60% 40% at 90% 0%, rgba(0,255,136,0.12), transparent 50%),
+                linear-gradient(180deg, #060a12 0%, #0a121c 48%, #070b12 100%);
+            font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+        }
+        .wallet-page { max-width: 1120px; margin: 0 auto; padding: 36px 18px 72px; }
+        .wallet-hero {
+            padding: 28px 30px 24px; margin-bottom: 18px;
+            border: 1px solid var(--w-line); border-radius: 22px;
+            background: linear-gradient(135deg, rgba(0,212,255,0.10), rgba(0,255,136,0.05));
+            backdrop-filter: blur(8px);
+        }
+        .wallet-kicker { margin: 0 0 6px; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.72rem; color: var(--w-cyan); font-weight: 700; }
+        .wallet-hero h1 { margin: 0 0 8px; font-size: clamp(2.1rem, 5vw, 3.2rem); color: #fff; letter-spacing: -0.02em; }
+        .wallet-muted { color: var(--w-mute); line-height: 1.55; margin: 0; }
+        .wallet-balance-row {
+            display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 18px;
+            margin-top: 18px; min-height: 2.4rem;
+        }
+        .wallet-balance-row strong {
+            font-size: clamp(1.6rem, 3vw, 2.2rem); color: var(--w-mint); font-variant-numeric: tabular-nums;
+        }
+        .wallet-balance-row .rate { color: var(--w-cyan); font-weight: 700; }
         .wallet-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-        .wallet-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(0,255,136,0.42); color: #00ff88; background: rgba(0,255,136,0.12); text-decoration: none; font-weight: 800; }
-        .wallet-btn.secondary { border-color: rgba(0,212,255,0.42); color: #00d4ff; background: rgba(0,212,255,0.12); }
+        .wallet-btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px;
+            border-radius: 999px; border: 1px solid rgba(0,255,136,0.42); color: var(--w-mint);
+            background: rgba(0,255,136,0.12); text-decoration: none; font-weight: 800;
+            transition: transform 160ms ease, background 160ms ease;
+        }
+        .wallet-btn:hover { transform: translateY(-1px); background: rgba(0,255,136,0.2); }
+        .wallet-btn.secondary { border-color: rgba(0,212,255,0.42); color: var(--w-cyan); background: rgba(0,212,255,0.12); }
+        .wallet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 14px; }
+        .wallet-card {
+            padding: 20px 22px; border: 1px solid var(--w-line); border-radius: 18px;
+            background: var(--w-panel);
+        }
+        .wallet-card h2 { margin: 0 0 8px; color: var(--w-mint); font-size: 1.15rem; }
+        .wallet-card h3 { margin: 0 0 10px; color: var(--w-cyan); font-size: 1rem; }
+        .dl-row, .spork-row {
+            display: grid; gap: 6px; padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .dl-row:last-child, .spork-row:last-child { border-bottom: 0; }
+        .dl-meta, .spork-meta { font-size: 0.78rem; color: var(--w-mute); word-break: break-all; }
+        .pill {
+            display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+            font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em;
+        }
+        .pill-on { background: rgba(0,255,136,0.18); color: var(--w-mint); }
+        .pill-off { background: rgba(255,90,90,0.16); color: #ff8f8f; }
+        .pill-threshold { background: rgba(0,212,255,0.16); color: var(--w-cyan); }
+        .spork-list { max-height: 420px; overflow: auto; }
+        .skeleton {
+            display: inline-block; min-width: 4.5rem; height: 1.1em; border-radius: 6px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+            background-size: 200% 100%;
+            animation: shimmer 1.1s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .skeleton { animation: none; }
+            .wallet-btn { transition: none; }
+        }
         code { color: #9be7ff; }
+        .status-note { margin-top: 10px; font-size: 0.85rem; color: var(--w-mute); }
     </style>
 </head>
 <body class="layout-standard">
     <main class="wallet-page">
         <section class="wallet-hero">
-            <p class="wallet-muted">MN2 wallet portal</p>
+            <p class="wallet-kicker">MasterNoder · Wallet 9.2.6.5</p>
             <h1>Wallets</h1>
-            <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, exchange wallet actions, and daemon downloads.</p>
-            <div class="wallet-actions">
-                <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Open profile wallet</a>
-                <a class="wallet-btn secondary" href="/exchange#cex-account-bridge">Open exchange hub</a>
-                <a class="wallet-btn secondary" href="/explorer">Explorer</a>
+            <p class="wallet-muted">Chrome reads your on-chain UTXO balance and creates a deposit address on the daemon so deposits hit the network directly.</p>
+            <div class="wallet-balance-row" aria-live="polite">
+                <strong id="wallet-portal-balance"><span class="skeleton" aria-hidden="true"></span></strong>
+                <span id="wallet-portal-rate" class="rate"></span>
+                <span id="wallet-portal-mode" class="wallet-muted"></span>
             </div>
+            <div class="wallet-actions">
+                <a class="wallet-btn" href="/profile?tab=wallet&wallet=deposit#mn2-wallet">Deposit</a>
+                <a class="wallet-btn secondary" href="/profile?tab=wallet&wallet=withdraw#mn2-wallet">Withdraw</a>
+                <a class="wallet-btn secondary" href="/profile#mn2-wallet">Open profile wallet</a>
+                <a class="wallet-btn secondary" href="/exchange#cex-account-bridge">Exchange hub</a>
+            </div>
+            <p class="status-note" id="wallet-onchain-note">Balance source: on-chain. Shop settlement can stay ledger-mode; live exchange trading and payouts stay behind network sporks.</p>
         </section>
+
         <section class="wallet-grid" aria-label="Wallet sections">
+            <article class="wallet-card" id="wallet-downloads">
+                <h2>Daemon &amp; desktop wallet</h2>
+                <p class="wallet-muted" id="wallet-release-version">Loading release…</p>
+                <div id="wallet-download-rows"></div>
+            </article>
             <article class="wallet-card">
-                <h2>Deposit & withdraw</h2>
-                <p class="wallet-muted">Request a deposit address, submit withdrawals, manage trusted addresses, and review wallet transactions from the profile wallet card.</p>
-                <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Manage MN2 wallet</a>
+                <h2>On-chain connection</h2>
+                <p class="wallet-muted">Your website balance is the custodial ledger. Deposits credit it from chain; withdrawals broadcast on-chain when security checks pass. Shop settlement stays ledger-mode so checkout never waits on RPC.</p>
+                <a class="wallet-btn" href="/profile?tab=wallet&wallet=deposit#mn2-wallet">Get deposit address</a>
             </article>
             <article class="wallet-card">
                 <h2>Spend MN2</h2>
-                <p class="wallet-muted">Use the same balance for shop checkout, casino, exchange swaps, hosting, and creator tools.</p>
+                <p class="wallet-muted">Same balance for shop, casino, hosting, and creator tools.</p>
                 <a class="wallet-btn secondary" href="/shop#shop-mn2">Shop with MN2</a>
             </article>
             <article class="wallet-card">
-                <h2>NFT wallet v2</h2>
-                <p class="wallet-muted">Numbered editions, PayPal primary sales, coin resale, and profile avatar equip — separate from MN2 chain balance.</p>
-                <a class="wallet-btn secondary" href="/nft">Open NFT hub</a>
-            </article>
-            <article class="wallet-card">
-                <h2>Daemon & Qt wallet</h2>
-                <p class="wallet-muted">Daemon setup is tracked in the MN2 daemon setup guide. Use the explorer and profile wallet for live app operations.</p>
-                <a class="wallet-btn secondary" href="/news">Read wallet updates</a>
+                <h2>Network gates</h2>
+                <p class="wallet-muted">Exchange live trading and payouts default off until an operator signs the spork.</p>
+                <div id="wallet-gate-summary"></div>
             </article>
         </section>
+
+        <section class="wallet-card" style="margin-top:14px;" aria-label="All sporks">
+            <h2>Spork intelligence</h2>
+            <p class="wallet-muted">Every known MasterNoder2 spork — value, source, and whether it is active.</p>
+            <div class="spork-list" id="wallet-spork-list"><span class="skeleton" style="width:60%"></span></div>
+        </section>
     </main>
-    <script src="/static/js/user-id.js?v=20261010b"></script>
-    <script src="/static/js/nav-portal-template.js?v=20261002"></script>
-    <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
+    <script src="/static/js/user-id.js?v=9.2.6.5"></script>
+    <script src="/static/js/mn2-site-bridge.js?v=9.2.6.5"></script>
+    <script src="/static/js/nav-portal-template.js?v=9.2.6.5"></script>
+    <script src="/static/js/navigation-toolbar.js?v=9.2.6.5"></script>
+    <script>
+    (function () {
+        'use strict';
+        var bridge = window.Mn2SiteBridge;
+
+        function fmt(n) {
+            return bridge && bridge.fmtMn2 ? bridge.fmtMn2(n) : String(n);
+        }
+
+        function paintBalance(d) {
+            var el = document.getElementById('wallet-portal-balance');
+            var mode = document.getElementById('wallet-portal-mode');
+            var note = document.getElementById('wallet-onchain-note');
+            if (!el) return;
+            if (d && d.success === false) {
+                el.textContent = '—';
+                if (mode) mode.textContent = d.error || 'on-chain unavailable';
+                return;
+            }
+            if (!d || d.mn2_balance == null) {
+                el.textContent = '—';
+                if (mode) mode.textContent = d && d.signed_in === false ? 'Sign in to see on-chain balance' : '';
+                return;
+            }
+            el.textContent = fmt(d.mn2_balance) + ' MN2';
+            if (mode) {
+                mode.textContent = 'on-chain' + (d.deposit_address ? (' · ' + d.deposit_address) : '');
+            }
+            if (note && d.deposit_address) {
+                note.textContent = 'Deposit address ready on-chain: ' + d.deposit_address +
+                    '. Confirmed UTXOs power the chrome balance. Live exchange/payout sporks stay operator-gated.';
+            }
+        }
+
+        function paintPrice(d) {
+            var el = document.getElementById('wallet-portal-rate');
+            if (!el) return;
+            var p = d && d.mn2_usd_price;
+            el.textContent = p != null ? ('$' + Number(p).toFixed(4) + ' / MN2') : '';
+        }
+
+        function paintDownloads(payload) {
+            var ver = document.getElementById('wallet-release-version');
+            var rows = document.getElementById('wallet-download-rows');
+            if (!payload || !payload.success) {
+                if (ver) ver.textContent = 'Release manifest unavailable';
+                return;
+            }
+            if (ver) {
+                ver.textContent = payload.manifest_unavailable
+                    ? (payload.version + ' · manifest unavailable (links still use this version)')
+                    : (payload.version + ' · checksums from release manifests');
+            }
+            if (!rows) return;
+            rows.innerHTML = (payload.assets || []).map(function (a) {
+                var sha = a.sha256 ? ('sha256 ' + a.sha256) : 'sha256 pending';
+                return '<div class="dl-row">' +
+                    '<div><strong>' + a.label + '</strong> · <a class="wallet-btn secondary" style="padding:6px 10px" href="' + a.url + '">Download</a></div>' +
+                    '<div class="dl-meta"><code>' + a.filename + '</code> · ' + sha + '</div></div>';
+            }).join('');
+        }
+
+        function paintSporks(payload) {
+            var list = document.getElementById('wallet-spork-list');
+            var gates = document.getElementById('wallet-gate-summary');
+            if (!payload || !payload.success) {
+                if (list) list.textContent = 'Spork snapshot unavailable';
+                return;
+            }
+            if (gates && payload.gates) {
+                var g = payload.gates;
+                gates.innerHTML =
+                    '<div class="spork-row"><span class="pill ' + (g.exchange_live && g.exchange_live.allowed ? 'pill-on' : 'pill-off') + '">' +
+                    (g.exchange_live && g.exchange_live.allowed ? 'ON' : 'OFF') + '</span> Exchange live</div>' +
+                    '<div class="spork-row"><span class="pill ' + (g.casino_real_money && g.casino_real_money.allowed ? 'pill-on' : 'pill-off') + '">' +
+                    (g.casino_real_money && g.casino_real_money.allowed ? 'ON' : 'OFF') + '</span> Casino real money</div>' +
+                    '<div class="spork-row"><span class="pill ' + (g.payout_live && g.payout_live.allowed ? 'pill-on' : 'pill-off') + '">' +
+                    (g.payout_live && g.payout_live.allowed ? 'ON' : 'OFF') + '</span> Payout live</div>' +
+                    '<div class="spork-row"><span class="pill ' + (g.maintenance_mode ? 'pill-off' : 'pill-on') + '">' +
+                    (g.maintenance_mode ? 'ON' : 'OFF') + '</span> Maintenance</div>';
+            }
+            if (!list) return;
+            list.innerHTML = (payload.sporks || []).map(function (s) {
+                var pillClass = s.kind === 'threshold' ? 'pill-threshold' : (s.active ? 'pill-on' : 'pill-off');
+                var pillText = s.kind === 'threshold' ? ('VAL ' + s.value) : (s.active ? 'ACTIVE' : 'OFF');
+                return '<div class="spork-row">' +
+                    '<div><span class="pill ' + pillClass + '">' + pillText + '</span> <strong>' + s.name + '</strong></div>' +
+                    '<div class="spork-meta">' + (s.summary || '') + ' · id ' + s.id +
+                    ' · source ' + s.source + ' · value ' + s.value + '</div></div>';
+            }).join('');
+        }
+
+        function boot(b) {
+            if (!b) {
+                paintDownloads({ success: false });
+                paintSporks({ success: false });
+                return;
+            }
+            b.loadFastBalance().then(paintBalance).catch(function () { paintBalance(null); });
+            b.loadPrice().then(paintPrice).catch(function () { paintPrice(null); });
+            b.loadReleases().then(paintDownloads).catch(function () { paintDownloads({ success: false }); });
+            b.loadSporks().then(paintSporks).catch(function () { paintSporks({ success: false }); });
+            setInterval(function () {
+                b.loadFastBalance().then(paintBalance);
+            }, 90000);
+        }
+        if (bridge) boot(bridge);
+        else {
+            var tries = 0;
+            var t = setInterval(function () {
+                tries += 1;
+                if (window.Mn2SiteBridge || tries > 40) {
+                    clearInterval(t);
+                    boot(window.Mn2SiteBridge);
+                }
+            }, 50);
+        }
+    })();
+    </script>
 </body>
 </html>

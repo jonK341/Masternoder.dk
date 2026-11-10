@@ -134,7 +134,7 @@ def _unlock_daemon_wallet_for_keys() -> Dict[str, Any]:
     return {"success": True}
 
 
-def generate_daemon_address() -> Dict[str, Any]:
+def generate_daemon_address(*, timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Create one receive address on the site daemon wallet.
 
     This is the only application path that calls RPC ``getnewaddress``.
@@ -148,7 +148,7 @@ def generate_daemon_address() -> Dict[str, Any]:
     tried_unlock = False
     for _ in range(3):
         try:
-            rpc_result = getnewaddress()
+            rpc_result = getnewaddress(timeout_sec=timeout_sec)
         except Exception as exc:
             return {
                 "success": False,
@@ -197,10 +197,10 @@ def generate_daemon_address() -> Dict[str, Any]:
     }
 
 
-def _generate_valid_address(max_attempts: int = 3) -> Dict[str, Any]:
+def _generate_valid_address(max_attempts: int = 3, *, timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """Generate a fresh address via getnewaddress, skipping any the daemon rejects."""
     del max_attempts  # retries and unlock live in generate_daemon_address
-    return generate_daemon_address()
+    return generate_daemon_address(timeout_sec=timeout_sec)
 
 
 def _first_pool_key(addresses: Dict[str, str]) -> Optional[str]:
@@ -217,10 +217,12 @@ def _first_pool_key(addresses: Dict[str, str]) -> Optional[str]:
     return pool_keys[0]
 
 
-def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
+def get_or_create_deposit_address(user_id: str, *, quick: bool = False) -> Dict[str, Any]:
     """
     Return the deposit address for the user. If none exists, use an existing pool address
     if available, else call RPC getnewaddress, store user_id -> address, and return it. Thread-safe.
+
+    quick=True trusts a stored address without validateaddress (chrome / lag-sensitive paths).
     """
     if not (user_id or "").strip():
         return {"success": False, "error": "user_id required", "deposit_address": None}
@@ -233,9 +235,22 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
     # a *definitive* invalid; an RPC outage (None) must keep the existing address.
     if user_id in addresses:
         existing = _entry_primary(addresses[user_id])
+        if quick and existing:
+            return {
+                "success": True,
+                "deposit_address": existing,
+                "user_id": user_id,
+                "created": False,
+                "quick": True,
+            }
         validity = _address_validity(existing) if existing else False
         if existing and validity is not False:
-            payload = {"success": True, "deposit_address": existing, "user_id": user_id}
+            payload = {
+                "success": True,
+                "deposit_address": existing,
+                "user_id": user_id,
+                "created": False,
+            }
             if validity is None and not _wallet_info_ready():
                 payload["address_warning"] = (
                     "Wallet is not ready to confirm ownership; kept the existing deposit address."
@@ -250,16 +265,28 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
         if not pool_key:
             break
         addr = addresses.pop(pool_key)
-        if _address_validity(addr) is False:
+        if not quick and _address_validity(addr) is False:
             continue  # discard invalid pool address, try the next one
         addresses[user_id] = addr
         _save_addresses(addresses)
-        return {"success": True, "deposit_address": addr, "user_id": user_id}
+        return {
+            "success": True,
+            "deposit_address": addr,
+            "user_id": user_id,
+            "created": True,
+            "from_pool": True,
+        }
 
-    gen = _generate_valid_address()
+    gen = _generate_valid_address(timeout_sec=3.0 if quick else None)
     if not gen.get("success"):
         _save_addresses(addresses)
-        return {"success": False, "error": gen.get("error"), "deposit_address": None}
+        return {
+            "success": False,
+            "error": gen.get("error"),
+            "code": gen.get("code"),
+            "deposit_address": None,
+            "created": False,
+        }
 
     new_addr = gen["deposit_address"]
     addresses[user_id] = {
@@ -268,7 +295,13 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
         "addresses": [{"label": "primary", "address": new_addr, "type": "core", "active": True}],
     }
     _save_addresses(addresses)
-    return {"success": True, "deposit_address": new_addr, "user_id": user_id}
+    return {
+        "success": True,
+        "deposit_address": new_addr,
+        "user_id": user_id,
+        "created": True,
+        "generated": True,
+    }
 
 
 def create_deposit_addresses(count: int) -> Dict[str, Any]:

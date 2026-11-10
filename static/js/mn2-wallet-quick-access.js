@@ -252,10 +252,13 @@
             return Promise.resolve(null);
         }
 
-        var loader = bridge() ? bridge().loadBalance() : fetch('/api/mn2/balance?user_id=' + encodeURIComponent(uid())).then(function (r) {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.json();
-        });
+        var b = bridge();
+        var loader = b && b.loadFastBalance
+            ? b.loadFastBalance()
+            : (b ? b.loadBalance() : fetch('/api/mn2/balance/fast?user_id=' + encodeURIComponent(uid()), { credentials: 'same-origin' }).then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            }));
 
         return loader.then(function (d) {
             var bal = (d && (d.mn2_balance != null ? d.mn2_balance : d.balance)) || 0;
