@@ -96,7 +96,11 @@ def _seconds_until(iso_value):
     dt = _parse_iso_utc(iso_value)
     if not dt:
         return 0
-    return max(0, int((dt - _utc_now()).total_seconds()))
+    remaining = (dt - _utc_now()).total_seconds()
+    if remaining <= 0:
+        return 0
+    # Keep fractional seconds so short faucets (2s) are not reported ready early.
+    return round(remaining, 3)
 
 
 def _resolve_uid() -> str:
@@ -403,6 +407,14 @@ def _battle_telemetry_status(user_id: str, limit: int = 20) -> dict:
 def _battle_crypto_options():
     return [
         {
+            "id": "click_tap",
+            "name": "MN2 Tap",
+            "description": "Click the Battle faucet for a drip of internal MN2 balance.",
+            "cooldown_sec": 2,
+            "base_mn2": 0.00012,
+            "requires": {},
+        },
+        {
             "id": "duel_hash",
             "name": "Duel Hash",
             "description": "Claim a small MN2 reward after proving Battle activity.",
@@ -461,15 +473,19 @@ def _crypto_requirement_met(option, progress):
     return True
 
 
-def _battle_crypto_reward_amount(option, progress):
+def _battle_crypto_reward_amount(option, progress, combo_streak: int = 0):
     amount = float(option.get("base_mn2", 0) or 0)
-    if option["id"] == "duel_hash":
+    option_id = option.get("id")
+    if option_id == "click_tap":
+        combo = max(0, min(int(combo_streak or 0), 25))
+        amount *= 1.0 + (combo * 0.04)
+    elif option_id == "duel_hash":
         amount += min(float(progress.get("matches", 0) or 0), 100) * 0.00008
-    elif option["id"] == "streak_miner":
+    elif option_id == "streak_miner":
         amount += min(float(progress.get("win_streak", 0) or 0), 20) * 0.00035
-    elif option["id"] == "season_relay":
+    elif option_id == "season_relay":
         amount += min(float(progress.get("season_score", 0) or 0), 500) * 0.00001
-    elif option["id"] == "clan_node":
+    elif option_id == "clan_node":
         amount += min(float(progress.get("shards", 0) or 0), 100) * 0.00003
     return round(amount, 8)
 
@@ -484,15 +500,17 @@ def _battle_crypto_status(user_id: str) -> dict:
         option_state = crypto.setdefault("options", {}).setdefault(option["id"], {})
         remaining = _seconds_until(option_state.get("next_claim_at"))
         unlocked = _crypto_requirement_met(option, progress)
+        stored_combo = int(option_state.get("combo_streak", 0) or 0) if option["id"] == "click_tap" else 0
         options.append({
             **option,
-            "reward_mn2": _battle_crypto_reward_amount(option, progress),
+            "reward_mn2": _battle_crypto_reward_amount(option, progress, combo_streak=stored_combo),
             "unlocked": unlocked,
             "ready": unlocked and remaining <= 0,
             "cooldown_remaining_sec": remaining,
             "last_claim_at": option_state.get("last_claim_at"),
             "next_claim_at": option_state.get("next_claim_at"),
             "claims_count": int(option_state.get("claims_count", 0) or 0),
+            "combo_streak": stored_combo if option["id"] == "click_tap" else None,
         })
     points = {}
     try:
@@ -513,7 +531,7 @@ def _battle_crypto_status(user_id: str) -> dict:
     }
 
 
-def _claim_battle_crypto(user_id: str, option_id: str):
+def _claim_battle_crypto(user_id: str, option_id: str, combo_streak: int = 0):
     data = _load_battle_v2_state()
     user_state = _battle_v2_user_state(data, user_id)
     crypto = user_state.setdefault("crypto", {"total_mn2_earned": 0, "claims": [], "options": {}})
@@ -528,14 +546,20 @@ def _claim_battle_crypto(user_id: str, option_id: str):
     if remaining > 0:
         return {"success": False, "error": "cooldown", "cooldown_remaining_sec": remaining}, 429
     now = _utc_now()
-    amount = _battle_crypto_reward_amount(option, progress)
+    combo = max(0, min(int(combo_streak or 0), 25))
+    amount = _battle_crypto_reward_amount(option, progress, combo_streak=combo)
     next_claim_at = (now + timedelta(seconds=int(option.get("cooldown_sec", 0) or 0))).isoformat()
     try:
         from backend.services.unified_points_database import unified_points_db
         unified_points_db.add_points(
             user_id, "mn2_balance", amount,
             source="battle_crypto_claim",
-            metadata={"option_id": option_id, "option_name": option.get("name"), "progress": progress},
+            metadata={
+                "option_id": option_id,
+                "option_name": option.get("name"),
+                "progress": progress,
+                "combo_streak": combo,
+            },
         )
     except Exception as e:
         return {"success": False, "error": "MN2 award failed: " + str(e)}, 500
@@ -547,10 +571,13 @@ def _claim_battle_crypto(user_id: str, option_id: str):
         "claimed_at": now.isoformat(),
         "next_claim_at": next_claim_at,
         "progress": progress,
+        "combo_streak": combo,
     }
     option_state["last_claim_at"] = claim["claimed_at"]
     option_state["next_claim_at"] = next_claim_at
     option_state["claims_count"] = int(option_state.get("claims_count", 0) or 0) + 1
+    if option_id == "click_tap":
+        option_state["combo_streak"] = combo
     crypto["total_mn2_earned"] = round(float(crypto.get("total_mn2_earned", 0) or 0) + amount, 8)
     crypto.setdefault("claims", []).append(claim)
     user_state["updated_at"] = now.isoformat()
@@ -560,7 +587,14 @@ def _claim_battle_crypto(user_id: str, option_id: str):
         push_activity(user_id, "battle_crypto_claim", f"Claimed {amount:.8f} MN2 from {option.get('name')}", {"option_id": option_id})
     except Exception:
         pass
-    return {"success": True, "claim": claim, "crypto": _battle_crypto_status(user_id)}, 200
+    status_payload = _battle_crypto_status(user_id)
+    return {
+        "success": True,
+        "claim": claim,
+        "crypto": status_payload,
+        "combo_streak": combo,
+        "reward_mn2": amount,
+    }, 200
 
 
 @battle_bp.route('/api/battle/stats', methods=['GET'])
@@ -1190,7 +1224,24 @@ def battle_crypto_claim():
         data = request.get_json(silent=True) or {}
         user_id = _resolve_uid()
         option_id = (data.get("option_id") or request.args.get("option_id") or "").strip()
-        body, status = _claim_battle_crypto(user_id, option_id)
+        combo_streak = data.get("combo_streak", 0)
+        body, status = _claim_battle_crypto(user_id, option_id, combo_streak=combo_streak)
+        return jsonify(body), status
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@battle_bp.route('/api/battle/faucet/click', methods=['POST'])
+def battle_faucet_click():
+    """MN2 click faucet — awards internal mn2_balance via the click_tap option."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_uid()
+        combo_streak = data.get("combo_streak", 0)
+        body, status = _claim_battle_crypto(user_id, "click_tap", combo_streak=combo_streak)
+        if status == 200:
+            body["faucet"] = "mn2_click"
+            body["page"] = "battle"
         return jsonify(body), status
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
