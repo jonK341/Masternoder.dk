@@ -27,12 +27,16 @@ from backend.services.exchange_cross_trade_service import (
     search_fast_books,
     write_search_logs,
 )
+from backend.services.exchange_fill_model_service import train_and_save
 from backend.services.exchange_ladder_service import (
     VENUES as LADDER_VENUES,
     format_ladder_block,
     run_ladder,
     write_ladder_log,
 )
+from backend.services.exchange_market_feed_service import feed_status
+from backend.services.exchange_metrics_service import observe_feed
+from backend.services.exchange_redis_bus import backend_name
 from backend.services.exchange_maker_quote_service import (
     format_maker_block,
     run_maker_quotes,
@@ -47,6 +51,17 @@ from backend.services.exchange_strategy_service import (
 
 
 def main() -> int:
+    try:
+        status = feed_status()
+        observe_feed(status)
+        print(f"feed bus={backend_name()} ok={sum(1 for r in status['symbols'].values() if r.get('ok'))}/{len(status['symbols'])}")
+    except Exception as exc:
+        print(f"feed status failed: {exc}")
+    try:
+        model = train_and_save()
+        print(f"fill_model status={model.get('status')} n={model.get('n')}")
+    except Exception as exc:
+        print(f"fill_model failed: {exc}")
     search = search_fast_books()
     logs = write_search_logs(search)
     print(format_search_block(search), end="")

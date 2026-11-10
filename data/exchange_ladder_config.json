@@ -15,6 +15,9 @@
   "reprice_bps": 5.0,
   "min_exit_bps": 55.0,
   "exit_decay_minutes": 120.0,
+  "inventory_skew_bps": 25.0,
+  "fill_model_enabled": true,
+  "fill_model_min_prob": 0.18,
   "binance": {
     "execute": true,
     "symbols": ["XRP", "ALGO", "XLM", "TRX", "SOL"],
@@ -28,6 +31,7 @@
     "fee_bps": 10.0,
     "recenter_bps": 20.0,
     "min_exit_bps": 35.0,
+    "inventory_skew_bps": 20.0,
     "quote_reserve": 5.0
   }
 }

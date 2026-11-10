@@ -24,6 +24,10 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from backend.services import crypto_exchange_service as ex
 from backend.services.exchange_cross_trade_service import _binance_top, _get_json, _open_order_rows
+from backend.services.exchange_fill_model_service import tune_ladder_cfg
+from backend.services.exchange_inventory_skew import skewed_entry_offset_bps, skew_factor
+from backend.services.exchange_market_feed_service import prefer_cached_binance_top
+from backend.services.exchange_metrics_service import observe_ladder
 from backend.services.exchange_maker_quote_service import (
     _accepted,
     _default_cancel,
@@ -51,7 +55,7 @@ LOST_AFTER_SEC = 600.0
 
 _FLOAT_KEYS = ("order_usd", "min_order_usd", "first_bps", "step_bps", "exit_bps", "fee_bps",
                "recenter_bps", "refresh_minutes", "reprice_bps", "min_exit_bps", "exit_decay_minutes",
-               "quote_reserve")
+               "quote_reserve", "inventory_skew_bps", "fill_model_min_prob")
 
 
 def _default_config() -> Dict[str, Any]:
@@ -73,6 +77,9 @@ def _default_config() -> Dict[str, Any]:
         "min_exit_bps": 55.0,
         "exit_decay_minutes": 120.0,
         "quote_reserve": 0.0,
+        "inventory_skew_bps": 25.0,
+        "fill_model_enabled": True,
+        "fill_model_min_prob": 0.18,
     }
 
 
@@ -95,6 +102,7 @@ def load_config(venue: str = "nonkyc") -> Dict[str, Any]:
         cfg[key] = float(cfg.get(key) if cfg.get(key) is not None else _default_config()[key])
     cfg["levels"] = int(cfg.get("levels") or 0)
     cfg["max_open_orders"] = int(cfg.get("max_open_orders") or 0)
+    cfg["fill_model_enabled"] = bool(cfg.get("fill_model_enabled", True))
     return cfg
 
 
@@ -230,7 +238,8 @@ def floor_qty(qty: float, decimals: int) -> float:
 
 
 def entry_price(ref: float, side: str, level: int, cfg: Dict[str, Any], decimals: int) -> float:
-    off = (cfg["first_bps"] + level * cfg["step_bps"]) / 1e4
+    skew = float(cfg.get("_inventory_skew") or 0.0)
+    off = skewed_entry_offset_bps(side, level, cfg, skew=skew) / 1e4
     return round_price(ref * (1 + off) if side == "sell" else ref * (1 - off), side, decimals)
 
 
@@ -319,7 +328,8 @@ def run_ladder(
     if not cfg["execute"]:
         return report
     defaults = _venue_defaults(venue)
-    top = top or _binance_top
+    if top is None:
+        top = lambda symbol: prefer_cached_binance_top(symbol, _binance_top)
     open_ids = open_ids or defaults["open_ids"]
     closed = closed or defaults["closed"]
     market = market or defaults["market"]
@@ -336,6 +346,9 @@ def run_ladder(
         balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
     bal[quote] = bal.get(quote, 0.0) - cfg["quote_reserve"]
+    cfg = tune_ladder_cfg(cfg, venue=venue, min_prob=float(cfg.get("fill_model_min_prob") or 0.18))
+    report["_fill_prob_l0"] = cfg.get("_fill_prob_l0")
+    skews: Dict[str, float] = {}
 
     markets: Dict[str, Dict[str, float]] = {}
     refs: Dict[str, float] = {}
@@ -387,6 +400,9 @@ def run_ladder(
             return abs(target / current - 1) * 1e4 >= cfg["reprice_bps"]
 
         mid = (float(book["bid"]) + float(book["ask"])) / 2
+        # Available bal already excludes locked quote reserve; include locked base approx via open sells.
+        skews[symbol] = skew_factor(bal, symbol, mid, quote)
+        cfg["_inventory_skew"] = skews[symbol]
         anchor = state["anchors"].get(symbol) or {}
         drift = abs(mid / float(anchor["ref"]) - 1) * 1e4 if anchor.get("ref") else None
         age_min = (now - float(anchor.get("at") or now)) / 60
@@ -478,6 +494,7 @@ def run_ladder(
             report["skipped"].append({"reason": "max_open_orders", "limit": cfg["max_open_orders"]})
             break
         mk = markets[symbol]
+        cfg["_inventory_skew"] = skews.get(symbol, 0.0)
         price = entry_price(refs[symbol], side, level, cfg, int(mk["price_decimals"]))
         if _crosses(state, symbol, side, price, maker_sell(symbol)):
             continue
@@ -493,7 +510,12 @@ def run_ladder(
     report["open_orders"] = sum(1 for o in orders.values() if not o.get("cancelled"))
     report["pending_exits"] = len(pending)
     report["realized_usd"] = state["realized_usd"]
+    report["skews"] = {k: round(v, 4) for k, v in skews.items()}
     _save_state(spath, state)
+    try:
+        observe_ladder(report, balances=bal, quote=quote, skews=skews)
+    except Exception:
+        pass
     return report
 
 

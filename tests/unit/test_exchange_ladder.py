@@ -10,7 +10,8 @@ MK = {"price_decimals": 6, "qty_decimals": 2, "min_qty": 0.0, "min_quote": 1.0}
 
 
 def _cfg(**over):
-    cfg = {**_default_config(), "execute": True, "symbols": ["ALGO"], "levels": 3}
+    cfg = {**_default_config(), "execute": True, "symbols": ["ALGO"], "levels": 3,
+           "fill_model_enabled": False, "inventory_skew_bps": 0.0}
     cfg.update(over)
     return cfg
 

@@ -1,0 +1,45 @@
+{
+  "title": "MasterNoder Exchange Daemon",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Ladder realized USD",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "sum(masternoder_ladder_realized_usd)", "legendFormat": "realized"}]
+    },
+    {
+      "type": "stat",
+      "title": "Open ladder orders",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "sum(masternoder_ladder_open_orders)", "legendFormat": "open"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Fills",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [{"expr": "sum by (venue, kind) (rate(masternoder_ladder_fills_total[15m]))", "legendFormat": "{{venue}} {{kind}}"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Market feed age",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [{"expr": "masternoder_market_feed_age_seconds", "legendFormat": "{{symbol}}"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Inventory skew",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "targets": [{"expr": "masternoder_ladder_inventory_skew", "legendFormat": "{{venue}} {{symbol}}"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "L0 fill probability",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "targets": [{"expr": "masternoder_ladder_fill_prob_l0", "legendFormat": "{{venue}}"}]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+[Unit]
+Description=MasterNoder Binance market feed (bookTicker → Redis)
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/html
+Environment=DAEMON_QUIET=1
+Environment=LITE_APP=1
+Environment=EXCHANGE_FORCE_IPV4=1
+Environment=EXCHANGE_REDIS_URL=redis://127.0.0.1:6379/0
+ExecStart=/var/www/html/.venv/bin/python /var/www/html/scripts/run_exchange_market_feed.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
