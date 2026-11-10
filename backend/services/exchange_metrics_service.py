@@ -29,6 +29,11 @@ def _init():
         "open_orders": Gauge("masternoder_ladder_open_orders", "Open ladder orders", ["venue", "kind"]),
         "pending_exits": Gauge("masternoder_ladder_pending_exits", "Pending ladder exits", ["venue"]),
         "fills": Counter("masternoder_ladder_fills_total", "Ladder fill events", ["venue", "kind", "side"]),
+        "fill_events": Gauge(
+            "masternoder_ladder_fill_events",
+            "Cumulative ladder fills observed in jsonl",
+            ["venue", "kind"],
+        ),
         "refresh_moves": Counter("masternoder_ladder_refresh_moves_total", "Entry/exit refreshes", ["venue", "kind"]),
         "free_quote": Gauge("masternoder_exchange_free_quote", "Free quote balance", ["venue", "asset"]),
         "feed_age": Gauge("masternoder_market_feed_age_seconds", "Age of cached mid", ["symbol"]),
@@ -36,6 +41,14 @@ def _init():
         "fill_prob": Gauge("masternoder_ladder_fill_prob_l0", "Predicted L0 fill probability", ["venue"]),
         "skew": Gauge("masternoder_ladder_inventory_skew", "Inventory skew -1..1", ["venue", "symbol"]),
     }
+    # Register zero-series so Grafana rate()/panels are not blank before first event.
+    for venue in ("nonkyc", "binance"):
+        for kind in ("entry", "exit"):
+            for side in ("buy", "sell"):
+                _metrics["fills"].labels(venue=venue, kind=kind, side=side).inc(0)
+            _metrics["refresh_moves"].labels(venue=venue, kind=kind).inc(0)
+            _metrics["fill_events"].labels(venue=venue, kind=kind).set(0.0)
+        _metrics["fill_prob"].labels(venue=venue).set(0.0)
     return _metrics
 
 
@@ -69,6 +82,10 @@ def observe_ladder(report: Dict[str, Any], *, balances: Optional[Dict[str, float
     metrics["open_orders"].labels(venue=venue, kind="all").set(float(report.get("open_orders") or 0))
     for fill in report.get("fills") or []:
         metrics["fills"].labels(venue=venue, kind=str(fill.get("kind") or ""), side=str(fill.get("side") or "")).inc()
+    fill_counts = report.get("fill_counts") or {}
+    if isinstance(fill_counts, dict):
+        for kind, count in fill_counts.items():
+            metrics["fill_events"].labels(venue=venue, kind=str(kind or "unknown")).set(float(count or 0))
     if report.get("cancelled"):
         metrics["refresh_moves"].labels(venue=venue, kind="entry").inc(len(report["cancelled"]))
     if report.get("repriced"):
@@ -78,7 +95,7 @@ def observe_ladder(report: Dict[str, Any], *, balances: Optional[Dict[str, float
     if report.get("_fill_prob_l0") is not None:
         metrics["fill_prob"].labels(venue=venue).set(float(report["_fill_prob_l0"]))
     for symbol, skew in (skews or {}).items():
-        metrics["skew"].labels(venue=venue, symbol=symbol).set(float(skew))
+        metrics["skew"].labels(venue=venue, symbol=str(symbol).upper()).set(float(skew))
 
 
 def observe_feed(status: Dict[str, Any]) -> None:

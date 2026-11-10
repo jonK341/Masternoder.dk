@@ -78,6 +78,7 @@ def test_metrics_observe_does_not_crash():
     from backend.services.exchange_metrics_service import observe_feed, observe_ladder
 
     observe_ladder({"venue": "nonkyc", "realized_usd": 0.1, "open_orders": 2, "pending_exits": 1,
-                    "fills": [{"kind": "exit", "side": "buy"}], "cancelled": ["a"], "repriced": []},
+                    "fills": [{"kind": "exit", "side": "buy"}], "cancelled": ["a"], "repriced": [],
+                    "fill_counts": {"entry": 3, "exit": 1}, "_fill_prob_l0": 0.42},
                    balances={"USDT": 1.5}, quote="USDT", skews={"XRP": 0.2})
     observe_feed({"backend": "file", "symbols": {"XRP": {"ok": True, "age_sec": 0.5}}})
