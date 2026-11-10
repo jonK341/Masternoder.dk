@@ -365,7 +365,8 @@ resolve_compat_patch() {
 upnp_compat_present() {
   local net_cpp="${SRC_DIR}/src/net.cpp"
   [[ -f "${net_cpp}" ]] || return 1
-  if grep -qE 'UPNP_GetValidIGD\([^)]*nullptr,\s*0\)' "${net_cpp}"; then
+  # POSIX ERE: [[:space:]] not \s (GNU grep -E).
+  if grep -qE 'UPNP_GetValidIGD\([^)]*nullptr,[[:space:]]*0\)' "${net_cpp}"; then
     return 0
   fi
   if grep -q 'MINIUPNPC_API_VERSION >= 18' "${net_cpp}" && grep -q 'nullptr, 0' "${net_cpp}"; then

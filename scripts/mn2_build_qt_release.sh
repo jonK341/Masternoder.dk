@@ -162,11 +162,13 @@ apply_compat_patches() {
     sed -i '/#include <sys\/types.h>/a #include <deque>' src/httpserver.cpp
     echo "Applied sed fallback: #include <deque> in httpserver.cpp"
   fi
-  # Surgical UPNP wrap if monolithic/modular patches missed it
-  if ! grep -qE 'UPNP_GetValidIGD\([^)]*nullptr,\s*0\)' src/net.cpp 2>/dev/null; then
+  # Surgical UPNP wrap if monolithic/modular patches missed it.
+  # Note: use POSIX ERE [[:space:]] — GNU grep -E does not treat \s as whitespace.
+  if ! grep -qE 'UPNP_GetValidIGD\([^)]*nullptr,[[:space:]]*0\)' src/net.cpp 2>/dev/null \
+    && ! grep -q 'MINIUPNPC_API_VERSION >= 18' src/net.cpp 2>/dev/null; then
     if grep -q 'UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));' src/net.cpp 2>/dev/null; then
       echo "=== UPNP sed fallback: wrapping GetValidIGD for miniupnpc API 18+ ==="
-      python3 - src/net.cpp <<'PY'
+      if ! python3 - src/net.cpp <<'PY'
 from pathlib import Path
 import sys
 path = Path(sys.argv[1])
@@ -182,6 +184,9 @@ if old not in text:
     raise SystemExit("UPNP snip missing")
 path.write_text(text.replace(old, new, 1))
 PY
+      then
+        echo "WARN: UPNP sed fallback could not apply (already wrapped or unexpected context)" >&2
+      fi
     fi
   fi
 }
