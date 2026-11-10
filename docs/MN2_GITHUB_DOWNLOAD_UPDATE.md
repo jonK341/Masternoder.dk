@@ -12,10 +12,19 @@ Published under `https://github.com/jonK341/MasterNoder2/releases/tag/<TARGET_VE
 | `masternoder2d.tar.gz` | `scripts/mn2_build_release.sh` / `mn2_build_release_remote.py` |
 | `RELEASE_MANIFEST.json` | same (sha256 + binary sizes) |
 | `MasterNoder2-qt-linux.tar.gz` | `scripts/mn2_build_qt_release.sh` |
-| `MasterNoder2-qt-win.zip` | same |
+| `MasterNoder2-qt-win.zip` | same (`--target win` or `all`, needs `USE_DEPENDS=1`) |
 | `QT_RELEASE_MANIFEST.json` | same |
 
-Site `/wallets` and `GET /api/mn2/releases` read these via `RELEASE_BASE` + fixed filenames.
+## Extended download files
+
+| File | Builder |
+| --- | --- |
+| `dk.masternoder.MasterNoder2.flatpak` | `scripts/mn2_build_flatpak.sh` (from daemon tarball) |
+| `FLATPAK_RELEASE_MANIFEST.json` | same |
+| `MasterNoder2-wallet-android.apk` | `scripts/mn2_build_android_wallet.sh` (needs Android SDK + JDK 17) |
+| `ANDROID_RELEASE_MANIFEST.json` | same |
+
+Site `/wallets` and `GET /api/mn2/releases` list core + extended rows via `RELEASE_BASE` + fixed filenames.
 
 ## Compile sequence (build host)
 
@@ -26,15 +35,24 @@ The C++ tree is under `external/MasterNoder2` (gitignored). On a host that has i
 bash scripts/mn2_build_release.sh
 
 # 2) Qt desktop wallets (Linux + Windows)
-bash scripts/mn2_build_qt_release.sh
+USE_DEPENDS=0 bash scripts/mn2_build_qt_release.sh --target linux
+USE_DEPENDS=1 bash scripts/mn2_build_qt_release.sh --target win
 
-# 3) Publish / update GitHub release assets
+# 3) Linux Flatpak (daemon)
+bash scripts/mn2_build_flatpak.sh
+
+# 4) Android wallet shell (WebView → /wallets)
+#    Requires ANDROID_HOME and JDK 17; generate wrapper once: (cd android/masternoder2-wallet && gradle wrapper)
+bash scripts/mn2_build_android_wallet.sh
+
+# 5) Publish / update GitHub release assets
 python scripts/mn2_publish_release.py \
   --tarball dist/masternoder2d.tar.gz \
   --manifest dist/RELEASE_MANIFEST.json \
-  --qt-assets
+  --qt-assets \
+  --extra-assets
 
-# 4) Verify + write Discord draft (posts only with --post when ready)
+# 6) Verify + write Discord draft (posts only with --post when ready)
 python scripts/mn2_prepare_github_download_announce.py
 python scripts/mn2_prepare_github_download_announce.py --post
 ```

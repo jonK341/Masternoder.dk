@@ -49,6 +49,14 @@ REQUIRED_ASSETS = (
     "QT_RELEASE_MANIFEST.json",
 )
 
+# Extended packages — linked in Discord when present; do not block READY.
+EXTENDED_ASSETS = (
+    "dk.masternoder.MasterNoder2.flatpak",
+    "FLATPAK_RELEASE_MANIFEST.json",
+    "MasterNoder2-wallet-android.apk",
+    "ANDROID_RELEASE_MANIFEST.json",
+)
+
 ANNOUNCE_DIR = ROOT / "docs" / "announcements"
 
 
@@ -72,8 +80,15 @@ def release_asset_names() -> tuple[bool, list[str], str]:
     return ready, names, note
 
 
-def build_discord_payload(*, ready: bool, asset_note: str) -> dict:
-    links = "\n".join(f"• [{name}]({RELEASE_BASE}/{name})" for name in REQUIRED_ASSETS)
+def build_discord_payload(*, ready: bool, asset_note: str, present: list[str] | None = None) -> dict:
+    present_set = set(present or [])
+    core_links = "\n".join(f"• [{name}]({RELEASE_BASE}/{name})" for name in REQUIRED_ASSETS)
+    extra = [n for n in EXTENDED_ASSETS if n in present_set]
+    extra_links = (
+        "\n".join(f"• [{name}]({RELEASE_BASE}/{name})" for name in extra)
+        if extra
+        else "• (Flatpak / Android not uploaded yet)"
+    )
     status = "READY" if ready else "PENDING BUILD"
     body = (
         f"**MasterNoder2 {TARGET_VERSION} — wallet & daemon downloads ({status})**\n\n"
@@ -81,12 +96,15 @@ def build_discord_payload(*, ready: bool, asset_note: str) -> dict:
         f"so website users feed the network with real receive paths.\n\n"
         f"**GitHub release:** https://github.com/{REPO}/releases/tag/{TARGET_VERSION}\n"
         f"**Asset check:** {asset_note}\n\n"
-        f"**Downloads**\n{links}\n\n"
+        f"**Core downloads**\n{core_links}\n\n"
+        f"**Extended**\n{extra_links}\n\n"
         f"**Compile (when source updates)**\n"
         f"1. `bash scripts/mn2_build_release.sh` → daemon tarball + `RELEASE_MANIFEST.json`\n"
-        f"2. `bash scripts/mn2_build_qt_release.sh` → Linux/Windows Qt + `QT_RELEASE_MANIFEST.json`\n"
-        f"3. `python scripts/mn2_publish_release.py --tarball … --manifest … --qt-assets`\n"
-        f"4. Re-run this script with `--post` once assets are live.\n\n"
+        f"2. `bash scripts/mn2_build_qt_release.sh --target all` → Linux/Windows Qt\n"
+        f"3. `bash scripts/mn2_build_flatpak.sh` → daemon Flatpak bundle\n"
+        f"4. `bash scripts/mn2_build_android_wallet.sh` → Android APK (needs SDK)\n"
+        f"5. `python scripts/mn2_publish_release.py --tarball … --manifest … --qt-assets --extra-assets`\n"
+        f"6. Re-run this script with `--post` once assets are live.\n\n"
         f"Site portal: /wallets\n"
         f"Spork gates 112/114 stay OFF until an operator signs them."
     )
@@ -139,7 +157,7 @@ def main() -> int:
     args = p.parse_args()
 
     ready, names, note = release_asset_names()
-    payload = build_discord_payload(ready=ready, asset_note=note)
+    payload = build_discord_payload(ready=ready, asset_note=note, present=names)
     path = write_announcement(payload, ready=ready, names=names, note=note)
     print(f"Announcement draft: {path}")
     print(f"Release {TARGET_VERSION}: ready={ready} ({note})")

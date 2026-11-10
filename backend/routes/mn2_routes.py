@@ -232,7 +232,12 @@ _RELEASE_CACHE_TTL_SEC = 300.0
 def _sha_from_manifest(manifest: dict, filename: str):
     if not manifest:
         return None
-    files = manifest.get("files") or manifest.get("assets") or {}
+    files = (
+        manifest.get("files")
+        or manifest.get("assets")
+        or manifest.get("qt_assets")
+        or {}
+    )
     if isinstance(files, dict) and filename in files:
         entry = files[filename]
         if isinstance(entry, dict):
@@ -268,11 +273,17 @@ def _build_releases_payload() -> dict:
     )
 
     qt_manifest_url = f"{RELEASE_BASE}/QT_RELEASE_MANIFEST.json"
+    flatpak_manifest_url = f"{RELEASE_BASE}/FLATPAK_RELEASE_MANIFEST.json"
+    android_manifest_url = f"{RELEASE_BASE}/ANDROID_RELEASE_MANIFEST.json"
     daemon_manifest: dict = {}
     qt_manifest: dict = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+    flatpak_manifest: dict = {}
+    android_manifest: dict = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         fut_daemon = pool.submit(_fetch_release_manifest, MANIFEST_URL, 2.0)
         fut_qt = pool.submit(_fetch_release_manifest, qt_manifest_url, 2.0)
+        fut_flatpak = pool.submit(_fetch_release_manifest, flatpak_manifest_url, 2.0)
+        fut_android = pool.submit(_fetch_release_manifest, android_manifest_url, 2.0)
         try:
             daemon_manifest = fut_daemon.result(timeout=2.5) or {}
         except Exception:
@@ -281,15 +292,33 @@ def _build_releases_payload() -> dict:
             qt_manifest = fut_qt.result(timeout=2.5) or {}
         except Exception:
             qt_manifest = {}
+        try:
+            flatpak_manifest = fut_flatpak.result(timeout=2.5) or {}
+        except Exception:
+            flatpak_manifest = {}
+        try:
+            android_manifest = fut_android.result(timeout=2.5) or {}
+        except Exception:
+            android_manifest = {}
 
     unavailable = not bool(daemon_manifest) and not bool(qt_manifest)
+    flatpak_name = "dk.masternoder.MasterNoder2.flatpak"
+    android_name = "MasterNoder2-wallet-android.apk"
     assets = [
         {
             "id": "daemon",
-            "label": "Daemon (Linux)",
+            "label": "Daemon (Linux tarball)",
             "filename": TARBALL_NAME,
             "url": f"{RELEASE_BASE}/{TARBALL_NAME}",
             "sha256": _sha_from_manifest(daemon_manifest, TARBALL_NAME),
+            "platform": "linux",
+        },
+        {
+            "id": "daemon-flatpak",
+            "label": "Daemon (Linux Flatpak)",
+            "filename": flatpak_name,
+            "url": f"{RELEASE_BASE}/{flatpak_name}",
+            "sha256": _sha_from_manifest(flatpak_manifest, flatpak_name),
             "platform": "linux",
         },
         {
@@ -307,6 +336,14 @@ def _build_releases_payload() -> dict:
             "url": f"{RELEASE_BASE}/MasterNoder2-qt-win.zip",
             "sha256": _sha_from_manifest(qt_manifest, "MasterNoder2-qt-win.zip"),
             "platform": "windows",
+        },
+        {
+            "id": "android",
+            "label": "Mobile wallet (Android)",
+            "filename": android_name,
+            "url": f"{RELEASE_BASE}/{android_name}",
+            "sha256": _sha_from_manifest(android_manifest, android_name),
+            "platform": "android",
         },
     ]
     payload = {

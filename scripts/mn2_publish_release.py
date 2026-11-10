@@ -90,11 +90,41 @@ def _qt_assets_from_dist(dist_dir: str) -> list[str]:
     return out
 
 
+def _extra_assets_from_dist(dist_dir: str) -> list[str]:
+    """Flatpak + Android packages (optional extended release assets)."""
+    names = (
+        "dk.masternoder.MasterNoder2.flatpak",
+        "MasterNoder2-wallet-android.apk",
+    )
+    manifests = (
+        "FLATPAK_RELEASE_MANIFEST.json",
+        "ANDROID_RELEASE_MANIFEST.json",
+    )
+    out: list[str] = []
+    for name in names:
+        path = os.path.join(dist_dir, name)
+        if os.path.isfile(path):
+            out.append(path)
+            sha = path + ".sha256"
+            if os.path.isfile(sha):
+                out.append(sha)
+    for name in manifests:
+        path = os.path.join(dist_dir, name)
+        if os.path.isfile(path):
+            out.append(path)
+    return out
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=f"Publish MN2 {TARGET_VERSION} GitHub release")
     p.add_argument("--tarball", help="Path to masternoder2d.tar.gz from mn2_build_release.sh")
     p.add_argument("--manifest", help="RELEASE_MANIFEST.json (default: alongside tarball)")
     p.add_argument("--qt-assets", action="store_true", help="Upload Qt packages from dist/ (no daemon tarball required)")
+    p.add_argument(
+        "--extra-assets",
+        action="store_true",
+        help="Also upload Flatpak + Android packages from dist/ when present",
+    )
     p.add_argument("--skip-tag", action="store_true", help="Release only (tag already exists)")
     p.add_argument("--draft", action="store_true", help="Create as draft release")
     p.add_argument("--promote", action="store_true", help="Publish existing draft release (no upload)")
@@ -106,6 +136,8 @@ def main() -> int:
 
     if args.qt_assets and not args.tarball:
         qt_only = _qt_assets_from_dist(dist_dir)
+        if args.extra_assets:
+            qt_only.extend(_extra_assets_from_dist(dist_dir))
         if not qt_only:
             print(f"No Qt assets in {dist_dir}", file=sys.stderr)
             return 1
@@ -134,7 +166,7 @@ def main() -> int:
             _run(["gh", "release", "upload", TARGET_VERSION, *qt_only, "--repo", REPO, "--clobber"])
         print(f"\nUploaded Qt assets to {TARGET_VERSION}")
         for path in qt_only:
-            if path.endswith(".json") or path.endswith((".tar.gz", ".zip")):
+            if path.endswith((".json", ".tar.gz", ".zip", ".flatpak", ".apk")):
                 print(f"  {os.path.basename(path)} ({os.path.getsize(path):,} bytes)")
         return 0
 
@@ -167,6 +199,8 @@ def main() -> int:
         assets.append(manifest)
     if args.qt_assets:
         assets.extend(_qt_assets_from_dist(os.path.dirname(tarball)))
+    if args.extra_assets:
+        assets.extend(_extra_assets_from_dist(os.path.dirname(tarball)))
 
     if args.promote:
         _run(["gh", "release", "edit", TARGET_VERSION, "--repo", REPO, "--draft=false"])

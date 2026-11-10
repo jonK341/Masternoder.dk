@@ -48,10 +48,24 @@ def test_releases_from_fixture_manifests(monkeypatch):
             "MasterNoder2-qt-win.zip": {"sha256": "ccc333"},
         }
     }
+    flatpak_manifest = {
+        "files": {
+            "dk.masternoder.MasterNoder2.flatpak": {"sha256": "ddd444"},
+        }
+    }
+    android_manifest = {
+        "files": {
+            "MasterNoder2-wallet-android.apk": {"sha256": "eee555"},
+        }
+    }
 
     def fake_fetch(url, timeout_sec=4.0):
         if url.endswith("QT_RELEASE_MANIFEST.json"):
             return qt_manifest
+        if url.endswith("FLATPAK_RELEASE_MANIFEST.json"):
+            return flatpak_manifest
+        if url.endswith("ANDROID_RELEASE_MANIFEST.json"):
+            return android_manifest
         return daemon_manifest
 
     monkeypatch.setattr("backend.routes.mn2_routes._fetch_release_manifest", fake_fetch)
@@ -67,6 +81,9 @@ def test_releases_from_fixture_manifests(monkeypatch):
     assert by_id["daemon"]["sha256"] == "aaa111"
     assert by_id["qt-linux"]["sha256"] == "bbb222"
     assert by_id["qt-win"]["sha256"] == "ccc333"
+    assert by_id["daemon-flatpak"]["sha256"] == "ddd444"
+    assert by_id["android"]["sha256"] == "eee555"
+    assert by_id["android"]["platform"] == "android"
     assert by_id["daemon"]["url"].startswith(cfg.RELEASE_BASE)
     assert data["platform_ui_version"] == "9.2.6.5"
 

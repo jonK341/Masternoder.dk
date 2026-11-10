@@ -276,6 +276,18 @@ build_win_qt() {
 
   export PATH
   PATH="$(echo "${PATH}" | sed -e 's/:\/mnt.*//g')"
+  # Boost 1.64 jam bootstrap fails on GCC 14+ (-Werror=implicit-function-declaration).
+  export CFLAGS="${CFLAGS:-} -Wno-error=implicit-function-declaration -Wno-implicit-function-declaration"
+  export CXXFLAGS="${CXXFLAGS:-} -Wno-error=implicit-function-declaration -Wno-implicit-function-declaration"
+  # jam's build.sh calls bare `gcc` without CFLAGS — wrap the compiler on PATH.
+  CC_WRAP="${BUILD_ROOT}/cc-wrap"
+  mkdir -p "${CC_WRAP}"
+  cat > "${CC_WRAP}/gcc" <<'WRAP'
+#!/bin/bash
+exec /usr/bin/gcc -Wno-error=implicit-function-declaration -Wno-implicit-function-declaration "$@"
+WRAP
+  chmod +x "${CC_WRAP}/gcc"
+  export PATH="${CC_WRAP}:${PATH}"
 
   echo "=== depends (x86_64-w64-mingw32, with Qt) — first run can take 60–120 min ==="
   cd depends
@@ -332,7 +344,13 @@ for name in ("MasterNoder2-qt-linux.tar.gz", "MasterNoder2-qt-win.zip"):
     if os.path.isfile(p):
         assets[name] = {"sha256": sha256(p), "size": os.path.getsize(p)}
 
-doc = {"version": version, "target": target, "qt_assets": assets}
+doc = {
+    "version": version,
+    "target": target,
+    "qt_assets": assets,
+    # Alias used by GET /api/mn2/releases sha lookup.
+    "files": assets,
+}
 with open(manifest_path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")
