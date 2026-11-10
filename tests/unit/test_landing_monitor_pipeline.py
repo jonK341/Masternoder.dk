@@ -25,7 +25,8 @@ def test_sats_and_unique_cuts(tmp_path, monkeypatch):
     b = pipe.build_pipeline(force=True, use_llm=False, reason="test_b")
     assert a["success"] is True
     assert a["duration_ms"] == pipe.PIPELINE_MS
-    assert a["scene_count"] >= 8
+    assert a["scene_count"] == pipe.TARGET_SCENES
+    assert a["scene_count"] == 50
     assert a["persist"] is False
     assert a["interactive"] is True
     head = a["scenes"][0]
@@ -33,6 +34,8 @@ def test_sats_and_unique_cuts(tmp_path, monkeypatch):
     assert head.get("speaker_id", "").startswith("performer_")
     assert head.get("sync", {}).get("hold_for_speech") is True
     assert head.get("fx", {}).get("sound")
+    assert head.get("image_url")
+    assert "image.pollinations.ai" in head["image_url"]
     # Every forced cut is a different movie.
     assert a["cut_id"] != b["cut_id"]
     assert a["scenes"][0]["id"] != b["scenes"][0]["id"]
@@ -92,7 +95,8 @@ def test_pipeline_routes(tmp_path, monkeypatch):
     body = post.get_json()
     assert body["duration_ms"] == pipe.PIPELINE_MS
     assert body["persist"] is False
-    assert len(body["scenes"]) >= 8
+    assert len(body["scenes"]) == pipe.TARGET_SCENES
+    assert body["scenes"][0].get("image_url")
 
     get = c.get("/api/landing/monitor/pipeline")
     assert get.status_code == 200

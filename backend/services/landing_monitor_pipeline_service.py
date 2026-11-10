@@ -23,10 +23,11 @@ _HEARTBEAT = os.path.join(_BASE, "logs", "daemon_all_profit_heartbeat.json")
 SATS_PER_COIN = 100_000_000
 PIPELINE_MINUTES = 12
 PIPELINE_MS = PIPELINE_MINUTES * 60 * 1000  # 720_000
-TARGET_SCENES = 60  # ~12s each → 12 minutes
+TARGET_SCENES = 50  # ~14.4s each → exactly 12 minutes
 BPM = 180
 # Hard recount cadence: every movie window forces a fresh recount of live sats.
 RECOUNT_SEC = PIPELINE_MINUTES * 60
+_ART_DIR = os.path.join(_BASE, "static", "landing_monitor", "scene_art")
 
 # In-memory only current cut (disk is a crash-scratch mirror, overwritten in place).
 _CURRENT: Dict[str, Any] = {}
@@ -95,6 +96,24 @@ SCENE_FX: Dict[str, Dict[str, Any]] = {
         "sound": "tick_blip",
         "bars": 3,
         "speaker": "performer_sage",
+    },
+    "social": {
+        "lightshow": "wave",
+        "title": "Online leaderboard",
+        "explain": "Recently active users climb the live board.",
+        "color": "#c77dff",
+        "sound": "bubble_ping",
+        "bars": 5,
+        "speaker": "performer_aurora",
+    },
+    "generator": {
+        "lightshow": "wave",
+        "title": "Generator glow",
+        "explain": "Vidgenerator and MasterNoder2 creative stack.",
+        "color": "#00d4ff",
+        "sound": "whoosh_rise",
+        "bars": 5,
+        "speaker": "performer_iris",
     },
 }
 
@@ -431,6 +450,196 @@ def _fmt_sats(n: int) -> str:
         return str(n)
 
 
+def _fmt_compact(n: Any) -> str:
+    try:
+        v = float(n or 0)
+    except (TypeError, ValueError):
+        return "0"
+    abs_v = abs(v)
+    if abs_v >= 1e12:
+        return f"{v / 1e12:.2f}".rstrip("0").rstrip(".") + "T"
+    if abs_v >= 1e9:
+        return f"{v / 1e9:.2f}".rstrip("0").rstrip(".") + "B"
+    if abs_v >= 1e6:
+        return f"{v / 1e6:.2f}".rstrip("0").rstrip(".") + "M"
+    if abs_v >= 1e3:
+        return f"{v / 1e3:.1f}".rstrip("0").rstrip(".") + "K"
+    return str(int(round(v)))
+
+
+def collect_online_leaderboard(*, limit: int = 10, recent_hours: int = 24) -> Dict[str, Any]:
+    """Recently active users ranked with XP — soft 'online' leaderboard."""
+    limit = max(1, min(25, int(limit or 10)))
+    recent_hours = max(1, min(168, int(recent_hours or 24)))
+    rows: List[Dict[str, Any]] = []
+    source = "empty"
+
+    try:
+        from sqlalchemy import text
+        from backend.extensions import db
+
+        q = text(
+            """
+            SELECT user_id, username, last_login
+            FROM user_accounts
+            WHERE last_login IS NOT NULL
+              AND last_login >= datetime('now', :window)
+            ORDER BY last_login DESC
+            LIMIT :lim
+            """
+        )
+        # SQLite window; also try postgres-friendly fallback if needed.
+        try:
+            result = db.session.execute(q, {"window": f"-{recent_hours} hours", "lim": limit * 3})
+            raw = result.fetchall()
+        except Exception:
+            q2 = text(
+                """
+                SELECT user_id, username, last_login
+                FROM user_accounts
+                WHERE last_login IS NOT NULL
+                ORDER BY last_login DESC
+                LIMIT :lim
+                """
+            )
+            raw = db.session.execute(q2, {"lim": limit * 3}).fetchall()
+        for r in raw:
+            rows.append(
+                {
+                    "user_id": str(r[0] or ""),
+                    "username": str(r[1] or r[0] or "user"),
+                    "last_login": str(r[2]) if r[2] is not None else None,
+                    "xp": 0,
+                    "online": True,
+                }
+            )
+        if rows:
+            source = "user_accounts_recent"
+    except Exception:
+        rows = []
+
+    # Merge / fill from XP points DB (same source as /api/leaderboard).
+    try:
+        with ThreadPoolExecutor(max_workers=1) as pool:
+
+            def _xp_board() -> List[Dict[str, Any]]:
+                from backend.services.unified_points_database import unified_points_db
+
+                all_data = unified_points_db.get_all_users_points() or {}
+                players: List[Dict[str, Any]] = []
+                for uid, data in all_data.items():
+                    if not isinstance(data, dict):
+                        continue
+                    try:
+                        xp = int(float(data.get("xp_total", data.get("xp", 0)) or 0))
+                    except (TypeError, ValueError):
+                        xp = 0
+                    players.append(
+                        {
+                            "user_id": str(uid),
+                            "username": str(data.get("display_name") or data.get("username") or uid),
+                            "xp": xp,
+                        }
+                    )
+                players.sort(key=lambda p: int(p.get("xp") or 0), reverse=True)
+                return players[:80]
+
+            fut = pool.submit(_xp_board)
+            board = fut.result(timeout=0.9)
+        xp_map = {str(p.get("user_id") or ""): int(p.get("xp") or 0) for p in board}
+        name_map = {str(p.get("user_id") or ""): str(p.get("username") or "") for p in board}
+        if rows:
+            for row in rows:
+                uid = row["user_id"]
+                row["xp"] = int(xp_map.get(uid) or row.get("xp") or 0)
+                if name_map.get(uid):
+                    row["username"] = name_map[uid]
+            rows.sort(key=lambda x: (-int(x.get("xp") or 0), str(x.get("username") or "")))
+        else:
+            for p in board[:limit]:
+                rows.append(
+                    {
+                        "user_id": str(p.get("user_id") or ""),
+                        "username": str(p.get("username") or p.get("user_id") or "player"),
+                        "last_login": None,
+                        "xp": int(p.get("xp") or 0),
+                        "online": False,
+                    }
+                )
+            if rows:
+                source = "xp_leaderboard"
+    except Exception:
+        pass
+
+    if not rows:
+        # Visible lobby board even on cold DBs — marked offline seeds.
+        seeds = [
+            ("hunter_alpha", "Hunter Alpha", 12500),
+            ("creator_01", "Creator Prime", 9800),
+            ("noder_master", "NoderMaster", 7200),
+            ("video_wizard", "VideoWizard", 5500),
+            ("battle_king", "BattleKing", 3100),
+        ]
+        for uid, name, xp in seeds[:limit]:
+            rows.append(
+                {
+                    "user_id": uid,
+                    "username": name,
+                    "last_login": None,
+                    "xp": xp,
+                    "online": False,
+                }
+            )
+        source = "seed_board"
+
+    for i, row in enumerate(rows[:limit]):
+        row["rank"] = i + 1
+    return {
+        "success": True,
+        "updated_at": _iso(),
+        "source": source,
+        "recent_hours": recent_hours,
+        "count": len(rows[:limit]),
+        "leaderboard": rows[:limit],
+    }
+
+
+def _art_prompt(*, category: str, title: str, body: str) -> str:
+    mood = {
+        "network": "emerald neon blockchain city, satoshi rain, MasterNoder2 node glow",
+        "trade": "daemon trading desk, amber charts, crypto fills sparks",
+        "profit": "golden profit pulse, vault light, triumphant lobby",
+        "wallet": "MN2 wallet hologram, green satoshis, sleek crypto wallet",
+        "action": "live user activity streams, cyan motion trails",
+        "social": "online leaderboard hologram, ranked avatars, social lobby",
+        "generator": "AI video generator studio, MasterNoder2 creative lab",
+        "finale": "rainbow lobby finale, MasterNoder2 billboard",
+        "system": "ops monitor grid, cool steel HUD",
+    }.get(category, "MasterNoder2 crypto lobby monitor")
+    return (
+        f"Cinematic still for MasterNoder2 lobby monitor, {mood}, "
+        f"about {title}: {body[:120]}, no readable text, ultra detailed, soft film grain"
+    )
+
+
+def _scene_image_fields(*, category: str, title: str, body: str, seed: int) -> Dict[str, Any]:
+    """Hotlink a freshly seeded Pollinations still; browser treats it as the clip art."""
+    import urllib.parse
+
+    prompt = _art_prompt(category=category, title=title, body=body)
+    encoded = urllib.parse.quote(prompt[:360], safe="")
+    url = (
+        f"https://image.pollinations.ai/prompt/{encoded}"
+        f"?width=960&height=540&nologo=true&enhance=true&seed={int(seed) & 0x7FFFFFFF}"
+    )
+    return {
+        "image_url": url,
+        "image_prompt": prompt[:280],
+        "image_seed": int(seed) & 0x7FFFFFFF,
+        "image_kind": "ai_still",
+    }
+
+
 def _speak_line(
     *,
     category: str,
@@ -440,21 +649,35 @@ def _speak_line(
     sats_kind: str,
     speaker_name: str = "",
 ) -> str:
-    """Camgirl-ready spoken stats line — short, clear, synced to the scene."""
+    """Daemon-human spoken line — conversational, not robotic announce."""
     kind = sats_kind or category
-    sats_txt = _fmt_sats(int(sats or 0)).replace(",", " ")
+    sats_txt = _fmt_compact(int(sats or 0))
     host = (speaker_name or "Host").split()[0]
+    soft = body.strip().rstrip(".")
     if kind == "network" or category == "network":
-        return f"{host} here. Network sats on screen: {sats_txt}. {title}."
+        return (
+            f"Hey, it's {host}. Network sats are sitting at {sats_txt} right now. "
+            f"{title} — {soft}."
+        )[:420]
     if kind == "trade" or category in ("trade", "profit"):
-        return f"{host} checking the daemon desk. Trade sats: {sats_txt}. {title}."
+        return (
+            f"{host} on the daemon desk. Trade sats just printed {sats_txt}. "
+            f"{title}. {soft}."
+        )[:420]
     if kind == "combined" or category == "finale":
-        return f"{host} wrapping the cut. Combined sats: {sats_txt}. {title}."
+        return (
+            f"Alright — {host} wrapping this cut. Combined sats land at {sats_txt}. "
+            f"{title}."
+        )[:420]
     if category == "wallet":
-        return f"{host} on wallet glow. {sats_txt} sats. {title}."
+        return f"{host} here with the wallet glow. {sats_txt} sats on MN2. {title}."[:420]
+    if category == "social":
+        return f"{host} checking who's online. {title}. {soft}."[:420]
+    if category == "generator":
+        return f"{host} peeking at MasterNoder2. {title}. {soft}."[:420]
     if category == "action":
-        return f"{host} on action beat. {title}. {body[:120]}"
-    return f"{host} on the monitor. {title}. Stats show {sats_txt} sats."
+        return f"{host} catching live activity. {title}. {soft[:140]}."[:420]
+    return f"{host} on the monitor. {title}. {soft}."[:420]
 
 
 def _scene(
@@ -464,10 +687,11 @@ def _scene(
     body: str,
     sats: int = 0,
     sats_kind: str = "",
-    duration_ms: int = 12000,
+    duration_ms: int = 14000,
     meta: Optional[Dict[str, Any]] = None,
     speaker_id: Optional[str] = None,
     speaker_index: int = 0,
+    art_seed: Optional[int] = None,
 ) -> Dict[str, Any]:
     fx = dict(SCENE_FX.get(category) or SCENE_FX["system"])
     sid = speaker_id or fx.get("speaker") or SPEAKER_ROTATION[speaker_index % len(SPEAKER_ROTATION)]
@@ -479,9 +703,10 @@ def _scene(
         sats_kind=sats_kind,
         speaker_name=sid.replace("performer_", "").title(),
     )
-    # Keep scene long enough that voice + SFX + lights stay locked together.
-    voice_budget_ms = max(4500, min(18000, 80 * max(24, len(speak))))
+    voice_budget_ms = max(5000, min(16000, 70 * max(24, len(speak))))
     dur = max(int(duration_ms), voice_budget_ms)
+    seed = int(art_seed if art_seed is not None else (uuid.uuid4().int % 10_000_000))
+    art = _scene_image_fields(category=category, title=title, body=body, seed=seed)
     return {
         "id": f"pipe_{uuid.uuid4().hex[:10]}",
         "category": category,
@@ -501,6 +726,10 @@ def _scene(
             "beat_ms": int(round(60_000 / BPM)),
         },
         "fx": fx,
+        "image_url": art["image_url"],
+        "image_prompt": art["image_prompt"],
+        "image_seed": art["image_seed"],
+        "image_kind": art["image_kind"],
         "meta": meta or {},
     }
 
@@ -519,13 +748,128 @@ def _sats_fingerprint(sats: Dict[str, Any]) -> str:
     )
 
 
+def _platform_stat_scenes(rng: random.Random) -> List[Dict[str, Any]]:
+    """Nice-to-know MasterNoder2 / platform clips (disk cache only — never block)."""
+    stats: Dict[str, Any] = {}
+    try:
+        snap = _read_json(os.path.join(_BASE, "data", "landing_monitor_cache.json"), {})
+        if isinstance(snap, dict):
+            stats = snap.get("stats") if isinstance(snap.get("stats"), dict) else {}
+    except Exception:
+        stats = {}
+
+    facts = [
+        (
+            "generator",
+            "MasterNoder2 video lab",
+            f"Vidgenerator holds {_fmt_compact(stats.get('total_videos') or 0)} videos — AI clips, music, and lobby FX.",
+            int(stats.get("total_videos") or 0),
+            "action",
+        ),
+        (
+            "social",
+            "Platform users",
+            f"{_fmt_compact(stats.get('total_users') or 0)} profiles on the ledger — battles, wallets, and streams.",
+            int(stats.get("total_users") or 0),
+            "action",
+        ),
+        (
+            "action",
+            "Battle arena pulse",
+            f"{_fmt_compact(stats.get('total_battles') or 0)} battles logged across the MasterNoder2 arena.",
+            int(stats.get("total_battles") or 0),
+            "action",
+        ),
+        (
+            "wallet",
+            "MN2 spot check",
+            (
+                f"MN2 prints around ${float(stats.get('mn2_usd_price') or 0):.4f} — "
+                "one coin is one hundred million sats."
+                if stats.get("mn2_usd_price") is not None
+                else "One MN2 equals one hundred million sats on MasterNoder2."
+            ),
+            0,
+            "wallet",
+        ),
+        (
+            "system",
+            "Daemon health",
+            (
+                "Chain daemon is online and feeding the lobby."
+                if stats.get("daemon_ok") is True
+                else "Daemon status is soft — pipeline still reads cached sats."
+            ),
+            int(stats.get("block_height") or 0),
+            "action",
+        ),
+        (
+            "generator",
+            "MasterNoder2 stack",
+            "Agents, shop, trophies, and the AI pipeline share one lobby — stats feed every clip.",
+            0,
+            "action",
+        ),
+        (
+            "wallet",
+            "Sats math",
+            "MasterNoder2 treats MN2 like bitcoin math — eight decimals, sats on screen.",
+            SATS_PER_COIN,
+            "network",
+        ),
+    ]
+    rng.shuffle(facts)
+    out: List[Dict[str, Any]] = []
+    for cat, title, body, sats_n, kind in facts:
+        # Map accidental battle → action for FX table.
+        if cat not in SCENE_FX:
+            cat = "action"
+        out.append(
+            {
+                "category": cat,
+                "title": title,
+                "body": body,
+                "sats": int(sats_n or 0),
+                "sats_kind": kind,
+                "duration_ms": 12000 + rng.randint(0, 3000),
+            }
+        )
+    return out
+
+
+def _trim_to_target(scenes: List[Dict[str, Any]], target: int) -> List[Dict[str, Any]]:
+    """Keep opener + finale and a diverse middle totaling exactly `target` scenes."""
+    if len(scenes) <= target:
+        return scenes
+    if target <= 2:
+        return scenes[:target]
+    head = scenes[:1]
+    tail = scenes[-1:]
+    middle = scenes[1:-1]
+    keep = target - 2
+    if len(middle) <= keep:
+        return head + middle + tail
+    # Prefer category diversity while trimming.
+    buckets: Dict[str, List[Dict[str, Any]]] = {}
+    for s in middle:
+        buckets.setdefault(str(s.get("category") or "system"), []).append(s)
+    picked: List[Dict[str, Any]] = []
+    while len(picked) < keep and any(buckets.values()):
+        for cat in list(buckets.keys()):
+            if len(picked) >= keep:
+                break
+            if buckets[cat]:
+                picked.append(buckets[cat].pop(0))
+    return head + picked[:keep] + tail
+
+
 def _procedural_ai_pipeline(
     sats: Dict[str, Any],
     actions: List[Dict[str, Any]],
     *,
     entropy: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Generative AI pipeline — every cut is different; driven by live sats + entropy."""
+    """Generative AI pipeline — 50 unique scenes / 12 min with art + online board."""
     network_sats = int((sats.get("totals") or {}).get("network_sats") or 0)
     trade_sats = int((sats.get("totals") or {}).get("trade_sats") or 0)
     fills = list(((sats.get("daemon_trades") or {}).get("detail") or {}).get("recent_fills") or [])
@@ -534,6 +878,8 @@ def _procedural_ai_pipeline(
     seed_src = f"{entropy or ''}:{_sats_fingerprint(sats)}:{time.time_ns()}"
     rng = random.Random(seed_src)
     rng.shuffle(fills)
+    online = collect_online_leaderboard(limit=10)
+    board = list(online.get("leaderboard") or [])
 
     scenes: List[Dict[str, Any]] = []
     cut_id = rng.randint(1000, 9999)
@@ -541,6 +887,7 @@ def _procedural_ai_pipeline(
 
     def add_scene(**kwargs: Any) -> None:
         kwargs.setdefault("speaker_index", speaker_i[0])
+        kwargs.setdefault("art_seed", rng.randint(1, 2_000_000_000))
         speaker_i[0] += 1
         scenes.append(_scene(**kwargs))
 
@@ -548,82 +895,122 @@ def _procedural_ai_pipeline(
         category="finale",
         title=f"AI lobby pipeline · cut {cut_id}",
         body=(
-            f"Fresh 12-minute reel from live sats (network {_fmt_sats(network_sats)} · "
-            f"trades {_fmt_sats(trade_sats)}) — lights + sounds + camgirl voice, not archived."
+            f"Fifty fresh scenes, twelve minutes — network {_fmt_compact(network_sats)} sats, "
+            f"trades {_fmt_compact(trade_sats)}, online board live. Nothing archived."
         ),
         sats=network_sats + trade_sats,
         sats_kind="combined",
-        duration_ms=12000 + rng.randint(0, 4000),
+        duration_ms=14000 + rng.randint(0, 2000),
     )
     add_scene(
         category="network",
         title="Network sats open",
-        body=f"On-chain MN2 wallet reads {_fmt_sats(int(mn2.get('sats') or 0))} sats"
+        body=f"On-chain MN2 wallet reads {_fmt_compact(int(mn2.get('sats') or 0))} sats"
         f" ({float(mn2.get('coins') or 0):.4f} MN2).",
         sats=int(mn2.get("sats") or 0),
         sats_kind="network",
-        duration_ms=13000,
+        duration_ms=14000,
     )
     if venues:
-        for vid, vsats in list(venues.items())[:4]:
+        for vid, vsats in list(venues.items())[:3]:
             add_scene(
                 category="network",
                 title=f"{vid} venue sats",
-                body=f"Cached venue BTC free → {_fmt_sats(vsats)} sats on {vid}.",
+                body=f"Venue BTC free on {vid} maps to {_fmt_compact(vsats)} sats.",
                 sats=int(vsats),
                 sats_kind="network",
-                duration_ms=11000,
+                duration_ms=12000,
                 meta={"venue": vid},
             )
     else:
         add_scene(
             category="network",
             title="Venue sats pending",
-            body="Venue BTC cache is empty — pipeline keeps network MN2 sats on screen.",
+            body="Venue BTC cache is quiet — MasterNoder2 still shows on-chain network sats.",
             sats=network_sats,
             sats_kind="network",
-            duration_ms=10000,
+            duration_ms=12000,
         )
 
     add_scene(
         category="trade",
         title="Daemon trade desk",
-        body=f"Profit daemon + grid ledger map to {_fmt_sats(trade_sats)} trade sats.",
+        body=f"Profit daemon plus grid ledger print {_fmt_compact(trade_sats)} trade sats.",
         sats=trade_sats,
         sats_kind="trade",
-        duration_ms=13000,
+        duration_ms=14000,
     )
 
-    # Expand fills into cinematic beats
-    for i, fill in enumerate(fills[:24]):
+    # Online users leaderboard — dedicated clips.
+    if board:
+        add_scene(
+            category="social",
+            title="Online users leaderboard",
+            body=(
+                "Top active players: "
+                + ", ".join(
+                    f"#{r.get('rank')} {r.get('username')} ({_fmt_compact(r.get('xp') or 0)} XP)"
+                    for r in board[:5]
+                )
+            ),
+            sats=len(board),
+            sats_kind="action",
+            duration_ms=15000,
+            meta={"leaderboard": board[:10]},
+        )
+        for row in board[:8]:
+            add_scene(
+                category="social",
+                title=f"#{row.get('rank')} {row.get('username')}",
+                body=(
+                    f"{row.get('username')} sits at {_fmt_compact(row.get('xp') or 0)} XP"
+                    + (" and looks online right now." if row.get("online") else " on the board.")
+                ),
+                sats=int(row.get("xp") or 0),
+                sats_kind="action",
+                duration_ms=11000 + rng.randint(0, 2000),
+                meta={"user": row},
+            )
+    else:
+        add_scene(
+            category="social",
+            title="Online board warming up",
+            body="Leaderboard is quiet — next logins will light the lobby ranks.",
+            sats=0,
+            sats_kind="action",
+            duration_ms=12000,
+        )
+
+    for fact in _platform_stat_scenes(rng):
+        add_scene(**fact)
+
+    for i, fill in enumerate(fills[:12]):
         sym = fill.get("symbol") or "pair"
         add_scene(
             category="trade" if i % 3 else "profit",
             title=f"Fill · {sym}",
             body=(
                 f"{fill.get('source', 'daemon')} {fill.get('mode') or ''} — "
-                f"${float(fill.get('fill_usd') or 0):.2f} → {_fmt_sats(int(fill.get('sats') or 0))} sats"
-                f" · PnL ${float(fill.get('realized_pnl_usd') or 0):.4f}"
+                f"${float(fill.get('fill_usd') or 0):.2f} → {_fmt_compact(int(fill.get('sats') or 0))} sats"
+                f", PnL ${float(fill.get('realized_pnl_usd') or 0):.4f}"
             ),
             sats=int(fill.get("sats") or 0),
             sats_kind="trade",
-            duration_ms=10000 + (i % 4) * 1000,
+            duration_ms=11000 + (i % 4) * 800,
             meta={"fill": fill},
         )
 
-    # Learned actions interleaved
-    for i, act in enumerate((actions or [])[:16]):
+    for i, act in enumerate((actions or [])[:10]):
         add_scene(
             category="action",
             title=str(act.get("title") or act.get("type") or "action"),
             body=str(act.get("text") or act.get("title") or "Learned platform action"),
             sats=0,
             sats_kind="action",
-            duration_ms=9000 + (i % 3) * 1500,
+            duration_ms=10000 + (i % 3) * 1200,
             meta={"action_id": act.get("id"), "action_category": act.get("category")},
         )
 
-    # Pad to ~12 minutes with shuffled generative refrains (unique each cut).
     motifs = [
         ("network", "Sats pulse", "Network sats breathe with the spectrum lightshow."),
         ("trade", "Daemon echo", "Trade sats chase the bezel — one fill, one chime."),
@@ -631,20 +1018,23 @@ def _procedural_ai_pipeline(
         ("wallet", "Wallet glow", "MN2 wallet sats glow green on every beat."),
         ("system", "Pipeline tick", "Twelve-minute clock advances — recount on the next window."),
         ("action", "Action remix", "Learned actions remix into the live sats story."),
+        ("generator", "AI clip lab", "MasterNoder2 spins a new still for every scene."),
+        ("social", "Crowd energy", "Online ranks keep the lobby human."),
     ]
     rng.shuffle(motifs)
     idx = 0
-    while len(scenes) < TARGET_SCENES:
+    # Leave one slot for the closing finale.
+    while len(scenes) < TARGET_SCENES - 1:
         cat, title, body = motifs[idx % len(motifs)]
         sats_val = network_sats if cat == "network" else trade_sats if cat in ("trade", "profit") else 0
-        jitter = rng.randint(-1200, 2400)
+        jitter = rng.randint(-800, 1800)
         add_scene(
             category=cat,
             title=f"{title} · beat {idx + 1} · cut {cut_id}",
-            body=body + f" Live recount {_fmt_sats(network_sats + trade_sats)} sats.",
+            body=body + f" Live recount {_fmt_compact(network_sats + trade_sats)} sats.",
             sats=sats_val,
             sats_kind="network" if cat == "network" else "trade" if cat in ("trade", "profit") else "action",
-            duration_ms=max(5000, 10000 + (idx % 5) * 800 + jitter),
+            duration_ms=max(8000, 11000 + (idx % 5) * 600 + jitter),
         )
         idx += 1
 
@@ -652,17 +1042,20 @@ def _procedural_ai_pipeline(
         category="finale",
         title=f"Cut {cut_id} complete — next movie will recount",
         body=(
-            f"Window closed — network {_fmt_sats(network_sats)} · trades {_fmt_sats(trade_sats)}. "
-            "Nothing archived; the next 12 minutes rebuild from fresh stats."
+            f"Window closed — network {_fmt_compact(network_sats)} · trades {_fmt_compact(trade_sats)}. "
+            "Fifty scenes done; the next twelve minutes rebuild from fresh stats."
         ),
         sats=network_sats + trade_sats,
         sats_kind="combined",
-        duration_ms=14000 + rng.randint(0, 4000),
+        duration_ms=14000 + rng.randint(0, 2000),
     )
 
+    scenes = _trim_to_target(scenes, TARGET_SCENES)
     out = _normalize_duration(scenes, generator="procedural_ai")
     out["cut_id"] = cut_id
     out["fingerprint"] = _sats_fingerprint(sats)
+    out["online_leaderboard"] = board[:10]
+    out["target_scenes"] = TARGET_SCENES
     return out
 
 
@@ -731,7 +1124,8 @@ def _ai_llm_pipeline(sats: Dict[str, Any], actions: List[Dict[str, Any]]) -> Opt
         f"Network sats: {totals.get('network_sats')}. Trade sats: {totals.get('trade_sats')}.\n"
         f"Recent fills: {json.dumps(fills[:8], default=str)[:1200]}\n"
         f"Actions: {json.dumps([{'title': a.get('title'), 'category': a.get('category')} for a in (actions or [])[:8]], default=str)[:800]}\n"
-        f"Produce about {TARGET_SCENES} scenes covering network sats, daemon trades, actions, and a finale."
+        f"Produce exactly {TARGET_SCENES} scenes covering network sats, daemon trades, online users, "
+        "MasterNoder2 facts, actions, and a finale."
     )
 
     def _call():

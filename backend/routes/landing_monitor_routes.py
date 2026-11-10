@@ -124,3 +124,84 @@ def landing_monitor_pipeline():
     if force:
         return jsonify(build_pipeline(force=True, use_llm=use_llm, reason="refresh"))
     return jsonify(get_pipeline())
+
+
+@landing_monitor_bp.route("/api/landing/monitor/online", methods=["GET"])
+def landing_monitor_online():
+    from backend.services.landing_monitor_pipeline_service import collect_online_leaderboard
+
+    limit = request.args.get("limit", 10, type=int)
+    hours = request.args.get("hours", 24, type=int)
+    return jsonify(collect_online_leaderboard(limit=limit, recent_hours=hours))
+
+
+@landing_monitor_bp.route("/api/landing/monitor/tts", methods=["POST"])
+def landing_monitor_tts():
+    """Human-like server TTS for lobby hosts (ElevenLabs when configured)."""
+    import hashlib
+    import os
+    import shutil
+
+    from flask import send_file
+
+    from backend.services import tts_service
+
+    body = request.get_json(silent=True) or {}
+    text = str(body.get("text") or body.get("speak") or "").strip()[:420]
+    speaker_id = str(body.get("speaker_id") or body.get("speaker") or "").strip()
+    voice_key = str(body.get("voice_key") or "").strip().lower()
+
+    speaker_voice = {
+        "performer_nova": "josh",
+        "performer_luna": "bella",
+        "performer_ember": "domi",
+        "performer_iris": "rachel",
+        "performer_honey": "bella",
+        "performer_storm": "adam",
+        "performer_pixie": "josh",
+        "performer_venus": "antoni",
+        "performer_sage": "sam",
+        "performer_aurora": "rachel",
+        "performer_jade": "bella",
+        "performer_velvet": "antoni",
+        "performer_skylar": "josh",
+        "performer_rio": "adam",
+        "performer_mist": "sam",
+    }
+    if not voice_key:
+        voice_key = speaker_voice.get(speaker_id, "bella")
+    if voice_key not in getattr(tts_service, "VOICES", {}):
+        voice_key = "bella"
+
+    if not text:
+        return jsonify({"success": False, "error": "empty_text"}), 400
+    if not tts_service.is_available():
+        return jsonify({"success": False, "error": "tts_unavailable", "fallback": "browser"}), 503
+
+    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    cache_dir = os.path.join(base, "static", "landing_monitor", "tts")
+    os.makedirs(cache_dir, exist_ok=True)
+    digest = hashlib.sha1(f"{voice_key}|{text}".encode("utf-8")).hexdigest()[:24]
+    dest = os.path.join(cache_dir, f"{digest}.mp3")
+    if not (os.path.isfile(dest) and os.path.getsize(dest) > 200):
+        path = tts_service.synthesize(text, voice_key=voice_key)
+        if not path or not os.path.isfile(path):
+            return jsonify({"success": False, "error": "synthesize_failed", "fallback": "browser"}), 502
+        try:
+            shutil.copyfile(path, dest)
+        except Exception:
+            return send_file(path, mimetype="audio/mpeg", as_attachment=False)
+
+    if str(request.args.get("redirect") or "").lower() in ("1", "true", "yes"):
+        return send_file(dest, mimetype="audio/mpeg", conditional=True)
+
+    return jsonify(
+        {
+            "success": True,
+            "url": "/static/landing_monitor/tts/" + os.path.basename(dest),
+            "voice_key": voice_key,
+            "speaker_id": speaker_id or None,
+            "provider": (tts_service.get_status() or {}).get("active_provider"),
+            "chars": len(text),
+        }
+    )

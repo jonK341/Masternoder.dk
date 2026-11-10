@@ -393,205 +393,149 @@
     return payload.lightshow || {};
   }
 
-  function buildStatStream(payload) {
-    var stats = (payload && payload.stats) || {};
-    var totals = ((payload && payload.sats) || {}).totals || {};
-    var special = (payload && payload.special) || {};
-    var actions = (payload && (payload.actions || payload.reel)) || [];
-    var items = [];
 
-    function push(id, category, kicker, value, label, speak, sound, mode) {
-      items.push({
-        id: id,
-        category: category,
-        kicker: kicker,
-        value: value,
-        label: label,
-        speak: speak,
-        fx: { sound: sound || CAT_SOUND[category] || 'tick_blip', lightshow: mode || 'pulse', color: CAT_COLOR[category] || '#00ff88' },
-      });
+  function renderOnlineBoard(rows) {
+    var board = $('lm-online-board');
+    if (!board) return;
+    board.innerHTML = '';
+    (rows || []).slice(0, 10).forEach(function (row) {
+      var li = document.createElement('li');
+      var online = !!row.online;
+      li.innerHTML =
+        '<span class="dot' + (online ? '' : ' is-off') + '"></span>' +
+        '<span class="rank">#' + (row.rank || '—') + '</span>' +
+        '<span class="name"></span>' +
+        '<span class="xp"></span>';
+      li.querySelector('.name').textContent = row.username || row.user_id || 'user';
+      li.querySelector('.xp').textContent = fmtCompact(row.xp || 0) + ' XP';
+      board.appendChild(li);
+    });
+    if (!(rows || []).length) {
+      var empty = document.createElement('li');
+      empty.innerHTML = '<span class="name">Online board warming up…</span>';
+      board.appendChild(empty);
     }
-
-    push(
-      'videos',
-      'generator',
-      'Platform',
-      fmtCompact(stats.total_videos || 0),
-      'Videos on the platform',
-      'Videos on the platform: ' + fmtCompact(stats.total_videos || 0) + '.',
-      'whoosh_rise',
-      'wave'
-    );
-    push(
-      'users',
-      'social',
-      'Platform',
-      fmtCompact(stats.total_users || 0),
-      'Active users',
-      'Users online in the ledger: ' + fmtCompact(stats.total_users || 0) + '.',
-      'bubble_ping',
-      'pulse'
-    );
-    push(
-      'battles',
-      'battle',
-      'Arena',
-      fmtCompact(stats.total_battles || 0),
-      'Battles logged',
-      'Battle count: ' + fmtCompact(stats.total_battles || 0) + '.',
-      'impact_blast',
-      'chase'
-    );
-    if (stats.mn2_usd_price != null) {
-      push(
-        'mn2',
-        'wallet',
-        'MN2',
-        '$' + Number(stats.mn2_usd_price).toFixed(4),
-        'MN2 spot price',
-        'M N 2 price is ' + Number(stats.mn2_usd_price).toFixed(4) + ' dollars.',
-        'coin_sparkle',
-        'spectrum'
-      );
-    }
-    push(
-      'daemon',
-      'system',
-      'Daemon',
-      stats.daemon_ok === true ? 'online' : stats.daemon_ok === false ? 'offline' : '—',
-      'Chain daemon status',
-      'Daemon status: ' + (stats.daemon_ok === true ? 'online' : stats.daemon_ok === false ? 'offline' : 'unknown') + '.',
-      'tick_blip',
-      'pulse'
-    );
-    if (stats.block_height != null) {
-      push(
-        'height',
-        'system',
-        'Chain',
-        fmtCompact(stats.block_height),
-        'Block height',
-        'Block height ' + fmtCompact(stats.block_height) + '.',
-        'tick_blip',
-        'pulse'
-      );
-    }
-    push(
-      'network_sats',
-      'network',
-      'Network sats',
-      fmtCompact(totals.network_sats || stats.network_sats || 0),
-      'On-chain + venue sats',
-      'Network sats on screen: ' + fmtCompact(totals.network_sats || stats.network_sats || 0) + '.',
-      'coin_sparkle',
-      'spectrum'
-    );
-    push(
-      'trade_sats',
-      'trade',
-      'Trade sats',
-      fmtCompact(totals.trade_sats || stats.trade_sats || 0),
-      'Daemon trade sats',
-      'Daemon trade sats: ' + fmtCompact(totals.trade_sats || stats.trade_sats || 0) + '.',
-      'chime_cash',
-      'chase'
-    );
-    if (special.title) {
-      push(
-        'special',
-        'social',
-        'Special',
-        special.title,
-        special.body || 'Lobby special',
-        'Lobby special: ' + special.title + '. ' + (special.body || ''),
-        'bubble_ping',
-        'rainbow'
-      );
-    }
-    for (var i = 0; i < Math.min(3, actions.length); i++) {
-      var a = actions[i] || {};
-      var cat = a.category || 'action';
-      push(
-        'act_' + (a.id || i),
-        cat,
-        'Action',
-        a.title || a.type || 'event',
-        a.text || 'Live action',
-        a.speak || ('Action update: ' + (a.title || a.type || 'event') + '.'),
-        (a.fx && a.fx.sound) || CAT_SOUND[cat] || 'whoosh_rise',
-        (a.fx && a.fx.lightshow) || 'wave'
-      );
-    }
-    return items;
   }
 
-  function StatStream(opts) {
+  function setSceneArt(url) {
+    var img = $('lm-scene-art');
+    if (!img) return;
+    if (!url) {
+      img.classList.remove('is-on');
+      return;
+    }
+    img.classList.remove('is-on');
+    var next = new Image();
+    next.onload = function () {
+      img.src = url;
+      requestAnimationFrame(function () {
+        img.classList.add('is-on');
+      });
+    };
+    next.onerror = function () {
+      img.classList.remove('is-on');
+    };
+    next.src = url;
+  }
+
+  function PipelinePlayer(opts) {
     this.show = opts.show;
     this.music = opts.music;
     this.sfx = opts.sfx;
     this.root = opts.root;
-    this.items = [];
+    this.scenes = [];
     this.index = 0;
     this.playing = false;
     this.timer = null;
     this.speechDone = true;
-    this.fingerprint = '';
+    this.cutId = null;
+    this.loading = false;
   }
 
-  StatStream.prototype.setItems = function (items, fingerprint) {
-    var next = Array.isArray(items) ? items.slice() : [];
-    var changed = fingerprint && fingerprint !== this.fingerprint;
-    this.fingerprint = fingerprint || this.fingerprint;
-    if (!next.length) return;
-    if (!this.playing) {
-      this.items = next;
-      this.renderIdle();
-      return;
-    }
-    if (changed) {
-      // Keep the stream moving — swap queue, continue from current index modulo.
-      var keepId = this.items[this.index] && this.items[this.index].id;
-      this.items = next;
-      var found = -1;
-      for (var i = 0; i < next.length; i++) {
-        if (next[i].id === keepId) {
-          found = i;
-          break;
-        }
-      }
-      this.index = found >= 0 ? found : 0;
-    } else {
-      this.items = next;
-    }
-  };
-
-  StatStream.prototype.renderIdle = function () {
-    var first = this.items[0];
-    setText('lm-stream-pos', '0/' + this.items.length);
-    setText('lm-hud-kicker', first ? first.kicker : 'Ready');
-    setText('lm-hud-value', first ? first.value : '—');
-    setText('lm-hud-label', first ? 'Tap Start stream — AI reads each stat in order.' : 'Waiting for live stats…');
+  PipelinePlayer.prototype.renderIdle = function () {
+    var first = this.scenes[0];
+    setText('lm-stream-pos', '0/' + (this.scenes.length || 50));
+    setText('lm-hud-kicker', first ? (first.category || 'Ready') : 'Ready');
+    setText('lm-hud-value', first ? (first.sats_label || first.title || '—') : '—');
+    setText(
+      'lm-hud-label',
+      first
+        ? 'Start pipeline — 50 AI scenes / 12 min with voice + art.'
+        : 'Loading 12-minute AI pipeline…'
+    );
     var bar = $('lm-stream-bar');
     if (bar) bar.style.width = '0%';
+    if (first && first.image_url) setSceneArt(first.image_url);
   };
 
-  StatStream.prototype.start = function () {
-    if (!this.items.length) {
-      setText('lm-hud-label', 'No stats yet — refreshing…');
+  PipelinePlayer.prototype.load = function (force) {
+    var self = this;
+    if (this.loading) return Promise.resolve(this.scenes);
+    this.loading = true;
+    var url = force ? '/api/landing/monitor/pipeline?refresh=1' : '/api/landing/monitor/pipeline';
+    var req = force
+      ? fetch('/api/landing/monitor/pipeline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ use_llm: false }),
+        })
+      : fetch(url, { headers: { Accept: 'application/json' } });
+    return req
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        self.loading = false;
+        if (!data || !data.success || !Array.isArray(data.scenes)) throw new Error('pipeline');
+        self.scenes = data.scenes;
+        self.cutId = data.cut_id;
+        renderOnlineBoard(data.online_leaderboard || []);
+        setText(
+          'lm-pipeline-progress',
+          (data.scene_count || self.scenes.length) + ' / 12:00'
+        );
+        setText('lm-pipeline-gen', data.generator || 'AI');
+        setText('lm-pipeline-reason', data.regen_reason || 'live');
+        var totals = (data.sats && data.sats.totals) || {};
+        setText(
+          'lm-pipeline-sats',
+          'sats ' + fmtCompact(totals.combined_sats || 0)
+        );
+        if (!self.playing) self.renderIdle();
+        return self.scenes;
+      })
+      .catch(function () {
+        self.loading = false;
+        setText('lm-hud-label', 'Pipeline retrying…');
+        return self.scenes;
+      });
+  };
+
+  PipelinePlayer.prototype.start = function () {
+    var self = this;
+    var go = function () {
+      if (!self.scenes.length) {
+        setText('lm-hud-label', 'No scenes yet — regenerating…');
+        return;
+      }
+      self.playing = true;
+      self.index = 0;
+      var btn = $('lm-stream-play');
+      if (btn) {
+        btn.setAttribute('aria-pressed', 'true');
+        btn.textContent = 'Streaming…';
+      }
+      if (self.show && !self.show.running) self.show.start();
+      self.next();
+    };
+    if (!this.scenes.length) {
+      this.load(false).then(go);
       return;
     }
-    this.playing = true;
-    this.index = 0;
-    var btn = $('lm-stream-play');
-    if (btn) {
-      btn.setAttribute('aria-pressed', 'true');
-      btn.textContent = 'Streaming…';
-    }
-    if (this.show && !this.show.running) this.show.start();
-    this.next();
+    go();
   };
 
-  StatStream.prototype.stop = function () {
+  PipelinePlayer.prototype.stop = function () {
     this.playing = false;
     this.speechDone = true;
     if (this.timer) clearTimeout(this.timer);
@@ -606,12 +550,12 @@
     var btn = $('lm-stream-play');
     if (btn) {
       btn.setAttribute('aria-pressed', 'false');
-      btn.textContent = 'Start stream';
+      btn.textContent = 'Start pipeline';
     }
     this.renderIdle();
   };
 
-  StatStream.prototype.skip = function () {
+  PipelinePlayer.prototype.skip = function () {
     if (!this.playing) {
       this.start();
       return;
@@ -619,16 +563,27 @@
     if (this.timer) clearTimeout(this.timer);
     if (window.MNCamgirlsStreamVoice) window.MNCamgirlsStreamVoice.cancel();
     this.speechDone = true;
-    this.index = (this.index + 1) % Math.max(1, this.items.length);
+    this.index = (this.index + 1) % Math.max(1, this.scenes.length);
     this.next();
   };
 
-  StatStream.prototype.next = function () {
+  PipelinePlayer.prototype.regen = function () {
     var self = this;
-    if (!this.playing || !this.items.length) return;
-    if (this.index >= this.items.length) this.index = 0;
+    var was = this.playing;
+    this.stop();
+    setText('lm-hud-label', 'Generating a new 50-scene cut…');
+    return this.load(true).then(function () {
+      if (was) self.start();
+      else self.renderIdle();
+    });
+  };
 
-    var item = this.items[this.index];
+  PipelinePlayer.prototype.next = function () {
+    var self = this;
+    if (!this.playing || !this.scenes.length) return;
+    if (this.index >= this.scenes.length) this.index = 0;
+
+    var scene = this.scenes[this.index];
     var hud = document.querySelector('.lm-hud');
     if (hud) {
       hud.classList.add('is-swap');
@@ -637,14 +592,21 @@
       }, 160);
     }
 
-    setText('lm-hud-kicker', item.kicker);
-    setText('lm-hud-value', item.value);
-    setText('lm-hud-label', item.label);
-    setText('lm-stream-pos', this.index + 1 + '/' + this.items.length);
+    var value =
+      scene.sats_label ||
+      (scene.sats ? fmtCompact(scene.sats) : null) ||
+      scene.title ||
+      '—';
+    setText('lm-hud-kicker', (scene.category || 'scene') + ' · ' + (this.index + 1) + '/' + this.scenes.length);
+    setText('lm-hud-value', value);
+    setText('lm-hud-label', scene.body || scene.title || '');
+    setText('lm-stream-pos', this.index + 1 + '/' + this.scenes.length);
+    setText('lm-pipeline-scene', scene.title || '');
     var bar = $('lm-stream-bar');
-    if (bar) bar.style.width = ((this.index + 1) / this.items.length) * 100 + '%';
+    if (bar) bar.style.width = ((this.index + 1) / this.scenes.length) * 100 + '%';
+    setSceneArt(scene.image_url);
 
-    var fx = item.fx || {};
+    var fx = scene.fx || {};
     if (this.root) {
       this.root.classList.add('is-sync-hit');
       this.root.style.setProperty('--lm-scene-color', fx.color || '#00ff88');
@@ -654,18 +616,24 @@
     }
     if (this.show) {
       this.show.setMode(fx.lightshow || 'pulse');
-      this.show.setAccent(fx.color || '#00ff88');
-      this.show.setBoost(1.25);
+      this.show.setAccent(fx.color || CAT_COLOR[scene.category] || '#00ff88');
+      this.show.setBoost(1.3);
       this.show.pulse();
     }
     if (this.music) this.music.boost = 1.15;
-    if (this.sfx) this.sfx.playAction(item);
+    if (this.sfx) {
+      this.sfx.playAction({
+        category: scene.category,
+        fx: { sound: fx.sound || CAT_SOUND[scene.category] || 'tick_blip' },
+      });
+    }
 
     this.speechDone = false;
-    var line = item.speak || item.label || String(item.value);
+    var line = scene.speak || scene.body || scene.title || String(value);
     var voice = window.MNCamgirlsStreamVoice;
     var started = Date.now();
-    var minHold = Math.max(2200, Math.min(7000, 55 * line.length));
+    var sceneHold = Math.max(9000, Math.min(18000, Number(scene.duration_ms) || 14000));
+    var minHold = Math.min(sceneHold, Math.max(2800, 55 * line.length));
 
     function finishSpeech() {
       self.speechDone = true;
@@ -677,8 +645,9 @@
       voice.speak(line, {
         force: true,
         interrupt: true,
-        rotate: true,
+        rotate: !scene.speaker_id,
         queue: false,
+        speakerId: scene.speaker_id,
         onstart: function (sp) {
           if (sp) {
             setText('lm-voice-name', sp.name || 'AI host');
@@ -698,16 +667,18 @@
       if (!self.playing) return;
       var waited = Date.now() - started;
       if (!self.speechDone || waited < minHold) {
-        self.timer = setTimeout(advance, 100);
+        self.timer = setTimeout(advance, 120);
         return;
       }
       var rem = waited % BEAT_MS;
       var pad = rem === 0 ? 0 : BEAT_MS - rem;
+      // Soft cap so one slow TTS line cannot stall the whole 12m cut forever.
+      var remain = Math.max(0, sceneHold - waited);
       self.timer = setTimeout(function () {
         if (!self.playing) return;
-        self.index = (self.index + 1) % self.items.length;
+        self.index = (self.index + 1) % self.scenes.length;
         self.next();
-      }, pad);
+      }, Math.min(remain + pad, Math.max(pad, 400)));
     }
     advance();
   };
@@ -719,12 +690,12 @@
     var canvas = $('lm-canvas');
     if (canvas) {
       canvas.width = Math.max(480, canvas.clientWidth || 720);
-      canvas.height = 160;
+      canvas.height = 200;
     }
     var show = canvas ? new Lightshow(canvas) : null;
     var music = new LandingMusic(BPM);
     var sfx = new ActionSFX();
-    var stream = new StatStream({ show: show, music: music, sfx: sfx, root: root });
+    var stream = new PipelinePlayer({ show: show, music: music, sfx: sfx, root: root });
     var beatTimer = null;
     var lightBtn = $('lm-light-toggle');
     var musicBtn = $('lm-music-toggle');
@@ -732,8 +703,8 @@
     var voiceBtn = $('lm-voice-toggle');
     var playBtn = $('lm-stream-play');
     var skipBtn = $('lm-stream-skip');
+    var regenBtn = $('lm-pipeline-regen');
     var voiceLead = $('lm-voice-lead');
-    var lastFp = '';
 
     function enableSfx() {
       return sfx.enable().then(function () {
@@ -764,6 +735,8 @@
         .init({
           performersApi: '/api/camgirls/performers',
           storageKey: 'mn-lm-camgirl-voice',
+          preferServerTts: true,
+          ttsEndpoint: '/api/landing/monitor/tts',
           onActiveSpeaker: function (id) {
             var speakers = window.MNCamgirlsStreamVoice.getSpeakers() || [];
             var sp = speakers.filter(function (s) {
@@ -797,10 +770,15 @@
       onBeat();
     }
 
-    function fingerprint(payload) {
-      var s = (payload && payload.stats) || {};
-      var t = ((payload && payload.sats) || {}).totals || {};
-      return [s.total_videos, s.total_users, s.total_battles, s.block_height, t.network_sats, t.trade_sats].join('|');
+    function refreshOnline() {
+      fetch('/api/landing/monitor/online?limit=10', { headers: { Accept: 'application/json' } })
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (d) {
+          if (d && d.success) renderOnlineBoard(d.leaderboard || []);
+        })
+        .catch(function () {});
     }
 
     async function refresh() {
@@ -812,9 +790,6 @@
         var light = paintHidden(data) || {};
         if (show && !stream.playing) show.setMode(light.id || 'pulse');
         if (data.bpm) music.bpm = data.bpm;
-        var fp = fingerprint(data);
-        stream.setItems(buildStatStream(data), fp);
-        if (fp !== lastFp) lastFp = fp;
       } catch (e) {
         setText('lm-updated', 'retrying');
       }
@@ -833,6 +808,8 @@
     }
 
     initVoice().catch(function () {});
+    stream.load(false);
+    refreshOnline();
 
     if (lightBtn) {
       lightBtn.addEventListener('click', function () {
@@ -903,11 +880,10 @@
           voiceBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
           voiceBtn.textContent = on ? 'Voice on' : 'Voice off';
           if (on) {
-            window.MNCamgirlsStreamVoice.speak('Voice online. I will read each stat on the monitor.', {
-              force: true,
-              interrupt: true,
-              rotate: true,
-            });
+            window.MNCamgirlsStreamVoice.speak(
+              'Voice online. I will read each pipeline scene with a human daemon tone.',
+              { force: true, interrupt: true, rotate: true }
+            );
           }
         });
       });
@@ -935,9 +911,19 @@
         stream.skip();
       });
     }
+    if (regenBtn) {
+      regenBtn.addEventListener('click', function () {
+        armStream();
+        stream.regen();
+      });
+    }
 
     refresh();
     setInterval(refresh, REFRESH_MS);
+    setInterval(refreshOnline, 30000);
+    setInterval(function () {
+      if (!stream.playing) stream.load(false);
+    }, 60000);
     if (!prefersReducedMotion() && lightBtn) lightBtn.click();
   }
 

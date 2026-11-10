@@ -27,10 +27,18 @@ def _synthesize_elevenlabs(text: str, voice_id: str) -> Optional[str]:
         client = ElevenLabs(api_key=key)
         out_path = os.path.join(tempfile.gettempdir(), f"tts_el_{int(time.time())}_{os.getpid()}.mp3")
         # API: text_to_speech.convert returns bytes or stream
+        # Warm, less-robotic delivery — lower stability + speaker boost.
         audio = client.text_to_speech.convert(
             voice_id=voice_id,
             text=text.strip()[:5000],
             model_id=_DEFAULT_MODEL,
+            output_format="mp3_44100_128",
+            voice_settings={
+                "stability": 0.32,
+                "similarity_boost": 0.82,
+                "style": 0.55,
+                "use_speaker_boost": True,
+            },
         )
         with open(out_path, "wb") as f:
             if hasattr(audio, "__iter__") and not isinstance(audio, (bytes, bytearray)):

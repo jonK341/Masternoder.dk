@@ -23,8 +23,8 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
-    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110g">
-    <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20261110g">
+    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110h">
+    <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20261110h">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -70,25 +70,28 @@
             </div>
             <div class="lm-stage">
                 <div class="lm-bezel">
-                    <canvas id="lm-canvas" class="lm-canvas" width="720" height="160" aria-hidden="true"></canvas>
+                    <img id="lm-scene-art" class="lm-scene-art" alt="" decoding="async" />
+                    <canvas id="lm-canvas" class="lm-canvas" width="720" height="200" aria-hidden="true"></canvas>
                     <div class="lm-hud" aria-live="polite">
                         <p class="lm-hud-kicker" id="lm-hud-kicker">Waiting</p>
                         <p class="lm-hud-value" id="lm-hud-value">—</p>
-                        <p class="lm-hud-label" id="lm-hud-label">Live stats stream in</p>
+                        <p class="lm-hud-label" id="lm-hud-label">50-scene · 12 min AI pipeline</p>
                     </div>
                 </div>
                 <div class="lm-stream-bar" aria-hidden="true"><div class="lm-stream-bar-fill" id="lm-stream-bar"></div></div>
+                <ol class="lm-online-board" id="lm-online-board" aria-label="Online users leaderboard"></ol>
                 <div class="lm-voice-strip">
                     <img id="lm-voice-avatar" src="/static/camgirls/avatar-demo.svg" alt="" width="28" height="28" />
                     <div class="lm-voice-copy">
                         <strong id="lm-voice-name">AI host</strong>
-                        <span id="lm-voice-line">Tap Start stream — AI reads each stat in sync with lights and sound.</span>
+                        <span id="lm-voice-line">Start pipeline — human voice reads each clip with fresh AI art.</span>
                     </div>
                     <select id="lm-voice-lead" aria-label="Lead camgirl speaker"></select>
                 </div>
                 <div class="lm-actions lm-actions-row">
-                    <button type="button" id="lm-stream-play" aria-pressed="false">Start stream</button>
-                    <button type="button" id="lm-stream-skip">Next stat</button>
+                    <button type="button" id="lm-stream-play" aria-pressed="false">Start pipeline</button>
+                    <button type="button" id="lm-stream-skip">Next scene</button>
+                    <button type="button" id="lm-pipeline-regen">New cut</button>
                     <button type="button" id="lm-voice-toggle" aria-pressed="false">Voice off</button>
                     <button type="button" id="lm-sfx-toggle" aria-pressed="false">SFX off</button>
                     <button type="button" id="lm-light-toggle" aria-pressed="false">Lights off</button>
@@ -123,7 +126,6 @@
                     <ol id="lm-reel-list"></ol>
                     <div id="lm-voice-deck"></div>
                     <button type="button" id="lm-pipeline-play"></button>
-                    <button type="button" id="lm-pipeline-regen"></button>
                     <button type="button" id="lm-reel-play"></button>
                     <button type="button" id="lm-reel-skip"></button>
                 </div>
@@ -417,8 +419,8 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/camgirls-stream-voice.js?v=20261110g" defer></script>
-    <script src="/static/js/landing-monitor.js?v=20261110g" defer></script>
+    <script src="/static/js/camgirls-stream-voice.js?v=20261110h" defer></script>
+    <script src="/static/js/landing-monitor.js?v=20261110h" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
