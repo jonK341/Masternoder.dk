@@ -239,6 +239,7 @@ def execute_spatial_arbitrage(
 
     if global_live:
         from backend.services.exchange_arbitrage_service import prepare_live_opportunity
+        from backend.services.profit_daemon_ops_service import check_slippage_guard
 
         prepared = prepare_live_opportunity(
             {"symbol": symbol, "buy_venue": buy_venue, "sell_venue": sell_venue,
@@ -257,11 +258,26 @@ def execute_spatial_arbitrage(
                 "sell_venue": sell_venue,
                 "funding": prepared.get("funding"),
                 "max_funded_usd": prepared.get("max_funded_usd"),
+                "slippage": prepared.get("slippage"),
                 "executed_at": _iso(),
             }
         opp = prepared["opportunity"]
         notional = float(opp.get("notional_usd") or notional)
         qty = round(notional / buy_price, 8) if buy_price > 0 else qty
+        slip = check_slippage_guard(opp, notional_usd=notional)
+        if not slip.get("ok"):
+            return {
+                "success": False,
+                "error": slip.get("reason") or "insufficient_book_depth",
+                "mode": "live",
+                "symbol": symbol,
+                "quantity": qty,
+                "notional_usd": notional,
+                "buy_venue": buy_venue,
+                "sell_venue": sell_venue,
+                "slippage": slip,
+                "executed_at": _iso(),
+            }
 
     def _leg(venue: str, side: str) -> Dict[str, Any]:
         if venue == "internal":

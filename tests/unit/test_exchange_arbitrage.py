@@ -385,3 +385,53 @@ def test_rebalance_tick_skips_without_two_venues(arb_env):
     assert r["success"] is True
     assert r.get("skipped") is True
     assert r.get("reason") == "need_two_credentialed_venues"
+
+
+def test_prepare_live_opportunity_rejects_thin_book(arb_env, monkeypatch):
+    arb = arb_env["arb"]
+    opp = {
+        "symbol": "DOGE",
+        "buy_venue": "nonkyc",
+        "buy_ask": 0.1,
+        "sell_venue": "binance",
+        "sell_bid": 0.101,
+        "notional_usd": 50.0,
+        "buy_depth_usd": 12.0,
+        "sell_depth_usd": 12.0,
+    }
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.max_funded_notional_usd",
+        lambda *a, **kw: 50.0,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.opportunity_funded",
+        lambda opp, **kw: {"ok": True},
+    )
+    prepared = arb.prepare_live_opportunity(opp, configured_usd=50.0, min_live_usd=10.0)
+    assert prepared["ok"] is False
+    assert prepared["reason"] in ("insufficient_book_depth", "insufficient_buy_depth", "insufficient_sell_depth")
+
+
+def test_rebalance_tick_marks_chain_fee_gate(arb_env, monkeypatch):
+    arb = arb_env["arb"]
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.venue_has_credentials",
+        lambda vid: vid in ("binance", "nonkyc"),
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.venue_quote_asset",
+        lambda vid: "USDC" if vid == "binance" else "USDT",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.parse_spot_balances",
+        lambda vid, **kw: {"USDC": 80.0} if vid == "binance" else {"USDT": 10.0},
+    )
+    monkeypatch.setattr(arb, "live_enabled", lambda: True)
+    r = arb.run_rebalance_tick()
+    assert r["success"] is True
+    assert r["rebalance_needed"] is True
+    assert r["withdraw_executed"] is False
+    chain = r["chain_transfer"]
+    assert chain["broadcast"] is False
+    assert chain["allowed"] is False
+    assert "fee_bps_too_high" in chain["reasons"] or "move_below_min" in chain["reasons"]

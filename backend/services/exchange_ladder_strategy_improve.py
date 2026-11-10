@@ -280,3 +280,54 @@ def enhance_ladder_cfg(cfg: Dict[str, Any], *, venue: str, balances: Optional[Di
     out = apply_exit_first_sides(out, free_quote=free_quote)
     out = filter_symbols_by_ppp_edge(out)
     return out
+
+
+_DESK_MAINT_STATE = os.path.join(ex._DATA_DIR, "desk_maintenance_state.json")
+
+
+def run_desk_maintenance_tick(
+    *,
+    top_up: bool = True,
+    train_fill_model: bool = True,
+    fill_model_min_interval_sec: float = 3600.0,
+    venues: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """Scheduled NonKYC/Binance dust→quote top-up + hourly fill-model calibration.
+
+    Owned by ``all_profit_daemons`` so desk hygiene does not depend on cron alone.
+    """
+    state = _read(_DESK_MAINT_STATE, {}) if isinstance(_read(_DESK_MAINT_STATE, {}), dict) else {}
+    now = time.time()
+    out: Dict[str, Any] = {"success": True, "ticked_at": now, "topups": [], "fill_model": None}
+    if top_up:
+        for vid in venues or ["nonkyc", "binance"]:
+            quote = "USDC" if vid == "binance" else "USDT"
+            try:
+                row = top_up_venue_quote(vid, quote=quote, dry_run=False)
+            except Exception as exc:
+                row = {"success": False, "venue": vid, "error": str(exc)}
+            out["topups"].append(row)
+    last_train = float(state.get("fill_model_trained_at") or 0)
+    if train_fill_model and (now - last_train) >= float(fill_model_min_interval_sec):
+        try:
+            from backend.services.exchange_fill_model_service import train_and_save
+            model = train_and_save()
+            out["fill_model"] = model
+            state["fill_model_trained_at"] = now
+        except Exception as exc:
+            out["fill_model"] = {"success": False, "error": str(exc)}
+    else:
+        out["fill_model"] = {
+            "skipped": True,
+            "reason": "interval",
+            "next_in_sec": max(0.0, float(fill_model_min_interval_sec) - (now - last_train)),
+        }
+    state["updated_at"] = now
+    state["last"] = {
+        "topup_count": len(out["topups"]),
+        "fill_model": (out.get("fill_model") or {}).get("status")
+        or (out.get("fill_model") or {}).get("reason")
+        or (out.get("fill_model") or {}).get("error"),
+    }
+    _write(_DESK_MAINT_STATE, state)
+    return out

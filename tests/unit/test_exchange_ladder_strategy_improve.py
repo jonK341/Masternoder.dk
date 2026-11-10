@@ -95,3 +95,25 @@ def test_reduce_notional_cap_fits_free_quote():
     act = _reduce_notional_action("binance", "USDC", 6.0, 25.0, score=1.0)
     assert act["suggested_notional_usd"] <= 6.0
     assert act["suggested_notional_usd"] >= 5.0
+
+
+def test_desk_maintenance_trains_once_per_hour(tmp_path, monkeypatch):
+    from backend.services import exchange_ladder_strategy_improve as imp
+
+    monkeypatch.setattr(imp, "_DESK_MAINT_STATE", str(tmp_path / "desk.json"))
+    monkeypatch.setattr(imp, "top_up_venue_quote", lambda *a, **k: {"success": True, "skipped": True, "venue": a[0] if a else "x"})
+    calls = []
+
+    def fake_train():
+        calls.append(1)
+        return {"status": "trained", "n": 12}
+
+    monkeypatch.setattr(
+        "backend.services.exchange_fill_model_service.train_and_save",
+        fake_train,
+    )
+    first = imp.run_desk_maintenance_tick(fill_model_min_interval_sec=3600)
+    second = imp.run_desk_maintenance_tick(fill_model_min_interval_sec=3600)
+    assert first["fill_model"]["status"] == "trained"
+    assert second["fill_model"].get("skipped") is True
+    assert len(calls) == 1
