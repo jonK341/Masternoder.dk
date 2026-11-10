@@ -54,6 +54,41 @@ def _load_mn2_config() -> dict:
 
 mn2_bp = Blueprint("mn2", __name__)
 
+_FAST_CACHE_HEADERS = {
+    "Cache-Control": "private, no-store",
+}
+
+
+@mn2_bp.route("/api/mn2/balance/fast", methods=["GET"])
+def mn2_balance_fast():
+    """Ledger-only balance for toolbar chrome. No chain scan, reconcile, or Chainz."""
+    from backend.services.account_resolution_service import resolve_user_id_with_source
+
+    user_id, source = resolve_user_id_with_source(
+        from_body=False,
+        from_query=True,
+        use_identification=False,
+    )
+    signed_in = source == "session"
+    config = _load_mn2_config()
+    payload = {
+        "success": True,
+        "signed_in": signed_in,
+        "wallet_mode": str(config.get("wallet_mode") or "ledger"),
+    }
+    if user_id and user_id != "default_user":
+        result = get_balance(user_id)
+        if not result.get("success"):
+            return jsonify({
+                "success": False,
+                "signed_in": signed_in,
+                "error": result.get("error", "Unknown error"),
+                "wallet_mode": payload["wallet_mode"],
+            }), 500, _FAST_CACHE_HEADERS
+        payload["user_id"] = result.get("user_id") or user_id
+        payload["mn2_balance"] = result.get("mn2_balance", 0)
+    return jsonify(payload), 200, _FAST_CACHE_HEADERS
+
 
 @mn2_bp.route("/api/mn2/balance", methods=["GET"])
 def mn2_balance():
@@ -127,6 +162,115 @@ def mn2_price():
     except Exception:
         pass
     return jsonify(payload), 200
+
+
+def _fetch_release_manifest(url: str, timeout_sec: float = 4.0) -> dict:
+    """Fetch a GitHub release manifest JSON. Returns {} on failure."""
+    import urllib.error
+    import urllib.request
+
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "MasterNoder-wallets/9.2.6.5"})
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            data = json.loads(raw)
+            return data if isinstance(data, dict) else {}
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, OSError, json.JSONDecodeError):
+        return {}
+
+
+@mn2_bp.route("/api/mn2/sporks", methods=["GET"])
+def mn2_sporks_snapshot():
+    """Read-only intelligence snapshot for every known MN2 spork."""
+    from backend.services.mn2_spork_service import spork_catalog_snapshot
+
+    payload = spork_catalog_snapshot()
+    return jsonify(payload), 200, {"Cache-Control": "public, max-age=15"}
+
+
+@mn2_bp.route("/api/mn2/releases", methods=["GET"])
+def mn2_releases_payload():
+    """
+    Current daemon + Qt wallet download rows.
+    URLs come from release-config base + fixed filenames; sha256 from manifests.
+    """
+    import sys
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    scripts_dir = os.path.join(repo_root, "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    try:
+        from mn2_release_config import (  # type: ignore
+            MANIFEST_URL,
+            RELEASE_BASE,
+            TARGET_VERSION,
+            TARBALL_NAME,
+        )
+    except Exception as exc:
+        return jsonify({
+            "success": False,
+            "error": f"release config unavailable: {exc}",
+            "version": None,
+            "assets": [],
+        }), 500
+
+    qt_manifest_url = f"{RELEASE_BASE}/QT_RELEASE_MANIFEST.json"
+    daemon_manifest = _fetch_release_manifest(MANIFEST_URL)
+    qt_manifest = _fetch_release_manifest(qt_manifest_url)
+    unavailable = not bool(daemon_manifest) and not bool(qt_manifest)
+
+    def _sha(manifest: dict, filename: str) -> str | None:
+        if not manifest:
+            return None
+        files = manifest.get("files") or manifest.get("assets") or {}
+        if isinstance(files, dict) and filename in files:
+            entry = files[filename]
+            if isinstance(entry, dict):
+                return entry.get("sha256") or entry.get("sha256sum")
+            if isinstance(entry, str):
+                return entry
+        digests = manifest.get("sha256") or manifest.get("checksums") or {}
+        if isinstance(digests, dict) and filename in digests:
+            return digests.get(filename)
+        if manifest.get("name") == filename and manifest.get("sha256"):
+            return manifest.get("sha256")
+        return None
+
+    assets = [
+        {
+            "id": "daemon",
+            "label": "Daemon (Linux)",
+            "filename": TARBALL_NAME,
+            "url": f"{RELEASE_BASE}/{TARBALL_NAME}",
+            "sha256": _sha(daemon_manifest, TARBALL_NAME),
+            "platform": "linux",
+        },
+        {
+            "id": "qt-linux",
+            "label": "Desktop wallet (Linux)",
+            "filename": "MasterNoder2-qt-linux.tar.gz",
+            "url": f"{RELEASE_BASE}/MasterNoder2-qt-linux.tar.gz",
+            "sha256": _sha(qt_manifest, "MasterNoder2-qt-linux.tar.gz"),
+            "platform": "linux",
+        },
+        {
+            "id": "qt-win",
+            "label": "Desktop wallet (Windows)",
+            "filename": "MasterNoder2-qt-win.zip",
+            "url": f"{RELEASE_BASE}/MasterNoder2-qt-win.zip",
+            "sha256": _sha(qt_manifest, "MasterNoder2-qt-win.zip"),
+            "platform": "windows",
+        },
+    ]
+    return jsonify({
+        "success": True,
+        "version": TARGET_VERSION,
+        "release_base": RELEASE_BASE,
+        "manifest_unavailable": unavailable,
+        "assets": assets,
+        "platform_ui_version": "9.2.6.5",
+    }), 200, {"Cache-Control": "public, max-age=60"}
 
 
 def _user_facing_rpc_error(rpc_error: str) -> str:
