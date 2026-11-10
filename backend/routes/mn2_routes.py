@@ -249,6 +249,9 @@ def _sha_from_manifest(manifest: dict, filename: str):
         return digests.get(filename)
     if manifest.get("name") == filename and manifest.get("sha256"):
         return manifest.get("sha256")
+    # Daemon RELEASE_MANIFEST.json uses tarball_name + tarball_sha256.
+    if filename == manifest.get("tarball_name") and manifest.get("tarball_sha256"):
+        return manifest.get("tarball_sha256")
     return None
 
 
@@ -339,23 +342,29 @@ def _build_releases_payload() -> dict:
             "sha256": _sha_from_manifest(qt_manifest, "MasterNoder2-qt-win.zip"),
             "platform": "windows",
         },
-        {
-            "id": "android",
-            "label": "Mobile wallet (Android)",
-            "filename": android_name,
-            "url": f"{RELEASE_BASE}/{android_name}",
-            "sha256": _sha_from_manifest(android_manifest, android_name),
-            "platform": "android",
-        },
+    ]
+    # Only advertise Android when a release manifest proves the APK exists.
+    if android_manifest:
+        assets.append(
+            {
+                "id": "android",
+                "label": "Mobile wallet (Android)",
+                "filename": android_name,
+                "url": f"{RELEASE_BASE}/{android_name}",
+                "sha256": _sha_from_manifest(android_manifest, android_name),
+                "platform": "android",
+            }
+        )
+    assets.append(
         {
             "id": "source",
             "label": "Source code",
             "filename": SOURCE_TARBALL_NAME,
             "url": SOURCE_URL,
-            "sha256": None,
+            "sha256": _sha_from_manifest(daemon_manifest, SOURCE_TARBALL_NAME),
             "platform": "source",
-        },
-    ]
+        }
+    )
     payload = {
         "success": True,
         "version": PUBLIC_VERSION,

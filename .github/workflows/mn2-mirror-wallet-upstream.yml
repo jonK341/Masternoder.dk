@@ -1,0 +1,37 @@
+# Mirror published wallet assets onto jonK341/MasterNoder2 Latest release.
+# Needs repo secret MN2_RELEASE_TOKEN (PAT with contents:write on MasterNoder2).
+name: Mirror wallet release to MasterNoder2
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - cursor/wallet-v9265-sporks-ui-2911
+    paths:
+      - ".github/workflows/mn2-mirror-wallet-upstream.yml"
+      - "scripts/mn2_mirror_wallet_to_upstream.py"
+      - "scripts/mn2_release_config.py"
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Mirror assets to MasterNoder2
+        env:
+          GH_TOKEN: ${{ secrets.MN2_RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "MN2_RELEASE_TOKEN is not configured; cannot write MasterNoder2 releases." >&2
+            exit 1
+          fi
+          python scripts/mn2_mirror_wallet_to_upstream.py --dest-tag v1.3.1.0
