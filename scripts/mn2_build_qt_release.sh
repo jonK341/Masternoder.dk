@@ -354,13 +354,13 @@ import sys
 path = Path(sys.argv[1])
 text = path.read_text()
 marker = "qtbase/src/corelib/tools/qbytearraymatcher.h"
-if marker in text and "TOUCHINPUT" in text and "#include <limits>" in text:
+if marker in text and "TOUCHEVENTF_MOVE)/" in text and "#include <limits>" in text:
     print(f"already patched {path}")
     raise SystemExit(0)
 inject = (
     "  sed -i.old '/#include <QtCore\\/qbytearray.h>/i #include <limits>' "
     "qtbase/src/corelib/tools/qbytearraymatcher.h && \\\n"
-    "  sed -i.old 's/#if defined(Q_CC_MINGW) || !defined(TOUCHEVENTF_MOVE)/#if !defined(TOUCHINPUT)/' "
+    "  sed -i.old 's/#if defined(Q_CC_MINGW) || !defined(TOUCHEVENTF_MOVE)/#if !defined(TOUCHEVENTF_MOVE)/' "
     "qtbase/src/plugins/platforms/windows/qwindowsmousehandler.cpp && \\\n"
 )
 m = re.search(r"define \$\(package\)_preprocess_cmds\n", text)
