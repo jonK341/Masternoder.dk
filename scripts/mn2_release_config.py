@@ -16,7 +16,7 @@ MAIN_COMMIT = "61caddbfd3c8f4465012d1033206501fb6690b14"
 _DOWNLOAD_OWNER = "jonK341"
 _DOWNLOAD_NAME = "Master" + "noder.dk"  # pragma: allowlist secret
 DOWNLOAD_REPO = f"{_DOWNLOAD_OWNER}/{_DOWNLOAD_NAME}"
-DOWNLOAD_TAG = "wallet-v1.3.0.0"
+DOWNLOAD_TAG = "mn2-wallet-v1.3.0.0"
 # Version string shown on /wallets and GET /api/mn2/releases.
 PUBLIC_VERSION = DOWNLOAD_TAG
 RELEASE_BASE = f"https://github.com/{DOWNLOAD_REPO}/releases/download/{DOWNLOAD_TAG}"
