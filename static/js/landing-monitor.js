@@ -1014,9 +1014,209 @@
       });
     }
 
+    function fillMatrixRail(el, lines) {
+      if (!el) return;
+      el.innerHTML = '';
+      (lines || []).slice(0, 24).forEach(function (line, i) {
+        var span = document.createElement('span');
+        span.textContent = line;
+        span.style.animationDelay = (i * 0.18) + 's';
+        el.appendChild(span);
+      });
+    }
+
+    function refreshMatrix() {
+      fetch('/api/landing/monitor/matrix?limit=40', { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.success) return;
+          fillMatrixRail($('lm-matrix-left'), d.left || []);
+          fillMatrixRail($('lm-matrix-right'), d.right || []);
+        })
+        .catch(function () {});
+    }
+
+    function refreshBattlefield() {
+      fetch('/api/landing/monitor/battlefield', { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.success) return;
+          root.classList.add('is-battlefield-3500');
+          var banner = $('lm-battlefield-banner');
+          if (banner && d.title) {
+            var strong = banner.querySelector('strong');
+            if (strong) strong.textContent = d.title;
+          }
+          var comm = $('lm-comm-lines');
+          if (comm && Array.isArray(d.comm_lines)) {
+            comm.textContent = d.comm_lines
+              .map(function (c) {
+                return (c.label || c.id) + ' ' + (c.status || '');
+              })
+              .join(' · ');
+          }
+        })
+        .catch(function () {});
+    }
+
+    function renderYt(videos) {
+      var box = $('lm-yt-results');
+      if (!box) return;
+      box.innerHTML = '';
+      (videos || []).slice(0, 6).forEach(function (v) {
+        var a = document.createElement('a');
+        a.className = 'lm-yt-card';
+        a.href = v.url || ('https://www.youtube.com/watch?v=' + v.id);
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.innerHTML = '<img alt="" /><span></span>';
+        a.querySelector('img').src = v.thumbnail || '';
+        a.querySelector('span').textContent = v.title || 'YouTube';
+        box.appendChild(a);
+      });
+    }
+
+    function runYtSearch(q, randomize) {
+      var url =
+        '/api/landing/monitor/youtube?limit=6&random=' +
+        (randomize ? '1' : '0') +
+        (q ? '&q=' + encodeURIComponent(q) : '');
+      fetch(url, { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.success) return;
+          renderYt(d.videos || []);
+          var input = $('lm-yt-q');
+          if (input && d.query && !q) input.value = d.query;
+        })
+        .catch(function () {});
+    }
+
+    function wireShareFb() {
+      var a = $('lm-share-fb');
+      if (!a) return;
+      var page = window.location.href.split('#')[0];
+      var quote = 'Jon Film lobby · MasterNoder2 battlefield 3500';
+      a.href =
+        'https://www.facebook.com/sharer/sharer.php?u=' +
+        encodeURIComponent(page) +
+        '&quote=' +
+        encodeURIComponent(quote);
+      fetch(
+        '/api/landing/monitor/share/facebook?url=' +
+          encodeURIComponent(page) +
+          '&quote=' +
+          encodeURIComponent(quote),
+        { headers: { Accept: 'application/json' } }
+      )
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d && d.share_url) a.href = d.share_url;
+        })
+        .catch(function () {});
+    }
+
+    function refreshVotes() {
+      fetch('/api/landing/monitor/votes', { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var poll = d && (d.open || (d.polls && d.polls[0]));
+          if (!poll) return;
+          setText('lm-vote-q', poll.question || 'Discord vote');
+          var box = $('lm-vote-opts');
+          if (!box) return;
+          box.innerHTML = '';
+          (poll.options || []).forEach(function (opt) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = (opt.label || opt.id) + ' · ' + (opt.votes || 0);
+            btn.addEventListener('click', function () {
+              fetch('/api/landing/monitor/votes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ option_id: opt.id, poll_id: poll.id }),
+              })
+                .then(function () { refreshVotes(); })
+                .catch(function () {});
+            });
+            box.appendChild(btn);
+          });
+        })
+        .catch(function () {});
+    }
+
+    function refreshJonFilm() {
+      fetch('/api/landing/monitor/jon-film', { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.success) return;
+          setText(
+            'lm-cal-meta',
+            (d.appointments || []).length +
+              ' appts · level +1 / ' +
+              (d.assignments_per_level || 20) +
+              ' assignments'
+          );
+          var list = $('lm-cal-list');
+          if (list) {
+            list.innerHTML = '';
+            (d.appointments || []).slice(0, 10).forEach(function (a) {
+              var li = document.createElement('li');
+              li.textContent =
+                (a.starts_at || '').slice(11, 16) +
+                ' · ' +
+                (a.actor_name || a.actor_id) +
+                ' · ' +
+                (a.stage || a.title || '');
+              list.appendChild(li);
+            });
+          }
+          var levels = $('lm-actor-levels');
+          if (levels) {
+            levels.innerHTML = '';
+            (d.actors || []).forEach(function (actor) {
+              var li = document.createElement('li');
+              li.textContent =
+                (actor.name || actor.id) +
+                ' · L' +
+                (actor.level || 1) +
+                ' · ' +
+                (actor.assignments || 0) +
+                ' jobs';
+              levels.appendChild(li);
+            });
+          }
+        })
+        .catch(function () {});
+    }
+
+    var ytForm = $('lm-yt-form');
+    if (ytForm) {
+      ytForm.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        runYtSearch(($('lm-yt-q') && $('lm-yt-q').value) || '', false);
+      });
+    }
+    var ytRandom = $('lm-yt-random');
+    if (ytRandom) {
+      ytRandom.addEventListener('click', function () {
+        runYtSearch('', true);
+      });
+    }
+
+    wireShareFb();
+    refreshBattlefield();
+    refreshMatrix();
+    refreshVotes();
+    refreshJonFilm();
+    runYtSearch('', true);
+
     refresh();
     setInterval(refresh, REFRESH_MS);
     setInterval(refreshOnline, 30000);
+    setInterval(refreshMatrix, 20000);
+    setInterval(refreshVotes, 45000);
+    setInterval(refreshJonFilm, 60000);
     setInterval(function () {
       if (!stream.playing) stream.load(false);
     }, 60000);

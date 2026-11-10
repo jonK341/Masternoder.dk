@@ -1,0 +1,48 @@
+{
+  "movie": "Jon Film",
+  "updated_at": "2026-11-10T22:03:41.285706Z",
+  "actors": [
+    {
+      "id": "actor_jon",
+      "name": "Jon",
+      "role": "lead",
+      "performer_id": "performer_nova",
+      "agent_id": "camgirl_agent_nova"
+    },
+    {
+      "id": "actor_nova",
+      "name": "Nova Star",
+      "role": "host",
+      "performer_id": "performer_nova",
+      "agent_id": "camgirl_agent_nova"
+    },
+    {
+      "id": "actor_luna",
+      "name": "Luna Eclipse",
+      "role": "co-star",
+      "performer_id": "performer_luna",
+      "agent_id": "camgirl_agent_luna"
+    },
+    {
+      "id": "actor_ember",
+      "name": "Ember Blaze",
+      "role": "battlefield_comm",
+      "performer_id": "performer_ember",
+      "agent_id": "camgirl_agent_ember"
+    },
+    {
+      "id": "actor_iris",
+      "name": "Iris Prism",
+      "role": "stage_director",
+      "performer_id": "performer_iris",
+      "agent_id": "camgirl_agent_iris"
+    },
+    {
+      "id": "actor_venus",
+      "name": "Venus",
+      "role": "finale_host",
+      "performer_id": "performer_venus",
+      "agent_id": "camgirl_agent_venus"
+    }
+  ]
+}

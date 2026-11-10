@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261110j">
-    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110j">
+    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110k">
     <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20261110i">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
@@ -69,18 +69,46 @@
                 </div>
             </div>
             <div class="lm-stage">
-                <div class="lm-bezel">
-                    <img id="lm-scene-art" class="lm-scene-art" alt="" decoding="async" />
-                    <canvas id="lm-canvas" class="lm-canvas" width="720" height="200" aria-hidden="true"></canvas>
-                    <div class="lm-hud" aria-live="polite">
-                        <p class="lm-hud-kicker" id="lm-hud-kicker">Waiting</p>
-                        <p class="lm-hud-value" id="lm-hud-value">—</p>
-                        <p class="lm-hud-label" id="lm-hud-label">50-scene · 12 min AI pipeline</p>
+                <div class="lm-battlefield-banner" id="lm-battlefield-banner">
+                    <strong>War Battlefield · Year 3500</strong>
+                    <span id="lm-comm-lines">COMM uplink…</span>
+                </div>
+                <div class="lm-monitor-row">
+                    <div class="lm-matrix-rail lm-matrix-left" id="lm-matrix-left" aria-hidden="true"></div>
+                    <div class="lm-bezel">
+                        <img id="lm-scene-art" class="lm-scene-art" alt="" decoding="async" />
+                        <canvas id="lm-canvas" class="lm-canvas" width="720" height="200" aria-hidden="true"></canvas>
+                        <div class="lm-hud" aria-live="polite">
+                            <p class="lm-hud-kicker" id="lm-hud-kicker">Waiting</p>
+                            <p class="lm-hud-value" id="lm-hud-value">—</p>
+                            <p class="lm-hud-label" id="lm-hud-label">50-scene · 12 min AI pipeline</p>
+                        </div>
                     </div>
+                    <div class="lm-matrix-rail lm-matrix-right" id="lm-matrix-right" aria-hidden="true"></div>
                 </div>
                 <div class="lm-stream-bar" aria-hidden="true"><div class="lm-stream-bar-fill" id="lm-stream-bar"></div></div>
                 <div class="lm-online-rail" aria-label="Top 25 users leaderboard">
                     <ol class="lm-online-board" id="lm-online-board"></ol>
+                </div>
+                <form class="lm-search" id="lm-yt-form" role="search">
+                    <label class="lm-sr-only" for="lm-yt-q">YouTube search</label>
+                    <input id="lm-yt-q" type="search" placeholder="Search YouTube under the monitor…" autocomplete="off" />
+                    <button type="submit" id="lm-yt-go">Search</button>
+                    <button type="button" id="lm-yt-random">Random</button>
+                    <a id="lm-share-fb" class="lm-share-fb" href="#" target="_blank" rel="noopener noreferrer">Share Facebook</a>
+                </form>
+                <div class="lm-yt-results" id="lm-yt-results" aria-live="polite"></div>
+                <div class="lm-vote" id="lm-vote">
+                    <strong id="lm-vote-q">Discord vote loading…</strong>
+                    <div class="lm-vote-opts" id="lm-vote-opts"></div>
+                </div>
+                <div class="lm-calendar" id="lm-calendar" aria-label="Jon Film appointments">
+                    <div class="lm-cal-head">
+                        <strong>Jon Film calendar</strong>
+                        <span id="lm-cal-meta">appointments + actor levels</span>
+                    </div>
+                    <ul id="lm-cal-list"></ul>
+                    <ol id="lm-actor-levels" class="lm-actor-levels"></ol>
                 </div>
                 <div class="lm-voice-strip">
                     <img id="lm-voice-avatar" src="/static/camgirls/avatar-demo.svg" alt="" width="28" height="28" />
@@ -393,7 +421,7 @@
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20261110j" defer></script>
     <script src="/static/js/camgirls-stream-voice.js?v=20261110i" defer></script>
-    <script src="/static/js/landing-monitor.js?v=20261110j" defer></script>
+    <script src="/static/js/landing-monitor.js?v=20261110k" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

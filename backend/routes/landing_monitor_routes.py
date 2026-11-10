@@ -226,3 +226,107 @@ def landing_monitor_tts():
 
     # Cache dir not writable — stream bytes once with a short-lived route-friendly tip.
     return send_file(audio_path, mimetype="audio/mpeg", as_attachment=False)
+
+
+@landing_monitor_bp.route("/api/landing/monitor/youtube", methods=["GET"])
+def landing_monitor_youtube():
+    from backend.services.landing_monitor_extras_service import youtube_search
+
+    q = (request.args.get("q") or request.args.get("query") or "").strip()
+    limit = request.args.get("limit", 6, type=int)
+    randomize = str(request.args.get("random") or "1").lower() not in ("0", "false", "no")
+    return jsonify(youtube_search(q, limit=limit, randomize=randomize))
+
+
+@landing_monitor_bp.route("/api/landing/monitor/share/facebook", methods=["GET"])
+def landing_monitor_share_facebook():
+    from backend.services.landing_monitor_extras_service import facebook_share_payload
+
+    url = (request.args.get("url") or "").strip()
+    quote = (request.args.get("quote") or "").strip()
+    return jsonify(facebook_share_payload(url=url, quote=quote))
+
+
+@landing_monitor_bp.route("/api/landing/monitor/votes", methods=["GET", "POST"])
+def landing_monitor_votes():
+    from backend.services.landing_monitor_extras_service import (
+        cast_discord_vote,
+        ensure_discord_poll,
+        list_votes,
+    )
+
+    if request.method == "GET":
+        ensure_discord_poll()
+        return jsonify(list_votes())
+
+    body = request.get_json(silent=True) or {}
+    option_id = str(body.get("option_id") or body.get("option") or "").strip()
+    poll_id = str(body.get("poll_id") or "").strip() or None
+    if not option_id:
+        return jsonify({"success": False, "error": "option_id_required"}), 400
+    return jsonify(cast_discord_vote(option_id, poll_id=poll_id))
+
+
+@landing_monitor_bp.route("/api/landing/monitor/matrix", methods=["GET"])
+def landing_monitor_matrix():
+    from backend.services.landing_monitor_extras_service import matrix_network_lines
+
+    limit = request.args.get("limit", 40, type=int)
+    return jsonify(matrix_network_lines(limit=limit))
+
+
+@landing_monitor_bp.route("/api/landing/monitor/battlefield", methods=["GET"])
+def landing_monitor_battlefield():
+    from backend.services.landing_monitor_extras_service import battlefield_theme
+
+    return jsonify(battlefield_theme())
+
+
+@landing_monitor_bp.route("/api/landing/monitor/jon-film", methods=["GET"])
+def landing_monitor_jon_film():
+    from backend.services import jon_film_service
+
+    return jsonify(jon_film_service.calendar_snapshot())
+
+
+@landing_monitor_bp.route("/api/landing/monitor/jon-film/appointments", methods=["GET", "POST"])
+def landing_monitor_jon_film_appointments():
+    from backend.services import jon_film_service
+
+    if request.method == "GET":
+        day = (request.args.get("day") or "").strip() or None
+        limit = request.args.get("limit", 40, type=int)
+        return jsonify(jon_film_service.list_appointments(limit=limit, day=day))
+
+    body = request.get_json(silent=True) or {}
+    force = bool(body.get("force", True))
+    count = int(body.get("count") or jon_film_service.DAILY_APPOINTMENTS)
+    return jsonify(jon_film_service.generate_daily_appointments(force=force, count=count))
+
+
+@landing_monitor_bp.route("/api/landing/monitor/jon-film/cron", methods=["POST"])
+def landing_monitor_jon_film_cron():
+    """Daily cron — always generate a fresh batch of 10 Jon Film appointments."""
+    import os
+
+    expected = (os.environ.get("AGENT_CRON_SECRET") or os.environ.get("JON_FILM_CRON_SECRET") or "").strip()
+    token = (request.headers.get("X-Agent-Cron-Token") or request.args.get("token") or "").strip()
+    if expected and token != expected:
+        return jsonify({"success": False, "error": "unauthorized"}), 401
+
+    from backend.services import jon_film_service
+    from backend.services.landing_monitor_extras_service import ensure_discord_poll
+
+    # Fresh every cron run — force regenerate.
+    appts = jon_film_service.generate_daily_appointments(force=True, count=10)
+    poll = ensure_discord_poll(
+        question="Jon Film daily vote — which stage leads tonight's battlefield cut?"
+    )
+    return jsonify(
+        {
+            "success": True,
+            "appointments": appts,
+            "poll": poll.get("poll"),
+            "movie": jon_film_service.MOVIE_TITLE,
+        }
+    )

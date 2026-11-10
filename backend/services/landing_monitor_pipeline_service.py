@@ -115,6 +115,24 @@ SCENE_FX: Dict[str, Dict[str, Any]] = {
         "bars": 5,
         "speaker": "performer_iris",
     },
+    "vote": {
+        "lightshow": "chase",
+        "title": "Discord lobby vote",
+        "explain": "Community vote tallies steer the next Jon Film stage.",
+        "color": "#5865F2",
+        "sound": "bubble_ping",
+        "bars": 4,
+        "speaker": "performer_pixie",
+    },
+    "battlefield": {
+        "lightshow": "pulse",
+        "title": "War battlefield 3500",
+        "explain": "Year-3500 combat stage with hot communication lines.",
+        "color": "#ff5a6a",
+        "sound": "impact_blast",
+        "bars": 6,
+        "speaker": "performer_ember",
+    },
 }
 
 # Rotate camgirl hosts so spoken stats stay varied across the cut.
@@ -961,6 +979,59 @@ def _procedural_ai_pipeline(
         duration_ms=14000,
     )
 
+    # Discord vote + year-3500 battlefield stages for Jon Film.
+    try:
+        from backend.services.landing_monitor_extras_service import ensure_discord_poll, list_votes
+
+        ensure_discord_poll()
+        vote_doc = list_votes()
+        poll = vote_doc.get("open") or {}
+        if poll:
+            tallies = ", ".join(
+                f"{o.get('label')} {int(o.get('votes') or 0)}" for o in (poll.get("options") or [])[:4]
+            )
+            add_scene(
+                category="vote",
+                title="Discord lobby vote",
+                body=f"{poll.get('question') or 'Lobby vote'} — {tallies}",
+                sats=sum(int(o.get("votes") or 0) for o in (poll.get("options") or [])),
+                sats_kind="action",
+                duration_ms=14000,
+                meta={"poll": poll},
+            )
+    except Exception:
+        pass
+
+    add_scene(
+        category="battlefield",
+        title="War battlefield · year 3500",
+        body="Jon Film combat stage is hot — ALPHA/BRAVO/GHOST/ORBIT communication lines stay encrypted.",
+        sats=3500,
+        sats_kind="action",
+        duration_ms=15000,
+        meta={"theme": "war_battlefield_3500", "year": 3500},
+    )
+    try:
+        from backend.services import jon_film_service
+
+        cal = jon_film_service.calendar_snapshot()
+        for appt in (cal.get("appointments") or [])[:4]:
+            add_scene(
+                category="action",
+                title=str(appt.get("title") or "Jon Film appointment"),
+                body=(
+                    f"{appt.get('actor_name')} with agent {appt.get('agent_id')} on stage "
+                    f"{appt.get('stage')} · comm {appt.get('comm_line')}"
+                ),
+                sats=0,
+                sats_kind="action",
+                duration_ms=12000,
+                meta={"appointment": appt, "movie": "Jon Film"},
+                speaker_id=appt.get("performer_id"),
+            )
+    except Exception:
+        pass
+
     # Online users leaderboard — dedicated clips.
     if board:
         add_scene(
@@ -1040,6 +1111,8 @@ def _procedural_ai_pipeline(
         ("action", "Action remix", "Learned actions remix into the live sats story."),
         ("generator", "AI clip lab", "MasterNoder2 spins a new still for every scene."),
         ("social", "Crowd energy", "Online ranks keep the lobby human."),
+        ("vote", "Discord ballot", "Lobby votes steer the next Jon Film take."),
+        ("battlefield", "3500 uplink", "Battlefield year 3500 keeps communication lines alive."),
     ]
     rng.shuffle(motifs)
     idx = 0
