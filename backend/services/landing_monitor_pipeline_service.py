@@ -322,13 +322,13 @@ def _daemon_trade_sats(*, btc_usd: float) -> Dict[str, Any]:
             continue
         if row.get("decision") not in ("fill", "paper", "live"):
             continue
-        exe = row.get("execution") if isinstance(row.get("execution"), dict) else {}
-        if not exec.get("success") and row.get("decision") not in ("paper",):
+        execution = row.get("execution") if isinstance(row.get("execution"), dict) else {}
+        if not execution.get("success") and row.get("decision") not in ("paper",):
             # still count paper / attempted fills with fill_usd
-            if not exec.get("fill_usd") and not row.get("notional_usd"):
+            if not execution.get("fill_usd") and not row.get("notional_usd"):
                 continue
-        fill_usd = float(exec.get("fill_usd") or row.get("notional_usd") or 0)
-        realized = float(exec.get("realized_pnl_usd") or 0)
+        fill_usd = float(execution.get("fill_usd") or row.get("notional_usd") or 0)
+        realized = float(execution.get("realized_pnl_usd") or 0)
         sats = _usd_to_btc_sats(fill_usd, btc_usd)
         trade_sats += abs(sats)
         pnl_usd += realized
