@@ -344,6 +344,24 @@ def test_battle_mn2_click_faucet(isolated_battle_social_state, monkeypatch):
         raising=False,
     )
     monkeypatch.setattr("backend.routes.social_routes.push_activity", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "backend.services.mn2_wallet_service.get_or_create_deposit_address",
+        lambda uid: {"success": True, "deposit_address": "MN2TestAddress123", "user_id": uid},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_rpc_client.sendtoaddress",
+        lambda address, amount: {"result": "txid_battle_faucet_test_001", "error": None},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_chain_rewards_service.chain_payouts_enabled",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_chain_rewards_service._min_payout",
+        lambda: 0.00001,
+    )
+    monkeypatch.setattr("backend.services.mn2_ledger.append_entry", lambda **k: None)
+    monkeypatch.setattr("backend.services.mn2_ledger._load_entries", lambda: [])
 
     app = _battle_app()
     with app.test_client() as c:
@@ -368,6 +386,9 @@ def test_battle_mn2_click_faucet(isolated_battle_social_state, monkeypatch):
         assert body["claim"]["option_id"] == "click_tap"
         assert float(body["claim"]["amount_mn2"]) > 0
         assert float(fake.balances["faucet-user"]["mn2_balance"]) > 0
+        assert body.get("on_chain") is True
+        assert body.get("chain_txid") == "txid_battle_faucet_test_001"
+        assert body.get("settlement") == "onchain"
 
         again = c.post(
             "/api/battle/faucet/click",

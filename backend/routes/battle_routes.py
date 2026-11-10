@@ -409,7 +409,7 @@ def _battle_crypto_options():
         {
             "id": "click_tap",
             "name": "MN2 Tap",
-            "description": "Click the Battle faucet for a drip of internal MN2 balance.",
+            "description": "Click the Battle faucet for MN2 — credits in-app and pays on-chain when enabled.",
             "cooldown_sec": 2,
             "base_mn2": 0.00012,
             "requires": {},
@@ -527,7 +527,8 @@ def _battle_crypto_status(user_id: str) -> dict:
         "total_mn2_earned": round(float(crypto.get("total_mn2_earned", 0) or 0), 8),
         "mn2_balance": float(points.get("mn2_balance", 0) or 0),
         "claims": list(crypto.get("claims", []))[-20:],
-        "implementation_status": "internal_mn2_balance_claims",
+        "implementation_status": "onchain_mn2_reward_claims",
+        "wallet_mode": "onchain",
     }
 
 
@@ -549,18 +550,56 @@ def _claim_battle_crypto(user_id: str, option_id: str, combo_streak: int = 0):
     combo = max(0, min(int(combo_streak or 0), 25))
     amount = _battle_crypto_reward_amount(option, progress, combo_streak=combo)
     next_claim_at = (now + timedelta(seconds=int(option.get("cooldown_sec", 0) or 0))).isoformat()
+    claim_ref = f"battle-crypto:{option_id}:{user_id}:{now.strftime('%Y%m%d%H%M%S')}:{combo}"
+    credit_meta = {
+        "option_id": option_id,
+        "option_name": option.get("name"),
+        "progress": progress,
+        "combo_streak": combo,
+        "reference": claim_ref,
+    }
+    chain_info = {
+        "on_chain": False,
+        "chain_skipped": True,
+        "chain_skip_reason": "credit_pending",
+    }
     try:
-        from backend.services.unified_points_database import unified_points_db
-        unified_points_db.add_points(
-            user_id, "mn2_balance", amount,
+        from backend.services.game_mn2_rewards import credit_mn2
+
+        credit = credit_mn2(
+            user_id,
+            amount,
             source="battle_crypto_claim",
-            metadata={
-                "option_id": option_id,
-                "option_name": option.get("name"),
-                "progress": progress,
-                "combo_streak": combo,
-            },
+            reference=claim_ref,
+            metadata=credit_meta,
         )
+        if not credit.get("success") and credit.get("code") == "auth_required":
+            # Guests still get in-app balance; on-chain requires an earn-eligible user.
+            from backend.services.unified_points_database import unified_points_db
+
+            unified_points_db.add_points(
+                user_id, "mn2_balance", amount,
+                source="battle_crypto_claim",
+                metadata=credit_meta,
+            )
+            chain_info = {
+                "on_chain": False,
+                "chain_skipped": True,
+                "chain_skip_reason": "authenticated_user_required",
+            }
+        elif not credit.get("success"):
+            return {"success": False, "error": credit.get("error") or "MN2 award failed"}, 500
+        else:
+            chain_info = {
+                "on_chain": bool(credit.get("on_chain")),
+                "chain_txid": credit.get("chain_txid"),
+                "chain_address": credit.get("chain_address"),
+                "chain_amount": credit.get("chain_amount"),
+                "chain_skipped": bool(credit.get("chain_skipped")),
+                "chain_skip_reason": credit.get("chain_skip_reason"),
+                "chain_error": credit.get("chain_error"),
+                "chain_duplicate": credit.get("chain_duplicate"),
+            }
     except Exception as e:
         return {"success": False, "error": "MN2 award failed: " + str(e)}, 500
 
@@ -572,6 +611,10 @@ def _claim_battle_crypto(user_id: str, option_id: str, combo_streak: int = 0):
         "next_claim_at": next_claim_at,
         "progress": progress,
         "combo_streak": combo,
+        "reference": claim_ref,
+        "on_chain": chain_info.get("on_chain"),
+        "chain_txid": chain_info.get("chain_txid"),
+        "chain_address": chain_info.get("chain_address"),
     }
     option_state["last_claim_at"] = claim["claimed_at"]
     option_state["next_claim_at"] = next_claim_at
@@ -594,6 +637,7 @@ def _claim_battle_crypto(user_id: str, option_id: str, combo_streak: int = 0):
         "crypto": status_payload,
         "combo_streak": combo,
         "reward_mn2": amount,
+        **chain_info,
     }, 200
 
 
@@ -1209,7 +1253,7 @@ def battle_v2_telemetry():
 
 @battle_bp.route('/api/battle/crypto', methods=['GET'])
 def battle_crypto():
-    """Per-user in-game Battle crypto status. Awards use internal mn2_balance, not wallet transfers."""
+    """Per-user Battle crypto status. Awards credit mn2_balance and pay on-chain when enabled."""
     try:
         user_id = _resolve_uid()
         return jsonify({"success": True, **_battle_crypto_status(user_id)}), 200
@@ -1233,7 +1277,7 @@ def battle_crypto_claim():
 
 @battle_bp.route('/api/battle/faucet/click', methods=['POST'])
 def battle_faucet_click():
-    """MN2 click faucet — awards internal mn2_balance via the click_tap option."""
+    """MN2 click faucet — credits mn2_balance and sends on-chain MN2 when payouts are enabled."""
     try:
         data = request.get_json(silent=True) or {}
         user_id = _resolve_uid()
@@ -1242,6 +1286,7 @@ def battle_faucet_click():
         if status == 200:
             body["faucet"] = "mn2_click"
             body["page"] = "battle"
+            body["settlement"] = "onchain" if body.get("on_chain") else "in_app"
         return jsonify(body), status
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

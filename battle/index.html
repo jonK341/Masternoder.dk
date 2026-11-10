@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/battle-mn2-faucet.css?v=20261110c">
+    <link rel="stylesheet" href="/static/css/battle-mn2-faucet.css?v=20261111a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <script src="/static/js/user-id.js?v=20261010b"></script>
@@ -39,7 +39,7 @@
     <main class="mn2-faucet-shell">
         <section class="mn2-hero" aria-labelledby="mn2-brand">
             <h1 class="mn2-brand" id="mn2-brand">MasterNoder <span>MN2 Faucet</span></h1>
-            <p class="mn2-tagline">Battle is a tap-to-earn drip now — click for internal MN2 balance. Not on-chain. Not a wager.</p>
+            <p class="mn2-tagline">Battle is a tap-to-earn drip — credits your in-app MN2 and pays the same amount on-chain to your deposit address when the treasury RPC is live.</p>
 
             <div class="mn2-balance-row" aria-live="polite">
                 <div>
@@ -88,7 +88,7 @@
             <a href="/game">Hunter Game</a>
             <a href="/battlegrounds">Battlegrounds</a>
         </nav>
-        <p class="mn2-note">Rewards credit <code>mn2_balance</code> in-app only — not a blockchain transfer.</p>
+        <p class="mn2-note">Each tap credits <code>mn2_balance</code> and attempts a treasury <code>sendtoaddress</code> to your MN2 deposit wallet. Guest users stay in-app only until identified.</p>
     </main>
 
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="battle" defer></script>
@@ -330,7 +330,15 @@
             const cdSec = 2;
             cooldownTotal = cdSec * 1000;
             cooldownUntil = Date.now() + cdSec * 1000;
-            setStatus('+' + Number(amount).toFixed(8) + ' MN2 credited', 'is-ok');
+            let msg = '+' + Number(amount).toFixed(8) + ' MN2 credited';
+            if (data.on_chain && data.chain_txid) {
+                msg += ' · on-chain ' + String(data.chain_txid).slice(0, 12) + '…';
+            } else if (data.chain_skip_reason) {
+                msg += ' · chain pending (' + data.chain_skip_reason + ')';
+            } else if (data.chain_error) {
+                msg += ' · chain error';
+            }
+            setStatus(msg, data.on_chain ? 'is-ok' : 'is-ok');
             updateTapUi();
         }
 

@@ -129,7 +129,12 @@
   "order_payment_combined_fulfill": true,
   "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
   "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)",
-  "wallet_mode": "ledger",
+  "wallet_mode": "onchain",
+  "chain_reward_payouts": {
+    "enabled": true,
+    "min_amount_mn2": 0.0001,
+    "comment": "Treasury sendtoaddress for in-app MN2 rewards (battle faucet, game wins, etc.)"
+  },
   "onchain_fee_payer": {
     "address": "",
     "account": "",

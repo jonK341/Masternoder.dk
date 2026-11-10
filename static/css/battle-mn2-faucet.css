@@ -486,6 +486,11 @@ body.mn2-faucet-page {
   color: var(--mn2-muted);
 }
 
+.mn2-note code {
+  color: var(--mn2-mint);
+  font-size: 0.85em;
+}
+
 /* Hide legacy overlays that broke layout on the old arena page */
 .mn2-faucet-page #top50-monetization-frame-container {
   display: none !important;
