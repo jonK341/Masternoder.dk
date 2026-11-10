@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261110a">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -171,18 +171,28 @@
             <div data-ptc-placement="home_smartlinks" data-ptc-limit="2"></div>
         </section>
 
-        <section class="fp-starmap" aria-labelledby="fp-starmap-title">
-            <div class="fp-starmap-head">
-                <h2 id="fp-starmap-title">Star Map 4D</h2>
-                <p>Fjerde dimension er <strong>tid (w)</strong>: stereografisk projektion fra ℝ⁴ — samme data som Star Map 25.</p>
+        <section class="fp-profit-monitor" aria-labelledby="fp-profit-title">
+            <div class="fp-profit-head">
+                <h2 id="fp-profit-title">Profit Daemon monitor</h2>
+                <p>Live maker · ladder · arb ticks from The Profit Daemon Jon — stem for YouTube go-live readiness.</p>
             </div>
-            <div class="fp-starmap-controls">
-                <label for="fp-starmap-w">Tidsled <em>w</em>
-                    <input type="range" id="fp-starmap-w" min="0" max="100" value="42" aria-valuetext="tid">
-                </label>
-                <a class="fp-starmap-open" href="/starmap25/">Åbn Star Map 25 monitor →</a>
+            <div class="fp-profit-controls">
+                <span class="fp-profit-pill" id="fp-profit-mode">loading…</span>
+                <span class="fp-profit-pill" id="fp-profit-daemon">daemon —</span>
+                <span class="fp-profit-pill" id="fp-profit-votes-local">local 0/5</span>
+                <span class="fp-profit-pill yt" id="fp-profit-votes-sub">subscribers 0/5</span>
+                <span class="fp-profit-pill dc" id="fp-profit-votes-dc">discord 0/5</span>
+                <a class="fp-profit-open" href="/profit/">Åbn fuld Profit monitor →</a>
             </div>
-            <canvas id="fp-starmap4d" width="900" height="380" aria-label="Stjernekort 4D projektion"></canvas>
+            <div class="fp-profit-actions">
+                <button type="button" class="fp-profit-vote" id="fp-profit-vote-local">Vote — local</button>
+                <button type="button" class="fp-profit-vote yt" id="fp-profit-vote-sub">Vote — YouTube sub</button>
+                <button type="button" class="fp-profit-vote dc" id="fp-profit-vote-dc">Vote — Discord</button>
+            </div>
+            <div class="fp-profit-kpis" id="fp-profit-kpis" aria-live="polite"></div>
+            <div class="fp-profit-feed" id="fp-profit-feed" aria-live="polite">
+                <div class="fp-profit-empty">Loading live trades…</div>
+            </div>
         </section>
 
         <div class="fp-split">
@@ -340,7 +350,7 @@
     <script src="/static/js/error-manager.js?v=20261010a" defer></script>
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
-    <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
+    <script src="/static/js/frontpage-home.js?v=20261110a" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
