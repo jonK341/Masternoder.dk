@@ -7,7 +7,14 @@ import time
 from typing import Any, Dict, List, Optional
 
 from backend.services import crypto_exchange_service as ex
-from backend.services.exchange_venue_api_service import venue_api_request, venue_has_credentials
+from backend.services.exchange_market_feed_service import cached_top
+from backend.services.exchange_profit_path_service import profit_path_summary
+from backend.services.exchange_venue_api_service import (
+    parse_spot_balances,
+    place_limit_order,
+    venue_api_request,
+    venue_has_credentials,
+)
 
 _FEE_PATH = os.path.join(ex._DATA_DIR, "venue_fee_table.json")
 _TOPUP_STATE = os.path.join(ex._DATA_DIR, "nonkyc_quote_topup_state.json")
@@ -117,8 +124,6 @@ def filter_symbols_by_ppp_edge(cfg: Dict[str, Any], *, min_hit_rate: float = 15.
         return out
     summary: Any = None
     try:
-        from backend.services.exchange_profit_path_service import profit_path_summary
-
         summary = profit_path_summary(hours=24)
     except Exception:
         summary = None
@@ -151,9 +156,6 @@ def top_up_nonkyc_quote(
     dry_run: bool = False,
 ) -> Dict[str, Any]:
     """Sell NonKYC dust/base into USDT when free quote is below min_quote_usd."""
-    from backend.services.exchange_market_feed_service import cached_top
-    from backend.services.exchange_venue_api_service import parse_spot_balances, place_limit_order, venue_has_credentials
-
     if not venue_has_credentials("nonkyc"):
         return {"success": False, "error": "no_credentials"}
     bal = parse_spot_balances("nonkyc", dry_run=False, force_refresh=True) or {}
