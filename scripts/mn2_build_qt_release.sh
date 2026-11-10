@@ -386,6 +386,13 @@ build_win_qt() {
     exit 1
   fi
 
+  # Compiler temps can exhaust a small tmpfs /tmp during Qt depends builds.
+  if [[ -z "${TMPDIR:-}" ]] || df -P "${TMPDIR:-/tmp}" 2>/dev/null | awk 'NR==2 {exit !($2 < 8000000)}'; then
+    mkdir -p "${BUILD_ROOT}/tmp"
+    export TMPDIR="${BUILD_ROOT}/tmp"
+    echo "=== Using TMPDIR=${TMPDIR} (avoid small/tmpfs /tmp) ==="
+  fi
+
   export PATH
   PATH="$(echo "${PATH}" | sed -e 's/:\/mnt.*//g')"
   # Boost 1.64 jam bootstrap fails on GCC 14+ (-Werror=implicit-function-declaration).
