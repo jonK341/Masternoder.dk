@@ -12,6 +12,36 @@ def test_landing_monitor_snapshot_shape(tmp_path, monkeypatch):
     monkeypatch.setattr(acts, "_ACTIONS_PATH", str(tmp_path / "actions.json"))
     monkeypatch.setattr(acts, "_LEARN_PATH", str(tmp_path / "learn.json"))
     monkeypatch.setattr(acts, "sync_from_activity", lambda limit=30: {"imported": 0})
+    from backend.services import landing_monitor_pipeline_service as pipe
+
+    monkeypatch.setattr(
+        pipe,
+        "collect_sats_snapshot",
+        lambda: {
+            "success": True,
+            "totals": {"network_sats": 1, "trade_sats": 2, "combined_sats": 3},
+            "network": {"mn2": {"sats": 1}, "venue_btc": {"venues": {}}},
+            "daemon_trades": {"detail": {"recent_fills": [], "fill_count": 0, "realized_pnl_usd": 0}},
+        },
+    )
+    monkeypatch.setattr(
+        pipe,
+        "build_pipeline",
+        lambda **kwargs: {
+            "success": True,
+            "duration_ms": pipe.PIPELINE_MS,
+            "duration_label": "12 min",
+            "scene_count": 2,
+            "generator": "test",
+            "cut_id": 1,
+            "fingerprint": "1|2",
+            "regen_reason": "test",
+            "recount_in_sec": 720,
+            "scenes": [],
+            "ai": {},
+            "updated_at": "Z",
+        },
+    )
     monkeypatch.setattr(svc, "_collect_stats", lambda: {
         "total_videos": 3,
         "total_users": 2,

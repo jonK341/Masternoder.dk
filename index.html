@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
-    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110c">
+    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110e">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -107,6 +107,30 @@
                         <div class="lm-stat"><div class="v" id="lm-stat-mn2">—</div><div class="l">MN2</div></div>
                         <div class="lm-stat"><div class="v" id="lm-stat-daemon">—</div><div class="l">Daemon</div></div>
                         <div class="lm-stat"><div class="v" id="lm-stat-height">—</div><div class="l">Height</div></div>
+                        <button type="button" class="lm-stat lm-stat-sats lm-stat-btn" data-sats-focus="network" id="lm-stat-network-sats-btn" title="Focus pipeline on network sats">
+                            <div class="v" id="lm-stat-network-sats">—</div><div class="l">Network sats</div>
+                        </button>
+                        <button type="button" class="lm-stat lm-stat-sats lm-stat-btn" data-sats-focus="trade" id="lm-stat-trade-sats-btn" title="Focus pipeline on daemon trade sats">
+                            <div class="v" id="lm-stat-trade-sats">—</div><div class="l">Trade sats</div>
+                        </button>
+                        <button type="button" class="lm-stat lm-stat-sats lm-stat-btn" data-sats-focus="combined" id="lm-stat-combined-sats-btn" title="Recount pipeline from live sats">
+                            <div class="v" id="lm-stat-combined-sats">—</div><div class="l">Combined · recount</div>
+                        </button>
+                    </div>
+                    <div class="lm-panel lm-pipeline-panel">
+                        <h3 id="lm-pipeline-title">AI pipeline · 12 min</h3>
+                        <p id="lm-pipeline-scene">Live sats rewrite the movie whenever stats change. Every 12 min recounts a new cut — nothing archived.</p>
+                        <div class="lm-reel-meta">
+                            <span class="lm-pill" id="lm-pipeline-progress">0 / 12:00</span>
+                            <span class="lm-pill" id="lm-pipeline-gen">AI…</span>
+                            <span class="lm-pill" id="lm-pipeline-sats">sats —</span>
+                            <span class="lm-pill" id="lm-pipeline-reason">waiting</span>
+                        </div>
+                        <div class="lm-pipeline-bar" aria-hidden="true"><div class="lm-pipeline-bar-fill" id="lm-pipeline-bar"></div></div>
+                        <div class="lm-actions">
+                            <button type="button" id="lm-pipeline-play" aria-pressed="false">Play 12-min AI pipeline</button>
+                            <button type="button" id="lm-pipeline-regen">New cut now</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -399,7 +423,7 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/landing-monitor.js?v=20261110c" defer></script>
+    <script src="/static/js/landing-monitor.js?v=20261110e" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

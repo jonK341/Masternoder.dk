@@ -256,6 +256,39 @@ def refresh_snapshot(*, force: bool = False) -> Dict[str, Any]:
             "reel": actions_blob.get("reel") or [],
             "reel_count": actions_blob.get("reel_count") or 0,
         }
+
+        # Network sats + daemon trade sats + 12-minute AI pipeline (lights/sounds).
+        try:
+            from backend.services import landing_monitor_pipeline_service as pipe
+
+            sats = pipe.collect_sats_snapshot()
+            # Rebuild when sats fingerprint changes or the 12m window ends.
+            pipeline = pipe.build_pipeline(force=False, use_llm=False, reason="snapshot")
+            payload["sats"] = sats
+            payload["pipeline"] = {
+                "duration_ms": pipeline.get("duration_ms"),
+                "duration_label": pipeline.get("duration_label") or "12 min",
+                "scene_count": pipeline.get("scene_count") or 0,
+                "generator": pipeline.get("generator"),
+                "cut_id": pipeline.get("cut_id"),
+                "fingerprint": pipeline.get("fingerprint"),
+                "regen_reason": pipeline.get("regen_reason"),
+                "recount_in_sec": pipeline.get("recount_in_sec"),
+                "persist": False,
+                "interactive": True,
+                "ai": pipeline.get("ai") or {},
+                "scenes": (pipeline.get("scenes") or [])[:8],
+                "updated_at": pipeline.get("updated_at"),
+            }
+            payload["stats"] = dict(payload.get("stats") or {})
+            totals = sats.get("totals") or {}
+            payload["stats"]["network_sats"] = totals.get("network_sats") or 0
+            payload["stats"]["trade_sats"] = totals.get("trade_sats") or 0
+            payload["stats"]["combined_sats"] = totals.get("combined_sats") or 0
+        except Exception:
+            payload["sats"] = {"success": False, "totals": {}}
+            payload["pipeline"] = {"duration_label": "12 min", "scene_count": 0, "scenes": []}
+
         _write_cache(payload)
         return payload
 

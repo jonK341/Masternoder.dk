@@ -402,6 +402,30 @@
     if (el) el.textContent = text;
   }
 
+  function fmtSats(n) {
+    var v = Number(n || 0);
+    if (!isFinite(v)) return '—';
+    try {
+      return Math.round(v).toLocaleString();
+    } catch (e) {
+      return String(Math.round(v));
+    }
+  }
+
+  function flashStat(id) {
+    var el = $(id);
+    if (!el) return;
+    var btn = el.closest ? el.closest('.lm-stat-btn') : null;
+    var target = btn || el.parentElement;
+    if (!target) return;
+    target.classList.remove('is-flash');
+    void target.offsetWidth;
+    target.classList.add('is-flash');
+    setTimeout(function () {
+      target.classList.remove('is-flash');
+    }, 750);
+  }
+
   function paint(payload) {
     if (!payload || !payload.success) return;
     var stats = payload.stats || {};
@@ -414,6 +438,15 @@
     );
     setText('lm-stat-daemon', stats.daemon_ok === true ? 'online' : stats.daemon_ok === false ? 'offline' : '—');
     setText('lm-stat-height', stats.block_height != null ? String(stats.block_height) : '—');
+
+    var sats = payload.sats || {};
+    var totals = sats.totals || {};
+    var net = totals.network_sats != null ? totals.network_sats : stats.network_sats;
+    var trade = totals.trade_sats != null ? totals.trade_sats : stats.trade_sats;
+    var combined = totals.combined_sats != null ? totals.combined_sats : stats.combined_sats;
+    setText('lm-stat-network-sats', fmtSats(net));
+    setText('lm-stat-trade-sats', fmtSats(trade));
+    setText('lm-stat-combined-sats', fmtSats(combined));
 
     var special = payload.special || {};
     setText('lm-special-title', special.title || 'Special');
@@ -444,6 +477,11 @@
       'Learned ' + (learn.total_actions || 0) + (catBits ? ' · ' + catBits : '')
     );
 
+    var pipeMeta = payload.pipeline || {};
+    if (pipeMeta.cut_id) setText('lm-pipeline-gen', 'cut ' + pipeMeta.cut_id + ' · ' + (pipeMeta.generator || 'AI'));
+    if (pipeMeta.regen_reason) setText('lm-pipeline-reason', String(pipeMeta.regen_reason).replace(/_/g, ' '));
+    setText('lm-pipeline-sats', 'net ' + fmtSats(net) + ' · trade ' + fmtSats(trade));
+
     if (stats.total_videos != null && $('stat-videos')) {
       $('stat-videos').textContent = (stats.total_videos || 0).toLocaleString();
     }
@@ -459,6 +497,204 @@
 
     return payload.lightshow || {};
   }
+
+  function formatClock(ms) {
+    var total = Math.max(0, Math.floor(Number(ms || 0) / 1000));
+    var m = Math.floor(total / 60);
+    var s = total % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function PipelinePlayer(opts) {
+    this.show = opts.show;
+    this.music = opts.music;
+    this.sfx = opts.sfx;
+    this.root = opts.root;
+    this.panel = document.querySelector('.lm-pipeline-panel');
+    this.playBtn = $('lm-pipeline-play');
+    this.scenes = [];
+    this.index = 0;
+    this.playing = false;
+    this.timer = null;
+    this.elapsed = 0;
+    this.duration = 12 * 60 * 1000;
+    this.fingerprint = null;
+    this.cutId = null;
+    this.focus = 'combined';
+  }
+
+  PipelinePlayer.prototype.setFocus = function (focus) {
+    this.focus = focus || 'combined';
+    document.querySelectorAll('.lm-stat-btn').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-sats-focus') === focus);
+    });
+  };
+
+  PipelinePlayer.prototype.loadCut = function (pipe, opts) {
+    opts = opts || {};
+    var scenes = Array.isArray(pipe && pipe.scenes) ? pipe.scenes.slice() : [];
+    if (this.focus === 'network') {
+      scenes = scenes.filter(function (s) {
+        return s.sats_kind === 'network' || s.category === 'network' || s.category === 'wallet';
+      }).concat(scenes.filter(function (s) {
+        return !(s.sats_kind === 'network' || s.category === 'network' || s.category === 'wallet');
+      }));
+    } else if (this.focus === 'trade') {
+      scenes = scenes.filter(function (s) {
+        return s.sats_kind === 'trade' || s.category === 'trade' || s.category === 'profit';
+      }).concat(scenes.filter(function (s) {
+        return !(s.sats_kind === 'trade' || s.category === 'trade' || s.category === 'profit');
+      }));
+    }
+    var wasPlaying = this.playing;
+    var fp = (pipe && pipe.fingerprint) || null;
+    var cut = (pipe && pipe.cut_id) || null;
+    var changed = fp && fp !== this.fingerprint;
+    this.fingerprint = fp;
+    this.cutId = cut;
+    this.scenes = scenes;
+    this.duration = Number((pipe && pipe.duration_ms) || this.duration) || 12 * 60 * 1000;
+    setText(
+      'lm-pipeline-gen',
+      (cut ? 'cut ' + cut + ' · ' : '') + ((pipe && pipe.generator) || 'AI')
+    );
+    if (pipe && pipe.regen_reason) {
+      setText('lm-pipeline-reason', String(pipe.regen_reason).replace(/_/g, ' '));
+    }
+    if (changed) {
+      flashStat('lm-stat-combined-sats');
+      flashStat('lm-stat-network-sats');
+      flashStat('lm-stat-trade-sats');
+    }
+    // New stats / new cut → restart movie so every showing is different.
+    if (wasPlaying && (changed || opts.restart)) {
+      this.stop(true);
+      this.start();
+      return true;
+    }
+    if (!this.playing) {
+      setText(
+        'lm-pipeline-scene',
+        scenes[0]
+          ? scenes[0].title + ' — tap play for the live 12-min cut'
+          : 'Waiting for live sats to generate a cut…'
+      );
+      setText('lm-pipeline-progress', '0 / ' + formatClock(this.duration));
+      var bar = $('lm-pipeline-bar');
+      if (bar) bar.style.width = '0%';
+    }
+    return changed;
+  };
+
+  PipelinePlayer.prototype.start = function () {
+    if (!this.scenes.length) {
+      setText('lm-pipeline-scene', 'No pipeline scenes yet — regenerating…');
+      return;
+    }
+    this.playing = true;
+    this.index = 0;
+    this.elapsed = 0;
+    if (this.panel) this.panel.classList.add('is-playing');
+    if (this.playBtn) {
+      this.playBtn.setAttribute('aria-pressed', 'true');
+      this.playBtn.textContent = 'Playing 12-min cut…';
+    }
+    if (this.show && !this.show.running) this.show.start();
+    this.nextScene();
+  };
+
+  PipelinePlayer.prototype.stop = function (silent) {
+    this.playing = false;
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    if (this.panel) this.panel.classList.remove('is-playing');
+    if (this.show) {
+      this.show.setBoost(1);
+      this.show.caption = '';
+    }
+    if (this.music) this.music.boost = 1;
+    if (this.playBtn) {
+      this.playBtn.setAttribute('aria-pressed', 'false');
+      this.playBtn.textContent = 'Play 12-min AI pipeline';
+    }
+    if (!silent) {
+      setText('lm-pipeline-scene', 'Cut stopped — next stats change builds a new movie (not saved).');
+    }
+  };
+
+  PipelinePlayer.prototype.nextScene = function () {
+    var self = this;
+    if (!this.playing) return;
+    if (this.index >= this.scenes.length) {
+      setText('lm-pipeline-scene', '12-min window done — recounting a brand-new cut from live sats…');
+      this.stop(true);
+      // Force a fresh recount at end of every movie.
+      fetch('/api/landing/monitor/pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ use_llm: true, force: true }),
+      })
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (pipe) {
+          self.loadCut(pipe, { restart: true });
+        })
+        .catch(function () {});
+      return;
+    }
+    var scene = this.scenes[this.index];
+    var fx = scene.fx || {};
+    var cat = scene.category || 'system';
+    var color = fx.color || CAT_COLOR[cat] || CAT_COLOR.system;
+    var mode = fx.lightshow || 'pulse';
+    var ms = Math.max(4000, Number(scene.duration_ms) || 12000);
+    this.elapsed += ms;
+
+    setText('lm-pipeline-scene', scene.title + (scene.body ? ' — ' + scene.body : ''));
+    setText(
+      'lm-pipeline-progress',
+      formatClock(Math.min(this.elapsed, this.duration)) + ' / ' + formatClock(this.duration)
+    );
+    setText(
+      'lm-pipeline-sats',
+      (scene.sats_kind || cat) + ' · ' + fmtSats(scene.sats) + ' sats'
+    );
+    var bar = $('lm-pipeline-bar');
+    if (bar) bar.style.width = Math.min(100, (this.elapsed / this.duration) * 100) + '%';
+
+    if (scene.sats_kind === 'network' || cat === 'network') flashStat('lm-stat-network-sats');
+    if (scene.sats_kind === 'trade' || cat === 'trade' || cat === 'profit') flashStat('lm-stat-trade-sats');
+    if (scene.sats_kind === 'combined' || cat === 'finale') flashStat('lm-stat-combined-sats');
+
+    setText('lm-effect-title', fx.title || mode);
+    setText('lm-effect-body', fx.explain || scene.body || '');
+    if (this.root) {
+      this.root.classList.add('is-scene');
+      this.root.style.setProperty('--lm-scene-color', color);
+    }
+    if (this.show) {
+      this.show.setMode(mode);
+      this.show.setAccent(color);
+      this.show.setBoost(1.25);
+      this.show.caption = (scene.title || '').slice(0, 42);
+      this.show.pulse();
+    }
+    if (this.music) this.music.boost = 1.2;
+    if (this.sfx) {
+      this.sfx.playAction({
+        category: cat === 'trade' || cat === 'profit' ? 'profit' : cat === 'network' || cat === 'wallet' ? 'wallet' : cat === 'finale' ? 'social' : cat === 'action' ? 'generator' : 'system',
+        fx: { sound: fx.sound || CAT_SOUND[cat] || 'tick_blip' },
+      });
+    }
+
+    this.timer = setTimeout(function () {
+      self.index += 1;
+      self.nextScene();
+    }, ms);
+  };
 
   function ActionReel(opts) {
     this.show = opts.show;
@@ -642,12 +878,16 @@
     var music = new LandingMusic(BPM);
     var sfx = new ActionSFX();
     var reel = new ActionReel({ show: show, music: music, sfx: sfx, root: root });
+    var pipeline = new PipelinePlayer({ show: show, music: music, sfx: sfx, root: root });
     var beatTimer = null;
     var musicBtn = $('lm-music-toggle');
     var lightBtn = $('lm-light-toggle');
     var sfxBtn = $('lm-sfx-toggle');
     var playBtn = $('lm-reel-play');
     var skipBtn = $('lm-reel-skip');
+    var pipePlayBtn = $('lm-pipeline-play');
+    var pipeRegenBtn = $('lm-pipeline-regen');
+    var lastSatsFp = null;
 
     function setSfxHint(on) {
       setText('lm-sfx-hint', on ? 'Sounds: on (each action)' : 'Sounds: off');
@@ -678,6 +918,33 @@
       onBeat();
     }
 
+    async function fetchFullPipeline() {
+      try {
+        var res = await fetch('/api/landing/monitor/pipeline', { headers: { Accept: 'application/json' } });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function regeneratePipeline(forceAi) {
+      setText('lm-pipeline-reason', 'recounting');
+      try {
+        var res = await fetch('/api/landing/monitor/pipeline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ use_llm: !!forceAi }),
+        });
+        var pipe = await res.json();
+        pipeline.loadCut(pipe, { restart: pipeline.playing });
+        return pipe;
+      } catch (e) {
+        setText('lm-pipeline-reason', 'regen failed');
+        return null;
+      }
+    }
+
     async function refresh() {
       try {
         var res = await fetch('/api/landing/monitor', { headers: { Accept: 'application/json' } });
@@ -685,9 +952,28 @@
         var data = await res.json();
         if (!data || !data.success) throw new Error('monitor payload');
         var light = paint(data) || {};
-        if (show && !reel.playing) show.setMode(light.id || 'pulse');
+        if (show && !reel.playing && !pipeline.playing) show.setMode(light.id || 'pulse');
         if (data.bpm) music.bpm = data.bpm;
         reel.setScenes(data.reel || data.actions || []);
+
+        var fp = (data.pipeline && data.pipeline.fingerprint) || null;
+        var statsChanged = fp && fp !== lastSatsFp;
+        if (statsChanged) {
+          lastSatsFp = fp;
+          flashStat('lm-stat-network-sats');
+          flashStat('lm-stat-trade-sats');
+        }
+        // Always pull the live cut when fingerprint changes so the movie differs.
+        if (statsChanged || !(pipeline.scenes && pipeline.scenes.length)) {
+          var full = await fetchFullPipeline();
+          if (full && full.scenes) pipeline.loadCut(full, { restart: statsChanged && pipeline.playing });
+          else if (data.pipeline) pipeline.loadCut(data.pipeline, { restart: false });
+        } else if (data.pipeline) {
+          // Keep meta fresh without forcing a restart mid-scene unless fingerprint moved.
+          if (data.pipeline.regen_reason) {
+            setText('lm-pipeline-reason', String(data.pipeline.regen_reason).replace(/_/g, ' '));
+          }
+        }
         return;
       } catch (e) {
         try {
@@ -720,6 +1006,7 @@
             },
             lightshow: { id: 'pulse' },
             learning: { total_actions: 0, categories: {} },
+            sats: { totals: {} },
           });
           if (show) show.setMode('pulse');
         } catch (e2) {
@@ -798,6 +1085,7 @@
           reel.stop();
           return;
         }
+        if (pipeline.playing) pipeline.stop(true);
         if (lightBtn && lightBtn.getAttribute('aria-pressed') !== 'true') lightBtn.click();
         if (!sfx.enabled) {
           enableSfxUi().catch(function () {});
@@ -811,8 +1099,69 @@
       });
     }
 
+    if (pipePlayBtn) {
+      pipePlayBtn.addEventListener('click', function () {
+        if (pipeline.playing) {
+          pipeline.stop();
+          return;
+        }
+        if (reel.playing) reel.stop();
+        if (lightBtn && lightBtn.getAttribute('aria-pressed') !== 'true') lightBtn.click();
+        if (!sfx.enabled) enableSfxUi().catch(function () {});
+        if (!pipeline.scenes.length) {
+          regeneratePipeline(true).then(function () {
+            pipeline.start();
+          });
+        } else {
+          pipeline.start();
+        }
+      });
+    }
+    if (pipeRegenBtn) {
+      pipeRegenBtn.addEventListener('click', function () {
+        if (!sfx.enabled) enableSfxUi().catch(function () {});
+        regeneratePipeline(true);
+      });
+    }
+
+    document.querySelectorAll('.lm-stat-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var focus = btn.getAttribute('data-sats-focus') || 'combined';
+        pipeline.setFocus(focus);
+        if (!sfx.enabled) enableSfxUi().catch(function () {});
+        if (focus === 'combined') {
+          regeneratePipeline(true);
+          return;
+        }
+        // Re-order current cut around the chosen sats lens; still a live, unsaved movie.
+        if (pipeline.scenes.length) {
+          pipeline.loadCut(
+            {
+              scenes: pipeline.scenes,
+              duration_ms: pipeline.duration,
+              fingerprint: pipeline.fingerprint + ':' + focus,
+              cut_id: pipeline.cutId,
+              generator: 'interactive_' + focus,
+              regen_reason: 'stats_focus_' + focus,
+            },
+            { restart: pipeline.playing }
+          );
+          sfx.playAction({
+            category: focus === 'trade' ? 'profit' : 'wallet',
+            fx: { sound: focus === 'trade' ? 'chime_cash' : 'coin_sparkle' },
+          });
+        } else {
+          regeneratePipeline(false);
+        }
+      });
+    });
+
     refresh();
     setInterval(refresh, REFRESH_MS);
+    // Soft 12-minute wall-clock recount even if sats are quiet.
+    setInterval(function () {
+      regeneratePipeline(false);
+    }, 12 * 60 * 1000);
     if (!prefersReducedMotion() && lightBtn) {
       lightBtn.click();
     }

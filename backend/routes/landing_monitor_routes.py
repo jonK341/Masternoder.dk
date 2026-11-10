@@ -100,3 +100,27 @@ def landing_monitor_played():
     if not isinstance(ids, list):
         ids = []
     return jsonify(mark_played(ids))
+
+
+@landing_monitor_bp.route("/api/landing/monitor/sats", methods=["GET"])
+def landing_monitor_sats():
+    from backend.services.landing_monitor_pipeline_service import collect_sats_snapshot
+
+    return jsonify(collect_sats_snapshot())
+
+
+@landing_monitor_bp.route("/api/landing/monitor/pipeline", methods=["GET", "POST"])
+def landing_monitor_pipeline():
+    from backend.services.landing_monitor_pipeline_service import build_pipeline, get_pipeline
+
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        use_llm = str(body.get("use_llm", "1")).lower() not in ("0", "false", "no")
+        # Always a fresh cut on POST — never append to a saved history.
+        return jsonify(build_pipeline(force=True, use_llm=use_llm, reason="client_regen"))
+
+    force = str(request.args.get("refresh") or "").lower() in ("1", "true", "yes")
+    use_llm = str(request.args.get("ai") or "0").lower() in ("1", "true", "yes")
+    if force:
+        return jsonify(build_pipeline(force=True, use_llm=use_llm, reason="refresh"))
+    return jsonify(get_pipeline())

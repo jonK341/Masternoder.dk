@@ -15,10 +15,14 @@ os.environ.setdefault("LITE_APP", "1")
 
 def main() -> int:
     from backend.services.landing_monitor_actions_service import sync_from_activity
+    from backend.services.landing_monitor_pipeline_service import build_pipeline
     from backend.services.landing_monitor_service import refresh_snapshot
 
     sync = sync_from_activity(limit=40)
+    pipe = build_pipeline(force=False, use_llm=False)
     payload = refresh_snapshot(force=True)
+    sats = payload.get("sats") or {}
+    totals = sats.get("totals") or {}
     print(
         json.dumps(
             {
@@ -29,6 +33,10 @@ def main() -> int:
                 "lightshow": (payload.get("lightshow") or {}).get("id"),
                 "imported": sync.get("imported"),
                 "reel_count": payload.get("reel_count"),
+                "network_sats": totals.get("network_sats"),
+                "trade_sats": totals.get("trade_sats"),
+                "pipeline_ms": pipe.get("duration_ms"),
+                "pipeline_scenes": pipe.get("scene_count"),
             }
         )
     )

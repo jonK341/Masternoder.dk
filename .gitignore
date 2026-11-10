@@ -103,4 +103,5 @@ data/paypal_shop_orders.json
 data/landing_monitor_cache.json
 data/landing_monitor_actions.json
 data/landing_monitor_learning.json
+data/landing_monitor_pipeline.json
 instance/*.lock

@@ -114,6 +114,32 @@ def test_snapshot_includes_reel(tmp_path, monkeypatch):
         },
     )
     monkeypatch.setattr(acts, "sync_from_activity", lambda limit=30: {"imported": 0})
+    from backend.services import landing_monitor_pipeline_service as pipe
+
+    monkeypatch.setattr(
+        pipe,
+        "collect_sats_snapshot",
+        lambda: {
+            "success": True,
+            "totals": {"network_sats": 0, "trade_sats": 0, "combined_sats": 0},
+            "network": {"mn2": {}, "venue_btc": {"venues": {}}},
+            "daemon_trades": {"detail": {"recent_fills": [], "fill_count": 0, "realized_pnl_usd": 0}},
+        },
+    )
+    monkeypatch.setattr(
+        pipe,
+        "build_pipeline",
+        lambda **kwargs: {
+            "success": True,
+            "duration_ms": 720000,
+            "duration_label": "12 min",
+            "scene_count": 0,
+            "generator": "test",
+            "scenes": [],
+            "ai": {},
+            "updated_at": "Z",
+        },
+    )
 
     acts.record_action("video_clip_ready", title="Clip ready")
     payload = svc.refresh_snapshot(force=True)
