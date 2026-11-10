@@ -22,7 +22,8 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261110c">
+    <link rel="stylesheet" href="/static/css/starmap25-front-monitor.css?v=20261110c">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -173,16 +174,41 @@
 
         <section class="fp-starmap" aria-labelledby="fp-starmap-title">
             <div class="fp-starmap-head">
-                <h2 id="fp-starmap-title">Star Map 4D</h2>
-                <p>Fjerde dimension er <strong>tid (w)</strong>: stereografisk projektion fra ℝ⁴ — samme data som Star Map 25.</p>
+                <h2 id="fp-starmap-title">Star Map 25 monitor</h2>
+                <p>Profit daemon Jon and the live stream are on this monitor.</p>
             </div>
-            <div class="fp-starmap-controls">
-                <label for="fp-starmap-w">Tidsled <em>w</em>
-                    <input type="range" id="fp-starmap-w" min="0" max="100" value="42" aria-valuetext="tid">
-                </label>
-                <a class="fp-starmap-open" href="/starmap25/">Åbn Star Map 25 monitor →</a>
+            <div class="sm25-monitor" data-starmap-monitor>
+                <div class="sm25-monitor-grid" data-monitor-grid aria-label="25 systems"></div>
+                <p class="sm25-monitor-line" data-monitor-line>Loading the 25 systems…</p>
+                <div class="sm25-monitor-stage">
+                    <div class="sm25-monitor-map">
+                        <div class="fp-starmap-controls">
+                            <label for="fp-starmap-w">Tidsled <em>w</em>
+                                <input type="range" id="fp-starmap-w" min="0" max="100" value="42" aria-valuetext="tid">
+                            </label>
+                            <a class="fp-starmap-open" href="/starmap25/">Open the full monitor →</a>
+                        </div>
+                        <canvas id="fp-starmap4d" width="900" height="380" aria-label="Stjernekort 4D projektion"></canvas>
+                    </div>
+                    <article class="sm25-daemon" data-daemon-jon>
+                        <h3>Profit daemon Jon</h3>
+                        <p data-daemon-level>Loading Jon…</p>
+                        <p data-daemon-vision></p>
+                        <p data-daemon-move></p>
+                        <a href="/profit/">Daemon board</a>
+                    </article>
+                </div>
+                <div class="sm25-stream">
+                    <iframe
+                        data-live-stream
+                        title="Jon live stream"
+                        src="https://www.youtube.com/embed/-iSYSBSn_8E?rel=0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen></iframe>
+                    <p data-live-note>Loading the live stream…</p>
+                </div>
             </div>
-            <canvas id="fp-starmap4d" width="900" height="380" aria-label="Stjernekort 4D projektion"></canvas>
         </section>
 
         <div class="fp-split">
@@ -340,7 +366,8 @@
     <script src="/static/js/error-manager.js?v=20261010a" defer></script>
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
-    <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
+    <script src="/static/js/frontpage-home.js?v=20261110c" defer></script>
+    <script src="/static/js/starmap25-front-monitor.js?v=20261110c" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

@@ -51,6 +51,34 @@ def test_platform_news_announces_wallet_staking_pages():
     assert "staking" in item["summary"].lower()
 
 
+def test_front_page_starmap_monitor_shows_jon_and_the_live_stream():
+    index = (ROOT / "index.html").read_text(encoding="utf-8")
+    start = index.index('id="fp-starmap-title"')
+    section_start = index.rfind("<section", 0, start)
+    section_end = index.index("</section>", start)
+    block = index[section_start:section_end]
+
+    assert "Star Map 25 monitor" in block
+    assert 'data-starmap-monitor' in block
+    assert "Profit daemon Jon" in block
+    assert 'data-daemon-jon' in block
+    assert 'data-live-stream' in block
+    assert "https://www.youtube.com/embed/-iSYSBSn_8E" in block
+    assert block.index("data-daemon-jon") < block.index("data-live-stream")
+    assert block.index("data-starmap-monitor") < block.index("data-daemon-jon")
+
+
+def test_starmap25_monitor_tab_includes_jon_and_the_live_stream():
+    page = (ROOT / "starmap25" / "index.html").read_text(encoding="utf-8")
+    panel_start = page.index('id="monitor-panel"')
+    panel_end = page.index('id="buildup-panel"')
+    panel = page[panel_start:panel_end]
+
+    assert "Profit daemon Jon" in panel
+    assert 'data-live-stream' in panel
+    assert "https://www.youtube.com/embed/-iSYSBSn_8E" in panel
+
+
 def test_reader_launcher_stylesheet_exists():
     assert (ROOT / "static/css/calm-reader.css").is_file()
 
