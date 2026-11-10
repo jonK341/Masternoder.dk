@@ -95,6 +95,33 @@ def discord_status():
     }), 200
 
 
+@discord_bp.route("/api/discord/trade-stream-interest", methods=["GET"])
+def discord_trade_stream_interest_status():
+    """Public tally including Discord votes for the trade livestream."""
+    from backend.services.profit_trade_stream_service import interest_status, snapshot
+
+    if str(request.args.get("with_trades") or "").strip() in ("1", "true", "yes"):
+        return jsonify(snapshot(limit=20)), 200
+    return jsonify(interest_status()), 200
+
+
+@discord_bp.route("/api/discord/trade-stream-interest", methods=["POST"])
+def discord_trade_stream_interest_vote():
+    """Record a Discord-audience vote (button/webhook/chat link)."""
+    from backend.services.profit_trade_stream_service import register_interest
+
+    body = request.get_json(silent=True) or {}
+    discord_id = str(body.get("discord_id") or body.get("voter") or request.remote_addr or "anon")
+    user_id = str(body.get("user_id") or "").strip()
+    out = register_interest(
+        voter=discord_id,
+        audience="discord",
+        user_id=user_id,
+        discord_id=discord_id,
+    )
+    return jsonify(out), 200
+
+
 @discord_bp.route("/api/discord/post", methods=["POST"])
 def discord_post():
     if not _ops_ok():

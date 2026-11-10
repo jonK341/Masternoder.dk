@@ -1,0 +1,24 @@
+{
+  "compliance_note": "Rewards credit on-site only. Discord is the control surface.",
+  "slash_commands": [
+    {
+      "name": "streamvote",
+      "description": "Vote for a live YouTube trade stream (Discord audience)"
+    },
+    {
+      "name": "tradestream",
+      "description": "Alias: vote for live trade stream on YouTube"
+    },
+    {
+      "name": "link",
+      "description": "Link your Discord to your MasterNoder account",
+      "options": [
+        {"name": "code", "description": "Link code from casino Discord tab", "type": 3, "required": true}
+      ]
+    },
+    {"name": "earn", "description": "Claim or check Discord play-earn"},
+    {"name": "casino", "description": "Open casino lobby link"},
+    {"name": "mn2", "description": "MN2 hub status"},
+    {"name": "spider", "description": "Ask Spiderbot", "options": [{"name": "prompt", "description": "Question", "type": 3, "required": false}]}
+  ]
+}

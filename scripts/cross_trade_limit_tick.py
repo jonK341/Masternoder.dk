@@ -74,23 +74,52 @@ def main() -> int:
         strategies = {"actionable": 0, "execute": False, "error": str(exc)}
         strategy_logs = {}
         print(f"strategies failed: {exc}")
-    try:
-        maker = run_maker_quotes()
-        write_maker_log(maker)
-        print(format_maker_block(maker), end="")
-    except Exception as exc:
-        maker = {"execute": False, "error": str(exc)}
-        print(f"maker failed: {exc}")
-    ladders = {}
-    for venue in ladder_venues():
+    # When the all-profit daemon owns the resting book, skip maker/ladder here
+    # so cron does not double-tick the same orders (keeps search + cross path).
+    daemon_owns_book = str(os.environ.get("EXCHANGE_DAEMON_OWNS_BOOK", "")).strip().lower() in (
+        "1", "true", "yes", "on",
+    )
+    if not daemon_owns_book:
         try:
-            ladder = run_ladder(venue=venue)
-            write_ladder_log(ladder)
-            print(format_ladder_block(ladder), end="")
+            hb_path = os.path.join(ROOT, "logs", "daemon_all_profit_heartbeat.json")
+            if os.path.isfile(hb_path):
+                with open(hb_path, encoding="utf-8") as fh:
+                    hb = json.load(fh)
+                book_hb = ((hb.get("loops") or {}).get("book") or {})
+                ts = str(book_hb.get("updated_at") or "")
+                if ts:
+                    from datetime import datetime, timezone
+
+                    age = (
+                        datetime.now(timezone.utc)
+                        - datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    ).total_seconds()
+                    if age <= 180:
+                        daemon_owns_book = True
+        except Exception:
+            pass
+    if daemon_owns_book:
+        maker = {"execute": False, "skipped": "daemon_owns_book"}
+        ladders = {}
+        print("book skipped: owned by all_profit_daemons")
+    else:
+        try:
+            maker = run_maker_quotes()
+            write_maker_log(maker)
+            print(format_maker_block(maker), end="")
         except Exception as exc:
-            ladder = {"execute": False, "error": str(exc)}
-            print(f"ladder {venue} failed: {exc}")
-        ladders[venue] = ladder
+            maker = {"execute": False, "error": str(exc)}
+            print(f"maker failed: {exc}")
+        ladders = {}
+        for venue in ladder_venues():
+            try:
+                ladder = run_ladder(venue=venue)
+                write_ladder_log(ladder)
+                print(format_ladder_block(ladder), end="")
+            except Exception as exc:
+                ladder = {"execute": False, "error": str(exc)}
+                print(f"ladder {venue} failed: {exc}")
+            ladders[venue] = ladder
     result = run_once()
     result["arbitrage_live"] = bool(live_enabled())
     result["cross_trade_live"] = bool(cross_trade_live_enabled())

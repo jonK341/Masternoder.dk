@@ -114,6 +114,67 @@ def tick_triangular_paper(scfg: Dict[str, Any]) -> Dict[str, Any]:
     notional = float(scfg.get("notional_usd") or 150)
     agent_id = str(scfg.get("agent_id") or "arb_triangular_paper")
     symbols = sorted({s for loop in loops for s in loop})
+
+    # Live gate: when EXCHANGE_TRIANGULAR_LIVE=1 + SPORK OK, farm real spatial
+    # legs on the triangular symbol set (same live path as dual-venue).
+    try:
+        from backend.services.profit_daemon_ops_service import triangular_live_allowed
+
+        gate = triangular_live_allowed()
+    except Exception as exc:
+        gate = {"allowed": False, "reason": str(exc)[:120], "paper_only": True}
+    if gate.get("allowed") and arb.live_enabled():
+        scan = arb.scan_opportunities(symbols=symbols, venues=venues, notional_usd=notional)
+        opps = [
+            o for o in (scan.get("opportunities") or [])
+            if float(o.get("net_bps") or 0) >= min_edge
+        ]
+        if not opps:
+            return {
+                "success": True,
+                "strategy": "triangular_paper",
+                "executed": False,
+                "mode": "live",
+                "live_gate": gate,
+                "best": None,
+            }
+        best_opp = opps[0]
+        from backend.services.exchange_live_execution_service import (
+            book_agent_profit,
+            execute_spatial_arbitrage,
+        )
+
+        exec_res = execute_spatial_arbitrage(best_opp, agent_id=agent_id)
+        book_agent_profit(agent_id, best_opp, exec_res)
+        try:
+            from backend.services.profit_trade_stream_service import append_trade
+
+            append_trade(
+                strategy="triangular",
+                message=(
+                    f"Triangular live {best_opp.get('symbol')} "
+                    f"{best_opp.get('net_bps')} bps mode={exec_res.get('mode')}"
+                ),
+                mode=str(exec_res.get("mode") or "live"),
+                delta_usd=float(best_opp.get("est_profit_usd") or 0),
+                extra={"agent": agent_id},
+            )
+        except Exception:
+            pass
+        return {
+            "success": True,
+            "strategy": "triangular_paper",
+            "executed": bool(exec_res.get("success")),
+            "mode": exec_res.get("mode"),
+            "live_gate": gate,
+            "best": best_opp,
+            "exec": {
+                "success": exec_res.get("success"),
+                "mode": exec_res.get("mode"),
+                "error": exec_res.get("error"),
+            },
+        }
+
     fetched = conn.fetch_prices(symbols, venues)
     prices_map = fetched.get("prices") or {}
     best: Optional[Dict[str, Any]] = None
@@ -129,11 +190,30 @@ def tick_triangular_paper(scfg: Dict[str, Any]) -> Dict[str, Any]:
             if best is None or edge > best["edge_bps"]:
                 best = row
     if not best or best["edge_bps"] < min_edge:
-        return {"success": True, "strategy": "triangular_paper", "executed": False, "best": best}
+        return {
+            "success": True,
+            "strategy": "triangular_paper",
+            "executed": False,
+            "best": best,
+            "live_gate": gate,
+            "mode": "paper",
+        }
     profit = notional * (best["edge_bps"] / 10000.0) * 0.5
-    action = {"strategy": "triangular_paper", "mode": "paper", "notional_usd": notional, **best, "est_profit_usd": round(profit, 4)}
+    action = {
+        "strategy": "triangular_paper",
+        "mode": "paper",
+        "notional_usd": notional,
+        **best,
+        "est_profit_usd": round(profit, 4),
+    }
     _book(agent_id, profit, action)
-    return {"success": True, "strategy": "triangular_paper", "executed": True, **action}
+    return {
+        "success": True,
+        "strategy": "triangular_paper",
+        "executed": True,
+        "live_gate": gate,
+        **action,
+    }
 
 
 def tick_spatial_special(scfg: Dict[str, Any], strategy_name: str) -> Dict[str, Any]:

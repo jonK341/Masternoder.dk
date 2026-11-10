@@ -75,6 +75,46 @@ def test_fast_arb_rescan_ready_when_above_threshold(ext_env, monkeypatch):
     assert state["threshold_bps"] == 12
 
 
+def test_triangular_live_uses_spatial_exec(ext_env, monkeypatch):
+    ext = ext_env
+    opp = _sample_opp(22.0)
+
+    monkeypatch.setattr(
+        "backend.services.profit_daemon_ops_service.triangular_live_allowed",
+        lambda: {"allowed": True, "spork_ok": True, "paper_only": False},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_arbitrage_service.live_enabled",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_arbitrage_service.scan_opportunities",
+        lambda **kw: {"opportunity_count": 1, "opportunities": [opp]},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.execute_spatial_arbitrage",
+        lambda best, agent_id="": {"success": True, "mode": "live"},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_live_execution_service.book_agent_profit",
+        lambda *a, **k: None,
+    )
+    monkeypatch.setattr(
+        "backend.services.profit_trade_stream_service.append_trade",
+        lambda **k: {"success": True},
+    )
+    res = ext.tick_triangular_paper({
+        "venues": ["binance", "nonkyc"],
+        "loops": [["BTC", "ETH", "SOL"]],
+        "min_edge_bps": 12,
+        "notional_usd": 50,
+        "agent_id": "t2",
+    })
+    assert res["executed"] is True
+    assert res["mode"] == "live"
+    assert res["live_gate"]["allowed"] is True
+
+
 def test_fast_arb_rescan_not_ready_below_threshold(ext_env, monkeypatch):
     ext = ext_env
     opp = _sample_opp(5.7)

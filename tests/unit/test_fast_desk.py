@@ -57,7 +57,29 @@ def test_interesting_stats_kpis(monkeypatch, tmp_path):
     assert stats["kpis"]["ladder_realized_usd"] == 0.5
     assert stats["kpis"]["maker_open"] == 2
     assert stats["gap"]["fee_blocked"] == 1
-    snap = desk.snapshot.__wrapped__ if False else None
     monkeypatch.setattr(desk, "_read_state", lambda: state)
+    monkeypatch.setattr(desk, "desk_live_status", lambda: ("live", True))
     out = desk.snapshot()
     assert "stats" in out and out["stats"]["kpis"]["ready"] == 1
+    assert out["mode"] == "live"
+    assert out["live_orders"] is True
+
+
+def test_desk_live_status_follows_arb_gate(monkeypatch):
+    from backend.services import fast_desk_service as desk
+
+    monkeypatch.setenv("EXCHANGE_ARBITRAGE_LIVE", "1")
+    monkeypatch.delenv("EXCHANGE_CROSS_TRADE_LIVE", raising=False)
+    monkeypatch.delenv("EXCHANGE_DAEMON_MODE", raising=False)
+    monkeypatch.setattr(desk, "_daemon_stats", lambda: {})
+    mode, live = desk.desk_live_status()
+    assert mode == "live"
+    assert live is True
+
+
+def test_summary_uses_live_wording():
+    text = summarize_tick(
+        [{"symbol": "SOL", "decision": "paper_candidate", "net_bps": 40, "executable_usd": 30}],
+        live=True,
+    )
+    assert text.startswith("Live fill ready for SOL.")

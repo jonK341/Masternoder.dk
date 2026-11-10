@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run every local profit daemon in one process (exchange + grid + stuck + casino + micro-chain).
+"""Run every local profit daemon in one process (exchange + grid + stuck + casino + micro-chain + book).
 
 Exchange tick (via exchange_master_daemon.run_once):
   - Cross-venue arbitrage (6+ paper agents + live Binance/NonKYC)
@@ -8,6 +8,9 @@ Exchange tick (via exchange_master_daemon.run_once):
   - Extended strategies (stablecoin peg, triangular, meme, defi, payments)
   - User marketplace agents, sales pool, mesh matcher, treasury liquidity
   - PayPal auto-sweep when profit pool is ready
+
+Book loop (daemon-owned; sets EXCHANGE_DAEMON_OWNS_BOOK=1):
+  - Maker quotes + multi-venue ladder (cron limit-tick becomes fallback)
 
 Casino tick (via casino_agent_daemon.run_once):
   - Autonomous casino agents (Nova, Luna, Sage, Ember, Iris)
@@ -41,12 +44,13 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "desk": 120},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "desk": 300},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "desk": 90},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "desk": 60},
+    # book = ladder + maker (daemon-owned resting strategies; cron becomes fallback).
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "desk": 120, "book": 45},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "desk": 300, "book": 60},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "desk": 90, "book": 30},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "desk": 60, "book": 45},
     # Host .env alias: max engines + PayPal sweep + faster order sender (withdraw plan).
-    "paypal": {"exchange": 30, "casino": 300, "fast": 20, "grid": 25, "stuck": 480, "micro": 90, "desk": 60},
+    "paypal": {"exchange": 30, "casino": 300, "fast": 20, "grid": 25, "stuck": 480, "micro": 90, "desk": 60, "book": 30},
 }
 
 _PROFILE_ALIASES = {"paypal": "max"}
@@ -61,6 +65,7 @@ _LIVE_PROFIT_MAX_INTERVALS = {
     "stuck": 480,
     "micro": 90,
     "desk": 60,
+    "book": 30,
 }
 
 
@@ -609,6 +614,87 @@ def _desk_once() -> Dict[str, Any]:
     return run_desk_maintenance_tick()
 
 
+def _book_once() -> Dict[str, Any]:
+    """Daemon-owned resting book: maker quotes + multi-venue ladder."""
+    from backend.services.exchange_ladder_service import run_ladder, write_ladder_log
+    from backend.services.exchange_maker_quote_service import run_maker_quotes, write_maker_log
+    from backend.services.exchange_registry_service import ladder_venues
+
+    # Claim ownership so cron limit-tick skips the same writers (no double-tick).
+    os.environ.setdefault("EXCHANGE_DAEMON_OWNS_BOOK", "1")
+    out: Dict[str, Any] = {"success": True, "owned_by": "all_profit_daemons"}
+    try:
+        maker = run_maker_quotes()
+        write_maker_log(maker)
+        out["maker"] = maker
+    except Exception as exc:
+        out["maker"] = {"success": False, "error": str(exc)[:180]}
+    ladders: Dict[str, Any] = {}
+    for venue in ladder_venues():
+        try:
+            ladder = run_ladder(venue=venue)
+            write_ladder_log(ladder)
+            ladders[venue] = ladder
+        except Exception as exc:
+            ladders[venue] = {"success": False, "error": str(exc)[:180], "venue": venue}
+    out["ladders"] = ladders
+    try:
+        from backend.services.profit_trade_stream_service import append_trade
+
+        mk = out.get("maker") or {}
+        if mk.get("execute") and not mk.get("error"):
+            append_trade(
+                strategy="maker",
+                message=f"Maker quotes open={mk.get('open') or len(mk.get('quotes') or [])} venue={mk.get('venue') or '?'}",
+                mode="live" if mk.get("execute") else "paper",
+                delta_usd=0.0,
+            )
+        for venue, row in ladders.items():
+            if not isinstance(row, dict) or row.get("error"):
+                continue
+            append_trade(
+                strategy="ladder",
+                message=(
+                    f"Ladder {venue} open={row.get('open')} "
+                    f"pnl=${float(row.get('realized_usd') or 0):.2f}"
+                ),
+                mode="live" if row.get("execute") else "paper",
+                delta_usd=float(row.get("realized_usd") or 0),
+                extra={"venue": venue},
+            )
+    except Exception:
+        pass
+    return out
+
+
+def _summarize_book(res: Dict[str, Any]) -> str:
+    mk = res.get("maker") or {}
+    mk_open = mk.get("open")
+    if mk_open is None:
+        quotes = mk.get("quotes") or mk.get("placed") or []
+        mk_open = len(quotes) if isinstance(quotes, list) else "?"
+    parts = [
+        f"maker_exec={bool(mk.get('execute'))}",
+        f"maker_open={mk_open}",
+    ]
+    if mk.get("error"):
+        parts.append(f"maker_err={str(mk.get('error'))[:40]}")
+    for venue, row in (res.get("ladders") or {}).items():
+        if not isinstance(row, dict):
+            continue
+        if row.get("error"):
+            parts.append(f"{venue}_err={str(row.get('error'))[:40]}")
+            continue
+        open_n = row.get("open")
+        if open_n is None:
+            orders = row.get("orders") or {}
+            open_n = len(orders) if isinstance(orders, dict) else "?"
+        parts.append(f"{venue}_open={open_n}")
+        if row.get("realized_usd") is not None:
+            parts.append(f"{venue}_pnl=${float(row.get('realized_usd') or 0):.2f}")
+    return " ".join(parts)
+
+
 def _desk_loop(interval: int, stop: threading.Event) -> None:
     print(f"[all-profit] desk maintenance loop interval={interval}s", flush=True)
     while not stop.is_set():
@@ -623,6 +709,20 @@ def _desk_loop(interval: int, stop: threading.Event) -> None:
         except Exception as exc:
             print(f"[all-profit] desk error: {exc}", flush=True)
         stop.wait(max(30, interval))
+
+
+def _book_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] book (ladder+maker) loop interval={interval}s", flush=True)
+    while not stop.is_set():
+        try:
+            res = _book_once()
+            summary = _summarize_book(res)
+            print(f"[all-profit] book {summary}", flush=True)
+            _write_heartbeat("book", summary)
+        except Exception as exc:
+            print(f"[all-profit] book error: {exc}", flush=True)
+            _write_heartbeat("book", f"error={exc}")
+        stop.wait(max(15, interval))
 
 
 def _casino_loop(interval: int, dry_run: bool, stop: threading.Event) -> None:
@@ -739,6 +839,7 @@ def main() -> int:
     parser.add_argument("--skip-stuck", action="store_true", help="Do not run stuck-inventory strategy")
     parser.add_argument("--skip-micro-chain", action="store_true", help="Do not run portal micro-chain loop")
     parser.add_argument("--skip-desk", action="store_true", help="Do not run desk dust/fill-model maintenance")
+    parser.add_argument("--skip-book", action="store_true", help="Do not run daemon-owned ladder+maker book loop")
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
@@ -764,6 +865,7 @@ def main() -> int:
     stuck_iv = int(os.environ.get("EXCHANGE_STUCK_INTERVAL") or 0) or iv.get("stuck") or 600
     micro_iv = int(os.environ.get("MN2_MICRO_CHAIN_INTERVAL") or 0) or iv.get("micro") or 120
     desk_iv = int(os.environ.get("EXCHANGE_DESK_INTERVAL") or 0) or iv.get("desk") or 120
+    book_iv = int(os.environ.get("EXCHANGE_BOOK_INTERVAL") or 0) or iv.get("book") or 45
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -785,6 +887,8 @@ def main() -> int:
                 out["micro_chain"] = _micro_chain_once()
             if not args.skip_desk:
                 out["desk"] = _desk_once()
+            if not args.skip_book:
+                out["book"] = _book_once()
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -811,6 +915,8 @@ def main() -> int:
                     f"fill_model={fm.get('status') or fm.get('reason') or fm.get('error') or '?'}",
                     flush=True,
                 )
+            if "book" in out:
+                print(f"[all-profit] book {_summarize_book(out['book'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -840,6 +946,8 @@ def main() -> int:
             print(f"  portal micro-chain (MN2) interval={micro_iv}s")
         if not args.skip_desk:
             print(f"  desk dust/fill-model interval={desk_iv}s")
+        if not args.skip_book:
+            print(f"  book ladder+maker interval={book_iv}s (daemon-owned)")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -868,6 +976,10 @@ def main() -> int:
         if not args.skip_desk:
             threads.append(threading.Thread(
                 target=_desk_loop, args=(desk_iv, stop), name="desk", daemon=True,
+            ))
+        if not args.skip_book:
+            threads.append(threading.Thread(
+                target=_book_loop, args=(book_iv, stop), name="book", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(
