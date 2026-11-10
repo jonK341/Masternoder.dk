@@ -2571,6 +2571,20 @@ def generate_rich_video_sync(
         pref = "heygen"
     use_auto = not pref or pref == "auto"
 
+    # ComfyUI / Comfy Cloud film canvas. Runs only when the job asks for it.
+    if pref in ("canvas", "comfy", "comfyui"):
+        try:
+            from backend.services.film_canvas_service import (
+                is_available as canvas_ok,
+                generate_segment_clips as canvas_clips,
+            )
+            if canvas_ok():
+                if on_progress:
+                    on_progress(3, "Generating film canvas clip...")
+                segments = canvas_clips(segments, max_clips=1, timeout_per_clip=180)
+        except Exception:
+            pass
+
     # Pre-generate AI video clips if ModelsLab is available
     if use_auto:
         try:
