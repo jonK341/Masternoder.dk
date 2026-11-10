@@ -214,7 +214,8 @@ build_linux_qt() {
   else
     ./autogen.sh
     CONFIGURE_FLAGS=(--with-gui --disable-tests --disable-bench --with-unsupported-ssl)
-    # Prefer distro protobuf over a stale /usr/local protoc 3.0 + mismatched headers.
+    # Prefer distro protobuf over a stale /usr/local protoc + mismatched headers.
+    # gcc searches /usr/local/include before /usr/include, so shadow local google/ headers.
     export PATH="/usr/bin:${PATH}"
     if [[ -z "${PROTOBUF_CFLAGS:-}" ]] && [[ -d /usr/include/google/protobuf ]]; then
       export PROTOBUF_CFLAGS="-I/usr/include"
@@ -222,13 +223,30 @@ build_linux_qt() {
     if [[ -z "${PROTOBUF_LIBS:-}" ]] && { [[ -e /usr/lib/x86_64-linux-gnu/libprotobuf.so ]] || [[ -e /usr/lib/libprotobuf.so ]]; }; then
       export PROTOBUF_LIBS="-lprotobuf"
     fi
+    export CPPFLAGS="${CPPFLAGS:-} -I/usr/include"
+    export CXXFLAGS="${CXXFLAGS:-} -I/usr/include"
     # Force regeneration against the selected protoc/headers.
     rm -f src/qt/paymentrequest.pb.cc src/qt/paymentrequest.pb.h
+  fi
+
+  GOOGLE_HDR_BAK=""
+  restore_google_hdrs() {
+    if [[ -n "${GOOGLE_HDR_BAK}" ]] && [[ -d "${GOOGLE_HDR_BAK}" ]] && [[ ! -e /usr/local/include/google ]]; then
+      mv "${GOOGLE_HDR_BAK}" /usr/local/include/google || true
+    fi
+  }
+  trap restore_google_hdrs EXIT
+  if [[ "${USE_DEPENDS}" == "0" ]] && [[ -d /usr/local/include/google/protobuf ]]; then
+    GOOGLE_HDR_BAK="/usr/local/include/google.mn2-qt-bak.$$"
+    mv /usr/local/include/google "${GOOGLE_HDR_BAK}"
+    echo "Shadowed /usr/local/include/google for distro protobuf"
   fi
 
   ./configure "${CONFIGURE_FLAGS[@]}"
   make -j"${JOBS}" src/qt/masternoder2-qt
   strip -s src/qt/masternoder2-qt 2>/dev/null || true
+  restore_google_hdrs
+  trap - EXIT
 
   DIST="${BUILD_ROOT}/dist"
   PKG="${DIST}/MasterNoder2-qt-linux"
