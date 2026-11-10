@@ -31,6 +31,8 @@ MIN_ORDER_USD = 5.0
 def _default_config() -> Dict[str, Any]:
     return {
         "execute": False,
+        "venue": "nonkyc",
+        "quote": "USDT",
         "symbols": ["ALGO", "XRP"],
         "sides": ["sell"],
         "clip_usd": 25.0,
@@ -46,6 +48,18 @@ def load_config() -> Dict[str, Any]:
     raw = ex._read_json(_CFG_PATH, None)
     if isinstance(raw, dict):
         cfg.update({k: v for k, v in raw.items() if v is not None})
+    try:
+        from backend.services.exchange_registry_service import primary_maker_venue
+        primary = primary_maker_venue()
+        cfg.setdefault("venue", primary["id"])
+        cfg.setdefault("quote", primary["quote"])
+        if not raw or not raw.get("venue"):
+            cfg["venue"] = primary["id"]
+            cfg["quote"] = primary["quote"]
+    except Exception:
+        pass
+    cfg["venue"] = str(cfg.get("venue") or "nonkyc").lower()
+    cfg["quote"] = str(cfg.get("quote") or "USDT").upper()
     cfg["execute"] = bool(cfg.get("execute"))
     cfg["symbols"] = [str(s).upper() for s in (cfg.get("symbols") or []) if str(s).strip()]
     cfg["sides"] = [s for s in (str(x).lower() for x in (cfg.get("sides") or [])) if s in ("buy", "sell")]
@@ -95,38 +109,48 @@ def _order_id(row: Dict[str, Any]) -> str:
     return str(row.get("id") or row.get("_id") or row.get("orderId") or "")
 
 
+def _maker_venue_quote() -> tuple[str, str]:
+    cfg = load_config()
+    return str(cfg.get("venue") or "nonkyc"), str(cfg.get("quote") or "USDT")
+
+
 def _default_status(symbol: str, coid: str) -> Dict[str, Any]:
-    # NonKYC's create response id differs from its listing id, so orders are matched on userProvidedId.
+    # NonKYC-style venues match on userProvidedId after create.
+    venue, quote = _maker_venue_quote()
+    pair = f"{symbol}_{quote}" if venue in ("nonkyc", "xeggex") else f"{symbol}{quote}"
     for status in ("filled", "cancelled"):
         res = venue_api_request(
-            "nonkyc", "open_orders", {"symbol": f"{symbol}_USDT", "status": status, "limit": 50}, dry_run=False,
+            venue, "open_orders", {"symbol": pair, "status": status, "limit": 50}, dry_run=False,
         )
         for row in _open_order_rows(res.get("body")):
-            if str(row.get("userProvidedId") or "") == coid:
+            if str(row.get("userProvidedId") or row.get("clientOrderId") or "") == coid:
                 return row
     return {}
 
 
 def _default_open_ids(symbol: str) -> Optional[Dict[str, str]]:
-    res = get_open_orders("nonkyc", symbol, dry_run=False, quote="USDT")
+    venue, quote = _maker_venue_quote()
+    res = get_open_orders(venue, symbol, dry_run=False, quote=quote)
     if not res.get("success") or res.get("simulated"):
         return None
     return {
-        str(row.get("userProvidedId") or ""): _order_id(row)
+        str(row.get("userProvidedId") or row.get("clientOrderId") or ""): _order_id(row)
         for row in _open_order_rows(res.get("body"))
-        if row.get("userProvidedId")
+        if row.get("userProvidedId") or row.get("clientOrderId")
     }
 
 
 def _default_place(symbol: str, side: str, qty: float, price: float, coid: str) -> Dict[str, Any]:
+    venue, quote = _maker_venue_quote()
     return place_limit_order(
-        "nonkyc", symbol, side, qty, price,
-        dry_run=False, quote="USDT", client_order_id=coid, time_in_force="GTC",
+        venue, symbol, side, qty, price,
+        dry_run=False, quote=quote, client_order_id=coid, time_in_force="GTC",
     )
 
 
 def _default_cancel(symbol: str, order_id: str) -> Dict[str, Any]:
-    return cancel_order("nonkyc", symbol, order_id, dry_run=False, quote="USDT")
+    venue, quote = _maker_venue_quote()
+    return cancel_order(venue, symbol, order_id, dry_run=False, quote=quote)
 
 
 def _accepted(res: Dict[str, Any]) -> bool:
@@ -176,8 +200,10 @@ def run_maker_quotes(
     now = (clock or time.time)()
     spath = state_path(path)
     state = load_state(spath)
+    venue = str(cfg.get("venue") or "nonkyc")
+    report["venue"] = venue
     if balances is None:
-        balances = parse_spot_balances("nonkyc", dry_run=False, force_refresh=True)
+        balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
 
     for symbol in cfg["symbols"]:

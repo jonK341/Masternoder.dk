@@ -126,27 +126,9 @@ def main(argv: list[str] | None = None) -> int:
         if not encryption_available():
             print("ERROR: live mode requires EXCHANGE_VAULT_KEY (run --wizard). Refusing to start.")
             return 3
-        # Prefer vault-backed secrets for every registered exchange
         try:
-            from backend.services.exchange_registry_service import list_exchanges
-            from backend.services.exchange_secrets_vault_service import get_secret
-            env_names = []
-            for row in list_exchanges():
-                creds = row.get("credentials_env") or {}
-                for key in ("api_key", "api_secret", "api_passphrase"):
-                    name = creds.get(key)
-                    if name:
-                        env_names.append(str(name))
-            if not env_names:
-                env_names = [
-                    "BINANCE_API_KEY", "BINANCE_API_SECRET",
-                    "NONKYC_API_KEY", "NONKYC_API_SECRET",
-                ]
-            for env_name in env_names:
-                if not os.environ.get(env_name):
-                    got = get_secret(env_name)
-                    if got:
-                        os.environ[env_name] = str(got)
+            from backend.services.exchange_registry_service import hydrate_live_secrets_from_vault
+            hydrate_live_secrets_from_vault()
         except Exception:
             pass
 

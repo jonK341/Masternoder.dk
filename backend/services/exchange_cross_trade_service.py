@@ -86,7 +86,22 @@ def load_config() -> Dict[str, Any]:
     base["max_trades_per_run"] = int(_clampf(base.get("max_trades_per_run"), 1, 50, 3))
     base["daily_loss_cap_usd"] = _clampf(base.get("daily_loss_cap_usd"), 0.0, 1e6, 10.0)
     if not isinstance(base.get("venues"), list) or not base["venues"]:
-        base["venues"] = ["binance", "nonkyc", "xeggex"]
+        try:
+            from backend.services.exchange_registry_service import cross_trade_venues
+            base["venues"] = cross_trade_venues()[:8]
+        except Exception:
+            base["venues"] = ["binance", "nonkyc", "xeggex"]
+    else:
+        # Keep configured venues that are still enabled in the registry (when present).
+        try:
+            from backend.services.exchange_registry_service import list_exchanges
+            enabled = {str(r["id"]).lower() for r in list_exchanges(enabled_only=True)}
+            if enabled:
+                filtered = [str(v).lower() for v in base["venues"] if str(v).lower() in enabled]
+                if filtered:
+                    base["venues"] = filtered
+        except Exception:
+            pass
     base["fast_withdraw_only"] = bool(base.get("fast_withdraw_only"))
     symbols = base.get("symbols")
     if not isinstance(symbols, list) or not symbols:

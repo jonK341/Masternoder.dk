@@ -1,8 +1,8 @@
 {
   "name": "The Profit Daemon Jon",
   "slug": "the-profit-daemon-jon",
-  "version": "1.0.0",
-  "description": "Downloadable profit daemon for MasterNoder — ladders, arb, grid, metrics, sales reports.",
+  "version": "1.1.0",
+  "description": "Downloadable profit daemon for MasterNoder — multi-exchange registry, local control, ladders, arb, grid, metrics, sales reports.",
   "entrypoint": "run.py",
   "brand": "The Profit Daemon Jon",
   "author": "jonK341",

@@ -107,6 +107,54 @@ def ladder_quotes() -> Dict[str, str]:
     return quotes
 
 
+def cross_trade_venues() -> List[str]:
+    """Enabled venues suitable for cross-trade / arb scanning."""
+    out: List[str] = []
+    for row in list_exchanges(enabled_only=True):
+        vid = str(row.get("id") or "").lower()
+        if not vid or vid == "internal":
+            continue
+        # Prefer live-capable or ladder venues; still include public-enabled ones for scan.
+        out.append(vid)
+    return out or ["binance", "nonkyc", "xeggex"]
+
+
+def primary_maker_venue() -> Dict[str, str]:
+    """Default resting-maker venue (prefer non-Binance ladder venue)."""
+    rows = list_exchanges(enabled_only=True)
+    for row in rows:
+        if row.get("ladder") and str(row.get("id") or "").lower() != "binance":
+            return {
+                "id": str(row["id"]).lower(),
+                "quote": str(row.get("quote") or "USDT").upper(),
+            }
+    for row in rows:
+        if row.get("live_trading") and str(row.get("id") or "").lower() != "binance":
+            return {
+                "id": str(row["id"]).lower(),
+                "quote": str(row.get("quote") or "USDT").upper(),
+            }
+    return {"id": "nonkyc", "quote": "USDT"}
+
+
+def hydrate_live_secrets_from_vault() -> Dict[str, Any]:
+    """Copy vault secrets into process env for every registered exchange."""
+    from backend.services.exchange_secrets_vault_service import get_secret
+
+    loaded: List[str] = []
+    for row in list_exchanges():
+        creds = row.get("credentials_env") or {}
+        for key in ("api_key", "api_secret", "api_passphrase"):
+            name = str(creds.get(key) or "").strip()
+            if not name or os.environ.get(name):
+                continue
+            got = get_secret(name)
+            if got:
+                os.environ[name] = str(got)
+                loaded.append(name)
+    return {"success": True, "loaded": loaded}
+
+
 def known_parsers() -> List[str]:
     return sorted(_KNOWN_PARSERS)
 

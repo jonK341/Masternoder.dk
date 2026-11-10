@@ -378,10 +378,19 @@ def start_background(*, open_browser: bool = True) -> Dict[str, Any]:
         host, port = _SERVER.server_address[0], _SERVER.server_address[1]
         return {"success": True, "already_running": True, "url": f"http://{host}:{port}/"}
     host, port = _control_bind()
-    try:
-        server = ThreadingHTTPServer((host, port), Handler)
-    except OSError as exc:
-        return {"success": False, "error": str(exc), "host": host, "port": port}
+    server = None
+    last_err: Optional[BaseException] = None
+    for candidate in (port, port + 1, port + 2, port + 3, 0):
+        try:
+            server = ThreadingHTTPServer((host, int(candidate)), Handler)
+            port = server.server_address[1]
+            break
+        except OSError as exc:
+            last_err = exc
+            server = None
+            continue
+    if server is None:
+        return {"success": False, "error": str(last_err), "host": host, "port": port}
     _SERVER = server
 
     def _serve() -> None:

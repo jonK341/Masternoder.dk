@@ -55,8 +55,6 @@ TAG = "ld-"
 VENUES = ladder_venues()
 QUOTES = ladder_quotes()
 _CFG_PATH = os.path.join(ex._BASE, "data", "exchange_ladder_config.json")
-_MARKET_URL = "https://api.nonkyc.io/api/v2/market/getbysymbol/{symbol}_USDT"
-_BINANCE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo?symbol={symbol}USDC"
 LOST_AFTER_SEC = 600.0
 
 _FLOAT_KEYS = ("order_usd", "min_order_usd", "first_bps", "step_bps", "exit_bps", "fee_bps",
@@ -90,19 +88,20 @@ def _default_config() -> Dict[str, Any]:
 
 
 def load_config(venue: str = "nonkyc") -> Dict[str, Any]:
-    """Top-level keys configure NonKYC; another venue overlays its own block and is off unless it says so."""
+    """Top-level keys configure the primary venue; other venues overlay their own block."""
     cfg = _default_config()
     raw = ex._read_json(_CFG_PATH, None)
     raw = raw if isinstance(raw, dict) else {}
-    venue_ids = set(ladder_venues()) | set(VENUES)
-    cfg.update({k: v for k, v in raw.items() if v is not None and k not in venue_ids})
-    if venue != "nonkyc":
+    primary = str(raw.get("primary_venue") or "nonkyc").lower()
+    venue_ids = set(ladder_venues()) | set(VENUES) | {primary}
+    cfg.update({k: v for k, v in raw.items() if v is not None and k not in venue_ids and k != "primary_venue"})
+    if venue != primary:
         block = raw.get(venue) if isinstance(raw.get(venue), dict) else {}
         cfg["execute"] = False
         cfg.update({k: v for k, v in block.items() if v is not None})
     cfg["venue"] = venue
     quotes = {**QUOTES, **ladder_quotes()}
-    cfg["quote"] = quotes.get(venue) or ("USDC" if venue == "binance" else "USDT")
+    cfg["quote"] = quotes.get(venue) or _venue_quote(venue)
     cfg["execute"] = bool(cfg.get("execute"))
     cfg["symbols"] = [str(s).upper() for s in (cfg.get("symbols") or []) if str(s).strip()]
     cfg["sides"] = [s for s in (str(x).lower() for x in (cfg.get("sides") or [])) if s in ("buy", "sell")]
@@ -148,38 +147,32 @@ def lowest_own_sell(symbol: str, path: Optional[str] = None) -> Optional[float]:
     return min(prices) if prices else None
 
 
-def _default_market(symbol: str) -> Optional[Dict[str, float]]:
-    body = _get_json(_MARKET_URL.format(symbol=symbol))
-    if not isinstance(body, dict) or not body.get("isActive", True):
-        return None
-    return {
-        "price_decimals": int(body.get("priceDecimals") or 6),
-        "qty_decimals": int(body.get("quantityDecimals") or 2),
-        "min_qty": float(body.get("minimumQuantity") or 0),
-        "min_quote": float(body.get("minQuote") or 1),
-    }
-
-
-def _default_closed(symbol: str, _coids: List[str]) -> Dict[str, Dict[str, Any]]:
-    out: Dict[str, Dict[str, Any]] = {}
-    for status in ("filled", "cancelled"):
-        res = venue_api_request(
-            "nonkyc", "open_orders", {"symbol": f"{symbol}_USDT", "status": status, "limit": 100}, dry_run=False,
-        )
-        for row in _open_order_rows(res.get("body")):
-            uid = str(row.get("userProvidedId") or "")
-            if uid.startswith(TAG):
-                out.setdefault(uid, row)
-    return out
-
-
 def _decimals(step: str) -> int:
     text = str(step).rstrip("0")
     return len(text.split(".", 1)[1]) if "." in text else 0
 
 
+def _venue_quote(venue: str) -> str:
+    return ladder_quotes().get(venue) or QUOTES.get(venue) or ("USDC" if venue == "binance" else "USDT")
+
+
+def _pair_symbol(venue: str, symbol: str, quote: str) -> str:
+    if venue == "binance":
+        return f"{symbol}{quote}"
+    if venue in ("nonkyc", "xeggex"):
+        return f"{symbol}_{quote}"
+    # Prefer connector pair template when present.
+    try:
+        from backend.services.external_exchange_connector_service import _venue_map, build_pair
+        row = _venue_map().get(venue) or {"quote": quote, "pair_template": "{base}{quote}"}
+        return build_pair(row, symbol)
+    except Exception:
+        return f"{symbol}{quote}"
+
+
 def _binance_market(symbol: str) -> Optional[Dict[str, float]]:
-    body = _get_json(_BINANCE_INFO_URL.format(symbol=symbol))
+    quote = _venue_quote("binance")
+    body = _get_json(f"https://api.binance.com/api/v3/exchangeInfo?symbol={symbol}{quote}")
     try:
         row = body["symbols"][0]
     except (KeyError, IndexError, TypeError):
@@ -196,42 +189,127 @@ def _binance_market(symbol: str) -> Optional[Dict[str, float]]:
     }
 
 
-def _binance_open_ids(symbol: str) -> Optional[Dict[str, str]]:
-    res = get_open_orders("binance", symbol, dry_run=False, quote="USDC")
-    if not res.get("success") or res.get("simulated") or not isinstance(res.get("body"), list):
+def _nonkyc_market(symbol: str) -> Optional[Dict[str, float]]:
+    quote = _venue_quote("nonkyc")
+    body = _get_json(f"https://api.nonkyc.io/api/v2/market/getbysymbol/{symbol}_{quote}")
+    if not isinstance(body, dict) or not body.get("isActive", True):
         return None
-    return {str(r.get("clientOrderId") or ""): str(r.get("orderId")) for r in res["body"] if r.get("clientOrderId")}
+    return {
+        "price_decimals": int(body.get("priceDecimals") or 6),
+        "qty_decimals": int(body.get("quantityDecimals") or 2),
+        "min_qty": float(body.get("minimumQuantity") or 0),
+        "min_quote": float(body.get("minQuote") or 1),
+    }
 
 
-def _binance_closed(symbol: str, coids: List[str]) -> Dict[str, Dict[str, Any]]:
-    out: Dict[str, Dict[str, Any]] = {}
-    for coid in coids:
-        res = venue_api_request(
-            "binance", "order_status", {"symbol": f"{symbol}USDC", "origClientOrderId": coid}, dry_run=False,
-        )
-        body = res.get("body") if isinstance(res.get("body"), dict) else {}
-        if str(body.get("status") or "") in ("FILLED", "CANCELED", "EXPIRED", "REJECTED", "EXPIRED_IN_MATCH"):
-            out[coid] = {"id": body.get("orderId"), "executedQuantity": body.get("executedQty"), "status": body["status"]}
-    return out
-
-
-def _binance_place(symbol: str, side: str, qty: float, price: float, coid: str) -> Dict[str, Any]:
-    return place_limit_order(
-        "binance", symbol, side, qty, price,
-        dry_run=False, quote="USDC", client_order_id=coid, time_in_force="GTC",
-    )
-
-
-def _binance_cancel(symbol: str, order_id: str) -> Dict[str, Any]:
-    return cancel_order("binance", symbol, order_id, dry_run=False, quote="USDC")
+def _generic_market(symbol: str) -> Optional[Dict[str, float]]:
+    # Conservative defaults when the venue has no exchangeInfo helper.
+    return {"price_decimals": 6, "qty_decimals": 4, "min_qty": 0.0, "min_quote": 1.0}
 
 
 def _venue_defaults(venue: str) -> Dict[str, Callable[..., Any]]:
+    """Build open/place/cancel/market adapters from the exchange registry quote."""
+    quote = _venue_quote(venue)
     if venue == "binance":
-        return {"open_ids": _binance_open_ids, "closed": _binance_closed, "market": _binance_market,
-                "place": _binance_place, "cancel": _binance_cancel}
-    return {"open_ids": _default_open_ids, "closed": _default_closed, "market": _default_market,
-            "place": _default_place, "cancel": _default_cancel}
+        market = _binance_market
+    elif venue in ("nonkyc", "xeggex"):
+        market = _nonkyc_market if venue == "nonkyc" else _generic_market
+    else:
+        market = _generic_market
+
+    def open_ids(symbol: str) -> Optional[Dict[str, str]]:
+        res = get_open_orders(venue, symbol, dry_run=False, quote=quote)
+        if not res.get("success") or res.get("simulated"):
+            return None
+        body = res.get("body")
+        if venue == "binance" and isinstance(body, list):
+            return {
+                str(r.get("clientOrderId") or ""): str(r.get("orderId"))
+                for r in body if r.get("clientOrderId")
+            }
+        # NonKYC / Xeggex-style userProvidedId rows (and generic open_ids helper).
+        if venue in ("nonkyc", "xeggex"):
+            return _default_open_ids(symbol) if venue == "nonkyc" else {
+                str(row.get("userProvidedId") or row.get("clientOrderId") or ""): str(
+                    row.get("id") or row.get("orderId") or ""
+                )
+                for row in _open_order_rows(body)
+                if row.get("userProvidedId") or row.get("clientOrderId")
+            }
+        rows = body if isinstance(body, list) else _open_order_rows(body)
+        out: Dict[str, str] = {}
+        for row in rows or []:
+            coid = str(row.get("clientOrderId") or row.get("userProvidedId") or "")
+            oid = str(row.get("orderId") or row.get("id") or "")
+            if coid and oid:
+                out[coid] = oid
+        return out or None
+
+    def closed(symbol: str, coids: List[str]) -> Dict[str, Dict[str, Any]]:
+        out: Dict[str, Dict[str, Any]] = {}
+        if venue == "binance":
+            pair = _pair_symbol(venue, symbol, quote)
+            for coid in coids:
+                res = venue_api_request(
+                    "binance", "order_status",
+                    {"symbol": pair, "origClientOrderId": coid}, dry_run=False,
+                )
+                body = res.get("body") if isinstance(res.get("body"), dict) else {}
+                if str(body.get("status") or "") in (
+                    "FILLED", "CANCELED", "EXPIRED", "REJECTED", "EXPIRED_IN_MATCH",
+                ):
+                    out[coid] = {
+                        "id": body.get("orderId"),
+                        "executedQuantity": body.get("executedQty"),
+                        "status": body["status"],
+                    }
+            return out
+        if venue == "nonkyc":
+            return _nonkyc_closed(symbol)
+        # Best-effort: query order_status when the venue exposes it.
+        pair = _pair_symbol(venue, symbol, quote)
+        for coid in coids:
+            res = venue_api_request(
+                venue, "order_status",
+                {"symbol": pair, "origClientOrderId": coid, "clientOrderId": coid},
+                dry_run=False,
+            )
+            body = res.get("body") if isinstance(res.get("body"), dict) else {}
+            status = str(body.get("status") or "").lower()
+            if status in ("filled", "cancelled", "canceled", "expired", "rejected"):
+                out[coid] = body
+        return out
+
+    def place(symbol: str, side: str, qty: float, price: float, coid: str) -> Dict[str, Any]:
+        if venue == "nonkyc":
+            return _default_place(symbol, side, qty, price, coid)
+        return place_limit_order(
+            venue, symbol, side, qty, price,
+            dry_run=False, quote=quote, client_order_id=coid, time_in_force="GTC",
+        )
+
+    def cancel(symbol: str, order_id: str) -> Dict[str, Any]:
+        if venue == "nonkyc":
+            return _default_cancel(symbol, order_id)
+        return cancel_order(venue, symbol, order_id, dry_run=False, quote=quote)
+
+    return {"open_ids": open_ids, "closed": closed, "market": market, "place": place, "cancel": cancel}
+
+
+def _nonkyc_closed(symbol: str) -> Dict[str, Dict[str, Any]]:
+    out: Dict[str, Dict[str, Any]] = {}
+    quote = _venue_quote("nonkyc")
+    for status in ("filled", "cancelled"):
+        res = venue_api_request(
+            "nonkyc", "open_orders",
+            {"symbol": f"{symbol}_{quote}", "status": status, "limit": 100},
+            dry_run=False,
+        )
+        for row in _open_order_rows(res.get("body")):
+            uid = str(row.get("userProvidedId") or "")
+            if uid.startswith(TAG):
+                out.setdefault(uid, row)
+    return out
 
 
 def round_price(price: float, side: str, decimals: int) -> float:

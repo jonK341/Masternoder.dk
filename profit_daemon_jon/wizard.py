@@ -7,6 +7,9 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 ENV_PATH = os.path.join(ROOT, ".env")
 EXAMPLE = os.path.join(ROOT, "profit_daemon_jon", ".env.example")
 
@@ -57,12 +60,34 @@ def main() -> int:
     set_kv("EXCHANGE_ARBITRAGE_LIVE", "1" if mode == "live" else "0")
     set_kv("EXCHANGE_LIVE_PROFIT_MAX", "1" if mode == "live" else "0")
 
-    if _yes("Configure Binance API key/secret?", default=False):
-        set_kv("BINANCE_API_KEY", _ask("BINANCE_API_KEY"))
-        set_kv("BINANCE_API_SECRET", getpass.getpass("BINANCE_API_SECRET: "))
-    if _yes("Configure NonKYC API key/secret?", default=False):
-        set_kv("NONKYC_API_KEY", _ask("NONKYC_API_KEY"))
-        set_kv("NONKYC_API_SECRET", getpass.getpass("NONKYC_API_SECRET: "))
+    # Offer credentials for every live-capable / ladder venue in the registry.
+    try:
+        from backend.services.exchange_registry_service import list_exchanges
+        candidates = [
+            r for r in list_exchanges()
+            if r.get("live_trading") or r.get("ladder")
+        ]
+    except Exception:
+        candidates = [
+            {"id": "binance", "name": "Binance", "credentials_env": {
+                "api_key": "BINANCE_API_KEY", "api_secret": "BINANCE_API_SECRET"}},
+            {"id": "nonkyc", "name": "NonKYC", "credentials_env": {
+                "api_key": "NONKYC_API_KEY", "api_secret": "NONKYC_API_SECRET"}},
+        ]
+
+    for row in candidates:
+        name = row.get("name") or row.get("id")
+        creds = row.get("credentials_env") or {}
+        key_env = creds.get("api_key")
+        secret_env = creds.get("api_secret")
+        if not key_env or not secret_env:
+            continue
+        if _yes(f"Configure {name} API key/secret?", default=False):
+            set_kv(str(key_env), _ask(str(key_env)))
+            set_kv(str(secret_env), getpass.getpass(f"{secret_env}: "))
+            pass_env = creds.get("api_passphrase")
+            if pass_env and _yes(f"Configure {name} passphrase?", default=False):
+                set_kv(str(pass_env), getpass.getpass(f"{pass_env}: "))
 
     if mode == "live":
         print("Live mode requires an encrypted vault key (Fernet).")
@@ -75,11 +100,13 @@ def main() -> int:
 
     set_kv("EXCHANGE_REDIS_URL", _ask("Redis URL", "redis://127.0.0.1:6379/0"))
     set_kv("EXCHANGE_METRICS_PORT", _ask("Metrics port", "9108"))
+    set_kv("PROFIT_DAEMON_CONTROL_PORT", _ask("Local control port", "8787"))
 
     os.makedirs(ROOT, exist_ok=True)
     with open(ENV_PATH, "w", encoding="utf-8") as handle:
         handle.write("\n".join(lines).rstrip() + "\n")
     print(f"Wrote {ENV_PATH}")
+    print("Add more venues later via http://127.0.0.1:8787/ or data/exchanges_registry.json")
     print("Next: .venv/bin/python profit_daemon_jon/run.py --install-top25")
     print("      .venv/bin/python profit_daemon_jon/run.py --once --profile paper")
     return 0

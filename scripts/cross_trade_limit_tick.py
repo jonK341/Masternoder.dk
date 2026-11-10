@@ -29,11 +29,11 @@ from backend.services.exchange_cross_trade_service import (
 )
 from backend.services.exchange_fill_model_service import train_and_save
 from backend.services.exchange_ladder_service import (
-    VENUES as LADDER_VENUES,
     format_ladder_block,
     run_ladder,
     write_ladder_log,
 )
+from backend.services.exchange_registry_service import ladder_venues
 from backend.services.exchange_market_feed_service import feed_status
 from backend.services.exchange_metrics_service import observe_feed
 from backend.services.exchange_redis_bus import backend_name
@@ -82,7 +82,7 @@ def main() -> int:
         maker = {"execute": False, "error": str(exc)}
         print(f"maker failed: {exc}")
     ladders = {}
-    for venue in LADDER_VENUES:
+    for venue in ladder_venues():
         try:
             ladder = run_ladder(venue=venue)
             write_ladder_log(ladder)
