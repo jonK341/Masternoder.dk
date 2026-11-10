@@ -301,29 +301,34 @@ else:
     print("patched evutil.c winnt/iphlpapi block")
 PY
   chmod +x "${helper}"
-  if grep -q 'mn2-mingw-iphlpapi' "${mk}"; then
-    echo "=== libevent.mk already wires mn2-mingw-iphlpapi ==="
-  else
-    echo "=== Patching depends libevent.mk for mingw iphlpapi ==="
-    python3 - "${mk}" "${helper}" <<'PY'
+  # Do not put `#` comments inside preprocess_cmds — make eval treats them as
+  # makefile comments and breaks funcs.mk with "missing separator".
+  echo "=== Patching depends libevent.mk for mingw iphlpapi ==="
+  python3 - "${mk}" "${helper}" <<'PY'
 from pathlib import Path
+import re
 import sys
+
 path = Path(sys.argv[1])
 helper = sys.argv[2]
 text = path.read_text()
-old = """define $(package)_preprocess_cmds
+new_block = f"""define $(package)_preprocess_cmds
+  python3 {helper}
   ./autogen.sh
 endef"""
-new = f"""define $(package)_preprocess_cmds
-  python3 {helper}  # mn2-mingw-iphlpapi
-  ./autogen.sh
-endef"""
-if old not in text:
-    raise SystemExit(f"unexpected libevent.mk preprocess block in {path}")
-path.write_text(text.replace(old, new, 1))
+# Replace any existing preprocess block (stock or prior broken patch).
+text2, n = re.subn(
+    r"define \$\(package\)_preprocess_cmds\n.*?^endef",
+    new_block,
+    text,
+    count=1,
+    flags=re.M | re.S,
+)
+if n != 1:
+    raise SystemExit(f"could not rewrite preprocess block in {path}")
+path.write_text(text2)
 print(f"patched {path}")
 PY
-  fi
 
   # Clear failed libevent build so depends re-runs preprocess with the fix.
   rm -rf "${SRC_DIR}/depends/work/build/x86_64-w64-mingw32/libevent" \
