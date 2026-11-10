@@ -149,27 +149,35 @@ def filter_symbols_by_ppp_edge(cfg: Dict[str, Any], *, min_hit_rate: float = 15.
     return out
 
 
+def quote_operating_target(cfg: Dict[str, Any]) -> float:
+    """Free quote needed before the desk resumes normal buy entries (~3 rungs)."""
+    order = max(float(cfg.get("order_usd") or 1.0), 0.01)
+    return max(order * 3.0, float(cfg.get("min_order_usd") or order) * 3.0, 12.0)
+
+
 def apply_exit_first_sides(cfg: Dict[str, Any], *, free_quote: float) -> Dict[str, Any]:
     """When quote is thin, stop new buy entries so sells/exits can recycle capital.
 
     Live learning: NonKYC filled many buy entries while exits starved (empty USDT),
-    locking inventory. Sell-only mode until quote recovers.
+    locking inventory. Sell-only mode until quote recovers to ~3 rung target.
     """
     out = dict(cfg)
     order = max(float(out.get("order_usd") or 1.0), 0.01)
-    # Need ~1.5 orders of free quote before opening new buy entries.
-    thin = float(free_quote) < order * 1.5
+    target = quote_operating_target(out)
+    thin = float(free_quote) < target
     if thin and "buy" in list(out.get("sides") or []):
+        # Drop buys only — do not invent sell-only mode when the cfg was buy-only.
         sides = [s for s in (out.get("sides") or []) if s != "buy"]
-        out["sides"] = sides or ["sell"]
+        out["sides"] = sides
         out["_exit_first"] = {
             "active": True,
             "free_quote": free_quote,
             "order_usd": order,
+            "target_usd": target,
             "sides": out["sides"],
         }
     else:
-        out["_exit_first"] = {"active": False, "free_quote": free_quote}
+        out["_exit_first"] = {"active": False, "free_quote": free_quote, "target_usd": target}
     return out
 
 
@@ -190,7 +198,7 @@ def top_up_venue_quote(
     free_q = float(bal.get(q) or 0)
     if free_q >= min_quote_usd:
         return {"success": True, "skipped": True, "venue": vid, "quote": q, "free": free_q, "reason": "quote_ok"}
-    candidates = ["ALGO", "DOGE", "XRP", "ADA", "TRX", "SOL", "XLM"]
+    candidates = ["ALGO", "DOGE", "XRP", "ADA", "TRX", "SOL", "XLM", "BNB", "AVAX", "LINK"]
     sells: List[Dict[str, Any]] = []
     need = max(min_quote_usd - free_q, 1.0)
     for sym in candidates:
@@ -203,13 +211,13 @@ def top_up_venue_quote(
         bid = float(top.get("bid") or 0)
         if bid <= 0:
             continue
-        target_usd = min(12.0, need)
-        sell_qty = min(qty * 0.8, target_usd / bid)
+        target_usd = min(max(min_quote_usd, 12.0), need)
+        # Use most free inventory; Binance still needs ~$5 min notional.
+        sell_qty = min(qty * 0.95, target_usd / bid)
         if sell_qty * bid < 0.5:
             continue
-        # Binance min notional ~$5
         if vid == "binance" and sell_qty * bid < 5.0:
-            sell_qty = min(qty * 0.95, max(5.05, need) / bid)
+            sell_qty = min(qty * 0.99, max(5.05, need) / bid)
             if sell_qty * bid < 5.0:
                 continue
         price = round(bid * 0.997, 8)

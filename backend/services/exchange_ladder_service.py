@@ -28,6 +28,7 @@ from backend.services.exchange_fill_model_service import tune_ladder_cfg
 from backend.services.exchange_inventory_skew import skewed_entry_offset_bps, skew_factor
 from backend.services.exchange_ladder_strategy_improve import (
     enhance_ladder_cfg,
+    quote_operating_target,
     refresh_venue_fees,
     top_up_venue_quote,
 )
@@ -440,12 +441,7 @@ def run_ladder(
         if not injected_balances:
             refresh_venue_fees()
             if cfg.get("execute"):
-                # Target enough quote for ~3 ladder orders / pending exits.
-                topup_target = max(
-                    float(cfg.get("min_order_usd") or 3.0) * 3.0,
-                    float(cfg.get("order_usd") or 3.5) * 3.0,
-                    12.0,
-                )
+                topup_target = float(quote_operating_target(cfg))
                 report["quote_topup"] = top_up_venue_quote(
                     venue,
                     quote=str(cfg.get("quote") or quote),
@@ -622,6 +618,50 @@ def run_ladder(
                 break
             _cancel_entry(coid, o)
         return _fundable(symbol, side, qty, price)
+
+    def _release_quote_from_far_buys(target_usd: float) -> float:
+        """Cancel farthest buy entries (not exits) until free quote reaches target.
+
+        Live learning: exit-first stopped *new* buys but ~$40 stayed locked in resting
+        buy entries while free USDT/USDC starved top-ups and exits.
+        """
+        free = float(bal.get(quote) or 0.0)
+        if free >= target_usd or target_usd <= 0:
+            return free
+        candidates = [
+            (coid, o) for coid, o in orders.items()
+            if not o.get("cancelled")
+            and o.get("kind") == "entry"
+            and o.get("side") == "buy"
+            and coid in lives.get(str(o.get("symbol") or ""), {})
+        ]
+        candidates.sort(key=lambda item: (
+            -int(item[1].get("level") or 0),
+            float(item[1].get("placed_at") or 0.0),
+        ))
+        freed: List[str] = []
+        for coid, o in candidates:
+            if float(bal.get(quote) or 0.0) >= target_usd:
+                break
+            if _cancel_entry(coid, o):
+                freed.append(coid)
+        if freed:
+            report["released_buys"] = freed
+            report["released_quote_target"] = target_usd
+        return float(bal.get(quote) or 0.0)
+
+    # Recycle quote locked in far buy entries before placing more work.
+    quote_target = float(quote_operating_target(cfg))
+    if float(bal.get(quote) or 0.0) < quote_target:
+        _release_quote_from_far_buys(quote_target)
+        open_count = sum(1 for o in orders.values() if not o.get("cancelled"))
+        # Re-apply exit-first with the post-release free quote.
+        try:
+            cfg = enhance_ladder_cfg(cfg, venue=venue, balances=bal)
+            report["_exit_first"] = cfg.get("_exit_first")
+            report["_dynamic_cap"] = cfg.get("_dynamic_cap")
+        except Exception as exc:
+            report["strategy_improve_error"] = str(exc)
 
     still: List[Dict[str, Any]] = []
     for spec in pending:

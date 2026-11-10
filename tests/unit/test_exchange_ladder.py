@@ -61,7 +61,8 @@ def _run(venue, tmp_path, *, mid=0.093, now=1000.0, bal=None, cfg=None, maker_se
         **kw,
         cfg=cfg or _cfg(),
         top=lambda _s: {"bid": mid, "ask": mid},
-        balances=bal if bal is not None else {"ALGO": 300.0, "USDT": 8.0},
+        # Default quote is above the ~3-rung operating target so exit-first stays off.
+        balances=bal if bal is not None else {"ALGO": 300.0, "USDT": 20.0},
         open_ids=venue.open_ids, closed=venue.closed, market=lambda _s: MK,
         place=venue.place, cancel=venue.cancel,
         maker_sell=lambda _s: maker_sell,
@@ -80,10 +81,10 @@ def test_first_tick_places_small_rungs_both_sides_within_budget(tmp_path):
     sells, buys = _by(venue, "sell"), _by(venue, "buy")
     assert [p["price"] for p in sells] == [entry_price(0.093, "sell", k, _cfg(), 6) for k in range(3)]
     assert all(3.0 <= p["qty"] * p["price"] <= 3.5 for p in venue.placed)
-    assert len(buys) == 2  # $8 USDT funds two $3.50 buys
+    assert len(buys) == 3  # $20 USDT funds three $3.50 buys
     assert buys[0]["price"] < 0.093 < sells[0]["price"]
     assert all(p["coid"].startswith("ld-ALGO-") for p in venue.placed)
-    assert rep["open_orders"] == 5
+    assert rep["open_orders"] == 6
     assert lowest_own_sell("ALGO", str(tmp_path / "ladder.json")) == sells[0]["price"]
 
 
@@ -272,7 +273,7 @@ def test_entry_and_exit_on_the_same_rung_get_distinct_tags(tmp_path):
     cfg = _cfg(levels=1)
     _run(venue, tmp_path, cfg=cfg)
     venue.fill(_by(venue, "sell")[0]["coid"])
-    rep = _run(venue, tmp_path, cfg=cfg, mid=0.0925, now=1000.0 + 11 * 60, bal={"ALGO": 300.0, "USDT": 8.0})
+    rep = _run(venue, tmp_path, cfg=cfg, mid=0.0925, now=1000.0 + 11 * 60, bal={"ALGO": 300.0, "USDT": 20.0})
     assert rep["errors"] == []
     kinds = sorted((p["kind"], p["side"]) for p in rep["placed"])
     assert kinds == [("entry", "buy"), ("exit", "buy")]
@@ -296,7 +297,7 @@ def test_quote_reserve_does_not_starve_buy_exits(tmp_path):
 def test_unfunded_exit_cancels_far_buy_entry_to_free_quote(tmp_path):
     venue = FakeVenue()
     cfg = _cfg(levels=2)
-    _run(venue, tmp_path, cfg=cfg, bal={"ALGO": 300.0, "USDT": 8.0})
+    _run(venue, tmp_path, cfg=cfg, bal={"ALGO": 300.0, "USDT": 20.0})
     sell = _by(venue, "sell")[0]
     buys = _by(venue, "buy")
     assert len(buys) >= 1
@@ -305,7 +306,9 @@ def test_unfunded_exit_cancels_far_buy_entry_to_free_quote(tmp_path):
     free_usdt = 0.0
     rep = _run(venue, tmp_path, cfg=cfg, now=1060.0, bal={"ALGO": 300.0 - sell["qty"], "USDT": free_usdt})
     assert any(p.get("kind") == "exit" and p.get("side") == "buy" for p in rep["placed"]) or rep["pending_exits"] == 0
-    assert rep.get("freed_for_exit") or not any(s.get("reason") == "exit_unfunded" for s in rep["skipped"])
+    assert rep.get("freed_for_exit") or rep.get("released_buys") or not any(
+        s.get("reason") == "exit_unfunded" for s in rep["skipped"]
+    )
 
 
 def test_sell_entries_fill_before_buys_under_open_cap(tmp_path):
@@ -320,7 +323,8 @@ def test_skew_guard_skips_buys_when_long_base(tmp_path):
         venue,
         tmp_path,
         cfg=_cfg(sides=["buy", "sell"], levels=1, inventory_skew_bps=25.0),
-        bal={"ALGO": 300.0, "USDT": 8.0},
+        # Quote above exit-first target so the skip is from skew, not thin-quote.
+        bal={"ALGO": 1000.0, "USDT": 20.0},
     )
     assert _by(venue, "buy") == []
     assert len(_by(venue, "sell")) == 1
@@ -334,6 +338,21 @@ def test_client_order_ids_stay_unique_across_ticks(tmp_path):
     _run(venue, tmp_path, cfg=cfg, mid=0.094, now=1000.0 + 11 * 60)
     assert len({p["coid"] for p in venue.placed}) == len(venue.placed)
     assert all("-" in p["coid"] and p["coid"].startswith("ld-ALGO-") for p in venue.placed)
+
+
+def test_thin_quote_cancels_far_buy_entries_to_free_capital(tmp_path):
+    venue = FakeVenue()
+    cfg = _cfg(levels=3, inventory_skew_bps=0.0)
+    # Fund several buy rungs while quote looks healthy.
+    _run(venue, tmp_path, cfg=cfg, bal={"ALGO": 300.0, "USDT": 20.0})
+    buys = _by(venue, "buy")
+    assert len(buys) >= 2
+    # Next tick: free USDT is starved but resting buys still lock quote.
+    rep = _run(venue, tmp_path, cfg=cfg, now=1060.0, bal={"ALGO": 300.0, "USDT": 2.0})
+    assert rep.get("released_buys")
+    assert any(c in venue.cancelled for c in rep["released_buys"])
+    # Cancelled buy notional should push free USDT toward the operating target.
+    assert float(rep.get("released_quote_target") or 0) >= 12.0
 
 
 def test_live_balance_path_runs_venue_quote_topup(tmp_path, monkeypatch):

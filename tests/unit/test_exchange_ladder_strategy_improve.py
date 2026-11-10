@@ -76,8 +76,14 @@ def test_exit_first_strips_buys_when_quote_thin():
     cfg = {"sides": ["buy", "sell"], "order_usd": 3.5}
     thin = apply_exit_first_sides(cfg, free_quote=2.0)
     assert thin["_exit_first"]["active"] is True
+    assert thin["_exit_first"]["target_usd"] == 12.0
     assert "buy" not in thin["sides"]
     assert "sell" in thin["sides"]
+    # Still thin below the ~3-rung operating target even if > 1.5*order.
+    mid = apply_exit_first_sides(cfg, free_quote=8.0)
+    assert mid["_exit_first"]["active"] is True
+    buy_only = apply_exit_first_sides({"sides": ["buy"], "order_usd": 3.5}, free_quote=2.0)
+    assert buy_only["sides"] == []
     fat = apply_exit_first_sides(cfg, free_quote=20.0)
     assert fat["_exit_first"]["active"] is False
     assert "buy" in fat["sides"]
