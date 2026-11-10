@@ -182,6 +182,69 @@ def test_place_market_order_applies_binance_filters(monkeypatch):
     assert captured["quantity"] == 10.63
 
 
+def test_fetch_binance_symbol_filters_includes_tick_size(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    vapi._BINANCE_FILTER_CACHE.clear()
+    vapi._BINANCE_FILTER_CACHE_TS.clear()
+
+    def fake_http(method, url, *, headers=None, data=None, timeout=8.0):
+        return {
+            "success": True,
+            "status_code": 200,
+            "body": {
+                "symbols": [{
+                    "symbol": "DOGEUSDC",
+                    "filters": [
+                        {"filterType": "PRICE_FILTER", "tickSize": "0.00001",
+                         "minPrice": "0.00001", "maxPrice": "1000"},
+                        {"filterType": "LOT_SIZE", "stepSize": "1", "minQty": "1", "maxQty": "90000000"},
+                        {"filterType": "NOTIONAL", "minNotional": "5"},
+                    ],
+                }],
+            },
+        }
+
+    monkeypatch.setattr(vapi, "_http_request", fake_http)
+    out = vapi.fetch_binance_symbol_filters("DOGEUSDC", force_refresh=True)
+    assert out["ok"] is True
+    assert out["tick_size"] == 0.00001
+    assert out["step_size"] == 1.0
+    assert out["min_notional"] == 5.0
+
+
+def test_place_limit_order_quantizes_binance_price(monkeypatch):
+    from backend.services import exchange_venue_api_service as vapi
+
+    captured = {}
+
+    def fake_request(venue_id, endpoint_key, params, dry_run=None, rotation=False):
+        captured.update(params)
+        return {"success": True, "body": {"orderId": 99, "clientOrderId": params.get("newClientOrderId")}}
+
+    monkeypatch.setattr(vapi, "normalize_order_qty", lambda *a, **k: {
+        "ok": True,
+        "quantity": 100.0,
+        "adjusted": False,
+        "filters": {"tick_size": 0.00001, "min_price": 0.00001, "max_price": 1000.0},
+    })
+    monkeypatch.setattr(vapi, "venue_api_request", fake_request)
+    monkeypatch.setattr(vapi, "live_gate_ok", lambda rotation=False: True)
+    monkeypatch.setattr(vapi, "venue_has_credentials", lambda vid: True)
+    monkeypatch.setattr(vapi, "resolve_market", lambda *a, **k: {
+        "ok": True, "market": "DOGEUSDC", "quote": "USDC", "base": "DOGE",
+    })
+
+    # Raw bid*0.997 style price that used to trip PRICE_FILTER.
+    res = vapi.place_limit_order(
+        "binance", "DOGE", "sell", 100.0, 0.06722771,
+        dry_run=False, quote="USDC", client_order_id="pdj-topup-test",
+    )
+    assert res["success"] is True
+    assert captured["price"] == "0.06722"
+    assert captured["quantity"] == "100"
+
+
 def test_balance_cache_refresh_and_age(monkeypatch):
     from backend.services import exchange_venue_api_service as vapi
 

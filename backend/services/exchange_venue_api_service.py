@@ -406,7 +406,7 @@ def _quantize_up(value: float, step: float) -> float:
 
 
 def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) -> Dict[str, Any]:
-    """Return LOT_SIZE / MIN_NOTIONAL filters for a Binance spot symbol (cached)."""
+    """Return LOT_SIZE / MIN_NOTIONAL / PRICE_FILTER filters for a Binance spot symbol (cached)."""
     pair = str(market or "").upper()
     if not pair:
         return {"ok": False, "error": "missing_market"}
@@ -432,7 +432,15 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             return cached
         return {"ok": False, "error": "symbol_not_found", "market": pair}
 
-    filters: Dict[str, float] = {"step_size": 0.0, "min_qty": 0.0, "max_qty": 0.0, "min_notional": 0.0}
+    filters: Dict[str, float] = {
+        "step_size": 0.0,
+        "min_qty": 0.0,
+        "max_qty": 0.0,
+        "min_notional": 0.0,
+        "tick_size": 0.0,
+        "min_price": 0.0,
+        "max_price": 0.0,
+    }
     for filt in row.get("filters") or []:
         if not isinstance(filt, dict):
             continue
@@ -443,6 +451,12 @@ def fetch_binance_symbol_filters(market: str, *, force_refresh: bool = False) ->
             filters["max_qty"] = float(filt.get("maxQty") or 0)
         elif ftype in ("MIN_NOTIONAL", "NOTIONAL"):
             filters["min_notional"] = float(filt.get("minNotional") or filt.get("notional") or 0)
+        elif ftype == "PRICE_FILTER":
+            # Without tick_size, limit prices like bid*0.997 round to 8dp and Binance
+            # rejects with "Filter failure: PRICE_FILTER" — starving USDC top-ups.
+            filters["tick_size"] = float(filt.get("tickSize") or 0)
+            filters["min_price"] = float(filt.get("minPrice") or 0)
+            filters["max_price"] = float(filt.get("maxPrice") or 0)
 
     out = {"ok": True, "market": pair, **filters}
     _BINANCE_FILTER_CACHE[pair] = out
@@ -1034,13 +1048,23 @@ def place_limit_order(
         qty = float(norm["quantity"])
         tick = float((norm.get("filters") or {}).get("tick_size") or 0)
         if tick > 0:
+            # Floor to tick so PRICE_FILTER accepts; maker bids stay at/below intent.
             px = _quantize_down(px, tick)
+            min_px = float((norm.get("filters") or {}).get("min_price") or 0)
+            max_px = float((norm.get("filters") or {}).get("max_price") or 0)
+            if min_px > 0 and px < min_px:
+                px = min_px
+            if max_px > 0 and px > max_px:
+                px = _quantize_down(max_px, tick)
         tif = str(time_in_force or "GTC").upper()
         if tif not in ("GTC", "IOC", "FOK"):
             tif = "GTC"
+        # Binance rejects long float reprs; emit tick-aligned decimals as strings.
+        px_s = format(Decimal(str(px)).normalize(), "f") if tick > 0 else str(px)
+        qty_s = format(Decimal(str(qty)).normalize(), "f")
         params = {
             "symbol": pair, "side": side_u, "type": "LIMIT", "timeInForce": tif,
-            "quantity": qty, "price": px, "newClientOrderId": coid,
+            "quantity": qty_s, "price": px_s, "newClientOrderId": coid,
         }
     elif venue_id in ("nonkyc", "xeggex"):
         params = {

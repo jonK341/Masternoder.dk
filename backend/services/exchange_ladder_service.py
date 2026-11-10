@@ -470,6 +470,20 @@ def run_ladder(
             report["skipped"].append({"symbol": symbol, "reason": reason})
             continue
         live = {k: v for k, v in live.items() if k.startswith(TAG)}
+        # Orphan ld- orders (live on venue, missing from local state) lock quote and
+        # starve new spots — cancel them so top-up / recenter can refill.
+        for coid, oid in list(live.items()):
+            if coid in orders:
+                continue
+            res = cancel(symbol, oid)
+            if res.get("success"):
+                live.pop(coid, None)
+                report.setdefault("orphan_cancelled", []).append(coid)
+            else:
+                report["errors"].append({
+                    "symbol": symbol, "coid": coid,
+                    "error": f"orphan_cancel:{res.get('error') or 'failed'}",
+                })
         lives[symbol] = live
         markets[symbol] = mk
         missing = [c for c, o in orders.items() if o["symbol"] == symbol and c not in live]
