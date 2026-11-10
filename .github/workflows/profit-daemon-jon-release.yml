@@ -65,15 +65,8 @@ jobs:
           path: dist/TheProfitDaemonJon-windows-x64.zip
 
   build-macos:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-14
-            arch: arm64
-          - os: macos-15
-            arch: x64
-    runs-on: ${{ matrix.os }}
+    # macos-14 arm64 runners are not available on this repo's Actions plan.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -84,11 +77,11 @@ jobs:
       - name: Zip artifact
         run: |
           cd dist
-          zip -r "TheProfitDaemonJon-macos-${{ matrix.arch }}.zip" TheProfitDaemonJon
+          zip -r "TheProfitDaemonJon-macos-x64.zip" TheProfitDaemonJon
       - uses: actions/upload-artifact@v4
         with:
-          name: TheProfitDaemonJon-macos-${{ matrix.arch }}
-          path: dist/TheProfitDaemonJon-macos-${{ matrix.arch }}.zip
+          name: TheProfitDaemonJon-macos-x64
+          path: dist/TheProfitDaemonJon-macos-x64.zip
 
   publish-release:
     needs: [build-linux, build-windows, build-macos]
@@ -105,12 +98,11 @@ jobs:
           files: |
             artifacts/TheProfitDaemonJon-linux-x64/TheProfitDaemonJon-linux-x64.zip
             artifacts/TheProfitDaemonJon-windows-x64/TheProfitDaemonJon-windows-x64.zip
-            artifacts/TheProfitDaemonJon-macos-arm64/TheProfitDaemonJon-macos-arm64.zip
             artifacts/TheProfitDaemonJon-macos-x64/TheProfitDaemonJon-macos-x64.zip
           body: |
-            **The Profit Daemon Jon ${{ github.ref_name }}** — standalone builds (Linux / Windows / macOS).
+            **The Profit Daemon Jon ${{ github.ref_name }}** — standalone builds (Linux / Windows / macOS x64).
 
-            ### What's new in 1.1.0
+            ### What's new
             - Exchange registry (`data/exchanges_registry.json`) — enable/add venues without hardcoding
             - Local browser control at `http://127.0.0.1:8787/` on daemon start
             - Ladder / maker / cross-trade / wizard read venues from the registry
@@ -124,5 +116,7 @@ jobs:
 
             Source: `bash profit_daemon_jon/install.sh`
             Docker: `docker compose -f profit_daemon_jon/docker-compose.yml up -d`
+
+            Assets: linux-x64, windows-x64, macos-x64 (Apple Silicon: use Rosetta or build from source with `build_release.sh`).
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
