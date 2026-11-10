@@ -35,7 +35,13 @@ def test_sats_and_unique_cuts(tmp_path, monkeypatch):
     assert head.get("sync", {}).get("hold_for_speech") is True
     assert head.get("fx", {}).get("sound")
     assert head.get("image_url")
+    assert head.get("gif_url")
     assert "image.pollinations.ai" in head["image_url"]
+    assert "image.pollinations.ai" in head["gif_url"]
+    art = pipe.generate_scene_art(category="generator", title="Test", body="Clip", kind="gif")
+    assert art["success"] is True
+    assert art["kind"] == "gif"
+    assert art["gif_url"]
     # Every forced cut is a different movie.
     assert a["cut_id"] != b["cut_id"]
     assert a["scenes"][0]["id"] != b["scenes"][0]["id"]
@@ -101,3 +107,13 @@ def test_pipeline_routes(tmp_path, monkeypatch):
     get = c.get("/api/landing/monitor/pipeline")
     assert get.status_code == 200
     assert get.get_json()["cut_id"] == body["cut_id"]
+
+    art = c.post(
+        "/api/landing/monitor/scene-art",
+        json={"kind": "still", "title": "Lobby", "body": "Test frame", "category": "generator"},
+    )
+    assert art.status_code == 200
+    art_body = art.get_json()
+    assert art_body["success"] is True
+    assert art_body["kind"] == "still"
+    assert "image.pollinations.ai" in art_body["url"]

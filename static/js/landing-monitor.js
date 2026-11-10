@@ -513,14 +513,16 @@
     board.classList.toggle('is-scrolling', list.length > 0);
   }
 
-  function setSceneArt(url) {
+  function setSceneArt(url, kind) {
     var img = $('lm-scene-art');
     if (!img) return;
     if (!url) {
       img.classList.remove('is-on');
+      img.removeAttribute('data-art-kind');
       return;
     }
     img.classList.remove('is-on');
+    img.setAttribute('data-art-kind', kind || 'still');
     var next = new Image();
     next.onload = function () {
       img.src = url;
@@ -532,6 +534,40 @@
       img.classList.remove('is-on');
     };
     next.src = url;
+  }
+
+  function currentPipelineScene(stream) {
+    if (!stream || !stream.scenes || !stream.scenes.length) return null;
+    var idx = Math.max(0, Math.min(stream.index || 0, stream.scenes.length - 1));
+    return stream.scenes[idx] || null;
+  }
+
+  function requestSceneArt(stream, kind) {
+    var scene = currentPipelineScene(stream);
+    var payload = {
+      kind: kind || 'still',
+      category: (scene && scene.category) || 'generator',
+      title: (scene && scene.title) || 'Lobby scene',
+      body: (scene && (scene.body || scene.speak)) || 'MasterNoder2 pipeline frame',
+    };
+    return fetch('/api/landing/monitor/scene-art', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || !data.success || !data.url) throw new Error('scene-art');
+        if (scene) {
+          if (kind === 'gif') scene.gif_url = data.url;
+          else scene.image_url = data.url;
+        }
+        setSceneArt(data.url, kind);
+        setText('lm-voice-line', kind === 'gif' ? 'AI gif frame locked to this scene.' : 'AI picture locked to this scene.');
+        return data;
+      });
   }
 
   function PipelinePlayer(opts) {
@@ -561,7 +597,9 @@
     );
     var bar = $('lm-stream-bar');
     if (bar) bar.style.width = '0%';
-    if (first && first.image_url) setSceneArt(first.image_url);
+    if (first && (first.image_url || first.gif_url)) {
+      setSceneArt(first.image_url || first.gif_url, first.image_url ? 'still' : 'gif');
+    }
   };
 
   PipelinePlayer.prototype.load = function (force) {
@@ -700,7 +738,7 @@
     setText('lm-pipeline-scene', scene.title || '');
     var bar = $('lm-stream-bar');
     if (bar) bar.style.width = ((this.index + 1) / this.scenes.length) * 100 + '%';
-    setSceneArt(scene.image_url);
+    setSceneArt(scene.image_url || scene.gif_url, scene.image_url ? 'still' : 'gif');
 
     var fx = scene.fx || {};
     if (this.root) {
@@ -800,6 +838,8 @@
     var playBtn = $('lm-stream-play');
     var skipBtn = $('lm-stream-skip');
     var regenBtn = $('lm-pipeline-regen');
+    var artStillBtn = $('lm-art-gen');
+    var artGifBtn = $('lm-art-gif');
     var voiceLead = $('lm-voice-lead');
 
     function enableSfx() {
@@ -1011,6 +1051,36 @@
       regenBtn.addEventListener('click', function () {
         armStream();
         stream.regen();
+      });
+    }
+    if (artStillBtn) {
+      artStillBtn.addEventListener('click', function () {
+        artStillBtn.disabled = true;
+        requestSceneArt(stream, 'still')
+          .catch(function () {
+            setText('lm-voice-line', 'AI picture unavailable — try Movie AI.');
+          })
+          .finally(function () {
+            artStillBtn.disabled = false;
+          });
+      });
+    }
+    if (artGifBtn) {
+      artGifBtn.addEventListener('click', function () {
+        var scene = currentPipelineScene(stream);
+        if (scene && scene.gif_url && !artGifBtn.dataset.force) {
+          setSceneArt(scene.gif_url, 'gif');
+          setText('lm-voice-line', 'Pipeline gif frame on screen.');
+          return;
+        }
+        artGifBtn.disabled = true;
+        requestSceneArt(stream, 'gif')
+          .catch(function () {
+            setText('lm-voice-line', 'AI gif unavailable — try Movie AI.');
+          })
+          .finally(function () {
+            artGifBtn.disabled = false;
+          });
       });
     }
 

@@ -126,6 +126,35 @@ def landing_monitor_pipeline():
     return jsonify(get_pipeline())
 
 
+@landing_monitor_bp.route("/api/landing/monitor/scene-art", methods=["GET", "POST"])
+def landing_monitor_scene_art():
+    """Generate a fresh AI still or gif-style frame for the lobby pipeline movie."""
+    from backend.services.landing_monitor_pipeline_service import generate_scene_art
+
+    body = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    args = request.args
+    kind = body.get("kind") or args.get("kind") or "still"
+    category = body.get("category") or args.get("category") or "generator"
+    title = body.get("title") or args.get("title") or "Lobby scene"
+    text = body.get("body") or args.get("body") or "MasterNoder2 pipeline frame"
+    seed_raw = body.get("seed") if "seed" in body else args.get("seed")
+    seed = None
+    if seed_raw is not None and str(seed_raw).strip() != "":
+        try:
+            seed = int(seed_raw)
+        except (TypeError, ValueError):
+            seed = None
+    return jsonify(
+        generate_scene_art(
+            category=str(category),
+            title=str(title),
+            body=str(text),
+            kind=str(kind),
+            seed=seed,
+        )
+    )
+
+
 @landing_monitor_bp.route("/api/landing/monitor/online", methods=["GET"])
 def landing_monitor_online():
     from backend.services.landing_monitor_pipeline_service import collect_online_leaderboard

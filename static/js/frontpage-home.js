@@ -565,8 +565,18 @@
             this.canvas = document.getElementById(canvasId);
             this.points = [];
             this.slider = document.getElementById('fp-starmap-w');
+            this.syncEl = document.getElementById('fp-starmap-mn2');
+            this.mn2 = {
+                price: null,
+                networkSats: 0,
+                tradeSats: 0,
+                combinedSats: 0,
+                height: 0,
+                coins: 0,
+            };
             this.t0 = performance.now();
             this._raf = null;
+            this._syncTimer = null;
             window.addEventListener('resize', () => this.resize());
         }
 
@@ -580,6 +590,50 @@
             this.canvas.height = h;
         }
 
+        paintSyncLabel() {
+            if (!this.syncEl) return;
+            const m = this.mn2;
+            const price =
+                m.price != null && Number.isFinite(Number(m.price))
+                    ? `$${Number(m.price).toFixed(4)}`
+                    : '—';
+            const sats = Number(m.combinedSats || m.networkSats || 0);
+            const height = m.height ? ` · h ${Number(m.height).toLocaleString()}` : '';
+            const coins = m.coins ? ` · ${Number(m.coins).toLocaleString(undefined, { maximumFractionDigits: 4 })} MN2` : '';
+            this.syncEl.textContent = `MN2 ${price} · ${sats.toLocaleString()} sats${coins}${height}`;
+        }
+
+        async syncMn2() {
+            try {
+                const [satsRes, priceRes] = await Promise.all([
+                    fetch(`${BASE}/api/landing/monitor/sats`, { headers: { Accept: 'application/json' } }),
+                    fetch(`${BASE}/api/mn2/price`, { headers: { Accept: 'application/json' } }),
+                ]);
+                if (satsRes.ok) {
+                    const sats = await satsRes.json();
+                    const totals = (sats && sats.totals) || {};
+                    const network = (sats && sats.network && sats.network.mn2) || {};
+                    this.mn2.networkSats = Number(totals.network_sats || network.sats || 0);
+                    this.mn2.tradeSats = Number(totals.trade_sats || 0);
+                    this.mn2.combinedSats = Number(totals.combined_sats || 0);
+                    this.mn2.coins = Number(network.coins || 0);
+                    this.mn2.height = Number(network.height || network.block_height || sats.height || 0);
+                }
+                if (priceRes.ok) {
+                    const price = await priceRes.json();
+                    if (price && price.mn2_usd_price != null) this.mn2.price = Number(price.mn2_usd_price);
+                }
+            } catch (_) {
+                if (window.ErrorManager && window.ErrorManager.logJSError) {
+                    window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), {
+                        source: 'frontpage-home.js',
+                        context: 'starmap-mn2-sync',
+                    });
+                }
+            }
+            this.paintSyncLabel();
+        }
+
         async load() {
             if (!this.canvas) return;
             try {
@@ -587,9 +641,18 @@
                 const data = await res.json();
                 const sm = data && data.star_map_25;
                 this.points = (sm && sm.points) || [];
-            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }
+            } catch (_) {
+                if (window.ErrorManager && window.ErrorManager.logJSError) {
+                    window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), {
+                        source: 'frontpage-home.js',
+                        context: 'starmap-load',
+                    });
+                }
                 this.points = [];
             }
+            await this.syncMn2();
+            if (this._syncTimer) clearInterval(this._syncTimer);
+            this._syncTimer = setInterval(() => this.syncMn2(), 60000);
             this.resize();
             this.startLoop();
         }
@@ -610,17 +673,19 @@
             const H = this.canvas.height;
             if (W < 8 || H < 8) return;
 
-            ctx.fillStyle = '#06060c';
+            ctx.fillStyle = '#040a08';
             ctx.fillRect(0, 0, W, H);
 
             const cx = W * 0.5;
             const cy = H * 0.52;
-            const scale = Math.min(W, H) * 0.22;
+            const coinPulse = Math.min(1.35, 0.85 + Math.log10(1 + Math.max(0, this.mn2.combinedSats || 0)) / 12);
+            const scale = Math.min(W, H) * 0.22 * coinPulse;
 
             const wSlider = this.slider ? parseInt(this.slider.value, 10) / 100 : 0.5;
             const t = (performance.now() - this.t0) / 1000;
-            const a1 = t * 0.35 + wSlider * Math.PI;
-            const a2 = t * 0.22 + wSlider * Math.PI * 0.5;
+            const priceNudge = this.mn2.price ? Math.min(0.45, Number(this.mn2.price) * 40) : 0;
+            const a1 = t * (0.32 + priceNudge * 0.08) + wSlider * Math.PI;
+            const a2 = t * 0.2 + wSlider * Math.PI * 0.5 + (this.mn2.height % 360) * 0.0004;
 
             if (!this.points.length) {
                 ctx.fillStyle = 'rgba(255,255,255,0.5)';
@@ -633,6 +698,7 @@
 
             const n = this.points.length;
             const ds = dprScale(W);
+            const satsBoost = Math.min(2.2, 1 + Math.log10(1 + Math.max(0, this.mn2.networkSats || 0)) / 8);
             this.points.forEach((p, i) => {
                 const base = segmentumPhase(p.segmentum || 'Unknown');
                 const u = i / n;
@@ -649,33 +715,33 @@
 
                 const px = cx + proj.x * scale;
                 const py = cy + proj.y * scale;
-                const size = 3.2 + ((p.point_value || 10) / 18) * ds;
-                const hue = 140 + wSlider * 80 + (p.index || i) * 3;
+                const size = (3.2 + ((p.point_value || 10) / 18) * ds) * satsBoost;
+                // MN2 green band — coin pulse shifts toward cyan/emerald.
+                const hue = 130 + wSlider * 35 + priceNudge * 40 + ((p.index || i) % 12);
 
                 ctx.beginPath();
                 ctx.arc(px, py, size, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${hue % 360}, 75%, 58%, 0.92)`;
+                ctx.fillStyle = `hsla(${hue % 360}, 78%, 56%, 0.94)`;
                 ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                ctx.strokeStyle = 'rgba(0,255,136,0.28)';
                 ctx.lineWidth = 1;
                 ctx.stroke();
 
                 if (W > 700 && i < 18) {
                     ctx.font = `${10 * (W / 900)}px system-ui, sans-serif`;
-                    ctx.fillStyle = 'rgba(230,240,255,0.5)';
+                    ctx.fillStyle = 'rgba(210,255,230,0.55)';
                     const name = (p.name || p.id || '').slice(0, 22);
                     ctx.fillText(name, px + size + 2, py + 3);
                 }
             });
 
-            ctx.fillStyle = 'rgba(200,200,255,0.45)';
+            ctx.fillStyle = 'rgba(160,255,200,0.5)';
             ctx.font = `${11 * (W / 900)}px system-ui`;
-            ctx.fillText('4D → stereographic 3D · tid (w) roterer hyper-rummet', 12, H - 12);
+            ctx.fillText('Star Map 25 × MN2 · double frame · tid (w) roterer hyper-rummet', 12, H - 12);
         }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        buildSmartLinks();
         wireVisitTracking();
         // Sound system lives in the lobby monitor only (#fp-landing-monitor).
         const runWhenIdle = (fn) => {

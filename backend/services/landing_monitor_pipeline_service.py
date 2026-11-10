@@ -642,8 +642,8 @@ def collect_online_leaderboard(*, limit: int = 10, recent_hours: int = 24) -> Di
     }
 
 
-def _art_prompt(*, category: str, title: str, body: str) -> str:
-    mood = {
+def _art_mood(category: str) -> str:
+    return {
         "network": "emerald neon blockchain city, satoshi rain, MasterNoder2 node glow",
         "trade": "daemon trading desk, amber charts, crypto fills sparks",
         "profit": "golden profit pulse, vault light, triumphant lobby",
@@ -654,27 +654,77 @@ def _art_prompt(*, category: str, title: str, body: str) -> str:
         "finale": "rainbow lobby finale, MasterNoder2 billboard",
         "system": "ops monitor grid, cool steel HUD",
     }.get(category, "MasterNoder2 crypto lobby monitor")
+
+
+def _art_prompt(*, category: str, title: str, body: str, kind: str = "still") -> str:
+    mood = _art_mood(category)
+    if kind == "gif":
+        return (
+            f"Animated looping GIF frame style for MasterNoder2 lobby movie, {mood}, "
+            f"motion trails, soft morph between poses, about {title}: {body[:100]}, "
+            f"no readable text, vibrant motion blur, short loop energy"
+        )
     return (
         f"Cinematic still for MasterNoder2 lobby monitor, {mood}, "
         f"about {title}: {body[:120]}, no readable text, ultra detailed, soft film grain"
     )
 
 
-def _scene_image_fields(*, category: str, title: str, body: str, seed: int) -> Dict[str, Any]:
-    """Hotlink a freshly seeded Pollinations still; browser treats it as the clip art."""
+def _pollinations_url(*, prompt: str, seed: int, width: int = 960, height: int = 540) -> str:
     import urllib.parse
 
-    prompt = _art_prompt(category=category, title=title, body=body)
     encoded = urllib.parse.quote(prompt[:360], safe="")
-    url = (
+    return (
         f"https://image.pollinations.ai/prompt/{encoded}"
-        f"?width=960&height=540&nologo=true&enhance=true&seed={int(seed) & 0x7FFFFFFF}"
+        f"?width={int(width)}&height={int(height)}&nologo=true&enhance=true"
+        f"&seed={int(seed) & 0x7FFFFFFF}"
     )
+
+
+def _scene_image_fields(*, category: str, title: str, body: str, seed: int) -> Dict[str, Any]:
+    """Hotlink freshly seeded Pollinations still + motion gif-style art for each clip."""
+    seed_i = int(seed) & 0x7FFFFFFF
+    still_prompt = _art_prompt(category=category, title=title, body=body, kind="still")
+    gif_prompt = _art_prompt(category=category, title=title, body=body, kind="gif")
     return {
-        "image_url": url,
-        "image_prompt": prompt[:280],
-        "image_seed": int(seed) & 0x7FFFFFFF,
+        "image_url": _pollinations_url(prompt=still_prompt, seed=seed_i),
+        "gif_url": _pollinations_url(
+            prompt=gif_prompt, seed=(seed_i ^ 0x5A5A5A5A) & 0x7FFFFFFF, width=640, height=360
+        ),
+        "image_prompt": still_prompt[:280],
+        "gif_prompt": gif_prompt[:280],
+        "image_seed": seed_i,
         "image_kind": "ai_still",
+        "gif_kind": "ai_gif",
+        "movie_ai_href": "/vidgenerator/generator",
+    }
+
+
+def generate_scene_art(
+    *,
+    category: str = "generator",
+    title: str = "Lobby scene",
+    body: str = "MasterNoder2 pipeline frame",
+    kind: str = "still",
+    seed: int | None = None,
+) -> Dict[str, Any]:
+    """On-demand AI picture or gif-style frame for the lobby pipeline movie."""
+    import time
+
+    kind_norm = "gif" if str(kind).lower() in ("gif", "animated", "motion") else "still"
+    seed_i = int(seed if seed is not None else (time.time_ns() & 0x7FFFFFFF))
+    prompt = _art_prompt(category=category or "generator", title=title or "Lobby", body=body or "", kind=kind_norm)
+    width, height = (640, 360) if kind_norm == "gif" else (960, 540)
+    url = _pollinations_url(prompt=prompt, seed=seed_i, width=width, height=height)
+    return {
+        "success": True,
+        "kind": kind_norm,
+        "url": url,
+        "image_url": url if kind_norm == "still" else None,
+        "gif_url": url if kind_norm == "gif" else None,
+        "prompt": prompt[:280],
+        "seed": seed_i,
+        "movie_ai_href": "/vidgenerator/generator",
     }
 
 
@@ -765,9 +815,13 @@ def _scene(
         },
         "fx": fx,
         "image_url": art["image_url"],
+        "gif_url": art["gif_url"],
         "image_prompt": art["image_prompt"],
+        "gif_prompt": art.get("gif_prompt"),
         "image_seed": art["image_seed"],
         "image_kind": art["image_kind"],
+        "gif_kind": art.get("gif_kind"),
+        "movie_ai_href": art.get("movie_ai_href") or "/vidgenerator/generator",
         "meta": meta or {},
     }
 
