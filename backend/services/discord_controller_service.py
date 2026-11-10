@@ -580,8 +580,34 @@ def handle_slash_command(command: str, discord_id: str, options: Optional[Dict[s
             text = f"{text}\nAudio: {audio}"
         return reply(text, embed_title="Spiderbot")
 
+    if cmd in ("streamvote", "tradestream", "ytstream", "livetrade"):
+        try:
+            from backend.services.profit_trade_stream_service import interest_status, register_interest
+
+            site_uid = _user_id_for_discord(did) or ""
+            out = register_interest(
+                voter=did or "discord",
+                audience="discord",
+                user_id=site_uid,
+                discord_id=did,
+            )
+            st = interest_status()
+            disc = (st.get("audiences") or {}).get("discord") or {}
+            ready = "✅ ready for go-live" if st.get("interested_enough") else "collecting interest"
+            return reply(
+                f"🗳️ **Trade stream vote counted** (Discord)\n"
+                f"Discord votes: **{disc.get('votes', 0)}/{disc.get('threshold', 5)}**\n"
+                f"YouTube subs: **{st.get('subscriber_votes', 0)}/{st.get('subscriber_threshold', 5)}** · "
+                f"Local: **{st.get('local_votes', 0)}/{st.get('local_threshold', 5)}**\n"
+                f"Status: {ready}\n"
+                f"Overlay: {_BASE_URL}/trade-stream (ops) · no auto go-live",
+                embed_title="Trade stream interest",
+            )
+        except Exception as exc:
+            return reply(f"Could not record stream vote: {exc}")
+
     return reply(
-        f"Unknown command `/{cmd}`. Try: `/spider` `/play` `/playnow` `/mn2` `/uber` `/casino` `/earn`"
+        f"Unknown command `/{cmd}`. Try: `/streamvote` `/spider` `/play` `/playnow` `/mn2` `/uber` `/casino` `/earn`"
     )
 
 

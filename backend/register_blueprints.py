@@ -391,6 +391,14 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP discord: {e}")
     try:
+        from backend.routes.youtube_routes import youtube_bp
+        if "youtube" not in app.blueprints:
+            app.register_blueprint(youtube_bp)
+            n += 1
+            print("  [OK] Registered youtube blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP youtube: {e}")
+    try:
         from backend.routes.customer_aggregator_routes import customer_aggregator_bp
         if "customer_aggregator" not in app.blueprints:
             app.register_blueprint(customer_aggregator_bp)
@@ -1719,6 +1727,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import discord: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering discord: {e}")
+
+    try:
+        from backend.routes.youtube_routes import youtube_bp
+        if "youtube" not in app.blueprints:
+            app.register_blueprint(youtube_bp)
+            registered_count += 1
+            print("  [OK] Registered youtube blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import youtube: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering youtube: {e}")
 
     try:
         from backend.routes.customer_aggregator_routes import customer_aggregator_bp

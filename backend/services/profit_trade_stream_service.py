@@ -1,8 +1,8 @@
-"""Live trade ticker for OBS / YouTube stream overlays.
+"""Live trade ticker for OBS / YouTube / Discord stream overlays.
 
 Appends short trade events from the profit daemon and tracks opt-in interest
-for a public YouTube trade stream. Votes are collected for two audiences:
-local/ops viewers and YouTube subscribers (no auto-go-live).
+for a public trade livestream. Votes are collected for three audiences:
+local/ops viewers, YouTube subscribers, and Discord members (no auto-go-live).
 """
 from __future__ import annotations
 
@@ -20,7 +20,8 @@ _MAX_EVENTS = 400
 
 AUDIENCE_LOCAL = "local"
 AUDIENCE_YT_SUB = "youtube_subscriber"
-_AUDIENCES = (AUDIENCE_LOCAL, AUDIENCE_YT_SUB)
+AUDIENCE_DISCORD = "discord"
+_AUDIENCES = (AUDIENCE_LOCAL, AUDIENCE_YT_SUB, AUDIENCE_DISCORD)
 
 
 def _iso() -> str:
@@ -31,6 +32,8 @@ def _normalize_audience(audience: str) -> str:
     raw = str(audience or AUDIENCE_LOCAL).strip().lower().replace("-", "_")
     if raw in ("sub", "subscriber", "subscribers", "yt", "youtube", "youtube_sub", "youtube_subscribers"):
         return AUDIENCE_YT_SUB
+    if raw in ("discord", "discord_member", "discord_members", "dc", "guild"):
+        return AUDIENCE_DISCORD
     if raw in ("ops", "desk", "overlay", "local"):
         return AUDIENCE_LOCAL
     if raw in _AUDIENCES:
@@ -108,7 +111,12 @@ def _audience_bucket(raw: Dict[str, Any], audience: str) -> Dict[str, Any]:
 def _thresholds() -> Dict[str, int]:
     local_min = int(os.environ.get("PROFIT_YT_STREAM_INTEREST_MIN", "5") or 5)
     sub_min = int(os.environ.get("PROFIT_YT_STREAM_SUB_INTEREST_MIN", str(local_min)) or local_min)
-    return {AUDIENCE_LOCAL: local_min, AUDIENCE_YT_SUB: sub_min}
+    discord_min = int(os.environ.get("PROFIT_YT_STREAM_DISCORD_INTEREST_MIN", str(local_min)) or local_min)
+    return {
+        AUDIENCE_LOCAL: local_min,
+        AUDIENCE_YT_SUB: sub_min,
+        AUDIENCE_DISCORD: discord_min,
+    }
 
 
 def interest_status() -> Dict[str, Any]:
@@ -126,10 +134,8 @@ def interest_status() -> Dict[str, Any]:
             "threshold": thr,
             "interested_enough": votes >= thr,
         }
-    local_ok = bool(by_audience[AUDIENCE_LOCAL]["interested_enough"])
-    sub_ok = bool(by_audience[AUDIENCE_YT_SUB]["interested_enough"])
-    # Ready when either audience clears its bar (both crowds can unlock go-live).
-    interested_enough = local_ok or sub_ok
+    # Ready when any audience clears its bar.
+    interested_enough = any(bool(by_audience[a]["interested_enough"]) for a in _AUDIENCES)
     return {
         "success": True,
         "votes": total,
@@ -138,15 +144,19 @@ def interest_status() -> Dict[str, Any]:
         "audiences": by_audience,
         "local_votes": by_audience[AUDIENCE_LOCAL]["votes"],
         "subscriber_votes": by_audience[AUDIENCE_YT_SUB]["votes"],
+        "discord_votes": by_audience[AUDIENCE_DISCORD]["votes"],
         "local_threshold": thresholds[AUDIENCE_LOCAL],
         "subscriber_threshold": thresholds[AUDIENCE_YT_SUB],
+        "discord_threshold": thresholds[AUDIENCE_DISCORD],
         "note": (
-            "Votes count for local/ops viewers and for YouTube subscribers. "
-            "Either audience reaching its threshold signals readiness to go live "
+            "Votes count for local/ops, YouTube subscribers, and Discord members. "
+            "Any audience reaching its threshold signals readiness to go live "
             "(fleet-progress-monitor / streamer OBS). No auto go-live."
         ),
         "overlay_path": "/trade-stream",
         "public_vote_path": "/api/youtube/trade-stream-interest",
+        "discord_vote_path": "/api/discord/trade-stream-interest",
+        "discord_slash": "/streamvote",
         "updated_at": raw.get("updated_at"),
     }
 
@@ -169,11 +179,13 @@ def register_interest(
     audience: str = AUDIENCE_LOCAL,
     user_id: str = "",
     self_attest_subscriber: bool = False,
+    discord_id: str = "",
 ) -> Dict[str, Any]:
-    """Register an interest vote for local viewers or YouTube subscribers."""
+    """Register an interest vote for local, YouTube subscriber, or Discord audiences."""
     aud = _normalize_audience(audience)
-    key = (voter or user_id or "anon").strip().lower()[:64] or "anon"
+    key = (voter or user_id or discord_id or "anon").strip().lower()[:64] or "anon"
     uid = (user_id or "").strip()
+    did = (discord_id or "").strip()
 
     subscriber_verified = False
     if aud == AUDIENCE_YT_SUB:
@@ -185,6 +197,8 @@ def register_interest(
             subscriber_verified = True
             self_attest_subscriber = True
         key = f"yt:{(uid or key)}"
+    elif aud == AUDIENCE_DISCORD:
+        key = f"dc:{(did or key)}"
 
     raw = ex._read_json(_INTEREST_PATH, {}) or {}
     audiences = raw.get("audiences") if isinstance(raw.get("audiences"), dict) else {}
@@ -208,6 +222,13 @@ def register_interest(
             "user_id": uid or None,
             "self_attest": bool(self_attest_subscriber),
             "verified_claim": _is_known_subscriber(uid),
+            "ts": _iso(),
+        }
+    if aud == AUDIENCE_DISCORD:
+        raw["last_discord_vote"] = {
+            "voter": key,
+            "discord_id": did or None,
+            "user_id": uid or None,
             "ts": _iso(),
         }
     ex._write_json(_INTEREST_PATH, raw)
