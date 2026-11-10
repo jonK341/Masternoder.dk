@@ -433,14 +433,14 @@ apply_compat_patch() {
   fi
 }
 
-# Prefer uploaded /tmp/mn2-patches, else in-repo docs/patches (gcc15 modules).
+# Prefer in-repo docs/patches (keeps pace with website checkout); /tmp is legacy upload dir.
 if [[ -z "${COMPAT_PATCH_DIR:-}" ]]; then
-  if [[ -d /tmp/mn2-patches ]] && compgen -G '/tmp/mn2-patches/mn2-gcc15-*.patch' >/dev/null 2>&1; then
-    COMPAT_PATCH_DIR=/tmp/mn2-patches
-  elif [[ -n "${REPO_ROOT}" ]] && [[ -d "${REPO_ROOT}/docs/patches" ]]; then
+  if [[ -n "${REPO_ROOT}" ]] && compgen -G "${REPO_ROOT}/docs/patches/mn2-gcc15-*.patch" >/dev/null 2>&1; then
     COMPAT_PATCH_DIR="${REPO_ROOT}/docs/patches"
-  else
+  elif [[ -d /tmp/mn2-patches ]] && compgen -G '/tmp/mn2-patches/mn2-gcc15-*.patch' >/dev/null 2>&1; then
     COMPAT_PATCH_DIR=/tmp/mn2-patches
+  else
+    COMPAT_PATCH_DIR="${REPO_ROOT:-/tmp}/docs/patches"
   fi
 fi
 
