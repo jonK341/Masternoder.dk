@@ -36,7 +36,6 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from mn2_release_config import (  # noqa: E402
     RELEASE_BASE,
-    RELEASE_NOTES,
     REPO,
     TARGET_VERSION,
     TARBALL_NAME,
