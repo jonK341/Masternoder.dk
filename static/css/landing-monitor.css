@@ -58,6 +58,29 @@
   gap: 8px;
 }
 
+.lm-monitor-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lm-controls {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 0 2px;
+  background: linear-gradient(180deg, rgba(6, 10, 24, 0.96), rgba(6, 10, 24, 0.88));
+  border-bottom: 1px solid rgba(0, 212, 255, 0.16);
+}
+
+.lm-controls .lm-actions-row {
+  margin: 0;
+}
+
 .lm-bezel {
   position: relative;
   border-radius: 16px;
