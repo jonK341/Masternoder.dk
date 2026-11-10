@@ -31,7 +31,12 @@
         {
           "refId": "A",
           "expr": "sum(masternoder_ladder_realized_usd)",
-          "legendFormat": "realized"
+          "legendFormat": "realized",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "instant": true
         }
       ],
       "datasource": {
@@ -53,7 +58,12 @@
         {
           "refId": "A",
           "expr": "sum(masternoder_ladder_open_orders)",
-          "legendFormat": "open"
+          "legendFormat": "open",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "instant": true
         }
       ],
       "datasource": {
@@ -75,7 +85,11 @@
         {
           "refId": "A",
           "expr": "sum by (venue, kind) (rate(masternoder_ladder_fills_total[15m]))",
-          "legendFormat": "{{venue}} {{kind}}"
+          "legendFormat": "{{venue}} {{kind}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "datasource": {
@@ -97,7 +111,11 @@
         {
           "refId": "A",
           "expr": "masternoder_market_feed_age_seconds",
-          "legendFormat": "{{symbol}}"
+          "legendFormat": "{{symbol}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "datasource": {
@@ -119,7 +137,11 @@
         {
           "refId": "A",
           "expr": "masternoder_ladder_inventory_skew",
-          "legendFormat": "{{venue}} {{symbol}}"
+          "legendFormat": "{{venue}} {{symbol}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "datasource": {
@@ -141,7 +163,11 @@
         {
           "refId": "A",
           "expr": "masternoder_ladder_fill_prob_l0",
-          "legendFormat": "{{venue}}"
+          "legendFormat": "{{venue}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "datasource": {
