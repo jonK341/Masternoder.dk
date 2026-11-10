@@ -194,6 +194,9 @@ PY
 build_linux_qt() {
   echo "=== Building Linux Qt (USE_DEPENDS=${USE_DEPENDS}) ==="
   cd "${SRC_DIR}"
+  # System Boost 1.83+ no longer injects bind placeholders into the global namespace.
+  export CPPFLAGS="${CPPFLAGS:-} -DBOOST_BIND_GLOBAL_PLACEHOLDERS"
+  export CXXFLAGS="${CXXFLAGS:-} -DBOOST_BIND_GLOBAL_PLACEHOLDERS"
   if [[ "${USE_DEPENDS}" == "1" ]]; then
     echo "=== depends (x86_64-linux-gnu, with Qt) — first run can take 60–120 min ==="
     cd depends
