@@ -1,6 +1,6 @@
 --- a/src/validationinterface.cpp
 +++ b/src/validationinterface.cpp
-@@ -6,6 +6,9 @@
+@@ -6,6 +6,10 @@
  
  #include "validationinterface.h"
  

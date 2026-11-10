@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+# v1.3.0.0 and v1.2.3.0 currently share commit 61caddb; pin the stable base tag.
 BASE_TAG = "v1.2.3.0"
 COMPAT_PATHS = [
     "src/httpserver.cpp",

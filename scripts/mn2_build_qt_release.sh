@@ -140,8 +140,9 @@ apply_compat_patches() {
   # basename()/extension() removal + UPNP / filetime fixes for modern Boost/GCC
   if [[ -f "${COMPAT_PATCH_FILE}" ]]; then
     echo "=== Applying modern-host compat patch $(basename "${COMPAT_PATCH_FILE}") ==="
-    if ! patch -p1 --forward < "${COMPAT_PATCH_FILE}"; then
-      echo "WARN: modern-host compat patch failed or already applied" >&2
+    # Strip CR and allow slight context drift (-F3) across MN2 tags.
+    if ! sed 's/\r$//' "${COMPAT_PATCH_FILE}" | patch -p1 --forward --batch -F3; then
+      echo "WARN: modern-host compat patch failed or already applied; trying modular gcc15 patches" >&2
     fi
   else
     echo "WARN: modern-host compat patch missing: ${COMPAT_PATCH_FILE}" >&2
@@ -151,7 +152,7 @@ apply_compat_patches() {
     for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
       [[ -f "${f}" ]] || continue
       echo "=== Applying compat patch $(basename "${f}") ==="
-      if ! patch -p1 --forward < "${f}"; then
+      if ! sed 's/\r$//' "${f}" | patch -p1 --forward --batch -F3; then
         echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
       fi
     done
@@ -160,6 +161,28 @@ apply_compat_patches() {
   if ! grep -q '#include <deque>' src/httpserver.cpp 2>/dev/null; then
     sed -i '/#include <sys\/types.h>/a #include <deque>' src/httpserver.cpp
     echo "Applied sed fallback: #include <deque> in httpserver.cpp"
+  fi
+  # Surgical UPNP wrap if monolithic/modular patches missed it
+  if ! grep -qE 'UPNP_GetValidIGD\([^)]*nullptr,\s*0\)' src/net.cpp 2>/dev/null; then
+    if grep -q 'UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));' src/net.cpp 2>/dev/null; then
+      echo "=== UPNP sed fallback: wrapping GetValidIGD for miniupnpc API 18+ ==="
+      python3 - src/net.cpp <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text()
+old = "    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));\n    if (r == 1) {"
+new = """#if (defined(MINIUPNPC_API_VERSION) && MINIUPNPC_API_VERSION >= 18) || defined(__linux__)
+    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr), nullptr, 0);
+#else
+    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
+#endif
+    if (r == 1) {"""
+if old not in text:
+    raise SystemExit("UPNP snip missing")
+path.write_text(text.replace(old, new, 1))
+PY
+    fi
   fi
 }
 

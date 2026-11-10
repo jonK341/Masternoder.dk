@@ -1,6 +1,6 @@
 --- a/src/init.cpp
 +++ b/src/init.cpp
-@@ -1034,7 +1034,8 @@ bool AppInitMain()
+@@ -1034,7 +1034,8 @@ bool AppInit2()
      std::string strDataDir = GetDataDir().string();
  #ifdef ENABLE_WALLET
      // Wallet file must be a plain filename without a directory
