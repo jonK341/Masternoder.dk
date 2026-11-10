@@ -225,40 +225,56 @@
     window.speechSynthesis.speak(u);
   }
 
+  function playAudioUrl(url, sp, text, opts) {
+    stopServerAudio();
+    var audio = new Audio(url);
+    state.audioEl = audio;
+    audio.volume = state.volume;
+    state.speaking = true;
+    audio.onended = function () {
+      if (String(url).indexOf("blob:") === 0) {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (e) {}
+      }
+      stopServerAudio();
+      finishSpeak(sp, text, opts);
+    };
+    audio.onerror = function () {
+      stopServerAudio();
+      speakBrowser(text, sp, opts);
+    };
+    return audio.play().catch(function () {
+      stopServerAudio();
+      speakBrowser(text, sp, opts);
+    });
+  }
+
   function speakServer(text, sp, opts) {
     return fetch(state.ttsEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       credentials: "same-origin",
       body: JSON.stringify({ text: text, speaker_id: sp && sp.id }),
-    })
-      .then(function (r) {
-        return r.json().then(function (d) {
-          return { ok: r.ok, data: d };
+    }).then(function (r) {
+      var ctype = (r.headers.get("content-type") || "").toLowerCase();
+      if (!r.ok) {
+        return r.json().catch(function () {
+          return {};
+        }).then(function (d) {
+          throw new Error((d && d.error) || "tts_failed");
         });
-      })
-      .then(function (res) {
-        if (!res.ok || !res.data || !res.data.success || !res.data.url) {
-          throw new Error((res.data && res.data.error) || "tts_failed");
-        }
-        stopServerAudio();
-        var audio = new Audio(res.data.url);
-        state.audioEl = audio;
-        audio.volume = state.volume;
-        state.speaking = true;
-        audio.onended = function () {
-          stopServerAudio();
-          finishSpeak(sp, text, opts);
-        };
-        audio.onerror = function () {
-          stopServerAudio();
-          speakBrowser(text, sp, opts);
-        };
-        return audio.play().catch(function () {
-          stopServerAudio();
-          speakBrowser(text, sp, opts);
+      }
+      if (ctype.indexOf("audio/") === 0) {
+        return r.blob().then(function (blob) {
+          return playAudioUrl(URL.createObjectURL(blob), sp, text, opts);
         });
+      }
+      return r.json().then(function (d) {
+        if (!d || !d.success || !d.url) throw new Error((d && d.error) || "tts_failed");
+        return playAudioUrl(d.url, sp, text, opts);
       });
+    });
   }
 
   function speakUtterance(text, speaker, opts) {

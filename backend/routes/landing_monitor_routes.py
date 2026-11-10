@@ -191,25 +191,38 @@ def landing_monitor_tts():
     os.makedirs(cache_dir, exist_ok=True)
     digest = hashlib.sha1(f"{voice_key}|{text}".encode("utf-8")).hexdigest()[:24]
     dest = os.path.join(cache_dir, f"{digest}.mp3")
-    if not (os.path.isfile(dest) and os.path.getsize(dest) > 200):
+    audio_path = dest if (os.path.isfile(dest) and os.path.getsize(dest) > 200) else None
+    if not audio_path:
         path = tts_service.synthesize(text, voice_key=voice_key)
         if not path or not os.path.isfile(path):
             return jsonify({"success": False, "error": "synthesize_failed", "fallback": "browser"}), 502
         try:
             shutil.copyfile(path, dest)
+            try:
+                os.chmod(dest, 0o664)
+            except Exception:
+                pass
+            audio_path = dest
         except Exception:
-            return send_file(path, mimetype="audio/mpeg", as_attachment=False)
+            audio_path = path
 
-    if str(request.args.get("redirect") or "").lower() in ("1", "true", "yes"):
-        return send_file(dest, mimetype="audio/mpeg", conditional=True)
+    want_file = str(request.args.get("redirect") or "").lower() in ("1", "true", "yes")
+    accept = (request.headers.get("Accept") or "").lower()
+    if want_file or "audio/" in accept:
+        return send_file(audio_path, mimetype="audio/mpeg", conditional=True, as_attachment=False)
 
-    return jsonify(
-        {
-            "success": True,
-            "url": "/static/landing_monitor/tts/" + os.path.basename(dest),
-            "voice_key": voice_key,
-            "speaker_id": speaker_id or None,
-            "provider": (tts_service.get_status() or {}).get("active_provider"),
-            "chars": len(text),
-        }
-    )
+    # Prefer a public static URL when the cache write succeeded.
+    if audio_path == dest or (os.path.isfile(dest) and os.path.getsize(dest) > 200):
+        return jsonify(
+            {
+                "success": True,
+                "url": "/static/landing_monitor/tts/" + os.path.basename(dest),
+                "voice_key": voice_key,
+                "speaker_id": speaker_id or None,
+                "provider": (tts_service.get_status() or {}).get("active_provider"),
+                "chars": len(text),
+            }
+        )
+
+    # Cache dir not writable — stream bytes once with a short-lived route-friendly tip.
+    return send_file(audio_path, mimetype="audio/mpeg", as_attachment=False)
