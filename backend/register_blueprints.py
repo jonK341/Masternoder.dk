@@ -519,6 +519,13 @@ def register_lite_blueprints(app):
     except Exception as e:
         print(f"  [WARN] LITE_APP monitoring: {e}")
     try:
+        from backend.routes.landing_monitor_routes import landing_monitor_bp
+        app.register_blueprint(landing_monitor_bp)
+        n += 1
+        print("  [OK] Registered landing_monitor blueprint")
+    except Exception as e:
+        print(f"  [WARN] LITE_APP landing_monitor: {e}")
+    try:
         from vidgenerator.src.routes.point_calculator_routes import point_calculator_bp
         app.register_blueprint(point_calculator_bp)
         n += 1
@@ -1316,6 +1323,17 @@ def _register_all_blueprints_impl(app):
         print(f"  [WARN] Could not import monitoring: {e}")
     except Exception as e:
         print(f"  [ERROR] Error registering monitoring: {e}")
+
+    # Landing monitor (frontpage entertainment + 5s data)
+    try:
+        from backend.routes.landing_monitor_routes import landing_monitor_bp
+        app.register_blueprint(landing_monitor_bp)
+        registered_count += 1
+        print("  [OK] Registered landing_monitor blueprint")
+    except ImportError as e:
+        print(f"  [WARN] Could not import landing_monitor: {e}")
+    except Exception as e:
+        print(f"  [ERROR] Error registering landing_monitor: {e}")
     
     # Auto-Fix Routes
     try:

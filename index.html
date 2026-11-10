@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110a">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -50,6 +51,48 @@
                     <a class="fp-secondary-action" href="/game">Åbn game hub</a>
                     <a class="fp-download-hero" href="#fp-download" title="Download apps — Play Store, Podcast, PWA">⬇ Download</a>
                     <a class="fp-mn2-badge" href="/shop" title="MN2 wallet, deposit, withdraw, pay in shop">Pay with MN2</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="fp-landing-monitor" id="fp-landing-monitor" aria-labelledby="lm-title">
+            <div class="lm-head">
+                <div>
+                    <p class="fp-kicker"><span>Live monitor</span><span>5s refresh</span></p>
+                    <h2 id="lm-title">Lobby lightshow</h2>
+                </div>
+                <div class="lm-meta">
+                    <span class="lm-pill" id="lm-bpm">180 BPM</span>
+                    <span class="lm-pill" id="lm-updated">Loading…</span>
+                </div>
+            </div>
+            <div class="lm-grid">
+                <div class="lm-bezel" aria-hidden="true">
+                    <canvas id="lm-canvas" class="lm-canvas" width="640" height="220"></canvas>
+                </div>
+                <div class="lm-side">
+                    <div class="lm-panel">
+                        <h3 id="lm-special-title">Special</h3>
+                        <p id="lm-special-body">Loading specials…</p>
+                        <div class="lm-actions">
+                            <a id="lm-special-cta" href="/wallets">Open</a>
+                            <button type="button" id="lm-light-toggle" aria-pressed="false">Lightshow off</button>
+                            <button type="button" id="lm-music-toggle" aria-pressed="false">Play AI music</button>
+                        </div>
+                    </div>
+                    <div class="lm-panel">
+                        <h3 id="lm-effect-title">Effect</h3>
+                        <p id="lm-effect-body">Effect explain loads with the lightshow.</p>
+                        <p class="lm-safety" id="lm-effect-safety"></p>
+                    </div>
+                    <div class="lm-stats" aria-label="Live platform data">
+                        <div class="lm-stat"><div class="v" id="lm-stat-videos">—</div><div class="l">Videos</div></div>
+                        <div class="lm-stat"><div class="v" id="lm-stat-users">—</div><div class="l">Users</div></div>
+                        <div class="lm-stat"><div class="v" id="lm-stat-battles">—</div><div class="l">Battles</div></div>
+                        <div class="lm-stat"><div class="v" id="lm-stat-mn2">—</div><div class="l">MN2</div></div>
+                        <div class="lm-stat"><div class="v" id="lm-stat-daemon">—</div><div class="l">Daemon</div></div>
+                        <div class="lm-stat"><div class="v" id="lm-stat-height">—</div><div class="l">Height</div></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -331,8 +374,8 @@
             runWhenIdle(() => {
                 loadMn2Surface();
                 loadAllStats();
-                setInterval(loadAllStats, 45000);
-                setInterval(loadMn2Surface, 120000);
+                setInterval(loadAllStats, 5000);
+                setInterval(loadMn2Surface, 15000);
             });
         });
     </script>
@@ -341,6 +384,7 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
+    <script src="/static/js/landing-monitor.js?v=20261110a" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
