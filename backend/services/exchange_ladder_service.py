@@ -29,7 +29,7 @@ from backend.services.exchange_inventory_skew import skewed_entry_offset_bps, sk
 from backend.services.exchange_ladder_strategy_improve import (
     enhance_ladder_cfg,
     refresh_venue_fees,
-    top_up_nonkyc_quote,
+    top_up_venue_quote,
 )
 from backend.services.exchange_market_feed_service import prefer_cached_binance_top
 from backend.services.exchange_metrics_service import observe_ladder
@@ -428,24 +428,27 @@ def run_ladder(
     spath = state_path(path, venue)
     state = load_state(spath)
     orders, pending = state["orders"], state["pending"]
+    # Capture before the live fetch — otherwise top-up never runs on the host path.
+    injected_balances = balances is not None
     if balances is None:
         balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
     # quote_reserve is for new entries only — exits must spend the reserved quote.
     reserve = float(cfg.get("quote_reserve") or 0.0)
-    injected_balances = balances is not None
     try:
         # Network top-up / fee refresh only on the live balance path (not unit tests).
         if not injected_balances:
             refresh_venue_fees()
-            if venue == "nonkyc" and cfg.get("execute"):
+            if cfg.get("execute"):
                 # Target enough quote for ~3 ladder orders / pending exits.
                 topup_target = max(
                     float(cfg.get("min_order_usd") or 3.0) * 3.0,
                     float(cfg.get("order_usd") or 3.5) * 3.0,
                     12.0,
                 )
-                report["quote_topup"] = top_up_nonkyc_quote(
+                report["quote_topup"] = top_up_venue_quote(
+                    venue,
+                    quote=str(cfg.get("quote") or quote),
                     min_quote_usd=topup_target,
                     dry_run=False,
                 )
@@ -557,7 +560,11 @@ def run_ladder(
     def _try_place(spec: Dict[str, Any], kind: str) -> Optional[str]:
         nonlocal open_count
         symbol, side, price, qty = spec["symbol"], spec["side"], float(spec["price"]), float(spec["qty"])
-        coid = f"{TAG}{symbol[:4]}-{side[:1]}{spec['level']}{'x' if kind == 'exit' else 'n'}-{int(now * 1000) % 10**9}"
+        # NonKYC requires unique userProvidedId — include symbol+kind+ms+open_count.
+        coid = (
+            f"{TAG}{symbol}-{side[:1]}{int(spec['level'])}"
+            f"{'x' if kind == 'exit' else 'n'}-{int(now * 1000) % 10**10}-{open_count}"
+        )
         res = place_with_retry(place, symbol, side, qty, price, coid, sleep=sleep)
         if not _accepted(res):
             report["errors"].append({"symbol": symbol, "side": side, "kind": kind, "price": price,
@@ -646,7 +653,7 @@ def run_ladder(
             sym = str(s["symbol"])
             pending_base[sym] = pending_base.get(sym, 0.0) + float(s["qty"])
 
-    candidates: List[Tuple[int, int, str, str]] = []
+    candidates: List[Tuple[int, int, int, str, str]] = []
     for pos, symbol in enumerate(cfg["symbols"]):
         if symbol not in refs:
             continue
@@ -654,13 +661,26 @@ def run_ladder(
         for side in cfg["sides"]:
             for level in range(cfg["levels"]):
                 if (side, level) not in taken:
-                    candidates.append((level, pos, symbol, side))
-    for level, _pos, symbol, side in sorted(candidates):
+                    # Sell entries before buys so recovering quote recycles inventory first.
+                    side_rank = 0 if side == "sell" else 1
+                    candidates.append((side_rank, level, pos, symbol, side))
+    for _side_rank, level, _pos, symbol, side in sorted(candidates):
         if open_count >= cfg["max_open_orders"]:
             report["skipped"].append({"reason": "max_open_orders", "limit": cfg["max_open_orders"]})
             break
         mk = markets[symbol]
-        cfg["_inventory_skew"] = skews.get(symbol, 0.0)
+        skew = float(skews.get(symbol, 0.0))
+        cfg["_inventory_skew"] = skew
+        # Heavy base inventory: skip new buy entries when skew pricing is on (unload first).
+        if (
+            side == "buy"
+            and float(cfg.get("inventory_skew_bps") or 0) > 0
+            and skew >= 0.35
+        ):
+            report["skipped"].append(
+                {"symbol": symbol, "side": side, "reason": "skew_long_base", "skew": round(skew, 3)}
+            )
+            continue
         price = entry_price(refs[symbol], side, level, cfg, int(mk["price_decimals"]))
         if _crosses(state, symbol, side, price, maker_sell(symbol)):
             continue

@@ -5,6 +5,7 @@ from backend.services.exchange_ladder_strategy_improve import (
     filter_symbols_by_ppp_edge,
     refresh_venue_fees,
     top_up_nonkyc_quote,
+    top_up_venue_quote,
 )
 
 
@@ -55,6 +56,20 @@ def test_topup_dry_run_without_creds(monkeypatch):
     )
     out = top_up_nonkyc_quote(dry_run=True)
     assert out["success"] is False
+    out_bn = top_up_venue_quote("binance", quote="USDC", dry_run=True)
+    assert out_bn["success"] is False
+    assert out_bn["venue"] == "binance"
+
+
+def test_topup_venue_quote_skips_when_funded(monkeypatch):
+    from backend.services import exchange_ladder_strategy_improve as imp
+
+    monkeypatch.setattr(imp, "venue_has_credentials", lambda _v: True)
+    monkeypatch.setattr(imp, "parse_spot_balances", lambda *_a, **_k: {"USDC": 40.0, "XRP": 10.0})
+    out = top_up_venue_quote("binance", quote="USDC", min_quote_usd=12.0, dry_run=True)
+    assert out["skipped"] is True
+    assert out["quote"] == "USDC"
+    assert out["free"] == 40.0
 
 
 def test_exit_first_strips_buys_when_quote_thin():

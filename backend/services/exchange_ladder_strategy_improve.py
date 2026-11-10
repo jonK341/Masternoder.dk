@@ -173,23 +173,26 @@ def apply_exit_first_sides(cfg: Dict[str, Any], *, free_quote: float) -> Dict[st
     return out
 
 
-def top_up_nonkyc_quote(
+def top_up_venue_quote(
+    venue: str = "nonkyc",
     *,
+    quote: Optional[str] = None,
     min_quote_usd: float = 12.0,
     max_sells: int = 6,
     dry_run: bool = False,
 ) -> Dict[str, Any]:
-    """Sell NonKYC base inventory into USDT when free quote is below min_quote_usd."""
-    if not venue_has_credentials("nonkyc"):
-        return {"success": False, "error": "no_credentials"}
-    bal = parse_spot_balances("nonkyc", dry_run=False, force_refresh=True) or {}
-    usdt = float(bal.get("USDT") or 0)
-    if usdt >= min_quote_usd:
-        return {"success": True, "skipped": True, "usdt": usdt, "reason": "quote_ok"}
-    # Prefer liquid ladder symbols; skip obvious meme dust.
+    """Sell liquid base inventory into the venue quote asset when free quote is thin."""
+    vid = str(venue or "nonkyc").lower()
+    q = str(quote or ("USDC" if vid == "binance" else "USDT")).upper()
+    if not venue_has_credentials(vid):
+        return {"success": False, "error": "no_credentials", "venue": vid}
+    bal = parse_spot_balances(vid, dry_run=False, force_refresh=True) or {}
+    free_q = float(bal.get(q) or 0)
+    if free_q >= min_quote_usd:
+        return {"success": True, "skipped": True, "venue": vid, "quote": q, "free": free_q, "reason": "quote_ok"}
     candidates = ["ALGO", "DOGE", "XRP", "ADA", "TRX", "SOL", "XLM"]
     sells: List[Dict[str, Any]] = []
-    need = max(min_quote_usd - usdt, 1.0)
+    need = max(min_quote_usd - free_q, 1.0)
     for sym in candidates:
         if len(sells) >= max_sells or need <= 0.5:
             break
@@ -200,36 +203,42 @@ def top_up_nonkyc_quote(
         bid = float(top.get("bid") or 0)
         if bid <= 0:
             continue
-        # More aggressive: up to 80% of free qty / $12 per clip toward the shortfall.
         target_usd = min(12.0, need)
         sell_qty = min(qty * 0.8, target_usd / bid)
         if sell_qty * bid < 0.5:
             continue
-        price = round(bid * 0.997, 8)  # slight undercut for fill
-        row = {"symbol": sym, "qty": sell_qty, "price": price, "usd": round(sell_qty * price, 4)}
+        # Binance min notional ~$5
+        if vid == "binance" and sell_qty * bid < 5.0:
+            sell_qty = min(qty * 0.95, max(5.05, need) / bid)
+            if sell_qty * bid < 5.0:
+                continue
+        price = round(bid * 0.997, 8)
+        row = {"symbol": sym, "qty": sell_qty, "price": price, "usd": round(sell_qty * price, 4), "venue": vid}
         if dry_run:
             row["dry_run"] = True
             sells.append(row)
             need -= float(row["usd"])
             continue
         res = place_limit_order(
-            "nonkyc",
+            vid,
             sym,
             "sell",
             sell_qty,
             price,
-            quote="USDT",
-            client_order_id=f"pdj-topup-{sym}-{int(time.time())}",
+            quote=q,
+            client_order_id=f"pdj-topup-{vid}-{sym}-{int(time.time() * 1000) % 10**10}",
         )
         row["result"] = {"success": bool(res.get("success")), "error": res.get("error")}
         sells.append(row)
         if res.get("success"):
-            usdt += sell_qty * price
-            need = max(min_quote_usd - usdt, 0.0)
+            free_q += sell_qty * price
+            need = max(min_quote_usd - free_q, 0.0)
     payload = {
         "success": True,
-        "usdt_before": float(bal.get("USDT") or 0),
-        "usdt_est_after": usdt,
+        "venue": vid,
+        "quote": q,
+        "free_before": float(bal.get(q) or 0),
+        "free_est_after": free_q,
         "target_usd": min_quote_usd,
         "sells": sells,
         "updated_at": time.time(),
@@ -238,6 +247,21 @@ def top_up_nonkyc_quote(
     _write(_TOPUP_STATE, payload)
     return payload
 
+
+def top_up_nonkyc_quote(
+    *,
+    min_quote_usd: float = 12.0,
+    max_sells: int = 6,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Back-compat wrapper — NonKYC USDT top-up."""
+    return top_up_venue_quote(
+        "nonkyc",
+        quote="USDT",
+        min_quote_usd=min_quote_usd,
+        max_sells=max_sells,
+        dry_run=dry_run,
+    )
 
 def enhance_ladder_cfg(cfg: Dict[str, Any], *, venue: str, balances: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     """Apply fee table, dynamic caps, exit-first sides, and PPP symbol filter."""

@@ -201,10 +201,30 @@ def run_maker_quotes(
     spath = state_path(path)
     state = load_state(spath)
     venue = str(cfg.get("venue") or "nonkyc")
+    quote = str(cfg.get("quote") or ("USDC" if venue == "binance" else "USDT")).upper()
     report["venue"] = venue
+    report["quote"] = quote
     if balances is None:
         balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
+
+    # Yield inventory to the ladder when quote is thin (aligned with exit-first ~1.5 min clips).
+    free_quote = float(bal.get(quote) or 0)
+    yield_on = bool(cfg.get("yield_to_ladder", True))
+    if yield_on and free_quote < MIN_ORDER_USD * 1.5:
+        report["yielded_to_ladder"] = True
+        report["yield_reason"] = "thin_quote"
+        open_fn = open_ids
+        for key, row in list(state.items()):
+            symbol = str(key.split(":", 1)[0])
+            coid = str(row.get("coid") or "")
+            live_ids = open_fn(symbol) or {}
+            if coid and coid in live_ids:
+                cancel(symbol, live_ids[coid])
+                report["quotes"].append({"symbol": symbol, "retired_for_ladder": coid})
+            state.pop(key, None)
+        _save_state(spath, state)
+        return report
 
     for symbol in cfg["symbols"]:
         book = top(symbol)
@@ -249,11 +269,11 @@ def run_maker_quotes(
                 if side == "sell":
                     bal[symbol] = bal.get(symbol, 0.0) + float(row.get("qty") or 0)
                 else:
-                    bal["USDT"] = bal.get("USDT", 0.0) + float(row.get("qty") or 0) * float(row.get("price") or 0)
+                    bal[quote] = bal.get(quote, 0.0) + float(row.get("qty") or 0) * float(row.get("price") or 0)
             if side == "sell":
                 qty = min(cfg["clip_usd"] / target, bal.get(symbol, 0.0) * 0.99)
             else:
-                qty = min(cfg["clip_usd"], bal.get("USDT", 0.0) - 0.05) / target
+                qty = min(cfg["clip_usd"], bal.get(quote, 0.0) - 0.05) / target
             qty = math.floor(qty * 100) / 100
             if qty * target < MIN_ORDER_USD:
                 item["skipped"] = "inventory" if side == "sell" else "budget"
@@ -268,7 +288,7 @@ def run_maker_quotes(
             if side == "sell":
                 bal[symbol] = bal.get(symbol, 0.0) - qty
             else:
-                bal["USDT"] = bal.get("USDT", 0.0) - qty * target
+                bal[quote] = bal.get(quote, 0.0) - qty * target
 
     wanted = {f"{s}:{side}" for s in cfg["symbols"] for side in cfg["sides"]}
     for key in [k for k in state if k not in wanted]:

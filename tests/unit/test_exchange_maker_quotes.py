@@ -7,7 +7,14 @@ from backend.services.exchange_maker_quote_service import (
 
 
 def _cfg(**over):
-    cfg = {**_default_config(), "execute": True, "symbols": ["ALGO"], "sides": ["sell"]}
+    # Unit fixtures use thin USDT by default; disable yield so sell-quote paths stay testable.
+    cfg = {
+        **_default_config(),
+        "execute": True,
+        "symbols": ["ALGO"],
+        "sides": ["sell"],
+        "yield_to_ladder": False,
+    }
     cfg.update(over)
     return cfg
 
@@ -157,3 +164,24 @@ def test_strategy_buy_never_crosses_our_resting_sell(tmp_path):
     )
     assert calls == []
     assert sent[0]["skipped"] == "own_maker_sell"
+
+
+def test_yields_resting_quotes_when_quote_is_thin(tmp_path):
+    venue = FakeVenue()
+    _run(venue, tmp_path, bal={"ALGO": 586.5, "USDT": 40.0})
+    assert len(venue.placed) == 1
+    rep = run_maker_quotes(
+        cfg=_cfg(yield_to_ladder=True),
+        top=lambda _s: {"bid": 0.0930, "ask": 0.0931},
+        balances={"ALGO": 586.5, "USDT": 0.04},
+        open_ids=venue.open_ids,
+        status=venue.status,
+        place=venue.place,
+        cancel=venue.cancel,
+        clock=lambda: 1060.0,
+        path=str(tmp_path / "maker.json"),
+    )
+    assert rep["yielded_to_ladder"] is True
+    assert venue.cancelled == ["o1"]
+    assert venue.open == {}
+    assert own_sell_price("ALGO", str(tmp_path / "maker.json")) is None

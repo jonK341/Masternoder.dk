@@ -306,3 +306,63 @@ def test_unfunded_exit_cancels_far_buy_entry_to_free_quote(tmp_path):
     rep = _run(venue, tmp_path, cfg=cfg, now=1060.0, bal={"ALGO": 300.0 - sell["qty"], "USDT": free_usdt})
     assert any(p.get("kind") == "exit" and p.get("side") == "buy" for p in rep["placed"]) or rep["pending_exits"] == 0
     assert rep.get("freed_for_exit") or not any(s.get("reason") == "exit_unfunded" for s in rep["skipped"])
+
+
+def test_sell_entries_fill_before_buys_under_open_cap(tmp_path):
+    venue = FakeVenue()
+    _run(venue, tmp_path, cfg=_cfg(max_open_orders=2, levels=3))
+    assert [p["side"] for p in venue.placed] == ["sell", "sell"]
+
+
+def test_skew_guard_skips_buys_when_long_base(tmp_path):
+    venue = FakeVenue()
+    rep = _run(
+        venue,
+        tmp_path,
+        cfg=_cfg(sides=["buy", "sell"], levels=1, inventory_skew_bps=25.0),
+        bal={"ALGO": 300.0, "USDT": 8.0},
+    )
+    assert _by(venue, "buy") == []
+    assert len(_by(venue, "sell")) == 1
+    assert any(s.get("reason") == "skew_long_base" for s in rep["skipped"])
+
+
+def test_client_order_ids_stay_unique_across_ticks(tmp_path):
+    venue = FakeVenue()
+    cfg = _cfg(sides=["sell"], levels=2)
+    _run(venue, tmp_path, cfg=cfg)
+    _run(venue, tmp_path, cfg=cfg, mid=0.094, now=1000.0 + 11 * 60)
+    assert len({p["coid"] for p in venue.placed}) == len(venue.placed)
+    assert all("-" in p["coid"] and p["coid"].startswith("ld-ALGO-") for p in venue.placed)
+
+
+def test_live_balance_path_runs_venue_quote_topup(tmp_path, monkeypatch):
+    from backend.services import exchange_ladder_service as lad
+
+    calls = []
+
+    def fake_topup(venue, **kwargs):
+        calls.append((venue, kwargs))
+        return {"success": True, "skipped": True, "venue": venue}
+
+    monkeypatch.setattr(lad, "parse_spot_balances", lambda *_a, **_k: {"ALGO": 50.0, "USDT": 20.0})
+    monkeypatch.setattr(lad, "top_up_venue_quote", fake_topup)
+    monkeypatch.setattr(lad, "refresh_venue_fees", lambda: None)
+    monkeypatch.setattr(lad, "enhance_ladder_cfg", lambda cfg, **_k: cfg)
+    monkeypatch.setattr(lad, "tune_ladder_cfg", lambda cfg, **_k: cfg)
+    venue = FakeVenue()
+    run_ladder(
+        cfg=_cfg(sides=["sell"], levels=1),
+        balances=None,
+        top=lambda _s: {"bid": 0.093, "ask": 0.093},
+        open_ids=venue.open_ids,
+        closed=venue.closed,
+        market=lambda _s: MK,
+        place=venue.place,
+        cancel=venue.cancel,
+        clock=lambda: 1000.0,
+        path=str(tmp_path / "ladder.json"),
+        sleep=lambda _s: None,
+    )
+    assert calls and calls[0][0] == "nonkyc"
+    assert calls[0][1]["quote"] == "USDT"
