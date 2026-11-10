@@ -2008,6 +2008,13 @@ def shop_ai_recommendations():
         except Exception:
             pass
 
+        starmap_ctx = {}
+        try:
+            from backend.routes.star_map_routes import starmap25_ai_context
+            starmap_ctx = starmap25_ai_context(user_id) or {}
+        except Exception:
+            starmap_ctx = {}
+
         all_items = _get_shop_items()[:30]
         available = [
             {'id': i.get('id'), 'name': i.get('name'), 'category': i.get('category'),
@@ -2022,8 +2029,20 @@ def shop_ai_recommendations():
             'cosmetic': 'visual/cosmetic items and themes',
             'tech':     'technology and automation upgrades',
             'value':    'best value-for-coins ratio',
+            'starmap':  'Star Map 25 boosters, game time, special units, and consumables',
         }
         focus_desc = focus_map.get(focus, 'overall best value and usefulness')
+        if focus == 'value' and starmap_ctx.get('shop_focus_hint'):
+            focus_desc = f"{focus_desc}; prefer {starmap_ctx.get('shop_focus_hint')}"
+
+        starmap_line = (
+            f"Star Map 25: {starmap_ctx.get('investigated_count', 0)}/"
+            f"{starmap_ctx.get('total_points', 25)} investigated, "
+            f"{starmap_ctx.get('secured_count', 0)} secured, "
+            f"{starmap_ctx.get('placements', 0)} placements. "
+            f"Techs: {', '.join(t.get('id', '') for t in (starmap_ctx.get('techs') or []))}. "
+            f"Monitor: {starmap_ctx.get('monitor_url', '/starmap25/')}."
+        )
 
         from backend.services.llm_service import chat
         resp = chat(
@@ -2033,6 +2052,7 @@ def shop_ai_recommendations():
                     'content': (
                         'You are the AI shop advisor for MasterNoder.dk. '
                         'Recommend exactly 5 shop items. '
+                        'Use Star Map 25 progress and agent techs when relevant. '
                         'Return ONLY valid JSON: {"recommendations": [{"item_id": str, "name": str, '
                         '"reason": str (max 12 words), "priority": "must-have|great|nice-to-have"}]}'
                     ),
@@ -2042,6 +2062,7 @@ def shop_ai_recommendations():
                     'content': (
                         f'User: level {level}, {xp} XP, budget {budget} coins. '
                         f'Focus: {focus_desc}.\n'
+                        f'{starmap_line}\n'
                         f'Available items:\n'
                         + '\n'.join(
                             f"- {i['id']}: {i['name']} ({i['category']}, price={i['price']}) — {i['description']}"
@@ -2087,6 +2108,7 @@ def shop_ai_recommendations():
             'xp':              xp,
             'budget':          budget,
             'focus':           focus,
+            'starmap25':       starmap_ctx,
             'recommendations': recs[:5],
             'provider':        resp.provider if resp.success else 'fallback',
         }), 200

@@ -100,3 +100,5 @@ data/trophy_income/
 data/trophy_quests/
 data/paypal_shop_orders.json
 instance/*.lock
+# Star Map / JSON state flock sidecars (Top 25 #24)
+data/*.json.lock

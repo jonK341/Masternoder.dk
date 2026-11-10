@@ -367,3 +367,84 @@ def test_json_state_save_helper_writes(tmp_path):
     path = tmp_path / "probe.json"
     assert sm._save_json_state(str(path), {"ok": True}, "probe") is True
     assert json.loads(path.read_text(encoding="utf-8"))["ok"] is True
+    assert (tmp_path / "probe.json.lock").is_file()
+
+
+def test_unlock_requirement_blocks_and_allows_investigate(tmp_path, monkeypatch):
+    from backend.routes import star_map_routes as sm
+
+    inv_path = tmp_path / "investigations.json"
+    inv_path.write_text(json.dumps({}), encoding="utf-8")
+    monkeypatch.setattr(sm, "STAR_MAP_25_INVESTIGATIONS_PATH", str(inv_path))
+    monkeypatch.setattr(sm, "_investigate_rate_limited", lambda user_id: (False, 0))
+    monkeypatch.setattr(sm, "_starmap25_booster_multiplier", lambda user_id: 1.0)
+    monkeypatch.setattr(sm, "_active_starmap25_boosters", lambda user_id: [])
+    monkeypatch.setattr(sm, "_sync_starmap25_to_user_profile", lambda user_id: None)
+    monkeypatch.setattr(sm, "_update_starmap25_quests", lambda *a, **k: None)
+    monkeypatch.setattr(sm, "_award_starmap25_trophies", lambda user_id: {"newly_awarded": []})
+    monkeypatch.setattr(sm, "_event_reward_modifier", lambda *a, **k: (1.0, 0, []))
+    monkeypatch.setattr(sm, "_log_event_participation", lambda *a, **k: None)
+    monkeypatch.setattr(sm, "_track_starmap25_with_event_tracker", lambda *a, **k: None)
+
+    class _FakePts:
+        def add_points(self, *args, **kwargs):
+            return True
+
+    monkeypatch.setattr(
+        "backend.services.unified_points_database.unified_points_db",
+        _FakePts(),
+    )
+
+    client = _app().test_client()
+    blocked = client.post(
+        "/api/star-map/25/investigate",
+        json={"user_id": "u_unlock", "point_id": "mars_sol", "approved": True},
+    )
+    assert blocked.status_code == 403
+    body = blocked.get_json()
+    assert body.get("success") is False
+    assert "terra_sol" in (body.get("unlock_missing") or [])
+
+    # Seed Terra investigated, then Mars should succeed
+    inv_path.write_text(json.dumps({"u_unlock": ["terra_sol"]}), encoding="utf-8")
+    ok = client.post(
+        "/api/star-map/25/investigate",
+        json={"user_id": "u_unlock", "point_id": "mars_sol", "approved": True},
+    )
+    assert ok.status_code == 200
+    assert ok.get_json().get("success") is True
+    assert ok.get_json().get("point_id") == "mars_sol"
+
+
+def test_starmap25_ai_context_and_frontpage_monitor_removed():
+    from backend.routes.star_map_routes import starmap25_ai_context
+
+    ctx = starmap25_ai_context("default_user")
+    assert ctx.get("total_points") == 25
+    assert ctx.get("monitor_url") == "/starmap25/"
+    assert any(t.get("id") == "agent_electric_magnet" for t in (ctx.get("techs") or []))
+
+    index = (ROOT / "index.html").read_text(encoding="utf-8")
+    frontpage = (ROOT / "static" / "js" / "frontpage-home.js").read_text(encoding="utf-8")
+    assert "fp-starmap4d" not in index
+    assert "class StarMap4D" not in frontpage
+    assert "/starmap25/" in frontpage
+
+
+def test_agent_strategy_includes_starmap_context(tmp_path, monkeypatch):
+    from backend.services.agent_ai_intelligence import AgentAIIntelligence
+
+    intel_dir = tmp_path / "intel"
+    intel_dir.mkdir()
+    service = AgentAIIntelligence(base_dir=str(tmp_path))
+    service.intelligence_file = str(intel_dir / "intelligence.json")
+    service.intelligence = service._default_intelligence()
+
+    strategy = service.develop_strategy(
+        "agent_test",
+        "Clear Star Map 25 systems",
+        constraints={"user_id": "default_user"},
+    )
+    assert strategy.get("starmap25")
+    assert strategy["phases"][0]["action"] == "view_star_map_via_electric_magnet"
+    assert any(t.get("id") == "agent_event_tracker" for t in (strategy.get("techs") or []))

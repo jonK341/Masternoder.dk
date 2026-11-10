@@ -1,5 +1,5 @@
 /**
- * Home: smart links, 4D starmap projection, intelligence news
+ * Home: smart links, intelligence news
  */
 (function () {
     'use strict';
@@ -507,158 +507,6 @@
         }
     }
 
-    const SEGMENTUM_INDEX = {
-        Solar: 0,
-        Obscurus: 1,
-        Pacificus: 2,
-        Tempestus: 3,
-        Ultima: 4,
-        Unknown: 5,
-    };
-
-    function segmentumPhase(seg) {
-        const k = SEGMENTUM_INDEX[seg] != null ? SEGMENTUM_INDEX[seg] : 5;
-        return (k / 6) * Math.PI * 2;
-    }
-
-    function rotate4D(x, y, z, w, a1, a2) {
-        const c1 = Math.cos(a1);
-        const s1 = Math.sin(a1);
-        let x1 = x * c1 - z * s1;
-        let y1 = y;
-        let z1 = x * s1 + z * c1;
-        let w1 = w;
-
-        const c2 = Math.cos(a2);
-        const s2 = Math.sin(a2);
-        const y2 = y1 * c2 - w1 * s2;
-        const w2 = y1 * s2 + w1 * c2;
-        return { x: x1, y: y2, z: z1, w: w2 };
-    }
-
-    function stereographic3(x, y, z, w) {
-        const denom = 1.0001 - w;
-        return { x: x / denom, y: y / denom, z: z / denom };
-    }
-
-    function dprScale(W) {
-        return Math.min(W / 400, 1.8);
-    }
-
-    class StarMap4D {
-        constructor(canvasId) {
-            this.canvas = document.getElementById(canvasId);
-            this.points = [];
-            this.slider = document.getElementById('fp-starmap-w');
-            this.t0 = performance.now();
-            this._raf = null;
-            window.addEventListener('resize', () => this.resize());
-        }
-
-        resize() {
-            if (!this.canvas) return;
-            const rect = this.canvas.getBoundingClientRect();
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            const w = Math.max(320, Math.floor(rect.width * dpr));
-            const h = Math.floor(Math.max(260, rect.width * 0.42) * dpr);
-            this.canvas.width = w;
-            this.canvas.height = h;
-        }
-
-        async load() {
-            if (!this.canvas) return;
-            try {
-                const res = await fetch(`${BASE}/api/star-map/25`);
-                const data = await res.json();
-                const sm = data && data.star_map_25;
-                this.points = (sm && sm.points) || [];
-            } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }
-                this.points = [];
-            }
-            this.resize();
-            this.startLoop();
-        }
-
-        startLoop() {
-            if (this._raf) cancelAnimationFrame(this._raf);
-            const tick = () => {
-                this.drawFrame();
-                this._raf = requestAnimationFrame(tick);
-            };
-            this._raf = requestAnimationFrame(tick);
-        }
-
-        drawFrame() {
-            if (!this.canvas) return;
-            const ctx = this.canvas.getContext('2d');
-            const W = this.canvas.width;
-            const H = this.canvas.height;
-            if (W < 8 || H < 8) return;
-
-            ctx.fillStyle = '#06060c';
-            ctx.fillRect(0, 0, W, H);
-
-            const cx = W * 0.5;
-            const cy = H * 0.52;
-            const scale = Math.min(W, H) * 0.22;
-
-            const wSlider = this.slider ? parseInt(this.slider.value, 10) / 100 : 0.5;
-            const t = (performance.now() - this.t0) / 1000;
-            const a1 = t * 0.35 + wSlider * Math.PI;
-            const a2 = t * 0.22 + wSlider * Math.PI * 0.5;
-
-            if (!this.points.length) {
-                ctx.fillStyle = 'rgba(255,255,255,0.5)';
-                ctx.font = '14px system-ui,sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Ingen stjernedata — tjek /api/star-map/25', cx, cy);
-                ctx.textAlign = 'start';
-                return;
-            }
-
-            const n = this.points.length;
-            const ds = dprScale(W);
-            this.points.forEach((p, i) => {
-                const base = segmentumPhase(p.segmentum || 'Unknown');
-                const u = i / n;
-                const theta = base + u * Math.PI * 2;
-                const phi = Math.acos(2 * u - 1) * 0.92;
-                const r = 0.55 + (p.point_value || 10) / 40 * 0.25;
-                const x = r * Math.sin(phi) * Math.cos(theta);
-                const y = r * Math.sin(phi) * Math.sin(theta);
-                const z = r * Math.cos(phi);
-                const w4 = (u * 2 - 1) * 0.65 + (wSlider - 0.5) * 0.4;
-
-                const q = rotate4D(x, y, z, w4, a1, a2);
-                const proj = stereographic3(q.x, q.y, q.z, q.w);
-
-                const px = cx + proj.x * scale;
-                const py = cy + proj.y * scale;
-                const size = 3.2 + ((p.point_value || 10) / 18) * ds;
-                const hue = 140 + wSlider * 80 + (p.index || i) * 3;
-
-                ctx.beginPath();
-                ctx.arc(px, py, size, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${hue % 360}, 75%, 58%, 0.92)`;
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-
-                if (W > 700 && i < 18) {
-                    ctx.font = `${10 * (W / 900)}px system-ui, sans-serif`;
-                    ctx.fillStyle = 'rgba(230,240,255,0.5)';
-                    const name = (p.name || p.id || '').slice(0, 22);
-                    ctx.fillText(name, px + size + 2, py + 3);
-                }
-            });
-
-            ctx.fillStyle = 'rgba(200,200,255,0.45)';
-            ctx.font = `${11 * (W / 900)}px system-ui`;
-            ctx.fillText('4D → stereographic 3D · tid (w) roterer hyper-rummet', 12, H - 12);
-        }
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
         buildSmartLinks();
         wireVisitTracking();
@@ -672,8 +520,6 @@
         };
         runWhenIdle(() => {
             loadNews();
-            const sm = new StarMap4D('fp-starmap4d');
-            sm.load();
         });
     });
 })();

@@ -5,7 +5,13 @@ Star Map 25: 25 WH40K-themed investigation points; investigate to earn game_poin
 """
 import os
 import json
+from contextlib import contextmanager
 from flask import Blueprint, jsonify, request
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - non-Unix
+    fcntl = None
 
 star_map_bp = Blueprint("star_map", __name__)
 
@@ -302,26 +308,51 @@ def _load_star_map_25():
     return {"name": "Star Map 25", "points": [], "specials": ["run_verification", "run_dna_test", "view_star_map"]}
 
 
-def _load_investigations():
-    if os.path.exists(STAR_MAP_25_INVESTIGATIONS_PATH):
+@contextmanager
+def _json_state_lock(path):
+    """Exclusive file lock for Star Map JSON state (Top 25 #24)."""
+    lock_path = path + ".lock"
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    handle = open(lock_path, "a+", encoding="utf-8")
+    try:
+        if fcntl is not None:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        yield handle
+    finally:
         try:
-            with open(STAR_MAP_25_INVESTIGATIONS_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
+            if fcntl is not None:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            handle.close()
+
+
+def _read_json_file(path, default):
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def _load_investigations():
+    with _json_state_lock(STAR_MAP_25_INVESTIGATIONS_PATH):
+        data = _read_json_file(STAR_MAP_25_INVESTIGATIONS_PATH, {})
+        return data if isinstance(data, dict) else {}
 
 
 def _save_json_state(path, data, label):
-    """Atomic-ish JSON write with audible failure logging (Top 25 #14)."""
+    """Atomic JSON write under exclusive lock with audible failure logging (Top 25 #14/#24)."""
     try:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        tmp = path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, path)
+        with _json_state_lock(path):
+            tmp = path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, path)
         return True
     except Exception as exc:
         try:
@@ -349,17 +380,89 @@ def _save_investigations(data):
 
 
 def _load_invasions():
-    if os.path.exists(STAR_MAP_25_INVASIONS_PATH):
-        try:
-            with open(STAR_MAP_25_INVASIONS_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"users": {}}
+    with _json_state_lock(STAR_MAP_25_INVASIONS_PATH):
+        data = _read_json_file(STAR_MAP_25_INVASIONS_PATH, {"users": {}})
+        if not isinstance(data, dict):
+            return {"users": {}}
+        data.setdefault("users", {})
+        return data
 
 
 def _save_invasions(data):
     return _save_json_state(STAR_MAP_25_INVASIONS_PATH, data, "invasions")
+
+
+def _point_unlock_requirement(point, sm25=None):
+    """Return optional unlock_requirement dict for a point (investigate list)."""
+    if not point:
+        return None
+    req = point.get("unlock_requirement")
+    if req is None and sm25 is not None:
+        meta = (sm25.get("point_metadata") or {}).get(point.get("id") or "", {})
+        req = meta.get("unlock_requirement")
+    if not req:
+        return None
+    if isinstance(req, dict):
+        return req
+    if isinstance(req, str):
+        return {"investigate": [req]}
+    if isinstance(req, list):
+        return {"investigate": [str(x) for x in req]}
+    return None
+
+
+def _unlock_requirement_met(requirement, investigated_ids):
+    """Check unlock_requirement against investigated point ids. Returns (ok, missing)."""
+    if not requirement:
+        return True, []
+    investigated = set(investigated_ids or [])
+    needed = [str(x) for x in (requirement.get("investigate") or []) if x]
+    missing = [pid for pid in needed if pid not in investigated]
+    return (len(missing) == 0), missing
+
+
+def starmap25_ai_context(user_id: str):
+    """Compact Star Map 25 + tech context for shop AI / agent strategy (Top 25 #23)."""
+    user_id = (user_id or "default_user").strip() or "default_user"
+    try:
+        investigated = list(_load_investigations().get(user_id) or [])
+    except Exception:
+        investigated = []
+    try:
+        sm25 = _load_star_map_25()
+        total_points = len(sm25.get("points") or [])
+    except Exception:
+        total_points = 25
+    try:
+        invasion_user = (_load_invasions().get("users") or {}).get(user_id) or {}
+        secured = list(invasion_user.get("invaded_ids") or [])
+    except Exception:
+        secured = []
+    try:
+        buildup_user = (_load_buildup().get("users") or {}).get(user_id) or {}
+        placements = len(buildup_user.get("placements") or [])
+        unlocked_specials = list(buildup_user.get("unlocked_specials") or [])
+    except Exception:
+        placements = 0
+        unlocked_specials = []
+    return {
+        "investigated_count": len(investigated),
+        "investigated_ids": investigated[:12],
+        "total_points": total_points,
+        "secured_count": len(secured),
+        "placements": placements,
+        "unlocked_specials": unlocked_specials[:8],
+        "monitor_url": "/starmap25/",
+        "techs": [
+            {"id": "agent_electric_magnet", "role": "view_star_map"},
+            {"id": "agent_event_tracker", "role": "track_starmap25_actions"},
+        ],
+        "shop_focus_hint": (
+            "starmap25 boosters and special units"
+            if len(investigated) >= 3
+            else "starmap25 entry boosters and Terra investigation"
+        ),
+    }
 
 
 def _load_trophy_awards():
@@ -905,13 +1008,12 @@ def _load_units():
 
 
 def _load_buildup():
-    if os.path.exists(STAR_MAP_25_BUILDUP_PATH):
-        try:
-            with open(STAR_MAP_25_BUILDUP_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"users": {}}
+    with _json_state_lock(STAR_MAP_25_BUILDUP_PATH):
+        data = _read_json_file(STAR_MAP_25_BUILDUP_PATH, {"users": {}})
+        if not isinstance(data, dict):
+            return {"users": {}}
+        data.setdefault("users", {})
+        return data
 
 
 def _save_buildup(data):
@@ -1147,7 +1249,8 @@ def get_star_map_25():
 
 def _star_map_25_point_state(user_id, point):
     point_id = point.get("id", "")
-    investigated = set(_load_investigations().get(user_id, []))
+    investigated_list = list(_load_investigations().get(user_id, []))
+    investigated = set(investigated_list)
     invasion_user = _load_invasions().get("users", {}).get(user_id, {})
     invaded = set(invasion_user.get("invaded_ids", []))
     levels = _get_user_system_levels(user_id)
@@ -1156,6 +1259,8 @@ def _star_map_25_point_state(user_id, point):
         p for p in buildup_user.get("placements", [])
         if p.get("point_id") == point_id
     ]
+    requirement = _point_unlock_requirement(point)
+    unlocked, missing = _unlock_requirement_met(requirement, investigated_list)
     return {
         "investigated": point_id in investigated,
         "secured": point_id in invaded,
@@ -1164,6 +1269,9 @@ def _star_map_25_point_state(user_id, point):
         "invasion_blurb": (invasion_user.get("blurbs") or {}).get(point_id, ""),
         "invasion_unit": (invasion_user.get("units") or {}).get(point_id, ""),
         "invasion_reward": (invasion_user.get("rewards") or {}).get(point_id, 0),
+        "unlock_requirement": requirement,
+        "unlocked": unlocked if point_id not in investigated else True,
+        "unlock_missing": missing if point_id not in investigated else [],
     }
 
 
@@ -1470,6 +1578,17 @@ def investigate_star_map_25_point():
                 "points_awarded": 0,
                 "message": "Already investigated",
             }), 200
+
+        requirement = _point_unlock_requirement(point, sm25)
+        unlocked, missing = _unlock_requirement_met(requirement, inv[user_id])
+        if not unlocked:
+            return jsonify({
+                "success": False,
+                "error": "Point locked — investigate required systems first",
+                "unlock_requirement": requirement,
+                "unlock_missing": missing,
+                "point_id": point_id,
+            }), 403
 
         limited, retry_after = _investigate_rate_limited(user_id)
         if limited:
