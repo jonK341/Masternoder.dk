@@ -266,6 +266,71 @@ build_linux_qt() {
   cat MasterNoder2-qt-linux.tar.gz.sha256
 }
 
+# libevent 2.1.8 sets _WIN32_WINNT=0x0501 after windows.h; modern mingw then
+# declares Vista GetTcpTable2 APIs while MIB_* types stay invisible → hard error.
+patch_libevent_mingw_iphlpapi() {
+  local mk="${SRC_DIR}/depends/packages/libevent.mk"
+  local helper="/tmp/mn2_fix_evutil_winnt.py"
+  if [[ ! -f "${mk}" ]]; then
+    echo "WARN: libevent.mk missing; skip mingw iphlpapi patch" >&2
+    return 0
+  fi
+  cat > "${helper}" <<'PY'
+#!/usr/bin/env python3
+"""mn2-mingw-iphlpapi: fix libevent 2.1.8 evutil.c for modern mingw headers."""
+from pathlib import Path
+
+path = Path("evutil.c")
+text = path.read_text(encoding="utf-8", errors="replace")
+old = "#undef _WIN32_WINNT\n/* For structs needed by GetAdaptersAddresses */\n#define _WIN32_WINNT 0x0501\n#include <iphlpapi.h>"
+new = (
+    "#undef _WIN32_WINNT\n"
+    "/* mn2-mingw-iphlpapi: Vista+ so iphlpapi.h MIB_* types resolve */\n"
+    "#define _WIN32_WINNT 0x0601\n"
+    "#undef NTDDI_VERSION\n"
+    "#define NTDDI_VERSION 0x06010000\n"
+    "#include <tcpmib.h>\n"
+    "#include <iphlpapi.h>"
+)
+if "mn2-mingw-iphlpapi" in text:
+    print("evutil.c already patched")
+elif old not in text:
+    raise SystemExit("evutil.c winnt block not found")
+else:
+    path.write_text(text.replace(old, new, 1), encoding="utf-8")
+    print("patched evutil.c winnt/iphlpapi block")
+PY
+  chmod +x "${helper}"
+  if grep -q 'mn2-mingw-iphlpapi' "${mk}"; then
+    echo "=== libevent.mk already wires mn2-mingw-iphlpapi ==="
+  else
+    echo "=== Patching depends libevent.mk for mingw iphlpapi ==="
+    python3 - "${mk}" "${helper}" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+helper = sys.argv[2]
+text = path.read_text()
+old = """define $(package)_preprocess_cmds
+  ./autogen.sh
+endef"""
+new = f"""define $(package)_preprocess_cmds
+  python3 {helper}  # mn2-mingw-iphlpapi
+  ./autogen.sh
+endef"""
+if old not in text:
+    raise SystemExit(f"unexpected libevent.mk preprocess block in {path}")
+path.write_text(text.replace(old, new, 1))
+print(f"patched {path}")
+PY
+  fi
+
+  # Clear failed libevent build so depends re-runs preprocess with the fix.
+  rm -rf "${SRC_DIR}/depends/work/build/x86_64-w64-mingw32/libevent" \
+    "${SRC_DIR}/depends/work/staging/x86_64-w64-mingw32/libevent" 2>/dev/null || true
+  find "${SRC_DIR}/depends/work" -path '*libevent*' \( -name '.stamp_built' -o -name '.stamp_configured' -o -name '.stamp_preprocessed' \) -delete 2>/dev/null || true
+}
+
 build_win_qt() {
   echo "=== Building Windows Qt cross-compile (USE_DEPENDS=${USE_DEPENDS}) ==="
   cd "${SRC_DIR}"
@@ -288,6 +353,10 @@ exec /usr/bin/gcc -Wno-error=implicit-function-declaration -Wno-implicit-functio
 WRAP
   chmod +x "${CC_WRAP}/gcc"
   export PATH="${CC_WRAP}:${PATH}"
+
+  # Modern mingw headers break libevent 2.1.8's XP-era _WIN32_WINNT redefine in
+  # evutil.c (iphlpapi.h sees Vista APIs without MIB_* types). Patch depends recipe.
+  patch_libevent_mingw_iphlpapi
 
   echo "=== depends (x86_64-w64-mingw32, with Qt) — first run can take 60–120 min ==="
   cd depends
