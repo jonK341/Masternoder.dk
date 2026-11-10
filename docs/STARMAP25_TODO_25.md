@@ -24,20 +24,20 @@
 | **2** | [x] | Refresh live temporary events (windows had expired 2026-06-01) | Banners/modifiers/analytics idle | `data/starmap25_events.json` |
 | **3** | [x] | Always-on action logging for investigate/build/deploy/collect/invade | Analytics only logged when an event matched | `star_map_routes.py` `_log_event_participation` |
 | **4** | [x] | Honor `max_per_planet` by building type (allow different buildings on one planet) | Build blocked any second building | `build_star_map_25()`, `starmap25_buildings.json` |
-| **5** | [x] | Expand deploy manifest with all `starmap25_*.json` gameplay files | Partial deploys shipped broken loops | `scripts/deploy.py` |
+| **5** | [x] | Expand deploy manifest with all `starmap25_*.json` gameplay files | Partial deploys shipped broken gameplay | `scripts/deploy.py` |
 | **6** | [x] | Unit tests for map/status/health/events/build placement rules | Almost zero coverage | `tests/unit/test_star_map_25.py` |
-| **7** | [ ] | Wire shop Level Skip / Daily Reset Bonus / Structure Unlock consume → buildup | Catalog items do not affect gameplay | `shop_catalog_seed.py`, `shop_routes.py`, `star_map_routes.py` |
-| **8** | [ ] | Make boosters reliable end-to-end (purchase → active → multipliers) | Economy core can miss purchased boosters | `_active_starmap25_boosters()`, shop purchase path |
-| **9** | [ ] | Special-unit acquisition + invade `special_unit_id` + apply `special_rule` | Design unfinished; invade ignores specials | `starmap25_units.json`, `invade_star_map_25()` |
-| **10** | [ ] | LLM invasion blurbs with template fallback | Invade still hardcodes one-liner | `invade_star_map_25()`, `llm_service` |
-| **11** | [ ] | Game tab: build/deploy/invade controls (or deep-link with prefilled system) | Secondary surface is investigate/collect only | `game/index.html` `loadStarMap25Tab()` |
-| **12** | [ ] | Differentiate trophies: Segmentum Clear = full segmentum; Lore Master ≠ Full Clear; Terra = first investigate | Current semantics are weak/overlapping | `_compute_starmap25_trophies()`, trophies UI |
-| **13** | [ ] | Show Star Map trophy progress on Trophies page | Link-only today | `trophies/index.html` |
+| **7** | [x] | Wire shop Level Skip / Daily Reset Bonus / Structure Unlock consume → buildup | Catalog items do not affect gameplay | `POST /api/star-map/25/consume-shop-item`, shop seed |
+| **8** | [x] | Make boosters reliable end-to-end (stable ids + detection + UI multiplier) | Economy core can miss purchased boosters | `shop_catalog_seed.py`, `_active_starmap25_boosters`, game tab |
+| **9** | [x] | Special-unit acquisition + invade `special_unit_id` + apply `special_rule` | Design unfinished; invade ignored specials | units shop SKUs, deploy gate, invade |
+| **10** | [x] | LLM invasion blurbs with template fallback | Invade hardcoded one-liner | `_generate_invasion_blurb()` |
+| **11** | [x] | Game tab: deploy/invade controls + build deep-link | Secondary surface was investigate/collect only | `game/index.html` |
+| **12** | [x] | Differentiate trophies: Terra first / full Segmentum / Lore Master ≠ Full Clear | Weak overlapping semantics | `_compute_starmap25_trophies()` |
+| **13** | [x] | Show Star Map trophy progress on Trophies page | Link-only before | `trophies/index.html` |
 | **14** | [ ] | Fail loudly / retry on JSON state write failures | Bare `except: pass` on saves | `_save_*` helpers |
 | **15** | [ ] | Real 3D orbit + labels + focus-from-card | HUD claims drag-rotate; auto-spin only | `init3DView()` in `starmap25/index.html` |
 | **16** | [ ] | Gate walkthrough unlocks (or rewrite copy as progress-only) | Tiers promise 3D/intel gates that are not enforced | `starmap25_walkthrough.json`, UI panels |
-| **17** | [ ] | Surface leaderboard + analytics on the monitor | APIs exist; UI absent | `star_map_25_leaderboard`, `star_map_25_analytics`, monitor |
-| **18** | [ ] | Complete OpenAPI (`planet-intel`, `sync-profile`, `ai-hint`, `ai-guide`) | Spec incomplete | `_star_map_25_openapi_spec()`, `docs/STARMAP25_API_OPENAPI.md` |
+| **17** | [ ] | Surface leaderboard + analytics on the monitor | APIs exist; UI absent | leaderboard/analytics + monitor |
+| **18** | [ ] | Complete OpenAPI (`planet-intel`, `sync-profile`, `ai-hint`, `ai-guide`, consume) | Spec incomplete | `_star_map_25_openapi_spec()` |
 | **19** | [ ] | `GET /api/star-map/25?segmentum=` filter | Listed in 50-project backlog | `get_star_map_25()` |
 | **20** | [ ] | Investigate rate limit (429 + Retry-After) | Abuse / farming gap | `investigate_star_map_25_point()` |
 | **21** | [ ] | Optional `unlock_requirement` enforcement on investigate | Data project unrealized | map metadata + investigate validation |
@@ -48,23 +48,25 @@
 
 ---
 
-## This push (started work)
+## This push (continued)
 
-1. New Top 25 checklist (this document).
-2. Play/Monitor cards visibility fix.
-3. Fresh event windows (active + upcoming).
-4. Always-on action analytics log.
-5. `max_per_planet` placement rules.
-6. Full `starmap25` deploy manifest.
-7. Focused unit tests for health/map/events/build rules.
+1. Stable Star Map shop SKUs + consumable effects (`starmap25-level-skip`, daily reset, structure unlock, level pack, special units).
+2. `POST /api/star-map/25/consume-shop-item` wires inventory → buildup state.
+3. Booster detection for stable ids; game tab shows combined multiplier.
+4. Special-unit unlock gate on deploy/invade; `special_unit_id` + `special_rule` bonuses; classified lore for Lore Master.
+5. LLM invasion blurb with template fallback.
+6. Game tab Deploy Guard / Invade / Build deep-link.
+7. Differentiated trophy semantics + Trophies page progress panel.
+8. Expanded unit tests.
 
 ## Quick verification
 
 ```bash
 .venv/bin/python -m pytest tests/unit/test_star_map_25.py -q
-curl -s http://127.0.0.1:5000/api/star-map/25/health
-curl -s http://127.0.0.1:5000/api/star-map/25/events
-# Open /starmap25/ — Play shows cards; Monitor shows cards + filters + buildup
+curl -s 'http://127.0.0.1:5000/api/star-map/25/status?user_id=default_user' | head
+# Shop: /shop?category=starmap25 — buy skip/reset/specials, then consume via API or monitor
+# Game tab: Deploy Guard then Invade on investigated systems
+# Trophies → Star Map tab: Star Map 25 trophy cards
 ```
 
 ## References
@@ -75,4 +77,4 @@ curl -s http://127.0.0.1:5000/api/star-map/25/events
 - `docs/STARMAP_25_50_PROJECTS.md`
 - `docs/STARMAP25_UPGRADE_FINISH.md`
 
-*Document version: 2026-11-10. Star Map 25 — active Top 25.*
+*Document version: 2026-11-10 (continued). Star Map 25 — active Top 25.*

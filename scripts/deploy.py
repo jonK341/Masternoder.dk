@@ -237,9 +237,12 @@ MANIFESTS = {
     "starmap25": [
         "starmap25/index.html",
         "game/index.html",
+        "trophies/index.html",
         "generator/index.html",
         "backend/routes/star_map_routes.py",
+        "backend/routes/shop_routes.py",
         "backend/routes/debugger_agent_tasks_routes.py",
+        "backend/services/shop_catalog_seed.py",
         "data/star_map_25.json",
         "data/star_map_25_investigations.json",
         "data/starmap25_agent_projects.json",

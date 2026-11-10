@@ -5,7 +5,7 @@ def build_seed_shop_items(*, include_dynamic_offers=True):
     items = []
     idx = 0
 
-    def add(name, desc, cat, price, icon="🛍️", rarity="common", tags=None, item_id=None):
+    def add(name, desc, cat, price, icon="🛍️", rarity="common", tags=None, item_id=None, effect=None):
         nonlocal idx
         idx += 1
         row = {
@@ -19,6 +19,8 @@ def build_seed_shop_items(*, include_dynamic_offers=True):
         }
         if tags:
             row["tags"] = tags
+        if effect:
+            row["effect"] = effect
         items.append(row)
 
     themes = [
@@ -52,34 +54,90 @@ def build_seed_shop_items(*, include_dynamic_offers=True):
     for n, d, i in boosts:
         add(n, d, "boosts", 30 + idx * 3, i, "common")
 
-    # Star Map 25: boosters, gametime, trophies
-    starmap25_boosts = [
-        ("Star Map 25 Booster 1h", "2x investigation points for 1 hour on Star Map 25", "🌟"),
-        ("Star Map 25 Booster 6h", "2x investigation points for 6 hours", "🌟"),
-        ("Star Map 25 Booster 24h", "2x investigation points for 24 hours", "🌟"),
-        ("Star Map 25 Game Time +30m", "Extra 30 min Hunter game + Star Map 25 session", "⏱️"),
-        ("Star Map 25 Game Time +1h", "Extra 1h Hunter game + Star Map 25 session", "⏱️"),
-        ("Star Map 25 Game Time +2h", "Extra 2h Hunter game + Star Map 25 session", "⏱️"),
-    ]
-    for n, d, i in starmap25_boosts:
-        add(n, d, "starmap25", 35 + idx * 2, i, "rare")
-    starmap25_trophies = [
-        ("Star Map 25 — Terra Trophy", "Trophy: First investigation (Terra)", "🏆"),
-        ("Star Map 25 — Segmentum Clear", "Trophy: All 5 Segmentum fortresses investigated", "🏆"),
-        ("Star Map 25 — Full Clear Trophy", "Trophy: All 25 points investigated", "🏆"),
-        ("Star Map 25 — Lore Master", "Trophy: Unlock all 25 lore entries", "📜"),
-    ]
-    for n, d, i in starmap25_trophies:
-        add(n, d, "starmap25", {"game_points": 50 + idx * 5}, i, "rare")
-    starmap25_levels_calendar = [
-        ("System Level Skip Token", "Unlock one system to next level (max 5)", "📈"),
-        ("Daily Reset Bonus 24h", "2x buildup collect for 24h after next daily reset", "🔄"),
-        ("High-Level Structure Unlock", "Unlock one Orbital Fortress / Cathedral / Primarch's Gate without level", "🏗️"),
-        ("Calendar Slot — Agent Task", "Schedule one agent/AI appointment (content, learning, analytics)", "📅"),
-        ("Star Map 25 Level Pack", "Bundle: 1 level skip + 1 daily reset bonus", "📦"),
-    ]
-    for n, d, i in starmap25_levels_calendar:
-        add(n, d, "starmap25", 80 + idx * 10, i, "rare")
+    # Star Map 25: boosters, gametime, consumables, special units (stable item ids)
+    add(
+        "Star Map 25 Booster 1h", "2x investigation points for 1 hour on Star Map 25", "starmap25",
+        77, "🌟", "rare", tags=["starmap25", "booster"], item_id="starmap25-booster-1h",
+        effect="starmap25_booster",
+    )
+    add(
+        "Star Map 25 Booster 6h", "2x investigation points for 6 hours", "starmap25",
+        79, "🌟", "rare", tags=["starmap25", "booster"], item_id="starmap25-booster-6h",
+        effect="starmap25_booster",
+    )
+    add(
+        "Star Map 25 Booster 24h", "2x investigation points for 24 hours", "starmap25",
+        81, "🌟", "rare", tags=["starmap25", "booster"], item_id="starmap25-booster-24h",
+        effect="starmap25_booster",
+    )
+    add(
+        "Star Map 25 Game Time +30m", "Extra 30 min Hunter game + Star Map 25 session", "starmap25",
+        83, "⏱️", "rare", tags=["starmap25", "gametime"], item_id="starmap25-gametime-30m",
+    )
+    add(
+        "Star Map 25 Game Time +1h", "Extra 1h Hunter game + Star Map 25 session", "starmap25",
+        85, "⏱️", "rare", tags=["starmap25", "gametime"], item_id="starmap25-gametime-1h",
+    )
+    add(
+        "Star Map 25 Game Time +2h", "Extra 2h Hunter game + Star Map 25 session", "starmap25",
+        87, "⏱️", "rare", tags=["starmap25", "gametime"], item_id="starmap25-gametime-2h",
+    )
+    # Cosmetic/display SKUs — earned trophies remain authoritative
+    add(
+        "Star Map 25 — Terra Trophy", "Display plaque: First investigation was Terra (earn on map)", "starmap25",
+        {"game_points": 185}, "🏆", "rare", tags=["starmap25", "trophy_display"], item_id="starmap25-trophy-terra",
+    )
+    add(
+        "Star Map 25 — Segmentum Clear", "Display plaque: Clear one full Segmentum (earn on map)", "starmap25",
+        {"game_points": 190}, "🏆", "rare", tags=["starmap25", "trophy_display"], item_id="starmap25-trophy-segmentum",
+    )
+    add(
+        "Star Map 25 — Full Clear Trophy", "Display plaque: Investigate all 25 systems (earn on map)", "starmap25",
+        {"game_points": 195}, "🏆", "rare", tags=["starmap25", "trophy_display"], item_id="starmap25-trophy-full",
+    )
+    add(
+        "Star Map 25 — Lore Master", "Display plaque: Full clear + classified lore (earn on map)", "starmap25",
+        {"game_points": 200}, "📜", "rare", tags=["starmap25", "trophy_display"], item_id="starmap25-trophy-lore",
+    )
+    add(
+        "System Level Skip Token", "Consume on a system to raise it one level (max 5)", "starmap25",
+        390, "📈", "rare", tags=["starmap25", "consumable"], item_id="starmap25-level-skip",
+        effect="starmap25_level_skip",
+    )
+    add(
+        "Daily Reset Bonus 24h", "2x buildup collect for 24h (personal Star Map window)", "starmap25",
+        400, "🔄", "rare", tags=["starmap25", "consumable"], item_id="starmap25-daily-reset-bonus",
+        effect="starmap25_daily_reset_bonus",
+    )
+    add(
+        "High-Level Structure Unlock", "One-shot unlock for Orbital Fortress / Cathedral / Primarch's Gate", "starmap25",
+        410, "🏗️", "rare", tags=["starmap25", "consumable"], item_id="starmap25-structure-unlock",
+        effect="starmap25_structure_unlock",
+    )
+    add(
+        "Calendar Slot — Agent Task", "Schedule one agent/AI appointment (content, learning, analytics)", "starmap25",
+        420, "📅", "rare", tags=["starmap25"], item_id="starmap25-calendar-slot",
+    )
+    add(
+        "Star Map 25 Level Pack", "Bundle: 1 level skip + 1 daily reset bonus into inventory", "starmap25",
+        430, "📦", "rare", tags=["starmap25", "bundle"], item_id="starmap25-level-pack",
+        effect="starmap25_level_pack",
+    )
+    add(
+        "Space Marines Detachment", "Unlock Space Marines special unit for Star Map deploy/invade", "starmap25",
+        450, "🦅", "epic", tags=["starmap25", "special_unit", "unit:marines"],
+        item_id="starmap25-unit-marines", effect="starmap25_unlock_special",
+    )
+    add(
+        "Mechanicus Cohort Charter", "Unlock Mechanicus special unit for Star Map deploy/invade", "starmap25",
+        460, "⚙️", "epic", tags=["starmap25", "special_unit", "unit:mechanicus"],
+        item_id="starmap25-unit-mechanicus", effect="starmap25_unlock_special",
+    )
+    add(
+        "Inquisition Cell Warrant", "Unlock Inquisition special unit (classified lore on invade)", "starmap25",
+        480, "⛪", "epic", tags=["starmap25", "special_unit", "unit:inquisition"],
+        item_id="starmap25-unit-inquisition", effect="starmap25_unlock_special",
+    )
 
     cosmetics = [
         ("Avatar Frame Gold", "Gold avatar frame", "🖼️"),

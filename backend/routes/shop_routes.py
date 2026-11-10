@@ -205,11 +205,23 @@ def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: i
             if total_minutes > 0:
                 unified_points_db.add_game_time_minutes(user_id, total_minutes)
         # Boosters: XP 1h/2h/24h, Battle 1h, Quest Booster (24h), Star Map 25 1h/6h/24h, seasonal 3h/4h/90m
-        if ("booster" in name or category == "boosts") and "theme session" not in name and "weekend bridge" not in name:
+        effect = (item.get("effect") or "").lower()
+        tags = [str(t).lower() for t in (item.get("tags") or [])]
+        is_starmap_booster = (
+            effect == "starmap25_booster"
+            or "starmap25_booster" in tags
+            or (category == "starmap25" and "booster" in name)
+            or str(item_id or "").startswith("starmap25-booster")
+        )
+        if (
+            ("booster" in name or category == "boosts" or is_starmap_booster)
+            and "theme session" not in name
+            and "weekend bridge" not in name
+        ):
             duration_minutes = 60
-            if "24h" in name or "24 h" in name:
+            if "24h" in name or "24 h" in name or str(item_id or "").endswith("-24h"):
                 duration_minutes = 24 * 60
-            elif "6h" in name or "6 h" in name:
+            elif "6h" in name or "6 h" in name or str(item_id or "").endswith("-6h"):
                 duration_minutes = 6 * 60
             elif "4h" in name or "4 h" in name:
                 duration_minutes = 4 * 60
@@ -219,12 +231,40 @@ def _apply_shop_item_effects(user_id: str, item_id: str, item: dict, quantity: i
                 duration_minutes = 120
             elif "90m" in name or "90 m" in name:
                 duration_minutes = 90
-            elif "1h" in name or "1 h" in name:
+            elif "1h" in name or "1 h" in name or str(item_id or "").endswith("-1h"):
                 duration_minutes = 60
             for _ in range(quantity):
                 unified_points_db.add_booster(
                     user_id, item_id or ("booster-" + name[:30]), duration_minutes, name=item.get("name") or item_id
                 )
+
+        # Star Map Level Pack → inventory children for later consume on /starmap25
+        if effect == "starmap25_level_pack" or str(item_id or "") in ("starmap25-level-pack", "shop-36") or "level pack" in name:
+            try:
+                from backend.services.shop_db_service import add_to_inventory
+                qty = max(1, int(quantity or 1))
+                for _ in range(qty):
+                    add_to_inventory(user_id, "starmap25-level-skip", "System Level Skip Token", 1, purchase_id=None)
+                    add_to_inventory(user_id, "starmap25-daily-reset-bonus", "Daily Reset Bonus 24h", 1, purchase_id=None)
+            except Exception:
+                pass
+
+        # Star Map special unit unlocks (also stored for deploy gate)
+        if effect == "starmap25_unlock_special" or str(item_id or "").startswith("starmap25-unit-"):
+            unit_id = None
+            for tag in tags:
+                if tag.startswith("unit:"):
+                    unit_id = tag.split(":", 1)[1].strip()
+                    break
+            if not unit_id and str(item_id or "").startswith("starmap25-unit-"):
+                unit_id = str(item_id).split("starmap25-unit-", 1)[-1].strip()
+            if unit_id:
+                try:
+                    from backend.routes.star_map_routes import unlock_starmap25_special_unit
+                    for _ in range(max(1, int(quantity or 1))):
+                        unlock_starmap25_special_unit(user_id, unit_id)
+                except Exception:
+                    pass
     except Exception:
         pass
 
