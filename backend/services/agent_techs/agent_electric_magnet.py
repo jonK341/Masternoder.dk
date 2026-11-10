@@ -315,7 +315,7 @@ class AgentElectricMagnet:
             return {"success": False, "error": str(e), "function": "run_dna_test", "special": True}
 
     def view_star_map(self, user_id: str = "default_user", params: Optional[Dict] = None) -> Dict:
-        """Special: View Star Map – 7 nearest stars, planets, life-bearing b; info & flyers."""
+        """Special: View Star Map – classic 7 stars plus Star Map 25 Imperium grid."""
         try:
             params = params or {}
             p = os.path.join(self.base_dir, "data", "star_map.json")
@@ -324,6 +324,20 @@ class AgentElectricMagnet:
                     star_map = json.load(f)
             else:
                 star_map = {"name": "Star Map", "stars": [], "specials": self.specials}
+            star_map_25 = {"name": "Star Map 25", "points": [], "specials": self.specials}
+            p25 = os.path.join(self.base_dir, "data", "star_map_25.json")
+            if os.path.exists(p25):
+                with open(p25, "r", encoding="utf-8") as f:
+                    star_map_25 = json.load(f)
+            investigated = []
+            try:
+                inv_path = os.path.join(self.base_dir, "data", "star_map_25_investigations.json")
+                if os.path.exists(inv_path):
+                    with open(inv_path, "r", encoding="utf-8") as f:
+                        inv = json.load(f) or {}
+                    investigated = list(inv.get(user_id, []) or [])
+            except Exception:
+                investigated = []
             if "improvements" not in self.data:
                 self.data["improvements"] = {}
             if "view_star_map" not in self.data["improvements"]:
@@ -332,10 +346,11 @@ class AgentElectricMagnet:
                 {"user_id": user_id, "timestamp": datetime.now().isoformat(), "params": params}
             )
             self.data["metrics"]["total_operations"] = self.data["metrics"].get("total_operations", 0) + 1
+            self.data["metrics"]["star_map_25_views"] = self.data["metrics"].get("star_map_25_views", 0) + 1
             self.save_data()
             try:
                 from backend.services.agent_trigger_system import agent_trigger_system
-                agent_trigger_system.award_points("view_star_map", user_id, {"source": "electric_magnet"})
+                agent_trigger_system.award_points("view_star_map", user_id, {"source": "electric_magnet", "map": "star_map_25"})
             except Exception:
                 pass
             return {
@@ -345,6 +360,10 @@ class AgentElectricMagnet:
                 "special": True,
                 "user_id": user_id,
                 "star_map": star_map,
+                "star_map_25": star_map_25,
+                "investigated_ids": investigated,
+                "investigated_count": len(investigated),
+                "monitor_url": "/starmap25/",
                 "timestamp": datetime.now().isoformat(),
             }
         except Exception as e:

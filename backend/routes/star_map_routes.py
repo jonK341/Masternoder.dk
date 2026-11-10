@@ -312,13 +312,40 @@ def _load_investigations():
     return {}
 
 
-def _save_investigations(data):
+def _save_json_state(path, data, label):
+    """Atomic-ish JSON write with audible failure logging (Top 25 #14)."""
     try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_INVESTIGATIONS_PATH), exist_ok=True)
-        with open(STAR_MAP_25_INVESTIGATIONS_PATH, "w", encoding="utf-8") as f:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
-    except Exception:
-        pass
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+        return True
+    except Exception as exc:
+        try:
+            import logging
+            logging.getLogger("starmap25").error("Failed to save %s (%s): %s", label, path, exc)
+        except Exception:
+            pass
+        try:
+            os.makedirs(os.path.dirname(STAR_MAP_25_EVENT_LOG_PATH), exist_ok=True)
+            with open(STAR_MAP_25_EVENT_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "ts": _utc_now().isoformat(),
+                    "action": "state_save_error",
+                    "label": label,
+                    "path": path,
+                    "error": str(exc),
+                }) + "\n")
+        except Exception:
+            pass
+        return False
+
+
+def _save_investigations(data):
+    return _save_json_state(STAR_MAP_25_INVESTIGATIONS_PATH, data, "investigations")
 
 
 def _load_invasions():
@@ -332,12 +359,7 @@ def _load_invasions():
 
 
 def _save_invasions(data):
-    try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_INVASIONS_PATH), exist_ok=True)
-        with open(STAR_MAP_25_INVASIONS_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception:
-        pass
+    return _save_json_state(STAR_MAP_25_INVASIONS_PATH, data, "invasions")
 
 
 def _load_trophy_awards():
@@ -351,12 +373,7 @@ def _load_trophy_awards():
 
 
 def _save_trophy_awards(data):
-    try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_TROPHIES_PATH), exist_ok=True)
-        with open(STAR_MAP_25_TROPHIES_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception:
-        pass
+    return _save_json_state(STAR_MAP_25_TROPHIES_PATH, data, "trophies")
 
 
 def _load_crypto_state():
@@ -370,12 +387,7 @@ def _load_crypto_state():
 
 
 def _save_crypto_state(data):
-    try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_CRYPTO_PATH), exist_ok=True)
-        with open(STAR_MAP_25_CRYPTO_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception:
-        pass
+    return _save_json_state(STAR_MAP_25_CRYPTO_PATH, data, "crypto")
 
 
 def _starmap25_crypto_options():
@@ -903,12 +915,35 @@ def _load_buildup():
 
 
 def _save_buildup(data):
+    return _save_json_state(STAR_MAP_25_BUILDUP_PATH, data, "buildup")
+
+
+def _track_starmap25_with_event_tracker(user_id: str, action: str, metadata=None):
+    """Forward Star Map actions to agent_event_tracker (new tech integration)."""
     try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_BUILDUP_PATH), exist_ok=True)
-        with open(STAR_MAP_25_BUILDUP_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        from backend.services.agent_techs.agent_event_tracker import agent_event_tracker
+        agent_event_tracker.track_new_task(
+            user_id=user_id,
+            task_name="starmap25_%s" % action,
+            params={"action": action, "source": "star_map_25", **(metadata or {})},
+        )
     except Exception:
         pass
+
+
+def _investigate_rate_limited(user_id: str):
+    """Simple per-user investigate cooldown (Top 25 #20). Returns (limited, retry_after_sec)."""
+    cooldown_sec = 2
+    buildup, user = _ensure_buildup_user(user_id)
+    last = _parse_iso_utc(user.get("last_investigate_ts"))
+    now = _utc_now()
+    if last:
+        elapsed = (now - last).total_seconds()
+        if elapsed < cooldown_sec:
+            return True, int(cooldown_sec - elapsed) + 1
+    user["last_investigate_ts"] = now.isoformat()
+    _save_buildup(buildup)
+    return False, 0
 
 
 def _get_user_system_levels(user_id):
@@ -1092,9 +1127,19 @@ def get_stars_list():
 
 @star_map_bp.route("/api/star-map/25", methods=["GET"])
 def get_star_map_25():
-    """Get full 25-point starmap (WH40K Segmentum + Legion homeworlds)."""
+    """Get full 25-point starmap (WH40K Segmentum + Legion homeworlds). Optional ?segmentum= filter."""
     try:
         data = _load_star_map_25()
+        segmentum = (request.args.get("segmentum") or "").strip()
+        if segmentum:
+            points = [
+                p for p in (data.get("points") or [])
+                if str(p.get("segmentum") or "").lower() == segmentum.lower()
+            ]
+            filtered = dict(data)
+            filtered["points"] = points
+            filtered["filter"] = {"segmentum": segmentum, "count": len(points)}
+            return jsonify({"success": True, "star_map_25": filtered}), 200
         return jsonify({"success": True, "star_map_25": data}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -1426,6 +1471,17 @@ def investigate_star_map_25_point():
                 "message": "Already investigated",
             }), 200
 
+        limited, retry_after = _investigate_rate_limited(user_id)
+        if limited:
+            resp = jsonify({
+                "success": False,
+                "error": "Investigate rate limited — retry shortly",
+                "retry_after": retry_after,
+            })
+            resp.status_code = 429
+            resp.headers["Retry-After"] = str(retry_after)
+            return resp
+
         base_amount = _sm25_investigation_reward(point.get("point_value", 10))
         booster_multiplier = _starmap25_booster_multiplier(user_id)
         amount = round(base_amount * booster_multiplier, 2)
@@ -1457,6 +1513,10 @@ def investigate_star_map_25_point():
             "booster_multiplier": booster_multiplier,
             "event_multiplier": event_multiplier,
             "event_flat_bonus": event_flat_bonus,
+        })
+        _track_starmap25_with_event_tracker(user_id, "investigate", {
+            "point_id": point_id,
+            "points_awarded": amount,
         })
         try:
             from backend.routes.social_routes import push_activity
@@ -1687,6 +1747,9 @@ def build_star_map_25():
             "event_bonus_points": event_bonus,
             "booster_multiplier": booster_multiplier,
         })
+        _track_starmap25_with_event_tracker(user_id, "build", {
+            "point_id": point_id, "planet": planet, "building_id": building_id,
+        })
         return jsonify({
             "success": True,
             "user_id": user_id,
@@ -1795,6 +1858,9 @@ def deploy_star_map_25():
             "event_bonus_points": event_bonus,
             "booster_multiplier": booster_multiplier,
         })
+        _track_starmap25_with_event_tracker(user_id, "deploy", {
+            "point_id": point_id, "planet": planet, "unit_id": unit_id,
+        })
         return jsonify({
             "success": True,
             "user_id": user_id,
@@ -1869,6 +1935,7 @@ def collect_star_map_25_buildup():
                         seen.add(eid)
                         event_matches.append(event)
             _log_event_participation(user_id, "collect", "multiple", event_matches, {"points_collected": pending})
+            _track_starmap25_with_event_tracker(user_id, "collect", {"points_collected": pending})
         except Exception:
             pass
         return jsonify({
@@ -2058,6 +2125,9 @@ def invade_star_map_25():
             "booster_multiplier": booster_multiplier,
             "special_rules": rule_notes,
             "blurb_source": blurb_source,
+        })
+        _track_starmap25_with_event_tracker(user_id, "invade", {
+            "point_id": point_id, "unit_id": unit_id, "special_unit_id": special_unit_id,
         })
         try:
             from backend.routes.social_routes import push_activity
@@ -2252,6 +2322,7 @@ def _star_map_25_agent_tools():
         {"name": "deploy", "method": "POST", "path": "/api/star-map/25/deploy", "mutates": True, "required": ["user_id", "point_id", "planet", "unit_id", "approved"]},
         {"name": "collect", "method": "POST", "path": "/api/star-map/25/collect", "mutates": True, "required": ["user_id", "approved"]},
         {"name": "invade", "method": "POST", "path": "/api/star-map/25/invade", "mutates": True, "required": ["user_id", "point_id", "unit_id", "approved"]},
+        {"name": "consume_shop_item", "method": "POST", "path": "/api/star-map/25/consume-shop-item", "mutates": True, "required": ["user_id", "item_id", "approved"]},
     ]
 
 
@@ -2319,6 +2390,7 @@ def star_map_25_agent_action():
             "deploy": ("/api/star-map/25/deploy", deploy_star_map_25),
             "collect": ("/api/star-map/25/collect", collect_star_map_25_buildup),
             "invade": ("/api/star-map/25/invade", invade_star_map_25),
+            "consume_shop_item": ("/api/star-map/25/consume-shop-item", consume_star_map_25_shop_item),
         }
         if action not in mutating:
             return jsonify({"success": False, "error": "Unknown action", "tools": _star_map_25_agent_tools()}), 400
@@ -2338,12 +2410,15 @@ def star_map_25_agent_action():
 
 def _star_map_25_openapi_spec():
     routes = [
-        ("GET", "/api/star-map/25", "Full Star Map 25 data"),
+        ("GET", "/api/star-map/25", "Full Star Map 25 data (optional ?segmentum=)"),
         ("GET", "/api/star-map/25/point/{point_id}", "Single point with user state"),
         ("GET", "/api/star-map/25/segmentums", "All Segmentum progress summaries"),
         ("GET", "/api/star-map/25/segmentum/{segmentum}", "One Segmentum progress summary"),
+        ("GET", "/api/star-map/25/planet-intel", "Five-level planet intel drill-down"),
         ("GET", "/api/star-map/25/status", "User progress, invasion state, trophies, crypto status"),
+        ("POST", "/api/star-map/25/sync-profile", "Sync Star Map progress into user profile"),
         ("POST", "/api/star-map/25/investigate", "Investigate one point and award game_points"),
+        ("POST", "/api/star-map/25/consume-shop-item", "Consume Level Skip / Daily Reset / Structure Unlock"),
         ("GET", "/api/star-map/25/buildings", "Building catalog"),
         ("GET", "/api/star-map/25/units", "Unit catalog"),
         ("GET", "/api/star-map/25/events", "Active/upcoming event windows"),
@@ -2358,6 +2433,8 @@ def _star_map_25_openapi_spec():
         ("GET", "/api/star-map/25/analytics", "Action/event analytics summary"),
         ("GET", "/api/star-map/25/leaderboard", "Star Map 25 leaderboard"),
         ("GET", "/api/star-map/25/health", "Data and writable-state health check"),
+        ("GET/POST", "/api/star-map/25/ai-hint", "AI tactical hints"),
+        ("GET/POST", "/api/star-map/25/ai-guide", "AI field guide with proof docs"),
         ("GET", "/api/star-map/25/agent-tools", "Agent-safe capability map"),
         ("POST", "/api/star-map/25/agent-action", "Execute read or explicitly approved agent action"),
         ("GET", "/api/star-map/25/openapi", "This OpenAPI document"),
@@ -2366,8 +2443,8 @@ def _star_map_25_openapi_spec():
         "openapi": "3.0.3",
         "info": {
             "title": "MasterNoder Star Map 25 API",
-            "version": "2026-04-29",
-            "description": "Star Map 25 gameplay, analytics, health, and agent-safe action surface.",
+            "version": "2026-11-10",
+            "description": "Star Map 25 gameplay, analytics, health, Electric Magnet/Event Tracker hooks, and agent-safe action surface.",
         },
         "paths": {
             path: {

@@ -1,8 +1,14 @@
 {
   "name": "3D Monitor",
-  "description": "Placeholder for 3D visual effects in vidgenerator. Plug into rulebook/effect IDs.",
-  "enabled": false,
-  "placeholder": true,
-  "effect_ids": ["checkpoint", "view_star_map", "geo_reference"],
-  "updated_at": "2026-01-27"
+  "description": "Enables Star Map 25 3D/4D orbit controls, labels, and focus-from-card on /starmap25/.",
+  "enabled": true,
+  "placeholder": false,
+  "effect_ids": ["checkpoint", "view_star_map", "geo_reference", "starmap25_3d"],
+  "features": {
+    "orbit_drag": true,
+    "point_labels": true,
+    "focus_from_card": true,
+    "auto_spin": true
+  },
+  "updated_at": "2026-11-10"
 }

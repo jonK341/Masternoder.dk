@@ -323,3 +323,47 @@ def test_trophies_page_loads_starmap25_progress():
     html = (ROOT / "trophies" / "index.html").read_text(encoding="utf-8")
     assert "loadStarMap25TrophyProgress" in html
     assert "starmap25-trophy-list" in html
+
+
+def test_segmentum_query_filter():
+    client = _app().test_client()
+    r = client.get("/api/star-map/25?segmentum=Solar")
+    assert r.status_code == 200
+    body = r.get_json()
+    points = (body.get("star_map_25") or {}).get("points") or []
+    assert points
+    assert all(str(p.get("segmentum")).lower() == "solar" for p in points)
+
+
+def test_electric_magnet_view_includes_star_map_25():
+    from backend.services.agent_techs.agent_electric_magnet import agent_electric_magnet
+
+    result = agent_electric_magnet.view_star_map("unit_test_user")
+    assert result.get("success") is True
+    assert len((result.get("star_map_25") or {}).get("points") or []) == 25
+    assert result.get("monitor_url") == "/starmap25/"
+
+
+def test_openapi_includes_consume_and_ai_routes():
+    from backend.routes.star_map_routes import _star_map_25_openapi_spec
+
+    paths = _star_map_25_openapi_spec()["paths"]
+    assert "/api/star-map/25/consume-shop-item" in paths
+    assert "/api/star-map/25/ai-hint" in paths or any("ai-hint" in p for p in paths)
+    assert "/api/star-map/25/planet-intel" in paths
+
+
+def test_monitor_has_tech_and_leaderboard_panels():
+    html = (ROOT / "starmap25" / "index.html").read_text(encoding="utf-8")
+    assert "btn-tech-view-map" in html
+    assert "leaderboard-panel" in html
+    assert "focusCardFromPoint" in html
+    assert "dragState" in html
+
+
+def test_json_state_save_helper_writes(tmp_path):
+    from backend.routes import star_map_routes as sm
+
+    path = tmp_path / "probe.json"
+    assert sm._save_json_state(str(path), {"ok": True}, "probe") is True
+    assert json.loads(path.read_text(encoding="utf-8"))["ok"] is True
