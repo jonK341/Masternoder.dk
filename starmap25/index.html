@@ -693,7 +693,7 @@
             <button type="button" class="starmap-hub-tab" data-starmap-tab="guide" role="tab" aria-selected="false">🤖 AI Guide</button>
             <button type="button" class="starmap-hub-tab" data-starmap-tab="monitor" role="tab" aria-selected="false">📡 Monitor</button>
         </nav>
-        <div id="starmap-route-note" class="starmap-route-note">Viewing: Play grid. Switch tabs to browse progress, economy, AI guide, and monitor tools.</div>
+        <div id="starmap-route-note" class="starmap-route-note">Viewing: Play grid (cards + map views). Monitor keeps the same cards with filters and buildup.</div>
 
         <section class="starmap-tab-panel" data-starmap-tab="progress" hidden>
         <div class="walkthrough-panel" id="walkthrough-panel">
@@ -876,12 +876,14 @@
     <script>
         (function initStarmapTabs() {
             var TAB_LABELS = {
-                play: 'Play grid',
+                play: 'Play grid (cards + map views)',
                 progress: 'Progress & walkthrough',
                 economy: 'Economy & crypto',
                 guide: 'AI field guide',
-                monitor: 'Monitor & buildup'
+                monitor: 'Monitor filters, buildup, and cards'
             };
+            // Point cards must stay visible on Play and Monitor so filters/buildup can target them.
+            var TABS_WITH_CARDS = { play: true, monitor: true };
             var nav = document.getElementById('starmap-hub-nav');
             var note = document.getElementById('starmap-route-note');
             var content = document.getElementById('content');
@@ -898,7 +900,7 @@
                     btn.setAttribute('aria-selected', on ? 'true' : 'false');
                 });
                 if (content) {
-                    content.classList.toggle('starmap-play-hidden', tabId !== 'play');
+                    content.classList.toggle('starmap-play-hidden', !TABS_WITH_CARDS[tabId]);
                 }
                 if (note) {
                     note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Switch tabs above to browse other Star Map systems.';

@@ -1,48 +1,78 @@
-# Star Map 25 — Todo 25: Assignments & Tasks
+# Star Map 25 — Top 25 Todo (active)
 
-**Purpose:** A single checklist of **25 tasks** for the Star Map 25 (Imperium Investigation Grid) feature. Use as a roadmap and assignment list.
+**Purpose:** Actionable Top 25 for finishing Star Map 25. Replaces the old MVP checklist; older upgrade docs marked many items done while several loops are still thin, expired, or unwired.
 
-**References:** `STARMAP_25_WARHAMMER40K_RESEARCH.md`, `HUNTERS_STAR_MAP_IMPLEMENTATION_SUMMARY.md` (sect. 10), `STARMAP_25_TOP10_IDEAS.md`, `data/star_map_25.json`.
+**Scope:** Monitor UI (`/starmap25/`), `backend/routes/star_map_routes.py`, `data/starmap25_*.json`, shop/game/trophies integrations, tests, deploy.
 
----
-
-## Todo 25 — Assignments
-
-| # | Assignment | Owner / Notes |
-|---|------------|----------------|
-| **1** | **Data** — Verify `data/star_map_25.json` has all 25 points with `id`, `name`, `segmentum`, `point_value`, `lore`, `icon`. | Done. Use as source of truth. |
-| **2** | **API** — `GET /api/star-map/25` and `GET /vidgenerator/api/star-map/25` return full 25-point map. | `star_map_routes.py` |
-| **3** | **API** — `GET /api/star-map/25/status?user_id=` returns `investigated_ids`, `total_points_earned`. | `star_map_routes.py` |
-| **4** | **API** — `POST /api/star-map/25/investigate` body `{ "user_id", "point_id" }`: one-time game_points award, persist investigation. | `star_map_routes.py` |
-| **5** | **Persistence** — Investigations stored (e.g. `star_map_25_investigations.json` or DB) and survive app restart. | Backend; avoid in-memory only. |
-| **6** | **Monitor page** — `/vidgenerator/starmap25/` loads; shows progress (X/25) and total points earned. | `vidgenerator/starmap25/index.html` |
-| **7** | **Monitor page** — Grid of 25 cards: Investigate button, lore, and visual state (e.g. gold when investigated). | UI |
-| **8** | **Monitor page** — View toggles: “Grid” and “3D Map” (Three.js) both work. | Optional; 3D can be placeholder. |
-| **9** | **Monitor page** — “Live” indicator and periodic status refresh (e.g. 30s). | UX |
-| **10** | **Navigation** — Nav toolbar and profile/game links include “Star Map 25” entry to `/vidgenerator/starmap25`. | `navigation-toolbar.js`, profile, points page |
-| **11** | **Hunter game** — “Star Map 25” tab exists with progress, points earned, and quick-investigate grid. | `vidgenerator/game/index.html` |
-| **12** | **Hunter game** — `loadStarMap25Tab()` fetches status and renders list; “Investigate” from tab calls API and refreshes. | Game tab logic |
-| **13** | **Trophies** — Star Map tab has link “Star Map 25 Monitor (25 points)”; optional: show progress (X/25). | `vidgenerator/trophies/index.html` |
-| **14** | **Shop** — Category “Star Map 25” with boosters (e.g. 1h/24h), gametime (+30m/+2h), and trophies (Terra, Segmentum Clear, Full Clear, Lore Master). | `shop_routes.py`, shop UI |
-| **15** | **Shop** — starmap25 items purchasable; apply effect (e.g. game_points multiplier, time extension). | Backend + shop logic |
-| **16** | **Effect clusters** — `starmap25_investigate`, `starmap25_view` present in Hunters effect-clusters API. | `hunters_game.py` (galactic cluster) |
-| **17** | **User engagement** — Daily “Star Map Scout” (1 investigation) and weekly “Segmentum Explorer” (5 investigations) quests wired. | `user_engagement.py` |
-| **18** | **Deploy** — Add `starmap25` manifest: `vidgenerator/starmap25/index.html`, `backend/routes/star_map_routes.py`, `data/star_map_25.json`. | `scripts/deploy.py` |
-| **19** | **Docs** — Keep `STARMAP_25_WARHAMMER40K_RESEARCH.md` and HUNTERS_STAR_MAP sect. 10 in sync with API and UI. | Docs |
-| **20** | **Test** — GET `/api/star-map/25`, GET `/api/star-map/25/status?user_id=`, POST `/api/star-map/25/investigate` (manual or script). | QA / script |
-| **21** | **Test** — Full flow: open monitor → investigate one point → confirm game_points and lore unlock. | QA |
-| **22** | **UX** — Monitor: clear error and loading states (API fail, timeout). | Frontend |
-| **23** | **UX** — Optional: group 25 cards by Segmentum (Solar, Obscurus, Tempestus, Pacificus, Ultima) on monitor. | Frontend |
-| **24** | **Trophies** — Terra (first), Segmentum Clear, Full Clear, Lore Master: award logic and display on Trophies page. | Backend + trophies UI |
-| **25** | **Optional** — 3D map: position 25 points by segmentum/location; orbit controls and labels. | Three.js / future |
+**Started:** 2026-11-10 (Europe/Copenhagen).
 
 ---
 
-## Quick reference
+## Status legend
 
-- **Data:** `data/star_map_25.json` (25 points), investigations file or DB.
-- **API base:** `GET /api/star-map/25`, `GET /api/star-map/25/status`, `POST /api/star-map/25/investigate` (and `/vidgenerator/api/...` prefixes).
-- **UI:** `/vidgenerator/starmap25/` (Monitor), Hunter game “Star Map 25” tab, Trophies link, Shop category `starmap25`.
-- **Deploy:** `python scripts/deploy.py starmap25` (after manifest is added).
+- `[x]` done in this push or already solid
+- `[~]` partially done / next slice
+- `[ ]` open
 
-*Document version: 2026-03-04. Star Map 25 — Todo 25 assignments.*
+---
+
+## Top 25
+
+| # | Status | Todo | Why | Primary paths |
+|---|--------|------|-----|---------------|
+| **1** | [x] | Fix Play/Monitor layout so point cards stay visible with filters/buildup | Cards hid on Monitor while filters lived there | `starmap25/index.html` |
+| **2** | [x] | Refresh live temporary events (windows had expired 2026-06-01) | Banners/modifiers/analytics idle | `data/starmap25_events.json` |
+| **3** | [x] | Always-on action logging for investigate/build/deploy/collect/invade | Analytics only logged when an event matched | `star_map_routes.py` `_log_event_participation` |
+| **4** | [x] | Honor `max_per_planet` by building type (allow different buildings on one planet) | Build blocked any second building | `build_star_map_25()`, `starmap25_buildings.json` |
+| **5** | [x] | Expand deploy manifest with all `starmap25_*.json` gameplay files | Partial deploys shipped broken loops | `scripts/deploy.py` |
+| **6** | [x] | Unit tests for map/status/health/events/build placement rules | Almost zero coverage | `tests/unit/test_star_map_25.py` |
+| **7** | [ ] | Wire shop Level Skip / Daily Reset Bonus / Structure Unlock consume → buildup | Catalog items do not affect gameplay | `shop_catalog_seed.py`, `shop_routes.py`, `star_map_routes.py` |
+| **8** | [ ] | Make boosters reliable end-to-end (purchase → active → multipliers) | Economy core can miss purchased boosters | `_active_starmap25_boosters()`, shop purchase path |
+| **9** | [ ] | Special-unit acquisition + invade `special_unit_id` + apply `special_rule` | Design unfinished; invade ignores specials | `starmap25_units.json`, `invade_star_map_25()` |
+| **10** | [ ] | LLM invasion blurbs with template fallback | Invade still hardcodes one-liner | `invade_star_map_25()`, `llm_service` |
+| **11** | [ ] | Game tab: build/deploy/invade controls (or deep-link with prefilled system) | Secondary surface is investigate/collect only | `game/index.html` `loadStarMap25Tab()` |
+| **12** | [ ] | Differentiate trophies: Segmentum Clear = full segmentum; Lore Master ≠ Full Clear; Terra = first investigate | Current semantics are weak/overlapping | `_compute_starmap25_trophies()`, trophies UI |
+| **13** | [ ] | Show Star Map trophy progress on Trophies page | Link-only today | `trophies/index.html` |
+| **14** | [ ] | Fail loudly / retry on JSON state write failures | Bare `except: pass` on saves | `_save_*` helpers |
+| **15** | [ ] | Real 3D orbit + labels + focus-from-card | HUD claims drag-rotate; auto-spin only | `init3DView()` in `starmap25/index.html` |
+| **16** | [ ] | Gate walkthrough unlocks (or rewrite copy as progress-only) | Tiers promise 3D/intel gates that are not enforced | `starmap25_walkthrough.json`, UI panels |
+| **17** | [ ] | Surface leaderboard + analytics on the monitor | APIs exist; UI absent | `star_map_25_leaderboard`, `star_map_25_analytics`, monitor |
+| **18** | [ ] | Complete OpenAPI (`planet-intel`, `sync-profile`, `ai-hint`, `ai-guide`) | Spec incomplete | `_star_map_25_openapi_spec()`, `docs/STARMAP25_API_OPENAPI.md` |
+| **19** | [ ] | `GET /api/star-map/25?segmentum=` filter | Listed in 50-project backlog | `get_star_map_25()` |
+| **20** | [ ] | Investigate rate limit (429 + Retry-After) | Abuse / farming gap | `investigate_star_map_25_point()` |
+| **21** | [ ] | Optional `unlock_requirement` enforcement on investigate | Data project unrealized | map metadata + investigate validation |
+| **22** | [ ] | Frontpage/dashboard widget: X/25 + points earned | Canvas visual only today | `static/js/frontpage-home.js` |
+| **23** | [ ] | Shop AI / agent strategy inject starmap context | AI Improvements §5–6 | shop recommend + agent intelligence |
+| **24** | [ ] | Persist investigations/buildup/invasions in DB (or file locks) | Multi-worker JSON races | state paths under `data/` |
+| **25** | [~] | Keep this Top 25 as source of truth; uncheck false “done” in upgrade docs when touching them | Prevents false finished signal | this file, `STARMAP25_UPGRADES_TODO.md` |
+
+---
+
+## This push (started work)
+
+1. New Top 25 checklist (this document).
+2. Play/Monitor cards visibility fix.
+3. Fresh event windows (active + upcoming).
+4. Always-on action analytics log.
+5. `max_per_planet` placement rules.
+6. Full `starmap25` deploy manifest.
+7. Focused unit tests for health/map/events/build rules.
+
+## Quick verification
+
+```bash
+.venv/bin/python -m pytest tests/unit/test_star_map_25.py -q
+curl -s http://127.0.0.1:5000/api/star-map/25/health
+curl -s http://127.0.0.1:5000/api/star-map/25/events
+# Open /starmap25/ — Play shows cards; Monitor shows cards + filters + buildup
+```
+
+## References
+
+- `docs/STARMAP25_UPGRADES_TODO.md` (older checklist; many boxes optimistic)
+- `docs/STARMAP25_UNITS_AND_INVASION_DESIGN.md`
+- `docs/STARMAP25_AI_IMPROVEMENTS.md`
+- `docs/STARMAP_25_50_PROJECTS.md`
+- `docs/STARMAP25_UPGRADE_FINISH.md`
+
+*Document version: 2026-11-10. Star Map 25 — active Top 25.*

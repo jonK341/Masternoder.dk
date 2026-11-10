@@ -1,6 +1,9 @@
 # Star Map 25 — Upgrade Todo
 
-Use this as the active upgrade checklist for progressing Star Map 25 beyond the investigation MVP.
+> **Active checklist:** use [`docs/STARMAP25_TODO_25.md`](./STARMAP25_TODO_25.md) (Top 25, started 2026-11-10).
+> Many items below were marked done while events, analytics, shop wiring, specials, and 3D controls remained partial — treat this file as historical unless re-verified.
+
+Use this as the prior upgrade checklist for progressing Star Map 25 beyond the investigation MVP.
 
 ## Now
 

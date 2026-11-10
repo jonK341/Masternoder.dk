@@ -510,17 +510,18 @@ def _event_reward_modifier(action, point):
 
 
 def _log_event_participation(user_id, action, point_id, event_matches, metadata=None):
-    if not event_matches:
-        return
+    """Append always-on Star Map action telemetry (events optional)."""
     try:
         from datetime import datetime, timezone
         os.makedirs(os.path.dirname(STAR_MAP_25_EVENT_LOG_PATH), exist_ok=True)
+        matches = event_matches or []
         row = {
             "ts": datetime.now(timezone.utc).isoformat(),
             "user_id": user_id,
             "action": action,
             "point_id": point_id,
-            "event_ids": [e.get("id") for e in event_matches],
+            "event_ids": [e.get("id") for e in matches if isinstance(e, dict)],
+            "event_active": bool(matches),
             "metadata": metadata or {},
         }
         with open(STAR_MAP_25_EVENT_LOG_PATH, "a", encoding="utf-8") as f:
@@ -1209,6 +1210,14 @@ def investigate_star_map_25_point():
         _sync_starmap25_to_user_profile(user_id)
         _update_starmap25_quests(user_id, investigations=1, game_points=amount)
         trophy_status = _award_starmap25_trophies(user_id)
+        event_multiplier, event_flat_bonus, event_matches = _event_reward_modifier("investigate", point)
+        _log_event_participation(user_id, "investigate", point_id, event_matches, {
+            "points_awarded": amount,
+            "base_points_awarded": base_amount,
+            "booster_multiplier": booster_multiplier,
+            "event_multiplier": event_multiplier,
+            "event_flat_bonus": event_flat_bonus,
+        })
         try:
             from backend.routes.social_routes import push_activity
             push_activity(user_id, "starmap25_investigate", f"Investigated {point.get('name', point_id)}", {"point_id": point_id})
@@ -1225,6 +1234,7 @@ def investigate_star_map_25_point():
             "booster_multiplier": booster_multiplier,
             "active_starmap25_boosters": _active_starmap25_boosters(user_id),
             "newly_awarded_trophies": trophy_status.get("newly_awarded", []),
+            "event_ids": [e.get("id") for e in event_matches],
             "lore": point.get("lore", ""),
         }), 200
     except Exception as e:
@@ -1370,10 +1380,21 @@ def build_star_map_25():
         if user_id not in buildup.setdefault("users", {}):
             buildup["users"][user_id] = {"placements": [], "last_collect_ts": None}
         placements = buildup["users"][user_id]["placements"]
-        slot_key = f"{point_id}|{planet}"
-        existing = [pl for pl in placements if pl.get("type") == "building" and pl.get("point_id") == point_id and pl.get("planet") == planet]
-        if existing:
-            return jsonify({"success": False, "error": "Already have a building on this planet"}), 400
+        max_per_planet = int(building.get("max_per_planet", 1) or 1)
+        same_building = [
+            pl for pl in placements
+            if pl.get("type") == "building"
+            and pl.get("point_id") == point_id
+            and pl.get("planet") == planet
+            and pl.get("id") == building_id
+        ]
+        if len(same_building) >= max_per_planet:
+            return jsonify({
+                "success": False,
+                "error": "Planet already has the maximum of this building (%d)" % max_per_planet,
+                "max_per_planet": max_per_planet,
+                "existing_count": len(same_building),
+            }), 400
         placements.append({
             "point_id": point_id,
             "planet": planet,
