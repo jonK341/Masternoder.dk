@@ -40,12 +40,15 @@ jobs:
         shell: cmd
         run: profit_daemon_jon\build_release.cmd
       - name: Optional Authenticode sign
-        if: ${{ secrets.WINDOWS_CERT_PFX != '' }}
         shell: pwsh
         env:
           WINDOWS_CERT_PFX: ${{ secrets.WINDOWS_CERT_PFX }}
           WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
         run: |
+          if (-not $env:WINDOWS_CERT_PFX) {
+            Write-Host "WINDOWS_CERT_PFX not set — skipping Authenticode sign"
+            exit 0
+          }
           $pfx = Join-Path $env:RUNNER_TEMP "pdj.pfx"
           [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERT_PFX))
           $exe = Get-ChildItem -Path dist\TheProfitDaemonJon -Filter TheProfitDaemonJon.exe -Recurse | Select-Object -First 1
@@ -63,12 +66,12 @@ jobs:
 
   build-macos:
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-14, macos-13]
         include:
           - os: macos-14
             arch: arm64
-          - os: macos-13
+          - os: macos-15
             arch: x64
     runs-on: ${{ matrix.os }}
     steps:
@@ -105,14 +108,21 @@ jobs:
             artifacts/TheProfitDaemonJon-macos-arm64/TheProfitDaemonJon-macos-arm64.zip
             artifacts/TheProfitDaemonJon-macos-x64/TheProfitDaemonJon-macos-x64.zip
           body: |
-            **The Profit Daemon Jon** standalone builds (Linux / Windows / macOS).
+            **The Profit Daemon Jon ${{ github.ref_name }}** — standalone builds (Linux / Windows / macOS).
 
+            ### What's new in 1.1.0
+            - Exchange registry (`data/exchanges_registry.json`) — enable/add venues without hardcoding
+            - Local browser control at `http://127.0.0.1:8787/` on daemon start
+            - Ladder / maker / cross-trade / wizard read venues from the registry
+            - Packaged configs: registry, connectors, venue API
+
+            ### Install
             1. Download the zip for your OS
             2. Unzip
             3. `./TheProfitDaemonJon --wizard` then `--once --profile paper`
+            4. Open `http://127.0.0.1:8787/` to manage exchanges
 
             Source: `bash profit_daemon_jon/install.sh`
             Docker: `docker compose -f profit_daemon_jon/docker-compose.yml up -d`
-            Windows zip is Authenticode-signed when `WINDOWS_CERT_PFX` secret is configured.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
