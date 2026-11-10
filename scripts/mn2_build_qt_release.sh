@@ -312,11 +312,13 @@ import sys
 path = Path(sys.argv[1])
 helper = sys.argv[2]
 text = path.read_text()
-new_block = f"""define $(package)_preprocess_cmds
-  python3 {helper}
-  ./autogen.sh
-endef"""
-# Replace any existing preprocess block (stock or prior broken patch).
+# Single shell line only: multi-line preprocess_cmds expand into make recipes
+# without leading tabs and trigger "missing separator".
+new_block = (
+    "define $(package)_preprocess_cmds\n"
+    f"  python3 {helper} && ./autogen.sh\n"
+    "endef"
+)
 text2, n = re.subn(
     r"define \$\(package\)_preprocess_cmds\n.*?^endef",
     new_block,
