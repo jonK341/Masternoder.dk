@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Profit trade stream</title>
 <style>
-  :root { --bg:#070b14; --fg:#e8eefc; --acc:#5eead4; --muted:#8aa0c2; --pos:#4ade80; --neg:#fb7185; }
+  :root { --bg:#070b14; --fg:#e8eefc; --acc:#5eead4; --muted:#8aa0c2; --pos:#4ade80; --neg:#fb7185; --yt:#ff6b6b; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: "IBM Plex Sans", "Segoe UI", sans-serif; background:
     radial-gradient(1200px 600px at 10% -10%, #123049 0%, transparent 55%),
@@ -14,11 +14,14 @@
   .wrap { max-width: 920px; margin: 0 auto; padding: 28px 22px 40px; }
   h1 { font-family: "IBM Plex Serif", Georgia, serif; font-weight: 600; font-size: clamp(1.6rem, 3vw, 2.3rem); margin: 0 0 6px; }
   .sub { color: var(--muted); margin-bottom: 18px; }
-  .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px; }
+  .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
   .pill { border:1px solid #24324d; background:#0d1524; padding:6px 12px; border-radius:999px; font-size:12px; color:var(--muted); }
   .pill.hot { border-color:#2f6f63; color:var(--acc); }
+  .pill.yt { border-color:#5a2a2a; color:var(--yt); }
   button { background:#142033; color:var(--fg); border:1px solid #2a3b5c; border-radius:10px; padding:8px 14px; cursor:pointer; }
   button:hover { border-color: var(--acc); }
+  button.yt { border-color:#5a2a2a; }
+  button.yt:hover { border-color: var(--yt); }
   .feed { display:flex; flex-direction:column; gap:8px; }
   .row { display:grid; grid-template-columns: 88px 1fr auto; gap:12px; align-items:baseline;
     padding:10px 12px; border-bottom:1px solid #172235; }
@@ -33,22 +36,38 @@
 <body>
   <div class="wrap">
     <h1>Live trade stream</h1>
-    <p class="sub">OBS / YouTube overlay for Profit Daemon fills. Opt-in interest only — no auto go-live.</p>
+    <p class="sub">OBS / YouTube overlay for Profit Daemon fills. Votes from local viewers <b>and</b> YouTube subscribers — either bar unlocks go-live readiness.</p>
     <div class="bar">
       <span class="pill" id="mode">mode —</span>
-      <span class="pill" id="votes">interest 0/5</span>
-      <button type="button" id="interest">I'm interested in YouTube live</button>
+      <span class="pill" id="votesLocal">local 0/5</span>
+      <span class="pill yt" id="votesSub">subscribers 0/5</span>
+    </div>
+    <div class="bar">
+      <button type="button" id="interestLocal">Vote — local / OPS</button>
+      <button type="button" class="yt" id="interestSub">Vote — YouTube subscriber</button>
     </div>
     <div class="feed" id="feed"></div>
   </div>
 <script>
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c];});}
+function voterId(key){
+  var id=localStorage.getItem(key);
+  if(!id){ id="v"+Math.random().toString(36).slice(2,10); localStorage.setItem(key, id); }
+  return id;
+}
 function paint(d){
   var interest=d.interest||{};
-  var votes=document.getElementById("votes");
-  votes.textContent="interest "+(interest.votes||0)+"/"+(interest.threshold||5);
-  votes.className="pill"+(interest.interested_enough?" hot":"");
+  var audiences=interest.audiences||{};
+  var local=(audiences.local)||{};
+  var sub=(audiences.youtube_subscriber)||{};
+  var localEl=document.getElementById("votesLocal");
+  var subEl=document.getElementById("votesSub");
+  localEl.textContent="local "+(local.votes||interest.local_votes||0)+"/"+(local.threshold||interest.local_threshold||5);
+  subEl.textContent="subscribers "+(sub.votes||interest.subscriber_votes||0)+"/"+(sub.threshold||interest.subscriber_threshold||5);
+  localEl.className="pill"+(local.interested_enough?" hot":"");
+  subEl.className="pill yt"+(sub.interested_enough?" hot":"");
   document.getElementById("mode").textContent=interest.interested_enough?"ready for YouTube":"collecting interest";
+  document.getElementById("mode").className="pill"+(interest.interested_enough?" hot":"");
   var rows=(d.trades||[]).slice().reverse();
   document.getElementById("feed").innerHTML=rows.map(function(r){
     var dlt=Number(r.delta_usd||0);
@@ -58,12 +77,18 @@ function paint(d){
   }).join("")||'<div class="row"><div class="t">—</div><div class="m">Waiting for live fills…</div><div class="d">—</div></div>';
 }
 function load(){ fetch("/api/trade-stream").then(function(r){return r.json();}).then(paint).catch(function(){}); }
-document.getElementById("interest").onclick=function(){
-  var voter=localStorage.getItem("yt_interest_id");
-  if(!voter){ voter="v"+Math.random().toString(36).slice(2,10); localStorage.setItem("yt_interest_id", voter); }
-  fetch("/api/trade-stream/interest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({voter:voter})})
+function vote(audience){
+  var body={voter:voterId("yt_interest_id_"+audience), audience:audience};
+  if(audience==="youtube_subscriber"){
+    body.self_attest_subscriber=true;
+    var uid=localStorage.getItem("yt_user_id")||"";
+    if(uid) body.user_id=uid;
+  }
+  fetch("/api/trade-stream/interest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
     .then(function(r){return r.json();}).then(function(){load();});
-};
+}
+document.getElementById("interestLocal").onclick=function(){ vote("local"); };
+document.getElementById("interestSub").onclick=function(){ vote("youtube_subscriber"); };
 load(); setInterval(load, 5000);
 </script>
 </body>

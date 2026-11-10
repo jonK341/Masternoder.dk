@@ -294,7 +294,15 @@ def api_trade_stream():
 def api_trade_stream_interest():
     body = request.get_json(silent=True) or {}
     voter = str(body.get("voter") or request.remote_addr or "anon")
-    return jsonify(trade_stream_interest(voter=voter))
+    audience = str(body.get("audience") or "local")
+    user_id = str(body.get("user_id") or "")
+    self_attest = bool(body.get("self_attest_subscriber") or body.get("subscriber"))
+    return jsonify(trade_stream_interest(
+        voter=voter,
+        audience=audience,
+        user_id=user_id,
+        self_attest_subscriber=self_attest,
+    ))
 
 
 # ------------------------- tab data -------------------------

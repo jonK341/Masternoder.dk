@@ -1,7 +1,8 @@
 """Live trade ticker for OBS / YouTube stream overlays.
 
 Appends short trade events from the profit daemon and tracks opt-in interest
-for a public YouTube trade stream (no auto-go-live — interest only).
+for a public YouTube trade stream. Votes are collected for two audiences:
+local/ops viewers and YouTube subscribers (no auto-go-live).
 """
 from __future__ import annotations
 
@@ -17,9 +18,24 @@ _INTEREST_PATH = os.path.join(ex._DATA_DIR, "profit_youtube_stream_interest.json
 _YT_BROADCAST = os.path.join(ex._BASE, "logs", "profit_youtube_broadcast.jsonl")
 _MAX_EVENTS = 400
 
+AUDIENCE_LOCAL = "local"
+AUDIENCE_YT_SUB = "youtube_subscriber"
+_AUDIENCES = (AUDIENCE_LOCAL, AUDIENCE_YT_SUB)
+
 
 def _iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _normalize_audience(audience: str) -> str:
+    raw = str(audience or AUDIENCE_LOCAL).strip().lower().replace("-", "_")
+    if raw in ("sub", "subscriber", "subscribers", "yt", "youtube", "youtube_sub", "youtube_subscribers"):
+        return AUDIENCE_YT_SUB
+    if raw in ("ops", "desk", "overlay", "local"):
+        return AUDIENCE_LOCAL
+    if raw in _AUDIENCES:
+        return raw
+    return AUDIENCE_LOCAL
 
 
 def append_trade(
@@ -79,36 +95,126 @@ def recent_trades(*, limit: int = 40) -> List[Dict[str, Any]]:
     return out
 
 
+def _audience_bucket(raw: Dict[str, Any], audience: str) -> Dict[str, Any]:
+    audiences = raw.get("audiences") if isinstance(raw.get("audiences"), dict) else {}
+    bucket = audiences.get(audience) if isinstance(audiences.get(audience), dict) else {}
+    voters = bucket.get("voters") if isinstance(bucket.get("voters"), list) else []
+    # Migrate legacy single-list votes into local.
+    if audience == AUDIENCE_LOCAL and not voters and isinstance(raw.get("voters"), list):
+        voters = list(raw.get("voters") or [])
+    return {"voters": [str(v) for v in voters if str(v).strip()]}
+
+
+def _thresholds() -> Dict[str, int]:
+    local_min = int(os.environ.get("PROFIT_YT_STREAM_INTEREST_MIN", "5") or 5)
+    sub_min = int(os.environ.get("PROFIT_YT_STREAM_SUB_INTEREST_MIN", str(local_min)) or local_min)
+    return {AUDIENCE_LOCAL: local_min, AUDIENCE_YT_SUB: sub_min}
+
+
 def interest_status() -> Dict[str, Any]:
     raw = ex._read_json(_INTEREST_PATH, {}) or {}
-    votes = int(raw.get("votes") or 0)
-    threshold = int(os.environ.get("PROFIT_YT_STREAM_INTEREST_MIN", "5") or 5)
+    thresholds = _thresholds()
+    by_audience: Dict[str, Any] = {}
+    total = 0
+    for audience in _AUDIENCES:
+        bucket = _audience_bucket(raw, audience)
+        votes = len(bucket["voters"])
+        total += votes
+        thr = thresholds[audience]
+        by_audience[audience] = {
+            "votes": votes,
+            "threshold": thr,
+            "interested_enough": votes >= thr,
+        }
+    local_ok = bool(by_audience[AUDIENCE_LOCAL]["interested_enough"])
+    sub_ok = bool(by_audience[AUDIENCE_YT_SUB]["interested_enough"])
+    # Ready when either audience clears its bar (both crowds can unlock go-live).
+    interested_enough = local_ok or sub_ok
     return {
         "success": True,
-        "votes": votes,
-        "threshold": threshold,
-        "interested_enough": votes >= threshold,
+        "votes": total,
+        "threshold": thresholds[AUDIENCE_LOCAL],
+        "interested_enough": interested_enough,
+        "audiences": by_audience,
+        "local_votes": by_audience[AUDIENCE_LOCAL]["votes"],
+        "subscriber_votes": by_audience[AUDIENCE_YT_SUB]["votes"],
+        "local_threshold": thresholds[AUDIENCE_LOCAL],
+        "subscriber_threshold": thresholds[AUDIENCE_YT_SUB],
         "note": (
-            "YouTube trade stream stays opt-in. When votes reach the threshold, "
-            "ops can go live via fleet-progress-monitor / streamer OBS overlay."
+            "Votes count for local/ops viewers and for YouTube subscribers. "
+            "Either audience reaching its threshold signals readiness to go live "
+            "(fleet-progress-monitor / streamer OBS). No auto go-live."
         ),
         "overlay_path": "/trade-stream",
+        "public_vote_path": "/api/youtube/trade-stream-interest",
         "updated_at": raw.get("updated_at"),
     }
 
 
-def register_interest(*, voter: str = "") -> Dict[str, Any]:
+def _is_known_subscriber(user_id: str) -> bool:
+    uid = (user_id or "").strip()
+    if not uid:
+        return False
+    try:
+        from backend.services.youtube_fanout_service import get_youtube_status
+
+        return bool(get_youtube_status(user_id=uid).get("subscribe_claimed"))
+    except Exception:
+        return False
+
+
+def register_interest(
+    *,
+    voter: str = "",
+    audience: str = AUDIENCE_LOCAL,
+    user_id: str = "",
+    self_attest_subscriber: bool = False,
+) -> Dict[str, Any]:
+    """Register an interest vote for local viewers or YouTube subscribers."""
+    aud = _normalize_audience(audience)
+    key = (voter or user_id or "anon").strip().lower()[:64] or "anon"
+    uid = (user_id or "").strip()
+
+    subscriber_verified = False
+    if aud == AUDIENCE_YT_SUB:
+        # Accept: prior subscribe-claim OR explicit self-attest from the YouTube vote CTA.
+        subscriber_verified = _is_known_subscriber(uid) or bool(self_attest_subscriber)
+        if not subscriber_verified and not self_attest_subscriber:
+            # Soft-accept self-attest when audience is explicitly youtube_subscriber
+            # (link in YouTube description/chat). Mark as attested.
+            subscriber_verified = True
+            self_attest_subscriber = True
+        key = f"yt:{(uid or key)}"
+
     raw = ex._read_json(_INTEREST_PATH, {}) or {}
-    voters = raw.get("voters") if isinstance(raw.get("voters"), list) else []
-    key = (voter or "anon").strip().lower()[:64] or "anon"
+    audiences = raw.get("audiences") if isinstance(raw.get("audiences"), dict) else {}
+    # One-time migrate legacy list → local bucket.
+    if isinstance(raw.get("voters"), list) and AUDIENCE_LOCAL not in audiences:
+        audiences[AUDIENCE_LOCAL] = {"voters": list(raw.get("voters") or [])}
+    bucket = audiences.get(aud) if isinstance(audiences.get(aud), dict) else {"voters": []}
+    voters = [str(v) for v in (bucket.get("voters") or []) if str(v).strip()]
     if key not in voters:
         voters.append(key)
-    raw["voters"] = voters[-500:]
-    raw["votes"] = len(raw["voters"])
+    audiences[aud] = {
+        "voters": voters[-500:],
+        "updated_at": _iso(),
+    }
+    raw["audiences"] = audiences
+    raw["votes"] = sum(len((audiences.get(a) or {}).get("voters") or []) for a in _AUDIENCES)
     raw["updated_at"] = _iso()
+    if aud == AUDIENCE_YT_SUB:
+        raw["last_subscriber_vote"] = {
+            "voter": key,
+            "user_id": uid or None,
+            "self_attest": bool(self_attest_subscriber),
+            "verified_claim": _is_known_subscriber(uid),
+            "ts": _iso(),
+        }
     ex._write_json(_INTEREST_PATH, raw)
     status = interest_status()
     status["registered"] = True
+    status["audience"] = aud
+    status["subscriber_attested"] = bool(self_attest_subscriber) if aud == AUDIENCE_YT_SUB else False
     return status
 
 
