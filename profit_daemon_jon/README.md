@@ -24,9 +24,24 @@ Paper mode is the default. Prefer the wizard before going live:
 
 ```bash
 .venv/bin/python profit_daemon_jon/run.py --wizard
-.venv/bin/python profit_daemon_jon/run.py --tray          # http://127.0.0.1:8787/
+.venv/bin/python profit_daemon_jon/run.py --control      # http://127.0.0.1:8787/
+# Daemon start also opens local control unless you pass --no-control
+.venv/bin/python profit_daemon_jon/run.py --once --profile paper
 docker compose -f profit_daemon_jon/docker-compose.yml up -d
 ```
+
+### Local browser control + exchanges
+
+Starting the daemon binds a **127.0.0.1** control panel (default port `8787`) so you can:
+
+- enable / disable venues
+- toggle ladder participation
+- **add another exchange** by reusing a known ticker parser (`binance`, `okx`, `nonkyc`, …)
+- see companion service health (Redis, Prometheus, Grafana, vault, WS feed)
+
+Registry file: `data/exchanges_registry.json`.
+
+Recommended companion services: Redis market bus, Prometheus `:9108`, Grafana, encrypted vault (`EXCHANGE_VAULT_KEY`), Binance bookTicker WS feed, Docker Compose stack.
 
 5-minute guide: `profit_daemon_jon/docs/INSTALL_5MIN.md`
 

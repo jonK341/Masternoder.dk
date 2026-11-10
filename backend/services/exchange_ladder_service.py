@@ -42,6 +42,7 @@ from backend.services.exchange_maker_quote_service import (
     own_sell_price,
     place_with_retry,
 )
+from backend.services.exchange_registry_service import ladder_quotes, ladder_venues
 from backend.services.exchange_venue_api_service import (
     cancel_order,
     get_open_orders,
@@ -51,8 +52,8 @@ from backend.services.exchange_venue_api_service import (
 )
 
 TAG = "ld-"
-VENUES = ("nonkyc", "binance")
-QUOTES = {"nonkyc": "USDT", "binance": "USDC"}
+VENUES = ladder_venues()
+QUOTES = ladder_quotes()
 _CFG_PATH = os.path.join(ex._BASE, "data", "exchange_ladder_config.json")
 _MARKET_URL = "https://api.nonkyc.io/api/v2/market/getbysymbol/{symbol}_USDT"
 _BINANCE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo?symbol={symbol}USDC"
@@ -93,13 +94,15 @@ def load_config(venue: str = "nonkyc") -> Dict[str, Any]:
     cfg = _default_config()
     raw = ex._read_json(_CFG_PATH, None)
     raw = raw if isinstance(raw, dict) else {}
-    cfg.update({k: v for k, v in raw.items() if v is not None and k not in VENUES})
+    venue_ids = set(ladder_venues()) | set(VENUES)
+    cfg.update({k: v for k, v in raw.items() if v is not None and k not in venue_ids})
     if venue != "nonkyc":
         block = raw.get(venue) if isinstance(raw.get(venue), dict) else {}
         cfg["execute"] = False
         cfg.update({k: v for k, v in block.items() if v is not None})
     cfg["venue"] = venue
-    cfg["quote"] = QUOTES[venue]
+    quotes = {**QUOTES, **ladder_quotes()}
+    cfg["quote"] = quotes.get(venue) or ("USDC" if venue == "binance" else "USDT")
     cfg["execute"] = bool(cfg.get("execute"))
     cfg["symbols"] = [str(s).upper() for s in (cfg.get("symbols") or []) if str(s).strip()]
     cfg["sides"] = [s for s in (str(x).lower() for x in (cfg.get("sides") or [])) if s in ("buy", "sell")]
@@ -342,7 +345,7 @@ def run_ladder(
     cancel = cancel or defaults["cancel"]
     if maker_sell is None:
         maker_sell = own_sell_price if venue == "nonkyc" else (lambda _s: None)
-    quote = cfg.get("quote") or QUOTES[venue]
+    quote = cfg.get("quote") or QUOTES.get(venue) or ladder_quotes().get(venue) or "USDT"
     now = (clock or time.time)()
     spath = state_path(path, venue)
     state = load_state(spath)

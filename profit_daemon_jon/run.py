@@ -7,6 +7,7 @@ Usage:
   python profit_daemon_jon/run.py --status
   python profit_daemon_jon/run.py --sales --hours 3
   python profit_daemon_jon/run.py --backlog
+  python profit_daemon_jon/run.py --control
 """
 from __future__ import annotations
 
@@ -39,7 +40,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sales", action="store_true", help="Print sales report")
     parser.add_argument("--hours", type=float, default=3.0, help="Sales window hours")
     parser.add_argument("--wizard", action="store_true", help="First-run setup wizard")
-    parser.add_argument("--tray", action="store_true", help="Desktop status page / tray")
+    parser.add_argument("--tray", action="store_true", help="Alias for --control (desktop tray / browser)")
+    parser.add_argument("--control", action="store_true", help="Local 127.0.0.1 browser control only")
+    parser.add_argument("--no-control", action="store_true", help="Do not open browser control with the daemon")
     parser.add_argument("--json", action="store_true", help="JSON output for status/sales/backlog")
     parser.add_argument("--once", action="store_true", help="Single daemon tick then exit")
     parser.add_argument("--profile", default=None, help="Profit profile (paper/standard/max/live-only)")
@@ -103,9 +106,9 @@ def main(argv: list[str] | None = None) -> int:
         from profit_daemon_jon.wizard import main as wizard_main
         return int(wizard_main() or 0)
 
-    if args.tray:
-        from profit_daemon_jon.tray_status import main as tray_main
-        return int(tray_main() or 0)
+    if args.tray or args.control:
+        from profit_daemon_jon.control_panel import main as control_main
+        return int(control_main() or 0)
 
     # Default: run the unified profit daemon
     profile = args.profile or os.environ.get("EXCHANGE_PROFIT_PROFILE") or "standard"
@@ -123,16 +126,38 @@ def main(argv: list[str] | None = None) -> int:
         if not encryption_available():
             print("ERROR: live mode requires EXCHANGE_VAULT_KEY (run --wizard). Refusing to start.")
             return 3
-        # Prefer vault-backed secrets when present
+        # Prefer vault-backed secrets for every registered exchange
         try:
+            from backend.services.exchange_registry_service import list_exchanges
             from backend.services.exchange_secrets_vault_service import get_secret
-            for env_name in ("BINANCE_API_KEY", "BINANCE_API_SECRET", "NONKYC_API_KEY", "NONKYC_API_SECRET"):
+            env_names = []
+            for row in list_exchanges():
+                creds = row.get("credentials_env") or {}
+                for key in ("api_key", "api_secret", "api_passphrase"):
+                    name = creds.get(key)
+                    if name:
+                        env_names.append(str(name))
+            if not env_names:
+                env_names = [
+                    "BINANCE_API_KEY", "BINANCE_API_SECRET",
+                    "NONKYC_API_KEY", "NONKYC_API_SECRET",
+                ]
+            for env_name in env_names:
                 if not os.environ.get(env_name):
                     got = get_secret(env_name)
                     if got:
                         os.environ[env_name] = str(got)
         except Exception:
             pass
+
+    if not args.no_control and os.environ.get("PROFIT_DAEMON_NO_CONTROL", "").strip() not in ("1", "true", "yes"):
+        try:
+            from profit_daemon_jon.control_panel import start_background
+            # --once smoke / CI: keep control quiet (no browser popup)
+            open_browser = not args.once
+            start_background(open_browser=open_browser)
+        except Exception as exc:
+            print(f"[control] skipped: {exc}")
 
     _banner(f"profile={profile} once={bool(args.once)}")
 

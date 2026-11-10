@@ -279,7 +279,9 @@ _PARSERS: Dict[str, Callable[[Any], Optional[Dict[str, float]]]] = {
 def fetch_ticker(venue_id: str, base: str, *, timeout: float = 6.0) -> Optional[Dict[str, float]]:
     """Fetch a single normalized ticker from a venue's public endpoint."""
     venue = _venue_map().get(venue_id)
-    parser = _PARSERS.get(venue_id)
+    # Allow venues to reuse another venue's response shape via ``parser``.
+    parser_key = str((venue or {}).get("parser") or venue_id)
+    parser = _PARSERS.get(parser_key) or _PARSERS.get(venue_id)
     if not venue or not parser:
         return None
     try:

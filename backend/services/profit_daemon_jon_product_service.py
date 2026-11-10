@@ -187,6 +187,8 @@ def product_improvement_backlog() -> Dict[str, Any]:
         {"id": "ops-docker", "area": "ops", "title": "Official Docker Compose one-liner", "status": "done"},
         {"id": "ops-wizard", "area": "ops", "title": "First-run setup wizard (keys + paper/live)", "status": "done"},
         {"id": "ops-gui", "area": "ops", "title": "Desktop tray status for The Profit Daemon Jon", "status": "done"},
+        {"id": "ops-control", "area": "ops", "title": "127.0.0.1 browser control on daemon start", "status": "done"},
+        {"id": "ops-exchange-registry", "area": "ops", "title": "Exchange registry — easy add/enable venues", "status": "done"},
         {"id": "sec-vault", "area": "security", "title": "Forced vault for live keys in downloadable build", "status": "done"},
         {"id": "sec-paper-default", "area": "security", "title": "Hard paper default until explicit live unlock", "status": "done"},
         {"id": "obs-public-dash", "area": "observability", "title": "Bundled Grafana/Prometheus compose profile", "status": "done"},

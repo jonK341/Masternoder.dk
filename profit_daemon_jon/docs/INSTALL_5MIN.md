@@ -36,7 +36,9 @@ Screenshot: banner `The Profit Daemon Jon` + tick summary.
 .venv/bin/python profit_daemon_jon/run.py --status
 .venv/bin/python profit_daemon_jon/run.py --sales --hours 3
 .venv/bin/python profit_daemon_jon/run.py --tray
-# open http://127.0.0.1:8787/
+# Daemon start opens http://127.0.0.1:8787/ control (add/enable exchanges)
+# Or run control alone:
+# .venv/bin/python profit_daemon_jon/run.py --control
 ```
 
 ## 6. Optional observability (1 min)
