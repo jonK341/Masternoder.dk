@@ -98,7 +98,10 @@ function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function
 }); }
 function paint(d) {
   var mode = document.getElementById("mode");
-  var live = !!d.live_orders;
+  var daemonMode = ((d.stats || {}).daemon || {}).mode;
+  var live = !!d.live_orders
+    || String(d.mode || "").toLowerCase() === "live"
+    || String(daemonMode || "").toLowerCase() === "live";
   mode.textContent = live ? "live" : "paper";
   mode.className = "mode" + (live ? " live" : "");
   document.getElementById("when").textContent = d.updated_at ? ("updated " + d.updated_at.replace("T", " ").slice(0, 19) + " UTC") : "";

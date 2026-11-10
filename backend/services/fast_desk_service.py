@@ -2,7 +2,7 @@
 
 Each tick reads the public Binance and NonKYC books for XRP, XLM, ALGO, TRX, and SOL
 and writes one plain-language line. It does not withdraw and does not send an order
-unless a later caller asks for a paper fill.
+unless a later caller asks for a fill.
 
 ``snapshot()`` also attaches read-only ladder / maker / daemon stats for the desk UI.
 """
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from backend.services import crypto_exchange_service as ex
 
@@ -22,17 +22,56 @@ def _iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def describe_coin(row: Dict[str, Any], *, notional_usd: float = 25.0) -> str:
+def _env_on(key: str) -> bool:
+    return str(os.environ.get(key, "")).strip().lower() in ("1", "true", "yes", "on")
+
+
+def desk_live_status() -> Tuple[str, bool]:
+    """Overall desk badge: follow profit-daemon / live gates, not only cross-trade.
+
+    Returns ``(mode, live_orders)`` where mode is ``live`` or ``paper``.
+    """
+    try:
+        from scripts.daemon_env import daemon_mode_label
+
+        label = str(daemon_mode_label() or "").strip().lower()
+    except Exception:
+        label = ""
+    hb_mode = ""
+    try:
+        hb_mode = str((_daemon_stats() or {}).get("mode") or "").strip().lower()
+    except Exception:
+        hb_mode = ""
+    env_mode = str(os.environ.get("EXCHANGE_DAEMON_MODE") or "").strip().lower()
+    try:
+        from backend.services.exchange_cross_trade_service import cross_trade_live_enabled
+
+        cross_live = bool(cross_trade_live_enabled())
+    except Exception:
+        cross_live = False
+    arb_live = _env_on("EXCHANGE_ARBITRAGE_LIVE")
+    live = (
+        label == "live"
+        or hb_mode == "live"
+        or env_mode == "live"
+        or cross_live
+        or arb_live
+    )
+    return ("live" if live else "paper", live)
+
+
+def describe_coin(row: Dict[str, Any], *, notional_usd: float = 25.0, live: bool = False) -> str:
     """One sentence for a coin row from preview_fast_usdt."""
     sym = str(row.get("symbol") or "?").upper()
     decision = str(row.get("decision") or "")
     net = row.get("net_bps")
     usd = float(row.get("executable_usd") or 0)
     net_txt = f"{net} bps" if net is not None else "no price"
+    fill_word = "live fill" if live else "paper fill"
     if decision == "paper_candidate":
         return (
             f"{sym}: gap is {net_txt} and ${usd:.2f} can fill a ${notional_usd:.0f} clip. "
-            "Ready for a paper fill."
+            f"Ready for a {fill_word}."
         )
     if decision == "book_too_thin":
         return (
@@ -44,11 +83,16 @@ def describe_coin(row: Dict[str, Any], *, notional_usd: float = 25.0) -> str:
     return f"{sym}: no book yet. Waiting."
 
 
-def summarize_tick(coins: List[Dict[str, Any]], *, notional_usd: float = 25.0) -> str:
-    parts = [describe_coin(row, notional_usd=notional_usd) for row in coins]
+def summarize_tick(
+    coins: List[Dict[str, Any]],
+    *,
+    notional_usd: float = 25.0,
+    live: bool = False,
+) -> str:
+    parts = [describe_coin(row, notional_usd=notional_usd, live=live) for row in coins]
     ready = [str(row.get("symbol") or "").upper() for row in coins if row.get("decision") == "paper_candidate"]
     if ready:
-        head = "Paper fill ready for " + ", ".join(ready) + "."
+        head = ("Live fill ready for " if live else "Paper fill ready for ") + ", ".join(ready) + "."
     else:
         head = "No trade."
     return head + " " + " ".join(parts)
@@ -245,32 +289,37 @@ def interesting_stats(state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
 
 def snapshot() -> Dict[str, Any]:
     state = _read_state()
+    mode, live = desk_live_status()
     if not state:
         empty = {
             "success": True,
             "running": False,
             "lines": [],
             "coins": [],
+            "mode": mode,
+            "live_orders": live,
             "note": "Daemon has not ticked yet.",
             "withdrawal_broadcast": False,
         }
         empty["stats"] = interesting_stats(empty)
         return empty
     state["success"] = True
+    # Always refresh the badge from current gates / heartbeat (stale paper ticks
+    # must not hide a live profit daemon).
+    state["mode"] = mode
+    state["live_orders"] = live
     state["stats"] = interesting_stats(state)
     return state
 
 
 def tick(*, notional_usd: float = 25.0, min_net_bps: float = 18.0) -> Dict[str, Any]:
     """One watch pass. Public books only. No withdrawal."""
-    from backend.services.exchange_cross_trade_service import (
-        cross_trade_live_enabled,
-        preview_fast_usdt,
-    )
+    from backend.services.exchange_cross_trade_service import preview_fast_usdt
 
+    mode, live = desk_live_status()
     scan = preview_fast_usdt(notional_usd=notional_usd, min_net_bps=min_net_bps)
     coins = list(scan.get("coins") or [])
-    text = summarize_tick(coins, notional_usd=notional_usd)
+    text = summarize_tick(coins, notional_usd=notional_usd, live=live)
     now = _iso()
     prev = _read_state()
     lines = list(prev.get("lines") or [])
@@ -290,8 +339,8 @@ def tick(*, notional_usd: float = 25.0, min_net_bps: float = 18.0) -> Dict[str, 
         "success": True,
         "running": True,
         "updated_at": now,
-        "mode": "live" if cross_trade_live_enabled() else "paper",
-        "live_orders": bool(cross_trade_live_enabled()),
+        "mode": mode,
+        "live_orders": live,
         "withdrawal_broadcast": False,
         "notional_usd": notional_usd,
         "min_net_bps": min_net_bps,
@@ -302,7 +351,8 @@ def tick(*, notional_usd: float = 25.0, min_net_bps: float = 18.0) -> Dict[str, 
         "latest": text,
         "note": (
             "Watching XRP, XLM, ALGO, TRX, and SOL on the public books. "
-            "A line is written every pass. No withdrawal is sent from this desk."
+            "A line is written every pass. No withdrawal is sent from this desk. "
+            f"Mode follows the profit daemon gates ({mode})."
         ),
     }
     try:
