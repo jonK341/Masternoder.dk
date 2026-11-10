@@ -11,20 +11,20 @@
          if (ExtractDestination(sendingTo.first, dest)) {
 --- a/src/qt/transactiondesc.cpp
 +++ b/src/qt/transactiondesc.cpp
-@@ -254,14 +254,14 @@
-     }
+@@ -254,14 +254,14 @@ QString TransactionDesc::toHTML(CWallet* wallet, CWalletTx& wtx, TransactionReco
+     strHTML += "<b>" + tr("Output index") + ":</b> " + QString::number(rec->getOutputIndex()) + "<br>";
  
-     // PaymentRequest info:
+     // Message from normal masternoder2:URI (masternoder2:XyZ...?message=example)
 -    foreach (const PAIRTYPE(string, string) & r, wtx.vOrderForm)
 +    for (const PAIRTYPE(string, string) & r : wtx.vOrderForm)
-     {
-         if (r.first == "PaymentRequest")
-             strHTML += tr("Payment request") + "<br />";
-     }
+         if (r.first == "Message")
+             strHTML += "<br><b>" + tr("Message") + ":</b><br>" + GUIUtil::HtmlEscape(r.second, true) + "<br>";
  
-     // Message
+     //
+     // PaymentRequest info:
+     //
 -    foreach (const PAIRTYPE(string, string) & r, wtx.vOrderForm) {
 +    for (const PAIRTYPE(string, string) & r : wtx.vOrderForm) {
-         if (r.first == "Message" || r.first == "msg")
-             strHTML += "<br />" + tr("Message") + ":<br />" + GUIUtil::HtmlEscape(r.second, true) + "<br />";
-     }
+         if (r.first == "PaymentRequest") {
+             PaymentRequestPlus req;
+             req.parse(QByteArray::fromRawData(r.second.data(), r.second.size()));
