@@ -603,6 +603,7 @@ MANIFESTS = {
         "gallery/index.html",
         "aggregator/index.html",
         "static/css/aggregator-studio-themes.css",
+        "static/css/aggregator-readability-fix.css",
         "static/css/camgirls-themes.css",
         "static/js/camgirls-themes.js",
         "static/js/theme-timeline.js",

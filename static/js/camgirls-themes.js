@@ -47,6 +47,9 @@
     } catch (e) {
       /* ignore */
     }
+    if (isAggregator()) {
+      return 'cosmic';
+    }
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
       return 'champagne';
     }

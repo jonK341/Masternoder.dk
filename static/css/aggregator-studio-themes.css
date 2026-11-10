@@ -13,10 +13,7 @@ html.agg-themed body.layout-aggregator-linux {
   --agg-linux-red: var(--cg-accent-secondary);
   --agg-linux-yellow: var(--cg-accent-warn);
   color: var(--agg-linux-fg);
-  background: var(--cg-bg);
-  background-image:
-    radial-gradient(ellipse 100% 70% at 0% 0%, var(--cg-body-gradient-a), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 100% 10%, var(--cg-body-gradient-b), transparent 45%);
+  background: var(--agg-linux-bg);
 }
 
 html.agg-themed[data-cg-theme="signal"] body.layout-aggregator-linux {
@@ -37,14 +34,6 @@ html.agg-themed body.layout-aggregator-linux .agg-theme-dock {
   max-width: 1368px;
   margin-left: auto;
   margin-right: auto;
-}
-
-html.agg-themed body.layout-aggregator-linux .agg-hero h1 {
-  background: linear-gradient(105deg, var(--cg-accent-primary), var(--cg-accent-secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: none;
 }
 
 html.agg-themed body.layout-aggregator-linux .agg-hub-tab.active {
