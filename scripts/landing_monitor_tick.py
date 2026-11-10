@@ -14,8 +14,10 @@ os.environ.setdefault("LITE_APP", "1")
 
 
 def main() -> int:
+    from backend.services.landing_monitor_actions_service import sync_from_activity
     from backend.services.landing_monitor_service import refresh_snapshot
 
+    sync = sync_from_activity(limit=40)
     payload = refresh_snapshot(force=True)
     print(
         json.dumps(
@@ -25,6 +27,8 @@ def main() -> int:
                 "bpm": payload.get("bpm"),
                 "special": (payload.get("special") or {}).get("id"),
                 "lightshow": (payload.get("lightshow") or {}).get("id"),
+                "imported": sync.get("imported"),
+                "reel_count": payload.get("reel_count"),
             }
         )
     )

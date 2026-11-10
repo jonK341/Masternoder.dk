@@ -195,6 +195,35 @@ def refresh_snapshot(*, force: bool = False) -> Dict[str, Any]:
 
         lightshow = _pick_rotating(LIGHTSHOWS, 12.0)
         special = _pick_rotating(SPECIALS, 8.0)
+
+        actions_blob: Dict[str, Any] = {"actions": [], "learning": {}, "reel": []}
+        try:
+            from backend.services import landing_monitor_actions_service as acts
+
+            # Keep the monitor synchronized with platform activity.
+            acts.sync_from_activity(limit=30)
+            listed = acts.list_actions(limit=12)
+            learn = acts.learning_snapshot()
+            reel = acts.build_reel(limit=16, prefer_unplayed=True)
+            actions_blob = {
+                "actions": listed.get("actions") or [],
+                "learning": (learn.get("learning") or {}),
+                "reel": reel.get("reel") or [],
+                "reel_count": reel.get("count") or 0,
+            }
+            # If a reel scene is waiting, prefer its category FX on the live bezel.
+            if actions_blob["reel"]:
+                head = actions_blob["reel"][0]
+                fx = head.get("fx") if isinstance(head.get("fx"), dict) else {}
+                lid = fx.get("lightshow")
+                if lid:
+                    lightshow = next((x for x in LIGHTSHOWS if x.get("id") == lid), lightshow)
+                    lightshow = dict(lightshow)
+                    lightshow["explain"] = fx.get("explain") or lightshow.get("explain")
+                    lightshow["name"] = fx.get("title") or lightshow.get("name")
+        except Exception:
+            pass
+
         payload = {
             "success": True,
             "epoch": time.time(),
@@ -222,6 +251,10 @@ def refresh_snapshot(*, force: bool = False) -> Dict[str, Any]:
                 "scale": ["A3", "C4", "E4", "G4", "A4", "C5"],
                 "explain": "Browser-side generative synth — no upload; starts only after you tap Play music.",
             },
+            "actions": actions_blob.get("actions") or [],
+            "learning": actions_blob.get("learning") or {},
+            "reel": actions_blob.get("reel") or [],
+            "reel_count": actions_blob.get("reel_count") or 0,
         }
         _write_cache(payload)
         return payload

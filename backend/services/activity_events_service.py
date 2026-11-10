@@ -36,6 +36,22 @@ def emit(
     with _LOCK:
         with open(_LOG_PATH, "a", encoding="utf-8") as f:
             f.write(json.dumps(row, default=str) + "\n")
+    # Fan-out to frontpage lobby monitor (learn + store) without blocking callers.
+    try:
+        from backend.services.landing_monitor_actions_service import record_action
+
+        record_action(
+            row["type"],
+            title=text or row["type"],
+            text=text,
+            channel=channel,
+            user_id=user_id,
+            payload=payload or {},
+            source="activity_events",
+            ts=row["ts"],
+        )
+    except Exception:
+        pass
     return {"success": True, "event": row}
 
 

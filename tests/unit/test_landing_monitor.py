@@ -5,9 +5,13 @@ from flask import Flask
 
 
 def test_landing_monitor_snapshot_shape(tmp_path, monkeypatch):
+    from backend.services import landing_monitor_actions_service as acts
     from backend.services import landing_monitor_service as svc
 
     monkeypatch.setattr(svc, "_CACHE_PATH", str(tmp_path / "landing_monitor_cache.json"))
+    monkeypatch.setattr(acts, "_ACTIONS_PATH", str(tmp_path / "actions.json"))
+    monkeypatch.setattr(acts, "_LEARN_PATH", str(tmp_path / "learn.json"))
+    monkeypatch.setattr(acts, "sync_from_activity", lambda limit=30: {"imported": 0})
     monkeypatch.setattr(svc, "_collect_stats", lambda: {
         "total_videos": 3,
         "total_users": 2,
@@ -27,28 +31,36 @@ def test_landing_monitor_snapshot_shape(tmp_path, monkeypatch):
     assert "explain" in payload["lightshow"]
     assert payload["effect_explain"]["bpm"] == 180
     assert payload["music"]["bpm"] == 180
+    assert "reel" in payload
+    assert "learning" in payload
     again = svc.get_snapshot(max_age_sec=30)
     assert again["stats"]["total_users"] == 2
 
 
-def test_landing_monitor_route():
+def test_landing_monitor_route(monkeypatch):
     from backend.routes.landing_monitor_routes import landing_monitor_bp
     from backend.services import landing_monitor_service as svc
 
     app = Flask(__name__)
     app.register_blueprint(landing_monitor_bp)
-    # Avoid DB by forcing a cache hit from a synthetic refresh
-    svc.refresh_snapshot = lambda force=False: {
-        "success": True,
-        "bpm": 180,
-        "refresh_ms": 5000,
-        "stats": {"total_videos": 0},
-        "special": {"id": "wallet", "title": "t"},
-        "lightshow": {"id": "pulse", "explain": "e"},
-        "effect_explain": {"title": "Pulse", "body": "e", "bpm": 180},
-        "music": {"bpm": 180},
-        "updated_at": "Z",
-    }
+
+    def fake_get_snapshot(*, max_age_sec=12.0):
+        return {
+            "success": True,
+            "bpm": 180,
+            "refresh_ms": 5000,
+            "stats": {"total_videos": 0},
+            "special": {"id": "wallet", "title": "t"},
+            "lightshow": {"id": "pulse", "explain": "e"},
+            "effect_explain": {"title": "Pulse", "body": "e", "bpm": 180},
+            "music": {"bpm": 180},
+            "updated_at": "Z",
+            "reel": [],
+            "learning": {},
+        }
+
+    monkeypatch.setattr(svc, "get_snapshot", fake_get_snapshot)
+    monkeypatch.setattr(svc, "refresh_snapshot", lambda force=False: fake_get_snapshot())
     c = app.test_client()
     r = c.get("/api/landing/monitor")
     assert r.status_code == 200

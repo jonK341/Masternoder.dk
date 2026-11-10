@@ -24,13 +24,79 @@ def landing_monitor_snapshot():
             "lightshow": {"id": "pulse", "name": "Pulse Lightshow", "explain": ""},
             "effect_explain": {"title": "Pulse", "body": "", "bpm": 180},
             "music": {"bpm": 180, "opt_in": True},
+            "actions": [],
+            "reel": [],
+            "learning": {},
         }
     return jsonify(payload), 200, {"Cache-Control": "public, max-age=2"}
 
+
 @landing_monitor_bp.route("/api/landing/monitor/tick", methods=["POST"])
 def landing_monitor_tick():
-    """Cron/ops tick — rebuild cache immediately."""
+    """Cron/ops tick — sync actions + rebuild cache."""
     from backend.services.landing_monitor_service import refresh_snapshot
+    from backend.services.landing_monitor_actions_service import sync_from_activity
 
+    sync = sync_from_activity(limit=40)
     payload = refresh_snapshot(force=True)
-    return jsonify({"success": True, "updated_at": payload.get("updated_at"), "bpm": payload.get("bpm")})
+    return jsonify(
+        {
+            "success": True,
+            "updated_at": payload.get("updated_at"),
+            "bpm": payload.get("bpm"),
+            "imported": sync.get("imported"),
+            "reel_count": payload.get("reel_count"),
+        }
+    )
+
+
+@landing_monitor_bp.route("/api/landing/monitor/actions", methods=["GET", "POST"])
+def landing_monitor_actions():
+    from backend.services import landing_monitor_actions_service as acts
+
+    if request.method == "GET":
+        category = (request.args.get("category") or "").strip() or None
+        unplayed = str(request.args.get("unplayed") or "").lower() in ("1", "true", "yes")
+        limit = request.args.get("limit", 40, type=int)
+        return jsonify(acts.list_actions(limit=limit, category=category, unplayed_only=unplayed))
+
+    body = request.get_json(silent=True) or {}
+    result = acts.record_action(
+        str(body.get("type") or body.get("event_type") or "manual_action"),
+        title=body.get("title"),
+        text=body.get("text"),
+        channel=body.get("channel"),
+        user_id=body.get("user_id"),
+        payload=body.get("payload") if isinstance(body.get("payload"), dict) else {},
+        category=body.get("category"),
+        source=str(body.get("source") or "api"),
+    )
+    return jsonify(result), 201
+
+
+@landing_monitor_bp.route("/api/landing/monitor/reel", methods=["GET"])
+def landing_monitor_reel():
+    from backend.services.landing_monitor_actions_service import build_reel
+
+    limit = request.args.get("limit", 24, type=int)
+    return jsonify(build_reel(limit=limit, prefer_unplayed=True))
+
+
+@landing_monitor_bp.route("/api/landing/monitor/learning", methods=["GET"])
+def landing_monitor_learning():
+    from backend.services.landing_monitor_actions_service import learning_snapshot
+
+    return jsonify(learning_snapshot())
+
+
+@landing_monitor_bp.route("/api/landing/monitor/played", methods=["POST"])
+def landing_monitor_played():
+    from backend.services.landing_monitor_actions_service import mark_played
+
+    body = request.get_json(silent=True) or {}
+    ids = body.get("ids") or body.get("action_ids") or []
+    if isinstance(ids, str):
+        ids = [ids]
+    if not isinstance(ids, list):
+        ids = []
+    return jsonify(mark_played(ids))
