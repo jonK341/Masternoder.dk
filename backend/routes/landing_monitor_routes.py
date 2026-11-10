@@ -144,6 +144,14 @@ def landing_monitor_tts():
 
     from flask import send_file
 
+    # Ensure deploy .env keys (e.g. ELEVENLABS_API_KEY) are visible to TTS.
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(override=False)
+    except Exception:
+        pass
+
     from backend.services import tts_service
 
     body = request.get_json(silent=True) or {}
