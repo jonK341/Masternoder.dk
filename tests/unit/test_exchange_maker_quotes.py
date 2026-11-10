@@ -13,6 +13,7 @@ def _cfg(**over):
         "execute": True,
         "symbols": ["ALGO"],
         "sides": ["sell"],
+        "clip_usd": 25.0,
         "yield_to_ladder": False,
     }
     cfg.update(over)
@@ -226,3 +227,22 @@ def test_empty_symbols_config_falls_back_to_defaults(tmp_path, monkeypatch):
     cfg = mq.load_config()
     assert cfg["symbols"] == ["ALGO", "XRP"]
     assert cfg["execute"] is True
+
+
+def test_places_buy_and_sell_when_budget_and_inventory_allow(tmp_path):
+    venue = FakeVenue()
+    rep = run_maker_quotes(
+        cfg=_cfg(sides=["buy", "sell"], clip_usd=10.0, yield_to_ladder=False),
+        top=lambda _s: {"bid": 0.0930, "ask": 0.0931},
+        balances={"ALGO": 586.5, "USDT": 40.0},
+        open_ids=venue.open_ids,
+        status=venue.status,
+        place=venue.place,
+        cancel=venue.cancel,
+        clock=lambda: 1000.0,
+        path=str(tmp_path / "maker.json"),
+    )
+    sides = {p[1] for p in venue.placed}
+    assert sides == {"buy", "sell"}
+    assert not rep.get("yielded_to_ladder")
+    assert own_sell_price("ALGO", str(tmp_path / "maker.json")) is not None

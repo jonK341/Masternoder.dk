@@ -17,6 +17,23 @@ def test_summarize_book_includes_venues():
     assert "binance_pnl=$0.67" in summary
 
 
+def test_summarize_book_reads_open_orders_and_yield_flag():
+    summary = apd._summarize_book({
+        "maker": {"execute": True, "yielded_to_ladder": True, "quotes": [
+            {"symbol": "XRP", "side": "sell", "success": True, "coid": "mk-1"},
+            {"symbol": "XLM", "side": "sell", "skipped": "inventory"},
+        ]},
+        "ladders": {
+            "binance": {"open_orders": 5, "realized_usd": 0.77},
+            "nonkyc": {"open_orders": 20, "realized_usd": 0.02},
+        },
+    })
+    assert "maker_open=1" in summary
+    assert "maker_buys=yielded" in summary
+    assert "binance_open=5" in summary
+    assert "nonkyc_open=20" in summary
+
+
 def test_book_once_sets_ownership(monkeypatch):
     monkeypatch.delenv("EXCHANGE_DAEMON_OWNS_BOOK", raising=False)
 

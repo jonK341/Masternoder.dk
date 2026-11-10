@@ -12,6 +12,9 @@ Exchange tick (via exchange_master_daemon.run_once):
 Book loop (daemon-owned; sets EXCHANGE_DAEMON_OWNS_BOOK=1):
   - Maker quotes + multi-venue ladder (cron limit-tick becomes fallback)
 
+Market feed loop (optional; needs redis + websockets packages):
+  - Binance bookTicker → Redis/file bus for ladder/maker mids
+
 Casino tick (via casino_agent_daemon.run_once):
   - Autonomous casino agents (Nova, Luna, Sage, Ember, Iris)
 
@@ -672,11 +675,21 @@ def _summarize_book(res: Dict[str, Any]) -> str:
     mk_open = mk.get("open")
     if mk_open is None:
         quotes = mk.get("quotes") or mk.get("placed") or []
-        mk_open = len(quotes) if isinstance(quotes, list) else "?"
+        if isinstance(quotes, list):
+            # Count live/resting quotes, not skipped inventory rows.
+            live = [
+                q for q in quotes
+                if isinstance(q, dict) and (q.get("success") or q.get("resting") or q.get("coid"))
+            ]
+            mk_open = len(live) if live else len(quotes)
+        else:
+            mk_open = "?"
     parts = [
         f"maker_exec={bool(mk.get('execute'))}",
         f"maker_open={mk_open}",
     ]
+    if mk.get("yielded_to_ladder"):
+        parts.append("maker_buys=yielded")
     if mk.get("error"):
         parts.append(f"maker_err={str(mk.get('error'))[:40]}")
     for venue, row in (res.get("ladders") or {}).items():
@@ -687,12 +700,33 @@ def _summarize_book(res: Dict[str, Any]) -> str:
             continue
         open_n = row.get("open")
         if open_n is None:
+            open_n = row.get("open_orders")
+        if open_n is None:
             orders = row.get("orders") or {}
             open_n = len(orders) if isinstance(orders, dict) else "?"
         parts.append(f"{venue}_open={open_n}")
         if row.get("realized_usd") is not None:
             parts.append(f"{venue}_pnl=${float(row.get('realized_usd') or 0):.2f}")
     return " ".join(parts)
+
+
+def _feed_loop(stop: threading.Event) -> None:
+    """Binance bookTicker → Redis/file bus (blocks until process exit)."""
+    from backend.services.exchange_market_feed_service import DEFAULT_SYMBOLS, run_feed_forever
+    from backend.services.exchange_redis_bus import backend_name
+
+    symbols = [s.strip().upper() for s in (os.environ.get("EXCHANGE_FEED_SYMBOLS") or "").split(",") if s.strip()]
+    symbols = symbols or list(DEFAULT_SYMBOLS)
+    print(f"[all-profit] market-feed bus={backend_name()} symbols={','.join(symbols)}", flush=True)
+    _write_heartbeat("feed", f"bus={backend_name()} symbols={len(symbols)}")
+    # run_feed_forever never returns; daemon thread dies with the process.
+    while not stop.is_set():
+        try:
+            run_feed_forever(symbols)
+        except Exception as exc:
+            print(f"[all-profit] market-feed error: {exc}", flush=True)
+            _write_heartbeat("feed", f"error={exc}")
+            stop.wait(5)
 
 
 def _desk_loop(interval: int, stop: threading.Event) -> None:
@@ -840,6 +874,7 @@ def main() -> int:
     parser.add_argument("--skip-micro-chain", action="store_true", help="Do not run portal micro-chain loop")
     parser.add_argument("--skip-desk", action="store_true", help="Do not run desk dust/fill-model maintenance")
     parser.add_argument("--skip-book", action="store_true", help="Do not run daemon-owned ladder+maker book loop")
+    parser.add_argument("--skip-feed", action="store_true", help="Do not run Binance bookTicker market-feed loop")
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
@@ -948,6 +983,8 @@ def main() -> int:
             print(f"  desk dust/fill-model interval={desk_iv}s")
         if not args.skip_book:
             print(f"  book ladder+maker interval={book_iv}s (daemon-owned)")
+        if not args.skip_feed:
+            print("  market-feed Binance bookTicker → Redis/file bus")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -980,6 +1017,10 @@ def main() -> int:
         if not args.skip_book:
             threads.append(threading.Thread(
                 target=_book_loop, args=(book_iv, stop), name="book", daemon=True,
+            ))
+        if not args.skip_feed:
+            threads.append(threading.Thread(
+                target=_feed_loop, args=(stop,), name="feed", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(

@@ -1,0 +1,7 @@
+# Market-data pack for The Profit Daemon Jon (Redis bus + WS feed + fill model).
+# Install into the daemon venv:
+#   .venv/bin/pip install -r requirements-profit-market.txt
+redis>=5.0.1,<8.0
+websockets>=12.0,<16.0
+scikit-learn>=1.3.2,<2.0
+joblib>=1.3.0,<2.0

@@ -34,12 +34,13 @@ def _default_config() -> Dict[str, Any]:
         "venue": "nonkyc",
         "quote": "USDT",
         "symbols": ["ALGO", "XRP"],
-        "sides": ["sell"],
-        "clip_usd": 25.0,
+        "sides": ["buy", "sell"],
+        "clip_usd": 12.0,
         "fee_bps": 30.0,
         "edge_bps": 18.0,
         "reprice_bps": 5.0,
         "max_age_minutes": 30.0,
+        "yield_to_ladder": True,
     }
 
 
@@ -71,6 +72,10 @@ def load_config() -> Dict[str, Any]:
         cfg["sides"] = list(_default_config()["sides"])
     for key in ("clip_usd", "fee_bps", "edge_bps", "reprice_bps", "max_age_minutes"):
         cfg[key] = float(cfg.get(key) or _default_config()[key])
+    if "yield_to_ladder" in cfg:
+        cfg["yield_to_ladder"] = bool(cfg.get("yield_to_ladder"))
+    else:
+        cfg["yield_to_ladder"] = bool(_default_config()["yield_to_ladder"])
     return cfg
 
 
@@ -205,7 +210,10 @@ def run_maker_quotes(
     report: Dict[str, Any] = {"execute": cfg["execute"], "quotes": [], "fills": []}
     if not cfg["execute"]:
         return report
-    top = top or _binance_top
+    if top is None:
+        from backend.services.exchange_market_feed_service import prefer_cached_binance_top
+
+        top = lambda symbol: prefer_cached_binance_top(symbol, _binance_top)
     open_ids = open_ids or _default_open_ids
     status = status or _default_status
     place = place or _default_place

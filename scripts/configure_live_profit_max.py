@@ -228,6 +228,34 @@ def _tune_profit_path_and_pair_search() -> None:
     _write_json(path, cfg)
 
 
+def _tune_maker_and_market_pack() -> None:
+    """Enable maker buys + Redis market-bus env for the daemon feed loop."""
+    path = os.path.join(ROOT, "data", "exchange_maker_config.json")
+    cfg: dict = {}
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as fh:
+            cfg = json.load(fh)
+    cfg["execute"] = True
+    cfg["venue"] = str(cfg.get("venue") or "nonkyc").lower()
+    cfg["quote"] = str(cfg.get("quote") or "USDT").upper()
+    symbols = [str(s).upper() for s in (cfg.get("symbols") or []) if str(s).strip()]
+    cfg["symbols"] = symbols or ["XRP", "XLM", "ALGO", "SOL"]
+    sides = [str(s).lower() for s in (cfg.get("sides") or []) if str(s).lower() in ("buy", "sell")]
+    if "buy" not in sides:
+        sides = ["buy"] + sides
+    if "sell" not in sides:
+        sides.append("sell")
+    cfg["sides"] = sides
+    cfg["clip_usd"] = float(cfg.get("clip_usd") or 12.0)
+    if cfg["clip_usd"] > 15:
+        # Keep clips small until NonKYC quote float is healthy.
+        cfg["clip_usd"] = 12.0
+    cfg["yield_to_ladder"] = True
+    _write_json(path, cfg)
+    _ensure_env_flag("EXCHANGE_REDIS_URL", os.environ.get("EXCHANGE_REDIS_URL", "redis://127.0.0.1:6379/0"))
+    _ensure_env_flag("EXCHANGE_DAEMON_OWNS_BOOK", "1")
+
+
 def _tune_treasury_and_payout() -> None:
     tpath = os.path.join(ROOT, "data", "exchange_treasury_config.json")
     with open(tpath, encoding="utf-8") as fh:
@@ -293,6 +321,7 @@ def main() -> int:
     _tune_extended_profit(xeggex_ok=xeggex_ok)
     _tune_ai_trader()
     _tune_profit_path_and_pair_search()
+    _tune_maker_and_market_pack()
     _tune_treasury_and_payout()
 
     if args.fast:
