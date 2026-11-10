@@ -165,14 +165,34 @@
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  gap: 8px;
+  overflow: hidden;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.lm-online-board.is-scrolling {
+  animation: lm-board-run-right 42s linear infinite;
+  width: max-content;
+}
+
+.lm-online-rail {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+@keyframes lm-board-run-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .lm-online-board li {
   flex: 0 0 auto;
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
   gap: 6px;
   padding: 5px 9px;
@@ -322,5 +342,11 @@
   .lm-hud-value,
   .lm-scene-art {
     transition: none;
+  }
+  .lm-online-board.is-scrolling {
+    animation: none;
+    transform: none;
+    width: 100%;
+    overflow-x: auto;
   }
 }

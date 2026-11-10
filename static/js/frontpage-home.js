@@ -446,9 +446,24 @@
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
             const [platformRes, profitRes, feedRes] = await Promise.all([
-                fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
-                fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
-                fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
+                fetch(`${BASE}/api/news/platform?limit=8`).then((r) => r.json()).catch(function (err) {
+                    if (window.ErrorManager && window.ErrorManager.logJSError) {
+                        window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'frontpage-home.js', context: 'news-platform' });
+                    }
+                    return { news: [] };
+                }),
+                fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(function (err) {
+                    if (window.ErrorManager && window.ErrorManager.logJSError) {
+                        window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'frontpage-home.js', context: 'news-profit' });
+                    }
+                    return { news: [] };
+                }),
+                fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(function (err) {
+                    if (window.ErrorManager && window.ErrorManager.logJSError) {
+                        window.ErrorManager.logJSError(err instanceof Error ? err : new Error(String(err)), { source: 'frontpage-home.js', context: 'news-feed' });
+                    }
+                    return { news: [] };
+                }),
             ]);
             const profit = (profitRes && profitRes.news) || [];
             const platform = (platformRes && platformRes.news) || [];
@@ -662,7 +677,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         buildSmartLinks();
         wireVisitTracking();
-        wireSoundSystem();
+        // Sound system lives in the lobby monitor only (#fp-landing-monitor).
         const runWhenIdle = (fn) => {
             if (typeof requestIdleCallback !== 'undefined') {
                 requestIdleCallback(fn, { timeout: 4000 });

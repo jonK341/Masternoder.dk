@@ -130,7 +130,7 @@ def landing_monitor_pipeline():
 def landing_monitor_online():
     from backend.services.landing_monitor_pipeline_service import collect_online_leaderboard
 
-    limit = request.args.get("limit", 10, type=int)
+    limit = request.args.get("limit", 25, type=int)
     hours = request.args.get("hours", 24, type=int)
     return jsonify(collect_online_leaderboard(limit=limit, recent_hours=hours))
 

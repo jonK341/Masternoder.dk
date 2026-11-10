@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated_at": "2026-06-22",
+  "updated_at": "2026-11-10",
   "episodes": [
     {
       "id": "ep-001-welcome",
@@ -33,7 +33,7 @@
     {
       "id": "ep-002-generator-ai",
       "channel_id": "generator-intelligence",
-      "title": "Generator Intelligence \u2014 AI Podcast Pipeline",
+      "title": "Generator Intelligence — AI Podcast Pipeline",
       "description": "How TTS, AI script, and the AI audio encoder produce episodes from generator intelligence.",
       "duration_sec": 1080,
       "audio_url": "/static/audio/podcast/ep-002-generator-ai.mp3",
@@ -92,7 +92,7 @@
       "id": "ep-004-view-rewards",
       "channel_id": "crypto-hunters",
       "title": "View Counting & Crypto Rewards",
-      "description": "Listen, share, and earn MN2 \u2014 view counting with daily caps and staking bonuses.",
+      "description": "Listen, share, and earn MN2 — view counting with daily caps and staking bonuses.",
       "duration_sec": 840,
       "audio_url": "/static/audio/podcast/ep-004-view-rewards.mp3",
       "published_at": "2026-06-15T16:00:00Z",
@@ -173,6 +173,115 @@
         "facebook": "https://facebook.com/MasterNoderAI/posts/super-encoder",
         "discord": "https://discord.gg/masternoder",
         "github": "https://github.com/MasterNoder/create-app"
+      }
+    },
+    {
+      "id": "ep-007-lobby-pipeline",
+      "channel_id": "masternoder-main",
+      "title": "Lobby Pipeline — 50 Scenes in 12 Minutes",
+      "description": "How the frontpage lobby builds a unique AI cut from network sats, daemon trades, Top 25 users, and MasterNoder2 facts — with human voices and scene art.",
+      "duration_sec": 1140,
+      "audio_url": "/static/audio/podcast/ep-007-lobby-pipeline.mp3",
+      "published_at": "2026-11-10T18:00:00Z",
+      "view_count": 420,
+      "play_count": 210,
+      "share_count": 38,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": true,
+      "encode_profile": "studio",
+      "assigned_agent": "podcast_producer_agent",
+      "tags": [
+        "lobby",
+        "pipeline",
+        "ai",
+        "monitor"
+      ],
+      "platform_links": {
+        "podcast": "/podcast/",
+        "home": "/",
+        "shop": "/shop/"
+      }
+    },
+    {
+      "id": "ep-008-daemon-desk-drums",
+      "channel_id": "crypto-hunters",
+      "title": "Daemon Desk Drums & Guitar",
+      "description": "Trade sats meet a live drum kit and guitar riffs inside the lobby monitor soundtrack — how FX sync to fills.",
+      "duration_sec": 960,
+      "audio_url": "/static/audio/podcast/ep-008-daemon-desk-drums.mp3",
+      "published_at": "2026-11-10T19:00:00Z",
+      "view_count": 310,
+      "play_count": 160,
+      "share_count": 22,
+      "premium": false,
+      "shop_item_id": "lobby-drums-guitar-kit",
+      "generator_intelligence": true,
+      "encode_profile": "premium",
+      "assigned_agent": "analytics_agent",
+      "tags": [
+        "daemon",
+        "sfx",
+        "drums",
+        "guitar"
+      ],
+      "platform_links": {
+        "podcast": "/podcast/",
+        "home": "/",
+        "shop": "/shop/"
+      }
+    },
+    {
+      "id": "ep-009-top25-ticker",
+      "channel_id": "masternoder-main",
+      "title": "Top 25 Ticker — Who’s Lighting the Lobby",
+      "description": "XP ranks and recently active players scroll under the bezel. We break down how soft-online and seed boards keep the line moving.",
+      "duration_sec": 780,
+      "audio_url": "/static/audio/podcast/ep-009-top25-ticker.mp3",
+      "published_at": "2026-11-10T20:00:00Z",
+      "view_count": 280,
+      "play_count": 140,
+      "share_count": 19,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": false,
+      "encode_profile": "standard",
+      "assigned_agent": "reporter_agent",
+      "tags": [
+        "leaderboard",
+        "users",
+        "lobby"
+      ],
+      "platform_links": {
+        "podcast": "/podcast/",
+        "home": "/",
+        "shop": "/shop/"
+      }
+    },
+    {
+      "id": "ep-010-shop-wave-nov",
+      "channel_id": "crypto-hunters",
+      "title": "November Shop Wave — Lobby FX Packs",
+      "description": "New shop items for lobby drums/guitar kits, pipeline boosters, and podcast listen packs — priced in points and MN2.",
+      "duration_sec": 900,
+      "audio_url": "/static/audio/podcast/ep-010-shop-wave-nov.mp3",
+      "published_at": "2026-11-10T21:00:00Z",
+      "view_count": 190,
+      "play_count": 95,
+      "share_count": 14,
+      "premium": true,
+      "shop_item_id": "podcast-listen-pack-nov",
+      "generator_intelligence": false,
+      "encode_profile": "standard",
+      "assigned_agent": "analytics_agent",
+      "tags": [
+        "shop",
+        "mn2",
+        "lobby",
+        "november"
+      ],
+      "platform_links": {
+        "discord": "https://discord.gg/masternoder"
       }
     }
   ]

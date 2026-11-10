@@ -469,7 +469,7 @@ def _fmt_compact(n: Any) -> str:
 
 def collect_online_leaderboard(*, limit: int = 10, recent_hours: int = 24) -> Dict[str, Any]:
     """Recently active users ranked with XP — soft 'online' leaderboard."""
-    limit = max(1, min(25, int(limit or 10)))
+    limit = max(1, min(25, int(limit or 25)))
     recent_hours = max(1, min(168, int(recent_hours or 24)))
     rows: List[Dict[str, Any]] = []
     source = "empty"
@@ -572,13 +572,33 @@ def collect_online_leaderboard(*, limit: int = 10, recent_hours: int = 24) -> Di
         pass
 
     if not rows:
-        # Visible lobby board even on cold DBs — marked offline seeds.
+        # Visible lobby board even on cold DBs — marked offline seeds (top 25).
         seeds = [
             ("hunter_alpha", "Hunter Alpha", 12500),
             ("creator_01", "Creator Prime", 9800),
             ("noder_master", "NoderMaster", 7200),
             ("video_wizard", "VideoWizard", 5500),
             ("battle_king", "BattleKing", 3100),
+            ("nova_host", "Nova Host", 2900),
+            ("luna_desk", "Luna Desk", 2750),
+            ("ember_fill", "Ember Fill", 2600),
+            ("iris_clip", "Iris Clip", 2450),
+            ("venus_cut", "Venus Cut", 2300),
+            ("sage_ops", "Sage Ops", 2150),
+            ("storm_grid", "Storm Grid", 2000),
+            ("pixie_sfx", "Pixie SFX", 1880),
+            ("aurora_lb", "Aurora LB", 1760),
+            ("mn2_ranger", "MN2 Ranger", 1640),
+            ("sats_pilot", "Sats Pilot", 1520),
+            ("daemon_ace", "Daemon Ace", 1410),
+            ("lobby_vj", "Lobby VJ", 1300),
+            ("pipeline_pro", "Pipeline Pro", 1190),
+            ("clip_crafter", "Clip Crafter", 1080),
+            ("grid_ghost", "Grid Ghost", 970),
+            ("wallet_glow", "Wallet Glow", 860),
+            ("arena_spark", "Arena Spark", 750),
+            ("shop_scout", "Shop Scout", 640),
+            ("news_noder", "News Noder", 530),
         ]
         for uid, name, xp in seeds[:limit]:
             rows.append(
@@ -878,7 +898,7 @@ def _procedural_ai_pipeline(
     seed_src = f"{entropy or ''}:{_sats_fingerprint(sats)}:{time.time_ns()}"
     rng = random.Random(seed_src)
     rng.shuffle(fills)
-    online = collect_online_leaderboard(limit=10)
+    online = collect_online_leaderboard(limit=25)
     board = list(online.get("leaderboard") or [])
 
     scenes: List[Dict[str, Any]] = []
@@ -956,9 +976,9 @@ def _procedural_ai_pipeline(
             sats=len(board),
             sats_kind="action",
             duration_ms=15000,
-            meta={"leaderboard": board[:10]},
+            meta={"leaderboard": board[:25]},
         )
-        for row in board[:8]:
+        for row in board[:12]:
             add_scene(
                 category="social",
                 title=f"#{row.get('rank')} {row.get('username')}",
@@ -1054,7 +1074,7 @@ def _procedural_ai_pipeline(
     out = _normalize_duration(scenes, generator="procedural_ai")
     out["cut_id"] = cut_id
     out["fingerprint"] = _sats_fingerprint(sats)
-    out["online_leaderboard"] = board[:10]
+    out["online_leaderboard"] = board[:25]
     out["target_scenes"] = TARGET_SCENES
     return out
 

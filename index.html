@@ -22,8 +22,8 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
-    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110i">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261110j">
+    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110j">
     <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20261110i">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
@@ -79,7 +79,9 @@
                     </div>
                 </div>
                 <div class="lm-stream-bar" aria-hidden="true"><div class="lm-stream-bar-fill" id="lm-stream-bar"></div></div>
-                <ol class="lm-online-board" id="lm-online-board" aria-label="Online users leaderboard"></ol>
+                <div class="lm-online-rail" aria-label="Top 25 users leaderboard">
+                    <ol class="lm-online-board" id="lm-online-board"></ol>
+                </div>
                 <div class="lm-voice-strip">
                     <img id="lm-voice-avatar" src="/static/camgirls/avatar-demo.svg" alt="" width="28" height="28" />
                     <div class="lm-voice-copy">
@@ -185,33 +187,6 @@
                 </div>
             </section>
 
-            <section class="fp-sound-console fp-section-compact" aria-labelledby="fp-sound-title">
-                <div class="fp-sound-copy">
-                    <p class="fp-kicker"><span>Audio</span><span>opt-in</span></p>
-                    <h2 id="fp-sound-title">Sound System</h2>
-                    <p class="fp-sound-lede">Analog gain staging med dB-visning. Volumen gemmes lokalt.</p>
-                </div>
-                <div class="fp-sound-board" aria-label="Lydkontrol">
-                    <button id="themeSoundToggle" class="fp-sound-power" type="button" aria-pressed="false">
-                        <span class="fp-sound-led" aria-hidden="true"></span>
-                        Start sound
-                    </button>
-                    <div class="fp-sound-level" aria-label="Analog volumen">
-                        <span id="themeSoundDb" class="fp-soundbar-db">-12.1 dB</span>
-                        <span id="themeSoundPct" class="fp-soundbar-pct">35%</span>
-                    </div>
-                    <div class="fp-sound-modes" role="group" aria-label="Lydtilstand">
-                        <button class="fp-sound-mode is-active" type="button" data-sound-mode="focus" aria-pressed="true">Focus</button>
-                        <button class="fp-sound-mode" type="button" data-sound-mode="stars" aria-pressed="false">Stars</button>
-                        <button class="fp-sound-mode" type="button" data-sound-mode="battle" aria-pressed="false">Battle</button>
-                    </div>
-                    <label class="fp-sound-volume" for="themeSoundVolume">
-                        Volume
-                        <input id="themeSoundVolume" type="range" min="0" max="100" value="35" aria-valuetext="35 procent">
-                    </label>
-                    <p id="themeSoundStatus" class="fp-sound-status">Sound offline. Klik start for at aktivere.</p>
-                </div>
-            </section>
         </div>
 
         <section class="fp-game-hub fp-section-compact" id="fp-game-hub" aria-labelledby="fp-gh-title">
@@ -237,7 +212,7 @@
                 <h2 id="fp-upgrade-title">Live surface</h2>
             </div>
             <div class="fp-upgrade-grid fp-upgrade-grid--compact">
-                <article><strong>Sonic</strong><span>Ambient + battle drive fra forsiden.</span></article>
+                <article><strong>Sonic</strong><span>Drums, guitar og SFX kører i lobby-monitoren.</span></article>
                 <article><strong>Control</strong><span>Generator, game hub og agenter samlet.</span></article>
                 <article><strong>Dashboard</strong><span>Stats, links og nyheder i ét flow.</span></article>
             </div>
@@ -285,8 +260,6 @@
             </section>
         </div>
     </main>
-
-    <button id="themeSoundFloatToggle" class="theme-sound-toggle" type="button" aria-label="Skift temalyd">Sound offline</button>
 
     <script>
         const BASE_URL = window.location.origin;
@@ -418,9 +391,9 @@
     <script src="/static/js/error-manager.js?v=20261010a" defer></script>
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
-    <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
+    <script src="/static/js/frontpage-home.js?v=20261110j" defer></script>
     <script src="/static/js/camgirls-stream-voice.js?v=20261110i" defer></script>
-    <script src="/static/js/landing-monitor.js?v=20261110i" defer></script>
+    <script src="/static/js/landing-monitor.js?v=20261110j" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

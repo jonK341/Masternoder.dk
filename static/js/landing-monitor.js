@@ -22,14 +22,15 @@
 
   var CAT_SOUND = {
     wallet: 'coin_sparkle',
-    battle: 'impact_blast',
-    generator: 'whoosh_rise',
+    battle: 'drum_hit',
+    generator: 'guitar_riff',
     profit: 'chime_cash',
     social: 'bubble_ping',
     system: 'tick_blip',
     network: 'coin_sparkle',
     trade: 'chime_cash',
     action: 'whoosh_rise',
+    finale: 'guitar_riff',
   };
 
   function $(id) {
@@ -175,6 +176,16 @@
       case 'bubble_ping':
         this._tone(640 + variation, 'sine', now, 0.08, 0.12, 980);
         break;
+      case 'drum_hit':
+        this._noise(now, 0.05, 0.2, 2200);
+        this._tone(90, 'sine', now, 0.12, 0.22, 40);
+        this._tone(180, 'triangle', now + 0.02, 0.06, 0.1);
+        break;
+      case 'guitar_riff':
+        this._tone(196 + variation * 0.2, 'sawtooth', now, 0.18, 0.11, 220);
+        this._tone(246.94, 'sawtooth', now + 0.06, 0.16, 0.1, 280);
+        this._tone(293.66, 'triangle', now + 0.12, 0.2, 0.09, 330);
+        break;
       default:
         this._tone(440 + variation, 'square', now, 0.05, 0.08);
         break;
@@ -254,13 +265,93 @@
     o.stop(when + 0.22);
   };
 
+  LandingMusic.prototype.snare = function (when) {
+    if (!this.ctx || !this.master) return;
+    var len = Math.max(1, Math.floor(this.ctx.sampleRate * 0.08));
+    var buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    var src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    var filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1800;
+    var g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.22 * this.boost, when);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.1);
+    src.connect(filter);
+    filter.connect(g);
+    g.connect(this.master);
+    src.start(when);
+    src.stop(when + 0.12);
+  };
+
+  LandingMusic.prototype.hihat = function (when) {
+    if (!this.ctx || !this.master) return;
+    var len = Math.max(1, Math.floor(this.ctx.sampleRate * 0.03));
+    var buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    var src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    var filter = this.ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 7000;
+    var g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.08 * this.boost, when);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
+    src.connect(filter);
+    filter.connect(g);
+    g.connect(this.master);
+    src.start(when);
+    src.stop(when + 0.05);
+  };
+
+  LandingMusic.prototype.guitar = function (when) {
+    if (!this.ctx || !this.master) return;
+    var chord = [
+      [110, 164.81, 220],
+      [130.81, 196, 261.63],
+      [146.83, 220, 293.66],
+      [98, 146.83, 196],
+    ][this.step % 4];
+    for (var i = 0; i < chord.length; i++) {
+      var o = this.ctx.createOscillator();
+      var g = this.ctx.createGain();
+      var f = this.ctx.createBiquadFilter();
+      o.type = 'sawtooth';
+      o.frequency.value = chord[i];
+      f.type = 'lowpass';
+      f.frequency.setValueAtTime(1400, when);
+      f.frequency.exponentialRampToValueAtTime(600, when + 0.35);
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.exponentialRampToValueAtTime(0.05 * this.boost, when + 0.02 + i * 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + 0.45);
+      o.connect(f);
+      f.connect(g);
+      g.connect(this.master);
+      o.start(when);
+      o.stop(when + 0.5);
+    }
+  };
+
   LandingMusic.prototype.schedule = function () {
     var self = this;
     if (!this.active) return;
     var now = this.ctx.currentTime;
     var beat = 60 / this.bpm;
+    var step = this.step;
+    // Drum kit: kick on 1/3, snare on 2/4, hats every beat.
     this.kick(now);
-    this.note(SCALE[this.step % SCALE.length], beat * 0.4, now + 0.01, 0.08);
+    if (step % 2 === 1) this.snare(now);
+    this.hihat(now);
+    this.hihat(now + beat * 0.5);
+    // Guitar chord every other bar + melodic lead.
+    if (step % 4 === 0) this.guitar(now);
+    this.note(SCALE[step % SCALE.length], beat * 0.4, now + 0.01, 0.07);
+    if (step % 2 === 0) {
+      this.note(SCALE[(step + 2) % SCALE.length] * 0.5, beat * 0.55, now + beat * 0.5, 0.05);
+    }
     this.step += 1;
     this.timer = setTimeout(function () {
       self.schedule();
@@ -398,7 +489,8 @@
     var board = $('lm-online-board');
     if (!board) return;
     board.innerHTML = '';
-    (rows || []).slice(0, 10).forEach(function (row) {
+    var list = (rows || []).slice(0, 25);
+    function appendRow(row) {
       var li = document.createElement('li');
       var online = !!row.online;
       li.innerHTML =
@@ -409,12 +501,16 @@
       li.querySelector('.name').textContent = row.username || row.user_id || 'user';
       li.querySelector('.xp').textContent = fmtCompact(row.xp || 0) + ' XP';
       board.appendChild(li);
-    });
-    if (!(rows || []).length) {
+    }
+    list.forEach(appendRow);
+    // Duplicate for seamless rightward ticker.
+    if (list.length) list.forEach(appendRow);
+    if (!list.length) {
       var empty = document.createElement('li');
       empty.innerHTML = '<span class="name">Online board warming up…</span>';
       board.appendChild(empty);
     }
+    board.classList.toggle('is-scrolling', list.length > 0);
   }
 
   function setSceneArt(url) {
@@ -771,7 +867,7 @@
     }
 
     function refreshOnline() {
-      fetch('/api/landing/monitor/online?limit=10', { headers: { Accept: 'application/json' } })
+      fetch('/api/landing/monitor/online?limit=25', { headers: { Accept: 'application/json' } })
         .then(function (r) {
           return r.json();
         })
