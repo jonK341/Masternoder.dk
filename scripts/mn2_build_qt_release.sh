@@ -338,6 +338,44 @@ PY
   find "${SRC_DIR}/depends/work" -path '*libevent*' \( -name '.stamp_built' -o -name '.stamp_configured' -o -name '.stamp_preprocessed' \) -delete 2>/dev/null || true
 }
 
+# Qt 5.9.7 qmake bootstrap on host GCC 15 needs <limits> in qbytearraymatcher.h.
+patch_qt_gcc15_limits() {
+  local mk="${SRC_DIR}/depends/packages/qt.mk"
+  if [[ ! -f "${mk}" ]]; then
+    echo "WARN: qt.mk missing; skip gcc15 limits patch" >&2
+    return 0
+  fi
+  echo "=== Patching depends qt.mk for GCC 15 <limits> ==="
+  python3 - "${mk}" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+marker = "qtbase/src/corelib/tools/qbytearraymatcher.h"
+if marker in text and "#include <limits>" in text:
+    print(f"already patched {path}")
+    raise SystemExit(0)
+inject = (
+    "  sed -i.old '/#include <QtCore\\/qbytearray.h>/i #include <limits>' "
+    "qtbase/src/corelib/tools/qbytearraymatcher.h && \\\n"
+)
+m = re.search(r"define \$\(package\)_preprocess_cmds\n", text)
+if not m:
+    raise SystemExit(f"preprocess_cmds not found in {path}")
+# Insert inject immediately after the define line.
+pos = m.end()
+text2 = text[:pos] + inject + text[pos:]
+path.write_text(text2)
+print(f"patched {path}")
+PY
+
+  rm -rf "${SRC_DIR}/depends/work/build/x86_64-w64-mingw32/qt" \
+    "${SRC_DIR}/depends/work/staging/x86_64-w64-mingw32/qt" 2>/dev/null || true
+  find "${SRC_DIR}/depends/work" -path '*qt*' \( -name '.stamp_built' -o -name '.stamp_configured' -o -name '.stamp_preprocessed' \) -delete 2>/dev/null || true
+}
+
 build_win_qt() {
   echo "=== Building Windows Qt cross-compile (USE_DEPENDS=${USE_DEPENDS}) ==="
   cd "${SRC_DIR}"
@@ -364,6 +402,8 @@ WRAP
   # Modern mingw headers break libevent 2.1.8's XP-era _WIN32_WINNT redefine in
   # evutil.c (iphlpapi.h sees Vista APIs without MIB_* types). Patch depends recipe.
   patch_libevent_mingw_iphlpapi
+  # Host GCC 15 building Qt 5.9 qmake needs <limits> in qbytearraymatcher.h.
+  patch_qt_gcc15_limits
 
   echo "=== depends (x86_64-w64-mingw32, with Qt) — first run can take 60–120 min ==="
   cd depends
