@@ -1,14 +1,26 @@
+diff --git a/src/util.cpp b/src/util.cpp
+index 935a751..c964f5a 100755
 --- a/src/util.cpp
 +++ b/src/util.cpp
-@@ -19,6 +19,7 @@
+@@ -19,6 +19,8 @@
+ #include "utilstrencodings.h"
  #include "utiltime.h"
  
- #include <chrono>
++#include <chrono>
 +#include <type_traits>
  #include <stdarg.h>
  
  #include <boost/date_time/posix_time/posix_time.hpp>
-@@ -477,13 +478,32 @@ void ClearDatadirCache()
+@@ -454,7 +456,7 @@ const boost::filesystem::path& GetDataDir(bool fNetSpecific)
+         return path;
+ 
+     if (mapArgs.count("-datadir")) {
+-        path = fs::system_complete(mapArgs["-datadir"]);
++        path = fs::absolute(fs::path(mapArgs["-datadir"]));
+         if (!fs::is_directory(path)) {
+             path = "";
+             return path;
+@@ -476,10 +478,35 @@ void ClearDatadirCache()
      pathCachedNetSpecific = boost::filesystem::path();
  }
  
@@ -28,17 +40,50 @@
 +        ft - T::clock::now() + system_clock::now()));
 +}
 +
- std::time_t BoostFilesystemLastWriteTime(const boost::filesystem::path& path)
- {
--    const boost::filesystem::file_time_type ft = boost::filesystem::last_write_time(path);
--    using namespace std::chrono;
--    return system_clock::to_time_t(time_point_cast<system_clock::duration>(
--        ft - boost::filesystem::file_time_type::clock::now() + system_clock::now()));
++std::time_t BoostFilesystemLastWriteTime(const boost::filesystem::path& path)
++{
 +#if BOOST_VERSION < 106600
 +    return boost::filesystem::last_write_time(path);
 +#else
 +    return BoostFilesystemLastWriteTimeImpl(boost::filesystem::last_write_time(path));
 +#endif
++}
++
+ boost::filesystem::path GetConfigFile()
+ {
+     boost::filesystem::path pathConfigFile(GetArg("-conf", "masternoder2.conf"));
+-    if (!pathConfigFile.is_complete())
++    if (!pathConfigFile.is_absolute())
+         pathConfigFile = GetDataDir(false) / pathConfigFile;
+ 
+     return pathConfigFile;
+@@ -488,7 +515,7 @@ boost::filesystem::path GetConfigFile()
+ boost::filesystem::path GetMasternodeConfigFile()
+ {
+     boost::filesystem::path pathConfigFile(GetArg("-mnconf", "masternode.conf"));
+-    if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir() / pathConfigFile;
++    if (!pathConfigFile.is_absolute()) pathConfigFile = GetDataDir() / pathConfigFile;
+     return pathConfigFile;
  }
  
- boost::filesystem::path GetConfigFile()
+@@ -601,7 +628,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
+ boost::filesystem::path GetPidFile()
+ {
+     boost::filesystem::path pathPidFile(GetArg("-pid", "masternoder2d.pid"));
+-    if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
++    if (!pathPidFile.is_absolute()) pathPidFile = GetDataDir() / pathPidFile;
+     return pathPidFile;
+ }
+ 
+diff --git a/src/util.h b/src/util.h
+index 8548e02..6bebbc6 100755
+--- a/src/util.h
++++ b/src/util.h
+@@ -145,6 +145,7 @@ void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map
+ boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
+ #endif
+ boost::filesystem::path GetTempPath();
++std::time_t BoostFilesystemLastWriteTime(const boost::filesystem::path& path);
+ void ShrinkDebugFile();
+ void runCommand(std::string strCommand);
+ 

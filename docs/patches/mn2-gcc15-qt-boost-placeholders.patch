@@ -1,0 +1,60 @@
+--- a/src/qt/bitcoingui.cpp
++++ b/src/qt/bitcoingui.cpp
+@@ -35,6 +35,9 @@
+ #include "guiinterface.h"
+ #include "util.h"
+ 
++#include <boost/bind.hpp>
++using namespace boost::placeholders;
++
+ #include <iostream>
+ 
+ #include <QAction>
+--- a/src/qt/clientmodel.cpp
++++ b/src/qt/clientmodel.cpp
+@@ -24,6 +24,9 @@
+ #include "guiinterface.h"
+ #include "util.h"
+ 
++#include <boost/bind.hpp>
++using namespace boost::placeholders;
++
+ #include <stdint.h>
+ 
+ #include <QDateTime>
+--- a/src/qt/splashscreen.cpp
++++ b/src/qt/splashscreen.cpp
+@@ -14,6 +14,9 @@
+ #include "util.h"
+ #include "version.h"
+ 
++#include <boost/bind.hpp>
++using namespace boost::placeholders;
++
+ #ifdef ENABLE_WALLET
+ #include "wallet/wallet.h"
+ #endif
+--- a/src/qt/transactiontablemodel.cpp
++++ b/src/qt/transactiontablemodel.cpp
+@@ -21,6 +21,9 @@
+ #include "util.h"
+ #include "wallet/wallet.h"
+ 
++#include <boost/bind.hpp>
++using namespace boost::placeholders;
++
+ #include <QColor>
+ #include <QDateTime>
+ #include <QDebug>
+--- a/src/qt/walletmodel.cpp
++++ b/src/qt/walletmodel.cpp
+@@ -24,6 +24,9 @@
+ #include "wallet/walletdb.h" // for BackupWallet
+ #include <stdint.h>
+ 
++#include <boost/bind.hpp>
++using namespace boost::placeholders;
++
+ #include <QDebug>
+ #include <QSet>
+ #include <QTimer>

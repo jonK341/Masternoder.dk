@@ -18,7 +18,7 @@
     }
 
     function fetchJson(url) {
-        return fetch(url).then(function (r) {
+        return fetch(url, { credentials: 'same-origin' }).then(function (r) {
             if (!r.ok) {
                 return { success: false, unavailable: true, status: r.status };
             }
@@ -26,6 +26,13 @@
         }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-site-bridge.js', context: 'catch' }); }
             return { success: false, unavailable: true, status: 0 };
         });
+    }
+
+    function fastBalanceUrl() {
+        var id = uid();
+        var q = id ? ('?user_id=' + encodeURIComponent(id)) : '';
+        // On-chain chrome (alias /fast still works server-side).
+        return BASE + '/api/mn2/balance/onchain' + q;
     }
 
     function fmtMn2(n, digits) {
@@ -39,11 +46,28 @@
         BASE: BASE,
         uid: uid,
         fmtMn2: fmtMn2,
+        fastBalanceUrl: fastBalanceUrl,
+        loadFastBalance: function () {
+            // Alias kept for callers; chrome now paints on-chain UTXO balance
+            // and ensures a deposit address via /api/mn2/balance/onchain.
+            return fetchJson(fastBalanceUrl());
+        },
+        loadOnchainBalance: function () {
+            var id = uid();
+            var q = id ? ('?user_id=' + encodeURIComponent(id)) : '';
+            return fetchJson(BASE + '/api/mn2/balance/onchain' + q);
+        },
         loadBalance: function () {
             return fetchJson(BASE + '/api/mn2/balance?user_id=' + encodeURIComponent(uid()));
         },
         loadPrice: function () {
             return fetchJson(BASE + '/api/mn2/price');
+        },
+        loadSporks: function () {
+            return fetchJson(BASE + '/api/mn2/sporks');
+        },
+        loadReleases: function () {
+            return fetchJson(BASE + '/api/mn2/releases');
         },
         loadNetworkOverview: function () {
             return fetchJson(BASE + '/api/mn2/network-overview');

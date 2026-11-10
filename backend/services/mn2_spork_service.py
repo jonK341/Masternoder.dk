@@ -306,3 +306,196 @@ def gate_status(*, now: Optional[int] = None) -> Dict[str, Any]:
             "SPORK_115_MAINTENANCE_MODE": maintenance_mode(now=now),
         },
     }
+
+
+# Threshold / numeric sporks are not unix activation times.
+_THRESHOLD_SPORKS = frozenset({
+    "SPORK_5_MAX_VALUE",
+    "SPORK_104_MAX_BLOCK_TIME",
+})
+
+_SPORK_INTELLIGENCE: Dict[str, Dict[str, str]] = {
+    "SPORK_2_SWIFTTX": {
+        "summary": "Instant transaction (SwiftTX) relay",
+        "surface": "daemon",
+    },
+    "SPORK_3_SWIFTTX_BLOCK_FILTERING": {
+        "summary": "Filter SwiftTX conflicts in blocks",
+        "surface": "daemon",
+    },
+    "SPORK_5_MAX_VALUE": {
+        "summary": "Max SwiftTX value threshold (coins)",
+        "surface": "daemon",
+    },
+    "SPORK_6_ENABLE_DIP0001": {
+        "summary": "DIP0001 transaction size rules",
+        "surface": "daemon",
+    },
+    "SPORK_7_MASTERNODE_SCANNING": {
+        "summary": "Masternode list scanning",
+        "surface": "daemon",
+    },
+    "SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT": {
+        "summary": "Enforce masternode block payments",
+        "surface": "daemon",
+    },
+    "SPORK_9_MASTERNODE_BUDGET_ENFORCEMENT": {
+        "summary": "Enforce masternode budget payments",
+        "surface": "daemon",
+    },
+    "SPORK_10_MASTERNODE_PAY_UPDATED_NODES": {
+        "summary": "Prefer payments to updated nodes",
+        "surface": "daemon",
+    },
+    "SPORK_13_ENABLE_SUPERBLOCKS": {
+        "summary": "Superblock budget windows",
+        "surface": "daemon",
+    },
+    "SPORK_14_NEW_PROTOCOL_ENFORCEMENT": {
+        "summary": "Require peers on the new protocol",
+        "surface": "daemon",
+    },
+    "SPORK_15_NEW_PROTOCOL_ENFORCEMENT_2": {
+        "summary": "Second protocol enforcement stage",
+        "surface": "daemon",
+    },
+    "SPORK_16_ZEROCOIN_MAINTENANCE_MODE": {
+        "summary": "Zerocoin maintenance kill-switch",
+        "surface": "daemon",
+    },
+    "SPORK_17_QUORUM_DKG_ENABLED": {
+        "summary": "Quorum distributed key generation",
+        "surface": "daemon",
+    },
+    "SPORK_18_ENABLE_VOTING_SYSTEM": {
+        "summary": "On-chain voting / governance",
+        "surface": "daemon",
+    },
+    "SPORK_19_CHAINLOCKS_ENABLED": {
+        "summary": "ChainLocks finality",
+        "surface": "daemon",
+    },
+    "SPORK_20_DEVELOPER_PAYMENT_ENFORCEMENT": {
+        "summary": "Developer payment enforcement",
+        "surface": "daemon",
+    },
+    "SPORK_21_QUORUM_ALL_CONNECTED": {
+        "summary": "Require full quorum connectivity",
+        "surface": "daemon",
+    },
+    "SPORK_22_ENABLE_TX_COMPRESSION": {
+        "summary": "Transaction compression",
+        "surface": "daemon",
+    },
+    "SPORK_23_QUORUM_POSE": {
+        "summary": "Proof-of-service quorum checks",
+        "surface": "daemon",
+    },
+    "SPORK_24_ENABLE_SIPHASH": {
+        "summary": "SipHash address hashing",
+        "surface": "daemon",
+    },
+    "SPORK_25_ENABLE_MASTERNODER2_SERVER": {
+        "summary": "MasterNoder2 server feature set",
+        "surface": "daemon",
+    },
+    "SPORK_28_ENABLE_TIMELOCK": {
+        "summary": "Timelock transactions",
+        "surface": "daemon",
+    },
+    "SPORK_29_ENABLE_ANONYMITY": {
+        "summary": "Anonymity / privacy features",
+        "surface": "daemon",
+    },
+    "SPORK_101_SERVICES_ENFORCEMENT": {
+        "summary": "Service bit enforcement",
+        "surface": "daemon",
+    },
+    "SPORK_104_MAX_BLOCK_TIME": {
+        "summary": "Max block time threshold (seconds)",
+        "surface": "daemon",
+    },
+    "SPORK_106_STAKING_SKIP_MN_SYNC": {
+        "summary": "Allow staking before full MN sync",
+        "surface": "daemon",
+    },
+    "SPORK_109_FORCE_ENABLED_VOTED_MASTERNODE": {
+        "summary": "Force enabled state for voted masternodes",
+        "surface": "daemon",
+    },
+    "SPORK_110_FORCE_ENABLED_MASTERNODE_PAYMENT": {
+        "summary": "Force masternode payment enablement",
+        "surface": "daemon",
+    },
+    "SPORK_111_ALLOW_DUPLICATE_MN_IPS": {
+        "summary": "Allow duplicate masternode IPs",
+        "surface": "daemon",
+    },
+    "SPORK_112_EXCHANGE_LIVE_TRADING": {
+        "summary": "Live cross-venue exchange trading",
+        "surface": "site+daemon",
+    },
+    "SPORK_113_CASINO_REAL_MONEY": {
+        "summary": "Casino real-money MN2 stakes",
+        "surface": "site+daemon",
+    },
+    "SPORK_114_PAYOUT_LIVE": {
+        "summary": "Live exchange payouts and sweeps",
+        "surface": "site+daemon",
+    },
+    "SPORK_115_MAINTENANCE_MODE": {
+        "summary": "Platform maintenance kill-switch",
+        "surface": "site+daemon",
+    },
+}
+
+
+def _spork_kind(name: str) -> str:
+    if name in _THRESHOLD_SPORKS:
+        return "threshold"
+    return "gate"
+
+
+def _spork_source(name: str, value: int) -> str:
+    overrides = _override_values()
+    if name in overrides:
+        return "override"
+    if name in (_cache.get("values") or {}):
+        return "rpc"
+    return "default"
+
+
+def spork_catalog_snapshot(*, now: Optional[int] = None, force_refresh: bool = True) -> Dict[str, Any]:
+    """
+    Read-only intelligence snapshot for every known spork.
+    Refreshes RPC cache once (2s timeout) unless overrides are set.
+    """
+    ts = int(now if now is not None else time.time())
+    if force_refresh:
+        _refresh_cache(now=ts, force=True)
+    rows = []
+    for name, wire_id in sorted(SPORK_IDS.items(), key=lambda kv: kv[1]):
+        value = spork_value(name, now=ts)
+        kind = _spork_kind(name)
+        meta = _SPORK_INTELLIGENCE.get(name) or {}
+        active = is_spork_active(value, now=ts) if kind == "gate" else False
+        rows.append({
+            "name": name,
+            "id": wire_id,
+            "value": int(value),
+            "default": int(SPORK_DEFAULTS.get(name, SPORK_OFF)),
+            "active": active,
+            "off": is_spork_off(value) if kind == "gate" else False,
+            "kind": kind,
+            "source": _spork_source(name, value),
+            "summary": meta.get("summary") or "",
+            "surface": meta.get("surface") or "daemon",
+        })
+    return {
+        "success": True,
+        "gates_enabled": gates_enabled(),
+        "count": len(rows),
+        "sporks": rows,
+        "gates": gate_status(now=ts),
+        "as_of": ts,
+    }

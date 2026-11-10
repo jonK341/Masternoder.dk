@@ -30,7 +30,7 @@
     points: 'profile-section-points',
     leaderboard: 'profile-section-leaderboard',
     shop: 'profile-section-shop',
-    wallet: 'profile-mn2-wallet-card',
+    wallet: 'mn2-wallet',
     settings: 'account-privacy-card',
     security: 'profile-security-frame',
     agents: 'my-agents-card',

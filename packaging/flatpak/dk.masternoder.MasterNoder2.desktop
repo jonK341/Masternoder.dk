@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=MasterNoder2 Daemon
+Comment=MasterNoder2 headless node (masternoder2d)
+Exec=masternoder2d
+Icon=dk.masternoder.MasterNoder2
+Terminal=true
+Type=Application
+Categories=Network;Finance;
+Keywords=masternoder;mn2;cryptocurrency;daemon;

@@ -11,7 +11,7 @@ index 0ddaa43..3423ad4 100755
  #include <signal.h>
  #include <future>
 diff --git a/src/init.cpp b/src/init.cpp
-index ed800a5..55e11a8 100755
+index 7459339..270a300 100755
 --- a/src/init.cpp
 +++ b/src/init.cpp
 @@ -60,6 +60,7 @@
@@ -91,7 +91,7 @@ index fa66dbf..6120ae2 100755
  #include <boost/tuple/tuple.hpp>
  
 diff --git a/src/net.cpp b/src/net.cpp
-index dfc8ad5..d3858b5 100755
+index dfc8ad5..7aac989 100755
 --- a/src/net.cpp
 +++ b/src/net.cpp
 @@ -13,6 +13,7 @@
@@ -118,18 +118,18 @@ index dfc8ad5..d3858b5 100755
  // Dump addresses to peers.dat every 15 minutes (900s)
  #define DUMP_ADDRESSES_INTERVAL 900
  
-@@ -1143,6 +1150,10 @@ void ThreadMapPort()
-     struct UPNPUrls urls;
+@@ -1144,7 +1151,11 @@ void ThreadMapPort()
      struct IGDdatas data;
      int r;
  
--    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
 +#if (defined(MINIUPNPC_API_VERSION) && MINIUPNPC_API_VERSION >= 18) || defined(__linux__)
 +    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr), nullptr, 0);
 +#else
-+    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
+     r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
 +#endif
      if (r == 1) {
+         if (fDiscover) {
+             char externalIPAddress[40];
 diff --git a/src/rpc/protocol.cpp b/src/rpc/protocol.cpp
 index 69a7a1a..1a38717 100755
 --- a/src/rpc/protocol.cpp
@@ -184,10 +184,10 @@ index 5ae17f3..4a19f8c 100755
  #include <boost/algorithm/string/predicate.hpp>
  #include <boost/algorithm/string/split.hpp>
 diff --git a/src/util.cpp b/src/util.cpp
-index 935a751..bb90fba 100755
+index 935a751..c964f5a 100755
 --- a/src/util.cpp
 +++ b/src/util.cpp
-@@ -19,6 +19,7 @@
+@@ -19,6 +19,8 @@
  #include "utilstrencodings.h"
  #include "utiltime.h"
  
@@ -196,7 +196,7 @@ index 935a751..bb90fba 100755
  #include <stdarg.h>
  
  #include <boost/date_time/posix_time/posix_time.hpp>
-@@ -454,7 +455,7 @@ const boost::filesystem::path& GetDataDir(bool fNetSpecific)
+@@ -454,7 +456,7 @@ const boost::filesystem::path& GetDataDir(bool fNetSpecific)
          return path;
  
      if (mapArgs.count("-datadir")) {
@@ -205,7 +205,7 @@ index 935a751..bb90fba 100755
          if (!fs::is_directory(path)) {
              path = "";
              return path;
-@@ -476,10 +477,18 @@ void ClearDatadirCache()
+@@ -476,10 +478,35 @@ void ClearDatadirCache()
      pathCachedNetSpecific = boost::filesystem::path();
  }
  
@@ -242,7 +242,7 @@ index 935a751..bb90fba 100755
          pathConfigFile = GetDataDir(false) / pathConfigFile;
  
      return pathConfigFile;
-@@ -488,7 +497,7 @@ boost::filesystem::path GetConfigFile()
+@@ -488,7 +515,7 @@ boost::filesystem::path GetConfigFile()
  boost::filesystem::path GetMasternodeConfigFile()
  {
      boost::filesystem::path pathConfigFile(GetArg("-mnconf", "masternode.conf"));
@@ -251,7 +251,7 @@ index 935a751..bb90fba 100755
      return pathConfigFile;
  }
  
-@@ -601,7 +610,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
+@@ -601,7 +628,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
  boost::filesystem::path GetPidFile()
  {
      boost::filesystem::path pathPidFile(GetArg("-pid", "masternoder2d.pid"));

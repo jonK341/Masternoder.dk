@@ -1,11 +1,53 @@
 /**
  * Compact MN2 bar for pages without a full mn2-page-strip.
+ * Uses fast ledger read + separate price route; refreshes every 90s.
  */
 (function (global) {
     'use strict';
 
+    var REFRESH_MS = 90000;
+    var _refreshTimer = null;
+
     function fmt(n) {
         return global.Mn2SiteBridge ? global.Mn2SiteBridge.fmtMn2(n) : String(n);
+    }
+
+    function paintBalance(d) {
+        var el = global.document.getElementById('mn2-global-balance');
+        if (!el) return;
+        if (!d || d.unavailable) {
+            el.textContent = '—';
+            return;
+        }
+        if (d.mn2_balance == null && d.balance == null) {
+            el.textContent = '—';
+            return;
+        }
+        var bal = d.mn2_balance != null ? d.mn2_balance : d.balance;
+        el.textContent = fmt(bal);
+    }
+
+    function paintPrice(d) {
+        var el = global.document.getElementById('mn2-global-rate');
+        if (!el) return;
+        var p = d && (d.mn2_usd_price != null ? d.mn2_usd_price : (d.price_usd != null ? d.price_usd : d.usd));
+        if (p != null) el.textContent = '$' + Number(p).toFixed(4);
+        else el.textContent = '';
+    }
+
+    function scheduleRefresh(hasBalance) {
+        if (_refreshTimer) {
+            clearInterval(_refreshTimer);
+            _refreshTimer = null;
+        }
+        if (!hasBalance || !global.Mn2SiteBridge) return;
+        _refreshTimer = setInterval(function () {
+            global.Mn2SiteBridge.loadFastBalance().then(paintBalance).catch(function () {
+                if (window.ErrorManager && window.ErrorManager.logJSError) {
+                    window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-global-bar.js', context: 'refresh' });
+                }
+            });
+        }, REFRESH_MS);
     }
 
     function inject() {
@@ -34,22 +76,26 @@
         }
 
         if (!global.Mn2SiteBridge) return;
-        global.Mn2SiteBridge.loadBalance().then(function (d) {
-            var bal = (d && (d.balance != null ? d.balance : d.mn2_balance)) || 0;
-            var el = global.document.getElementById('mn2-global-balance');
-            if (el) el.textContent = fmt(bal);
-        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-global-bar.js', context: 'catch' }); }});
-        global.Mn2SiteBridge.loadPrice().then(function (d) {
-            var p = d && (d.price_usd != null ? d.price_usd : d.usd);
-            var el = global.document.getElementById('mn2-global-rate');
-            if (el && p != null) el.textContent = '$' + Number(p).toFixed(4);
-        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-global-bar.js', context: 'catch' }); }});
+        global.Mn2SiteBridge.loadFastBalance().then(function (d) {
+            paintBalance(d);
+            var has = d && d.mn2_balance != null;
+            scheduleRefresh(!!has);
+        }).catch(function () {
+            if (window.ErrorManager && window.ErrorManager.logJSError) {
+                window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-global-bar.js', context: 'catch' });
+            }
+        });
+        global.Mn2SiteBridge.loadPrice().then(paintPrice).catch(function () {
+            if (window.ErrorManager && window.ErrorManager.logJSError) {
+                window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-global-bar.js', context: 'catch' });
+            }
+        });
     }
 
     function loadScripts(cb) {
         if (global.Mn2SiteBridge) { cb(); return; }
         var s = global.document.createElement('script');
-        s.src = '/static/js/mn2-site-bridge.js?v=20260614d';
+        s.src = '/static/js/mn2-site-bridge.js?v=9.2.6.5';
         s.onload = cb;
         global.document.head.appendChild(s);
     }

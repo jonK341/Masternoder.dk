@@ -40,3 +40,23 @@ def test_post_message_idempotent(monkeypatch, tmp_path):
     r2 = ds.post_message("ops", {"title": "A"}, message_id="dup-1")
     assert r1.get("success") is True
     assert r2.get("duplicate") is True
+
+
+def test_prepare_webhook_body_folds_flat_embed_fields():
+    from backend.services.discord_service import prepare_webhook_body
+
+    body = prepare_webhook_body(
+        {
+            "id": "internal-key",
+            "title": "Hello",
+            "description": "World",
+            "url": "https://example.com/r",
+            "color": 0x00D4FF,
+        }
+    )
+    assert "id" not in body
+    assert "title" not in body
+    assert body["embeds"][0]["title"] == "Hello"
+    assert body["embeds"][0]["description"] == "World"
+    assert body["embeds"][0]["url"] == "https://example.com/r"
+    assert body["embeds"][0]["color"] == 0x00D4FF

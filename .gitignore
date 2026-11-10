@@ -100,3 +100,10 @@ data/trophy_income/
 data/trophy_quests/
 data/paypal_shop_orders.json
 instance/*.lock
+
+# Android wallet local/build
+android/masternoder2-wallet/local.properties
+android/masternoder2-wallet/.gradle/
+android/masternoder2-wallet/app/build/
+android/masternoder2-wallet/build/
+android/masternoder2-wallet/.idea/

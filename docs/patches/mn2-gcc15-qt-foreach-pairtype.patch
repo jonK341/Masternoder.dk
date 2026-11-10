@@ -1,0 +1,30 @@
+--- a/src/qt/paymentserver.cpp
++++ b/src/qt/paymentserver.cpp
+@@ -507,7 +507,7 @@
+     QList<std::pair<CScript, CAmount> > sendingTos = request.getPayTo();
+     QStringList addresses;
+ 
+-    foreach (const PAIRTYPE(CScript, CAmount) & sendingTo, sendingTos) {
++    for (const PAIRTYPE(CScript, CAmount) & sendingTo : sendingTos) {
+         // Extract and check destination addresses
+         CTxDestination dest;
+         if (ExtractDestination(sendingTo.first, dest)) {
+--- a/src/qt/transactiondesc.cpp
++++ b/src/qt/transactiondesc.cpp
+@@ -254,14 +254,14 @@ QString TransactionDesc::toHTML(CWallet* wallet, CWalletTx& wtx, TransactionReco
+     strHTML += "<b>" + tr("Output index") + ":</b> " + QString::number(rec->getOutputIndex()) + "<br>";
+ 
+     // Message from normal masternoder2:URI (masternoder2:XyZ...?message=example)
+-    foreach (const PAIRTYPE(string, string) & r, wtx.vOrderForm)
++    for (const PAIRTYPE(string, string) & r : wtx.vOrderForm)
+         if (r.first == "Message")
+             strHTML += "<br><b>" + tr("Message") + ":</b><br>" + GUIUtil::HtmlEscape(r.second, true) + "<br>";
+ 
+     //
+     // PaymentRequest info:
+     //
+-    foreach (const PAIRTYPE(string, string) & r, wtx.vOrderForm) {
++    for (const PAIRTYPE(string, string) & r : wtx.vOrderForm) {
+         if (r.first == "PaymentRequest") {
+             PaymentRequestPlus req;
+             req.parse(QByteArray::fromRawData(r.second.data(), r.second.size()));

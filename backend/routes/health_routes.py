@@ -23,7 +23,9 @@ from backend.services.schema_bootstrap import SCHEMA_MIGRATIONS_HEALTH_COLUMNS
 health_bp = Blueprint('health', __name__)
 
 # App version for cache busting - bump on deploy to force client reload
-APP_VERSION = "20260428a"
+# Platform wallet/UI line: 9.2.6.5 (see docs/MN2_WALLET_VERSION_ROADMAP.md)
+APP_VERSION = "9.2.6.5"
+WALLET_UI_VERSION = "9.2.6.5"
 
 
 @health_bp.route('/api/version', methods=['GET'])
@@ -32,6 +34,8 @@ def version():
     return jsonify({
         'success': True,
         'version': APP_VERSION,
+        'wallet_ui_version': WALLET_UI_VERSION,
+        'shop_ui_version': '9.2.6.5',
         'timestamp': datetime.utcnow().isoformat(),
     }), 200, {
         'Cache-Control': 'no-store, no-cache, must-revalidate',

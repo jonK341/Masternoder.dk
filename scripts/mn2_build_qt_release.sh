@@ -129,31 +129,74 @@ checkout_source() {
   PATCHED=1
 }
 
-COMPAT_PATCH_DIR="${COMPAT_PATCH_DIR:-/tmp/mn2-patches}"
+# Prefer in-repo gcc15 / modern-host patches; /tmp/mn2-patches is a legacy override.
+COMPAT_PATCH_DIR="${COMPAT_PATCH_DIR:-${REPO_ROOT}/docs/patches}"
+COMPAT_PATCH_FILE="${COMPAT_PATCH_FILE:-${REPO_ROOT}/docs/patches/mn2-daemon-build-compat-modern-host.patch}"
 
 apply_compat_patches() {
   local f
-  if [[ ! -d "${COMPAT_PATCH_DIR}" ]]; then
-    return 0
-  fi
   cd "${SRC_DIR}"
-  for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
-    [[ -f "${f}" ]] || continue
-    echo "=== Applying compat patch $(basename "${f}") ==="
-    if ! patch -p1 --forward < "${f}"; then
-      echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
+
+  # basename()/extension() removal + UPNP / filetime fixes for modern Boost/GCC
+  if [[ -f "${COMPAT_PATCH_FILE}" ]]; then
+    echo "=== Applying modern-host compat patch $(basename "${COMPAT_PATCH_FILE}") ==="
+    # Strip CR and allow slight context drift (-F3) across MN2 tags.
+    if ! sed 's/\r$//' "${COMPAT_PATCH_FILE}" | patch -p1 --forward --batch -F3; then
+      echo "WARN: modern-host compat patch failed or already applied; trying modular gcc15 patches" >&2
     fi
-  done
+  else
+    echo "WARN: modern-host compat patch missing: ${COMPAT_PATCH_FILE}" >&2
+  fi
+
+  if [[ -d "${COMPAT_PATCH_DIR}" ]]; then
+    for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
+      [[ -f "${f}" ]] || continue
+      echo "=== Applying compat patch $(basename "${f}") ==="
+      if ! sed 's/\r$//' "${f}" | patch -p1 --forward --batch -F3; then
+        echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
+      fi
+    done
+  fi
   # GCC 15+: libstdc++ no longer pulls <deque> transitively
   if ! grep -q '#include <deque>' src/httpserver.cpp 2>/dev/null; then
     sed -i '/#include <sys\/types.h>/a #include <deque>' src/httpserver.cpp
     echo "Applied sed fallback: #include <deque> in httpserver.cpp"
+  fi
+  # Surgical UPNP wrap if monolithic/modular patches missed it.
+  # Note: use POSIX ERE [[:space:]] — GNU grep -E does not treat \s as whitespace.
+  if ! grep -qE 'UPNP_GetValidIGD\([^)]*nullptr,[[:space:]]*0\)' src/net.cpp 2>/dev/null \
+    && ! grep -q 'MINIUPNPC_API_VERSION >= 18' src/net.cpp 2>/dev/null; then
+    if grep -q 'UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));' src/net.cpp 2>/dev/null; then
+      echo "=== UPNP sed fallback: wrapping GetValidIGD for miniupnpc API 18+ ==="
+      if ! python3 - src/net.cpp <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text()
+old = "    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));\n    if (r == 1) {"
+new = """#if (defined(MINIUPNPC_API_VERSION) && MINIUPNPC_API_VERSION >= 18) || defined(__linux__)
+    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr), nullptr, 0);
+#else
+    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
+#endif
+    if (r == 1) {"""
+if old not in text:
+    raise SystemExit("UPNP snip missing")
+path.write_text(text.replace(old, new, 1))
+PY
+      then
+        echo "WARN: UPNP sed fallback could not apply (already wrapped or unexpected context)" >&2
+      fi
+    fi
   fi
 }
 
 build_linux_qt() {
   echo "=== Building Linux Qt (USE_DEPENDS=${USE_DEPENDS}) ==="
   cd "${SRC_DIR}"
+  # System Boost 1.83+ no longer injects bind placeholders into the global namespace.
+  export CPPFLAGS="${CPPFLAGS:-} -DBOOST_BIND_GLOBAL_PLACEHOLDERS"
+  export CXXFLAGS="${CXXFLAGS:-} -DBOOST_BIND_GLOBAL_PLACEHOLDERS"
   if [[ "${USE_DEPENDS}" == "1" ]]; then
     echo "=== depends (x86_64-linux-gnu, with Qt) — first run can take 60–120 min ==="
     cd depends
@@ -171,11 +214,39 @@ build_linux_qt() {
   else
     ./autogen.sh
     CONFIGURE_FLAGS=(--with-gui --disable-tests --disable-bench --with-unsupported-ssl)
+    # Prefer distro protobuf over a stale /usr/local protoc + mismatched headers.
+    # gcc searches /usr/local/include before /usr/include, so shadow local google/ headers.
+    export PATH="/usr/bin:${PATH}"
+    if [[ -z "${PROTOBUF_CFLAGS:-}" ]] && [[ -d /usr/include/google/protobuf ]]; then
+      export PROTOBUF_CFLAGS="-I/usr/include"
+    fi
+    if [[ -z "${PROTOBUF_LIBS:-}" ]] && { [[ -e /usr/lib/x86_64-linux-gnu/libprotobuf.so ]] || [[ -e /usr/lib/libprotobuf.so ]]; }; then
+      export PROTOBUF_LIBS="-lprotobuf"
+    fi
+    export CPPFLAGS="${CPPFLAGS:-} -I/usr/include"
+    export CXXFLAGS="${CXXFLAGS:-} -I/usr/include"
+    # Force regeneration against the selected protoc/headers.
+    rm -f src/qt/paymentrequest.pb.cc src/qt/paymentrequest.pb.h
+  fi
+
+  GOOGLE_HDR_BAK=""
+  restore_google_hdrs() {
+    if [[ -n "${GOOGLE_HDR_BAK}" ]] && [[ -d "${GOOGLE_HDR_BAK}" ]] && [[ ! -e /usr/local/include/google ]]; then
+      mv "${GOOGLE_HDR_BAK}" /usr/local/include/google || true
+    fi
+  }
+  trap restore_google_hdrs EXIT
+  if [[ "${USE_DEPENDS}" == "0" ]] && [[ -d /usr/local/include/google/protobuf ]]; then
+    GOOGLE_HDR_BAK="/usr/local/include/google.mn2-qt-bak.$$"
+    mv /usr/local/include/google "${GOOGLE_HDR_BAK}"
+    echo "Shadowed /usr/local/include/google for distro protobuf"
   fi
 
   ./configure "${CONFIGURE_FLAGS[@]}"
   make -j"${JOBS}" src/qt/masternoder2-qt
   strip -s src/qt/masternoder2-qt 2>/dev/null || true
+  restore_google_hdrs
+  trap - EXIT
 
   DIST="${BUILD_ROOT}/dist"
   PKG="${DIST}/MasterNoder2-qt-linux"
@@ -195,6 +266,118 @@ build_linux_qt() {
   cat MasterNoder2-qt-linux.tar.gz.sha256
 }
 
+# libevent 2.1.8 sets _WIN32_WINNT=0x0501 after windows.h; modern mingw then
+# declares Vista GetTcpTable2 APIs while MIB_* types stay invisible → hard error.
+patch_libevent_mingw_iphlpapi() {
+  local mk="${SRC_DIR}/depends/packages/libevent.mk"
+  local helper="/tmp/mn2_fix_evutil_winnt.py"
+  if [[ ! -f "${mk}" ]]; then
+    echo "WARN: libevent.mk missing; skip mingw iphlpapi patch" >&2
+    return 0
+  fi
+  cat > "${helper}" <<'PY'
+#!/usr/bin/env python3
+"""mn2-mingw-iphlpapi: fix libevent 2.1.8 evutil.c for modern mingw headers."""
+from pathlib import Path
+
+path = Path("evutil.c")
+text = path.read_text(encoding="utf-8", errors="replace")
+old = "#undef _WIN32_WINNT\n/* For structs needed by GetAdaptersAddresses */\n#define _WIN32_WINNT 0x0501\n#include <iphlpapi.h>"
+new = (
+    "#undef _WIN32_WINNT\n"
+    "/* mn2-mingw-iphlpapi: Vista+ so iphlpapi.h MIB_* types resolve */\n"
+    "#define _WIN32_WINNT 0x0601\n"
+    "#undef NTDDI_VERSION\n"
+    "#define NTDDI_VERSION 0x06010000\n"
+    "#include <tcpmib.h>\n"
+    "#include <iphlpapi.h>"
+)
+if "mn2-mingw-iphlpapi" in text:
+    print("evutil.c already patched")
+elif old not in text:
+    raise SystemExit("evutil.c winnt block not found")
+else:
+    path.write_text(text.replace(old, new, 1), encoding="utf-8")
+    print("patched evutil.c winnt/iphlpapi block")
+PY
+  chmod +x "${helper}"
+  # Do not put `#` comments inside preprocess_cmds — make eval treats them as
+  # makefile comments and breaks funcs.mk with "missing separator".
+  echo "=== Patching depends libevent.mk for mingw iphlpapi ==="
+  python3 - "${mk}" "${helper}" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+path = Path(sys.argv[1])
+helper = sys.argv[2]
+text = path.read_text()
+# Single shell line only: multi-line preprocess_cmds expand into make recipes
+# without leading tabs and trigger "missing separator".
+new_block = (
+    "define $(package)_preprocess_cmds\n"
+    f"  python3 {helper} && ./autogen.sh\n"
+    "endef"
+)
+text2, n = re.subn(
+    r"define \$\(package\)_preprocess_cmds\n.*?^endef",
+    new_block,
+    text,
+    count=1,
+    flags=re.M | re.S,
+)
+if n != 1:
+    raise SystemExit(f"could not rewrite preprocess block in {path}")
+path.write_text(text2)
+print(f"patched {path}")
+PY
+
+  # Clear failed libevent build so depends re-runs preprocess with the fix.
+  rm -rf "${SRC_DIR}/depends/work/build/x86_64-w64-mingw32/libevent" \
+    "${SRC_DIR}/depends/work/staging/x86_64-w64-mingw32/libevent" 2>/dev/null || true
+  find "${SRC_DIR}/depends/work" -path '*libevent*' \( -name '.stamp_built' -o -name '.stamp_configured' -o -name '.stamp_preprocessed' \) -delete 2>/dev/null || true
+}
+
+# Qt 5.9.7 qmake bootstrap on host GCC 15 needs <limits> in qbytearraymatcher.h.
+patch_qt_gcc15_limits() {
+  local mk="${SRC_DIR}/depends/packages/qt.mk"
+  if [[ ! -f "${mk}" ]]; then
+    echo "WARN: qt.mk missing; skip gcc15 limits patch" >&2
+    return 0
+  fi
+  echo "=== Patching depends qt.mk for GCC 15 <limits> ==="
+  python3 - "${mk}" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+marker = "qtbase/src/corelib/tools/qbytearraymatcher.h"
+if marker in text and "TOUCHEVENTF_MOVE)/" in text and "#include <limits>" in text:
+    print(f"already patched {path}")
+    raise SystemExit(0)
+inject = (
+    "  sed -i.old '/#include <QtCore\\/qbytearray.h>/i #include <limits>' "
+    "qtbase/src/corelib/tools/qbytearraymatcher.h && \\\n"
+    "  sed -i.old 's/#if defined(Q_CC_MINGW) || !defined(TOUCHEVENTF_MOVE)/#if !defined(TOUCHEVENTF_MOVE)/' "
+    "qtbase/src/plugins/platforms/windows/qwindowsmousehandler.cpp && \\\n"
+)
+m = re.search(r"define \$\(package\)_preprocess_cmds\n", text)
+if not m:
+    raise SystemExit(f"preprocess_cmds not found in {path}")
+# Insert inject immediately after the define line.
+pos = m.end()
+text2 = text[:pos] + inject + text[pos:]
+path.write_text(text2)
+print(f"patched {path}")
+PY
+
+  rm -rf "${SRC_DIR}/depends/work/build/x86_64-w64-mingw32/qt" \
+    "${SRC_DIR}/depends/work/staging/x86_64-w64-mingw32/qt" 2>/dev/null || true
+  find "${SRC_DIR}/depends/work" -path '*qt*' \( -name '.stamp_built' -o -name '.stamp_configured' -o -name '.stamp_preprocessed' \) -delete 2>/dev/null || true
+}
+
 build_win_qt() {
   echo "=== Building Windows Qt cross-compile (USE_DEPENDS=${USE_DEPENDS}) ==="
   cd "${SRC_DIR}"
@@ -203,8 +386,33 @@ build_win_qt() {
     exit 1
   fi
 
+  # Compiler temps can exhaust a small tmpfs /tmp during Qt depends builds.
+  if [[ -z "${TMPDIR:-}" ]] || df -P "${TMPDIR:-/tmp}" 2>/dev/null | awk 'NR==2 {exit !($2 < 8000000)}'; then
+    mkdir -p "${BUILD_ROOT}/tmp"
+    export TMPDIR="${BUILD_ROOT}/tmp"
+    echo "=== Using TMPDIR=${TMPDIR} (avoid small/tmpfs /tmp) ==="
+  fi
+
   export PATH
   PATH="$(echo "${PATH}" | sed -e 's/:\/mnt.*//g')"
+  # Boost 1.64 jam bootstrap fails on GCC 14+ (-Werror=implicit-function-declaration).
+  export CFLAGS="${CFLAGS:-} -Wno-error=implicit-function-declaration -Wno-implicit-function-declaration"
+  export CXXFLAGS="${CXXFLAGS:-} -Wno-error=implicit-function-declaration -Wno-implicit-function-declaration"
+  # jam's build.sh calls bare `gcc` without CFLAGS — wrap the compiler on PATH.
+  CC_WRAP="${BUILD_ROOT}/cc-wrap"
+  mkdir -p "${CC_WRAP}"
+  cat > "${CC_WRAP}/gcc" <<'WRAP'
+#!/bin/bash
+exec /usr/bin/gcc -Wno-error=implicit-function-declaration -Wno-implicit-function-declaration "$@"
+WRAP
+  chmod +x "${CC_WRAP}/gcc"
+  export PATH="${CC_WRAP}:${PATH}"
+
+  # Modern mingw headers break libevent 2.1.8's XP-era _WIN32_WINNT redefine in
+  # evutil.c (iphlpapi.h sees Vista APIs without MIB_* types). Patch depends recipe.
+  patch_libevent_mingw_iphlpapi
+  # Host GCC 15 building Qt 5.9 qmake needs <limits> in qbytearraymatcher.h.
+  patch_qt_gcc15_limits
 
   echo "=== depends (x86_64-w64-mingw32, with Qt) — first run can take 60–120 min ==="
   cd depends
@@ -261,7 +469,13 @@ for name in ("MasterNoder2-qt-linux.tar.gz", "MasterNoder2-qt-win.zip"):
     if os.path.isfile(p):
         assets[name] = {"sha256": sha256(p), "size": os.path.getsize(p)}
 
-doc = {"version": version, "target": target, "qt_assets": assets}
+doc = {
+    "version": version,
+    "target": target,
+    "qt_assets": assets,
+    # Alias used by GET /api/mn2/releases sha lookup.
+    "files": assets,
+}
 with open(manifest_path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")

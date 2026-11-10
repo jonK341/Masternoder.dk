@@ -1,0 +1,25 @@
+# Flatpak manifest for the MasterNoder2 headless daemon + CLI.
+# Build with scripts/mn2_build_flatpak.sh (wraps a release tarball; does not compile C++).
+app-id: dk.masternoder.MasterNoder2
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: masternoder2d
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --filesystem=home
+  - --filesystem=xdg-data/masternoder2:create
+modules:
+  - name: masternoder2d
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 masternoder2d /app/bin/masternoder2d
+      - install -Dm755 masternoder2-cli /app/bin/masternoder2-cli
+      - if test -f masternoder2-tx; then install -Dm755 masternoder2-tx /app/bin/masternoder2-tx; fi
+      - install -Dm644 dk.masternoder.MasterNoder2.desktop /app/share/applications/dk.masternoder.MasterNoder2.desktop
+      - install -Dm644 dk.masternoder.MasterNoder2.metainfo.xml /app/share/metainfo/dk.masternoder.MasterNoder2.metainfo.xml
+      - install -Dm644 dk.masternoder.MasterNoder2.png /app/share/icons/hicolor/128x128/apps/dk.masternoder.MasterNoder2.png
+    sources:
+      - type: dir
+        path: staging

@@ -14,9 +14,21 @@ from datetime import datetime, timedelta
 from flask import request, session, g
 
 _API_PREFIX = "/api/"
+# Fast chrome ledger read must not create accounts or on-chain addresses.
+_SKIP_LIFECYCLE_PREFIXES = (
+    "/api/mn2/balance/fast",
+    "/api/mn2/balance/onchain",
+    "/api/mn2/sporks",
+    "/api/mn2/releases",
+)
 _SAVE_INTERVAL_SECONDS = 300  # snapshot at most every 5 min per user
 _DORMANT_DAYS = 7
 _last_save_times: dict = {}
+
+
+def _skip_lifecycle_for_path(path: str) -> bool:
+    p = path or ""
+    return any(p == prefix or p.startswith(prefix + "/") for prefix in _SKIP_LIFECYCLE_PREFIXES)
 
 
 def register_ai_user_lifecycle_middleware(app):
@@ -28,6 +40,8 @@ def register_ai_user_lifecycle_middleware(app):
             return None
         if _API_PREFIX not in request.path:
             return None
+        if _skip_lifecycle_for_path(request.path):
+            return None
         try:
             _detect_and_classify_user()
         except Exception:
@@ -38,6 +52,8 @@ def register_ai_user_lifecycle_middleware(app):
         if getattr(g, "skip_api_middleware", False):
             return response
         if _API_PREFIX not in request.path:
+            return response
+        if _skip_lifecycle_for_path(request.path):
             return response
         if response.status_code < 400:
             try:

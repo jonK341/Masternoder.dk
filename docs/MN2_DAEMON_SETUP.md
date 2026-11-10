@@ -4,7 +4,8 @@ Quick command-line guide to download and run the MN2 daemon so the Masternoder.d
 
 **Where the daemon runs:** The daemon must run on the **server** where the Masternoder.dk backend is deployed (same machine or same private network). The backend connects to `MN2_RPC_URL` (e.g. `http://127.0.0.1:9332` on the server). You do **not** run the daemon on your local dev machine unless you are testing MN2 integration locally — in production, install and run the daemon on the deployment server and set `MN2_RPC_*` in the server’s `.env`.
 
-**Releases:** [MasterNoder2 releases](https://github.com/jonK341/MasterNoder2/releases) (latest: **v1.2.2.0**).  
+**Releases:** [MasterNoder2 releases](https://github.com/jonK341/MasterNoder2/releases).  
+**Current target version and download URLs** come from `scripts/mn2_release_config.py` (`TARGET_VERSION`, `RELEASE_BASE`, `RELEASE_URL`, `MANIFEST_URL`) — do not hardcode older tarball URLs here. The site `/wallets` portal and `GET /api/mn2/releases` read the same config.  
 **Default RPC port:** `9332` (mainnet). For **testnet**, use port `19332` and set `MN2_NETWORK=testnet` in `.env` (or set `MN2_RPC_URL=http://127.0.0.1:19332`). The app uses `MN2_RPC_URL` if set; otherwise it picks the default by `MN2_NETWORK`.
 
 **Server setup:** The steps below (download, extract, config, start) are intended for the **server** (e.g. Linux). On that server, set `MN2_RPC_URL`, `MN2_RPC_USER`, and `MN2_RPC_PASSWORD` in the app’s `.env` to match the daemon’s `masternoder2.conf`. Local dev can leave MN2 vars empty or point to a test daemon; the health check will show `mn2_rpc` as unreachable until a daemon is available.
@@ -24,12 +25,13 @@ Quick command-line guide to download and run the MN2 daemon so the Masternoder.d
 mkdir $env:USERPROFILE\mn2-daemon
 cd $env:USERPROFILE\mn2-daemon
 
-# Download Linux daemon (tar.gz) — for WSL or use Windows build if available
-$url = "https://github.com/jonK341/MasterNoder2/releases/download/v1.2.2.0/masternoder2d.tar.gz"
+# Download Linux daemon (tar.gz) — version from scripts/mn2_release_config.py (TARGET_VERSION)
+# From this repository's root:
+$url = python -c "import sys; sys.path.insert(0,'scripts'); from mn2_release_config import RELEASE_URL; print(RELEASE_URL)"  # pragma: allowlist secret
 Invoke-WebRequest -Uri $url -OutFile "masternoder2d.tar.gz" -UseBasicParsing
 ```
 
-If the release provides a **Windows** asset (e.g. `.zip` or installer), download that instead and extract to the same folder.
+If the release provides a **Windows** asset (e.g. `.zip` or installer), download that instead and extract to the same folder. Qt desktop wallets: `MasterNoder2-qt-linux.tar.gz` / `MasterNoder2-qt-win.zip` on the same `RELEASE_BASE`.
 
 ### Linux / WSL
 
@@ -38,10 +40,11 @@ If the release provides a **Windows** asset (e.g. `.zip` or installer), download
 mkdir -p ~/mn2-daemon
 cd ~/mn2-daemon
 
-# Download (pick one)
-wget https://github.com/jonK341/MasterNoder2/releases/download/v1.2.2.0/masternoder2d.tar.gz
+# Resolve URL from release config (repo root)
+RELEASE_URL=$(python3 -c "import sys; sys.path.insert(0,'scripts'); from mn2_release_config import RELEASE_URL; print(RELEASE_URL)")
+wget "$RELEASE_URL"
 # or
-curl -L -o masternoder2d.tar.gz https://github.com/jonK341/MasterNoder2/releases/download/v1.2.2.0/masternoder2d.tar.gz
+curl -L -o masternoder2d.tar.gz "$RELEASE_URL"
 ```
 
 ---
@@ -209,7 +212,7 @@ You should see JSON with a numeric `"result"` (block height). If the process exi
 
 ### Windows
 
-The v1.2.2.0 release does **not** include a headless `masternoder2d.exe` on Windows — only **MasterNoder2-qt-win.zip** (GUI wallet). The GUI wallet may not expose RPC on port 9332 the same way as the Linux daemon.
+Current releases do **not** include a headless `masternoder2d.exe` on Windows — only **MasterNoder2-qt-win.zip** (GUI wallet). The GUI wallet may not expose RPC on port 9332 the same way as the Linux daemon.
 
 - **Option A — Use WSL:** Install [WSL](https://aka.ms/wslinstall), then in WSL download and run the **Linux** `masternoder2d.tar.gz` daemon (steps in “Linux / WSL” below). The backend on Windows can then connect to `127.0.0.1:9332` if the daemon is running in WSL.
 - **Option B — Qt wallet:** The project can download the Windows Qt wallet to `tools/mn2-daemon/` (this folder is gitignored). Run `tools\mn2-daemon\MasterNoder2-win\masternoder2-qt.exe` for the GUI; ensure `%APPDATA%\MasterNoder2\masternoder2.conf` exists with `server=1` and your RPC settings (copy from `config/masternoder2.conf`). RPC may only be available when the wallet is fully synced; if port 9332 is still not open, use the Linux daemon in WSL.
@@ -382,9 +385,11 @@ curl -u mn2rpc:your_actual_password_here -d '{"jsonrpc":"1.0","id":"mn2","method
 Run this on the server (e.g. after SSH). Replace `YOUR_STRONG_PASSWORD` with a strong RPC password and set the same in the app’s `.env` as `MN2_RPC_PASSWORD`.
 
 ```bash
-# 1) Daemon directory and download
+# 1) Daemon directory and download (URL from scripts/mn2_release_config.py)
 mkdir -p ~/mn2-daemon && cd ~/mn2-daemon
-wget -q https://github.com/jonK341/MasterNoder2/releases/download/v1.2.2.0/masternoder2d.tar.gz
+RELEASE_URL=$(python3 -c "import sys; sys.path.insert(0,'/var/www/html/scripts'); from mn2_release_config import RELEASE_URL; print(RELEASE_URL)" 2>/dev/null \
+  || python3 -c "import sys; sys.path.insert(0,'scripts'); from mn2_release_config import RELEASE_URL; print(RELEASE_URL)")
+wget -q -O masternoder2d.tar.gz "$RELEASE_URL"
 tar -xzf masternoder2d.tar.gz
 
 # 2) Config (daemon reads ~/.masternoder2/masternoder2.conf)

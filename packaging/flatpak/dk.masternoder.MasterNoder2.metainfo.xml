@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dk.masternoder.MasterNoder2</id>
+  <name>MasterNoder2 Daemon</name>
+  <summary>Headless MasterNoder2 node and CLI</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <icon type="stock">dk.masternoder.MasterNoder2</icon>
+  <description>
+    <p>
+      MasterNoder2 daemon (masternoder2d) and RPC client (masternoder2-cli)
+      packaged for Linux desktops via Flatpak. Uses your home data directory
+      (~/.masternoder2) unless -datadir is set.
+    </p>
+  </description>
+  <launchable type="desktop-id">dk.masternoder.MasterNoder2.desktop</launchable>
+  <url type="homepage">https://github.com/jonK341/MasterNoder2</url>
+  <categories>
+    <category>Network</category>
+    <category>Finance</category>
+  </categories>
+</component>

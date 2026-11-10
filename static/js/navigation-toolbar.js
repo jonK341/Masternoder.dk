@@ -261,6 +261,10 @@
         return (
             '<div class="nav-toolbar-user">' +
             '<div class="nav-toolbar-user-controls" id="navToolbarUserControls">' +
+            '<button type="button" class="nav-toolbar-mn2-wallet" id="navToolbarMn2Wallet" title="MN2 Wallet" aria-haspopup="menu" aria-expanded="false">' +
+            '<span class="nav-toolbar-mn2-label">MN2</span>' +
+            '<span id="navToolbarMn2Balance">—</span>' +
+            '<span class="nav-toolbar-mn2-chevron" aria-hidden="true">▾</span></button>' +
             '<button class="nav-toolbar-control-btn" id="navToolbarUserBtn" title="User Settings"><span>👤</span></button>' +
             '<button class="nav-toolbar-control-btn" id="navToolbarSettingsBtn" title="Settings"><span>⚙️</span></button>' +
             '<button class="nav-toolbar-control-btn" id="navToolbarNotificationsBtn" title="Notifications">' +
@@ -271,6 +275,105 @@
             '<button class="nav-toolbar-toggle" id="navToolbarToggle" aria-label="Toggle menu">☰</button>' +
             '</div>'
         );
+    }
+
+    function _bindMn2WalletChip() {
+        var chip = document.getElementById('navToolbarMn2Wallet');
+        if (!chip || chip.dataset.mn2ToolbarBound) return;
+        chip.dataset.mn2ToolbarBound = '1';
+        var dropdownEl = null;
+        var actions = [
+            { label: 'Open wallet', href: '/wallets' },
+            { label: 'Deposit', href: '/profile?tab=wallet&wallet=deposit#mn2-wallet' },
+            { label: 'Withdraw', href: '/profile?tab=wallet&wallet=withdraw#mn2-wallet' },
+            { label: 'Profile wallet', href: '/profile#mn2-wallet' }
+        ];
+
+        function closeDd() {
+            if (dropdownEl) {
+                dropdownEl.remove();
+                dropdownEl = null;
+            }
+            chip.setAttribute('aria-expanded', 'false');
+            chip.classList.remove('is-open');
+        }
+
+        function openDd() {
+            closeDd();
+            var rect = chip.getBoundingClientRect();
+            var balEl = document.getElementById('navToolbarMn2Balance');
+            var balText = balEl ? balEl.textContent : '—';
+            var dd = document.createElement('div');
+            dd.className = 'mn2-wallet-dropdown';
+            dd.setAttribute('role', 'menu');
+            dd.innerHTML =
+                '<div class="mn2-wallet-dropdown-header">MN2 Wallet<span class="mn2-wallet-dropdown-balance">' +
+                balText + '</span></div>' +
+                actions.map(function (a) {
+                    return '<a class="mn2-wallet-dropdown-item" role="menuitem" href="' + a.href + '">' + a.label + '</a>';
+                }).join('');
+            dd.style.cssText = 'position:fixed;z-index:10050;min-width:200px;padding:8px;border-radius:12px;' +
+                'border:1px solid rgba(0,212,255,0.35);background:rgba(8,12,20,0.96);box-shadow:0 12px 32px rgba(0,0,0,0.45);';
+            dd.style.top = (rect.bottom + 6) + 'px';
+            dd.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
+            document.body.appendChild(dd);
+            dropdownEl = dd;
+            chip.setAttribute('aria-expanded', 'true');
+            chip.classList.add('is-open');
+            setTimeout(function () {
+                document.addEventListener('click', function onOut(ev) {
+                    if (dropdownEl && !dropdownEl.contains(ev.target) && !chip.contains(ev.target)) {
+                        closeDd();
+                        document.removeEventListener('click', onOut);
+                    }
+                });
+            }, 0);
+        }
+
+        chip.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (dropdownEl) closeDd();
+            else openDd();
+        });
+
+        function paintFast(d) {
+            var el = document.getElementById('navToolbarMn2Balance');
+            if (!el) return;
+            if (!d || d.mn2_balance == null) {
+                el.textContent = '—';
+                return;
+            }
+            var fmt = window.Mn2SiteBridge && window.Mn2SiteBridge.fmtMn2
+                ? window.Mn2SiteBridge.fmtMn2
+                : function (n) { return String(n); };
+            el.textContent = fmt(d.mn2_balance);
+        }
+
+        function loadFast() {
+            if (!window.Mn2SiteBridge || !window.Mn2SiteBridge.loadFastBalance) return;
+            window.Mn2SiteBridge.loadFastBalance().then(function (d) {
+                paintFast(d);
+                if (d && d.mn2_balance != null && !chip.dataset.mn2Refresh) {
+                    chip.dataset.mn2Refresh = '1';
+                    setInterval(function () {
+                        window.Mn2SiteBridge.loadFastBalance().then(paintFast);
+                    }, 90000);
+                }
+            });
+        }
+
+        if (window.Mn2SiteBridge) loadFast();
+        else {
+            var tries = 0;
+            var t = setInterval(function () {
+                tries++;
+                if (window.Mn2SiteBridge || tries > 40) {
+                    clearInterval(t);
+                    loadFast();
+                }
+            }, 100);
+        }
     }
 
     function _resolveIconImg(link) {
@@ -1009,13 +1112,22 @@
 
     // Global MN2 bar + live activity stream on all toolbar pages
     (function loadMn2Global() {
-        ['mn2-site-bridge.js?v=20260614d', 'mn2-global-bar.js?v=20260614d', 'mn2-activity-stream.js?v=20260614d'].forEach(function (src) {
+        if (!document.querySelector('link[href*="mn2-wallet-quick-access.css"]')) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '/static/css/mn2-wallet-quick-access.css?v=9.2.6.5';
+            document.head.appendChild(link);
+        }
+        _bindMn2WalletChip();
+        ['mn2-site-bridge.js?v=9.2.6.5', 'mn2-global-bar.js?v=9.2.6.5', 'mn2-activity-stream.js?v=9.2.6.5'].forEach(function (src) {
             if (document.querySelector('script[src*="' + src.split('?')[0] + '"]')) return;
             var s = document.createElement('script');
             s.src = '/static/js/' + src;
             s.defer = true;
             document.body.appendChild(s);
         });
+        // Re-bind after deferred scripts so chip uses the bridge if it was late.
+        setTimeout(_bindMn2WalletChip, 200);
     })();
 
     // Calm library launcher on non-compendium pages; full reader shell on /compendium/*

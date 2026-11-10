@@ -54,6 +54,87 @@ def _load_mn2_config() -> dict:
 
 mn2_bp = Blueprint("mn2", __name__)
 
+_FAST_CACHE_HEADERS = {
+    "Cache-Control": "private, no-store",
+}
+
+
+@mn2_bp.route("/api/mn2/balance/fast", methods=["GET"])
+@mn2_bp.route("/api/mn2/balance/onchain", methods=["GET"])
+def mn2_balance_onchain_chrome():
+    """
+    Chrome / wallet glance balance from the chain only.
+
+    Ensures a deposit address (RPC getnewaddress when missing) so deposits can
+    land on-chain, then returns confirmed UTXO balance. Does not read the
+    custodial ledger and does not call Chainz.
+    """
+    from backend.services.account_resolution_service import resolve_user_id_with_source
+    from backend.services.mn2_onchain_wallet import chain_balance_for_user, ensure_user_address
+
+    user_id, source = resolve_user_id_with_source(
+        from_body=False,
+        from_query=True,
+        use_identification=False,
+    )
+    signed_in = source == "session"
+    config = _load_mn2_config()
+    payload = {
+        "success": True,
+        "signed_in": signed_in,
+        "wallet_mode": "onchain",
+        "balance_source": "onchain",
+        "shop_wallet_mode": str(config.get("wallet_mode") or "ledger"),
+    }
+    if not user_id or user_id == "default_user":
+        return jsonify(payload), 200, _FAST_CACHE_HEADERS
+
+    # quick=True: no validateaddress / help probes — chrome must not wait on a dead RPC.
+    created = ensure_user_address(user_id, label=False, quick=True)
+    if not created.get("success"):
+        err = created.get("error") or "Could not create on-chain deposit address"
+        return jsonify({
+            "success": False,
+            "signed_in": signed_in,
+            "user_id": user_id,
+            "wallet_mode": "onchain",
+            "balance_source": "onchain",
+            "error": _user_facing_rpc_error(str(err)),
+            "code": created.get("code"),
+            "deposit_address": None,
+        }), 200, _FAST_CACHE_HEADERS
+
+    addr = created.get("deposit_address") or created.get("address")
+    chain = chain_balance_for_user(user_id)
+    confirmed = chain.get("confirmed_mn2")
+    if chain.get("available") and confirmed is not None:
+        mn2_balance = float(confirmed)
+    elif chain.get("error") == "no_deposit_address":
+        mn2_balance = 0.0
+    else:
+        # Address exists but RPC scan failed — surface the fault, do not fall back to ledger.
+        return jsonify({
+            "success": False,
+            "signed_in": signed_in,
+            "user_id": user_id,
+            "wallet_mode": "onchain",
+            "balance_source": "onchain",
+            "deposit_address": addr,
+            "onchain": chain,
+            "error": _user_facing_rpc_error(str(chain.get("error") or "On-chain balance unavailable")),
+        }), 200, _FAST_CACHE_HEADERS
+
+    base = _explorer_base_url().rstrip("/")
+    payload.update({
+        "user_id": user_id,
+        "mn2_balance": mn2_balance,
+        "deposit_address": addr,
+        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+        "onchain": chain,
+        "address_created": bool(created.get("created") or created.get("generated")),
+    })
+    return jsonify(payload), 200, _FAST_CACHE_HEADERS
+
 
 @mn2_bp.route("/api/mn2/balance", methods=["GET"])
 def mn2_balance():
@@ -127,6 +208,202 @@ def mn2_price():
     except Exception:
         pass
     return jsonify(payload), 200
+
+
+def _fetch_release_manifest(url: str, timeout_sec: float = 2.0) -> dict:
+    """Fetch a GitHub release manifest JSON. Returns {} on failure."""
+    import urllib.error
+    import urllib.request
+
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "MasterNoder-wallets/9.2.6.5"})
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            data = json.loads(raw)
+            return data if isinstance(data, dict) else {}
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, OSError, json.JSONDecodeError):
+        return {}
+
+
+_RELEASE_CACHE: dict = {"at": 0.0, "payload": None}
+_RELEASE_CACHE_TTL_SEC = 300.0
+
+
+def _sha_from_manifest(manifest: dict, filename: str):
+    if not manifest:
+        return None
+    files = (
+        manifest.get("files")
+        or manifest.get("assets")
+        or manifest.get("qt_assets")
+        or {}
+    )
+    if isinstance(files, dict) and filename in files:
+        entry = files[filename]
+        if isinstance(entry, dict):
+            return entry.get("sha256") or entry.get("sha256sum")
+        if isinstance(entry, str):
+            return entry
+    digests = manifest.get("sha256") or manifest.get("checksums") or {}
+    if isinstance(digests, dict) and filename in digests:
+        return digests.get(filename)
+    if manifest.get("name") == filename and manifest.get("sha256"):
+        return manifest.get("sha256")
+    # Daemon RELEASE_MANIFEST.json uses tarball_name + tarball_sha256.
+    if filename == manifest.get("tarball_name") and manifest.get("tarball_sha256"):
+        return manifest.get("tarball_sha256")
+    return None
+
+
+def _build_releases_payload() -> dict:
+    import concurrent.futures
+    import sys
+    import time as _time
+
+    cached = _RELEASE_CACHE.get("payload")
+    if cached and (_time.time() - float(_RELEASE_CACHE.get("at") or 0)) < _RELEASE_CACHE_TTL_SEC:
+        return cached
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    scripts_dir = os.path.join(repo_root, "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from mn2_release_config import (  # type: ignore
+        MANIFEST_URL,
+        PUBLIC_VERSION,
+        RELEASE_BASE,
+        SOURCE_TARBALL_NAME,
+        SOURCE_URL,
+        TARBALL_NAME,
+    )
+
+    qt_manifest_url = f"{RELEASE_BASE}/QT_RELEASE_MANIFEST.json"
+    flatpak_manifest_url = f"{RELEASE_BASE}/FLATPAK_RELEASE_MANIFEST.json"
+    android_manifest_url = f"{RELEASE_BASE}/ANDROID_RELEASE_MANIFEST.json"
+    daemon_manifest: dict = {}
+    qt_manifest: dict = {}
+    flatpak_manifest: dict = {}
+    android_manifest: dict = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        fut_daemon = pool.submit(_fetch_release_manifest, MANIFEST_URL, 2.0)
+        fut_qt = pool.submit(_fetch_release_manifest, qt_manifest_url, 2.0)
+        fut_flatpak = pool.submit(_fetch_release_manifest, flatpak_manifest_url, 2.0)
+        fut_android = pool.submit(_fetch_release_manifest, android_manifest_url, 2.0)
+        try:
+            daemon_manifest = fut_daemon.result(timeout=2.5) or {}
+        except Exception:
+            daemon_manifest = {}
+        try:
+            qt_manifest = fut_qt.result(timeout=2.5) or {}
+        except Exception:
+            qt_manifest = {}
+        try:
+            flatpak_manifest = fut_flatpak.result(timeout=2.5) or {}
+        except Exception:
+            flatpak_manifest = {}
+        try:
+            android_manifest = fut_android.result(timeout=2.5) or {}
+        except Exception:
+            android_manifest = {}
+
+    unavailable = not bool(daemon_manifest) and not bool(qt_manifest)
+    flatpak_name = "dk.masternoder.MasterNoder2.flatpak"
+    android_name = "MasterNoder2-wallet-android.apk"
+    assets = [
+        {
+            "id": "daemon",
+            "label": "Daemon (Linux tarball)",
+            "filename": TARBALL_NAME,
+            "url": f"{RELEASE_BASE}/{TARBALL_NAME}",
+            "sha256": _sha_from_manifest(daemon_manifest, TARBALL_NAME),
+            "platform": "linux",
+        },
+        {
+            "id": "daemon-flatpak",
+            "label": "Daemon (Linux Flatpak)",
+            "filename": flatpak_name,
+            "url": f"{RELEASE_BASE}/{flatpak_name}",
+            "sha256": _sha_from_manifest(flatpak_manifest, flatpak_name),
+            "platform": "linux",
+        },
+        {
+            "id": "qt-linux",
+            "label": "Desktop wallet (Linux)",
+            "filename": "MasterNoder2-qt-linux.tar.gz",
+            "url": f"{RELEASE_BASE}/MasterNoder2-qt-linux.tar.gz",
+            "sha256": _sha_from_manifest(qt_manifest, "MasterNoder2-qt-linux.tar.gz"),
+            "platform": "linux",
+        },
+        {
+            "id": "qt-win",
+            "label": "Desktop wallet (Windows)",
+            "filename": "MasterNoder2-qt-win.zip",
+            "url": f"{RELEASE_BASE}/MasterNoder2-qt-win.zip",
+            "sha256": _sha_from_manifest(qt_manifest, "MasterNoder2-qt-win.zip"),
+            "platform": "windows",
+        },
+    ]
+    # Only advertise Android when a release manifest proves the APK exists.
+    if android_manifest:
+        assets.append(
+            {
+                "id": "android",
+                "label": "Mobile wallet (Android)",
+                "filename": android_name,
+                "url": f"{RELEASE_BASE}/{android_name}",
+                "sha256": _sha_from_manifest(android_manifest, android_name),
+                "platform": "android",
+            }
+        )
+    assets.append(
+        {
+            "id": "source",
+            "label": "Source code",
+            "filename": SOURCE_TARBALL_NAME,
+            "url": SOURCE_URL,
+            "sha256": _sha_from_manifest(daemon_manifest, SOURCE_TARBALL_NAME),
+            "platform": "source",
+        }
+    )
+    payload = {
+        "success": True,
+        "version": PUBLIC_VERSION,
+        "release_base": RELEASE_BASE,
+        "manifest_unavailable": unavailable,
+        "assets": assets,
+        "platform_ui_version": "9.2.6.5",
+    }
+    _RELEASE_CACHE["at"] = _time.time()
+    _RELEASE_CACHE["payload"] = payload
+    return payload
+
+
+@mn2_bp.route("/api/mn2/sporks", methods=["GET"])
+def mn2_sporks_snapshot():
+    """Read-only intelligence snapshot for every known MN2 spork."""
+    from backend.services.mn2_spork_service import spork_catalog_snapshot
+
+    # Prefer cache; one forced refresh is enough for the wallets portal.
+    payload = spork_catalog_snapshot(force_refresh=True)
+    return jsonify(payload), 200, {"Cache-Control": "public, max-age=15"}
+
+
+@mn2_bp.route("/api/mn2/releases", methods=["GET"])
+def mn2_releases_payload():
+    """
+    Current daemon + Qt wallet download rows.
+    URLs come from release-config base + fixed filenames; sha256 from manifests.
+    """
+    try:
+        payload = _build_releases_payload()
+    except Exception as exc:
+        return jsonify({
+            "success": False,
+            "error": f"release config unavailable: {exc}",
+            "version": None,
+            "assets": [],
+        }), 500
+    return jsonify(payload), 200, {"Cache-Control": "public, max-age=60"}
 
 
 def _user_facing_rpc_error(rpc_error: str) -> str:

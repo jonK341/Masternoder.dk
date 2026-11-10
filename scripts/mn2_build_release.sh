@@ -316,26 +316,37 @@ checkout_source() {
   fi
 }
 
+# apply_patch_file LABEL PATH [soft]
+# soft=1 → return 1 on failure instead of exit 2 (caller may fall back).
 apply_patch_file() {
   local label="$1"
   local patch_path="$2"
+  local soft="${3:-0}"
   local tmp log
   tmp="$(mktemp)"
   log="$(mktemp)"
   sed 's/\r$//' "${patch_path}" > "${tmp}"
-  if ! patch -p1 --forward --batch --reject-file=- -i "${tmp}" >"${log}" 2>&1; then
+  # -F3: tolerate minor context drift across MN2 tags (v1.2.3.0 / v1.3.0.0).
+  if ! patch -p1 --forward --batch -F3 --reject-file=- -i "${tmp}" >"${log}" 2>&1; then
     echo "ERROR: ${label} failed (patch -p1 rejected hunks or malformed diff)." >&2
     sed -n '1,40p' "${log}" >&2 || true
     rm -f "${tmp}" "${log}"
+    if [[ "${soft}" == "1" ]]; then
+      return 1
+    fi
     exit 2
   fi
-  if grep -qiE 'hunk FAILED|patch: \*\*\*\*|can.t find file to patch|Reversed \(or previously applied\) patch detected!' "${log}"; then
+  if grep -qiE 'hunk FAILED|patch: \*\*\*\*|can.t find file to patch' "${log}"; then
     echo "ERROR: ${label} reported patch failures:" >&2
     sed -n '1,40p' "${log}" >&2 || true
     rm -f "${tmp}" "${log}"
+    if [[ "${soft}" == "1" ]]; then
+      return 1
+    fi
     exit 2
   fi
   rm -f "${tmp}" "${log}"
+  return 0
 }
 
 resolve_compat_patch() {
@@ -351,13 +362,11 @@ resolve_compat_patch() {
   printf '%s' "${compat}"
 }
 
-verify_upnp_compat() {
+upnp_compat_present() {
   local net_cpp="${SRC_DIR}/src/net.cpp"
-  if [[ ! -f "${net_cpp}" ]]; then
-    echo "ERROR: ${net_cpp} missing — run prepare stage first." >&2
-    exit 2
-  fi
-  if grep -qE 'UPNP_GetValidIGD\([^)]*nullptr,\s*0\)' "${net_cpp}"; then
+  [[ -f "${net_cpp}" ]] || return 1
+  # POSIX ERE: [[:space:]] not \s (GNU grep -E).
+  if grep -qE 'UPNP_GetValidIGD\([^)]*nullptr,[[:space:]]*0\)' "${net_cpp}"; then
     return 0
   fi
   if grep -q 'MINIUPNPC_API_VERSION >= 18' "${net_cpp}" && grep -q 'nullptr, 0' "${net_cpp}"; then
@@ -366,9 +375,49 @@ verify_upnp_compat() {
   if grep -q 'defined(__linux__)' "${net_cpp}" && grep -q 'nullptr, 0' "${net_cpp}"; then
     return 0
   fi
+  return 1
+}
+
+verify_upnp_compat() {
+  local net_cpp="${SRC_DIR}/src/net.cpp"
+  if [[ ! -f "${net_cpp}" ]]; then
+    echo "ERROR: ${net_cpp} missing — run prepare stage first." >&2
+    exit 2
+  fi
+  if upnp_compat_present; then
+    return 0
+  fi
   echo "ERROR: UPNP_GetValidIGD compat fix missing in src/net.cpp (expected 7-arg call or MINIUPNPC guard)." >&2
   echo "  Re-run prepare stage or ensure COMPAT_PATCH_FILE applies on this host." >&2
   exit 2
+}
+
+# Last-resort surgical wrap when monolithic/modular patches miss UPNP on this tree.
+apply_upnp_sed_fallback() {
+  local net_cpp="${SRC_DIR}/src/net.cpp"
+  if upnp_compat_present; then
+    return 0
+  fi
+  if ! grep -q 'UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));' "${net_cpp}"; then
+    return 1
+  fi
+  echo "=== UPNP sed fallback: wrapping GetValidIGD for miniupnpc API 18+ ==="
+  python3 - "${net_cpp}" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text()
+old = "    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));\n    if (r == 1) {"
+new = """#if (defined(MINIUPNPC_API_VERSION) && MINIUPNPC_API_VERSION >= 18) || defined(__linux__)
+    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr), nullptr, 0);
+#else
+    r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
+#endif
+    if (r == 1) {"""
+if old not in text:
+    raise SystemExit(1)
+path.write_text(text.replace(old, new, 1))
+PY
 }
 
 apply_compat_patch() {
@@ -377,42 +426,67 @@ apply_compat_patch() {
     return 0
   fi
   echo "=== Apply modern-host build compat patch (${compat}) ==="
-  apply_patch_file "modern-host compat patch" "${compat}"
-  if [[ "${USE_DEPENDS}" == "0" ]] && ! grep -q '#include "util.h"' src/net.cpp; then
-    echo "ERROR: compat patch did not update src/net.cpp (missing util.h for TraceThread)." >&2
-    exit 2
+  if ! apply_patch_file "modern-host compat patch" "${compat}" 1; then
+    echo "WARN: modern-host compat patch failed; will try modular gcc15 patches + UPNP fallback." >&2
   fi
-  verify_upnp_compat
+  if [[ "${USE_DEPENDS}" == "0" ]] && ! grep -q '#include "util.h"' src/net.cpp 2>/dev/null; then
+    echo "WARN: compat patch did not add util.h to src/net.cpp (TraceThread); modular/fallback may still fix build." >&2
+  fi
 }
 
-COMPAT_PATCH_DIR="${COMPAT_PATCH_DIR:-/tmp/mn2-patches}"
+# Prefer in-repo docs/patches (keeps pace with website checkout); /tmp is legacy upload dir.
+if [[ -z "${COMPAT_PATCH_DIR:-}" ]]; then
+  if [[ -n "${REPO_ROOT}" ]] && compgen -G "${REPO_ROOT}/docs/patches/mn2-gcc15-*.patch" >/dev/null 2>&1; then
+    COMPAT_PATCH_DIR="${REPO_ROOT}/docs/patches"
+  elif [[ -d /tmp/mn2-patches ]] && compgen -G '/tmp/mn2-patches/mn2-gcc15-*.patch' >/dev/null 2>&1; then
+    COMPAT_PATCH_DIR=/tmp/mn2-patches
+  else
+    COMPAT_PATCH_DIR="${REPO_ROOT:-/tmp}/docs/patches"
+  fi
+fi
 
 apply_compat_patches() {
   local f
-  if [[ ! -d "${COMPAT_PATCH_DIR}" ]]; then
-    return 0
+  local dirs=()
+  local d
+  if [[ -d "${COMPAT_PATCH_DIR}" ]]; then
+    dirs+=("${COMPAT_PATCH_DIR}")
+  fi
+  if [[ -n "${REPO_ROOT}" ]] && [[ -d "${REPO_ROOT}/docs/patches" ]]; then
+    if [[ "${COMPAT_PATCH_DIR}" != "${REPO_ROOT}/docs/patches" ]]; then
+      dirs+=("${REPO_ROOT}/docs/patches")
+    fi
   fi
   cd "${SRC_DIR}"
-  for f in "${COMPAT_PATCH_DIR}"/mn2-gcc15-*.patch; do
-    [[ -f "${f}" ]] || continue
-    echo "=== Applying compat patch $(basename "${f}") ==="
-    if ! patch -p1 --forward < "${f}"; then
-      echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
-    fi
+  for d in "${dirs[@]}"; do
+    for f in "${d}"/mn2-gcc15-*.patch; do
+      [[ -f "${f}" ]] || continue
+      echo "=== Applying compat patch $(basename "${f}") ==="
+      # --forward: skip already-applied hunks; reject-file=- avoids littering .rej
+      if ! sed 's/\r$//' "${f}" | patch -p1 --forward --batch -F3 --reject-file=- >/tmp/mn2-gcc15-patch.log 2>&1; then
+        if grep -qiE 'malformed patch|hunk FAILED|can.t find file' /tmp/mn2-gcc15-patch.log; then
+          echo "WARN: compat patch $(basename "${f}") failed or already applied" >&2
+          sed -n '1,20p' /tmp/mn2-gcc15-patch.log >&2 || true
+        fi
+      fi
+    done
   done
   if ! grep -q '#include <deque>' src/httpserver.cpp 2>/dev/null; then
     sed -i '/#include <sys\/types.h>/a #include <deque>' src/httpserver.cpp
     echo "Applied sed fallback: #include <deque> in httpserver.cpp"
   fi
+  apply_upnp_sed_fallback || true
+  verify_upnp_compat
 }
 
 ensure_compat_patch() {
   cd "${SRC_DIR}"
-  if verify_upnp_compat 2>/dev/null; then
+  if upnp_compat_present; then
     return 0
   fi
   echo "=== UPNP compat missing — re-applying modern-host patch before compile ==="
   apply_compat_patch
+  apply_compat_patches
 }
 
 stage_prepare() {

@@ -61,8 +61,22 @@ def _webhook_for_channel(channel: str) -> tuple[Optional[str], Optional[str]]:
 
 
 def prepare_webhook_body(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Fold an optional audio_url into Discord content so the webhook stays valid."""
+    """Normalize outbound webhook JSON (embeds + optional audio_url)."""
     body = dict(payload or {})
+    # Internal idempotency key — not a Discord webhook field.
+    body.pop("id", None)
+
+    # Fold flat title/description/url/color into a single embed when callers
+    # (e.g. release announce) pass the embed-shaped dict at the top level.
+    if "embeds" not in body and (
+        body.get("title") or body.get("description") or body.get("url") or body.get("color") is not None
+    ):
+        embed: Dict[str, Any] = {}
+        for key in ("title", "description", "url", "color", "fields", "footer", "thumbnail", "image"):
+            if key in body:
+                embed[key] = body.pop(key)
+        body["embeds"] = [embed]
+
     audio = str(body.pop("audio_url", "") or "").strip()
     if not audio:
         return body

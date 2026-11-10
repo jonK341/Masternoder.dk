@@ -16,7 +16,7 @@ USE_SHOP_V3 = os.environ.get("USE_SHOP_V3", "true").strip().lower() in ("1", "tr
 
 # Shop front-end generation (bump when navigation/layout changes; exposed in /api/shop/config)
 # Product line: Shop V.9 tabbed UI + unified purchase/inventory APIs — keep in sync with shop/index.html.
-SHOP_UI_VERSION = "9.2.0"
+SHOP_UI_VERSION = "9.2.6.5"
 
 
 def _resolve_user_id():
