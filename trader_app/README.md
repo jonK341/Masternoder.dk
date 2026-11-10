@@ -1,8 +1,8 @@
 # MN2 Private Control (laptop app)
 
-A **private, passcode-gated** control panel + trading cockpit you run **on your own machine**
+A **private local** control panel + trading cockpit you run **on your own machine**
 (whose IP can reach the exchanges — unlike the geo-blocked cloud host). It centralizes owner
-controls and stats behind a lock screen, in a tabbed UI.
+controls and stats in a tabbed UI. Bound to `127.0.0.1` by default with **no passcode gate**.
 
 ## Tabs
 - **Overview** — balances per venue/pair, grid positions & PnL, cross-trade signals.
@@ -16,13 +16,12 @@ controls and stats behind a lock screen, in a tabbed UI.
 ## Run (from source)
 ```bash
 pip install -r requirements.txt
-export TRADER_PASSCODE='choose-a-strong-passcode'   # required to unlock (owner-only)
 export SITE_URL=https://your-site.example            # site admin API for controls/signals
 export SITE_ADMIN_KEY=<your exchange admin key>
 export BINANCE_API_KEY=...  BINANCE_API_SECRET=...   # venue keys (or use the encrypted vault)
 python trader_app/app.py                             # -> http://127.0.0.1:8800
 ```
-Open http://127.0.0.1:8800, unlock with your passcode.
+Open http://127.0.0.1:8800 (Fast desk at `/desk`) — no unlock required.
 
 ## Build a standalone executable
 
@@ -49,8 +48,7 @@ Output: `dist/MN2PrivateControl/`. Run `MN2PrivateControl` (`.exe` on Windows), 
 > matching script on each target OS (verified on Linux; identical steps on Windows/macOS).
 
 ## Privacy / security
-- The whole app is behind a **passcode** (`TRADER_PASSCODE`); set a strong one — the default
-  `mn2-owner` is flagged insecure in the Security tab.
+- Passcode unlock is **disabled**; the app listens on `127.0.0.1` only by default.
 - All control/accounting data lives **in the app** and is fetched with your admin key; nothing
   private is exposed publicly by the app itself.
 - Venue API keys should live in the encrypted vault (`EXCHANGE_VAULT_KEY`), not plaintext.

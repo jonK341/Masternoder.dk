@@ -14,7 +14,6 @@
   "MN2_SPORK_GATES": "0",
   "SITE_URL": "",
   "SITE_ADMIN_KEY": "",
-  "TRADER_PASSCODE": "choose-a-strong-passcode",
   "site_url": "https://your-site.example",
   "admin_key": "REPLACE_WITH_YOUR_EXCHANGE_ADMIN_KEY"
 }

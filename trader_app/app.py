@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """MN2 Private Control — standalone laptop app (owner-only).
 
-A private, passcode-gated control panel + trading cockpit you run on your own machine
-(whose IP can reach the exchanges). Tabs: Overview, Trading, Profit Monitor (AI),
-Controls (daemon/bot/agents), Shop, Accounting, Security. It pulls signals/status from the
-site's admin API and runs the local grid/market-maker bot.
+A local control panel + trading cockpit you run on your own machine (whose IP can
+reach the exchanges). Bound to 127.0.0.1 by default with no passcode gate. Tabs:
+Overview, Trading, Profit Monitor (AI), Controls (daemon/bot/agents), Shop,
+Accounting, Security. It pulls signals/status from the site's admin API and runs
+the local grid/market-maker bot.
 
 Config (env or trader_app/config.json):
-  TRADER_PASSCODE   required to unlock the app (owner-only). Default 'mn2-owner' if unset.
   SITE_URL          e.g. https://your-site.example   (site admin API for controls/signals)
   SITE_ADMIN_KEY    admin key for the site's /api/exchange/* + control endpoints
   TRADER_PORT       default 8800
@@ -48,23 +48,6 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
 )
-
-# Brute-force protection: lock out an IP after repeated failed passcodes.
-_LOGIN_FAILS: dict = {}
-_LOCK_MAX = 5
-_LOCK_WINDOW = 300  # seconds
-
-
-def _login_locked(ip: str) -> bool:
-    ent = _LOGIN_FAILS.get(ip)
-    if not ent:
-        return False
-    import time as _t
-    if _t.time() - ent[1] > _LOCK_WINDOW:
-        _LOGIN_FAILS.pop(ip, None)
-        return False
-    return ent[0] >= _LOCK_MAX
-
 
 _CONFIG_SOURCE = None  # path config.json was actually loaded from (or None)
 
@@ -194,11 +177,9 @@ def _bootstrap_env_from_config() -> None:
         if v is not None and str(v) != "" and not os.environ.get(k):
             os.environ[k] = str(v)
     if _CONFIG_SOURCE:
-        default_pc = (os.environ.get("TRADER_PASSCODE") or "mn2-owner") == "mn2-owner"
-        print(f"[config] loaded config.json from: {_CONFIG_SOURCE} "
-              f"(passcode {'DEFAULT' if default_pc else 'set from config'})")
+        print(f"[config] loaded config.json from: {_CONFIG_SOURCE} (passcode gate disabled)")
     else:
-        print("[config] no config.json found — using DEFAULTS (passcode 'mn2-owner'). "
+        print("[config] no config.json found — using defaults (passcode gate disabled). "
               "Searched: " + " | ".join(_config_paths()))
 
 
@@ -213,16 +194,14 @@ def _cfg() -> dict:
 
 
 def _passcode() -> str:
+    # Kept for Security tab / config diagnostics only — unlock is no longer required.
     return os.environ.get("TRADER_PASSCODE") or "mn2-owner"
 
 
 def login_required(fn):
+    """Auth disabled: localhost desk opens without a passcode."""
     @wraps(fn)
     def wrapper(*a, **k):
-        if not session.get("auth"):
-            if request.path.startswith("/api/"):
-                return jsonify({"success": False, "error": "locked"}), 401
-            return redirect(url_for("login"))
         return fn(*a, **k)
     return wrapper
 
@@ -261,44 +240,17 @@ def site_post(path: str, body: dict = None) -> dict:
         return {"available": False, "error": str(exc)}
 
 
-# ------------------------- auth -------------------------
+# ------------------------- auth (disabled) -------------------------
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    import time as _t
-    ip = request.remote_addr or "?"
-    if request.method == "POST":
-        if _login_locked(ip):
-            return render_template("login.html", error="Too many attempts — wait a few minutes.")
-        code = (request.form.get("passcode") or "").strip()
-        if code and code == _passcode():
-            _LOGIN_FAILS.pop(ip, None)
-            session.permanent = True
-            session["auth"] = True
-            try:
-                store.record_alert("login", "Owner unlocked the app", "info")
-            except Exception:
-                pass
-            return redirect(url_for("desk"))
-        ent = _LOGIN_FAILS.get(ip)
-        if not ent or _t.time() - ent[1] > _LOCK_WINDOW:
-            ent = [0, _t.time()]
-        ent[0] += 1
-        _LOGIN_FAILS[ip] = ent
-        try:
-            store.record_alert("login_fail", f"Failed unlock attempt from {ip}", "warn")
-        except Exception:
-            pass
-        left = max(0, _LOCK_MAX - ent[0])
-        msg = "Incorrect passcode." + (f" {left} attempt(s) left." if left <= 2 else "")
-        return render_template("login.html", error=msg)
-    return render_template("login.html", error=None)
+    return redirect(url_for("desk"))
 
 
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect(url_for("desk"))
 
 
 @app.route("/")
@@ -766,14 +718,15 @@ def api_security():
         vstat = {"error": str(exc)}
     return jsonify({
         "success": True,
-        "app_locked_by_passcode": True,
+        "app_locked_by_passcode": False,
+        "passcode_gate_disabled": True,
         "passcode_is_default": _passcode() == "mn2-owner",
         "config_loaded_from": _CONFIG_SOURCE or "(none — using defaults)",
         "site_admin_key_set": bool(_cfg().get("admin_key")),
         "live_gates": live_gates,
         "vault": vstat,
         "recommendations": [
-            "Set a strong TRADER_PASSCODE (env) — do not use the default.",
+            "Passcode unlock is disabled — keep this app bound to 127.0.0.1 only.",
             "Keep EXCHANGE_*_LIVE flags off until you intend to trade real funds.",
             "Store venue keys in the encrypted vault (EXCHANGE_VAULT_KEY), not plaintext.",
         ],
@@ -782,5 +735,5 @@ def api_security():
 
 if __name__ == "__main__":
     port = int(os.environ.get("TRADER_PORT", "8800"))
-    print(f"MN2 Private Control: http://127.0.0.1:{port}  (passcode-gated)")
+    print(f"MN2 Private Control: http://127.0.0.1:{port}  (no passcode — localhost only)")
     app.run(host="127.0.0.1", port=port, debug=False, use_reloader=False, threaded=True)
