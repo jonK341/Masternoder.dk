@@ -40,6 +40,7 @@ SCENE_FX: Dict[str, Dict[str, Any]] = {
         "color": "#00ff88",
         "sound": "coin_sparkle",
         "bars": 5,
+        "speaker": "performer_nova",
     },
     "trade": {
         "lightshow": "chase",
@@ -48,22 +49,25 @@ SCENE_FX: Dict[str, Dict[str, Any]] = {
         "color": "#ffd166",
         "sound": "chime_cash",
         "bars": 6,
+        "speaker": "performer_ember",
     },
     "profit": {
         "lightshow": "pulse",
         "title": "Profit pulse",
         "explain": "Deep pulse for realized PnL beats.",
         "color": "#ffd166",
-        "sound": "chime_cash",
+        "sound": "fanfare_rise",
         "bars": 4,
+        "speaker": "performer_honey",
     },
     "wallet": {
         "lightshow": "spectrum",
         "title": "Wallet spectrum",
         "explain": "Wallet / MN2 balance hits.",
         "color": "#00ff88",
-        "sound": "coin_sparkle",
+        "sound": "glitter_burst",
         "bars": 4,
+        "speaker": "performer_luna",
     },
     "action": {
         "lightshow": "wave",
@@ -72,14 +76,16 @@ SCENE_FX: Dict[str, Dict[str, Any]] = {
         "color": "#00d4ff",
         "sound": "whoosh_rise",
         "bars": 5,
+        "speaker": "performer_iris",
     },
     "finale": {
         "lightshow": "rainbow",
         "title": "Pipeline finale",
         "explain": "Rainbow wash closes the 12-minute AI reel.",
         "color": "#c77dff",
-        "sound": "bubble_ping",
+        "sound": "sparkle_cascade",
         "bars": 8,
+        "speaker": "performer_venus",
     },
     "system": {
         "lightshow": "pulse",
@@ -88,8 +94,23 @@ SCENE_FX: Dict[str, Dict[str, Any]] = {
         "color": "#9aa4b2",
         "sound": "tick_blip",
         "bars": 3,
+        "speaker": "performer_sage",
     },
 }
+
+# Rotate camgirl hosts so spoken stats stay varied across the cut.
+SPEAKER_ROTATION = (
+    "performer_nova",
+    "performer_luna",
+    "performer_ember",
+    "performer_iris",
+    "performer_honey",
+    "performer_storm",
+    "performer_pixie",
+    "performer_venus",
+    "performer_sage",
+    "performer_aurora",
+)
 
 
 def _iso() -> str:
@@ -410,6 +431,32 @@ def _fmt_sats(n: int) -> str:
         return str(n)
 
 
+def _speak_line(
+    *,
+    category: str,
+    title: str,
+    body: str,
+    sats: int,
+    sats_kind: str,
+    speaker_name: str = "",
+) -> str:
+    """Camgirl-ready spoken stats line — short, clear, synced to the scene."""
+    kind = sats_kind or category
+    sats_txt = _fmt_sats(int(sats or 0)).replace(",", " ")
+    host = (speaker_name or "Host").split()[0]
+    if kind == "network" or category == "network":
+        return f"{host} here. Network sats on screen: {sats_txt}. {title}."
+    if kind == "trade" or category in ("trade", "profit"):
+        return f"{host} checking the daemon desk. Trade sats: {sats_txt}. {title}."
+    if kind == "combined" or category == "finale":
+        return f"{host} wrapping the cut. Combined sats: {sats_txt}. {title}."
+    if category == "wallet":
+        return f"{host} on wallet glow. {sats_txt} sats. {title}."
+    if category == "action":
+        return f"{host} on action beat. {title}. {body[:120]}"
+    return f"{host} on the monitor. {title}. Stats show {sats_txt} sats."
+
+
 def _scene(
     *,
     category: str,
@@ -419,17 +466,40 @@ def _scene(
     sats_kind: str = "",
     duration_ms: int = 12000,
     meta: Optional[Dict[str, Any]] = None,
+    speaker_id: Optional[str] = None,
+    speaker_index: int = 0,
 ) -> Dict[str, Any]:
     fx = dict(SCENE_FX.get(category) or SCENE_FX["system"])
+    sid = speaker_id or fx.get("speaker") or SPEAKER_ROTATION[speaker_index % len(SPEAKER_ROTATION)]
+    speak = _speak_line(
+        category=category,
+        title=title,
+        body=body,
+        sats=int(sats or 0),
+        sats_kind=sats_kind,
+        speaker_name=sid.replace("performer_", "").title(),
+    )
+    # Keep scene long enough that voice + SFX + lights stay locked together.
+    voice_budget_ms = max(4500, min(18000, 80 * max(24, len(speak))))
+    dur = max(int(duration_ms), voice_budget_ms)
     return {
         "id": f"pipe_{uuid.uuid4().hex[:10]}",
         "category": category,
         "title": title[:160],
         "body": body[:400],
+        "speak": speak[:420],
+        "speaker_id": sid,
         "sats": int(sats or 0),
         "sats_kind": sats_kind,
         "sats_label": _fmt_sats(int(sats or 0)),
-        "duration_ms": max(4000, int(duration_ms)),
+        "duration_ms": max(5000, dur),
+        "sync": {
+            "voice": True,
+            "sfx": True,
+            "lights": True,
+            "hold_for_speech": True,
+            "beat_ms": int(round(60_000 / BPM)),
+        },
         "fx": fx,
         "meta": meta or {},
     }
@@ -467,97 +537,90 @@ def _procedural_ai_pipeline(
 
     scenes: List[Dict[str, Any]] = []
     cut_id = rng.randint(1000, 9999)
-    scenes.append(
-        _scene(
-            category="finale",
-            title=f"AI lobby pipeline · cut {cut_id}",
-            body=(
-                f"Fresh 12-minute reel from live sats (network {_fmt_sats(network_sats)} · "
-                f"trades {_fmt_sats(trade_sats)}) — lights + sounds, not archived."
-            ),
-            sats=network_sats + trade_sats,
-            sats_kind="combined",
-            duration_ms=12000 + rng.randint(0, 4000),
-        )
+    speaker_i = [rng.randint(0, len(SPEAKER_ROTATION) - 1)]
+
+    def add_scene(**kwargs: Any) -> None:
+        kwargs.setdefault("speaker_index", speaker_i[0])
+        speaker_i[0] += 1
+        scenes.append(_scene(**kwargs))
+
+    add_scene(
+        category="finale",
+        title=f"AI lobby pipeline · cut {cut_id}",
+        body=(
+            f"Fresh 12-minute reel from live sats (network {_fmt_sats(network_sats)} · "
+            f"trades {_fmt_sats(trade_sats)}) — lights + sounds + camgirl voice, not archived."
+        ),
+        sats=network_sats + trade_sats,
+        sats_kind="combined",
+        duration_ms=12000 + rng.randint(0, 4000),
     )
-    scenes.append(
-        _scene(
-            category="network",
-            title="Network sats open",
-            body=f"On-chain MN2 wallet reads {_fmt_sats(int(mn2.get('sats') or 0))} sats"
-            f" ({float(mn2.get('coins') or 0):.4f} MN2).",
-            sats=int(mn2.get("sats") or 0),
-            sats_kind="network",
-            duration_ms=13000,
-        )
+    add_scene(
+        category="network",
+        title="Network sats open",
+        body=f"On-chain MN2 wallet reads {_fmt_sats(int(mn2.get('sats') or 0))} sats"
+        f" ({float(mn2.get('coins') or 0):.4f} MN2).",
+        sats=int(mn2.get("sats") or 0),
+        sats_kind="network",
+        duration_ms=13000,
     )
     if venues:
         for vid, vsats in list(venues.items())[:4]:
-            scenes.append(
-                _scene(
-                    category="network",
-                    title=f"{vid} venue sats",
-                    body=f"Cached venue BTC free → {_fmt_sats(vsats)} sats on {vid}.",
-                    sats=int(vsats),
-                    sats_kind="network",
-                    duration_ms=11000,
-                    meta={"venue": vid},
-                )
+            add_scene(
+                category="network",
+                title=f"{vid} venue sats",
+                body=f"Cached venue BTC free → {_fmt_sats(vsats)} sats on {vid}.",
+                sats=int(vsats),
+                sats_kind="network",
+                duration_ms=11000,
+                meta={"venue": vid},
             )
     else:
-        scenes.append(
-            _scene(
-                category="network",
-                title="Venue sats pending",
-                body="Venue BTC cache is empty — pipeline keeps network MN2 sats on screen.",
-                sats=network_sats,
-                sats_kind="network",
-                duration_ms=10000,
-            )
+        add_scene(
+            category="network",
+            title="Venue sats pending",
+            body="Venue BTC cache is empty — pipeline keeps network MN2 sats on screen.",
+            sats=network_sats,
+            sats_kind="network",
+            duration_ms=10000,
         )
 
-    scenes.append(
-        _scene(
-            category="trade",
-            title="Daemon trade desk",
-            body=f"Profit daemon + grid ledger map to {_fmt_sats(trade_sats)} trade sats.",
-            sats=trade_sats,
-            sats_kind="trade",
-            duration_ms=13000,
-        )
+    add_scene(
+        category="trade",
+        title="Daemon trade desk",
+        body=f"Profit daemon + grid ledger map to {_fmt_sats(trade_sats)} trade sats.",
+        sats=trade_sats,
+        sats_kind="trade",
+        duration_ms=13000,
     )
 
     # Expand fills into cinematic beats
     for i, fill in enumerate(fills[:24]):
         sym = fill.get("symbol") or "pair"
-        scenes.append(
-            _scene(
-                category="trade" if i % 3 else "profit",
-                title=f"Fill · {sym}",
-                body=(
-                    f"{fill.get('source', 'daemon')} {fill.get('mode') or ''} — "
-                    f"${float(fill.get('fill_usd') or 0):.2f} → {_fmt_sats(int(fill.get('sats') or 0))} sats"
-                    f" · PnL ${float(fill.get('realized_pnl_usd') or 0):.4f}"
-                ),
-                sats=int(fill.get("sats") or 0),
-                sats_kind="trade",
-                duration_ms=10000 + (i % 4) * 1000,
-                meta={"fill": fill},
-            )
+        add_scene(
+            category="trade" if i % 3 else "profit",
+            title=f"Fill · {sym}",
+            body=(
+                f"{fill.get('source', 'daemon')} {fill.get('mode') or ''} — "
+                f"${float(fill.get('fill_usd') or 0):.2f} → {_fmt_sats(int(fill.get('sats') or 0))} sats"
+                f" · PnL ${float(fill.get('realized_pnl_usd') or 0):.4f}"
+            ),
+            sats=int(fill.get("sats") or 0),
+            sats_kind="trade",
+            duration_ms=10000 + (i % 4) * 1000,
+            meta={"fill": fill},
         )
 
     # Learned actions interleaved
     for i, act in enumerate((actions or [])[:16]):
-        scenes.append(
-            _scene(
-                category="action",
-                title=str(act.get("title") or act.get("type") or "action"),
-                body=str(act.get("text") or act.get("title") or "Learned platform action"),
-                sats=0,
-                sats_kind="action",
-                duration_ms=9000 + (i % 3) * 1500,
-                meta={"action_id": act.get("id"), "action_category": act.get("category")},
-            )
+        add_scene(
+            category="action",
+            title=str(act.get("title") or act.get("type") or "action"),
+            body=str(act.get("text") or act.get("title") or "Learned platform action"),
+            sats=0,
+            sats_kind="action",
+            duration_ms=9000 + (i % 3) * 1500,
+            meta={"action_id": act.get("id"), "action_category": act.get("category")},
         )
 
     # Pad to ~12 minutes with shuffled generative refrains (unique each cut).
@@ -575,30 +638,26 @@ def _procedural_ai_pipeline(
         cat, title, body = motifs[idx % len(motifs)]
         sats_val = network_sats if cat == "network" else trade_sats if cat in ("trade", "profit") else 0
         jitter = rng.randint(-1200, 2400)
-        scenes.append(
-            _scene(
-                category=cat,
-                title=f"{title} · beat {idx + 1} · cut {cut_id}",
-                body=body + f" Live recount {_fmt_sats(network_sats + trade_sats)} sats.",
-                sats=sats_val,
-                sats_kind="network" if cat == "network" else "trade" if cat in ("trade", "profit") else "action",
-                duration_ms=max(5000, 10000 + (idx % 5) * 800 + jitter),
-            )
+        add_scene(
+            category=cat,
+            title=f"{title} · beat {idx + 1} · cut {cut_id}",
+            body=body + f" Live recount {_fmt_sats(network_sats + trade_sats)} sats.",
+            sats=sats_val,
+            sats_kind="network" if cat == "network" else "trade" if cat in ("trade", "profit") else "action",
+            duration_ms=max(5000, 10000 + (idx % 5) * 800 + jitter),
         )
         idx += 1
 
-    scenes.append(
-        _scene(
-            category="finale",
-            title=f"Cut {cut_id} complete — next movie will recount",
-            body=(
-                f"Window closed — network {_fmt_sats(network_sats)} · trades {_fmt_sats(trade_sats)}. "
-                "Nothing archived; the next 12 minutes rebuild from fresh stats."
-            ),
-            sats=network_sats + trade_sats,
-            sats_kind="combined",
-            duration_ms=14000 + rng.randint(0, 4000),
-        )
+    add_scene(
+        category="finale",
+        title=f"Cut {cut_id} complete — next movie will recount",
+        body=(
+            f"Window closed — network {_fmt_sats(network_sats)} · trades {_fmt_sats(trade_sats)}. "
+            "Nothing archived; the next 12 minutes rebuild from fresh stats."
+        ),
+        sats=network_sats + trade_sats,
+        sats_kind="combined",
+        duration_ms=14000 + rng.randint(0, 4000),
     )
 
     out = _normalize_duration(scenes, generator="procedural_ai")
@@ -725,6 +784,7 @@ def _ai_llm_pipeline(sats: Dict[str, Any], actions: List[Dict[str, Any]]) -> Opt
                     sats=sats_n,
                     sats_kind=str(row.get("sats_kind") or ""),
                     duration_ms=12000,
+                    speaker_index=len(scenes),
                 )
             )
         if len(scenes) < 8:

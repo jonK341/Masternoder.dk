@@ -119,28 +119,70 @@
     speakUtterance(next.text, next.speaker, { force: next.force, rotate: next.rotate });
   }
 
+  function resolveSpeaker(opts) {
+    opts = opts || {};
+    if (opts.speakerId) {
+      var named = state.speakers.filter(function (s) {
+        return s.id === opts.speakerId;
+      })[0];
+      if (named) return named;
+    }
+    if (opts.speaker && opts.speaker.id) return opts.speaker;
+    return pickSpeaker(!!opts.rotate);
+  }
+
   function speakUtterance(text, speaker, opts) {
     opts = opts || {};
-    if (!text || !window.speechSynthesis) return;
-    if (!opts.force && !state.enabled) return;
+    if (!text || !window.speechSynthesis) {
+      if (typeof opts.onend === "function") {
+        try {
+          opts.onend(null);
+        } catch (e) {}
+      }
+      return;
+    }
+    if (!opts.force && !state.enabled) {
+      if (typeof opts.onend === "function") {
+        try {
+          opts.onend(null);
+        } catch (e) {}
+      }
+      return;
+    }
 
-    var sp = speaker || pickSpeaker(opts.rotate);
-    if (!sp) return;
+    var sp = speaker || resolveSpeaker(opts);
+    if (!sp) {
+      if (typeof opts.onend === "function") {
+        try {
+          opts.onend(null);
+        } catch (e) {}
+      }
+      return;
+    }
 
     if (state.speaking && opts.interrupt) {
       window.speechSynthesis.cancel();
       state.speaking = false;
       state.queue = [];
-    } else if (state.speaking && opts.queue) {
-      state.queue.push({ text: text, speaker: sp, force: opts.force, rotate: opts.rotate });
-      return;
-    } else if (state.speaking && !opts.force) {
-      state.queue.push({ text: text, speaker: sp, force: opts.force, rotate: opts.rotate });
+    } else if (state.speaking && (opts.queue || !opts.force)) {
+      state.queue.push({
+        text: text,
+        speaker: sp,
+        force: opts.force,
+        rotate: opts.rotate,
+        onend: opts.onend,
+        onstart: opts.onstart,
+      });
       return;
     }
 
     if (typeof state.onActiveSpeaker === "function") state.onActiveSpeaker(sp.id);
     setLine(sp, text);
+    if (typeof opts.onstart === "function") {
+      try {
+        opts.onstart(sp, text);
+      } catch (e) {}
+    }
 
     var prof = state.profiles[sp.id] || { rate: 1, pitch: 1 };
     var u = new SpeechSynthesisUtterance(text);
@@ -151,24 +193,42 @@
     state.speaking = true;
     u.onend = function () {
       state.speaking = false;
+      if (typeof opts.onend === "function") {
+        try {
+          opts.onend(sp, text);
+        } catch (e) {}
+      }
       if (state.queue.length) {
         var next = state.queue.shift();
-        speakUtterance(next.text, next.speaker, { force: next.force, rotate: next.rotate });
+        speakUtterance(next.text, next.speaker, {
+          force: next.force,
+          rotate: next.rotate,
+          onend: next.onend,
+          onstart: next.onstart,
+        });
       }
     };
     u.onerror = function () {
       state.speaking = false;
+      if (typeof opts.onend === "function") {
+        try {
+          opts.onend(sp, text);
+        } catch (e) {}
+      }
     };
     window.speechSynthesis.speak(u);
   }
 
   function speak(text, opts) {
     opts = opts || {};
-    speakUtterance(text, null, {
+    speakUtterance(text, resolveSpeaker(opts), {
       force: !!opts.force,
       rotate: !!opts.rotate,
       interrupt: !!opts.interrupt,
       queue: opts.queue !== false,
+      speakerId: opts.speakerId,
+      onend: opts.onend,
+      onstart: opts.onstart,
     });
   }
 

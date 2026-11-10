@@ -28,6 +28,11 @@ def test_sats_and_unique_cuts(tmp_path, monkeypatch):
     assert a["scene_count"] >= 8
     assert a["persist"] is False
     assert a["interactive"] is True
+    head = a["scenes"][0]
+    assert head.get("speak")
+    assert head.get("speaker_id", "").startswith("performer_")
+    assert head.get("sync", {}).get("hold_for_speech") is True
+    assert head.get("fx", {}).get("sound")
     # Every forced cut is a different movie.
     assert a["cut_id"] != b["cut_id"]
     assert a["scenes"][0]["id"] != b["scenes"][0]["id"]

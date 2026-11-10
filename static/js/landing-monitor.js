@@ -25,6 +25,10 @@
     profit: 'chime_cash',
     social: 'bubble_ping',
     system: 'tick_blip',
+    network: 'coin_sparkle',
+    trade: 'chime_cash',
+    action: 'whoosh_rise',
+    finale: 'sparkle_cascade',
   };
 
   function $(id) {
@@ -139,6 +143,12 @@
         this._tone(1320 + variation, 'sine', now + 0.06, 0.16, 0.16);
         this._tone(1760 + variation * 0.5, 'sine', now + 0.12, 0.2, 0.1);
         break;
+      case 'glitter_burst':
+        this._tone(990 + variation, 'sine', now, 0.08, 0.14);
+        this._tone(1480, 'triangle', now + 0.05, 0.1, 0.12);
+        this._tone(1980, 'sine', now + 0.1, 0.14, 0.1);
+        this._noise(now, 0.06, 0.06, 3200);
+        break;
       case 'impact_blast':
         this._noise(now, 0.14, 0.28, 700);
         this._tone(160 + variation * 0.2, 'sawtooth', now, 0.22, 0.2, 55);
@@ -154,10 +164,30 @@
         this._tone(659.25, 'sine', now + 0.08, 0.3, 0.15);
         this._tone(783.99 + variation * 0.3, 'triangle', now + 0.16, 0.36, 0.12);
         break;
+      case 'fanfare_rise':
+        this._tone(392, 'sawtooth', now, 0.18, 0.12);
+        this._tone(523.25, 'triangle', now + 0.12, 0.2, 0.14);
+        this._tone(659.25, 'sine', now + 0.24, 0.28, 0.16);
+        this._tone(784, 'sine', now + 0.36, 0.32, 0.12);
+        break;
       case 'bubble_ping':
         this._tone(640 + variation, 'sine', now, 0.1, 0.16, 980);
         this._tone(520, 'triangle', now + 0.09, 0.14, 0.12, 760);
         this._noise(now + 0.02, 0.08, 0.08, 2400);
+        break;
+      case 'sparkle_cascade':
+        for (var i = 0; i < 5; i++) {
+          this._tone(700 + i * 180 + variation, 'sine', now + i * 0.05, 0.12, 0.1 - i * 0.012);
+        }
+        this._noise(now, 0.16, 0.1, 2600);
+        break;
+      case 'soft_thud':
+        this._tone(110, 'sine', now, 0.2, 0.22, 48);
+        this._noise(now, 0.1, 0.12, 400);
+        break;
+      case 'laser_zip':
+        this._tone(240 + variation, 'sawtooth', now, 0.16, 0.14, 1400);
+        this._noise(now, 0.08, 0.08, 1800);
         break;
       case 'tick_blip':
       default:
@@ -165,6 +195,10 @@
         this._tone(660, 'sine', now + 0.05, 0.08, 0.08);
         break;
     }
+  };
+
+  ActionSFX.prototype.playSyncHit = function () {
+    this.playAction({ category: 'system', fx: { sound: 'soft_thud' } });
   };
 
   function LandingMusic(bpm) {
@@ -605,16 +639,22 @@
 
   PipelinePlayer.prototype.stop = function (silent) {
     this.playing = false;
+    this._speechDone = true;
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
     }
     if (this.panel) this.panel.classList.remove('is-playing');
+    if (this.root) {
+      this.root.classList.remove('is-speaking');
+      this.root.classList.remove('is-sync-hit');
+    }
     if (this.show) {
       this.show.setBoost(1);
       this.show.caption = '';
     }
     if (this.music) this.music.boost = 1;
+    if (window.MNCamgirlsStreamVoice) window.MNCamgirlsStreamVoice.cancel();
     if (this.playBtn) {
       this.playBtn.setAttribute('aria-pressed', 'false');
       this.playBtn.textContent = 'Play 12-min AI pipeline';
@@ -624,13 +664,50 @@
     }
   };
 
+  PipelinePlayer.prototype._buildSpeak = function (scene) {
+    if (scene.speak) return scene.speak;
+    var cat = scene.category || 'system';
+    var sats = fmtSats(scene.sats).replace(/,/g, ' ');
+    if (scene.sats_kind === 'network' || cat === 'network') {
+      return 'Network sats on screen: ' + sats + '. ' + (scene.title || '');
+    }
+    if (scene.sats_kind === 'trade' || cat === 'trade' || cat === 'profit') {
+      return 'Daemon trade sats: ' + sats + '. ' + (scene.title || '');
+    }
+    if (scene.sats_kind === 'combined' || cat === 'finale') {
+      return 'Combined sats: ' + sats + '. ' + (scene.title || '');
+    }
+    return (scene.title || 'Monitor update') + '. ' + (scene.body || '');
+  };
+
+  PipelinePlayer.prototype._advanceWhenReady = function (minMs, startedAt) {
+    var self = this;
+    function tryAdvance() {
+      if (!self.playing) return;
+      var waited = Date.now() - startedAt;
+      if (!self._speechDone || waited < minMs) {
+        self.timer = setTimeout(tryAdvance, 120);
+        return;
+      }
+      // Beat-align the handoff so lights/SFX/voice stay a straight pipeline.
+      var beat = BEAT_MS;
+      var rem = waited % beat;
+      var pad = rem === 0 ? 0 : beat - rem;
+      self.timer = setTimeout(function () {
+        if (!self.playing) return;
+        self.index += 1;
+        self.nextScene();
+      }, pad);
+    }
+    tryAdvance();
+  };
+
   PipelinePlayer.prototype.nextScene = function () {
     var self = this;
     if (!this.playing) return;
     if (this.index >= this.scenes.length) {
       setText('lm-pipeline-scene', '12-min window done — recounting a brand-new cut from live sats…');
       this.stop(true);
-      // Force a fresh recount at end of every movie.
       fetch('/api/landing/monitor/pipeline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -650,7 +727,9 @@
     var cat = scene.category || 'system';
     var color = fx.color || CAT_COLOR[cat] || CAT_COLOR.system;
     var mode = fx.lightshow || 'pulse';
-    var ms = Math.max(4000, Number(scene.duration_ms) || 12000);
+    var ms = Math.max(5000, Number(scene.duration_ms) || 12000);
+    var startedAt = Date.now();
+    this._speechDone = false;
     this.elapsed += ms;
 
     setText('lm-pipeline-scene', scene.title + (scene.body ? ' — ' + scene.body : ''));
@@ -673,27 +752,62 @@
     setText('lm-effect-body', fx.explain || scene.body || '');
     if (this.root) {
       this.root.classList.add('is-scene');
+      this.root.classList.add('is-sync-hit');
       this.root.style.setProperty('--lm-scene-color', color);
+      setTimeout(function () {
+        if (self.root) self.root.classList.remove('is-sync-hit');
+      }, 220);
     }
     if (this.show) {
       this.show.setMode(mode);
       this.show.setAccent(color);
-      this.show.setBoost(1.25);
+      this.show.setBoost(1.35);
       this.show.caption = (scene.title || '').slice(0, 42);
       this.show.pulse();
     }
-    if (this.music) this.music.boost = 1.2;
+    if (this.music) this.music.boost = 1.25;
+
+    // Synchronized hit: SFX + lights fire on the same beat as speech starts.
     if (this.sfx) {
       this.sfx.playAction({
-        category: cat === 'trade' || cat === 'profit' ? 'profit' : cat === 'network' || cat === 'wallet' ? 'wallet' : cat === 'finale' ? 'social' : cat === 'action' ? 'generator' : 'system',
+        category: cat,
         fx: { sound: fx.sound || CAT_SOUND[cat] || 'tick_blip' },
       });
+      var selfSfx = this.sfx;
+      setTimeout(function () {
+        if (self.playing) selfSfx.playSyncHit();
+      }, BEAT_MS);
     }
 
-    this.timer = setTimeout(function () {
-      self.index += 1;
-      self.nextScene();
-    }, ms);
+    var line = this._buildSpeak(scene);
+    var voice = window.MNCamgirlsStreamVoice;
+    if (voice && voice.isEnabled()) {
+      if (this.root) this.root.classList.add('is-speaking');
+      voice.speak(line, {
+        force: true,
+        interrupt: true,
+        rotate: !scene.speaker_id,
+        speakerId: scene.speaker_id || fx.speaker,
+        queue: false,
+        onstart: function (sp) {
+          if (sp) {
+            setText('lm-voice-name', sp.name || 'Host');
+            setText('lm-voice-line', line);
+            var av = $('lm-voice-avatar');
+            if (av && sp.avatar) av.src = sp.avatar;
+          }
+        },
+        onend: function () {
+          self._speechDone = true;
+          if (self.root) self.root.classList.remove('is-speaking');
+        },
+      });
+    } else {
+      this._speechDone = true;
+      setText('lm-voice-line', 'Voice off — enable Camgirl voice to hear sats spoken.');
+    }
+
+    this._advanceWhenReady(ms, startedAt);
   };
 
   function ActionReel(opts) {
@@ -887,7 +1001,53 @@
     var skipBtn = $('lm-reel-skip');
     var pipePlayBtn = $('lm-pipeline-play');
     var pipeRegenBtn = $('lm-pipeline-regen');
+    var voiceBtn = $('lm-voice-toggle');
+    var voiceLead = $('lm-voice-lead');
     var lastSatsFp = null;
+
+    function fillVoiceLead(speakers) {
+      if (!voiceLead) return;
+      voiceLead.innerHTML = '';
+      (speakers || []).forEach(function (sp) {
+        var opt = document.createElement('option');
+        opt.value = sp.id;
+        opt.textContent = sp.name || sp.id;
+        voiceLead.appendChild(opt);
+      });
+      if (window.MNCamgirlsStreamVoice && window.MNCamgirlsStreamVoice.getLeadSpeakerId) {
+        voiceLead.value = window.MNCamgirlsStreamVoice.getLeadSpeakerId() || (speakers[0] && speakers[0].id) || '';
+      }
+    }
+
+    function initCamgirlVoice() {
+      if (!window.MNCamgirlsStreamVoice) return Promise.resolve();
+      return window.MNCamgirlsStreamVoice
+        .init({
+          performersApi: '/api/camgirls/performers',
+          deckId: 'lm-voice-deck',
+          storageKey: 'mn-lm-camgirl-voice',
+          onActiveSpeaker: function (id) {
+            var speakers = window.MNCamgirlsStreamVoice.getSpeakers() || [];
+            var sp = speakers.filter(function (s) {
+              return s.id === id;
+            })[0];
+            if (!sp) return;
+            setText('lm-voice-name', sp.name || 'Host');
+            var av = $('lm-voice-avatar');
+            if (av && sp.avatar) av.src = sp.avatar;
+          },
+          onLine: function (sp, text) {
+            if (sp) setText('lm-voice-name', sp.name || 'Host');
+            setText('lm-voice-line', text || '');
+          },
+        })
+        .then(function (speakers) {
+          fillVoiceLead(speakers);
+          return speakers;
+        });
+    }
+
+    initCamgirlVoice().catch(function () {});
 
     function setSfxHint(on) {
       setText('lm-sfx-hint', on ? 'Sounds: on (each action)' : 'Sounds: off');
@@ -1108,6 +1268,13 @@
         if (reel.playing) reel.stop();
         if (lightBtn && lightBtn.getAttribute('aria-pressed') !== 'true') lightBtn.click();
         if (!sfx.enabled) enableSfxUi().catch(function () {});
+        if (window.MNCamgirlsStreamVoice && !window.MNCamgirlsStreamVoice.isEnabled()) {
+          window.MNCamgirlsStreamVoice.setEnabled(true);
+          if (voiceBtn) {
+            voiceBtn.setAttribute('aria-pressed', 'true');
+            voiceBtn.textContent = 'Camgirl voice on';
+          }
+        }
         if (!pipeline.scenes.length) {
           regeneratePipeline(true).then(function () {
             pipeline.start();
@@ -1124,16 +1291,75 @@
       });
     }
 
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', function () {
+        var on = voiceBtn.getAttribute('aria-pressed') !== 'true';
+        if (!window.MNCamgirlsStreamVoice) {
+          voiceBtn.textContent = 'Voice unavailable';
+          return;
+        }
+        initCamgirlVoice()
+          .then(function () {
+            window.MNCamgirlsStreamVoice.setEnabled(on);
+            voiceBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            voiceBtn.textContent = on ? 'Camgirl voice on' : 'Camgirl voice off';
+            if (on) {
+              if (!sfx.enabled) enableSfxUi().catch(function () {});
+              window.MNCamgirlsStreamVoice.speak(
+                'Voice online. I will speak the network and trade sats in the pipeline.',
+                { force: true, interrupt: true, rotate: true }
+              );
+            }
+          })
+          .catch(function () {
+            voiceBtn.textContent = 'Voice unavailable';
+          });
+      });
+    }
+    if (voiceLead) {
+      voiceLead.addEventListener('change', function () {
+        if (window.MNCamgirlsStreamVoice) {
+          window.MNCamgirlsStreamVoice.setLeadSpeaker(voiceLead.value);
+        }
+      });
+    }
+
     document.querySelectorAll('.lm-stat-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var focus = btn.getAttribute('data-sats-focus') || 'combined';
         pipeline.setFocus(focus);
         if (!sfx.enabled) enableSfxUi().catch(function () {});
+        var spoken =
+          focus === 'network'
+            ? 'Network sats: ' + ($('lm-stat-network-sats') && $('lm-stat-network-sats').textContent)
+            : focus === 'trade'
+              ? 'Daemon trade sats: ' + ($('lm-stat-trade-sats') && $('lm-stat-trade-sats').textContent)
+              : 'Combined sats recount: ' + ($('lm-stat-combined-sats') && $('lm-stat-combined-sats').textContent);
+        if (window.MNCamgirlsStreamVoice) {
+          if (!window.MNCamgirlsStreamVoice.isEnabled()) {
+            window.MNCamgirlsStreamVoice.setEnabled(true);
+            if (voiceBtn) {
+              voiceBtn.setAttribute('aria-pressed', 'true');
+              voiceBtn.textContent = 'Camgirl voice on';
+            }
+          }
+          window.MNCamgirlsStreamVoice.speak(spoken + ' sats on the monitor.', {
+            force: true,
+            interrupt: true,
+            rotate: true,
+          });
+        }
+        sfx.playAction({
+          category: focus === 'trade' ? 'profit' : focus === 'combined' ? 'social' : 'wallet',
+          fx: {
+            sound:
+              focus === 'trade' ? 'chime_cash' : focus === 'combined' ? 'sparkle_cascade' : 'coin_sparkle',
+          },
+        });
         if (focus === 'combined') {
           regeneratePipeline(true);
           return;
         }
-        // Re-order current cut around the chosen sats lens; still a live, unsaved movie.
         if (pipeline.scenes.length) {
           pipeline.loadCut(
             {
@@ -1146,10 +1372,6 @@
             },
             { restart: pipeline.playing }
           );
-          sfx.playAction({
-            category: focus === 'trade' ? 'profit' : 'wallet',
-            fx: { sound: focus === 'trade' ? 'chime_cash' : 'coin_sparkle' },
-          });
         } else {
           regeneratePipeline(false);
         }

@@ -278,6 +278,66 @@ button.lm-stat-btn.is-flash .v {
   transition: width 400ms linear;
 }
 
+.lm-voice-dock {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lm-voice-speaker {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.lm-voice-speaker img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  object-fit: cover;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.lm-voice-speaker strong {
+  display: block;
+  font-size: 0.86rem;
+  color: #ffd166;
+}
+
+.lm-voice-speaker p {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  opacity: 0.85;
+  line-height: 1.35;
+}
+
+.lm-voice-select-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.74rem;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+
+.lm-voice-select-label select {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: #e8f7ff;
+  padding: 6px 8px;
+}
+
+.fp-landing-monitor.is-speaking .lm-bezel {
+  box-shadow: 0 0 0 2px #ffd166, 0 0 34px rgba(255, 209, 102, 0.35);
+}
+
+.fp-landing-monitor.is-sync-hit .lm-canvas {
+  filter: saturate(1.45) contrast(1.12) brightness(1.05);
+}
+
 @media (max-width: 820px) {
   .lm-grid {
     grid-template-columns: 1fr;

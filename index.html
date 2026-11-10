@@ -23,7 +23,8 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
-    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110e">
+    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110f">
+    <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20261110f">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -79,12 +80,26 @@
                             <button type="button" id="lm-light-toggle" aria-pressed="false">Lightshow off</button>
                             <button type="button" id="lm-music-toggle" aria-pressed="false">Play AI music</button>
                             <button type="button" id="lm-sfx-toggle" aria-pressed="false">Action sounds off</button>
+                            <button type="button" id="lm-voice-toggle" aria-pressed="false">Camgirl voice off</button>
                         </div>
                     </div>
                     <div class="lm-panel">
                         <h3 id="lm-effect-title">Effect</h3>
                         <p id="lm-effect-body">Effect explain loads with the lightshow.</p>
                         <p class="lm-safety" id="lm-effect-safety"></p>
+                        <div class="lm-voice-dock" id="lm-voice-dock">
+                            <div class="lm-voice-speaker">
+                                <img id="lm-voice-avatar" src="/static/camgirls/avatar-demo.svg" alt="" width="36" height="36" />
+                                <div>
+                                    <strong id="lm-voice-name">Camgirl voice</strong>
+                                    <p id="lm-voice-line">Enable voice so hosts speak the sats in the pipeline.</p>
+                                </div>
+                            </div>
+                            <label class="lm-voice-select-label">Lead host
+                                <select id="lm-voice-lead" aria-label="Lead camgirl speaker"></select>
+                            </label>
+                            <div id="lm-voice-deck"></div>
+                        </div>
                     </div>
                     <div class="lm-panel lm-reel-panel">
                         <h3 id="lm-reel-title">Action reel</h3>
@@ -423,7 +438,8 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/landing-monitor.js?v=20261110e" defer></script>
+    <script src="/static/js/camgirls-stream-voice.js?v=20261110f" defer></script>
+    <script src="/static/js/landing-monitor.js?v=20261110f" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
