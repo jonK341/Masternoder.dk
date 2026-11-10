@@ -12,6 +12,12 @@ from typing import Dict, Optional, Callable, Tuple, List, Any
 import textwrap
 import json
 
+from backend.services.film_canvas_service import (
+    generate_segment_clips as generate_canvas_segment_clips,
+    is_available as film_canvas_available,
+    provider_for_preference,
+)
+
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Production can override: VIDEOS_DIR=/var/www/html/vidgenerator/videos
 VIDEOS_DIR = os.environ.get('VIDEOS_DIR') or os.path.join(_BASE, 'vidgenerator', 'videos')
@@ -2022,7 +2028,22 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                 clip_mode = str(config.get("clip_video_mode") or "auto").strip().lower()
                 if clip_mode in ("avatar", "heygen"):
                     video_ai_pref = "heygen"
-                elif clip_mode in ("runway", "replicate", "auto", ""):
+                elif clip_mode in (
+                    "runway",
+                    "replicate",
+                    "auto",
+                    "",
+                    "canvas",
+                    "comfy",
+                    "comfyui",
+                    "comfy_local",
+                    "comfy_cloud",
+                    "fal",
+                    "fal_krea",
+                    "krea",
+                    "dramacanva",
+                    "drama",
+                ):
                     video_ai_pref = clip_mode or "auto"
                 else:
                     video_ai_pref = "auto"
@@ -2571,17 +2592,37 @@ def generate_rich_video_sync(
         pref = "heygen"
     use_auto = not pref or pref == "auto"
 
-    # ComfyUI / Comfy Cloud film canvas. Runs only when the job asks for it.
-    if pref in ("canvas", "comfy", "comfyui"):
+    # Film canvases: Comfy and fal render clips; DramaCanvas prepares the project.
+    canvas_preferences = (
+        "canvas",
+        "comfy",
+        "comfyui",
+        "comfy_local",
+        "comfy_cloud",
+        "fal",
+        "krea",
+        "fal_krea",
+        "dramacanva",
+        "drama",
+    )
+    if use_auto or pref in canvas_preferences:
         try:
-            from backend.services.film_canvas_service import (
-                is_available as canvas_ok,
-                generate_segment_clips as canvas_clips,
-            )
-            if canvas_ok():
+            canvas_provider = provider_for_preference(pref)
+            canvas_purpose = "planning" if canvas_provider == "dramacanva" else "render"
+            if film_canvas_available(canvas_provider, purpose=canvas_purpose):
                 if on_progress:
-                    on_progress(3, "Generating film canvas clip...")
-                segments = canvas_clips(segments, max_clips=1, timeout_per_clip=180)
+                    message = (
+                        "Preparing DramaCanvas storyboard project..."
+                        if canvas_provider == "dramacanva"
+                        else "Generating film canvas clip..."
+                    )
+                    on_progress(3, message)
+                segments = generate_canvas_segment_clips(
+                    segments,
+                    max_clips=1,
+                    timeout_per_clip=180,
+                    provider=canvas_provider,
+                )
         except Exception:
             pass
 

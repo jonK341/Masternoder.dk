@@ -24,8 +24,10 @@ ComfyUI's own websocket example).
 """
 from __future__ import annotations
 
+import io
 import json
 import os
+import secrets
 import time
 import urllib.error
 import urllib.parse
@@ -33,9 +35,25 @@ import urllib.request
 import uuid
 from typing import Any, Dict, List, Optional
 
+try:
+    import imageio.v2 as imageio
+except ImportError:
+    imageio = None
+
+try:
+    import msgpack
+except ImportError:
+    msgpack = None
+
+try:
+    import websocket
+except ImportError:
+    websocket = None
+
 COMFY_CLOUD_HTTP = "https://cloud.comfy.org"
 COMFY_CLOUD_WS = "wss://cloud.comfy.org/ws"
 FAL_KREA_WS = "wss://fal.run/fal-ai/krea-wan-14b/ws"
+FAL_TOKEN_HTTP = "https://rest.alpha.fal.ai/tokens/"
 DRAMACANVA_HTTP = "https://dramacanva.com/api/mcp"
 _DEFAULT_LOCAL_HTTP = "http://127.0.0.1:8188"
 _ENV_FILES = ("/var/www/html/.env", "/var/www/html/vidgenerator/.env")
@@ -47,6 +65,7 @@ CANVASES: Dict[str, Dict[str, Any]] = {
         "transport": "websocket",
         "key_env": None,
         "auth_header": None,
+        "uses": ["film_render", "image_render", "workflow_automation"],
         "generates_mp4": True,
     },
     "comfy_cloud": {
@@ -54,6 +73,7 @@ CANVASES: Dict[str, Dict[str, Any]] = {
         "transport": "websocket",
         "key_env": "COMFY_CLOUD_API_KEY",
         "auth_header": "X-API-Key",
+        "uses": ["film_render", "image_render", "workflow_automation"],
         "generates_mp4": True,
     },
     "fal_krea": {
@@ -61,16 +81,38 @@ CANVASES: Dict[str, Dict[str, Any]] = {
         "transport": "websocket",
         "key_env": "FAL_API_KEY",
         "auth_header": None,
-        "generates_mp4": False,
+        "uses": ["realtime_preview", "prompt_iteration", "film_render"],
+        "generates_mp4": True,
     },
     "dramacanva": {
         "label": "DramaCanvas",
         "transport": "http",
         "key_env": "DRAMACANVA_API_KEY",
         "auth_header": "Authorization",
+        "uses": ["script_breakdown", "storyboard", "continuity", "project_workspace"],
         "generates_mp4": False,
     },
 }
+
+PREFERENCE_ALIASES = {
+    "comfy": "comfy_cloud",
+    "comfyui": "comfy_local",
+    "comfy_local": "comfy_local",
+    "comfy_cloud": "comfy_cloud",
+    "fal": "fal_krea",
+    "krea": "fal_krea",
+    "fal_krea": "fal_krea",
+    "dramacanva": "dramacanva",
+    "drama": "dramacanva",
+}
+
+
+def provider_for_preference(preference: str) -> Optional[str]:
+    """Map UI/config names to one provider id; auto and canvas mean best available."""
+    normalized = str(preference or "").strip().lower()
+    if normalized in ("", "auto", "canvas"):
+        return None
+    return PREFERENCE_ALIASES.get(normalized)
 
 
 def _env(name: str) -> str:
@@ -93,6 +135,19 @@ def _env(name: str) -> str:
         except OSError:
             continue
     return ""
+
+
+def _safe_error(error: Any, *extra_secrets: str) -> str:
+    text = str(error)
+    secrets_to_remove = list(extra_secrets)
+    for spec in CANVASES.values():
+        env_name = spec.get("key_env")
+        if env_name:
+            secrets_to_remove.append(_env(env_name))
+    for secret in secrets_to_remove:
+        if secret:
+            text = text.replace(secret, "[REDACTED]")
+    return text[:300]
 
 
 def _http_base(canvas_id: str) -> str:
@@ -173,29 +228,53 @@ def list_canvases() -> List[Dict[str, Any]]:
             "websocket": websocket_url(canvas_id, client_id, include_secret=False),
             "key_env": key_env,
             "key_configured": bool(_env(key_env)) if key_env else True,
+            "uses": list(spec.get("uses") or []),
             "generates_mp4": bool(spec.get("generates_mp4")),
         })
     return rows
 
 
-def select_canvas() -> Optional[str]:
-    """Which Comfy canvas can submit a workflow right now."""
+def select_canvas(purpose: str = "render") -> Optional[str]:
+    """Select a configured canvas for rendering or planning."""
     forced = _env("FILM_CANVAS").strip().lower()
-    if forced in ("comfy_local", "comfy_cloud"):
-        return forced
-    if _env("COMFY_CLOUD_API_KEY"):
-        return "comfy_cloud"
-    if _env("COMFYUI_BASE_URL"):
+    forced = PREFERENCE_ALIASES.get(forced, forced)
+    if forced in CANVASES:
+        return forced if is_available(forced, purpose=purpose) else None
+    if purpose == "planning":
+        return "dramacanva" if _env("DRAMACANVA_API_KEY") else None
+    if _env("COMFYUI_BASE_URL") and _comfy_workflow_available():
         return "comfy_local"
+    if _env("COMFY_CLOUD_API_KEY") and _comfy_workflow_available():
+        return "comfy_cloud"
+    if _env("FAL_API_KEY") and _fal_dependencies_available():
+        return "fal_krea"
     return None
 
 
-def is_available() -> bool:
-    """True when a Comfy canvas and an API-format workflow file are both set."""
-    if select_canvas() is None:
-        return False
+def _comfy_workflow_available() -> bool:
     path = _env("COMFY_WORKFLOW_PATH")
     return bool(path) and os.path.isfile(path)
+
+
+def _fal_dependencies_available() -> bool:
+    return websocket is not None and msgpack is not None and imageio is not None
+
+
+def is_available(canvas_id: Optional[str] = None, *, purpose: str = "render") -> bool:
+    """Whether a canvas has the credentials, files, and local clients it needs."""
+    if canvas_id is None:
+        return select_canvas(purpose) is not None
+    if canvas_id in ("comfy_local", "comfy_cloud"):
+        if not _comfy_workflow_available():
+            return False
+        if canvas_id == "comfy_cloud":
+            return bool(_env("COMFY_CLOUD_API_KEY"))
+        return bool(_env("COMFYUI_BASE_URL"))
+    if canvas_id == "fal_krea":
+        return bool(_env("FAL_API_KEY")) and _fal_dependencies_available()
+    if canvas_id == "dramacanva":
+        return bool(_env("DRAMACANVA_API_KEY"))
+    return False
 
 
 def apply_prompt(workflow: Dict[str, Any], prompt: str, node_id: str) -> Dict[str, Any]:
@@ -254,6 +333,36 @@ def _http_json(method: str, url: str, headers: Dict[str, str], body: Optional[Di
     return parsed
 
 
+def _comfy_url(canvas_id: str, path: str) -> str:
+    prefix = "/api" if canvas_id == "comfy_cloud" else ""
+    return _http_base(canvas_id) + prefix + path
+
+
+def _wait_comfy_outputs(sock: Any, prompt_id: str, timeout: int) -> Dict[str, Any]:
+    outputs: Dict[str, Any] = {}
+    deadline = time.time() + max(5, timeout)
+    while time.time() < deadline:
+        sock.settimeout(max(1, deadline - time.time()))
+        message = sock.recv()
+        if not isinstance(message, str):
+            continue
+        event = json.loads(message)
+        data = event.get("data") if isinstance(event.get("data"), dict) else {}
+        if data.get("prompt_id") != prompt_id:
+            continue
+        event_type = event.get("type")
+        if event_type == "executed" and data.get("node") and isinstance(data.get("output"), dict):
+            outputs[str(data["node"])] = data["output"]
+        elif event_type == "execution_error":
+            detail = data.get("exception_message") or data.get("exception_type") or "execution error"
+            raise RuntimeError(str(detail))
+        elif event_type == "execution_success":
+            return outputs
+        elif event_type == "executing" and data.get("node") is None:
+            return outputs
+    raise RuntimeError("Canvas job timed out")
+
+
 def _download(url: str, headers: Dict[str, str], dest_path: str, timeout: int) -> None:
     # View downloads are binary. Drop the JSON content type.
     view_headers = {k: v for k, v in headers.items() if k.lower() != "content-type"}
@@ -266,18 +375,19 @@ def _download(url: str, headers: Dict[str, str], dest_path: str, timeout: int) -
         handle.write(payload)
 
 
-def generate_clip(
+def _generate_comfy_clip(
     prompt: str,
     dest_dir: Optional[str] = None,
     timeout: int = 180,
+    canvas_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Submit the configured Comfy workflow and download the first output file.
     Returns {success, local_path, prompt_id, canvas, error}.
     """
-    canvas_id = select_canvas()
+    canvas_id = canvas_id or select_canvas()
     workflow_path = _env("COMFY_WORKFLOW_PATH")
-    if canvas_id is None or not workflow_path or not os.path.isfile(workflow_path):
+    if canvas_id not in ("comfy_local", "comfy_cloud") or not workflow_path or not os.path.isfile(workflow_path):
         return {"success": False, "error": "Comfy canvas or COMFY_WORKFLOW_PATH is not configured"}
     try:
         with open(workflow_path, encoding="utf-8") as handle:
@@ -294,44 +404,51 @@ def generate_clip(
         return {"success": False, "error": str(exc)}
 
     client_id = str(uuid.uuid4())
-    base = _http_base(canvas_id)
     headers = auth_headers(canvas_id)
+    sock = None
     try:
+        if websocket is None:
+            raise RuntimeError("websocket-client is not installed")
+        sock = websocket.create_connection(
+            websocket_url(canvas_id, client_id, include_secret=True),
+            timeout=min(30, timeout),
+        )
         queued = _http_json(
             "POST",
-            base + "/prompt",
+            _comfy_url(canvas_id, "/prompt"),
             headers,
             {"prompt": graph, "client_id": client_id},
             timeout=60,
         )
     except (RuntimeError, urllib.error.URLError, OSError) as exc:
-        return {"success": False, "error": "Canvas submit failed: %s" % exc, "canvas": canvas_id}
+        if sock is not None:
+            sock.close()
+        return {
+            "success": False,
+            "error": "Canvas submit failed: %s" % _safe_error(exc),
+            "canvas": canvas_id,
+        }
 
     prompt_id = str(queued.get("prompt_id") or "")
     if not prompt_id:
+        if sock is not None:
+            sock.close()
         return {"success": False, "error": "Canvas did not return a prompt_id", "canvas": canvas_id}
 
-    deadline = time.time() + max(5, timeout)
-    entry: Dict[str, Any] = {}
-    while time.time() < deadline:
-        try:
-            history = _http_json("GET", base + "/history/" + urllib.parse.quote(prompt_id), headers, None, timeout=30)
-        except (RuntimeError, urllib.error.URLError, OSError):
-            history = {}
-        entry = history.get(prompt_id) if isinstance(history.get(prompt_id), dict) else history
-        if not isinstance(entry, dict):
-            entry = {}
-        status = entry.get("status") if isinstance(entry.get("status"), dict) else {}
-        if status.get("status_str") == "error":
-            message = status.get("exception_message") or "execution error"
-            return {"success": False, "error": str(message)[:300], "prompt_id": prompt_id, "canvas": canvas_id}
-        if first_output_file(entry):
-            break
-        time.sleep(2)
-    else:
-        return {"success": False, "error": "Canvas job timed out", "prompt_id": prompt_id, "canvas": canvas_id}
+    try:
+        outputs = _wait_comfy_outputs(sock, prompt_id, timeout)
+    except Exception as exc:
+        return {
+            "success": False,
+            "error": "Canvas execution failed: %s" % _safe_error(exc),
+            "prompt_id": prompt_id,
+            "canvas": canvas_id,
+        }
+    finally:
+        if sock is not None:
+            sock.close()
 
-    output = first_output_file(entry)
+    output = first_output_file({"outputs": outputs})
     if not output:
         return {"success": False, "error": "Canvas finished without a file", "prompt_id": prompt_id, "canvas": canvas_id}
 
@@ -340,7 +457,7 @@ def generate_clip(
     os.makedirs(dest_dir, exist_ok=True)
     ext = os.path.splitext(output["filename"])[1] or ".mp4"
     dest_path = os.path.join(dest_dir, "canvas_%s%s" % (prompt_id[:8], ext))
-    view = base + "/view?" + urllib.parse.urlencode({
+    view = _comfy_url(canvas_id, "/view") + "?" + urllib.parse.urlencode({
         "filename": output["filename"],
         "subfolder": output["subfolder"],
         "type": output["type"],
@@ -358,13 +475,281 @@ def generate_clip(
     }
 
 
+def _fal_token(timeout: int = 30) -> str:
+    key = _env("FAL_API_KEY")
+    if not key:
+        raise RuntimeError("FAL_API_KEY is not configured")
+    payload = json.dumps({
+        "allowed_apps": ["krea-wan-14b"],
+        "token_expiration": 5000,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        FAL_TOKEN_HTTP,
+        data=payload,
+        headers={
+            "Accept": "application/json",
+            "Authorization": "Key " + key,
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError("fal token request failed: %s" % exc) from exc
+    token = data.get("token") or data.get("jwt") or data.get("access_token")
+    if not isinstance(token, str) or not token:
+        raise RuntimeError("fal token response did not include a token")
+    return token
+
+
+def _write_frame_video(frames: List[bytes], path: str, fps: int) -> None:
+    if imageio is None:
+        raise RuntimeError("imageio is not installed")
+    writer = imageio.get_writer(path, fps=fps, codec="libx264", pixelformat="yuv420p")
+    try:
+        for frame in frames:
+            writer.append_data(imageio.imread(io.BytesIO(frame)))
+    finally:
+        writer.close()
+
+
+def _generate_fal_clip(
+    prompt: str,
+    dest_dir: Optional[str] = None,
+    timeout: int = 90,
+) -> Dict[str, Any]:
+    """Capture Krea WAN realtime image frames and encode them as an MP4."""
+    if not _fal_dependencies_available():
+        return {"success": False, "error": "fal Krea needs websocket-client, msgpack, and imageio"}
+    try:
+        token = _fal_token()
+    except RuntimeError as exc:
+        return {"success": False, "error": str(exc), "canvas": "fal_krea"}
+
+    fps = max(1, min(30, int(_env("FAL_KREA_FPS") or 12)))
+    frame_target = max(2, min(300, int(_env("FAL_KREA_FRAMES") or 48)))
+    width = max(64, int(_env("FAL_KREA_WIDTH") or 768))
+    height = max(64, int(_env("FAL_KREA_HEIGHT") or 432))
+    width = round(width / 8) * 8
+    height = round(height / 8) * 8
+    ws_url = FAL_KREA_WS + "?fal_jwt_token=" + urllib.parse.quote(token, safe="")
+    frames: List[bytes] = []
+    sock = None
+    try:
+        sock = websocket.create_connection(ws_url, timeout=min(30, timeout))
+        deadline = time.time() + max(10, timeout)
+        ready = False
+        while time.time() < deadline and len(frames) < frame_target:
+            remaining = max(1, deadline - time.time())
+            sock.settimeout(remaining)
+            message = sock.recv()
+            if isinstance(message, str):
+                event = json.loads(message)
+                if event.get("error"):
+                    raise RuntimeError("fal Krea error: %s" % event["error"])
+                if event.get("status") == "ready" and not ready:
+                    ready = True
+                    sock.send_binary(msgpack.packb({
+                        "prompt": prompt[:2000],
+                        "num_blocks": max(10, min(50, int(_env("FAL_KREA_BLOCKS") or 20))),
+                        "num_denoising_steps": 4,
+                        "strength": 0.8,
+                        "width": width,
+                        "height": height,
+                        "seed": secrets.randbelow(1 << 24),
+                    }, use_bin_type=True))
+            elif ready and isinstance(message, (bytes, bytearray)) and len(message) > 100:
+                frames.append(bytes(message))
+    except Exception as exc:
+        return {
+            "success": False,
+            "error": "fal Krea websocket failed: %s" % _safe_error(exc, token),
+            "canvas": "fal_krea",
+        }
+    finally:
+        if sock is not None:
+            sock.close()
+
+    if len(frames) < 2:
+        return {"success": False, "error": "fal Krea returned fewer than two frames", "canvas": "fal_krea"}
+    if dest_dir is None:
+        dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
+    os.makedirs(dest_dir, exist_ok=True)
+    path = os.path.join(dest_dir, "fal_krea_%s.mp4" % uuid.uuid4().hex[:8])
+    try:
+        _write_frame_video(frames, path, fps)
+    except Exception as exc:
+        return {"success": False, "error": "fal Krea encode failed: %s" % exc, "canvas": "fal_krea"}
+    return {
+        "success": True,
+        "local_path": path,
+        "canvas": "fal_krea",
+        "frame_count": len(frames),
+        "fps": fps,
+    }
+
+
+def _mcp_payload(raw: bytes, content_type: str) -> Dict[str, Any]:
+    text = raw.decode("utf-8", errors="replace")
+    if not text.strip():
+        return {}
+    if "text/event-stream" in content_type:
+        for line in reversed(text.splitlines()):
+            if line.startswith("data:"):
+                value = json.loads(line[5:].strip())
+                if isinstance(value, dict):
+                    return value
+        return {}
+    value = json.loads(text)
+    return value if isinstance(value, dict) else {}
+
+
+def _mcp_post(
+    body: Dict[str, Any],
+    *,
+    session_id: Optional[str] = None,
+    timeout: int = 60,
+) -> tuple[Dict[str, Any], Optional[str]]:
+    headers = auth_headers("dramacanva")
+    headers["Accept"] = "application/json, text/event-stream"
+    headers["MCP-Protocol-Version"] = "2025-03-26"
+    if session_id:
+        headers["Mcp-Session-Id"] = session_id
+    req = urllib.request.Request(
+        DRAMACANVA_HTTP,
+        data=json.dumps(body).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            payload = _mcp_payload(resp.read(), resp.headers.get("Content-Type", ""))
+            returned_session = resp.headers.get("Mcp-Session-Id") or session_id
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")[:300]
+        raise RuntimeError("DramaCanvas HTTP %s: %s" % (exc.code, detail)) from exc
+    except (urllib.error.URLError, OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError("DramaCanvas request failed: %s" % exc) from exc
+    return payload, returned_session
+
+
+def _dramacanva_arguments(tool: Dict[str, Any], prompt: str) -> Dict[str, Any]:
+    schema = tool.get("inputSchema") if isinstance(tool.get("inputSchema"), dict) else {}
+    properties = schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
+    required = schema.get("required") if isinstance(schema.get("required"), list) else []
+    args: Dict[str, Any] = {}
+    for name in ("prompt", "task", "instruction", "goal", "message"):
+        if name in properties:
+            args[name] = prompt
+            break
+    if "idempotencyKey" in properties:
+        args["idempotencyKey"] = "masternoder-" + uuid.uuid4().hex
+    project_id = _env("DRAMACANVA_PROJECT_ID")
+    for name in ("projectId", "project_id"):
+        if name in properties and project_id:
+            args[name] = project_id
+    unsupported = [name for name in required if name not in args]
+    if unsupported:
+        raise RuntimeError(
+            "DramaCanvas tool %s also needs: %s"
+            % (tool.get("name"), ", ".join(str(name) for name in unsupported))
+        )
+    return args
+
+
+def prepare_film_project(prompt: str, timeout: int = 90) -> Dict[str, Any]:
+    """Send a film brief to the DramaCanvas Agent for storyboard planning."""
+    if not is_available("dramacanva", purpose="planning"):
+        return {"success": False, "error": "DRAMACANVA_API_KEY is not configured"}
+    request_id = uuid.uuid4().hex
+    initialize = {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-03-26",
+            "capabilities": {},
+            "clientInfo": {"name": "MasterNoder film pipeline", "version": "1"},
+        },
+    }
+    try:
+        _initialized, session_id = _mcp_post(initialize, timeout=timeout)
+        _mcp_post(
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+            session_id=session_id,
+            timeout=timeout,
+        )
+        listed, session_id = _mcp_post(
+            {"jsonrpc": "2.0", "id": uuid.uuid4().hex, "method": "tools/list", "params": {}},
+            session_id=session_id,
+            timeout=timeout,
+        )
+        result = listed.get("result") if isinstance(listed.get("result"), dict) else {}
+        tools = result.get("tools") if isinstance(result.get("tools"), list) else []
+        tool = next(
+            (item for item in tools if isinstance(item, dict) and item.get("name") == "agent_start"),
+            None,
+        )
+        if tool is None:
+            return {"success": False, "error": "DramaCanvas did not advertise agent_start", "canvas": "dramacanva"}
+        arguments = _dramacanva_arguments(tool, prompt)
+        called, _session_id = _mcp_post(
+            {
+                "jsonrpc": "2.0",
+                "id": uuid.uuid4().hex,
+                "method": "tools/call",
+                "params": {"name": "agent_start", "arguments": arguments},
+            },
+            session_id=session_id,
+            timeout=timeout,
+        )
+    except RuntimeError as exc:
+        return {"success": False, "error": _safe_error(exc), "canvas": "dramacanva"}
+    if called.get("error"):
+        return {"success": False, "error": str(called["error"])[:300], "canvas": "dramacanva"}
+    return {
+        "success": True,
+        "canvas": "dramacanva",
+        "stage": "planning",
+        "result": called.get("result"),
+    }
+
+
+def generate_clip(
+    prompt: str,
+    dest_dir: Optional[str] = None,
+    timeout: int = 180,
+    provider: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Generate a local clip with the selected renderer canvas."""
+    canvas_id = provider or select_canvas("render")
+    if canvas_id in ("comfy_local", "comfy_cloud"):
+        return _generate_comfy_clip(prompt, dest_dir, timeout, canvas_id=canvas_id)
+    if canvas_id == "fal_krea":
+        return _generate_fal_clip(prompt, dest_dir, timeout)
+    return {"success": False, "error": "No render-capable film canvas is configured"}
+
+
 def generate_segment_clips(
     segments: list,
     max_clips: int = 1,
     timeout_per_clip: int = 180,
+    provider: Optional[str] = None,
 ) -> list:
-    """Fill ai_video_path on up to max_clips segments from the film canvas."""
-    if not is_available():
+    """Use a canvas for rendering, or DramaCanvas for planning."""
+    canvas_id = provider or select_canvas("render")
+    if canvas_id == "dramacanva":
+        brief = "\n".join(
+            "%s: %s" % (seg.get("title", ""), seg.get("description", ""))
+            for seg in segments
+        )[:4000]
+        result = prepare_film_project(brief, timeout=timeout_per_clip)
+        if segments:
+            segments[0]["film_canvas_planning"] = result
+        return segments
+    if canvas_id is None or not is_available(canvas_id):
         return segments
     dest_dir = os.environ.get("VIDEOS_DIR")
     filled = 0
@@ -377,7 +762,12 @@ def generate_segment_clips(
         desc = seg.get("description", "")
         mood = seg.get("mood", "cinematic")
         prompt = "Cinematic %s scene: %s. %s" % (mood, title, desc)
-        result = generate_clip(prompt[:500], dest_dir=dest_dir, timeout=timeout_per_clip)
+        result = generate_clip(
+            prompt[:500],
+            dest_dir=dest_dir,
+            timeout=timeout_per_clip,
+            provider=canvas_id,
+        )
         if result.get("success") and result.get("local_path"):
             seg["ai_video_path"] = result["local_path"]
             seg["film_canvas"] = result.get("canvas")
