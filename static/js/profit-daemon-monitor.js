@@ -31,6 +31,7 @@
                 });
                 if (name === 'news') loadNews();
                 if (name === 'rent') loadRentals();
+                if (name === 'level') loadLevel();
                 if (name === 'blockers') { /* filled on status load */ }
             });
         });
@@ -158,9 +159,143 @@
         }
     }
 
+    function esc(text) {
+        return String(text == null ? '' : text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function renderLevel(data) {
+        const summary = $('pdm-level-summary');
+        const active = $('pdm-level-active');
+        const yt = $('pdm-level-youtube');
+        const list = $('pdm-level-assigns');
+        if (!summary || !list) return;
+        const level = data.level || 0;
+        const progress = data.progress || {};
+        const board = data.board || {};
+        const editing = data.editing_level || (level + 1);
+        if (level > 0 && data.defined) {
+            summary.textContent = 'Level ' + level + ' earned. Assign all 20 slots to earn level ' + editing + '.';
+        } else {
+            summary.textContent = 'Level 0. Set the vision, the next profit move, and all 20 assignments to earn level 1. '
+                + (progress.filled || 0) + '/' + (progress.required || 20) + ' filled.';
+        }
+        if (active) {
+            if (data.defined) {
+                active.innerHTML = '<strong>Vision.</strong> ' + esc(data.vision)
+                    + '<br><strong>Next profit move.</strong> ' + esc(data.next_profit_move);
+            } else {
+                active.textContent = 'The daemon has no vision yet. It follows a level only after all 20 assignments are set.';
+            }
+        }
+        const youtube = data.youtube || {};
+        if (yt) {
+            if (!youtube.checked_at) {
+                yt.textContent = 'YouTube: not checked yet.';
+            } else {
+                const live = youtube.live ? 'Live now' : 'Not live';
+                const title = youtube.title ? ' · ' + esc(youtube.title) : '';
+                const note = youtube.note ? ' ' + esc(youtube.note) : '';
+                const href = youtube.watch_url
+                    ? ' <a href="' + esc(youtube.watch_url) + '" target="_blank" rel="noopener">Watch</a>'
+                    : '';
+                yt.innerHTML = 'YouTube: ' + live + title + '.' + note + href;
+            }
+        }
+        const vision = $('pdm-level-vision');
+        const move = $('pdm-level-move');
+        if (vision && document.activeElement !== vision) vision.value = board.vision || '';
+        if (move && document.activeElement !== move) move.value = board.next_profit_move || '';
+        const rows = board.assignments || data.slots || [];
+        list.innerHTML = rows.map((row) =>
+            '<label>' + esc(row.slot) + '. ' + esc(row.label || row.key)
+            + '<textarea data-slot="' + esc(row.slot) + '" rows="2" maxlength="280">'
+            + esc(row.text || '') + '</textarea></label>'
+        ).join('');
+        const msg = $('pdm-level-msg');
+        if (msg && !msg.dataset.lock) msg.textContent = '';
+    }
+
+    async function loadLevel() {
+        try {
+            const res = await fetch(BASE + '/api/profit-daemon/level?check_youtube=1');
+            const data = await res.json();
+            renderLevel(data);
+        } catch (e) {
+            const summary = $('pdm-level-summary');
+            if (summary) summary.textContent = 'Level board unavailable.';
+        }
+    }
+
+    async function saveLevel() {
+        const msg = $('pdm-level-msg');
+        const assignments = Array.from(document.querySelectorAll('#pdm-level-assigns textarea')).map((el) => ({
+            slot: Number(el.getAttribute('data-slot')),
+            text: el.value,
+        }));
+        const headers = { 'Content-Type': 'application/json' };
+        const key = ($('pdm-level-admin') || {}).value || '';
+        if (key) headers['X-Profit-Daemon-Admin'] = key;
+        if (msg) {
+            msg.dataset.lock = '1';
+            msg.textContent = 'Saving…';
+        }
+        try {
+            const res = await fetch(BASE + '/api/profit-daemon/level', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    vision: ($('pdm-level-vision') || {}).value || '',
+                    next_profit_move: ($('pdm-level-move') || {}).value || '',
+                    assignments: assignments,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok || data.success === false) {
+                if (msg) msg.textContent = data.error || 'Save failed.';
+                return;
+            }
+            if (msg) {
+                msg.textContent = data.earned
+                    ? 'Level ' + data.saved_level + ' earned. The daemon now follows this vision and next profit move.'
+                    : 'Draft saved. Still need ' + ((data.missing || []).length) + ' field(s): ' + (data.missing || []).join(', ');
+            }
+            renderLevel(data);
+        } catch (e) {
+            if (msg) msg.textContent = 'Save failed.';
+        } finally {
+            if (msg) delete msg.dataset.lock;
+        }
+    }
+
+    async function checkYoutube() {
+        const yt = $('pdm-level-youtube');
+        if (yt) yt.textContent = 'Checking YouTube…';
+        try {
+            const res = await fetch(BASE + '/api/profit-daemon/level/youtube-check', { method: 'POST' });
+            const data = await res.json();
+            const live = data.live ? 'Live now' : 'Not live';
+            const title = data.title ? ' · ' + esc(data.title) : '';
+            const note = data.note ? ' ' + esc(data.note) : '';
+            const href = data.watch_url
+                ? ' <a href="' + esc(data.watch_url) + '" target="_blank" rel="noopener">Watch</a>'
+                : '';
+            if (yt) yt.innerHTML = 'YouTube: ' + live + title + '.' + note + href;
+        } catch (e) {
+            if (yt) yt.textContent = 'YouTube check failed.';
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         wireTabs();
         loadStatus();
         setInterval(loadStatus, 30000);
+        const save = $('pdm-level-save');
+        const ytBtn = $('pdm-level-yt');
+        if (save) save.addEventListener('click', saveLevel);
+        if (ytBtn) ytBtn.addEventListener('click', checkYoutube);
     });
 })();
