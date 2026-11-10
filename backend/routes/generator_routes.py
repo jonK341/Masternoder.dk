@@ -19,8 +19,9 @@ def generator_pricing():
         duration = int(request.args.get("duration", 180))
         short_clip = request.args.get("short_clip", "").lower() in ("1", "true", "yes")
         tier = (request.args.get("tier") or "standard").strip().lower()
+        addons = request.args.get("addons") or ""
         payload = get_public_pricing()
-        payload["quote"] = quote_generation(duration=duration, short_clip=short_clip, tier=tier)
+        payload["quote"] = quote_generation(duration=duration, short_clip=short_clip, tier=tier, addons=addons)
         try:
             from backend.services.generator_crypto_rewards_service import public_crypto_rewards_info
             payload["crypto_rewards"] = public_crypto_rewards_info()

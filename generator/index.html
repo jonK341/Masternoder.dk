@@ -26,201 +26,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/static/css/theme-timeline.css?v=20260614a">
-    <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: #0d1117; color: #fff; }
-        .gen-page { max-width: 640px; margin: 0 auto; padding: 24px 20px 60px; }
-        .gen-header { text-align: center; margin-bottom: 32px; }
-        .gen-header h1 { font-size: 1.75rem; margin: 0; color: #00ff88; }
-        .gen-header p { color: rgba(255,255,255,0.7); font-size: 0.95rem; margin: 8px 0 0 0; }
-        .gen-nav { display: flex; gap: 10px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
-        .gen-nav a { color: rgba(255,255,255,0.8); text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; }
-        .gen-nav a:hover { color: #00ff88; background: rgba(0,255,136,0.1); }
-        .gen-card { background: rgba(22,27,34,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-        .gen-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-        .gen-tab { flex: 1; padding: 12px; border: none; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; }
-        .gen-tab:hover { color: #fff; background: rgba(255,255,255,0.1); }
-        .gen-tab.active { background: rgba(0,255,136,0.2); color: #00ff88; }
-        .gen-panel { display: none; }
-        .gen-panel.active { display: block; }
-        .gen-label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: rgba(255,255,255,0.9); }
-        .gen-input, .gen-textarea { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #161b22; color: #fff; font-size: 1rem; margin-bottom: 16px; }
-        .gen-textarea { min-height: 100px; resize: vertical; }
-        .gen-input::placeholder, .gen-textarea::placeholder { color: rgba(255,255,255,0.4); }
-        .gen-btn { width: 100%; padding: 14px 24px; border: none; border-radius: 10px; background: linear-gradient(135deg, #00ff88, #00d4ff); color: #000; font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .gen-btn:hover { opacity: 0.95; transform: translateY(-1px); }
-        .gen-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .gen-btn-magic { background: linear-gradient(135deg, #9333ea, #7c3aed) !important; color: #fff !important; margin-bottom: 16px; }
-        .gen-status { padding: 12px 16px; border-radius: 8px; margin-top: 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
-        .gen-status.idle { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); }
-        .gen-status.processing { background: rgba(255,170,0,0.15); color: #ffaa00; }
-        .gen-status.done { background: rgba(0,255,136,0.15); color: #00ff88; }
-        .gen-status.error { background: rgba(255,51,102,0.15); color: #ff3366; }
-        #theme-timeline-container { margin-bottom: 16px; }
-        .gen-footer { text-align: center; margin-top: 32px; font-size: 0.85rem; color: rgba(255,255,255,0.45); }
-        .gen-footer a { color: rgba(255,255,255,0.6); margin: 0 8px; }
-        /* Generator page: hide fixed monetization frame to avoid overlap */
-        body.gen-page-body #top50-monetization-frame-container { display: none; }
-        /* Special effects during generation */
-        .gen-status.processing { animation: gen-pulse 1.5s ease-in-out infinite; box-shadow: 0 0 20px rgba(255,170,0,0.3); }
-        @keyframes gen-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
-        .gen-progress-active #progressBox { animation: gen-glow 2s ease-in-out infinite; }
-        @keyframes gen-glow { 0%, 100% { box-shadow: 0 0 12px rgba(0,255,136,0.25); } 50% { box-shadow: 0 0 24px rgba(0,255,136,0.45); } }
-        #progressBar { transition: width 0.4s ease-out; }
-        .gen-config-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 16px; }
-        .gen-config-table th, .gen-config-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .gen-config-table th { color: rgba(255,255,255,0.7); font-weight: 600; width: 38%; }
-        .gen-config-table select, .gen-config-table input[type="number"], .gen-config-table input[type="text"] { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: #161b22; color: #fff; }
-        .gen-checklist { margin-bottom: 20px; padding: 14px 16px; background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); border-radius: 10px; }
-        .gen-checklist h4 { margin: 0 0 12px 0; font-size: 0.95rem; color: #00ff88; }
-        .gen-checklist label { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer; font-size: 0.9rem; color: rgba(255,255,255,0.9); }
-        .gen-checklist input[type="checkbox"] { width: 18px; height: 18px; accent-color: #00ff88; }
-        .gen-checklist .check-status { font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-left: 28px; }
-        .gen-section-row { height: 1px; background: linear-gradient(90deg, transparent, rgba(0,255,136,0.3), transparent); margin: 20px 0; border: none; }
-        .gen-table-sep { border-top: 2px solid rgba(0,255,136,0.25); }
-        .gen-finish-box { display: none; margin-top: 20px; padding: 20px; background: linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,212,255,0.08)); border: 1px solid rgba(0,255,136,0.4); border-radius: 12px; text-align: center; }
-        .gen-finish-box.show { display: block; animation: gen-finish-in 0.5s ease-out; }
-        @keyframes gen-finish-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
-        .gen-finish-box h3 { margin: 0 0 12px 0; color: #00ff88; font-size: 1.2rem; }
-        .gen-finish-box .finish-links { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-        .gen-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(0,255,136,0.2); color: #00ff88; margin-right: 6px; }
-        .gen-mission-title { font-size: 0.9rem; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
-        .gen-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .gen-card-header h2 { margin: 0; font-size: 1.1rem; color: #00ff88; }
-        .gen-checklist-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-        .gen-checklist-row label { margin-bottom: 0; }
-        .gen-refresh-btn { padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; border: 1px solid rgba(0,255,136,0.4); background: rgba(0,255,136,0.1); color: #00ff88; cursor: pointer; }
-        .gen-refresh-btn:hover { background: rgba(0,255,136,0.2); }
-        .gen-ai-power { margin: 16px 0; padding: 16px; background: linear-gradient(135deg, rgba(147,51,234,0.08), rgba(0,212,255,0.06)); border: 1px solid rgba(147,51,234,0.25); border-radius: 12px; }
-        .gen-ai-power h4 { margin: 0 0 12px; font-size: 0.95rem; color: #00ff88; }
-        .gen-ai-power .ai-toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-        .gen-ai-power .ai-toggle-row label { cursor: pointer; font-size: 0.95rem; }
-        .gen-ai-power .ai-toggle-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: #9333ea; }
-        .gen-provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 12px; }
-        .gen-provider-chip { padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
-        .gen-provider-chip.available { border-color: rgba(0,255,136,0.4); background: rgba(0,255,136,0.08); color: #00ff88; }
-        .gen-provider-chip .chip-type { font-size: 0.7rem; opacity: 0.8; margin-top: 2px; }
-        .gen-updates { margin-top: 24px; padding: 14px 18px; background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.2); border-radius: 10px; font-size: 0.88rem; }
-        .gen-updates h4 { margin: 0 0 8px; color: #00d4ff; font-size: 0.95rem; }
-        .gen-updates ul { margin: 0; padding-left: 18px; color: rgba(255,255,255,0.8); }
-        .gen-updates li { margin-bottom: 4px; }
-        .gen-collapse { cursor: pointer; user-select: none; }
-        .gen-collapse::after { content: ' ▾'; font-size: 0.8em; opacity: 0.7; }
-        .gen-collapse.collapsed::after { content: ' ▸'; }
-        .gen-collapse-content.collapsed { display: none; }
-        .gen-mn2-strip {
-            margin-bottom: 24px;
-            padding: 18px 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 212, 255, 0.35);
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.06));
-        }
-        .gen-mn2-strip h2 { margin: 0 0 8px; font-size: 1.05rem; color: #00d4ff; }
-        .gen-mn2-strip p { margin: 0 0 12px; font-size: 0.88rem; color: rgba(255,255,255,0.75); }
-        .gen-mn2-metrics { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
-        .gen-mn2-metric { min-width: 120px; padding: 10px 12px; border-radius: 8px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); }
-        .gen-mn2-metric span { display: block; font-size: 0.75rem; color: rgba(255,255,255,0.55); }
-        .gen-mn2-metric strong { font-size: 1.05rem; color: #00ff88; }
-        .gen-mn2-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-        .gen-mn2-actions a {
-            padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
-            text-decoration: none; color: #041018; background: linear-gradient(135deg, #00d4ff, #00ff88);
-        }
-        .gen-mn2-actions a.secondary {
-            color: #00d4ff; background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.35);
-        }
-        #genMn2EarnNote { margin-top: 10px; font-size: 0.85rem; color: rgba(0,255,136,0.95); display: none; }
-        .gen-stats-strip {
-            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-            margin-bottom: 24px; padding: 12px 16px;
-            background: rgba(22,27,34,0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
-        }
-        .gen-stat-pill {
-            min-width: 100px; padding: 8px 12px; border-radius: 8px; text-align: center;
-            background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06);
-        }
-        .gen-stat-pill span { display: block; font-size: 0.72rem; color: rgba(255,255,255,0.55); }
-        .gen-stat-pill strong { font-size: 0.95rem; color: #00ff88; }
-        .gen-credits-error {
-            margin-top: 12px; padding: 12px 14px; border-radius: 8px;
-            background: rgba(255,170,0,0.12); border: 1px solid rgba(255,170,0,0.35);
-            font-size: 0.88rem; color: #ffcc66;
-        }
-        .gen-credits-error a { color: #00d4ff; font-weight: 700; }
-        .gen-finish-rewards { margin: 0 0 12px; font-size: 0.92rem; color: rgba(255,255,255,0.88); }
-        .gen-btn-inline {
-            padding: 6px 12px; font-size: 0.85rem; width: auto; margin-top: 0;
-            background: rgba(147,51,234,0.25); color: #e9d5ff;
-        }
-        .gen-queue-bar {
-            display: none; margin-bottom: 16px; padding: 10px 14px; border-radius: 8px;
-            background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.35);
-            font-size: 0.88rem; color: #ffcc66;
-        }
-        .gen-queue-bar.show { display: block; }
-        .gen-health-pill {
-            font-size: 0.82rem; padding: 6px 10px; border-radius: 20px;
-            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.75);
-        }
-        .gen-health-pill.ok { border-color: rgba(0,255,136,0.4); color: #00ff88; }
-        .gen-health-pill.warn { border-color: rgba(255,170,0,0.4); color: #ffcc66; }
-        .gen-crypto-hint { font-size: 0.82rem; color: rgba(0,212,255,0.85); margin-top: 8px; }
-        .gen-hub-tabs-wrap {
-            margin: 0 0 18px;
-            padding: 12px 14px 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(0,255,136,0.22);
-            background: rgba(22,27,34,0.85);
-        }
-        .gen-hub-tabs-wrap .fp-kicker { margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.55); display: flex; gap: 10px; }
-        .gen-hub-tabs-heading { margin: 4px 0 8px; font-size: 1.05rem; color: #00ff88; }
-        .gen-hub-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
-        .gen-hub-tab {
-            display: inline-flex; align-items: center; gap: 6px;
-            min-height: 36px; padding: 8px 12px; border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.72); font-size: 0.8rem; font-weight: 700; cursor: pointer;
-        }
-        .gen-hub-tab:hover, .gen-hub-tab.is-active {
-            color: #00160c; border-color: rgba(0,255,136,0.55); background: #00ff88;
-        }
-        .gen-hub-panel { display: none; }
-        .gen-hub-panel.active { display: block; }
-        .gen-route-note { margin: 8px 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.5); }
-        .gen-pay-jump {
-            margin: 0 0 14px; padding: 10px 12px; border-radius: 8px;
-            background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25);
-            font-size: 0.85rem; color: rgba(255,255,255,0.8);
-        }
-        .gen-pay-jump button {
-            margin-left: 6px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
-            border: 1px solid rgba(0,212,255,0.4); background: rgba(0,212,255,0.15); color: #00d4ff; font-weight: 700;
-        }
-        .gen-advanced-details {
-            margin: 0 0 14px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(0,0,0,0.18);
-        }
-        .gen-advanced-details > summary {
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 0.92rem;
-            color: #00ff88;
-            list-style: none;
-        }
-        .gen-advanced-details > summary::-webkit-details-marker { display: none; }
-        .gen-advanced-details > summary::after {
-            content: ' ▾';
-            font-size: 0.85em;
-            opacity: 0.75;
-        }
-        .gen-advanced-details:not([open]) > summary::after { content: ' ▸'; }
-        .gen-advanced-details .gen-config-table { margin-top: 12px; margin-bottom: 0; }
-        .gen-advanced-details .gen-checklist { margin-bottom: 0; }
-    </style>
+    <link rel="stylesheet" href="/static/css/generator.css?v=20261110a">
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
 <body class="gen-page-body">
@@ -264,18 +70,30 @@
                 <div class="gen-mn2-metric"><span>Live quote</span><strong id="genMn2Quote">—</strong></div>
                 <div class="gen-mn2-metric"><span>COGS ref job</span><strong id="genMn2CogsHint" title="Advisory cost from pricing service">—</strong></div>
             </div>
-            <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-                <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;cursor:pointer;">
+            <div class="gen-pay-row">
+                <label>
                     <input type="checkbox" id="genPayWithMn2"> Pay with MN2
                 </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;">
+                <label>
                     Tier
-                    <select id="genMn2Tier" style="padding:6px 10px;border-radius:6px;background:#161b22;color:#fff;border:1px solid rgba(255,255,255,0.2);">
+                    <select id="genMn2Tier">
                         <option value="express">Express</option>
                         <option value="premium">Premium</option>
                         <option value="ultra">Ultra</option>
                     </select>
                 </label>
+            </div>
+            <div class="gen-addon-chain" id="genAddonChain">
+                <h3>Addon chain</h3>
+                <p>Fees apply when Pay with MN2 is on. Rewards credit when that paid job finishes. A later link turns on only after the ones before it.</p>
+                <ol>
+                    <li><label><span><input type="checkbox" data-addon="vision_monitor"> Vision monitor</span><small>fee 0.02 MN2 · reward +0.004</small></label></li>
+                    <li><label><span><input type="checkbox" data-addon="narration"> Voiceover</span><small>fee 0.015 MN2 · reward +0.003</small></label></li>
+                    <li><label><span><input type="checkbox" data-addon="multi_ai"> Multi-AI</span><small>fee 0.025 MN2 · reward +0.005</small></label></li>
+                    <li><label><span><input type="checkbox" data-addon="category_boost"> Category boost</span><small>fee 0.01 MN2 · reward +0.003</small></label></li>
+                    <li><label><span><input type="checkbox" data-addon="express_lane"> Express lane</span><small>fee 0.04 MN2 · reward +0.002</small></label></li>
+                </ol>
+                <p class="gen-addon-totals" id="genAddonTotals">No addon fees until you pay with MN2.</p>
             </div>
             <div class="gen-mn2-actions">
                 <a href="/shop">Pay with MN2 in Shop</a>
@@ -288,9 +106,10 @@
         </div>
 
         <div id="gen-hub-panel-create" class="gen-hub-panel active" role="tabpanel" data-gen-hub-panel="create">
-        <p class="gen-pay-jump">Paying with MN2? Set balance, tier, and Pay-with-MN2 on the
+        <p class="gen-pay-jump">Paying with MN2? Set balance, tier, addon chain, and Pay-with-MN2 on the
             <button type="button" data-gen-hub-go="pay">MN2 pay</button> tab (settings stay applied when you generate).
         </p>
+        <div class="gen-create-layout">
         <div class="gen-card" id="genMainCard">
             <div class="gen-card-header">
                 <h2><i class="fas fa-play-circle"></i> Mission control</h2>
@@ -401,6 +220,22 @@
                 <div id="clipsList" style="margin-top:16px;"></div>
             </div>
         </div>
+        <aside class="gen-vision" id="genVisionMonitor" aria-live="polite">
+            <header>
+                <span><i class="fas fa-tv" aria-hidden="true"></i> Vision monitor</span>
+                <span id="genVisionState">Idle</span>
+            </header>
+            <div class="gen-vision-screen" id="genVisionScreen" data-state="idle">
+                <p class="gen-vision-stage" id="genVisionStage">Waiting for a job. The monitor follows stage, percent, and job id while a video encodes.</p>
+                <div class="gen-vision-bar" aria-hidden="true"><span id="genVisionBar"></span></div>
+                <div class="gen-vision-meta">
+                    <span id="genVisionPct">0%</span>
+                    <span id="genVisionJob"></span>
+                </div>
+            </div>
+            <p>First link in the MN2 addon chain. Turn it on under MN2 pay to add its fee and finish reward.</p>
+        </aside>
+        </div>
 
         <div class="gen-card" id="recentClipsCard" style="display:none;">
             <h3 class="gen-label" style="margin-bottom:12px;">Mine seneste klip</h3>
@@ -470,6 +305,42 @@
         window.API_BASE = API_BASE;
         var isGenerating = false;
         var pollCancel = false;
+
+        function addonInputs() {
+            return Array.prototype.slice.call(document.querySelectorAll('#genAddonChain input[data-addon]'));
+        }
+        function selectedAddonIds() {
+            return addonInputs().filter(function (el) { return el.checked; }).map(function (el) {
+                return el.getAttribute('data-addon');
+            });
+        }
+        function enforceAddonChain(changed) {
+            var inputs = addonInputs();
+            var idx = inputs.indexOf(changed);
+            if (idx < 0) return;
+            inputs.forEach(function (el, i) {
+                if (changed.checked && i <= idx) el.checked = true;
+                if (!changed.checked && i >= idx) el.checked = false;
+            });
+        }
+        function syncVisionMonitor(opts) {
+            opts = opts || {};
+            var screen = document.getElementById('genVisionScreen');
+            if (!screen) return;
+            if (opts.state) {
+                screen.dataset.state = opts.state;
+                var label = document.getElementById('genVisionState');
+                if (label) label.textContent = opts.state === 'run' ? 'Live' : (opts.state === 'done' ? 'Done' : 'Idle');
+            }
+            var stage = document.getElementById('genVisionStage');
+            var pct = document.getElementById('genVisionPct');
+            var bar = document.getElementById('genVisionBar');
+            var job = document.getElementById('genVisionJob');
+            if (stage && opts.stage != null) stage.textContent = opts.stage;
+            if (pct && opts.pct != null) pct.textContent = opts.pct;
+            if (bar && opts.width != null) bar.style.width = opts.width;
+            if (job && opts.job != null) job.textContent = opts.job ? ('Job ' + opts.job) : '';
+        }
 
         function setMode(m) {
             document.querySelectorAll('.gen-tab').forEach(t => t.classList.remove('active'));
@@ -1053,6 +924,7 @@
             progBar.style.width = '5%';
             progPct.textContent = '...';
             progStage.textContent = 'Starter';
+            syncVisionMonitor({ state: 'run', stage: 'Starter', pct: '…', width: '5%', job: '' });
             const userId = localStorage.getItem('game_user_id') || 'default_user';
             let profileSnapshot = null;
             try {
@@ -1128,6 +1000,8 @@
                 if (styleVal) body.style_preset = styleVal;
                 if (toneVal) body.theme_tone = toneVal;
                 if (twistVal) body.creative_twist = twistVal;
+                var addonIds = selectedAddonIds();
+                if (addonIds.length) body.mn2_addons = addonIds;
                 if (payMn2) {
                     body.pay_with_mn2 = true;
                     body.mn2_tier = mn2TierForEnc;
@@ -1186,6 +1060,7 @@
                     jobIdVal.textContent = docId;
                     jobIdEl.style.display = 'block';
                 }
+                syncVisionMonitor({ state: 'run', stage: 'Encoding runs in background.', pct: '5%', width: '5%', job: docId });
                 if (btnCopyJob) btnCopyJob.onclick = function() { try { navigator.clipboard.writeText(docId); btnCopyJob.textContent = 'Kopieret!'; setTimeout(function(){ btnCopyJob.textContent = 'Kopier ID'; }, 2000); } catch (e) {} };
                 let attempts = 0;
                 let lastProgress = 5;
@@ -1212,11 +1087,13 @@
                         if (p > lastProgress) lastProgress = p;
                         progBar.style.width = p + '%';
                         progPct.textContent = p + '%';
+                        syncVisionMonitor({ state: 'run', width: p + '%', pct: p + '%' });
                         var stageLine = formatSegmentProgress(pd.message || pd.stage || pd.status || 'Behandler', pd.encode_stage || pd.stage);
                         if (pd.storyline_preview && String(pd.storyline_preview).trim()) {
                             stageLine = stageLine + ' · ' + String(pd.storyline_preview).trim().slice(0, 100);
                         }
                         progStage.textContent = stageLine;
+                        syncVisionMonitor({ state: 'run', stage: stageLine });
                         if (pd.status === 'completed' || pd.status === 'done' || p >= 100) {
                             st.className = 'gen-status done';
                             const videoUrl = (pd.video_url || (API_BASE + '/api/documentary/video/' + docId));
@@ -1224,6 +1101,7 @@
                             st.innerHTML = '<i class="fas fa-check"></i> Færdig!';
                             progBar.style.width = '100%';
                             progPct.textContent = '100%';
+                            syncVisionMonitor({ state: 'done', stage: 'Mission complete', pct: '100%', width: '100%' });
                             progBox.style.display = 'none';
                             if (mainCard) mainCard.classList.remove('gen-progress-active');
                             var finishBox = document.getElementById('genFinishBox');
@@ -1719,9 +1597,11 @@
             var duration = durEl ? parseInt(durEl.value, 10) || 180 : 180;
             var shortClip = shortEl ? shortEl.checked : false;
             var tier = (tierEl && tierEl.value) ? tierEl.value : 'express';
+            var addonIds = (typeof selectedAddonIds === 'function') ? selectedAddonIds() : [];
             var quoteUrl = '/api/generator/pricing?duration=' + encodeURIComponent(duration)
                 + '&short_clip=' + (shortClip ? '1' : '0')
-                + '&tier=' + encodeURIComponent(tier);
+                + '&tier=' + encodeURIComponent(tier)
+                + (addonIds.length ? ('&addons=' + encodeURIComponent(addonIds.join(','))) : '');
             var tasks = [
                 bridge.loadBalance().then(function (bal) {
                     if (!bal || !bal.success) return;
@@ -1739,7 +1619,15 @@
                     if (packEl && express != null) packEl.textContent = bridge.fmtMn2(express, 4) + ' MN2 express';
                     var q = p.quote || (p.tiers && p.tiers[tier]) || {};
                     if (quoteEl && q.price_mn2 != null) {
+                        var fee = q.addon_fee_mn2 || 0;
+                        var reward = q.addon_reward_mn2 || 0;
                         quoteEl.textContent = bridge.fmtMn2(q.price_mn2, 4) + ' MN2 · earn +' + bridge.fmtMn2(q.earn_on_finish_mn2 || p.earn_on_finish_mn2 || 0, 4);
+                        var totals = document.getElementById('genAddonTotals');
+                        if (totals) {
+                            totals.textContent = addonIds.length
+                                ? ('Chain fee ' + bridge.fmtMn2(fee, 4) + ' MN2 · chain reward +' + bridge.fmtMn2(reward, 4) + ' MN2')
+                                : 'No addon fees until a link is on.';
+                        }
                     }
                     var cogsEl = document.getElementById('genMn2CogsHint');
                     var cogs = p.cogs_advisory || {};
@@ -1770,6 +1658,12 @@
             ['configDuration', 'configShortClip', 'genMn2Tier', 'genPayWithMn2'].forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.addEventListener('change', function () { refreshGeneratorMn2Strip(false); });
+            });
+            addonInputs().forEach(function (el) {
+                el.addEventListener('change', function () {
+                    enforceAddonChain(el);
+                    refreshGeneratorMn2Strip(false);
+                });
             });
         });
     </script>
