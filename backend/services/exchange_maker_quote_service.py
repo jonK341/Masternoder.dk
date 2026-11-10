@@ -61,8 +61,14 @@ def load_config() -> Dict[str, Any]:
     cfg["venue"] = str(cfg.get("venue") or "nonkyc").lower()
     cfg["quote"] = str(cfg.get("quote") or "USDT").upper()
     cfg["execute"] = bool(cfg.get("execute"))
-    cfg["symbols"] = [str(s).upper() for s in (cfg.get("symbols") or []) if str(s).strip()]
+    symbols = [str(s).upper() for s in (cfg.get("symbols") or []) if str(s).strip()]
+    # Empty symbols[] in on-disk config was disabling the maker entirely — fall back.
+    if not symbols:
+        symbols = list(_default_config()["symbols"])
+    cfg["symbols"] = symbols
     cfg["sides"] = [s for s in (str(x).lower() for x in (cfg.get("sides") or [])) if s in ("buy", "sell")]
+    if not cfg["sides"]:
+        cfg["sides"] = list(_default_config()["sides"])
     for key in ("clip_usd", "fee_bps", "edge_bps", "reprice_bps", "max_age_minutes"):
         cfg[key] = float(cfg.get(key) or _default_config()[key])
     return cfg
@@ -93,7 +99,14 @@ def own_sell_price(symbol: str, path: Optional[str] = None) -> Optional[float]:
         return None
 
 
-def price_decimals(price: float) -> int:
+def price_decimals(price: float, *, venue: str = "nonkyc") -> int:
+    # Binance USDC alts commonly tick at 4 dp below $1 (ALGO/XLM); NonKYC allows 6.
+    if str(venue or "nonkyc").lower() == "binance":
+        if price >= 100:
+            return 2
+        if price >= 1:
+            return 3
+        return 4
     return 4 if price >= 1 else 6
 
 
@@ -101,7 +114,7 @@ def quote_price(ref: float, side: str, cfg: Dict[str, Any]) -> float:
     """Sell rounds up and buy rounds down, so rounding never eats the edge."""
     margin = (float(cfg["fee_bps"]) + float(cfg["edge_bps"])) / 1e4
     raw = ref * (1 + margin) if side == "sell" else ref * (1 - margin)
-    scale = 10 ** price_decimals(ref)
+    scale = 10 ** price_decimals(ref, venue=str(cfg.get("venue") or "nonkyc"))
     return (math.ceil(raw * scale) if side == "sell" else math.floor(raw * scale)) / scale
 
 
@@ -208,14 +221,19 @@ def run_maker_quotes(
         balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
 
-    # Yield inventory to the ladder when quote is thin (aligned with exit-first ~1.5 min clips).
+    # Yield only buy-side quotes when quote is thin. Sell-only maker must keep working —
+    # otherwise symbols stay idle forever while the ladder eats free quote into bids.
     free_quote = float(bal.get(quote) or 0)
     yield_on = bool(cfg.get("yield_to_ladder", True))
-    if yield_on and free_quote < MIN_ORDER_USD * 1.5:
+    sides = [str(s).lower() for s in (cfg.get("sides") or [])]
+    if yield_on and "buy" in sides and free_quote < MIN_ORDER_USD * 1.5:
         report["yielded_to_ladder"] = True
         report["yield_reason"] = "thin_quote"
         open_fn = open_ids
         for key, row in list(state.items()):
+            side = key.split(":")[-1] if ":" in key else ""
+            if side != "buy":
+                continue
             symbol = str(key.split(":", 1)[0])
             coid = str(row.get("coid") or "")
             live_ids = open_fn(symbol) or {}
@@ -224,7 +242,9 @@ def run_maker_quotes(
                 report["quotes"].append({"symbol": symbol, "retired_for_ladder": coid})
             state.pop(key, None)
         _save_state(spath, state)
-        return report
+        # Drop buys for this tick; still allow sell quotes below.
+        cfg = dict(cfg)
+        cfg["sides"] = [s for s in sides if s != "buy"] or ["sell"]
 
     for symbol in cfg["symbols"]:
         book = top(symbol)

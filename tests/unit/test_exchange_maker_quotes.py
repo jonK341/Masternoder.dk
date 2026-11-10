@@ -166,10 +166,8 @@ def test_strategy_buy_never_crosses_our_resting_sell(tmp_path):
     assert sent[0]["skipped"] == "own_maker_sell"
 
 
-def test_yields_resting_quotes_when_quote_is_thin(tmp_path):
+def test_sell_only_keeps_quoting_when_quote_is_thin(tmp_path):
     venue = FakeVenue()
-    _run(venue, tmp_path, bal={"ALGO": 586.5, "USDT": 40.0})
-    assert len(venue.placed) == 1
     rep = run_maker_quotes(
         cfg=_cfg(yield_to_ladder=True),
         top=lambda _s: {"bid": 0.0930, "ask": 0.0931},
@@ -178,10 +176,53 @@ def test_yields_resting_quotes_when_quote_is_thin(tmp_path):
         status=venue.status,
         place=venue.place,
         cancel=venue.cancel,
-        clock=lambda: 1060.0,
+        clock=lambda: 1000.0,
         path=str(tmp_path / "maker.json"),
     )
+    assert not rep.get("yielded_to_ladder")
+    assert len(venue.placed) == 1
+    assert own_sell_price("ALGO", str(tmp_path / "maker.json")) is not None
+
+
+def test_yield_retires_buy_quotes_but_keeps_sells(tmp_path):
+    venue = FakeVenue()
+    path = str(tmp_path / "maker.json")
+    # Seed a resting buy quote in state, then thin quote with buy+sell sides.
+    run_maker_quotes(
+        cfg=_cfg(sides=["buy"], yield_to_ladder=False, clip_usd=10.0),
+        top=lambda _s: {"bid": 0.0930, "ask": 0.0931},
+        balances={"ALGO": 10.0, "USDT": 40.0},
+        open_ids=venue.open_ids,
+        status=venue.status,
+        place=venue.place,
+        cancel=venue.cancel,
+        clock=lambda: 1000.0,
+        path=path,
+    )
+    assert venue.placed and venue.placed[0][1] == "buy"
+    rep = run_maker_quotes(
+        cfg=_cfg(sides=["buy", "sell"], yield_to_ladder=True, clip_usd=10.0),
+        top=lambda _s: {"bid": 0.0930, "ask": 0.0931},
+        balances={"ALGO": 586.5, "USDT": 0.04},
+        open_ids=venue.open_ids,
+        status=venue.status,
+        place=venue.place,
+        cancel=venue.cancel,
+        clock=lambda: 1060.0,
+        path=path,
+    )
     assert rep["yielded_to_ladder"] is True
-    assert venue.cancelled == ["o1"]
-    assert venue.open == {}
-    assert own_sell_price("ALGO", str(tmp_path / "maker.json")) is None
+    assert "o1" in venue.cancelled
+    assert any(p[1] == "sell" for p in venue.placed)
+
+
+def test_empty_symbols_config_falls_back_to_defaults(tmp_path, monkeypatch):
+    from backend.services import exchange_maker_quote_service as mq
+
+    monkeypatch.setattr(mq, "_CFG_PATH", str(tmp_path / "maker_cfg.json"))
+    (tmp_path / "maker_cfg.json").write_text(
+        '{"execute": true, "symbols": [], "sides": ["sell"]}', encoding="utf-8"
+    )
+    cfg = mq.load_config()
+    assert cfg["symbols"] == ["ALGO", "XRP"]
+    assert cfg["execute"] is True
