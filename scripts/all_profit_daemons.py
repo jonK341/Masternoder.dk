@@ -758,8 +758,14 @@ def main() -> int:
     threads: list[threading.Thread] = []
 
     unified = os.environ.get("UNIFIED_TRADING_DAEMON", "").strip() in ("1", "true", "yes")
+    brand = (os.environ.get("PROFIT_DAEMON_BRAND") or "").strip()
+    if not brand and os.environ.get("PROFIT_DAEMON_JON", "").strip() in ("1", "true", "yes"):
+        brand = "The Profit Daemon Jon"
     print("=" * 72)
-    print("MasterNoder — UNIFIED trading daemon (single process)" if unified else "MasterNoder — ALL profit daemons (single process)")
+    if brand:
+        print(f"{brand} — UNIFIED trading daemon" if unified else f"{brand} — ALL profit engines")
+    else:
+        print("MasterNoder — UNIFIED trading daemon (single process)" if unified else "MasterNoder — ALL profit daemons (single process)")
     print(f"  profile={profile} mode={daemon_mode_label()} auto_sweep={auto_sweep}")
     if not args.skip_exchange:
         print("  exchange engines:")

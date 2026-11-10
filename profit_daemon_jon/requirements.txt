@@ -1,0 +1,13 @@
+# Runtime deps for The Profit Daemon Jon (slim vs full MasterNoder stack)
+Flask==2.3.3
+Werkzeug>=2.3.8,<3.0
+requests==2.31.0
+python-dotenv>=1.0.1
+redis>=5.0.0
+prometheus_client>=0.20.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+websockets>=12.0
+numpy>=1.24.0
+cryptography>=41.0.0
+paramiko>=3.3.0

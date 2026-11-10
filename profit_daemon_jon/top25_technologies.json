@@ -1,0 +1,32 @@
+{
+  "product": "The Profit Daemon Jon",
+  "version": "1.0.0",
+  "description": "Top 25 technologies wired into the downloadable profit daemon.",
+  "technologies": [
+    {"id": 1, "key": "redis_market_bus", "title": "Redis market bus", "pip": ["redis"], "module": "backend.services.exchange_redis_bus", "why": "Shared live mids with file fallback"},
+    {"id": 2, "key": "prometheus_metrics", "title": "Prometheus metrics exporter", "pip": ["prometheus_client"], "module": "backend.services.exchange_metrics_service", "why": "PnL, fills, skew, feed age on :9108"},
+    {"id": 3, "key": "grafana_dashboard", "title": "Grafana exchange dashboard", "pip": [], "path": "data/grafana/exchange_daemon_dashboard.json", "why": "Operator UI for ladder health"},
+    {"id": 4, "key": "sklearn_fill_model", "title": "sklearn fill-probability model", "pip": ["scikit-learn", "joblib"], "module": "backend.services.exchange_fill_model_service", "why": "Tune ladder distance from fill odds"},
+    {"id": 5, "key": "inventory_skew", "title": "Inventory skew (Avellaneda–Stoikov style)", "pip": [], "module": "backend.services.exchange_inventory_skew", "why": "Lean book into heavy inventory"},
+    {"id": 6, "key": "binance_bookticker_ws", "title": "Binance bookTicker WebSocket feed", "pip": ["websockets"], "module": "backend.services.exchange_market_feed_service", "why": "Sub-second mids for ladder pricing"},
+    {"id": 7, "key": "ladder_maker", "title": "Multi-venue ladder maker", "pip": [], "module": "backend.services.exchange_ladder_service", "why": "Resting entry/exit pairs with exit funding"},
+    {"id": 8, "key": "cross_venue_arb", "title": "Cross-venue arbitrage scanner", "pip": [], "module": "backend.services.exchange_arbitrage_service", "why": "Spatial arb across connected venues"},
+    {"id": 9, "key": "grid_market_maker", "title": "Grid market maker", "pip": [], "module": "backend.services.exchange_grid_bot_service", "why": "Range-bound inventory grid"},
+    {"id": 10, "key": "stuck_inventory", "title": "Stuck-inventory recycler", "pip": [], "script": "scripts/all_profit_daemons.py", "why": "Push idle base into grid/ladder"},
+    {"id": 11, "key": "sales_report_cli", "title": "Sales report CLI", "pip": [], "script": "scripts/exchange_sales_report.py", "why": "N-hour fill/PnL summaries"},
+    {"id": 12, "key": "systemd_runner", "title": "systemd 24/7 runner", "pip": [], "path": "systemd/masternoder-profit-daemon.service", "why": "Always-on server install"},
+    {"id": 13, "key": "heartbeat_monitor", "title": "Heartbeat monitor API", "pip": [], "module": "backend.services.profit_daemon_monitor_service", "why": "/api/profit-daemon/status"},
+    {"id": 14, "key": "stale_alerts", "title": "Stale-daemon alerts", "pip": [], "module": "backend.services.profit_daemon_ops_service", "why": "Discord/ops when heartbeat dies"},
+    {"id": 15, "key": "paper_live_gates", "title": "Paper/live risk gates", "pip": [], "env": ["EXCHANGE_ARBITRAGE_LIVE", "EXCHANGE_LIVE_PROFIT_MAX"], "why": "Safe default paper mode"},
+    {"id": 16, "key": "exit_funding", "title": "Exit funding + quote reserve", "pip": [], "module": "backend.services.exchange_ladder_service", "why": "Buy-backs not starved by reserve"},
+    {"id": 17, "key": "multi_venue_balances", "title": "Multi-venue spot balances", "pip": [], "module": "backend.services.exchange_venue_api_service", "why": "Binance + NonKYC free balances"},
+    {"id": 18, "key": "fill_prob_tuning", "title": "Fill-prob ladder tuning", "pip": [], "module": "backend.services.exchange_fill_model_service", "why": "Widen/narrow book from L0 odds"},
+    {"id": 19, "key": "critical_top25_sync", "title": "Critical top-25 problem sync", "pip": [], "module": "backend.services.exchange_profit_agent_skills_service", "why": "Track open blockers each tick"},
+    {"id": 20, "key": "dotenv_vault", "title": "dotenv + encrypted vault keys", "pip": ["python-dotenv", "cryptography"], "why": "Local secrets without hardcoding"},
+    {"id": 21, "key": "pyinstaller_build", "title": "PyInstaller standalone builds", "pip": ["pyinstaller"], "path": "profit_daemon_jon/build_release.py", "why": "GitHub downloadable binaries"},
+    {"id": 22, "key": "preflight_checks", "title": "Preflight health checks", "pip": [], "script": "scripts/daemon_preflight.py", "why": "Fail fast before live ticks"},
+    {"id": 23, "key": "limit_tick_cron", "title": "Limit-tick cron fallback", "pip": [], "path": "cron/masternoder-exchange-metrics.service", "why": "Backup tick path if systemd stalls"},
+    {"id": 24, "key": "profit_path_protocol", "title": "Profit Path Protocol (PPP)", "pip": [], "module": "backend.services.exchange_profit_path_service", "why": "Ledgered route research + hit rates"},
+    {"id": 25, "key": "ops_reporting", "title": "Ops status + weekly hooks", "pip": [], "module": "backend.services.profit_daemon_ops_service", "why": "Operator reports and upgrade tracking"}
+  ]
+}
