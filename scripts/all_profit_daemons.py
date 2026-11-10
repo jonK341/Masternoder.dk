@@ -638,6 +638,32 @@ def _book_once() -> Dict[str, Any]:
         except Exception as exc:
             ladders[venue] = {"success": False, "error": str(exc)[:180], "venue": venue}
     out["ladders"] = ladders
+    try:
+        from backend.services.profit_trade_stream_service import append_trade
+
+        mk = out.get("maker") or {}
+        if mk.get("execute") and not mk.get("error"):
+            append_trade(
+                strategy="maker",
+                message=f"Maker quotes open={mk.get('open') or len(mk.get('quotes') or [])} venue={mk.get('venue') or '?'}",
+                mode="live" if mk.get("execute") else "paper",
+                delta_usd=0.0,
+            )
+        for venue, row in ladders.items():
+            if not isinstance(row, dict) or row.get("error"):
+                continue
+            append_trade(
+                strategy="ladder",
+                message=(
+                    f"Ladder {venue} open={row.get('open')} "
+                    f"pnl=${float(row.get('realized_usd') or 0):.2f}"
+                ),
+                mode="live" if row.get("execute") else "paper",
+                delta_usd=float(row.get("realized_usd") or 0),
+                extra={"venue": venue},
+            )
+    except Exception:
+        pass
     return out
 
 

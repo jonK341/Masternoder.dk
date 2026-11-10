@@ -1,6 +1,8 @@
 {
   "execute": true,
-  "symbols": [],
+  "venue": "nonkyc",
+  "quote": "USDT",
+  "symbols": ["XRP", "XLM", "ALGO", "SOL"],
   "sides": ["sell"],
   "clip_usd": 25.0,
   "fee_bps": 30.0,

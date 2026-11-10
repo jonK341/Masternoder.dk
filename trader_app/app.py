@@ -30,6 +30,10 @@ os.environ.setdefault("DAEMON_QUIET", "1")
 from flask import Flask, Response, jsonify, redirect, render_template, request, session, url_for
 
 from backend.services.fast_desk_service import snapshot as desk_snapshot
+from backend.services.profit_trade_stream_service import (
+    register_interest as trade_stream_interest,
+    snapshot as trade_stream_snapshot,
+)
 from trader_app import store
 
 from datetime import timedelta
@@ -270,6 +274,27 @@ def desk():
 @login_required
 def api_desk():
     return jsonify(desk_snapshot())
+
+
+@app.route("/trade-stream")
+@login_required
+def trade_stream():
+    """OBS / YouTube overlay for live profit fills + interest votes."""
+    return render_template("trade_stream.html")
+
+
+@app.route("/api/trade-stream")
+@login_required
+def api_trade_stream():
+    return jsonify(trade_stream_snapshot(limit=40))
+
+
+@app.route("/api/trade-stream/interest", methods=["POST"])
+@login_required
+def api_trade_stream_interest():
+    body = request.get_json(silent=True) or {}
+    voter = str(body.get("voter") or request.remote_addr or "anon")
+    return jsonify(trade_stream_interest(voter=voter))
 
 
 # ------------------------- tab data -------------------------

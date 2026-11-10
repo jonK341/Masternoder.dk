@@ -27,4 +27,6 @@ workflow, 5-minute install guide, CI smoke).
 | Extended max set | dual/fast/peg/meme/pay/tri/defi | Already in daemon | Keep in fast/exchange ticks |
 | Ten spot frameworks | research TA | **No** | Leave cron/search; execute defaults off |
 | Fast USDT watcher | watch-only UI | **No** | Desk companion, not an order engine |
-| Triangular live | paper in extended | Not yet | Wait on `EXCHANGE_TRIANGULAR_LIVE` |
+| Triangular live | spatial live on loop symbols | **On** when `EXCHANGE_TRIANGULAR_LIVE=1` + SPORK |
+| On-chain micro drip | portal MN2 micro-chain | **On** when `MN2_MICRO_CHAIN_LIVE=1` + destination |
+| YouTube trade stream | OBS overlay `/trade-stream` | Opt-in interest votes (no auto go-live) |
