@@ -36,12 +36,13 @@ def test_summarize_book_reads_open_orders_and_yield_flag():
 
 def test_book_once_sets_ownership(monkeypatch):
     monkeypatch.delenv("EXCHANGE_DAEMON_OWNS_BOOK", raising=False)
+    trades = []
 
     def fake_maker():
-        return {"execute": True, "open": 1, "quotes": []}
+        return {"execute": True, "open": 1, "venue": "nonkyc", "quotes": []}
 
     def fake_ladder(venue=None):
-        return {"execute": True, "open": 3, "venue": venue, "realized_usd": 0.1}
+        return {"execute": True, "open_orders": 3, "venue": venue, "realized_usd": 0.1}
 
     monkeypatch.setattr(
         "backend.services.exchange_maker_quote_service.run_maker_quotes",
@@ -63,12 +64,22 @@ def test_book_once_sets_ownership(monkeypatch):
         "backend.services.exchange_registry_service.ladder_venues",
         lambda: ("nonkyc", "binance"),
     )
+    monkeypatch.setattr(
+        "backend.services.profit_trade_stream_service.append_trade",
+        lambda **kw: trades.append(kw),
+    )
 
     out = apd._book_once()
     assert out["owned_by"] == "all_profit_daemons"
     assert out["maker"]["open"] == 1
     assert set(out["ladders"]) == {"nonkyc", "binance"}
     assert os_environ_owns_book()
+    maker_msg = next(t for t in trades if t["strategy"] == "maker")
+    assert maker_msg["message"] == "open=1 · nonkyc"
+    assert maker_msg["extra"]["venue"] == "nonkyc"
+    ladder_msgs = [t["message"] for t in trades if t["strategy"] == "ladder"]
+    assert "binance open=3 pnl=$0.10" in ladder_msgs
+    assert "nonkyc open=3 pnl=$0.10" in ladder_msgs
 
 
 def os_environ_owns_book() -> bool:

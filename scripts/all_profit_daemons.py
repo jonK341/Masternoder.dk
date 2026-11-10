@@ -646,24 +646,39 @@ def _book_once() -> Dict[str, Any]:
 
         mk = out.get("maker") or {}
         if mk.get("execute") and not mk.get("error"):
+            from backend.services.exchange_maker_quote_service import load_config as load_maker_cfg
+
+            venue = str(mk.get("venue") or load_maker_cfg().get("venue") or "nonkyc")
+            open_n = mk.get("open")
+            if open_n is None:
+                quotes = mk.get("quotes") or []
+                open_n = sum(
+                    1
+                    for q in quotes
+                    if isinstance(q, dict) and (q.get("resting") or (q.get("success") and q.get("coid")))
+                )
             append_trade(
                 strategy="maker",
-                message=f"Maker quotes open={mk.get('open') or len(mk.get('quotes') or [])} venue={mk.get('venue') or '?'}",
+                message=f"open={open_n} · {venue}",
                 mode="live" if mk.get("execute") else "paper",
                 delta_usd=0.0,
+                extra={"venue": venue, "open": open_n},
             )
         for venue, row in ladders.items():
             if not isinstance(row, dict) or row.get("error"):
                 continue
+            open_n = row.get("open")
+            if open_n is None:
+                open_n = row.get("open_orders")
+            if open_n is None:
+                orders = row.get("orders") or {}
+                open_n = len(orders) if isinstance(orders, dict) else 0
             append_trade(
                 strategy="ladder",
-                message=(
-                    f"Ladder {venue} open={row.get('open')} "
-                    f"pnl=${float(row.get('realized_usd') or 0):.2f}"
-                ),
+                message=f"{venue} open={open_n} pnl=${float(row.get('realized_usd') or 0):.2f}",
                 mode="live" if row.get("execute") else "paper",
                 delta_usd=float(row.get("realized_usd") or 0),
-                extra={"venue": venue},
+                extra={"venue": venue, "open": open_n},
             )
     except Exception:
         pass

@@ -207,7 +207,16 @@ def run_maker_quotes(
     sleep: Callable[[float], None] = time.sleep,
 ) -> Dict[str, Any]:
     cfg = cfg or load_config()
-    report: Dict[str, Any] = {"execute": cfg["execute"], "quotes": [], "fills": []}
+    venue = str(cfg.get("venue") or "nonkyc")
+    quote = str(cfg.get("quote") or ("USDC" if venue == "binance" else "USDT")).upper()
+    report: Dict[str, Any] = {
+        "execute": cfg["execute"],
+        "venue": venue,
+        "quote": quote,
+        "quotes": [],
+        "fills": [],
+        "open": 0,
+    }
     if not cfg["execute"]:
         return report
     if top is None:
@@ -221,10 +230,6 @@ def run_maker_quotes(
     now = (clock or time.time)()
     spath = state_path(path)
     state = load_state(spath)
-    venue = str(cfg.get("venue") or "nonkyc")
-    quote = str(cfg.get("quote") or ("USDC" if venue == "binance" else "USDT")).upper()
-    report["venue"] = venue
-    report["quote"] = quote
     if balances is None:
         balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
@@ -330,6 +335,11 @@ def run_maker_quotes(
         report["quotes"].append({"symbol": symbol, "side": key.split(":", 1)[1], "retired": coid})
         state.pop(key, None)
     _save_state(spath, state)
+    report["open"] = sum(
+        1
+        for q in (report.get("quotes") or [])
+        if isinstance(q, dict) and (q.get("resting") or (q.get("success") and q.get("coid")))
+    )
     return report
 
 
