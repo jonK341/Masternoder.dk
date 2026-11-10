@@ -67,6 +67,7 @@ if [[ ! -x "${WORK}/staging/masternoder2d" ]]; then
 fi
 cp -a "${FLATPAK_DIR}/dk.masternoder.MasterNoder2.desktop" "${WORK}/staging/"
 cp -a "${FLATPAK_DIR}/dk.masternoder.MasterNoder2.metainfo.xml" "${WORK}/staging/"
+cp -a "${FLATPAK_DIR}/dk.masternoder.MasterNoder2.png" "${WORK}/staging/"
 # Manifest expects sources under staging relative to its own dir — copy yaml into work
 cp -a "${FLATPAK_DIR}/dk.masternoder.MasterNoder2.yml" "${WORK}/"
 

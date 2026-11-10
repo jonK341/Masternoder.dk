@@ -19,6 +19,7 @@ modules:
       - if test -f masternoder2-tx; then install -Dm755 masternoder2-tx /app/bin/masternoder2-tx; fi
       - install -Dm644 dk.masternoder.MasterNoder2.desktop /app/share/applications/dk.masternoder.MasterNoder2.desktop
       - install -Dm644 dk.masternoder.MasterNoder2.metainfo.xml /app/share/metainfo/dk.masternoder.MasterNoder2.metainfo.xml
+      - install -Dm644 dk.masternoder.MasterNoder2.png /app/share/icons/hicolor/128x128/apps/dk.masternoder.MasterNoder2.png
     sources:
       - type: dir
         path: staging

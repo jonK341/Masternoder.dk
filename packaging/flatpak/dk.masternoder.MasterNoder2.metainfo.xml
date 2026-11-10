@@ -5,6 +5,7 @@
   <summary>Headless MasterNoder2 node and CLI</summary>
   <metadata_license>MIT</metadata_license>
   <project_license>MIT</project_license>
+  <icon type="stock">dk.masternoder.MasterNoder2</icon>
   <description>
     <p>
       MasterNoder2 daemon (masternoder2d) and RPC client (masternoder2-cli)
