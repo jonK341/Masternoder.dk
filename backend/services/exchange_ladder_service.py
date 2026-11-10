@@ -36,9 +36,6 @@ from backend.services.exchange_market_feed_service import prefer_cached_binance_
 from backend.services.exchange_metrics_service import observe_ladder
 from backend.services.exchange_maker_quote_service import (
     _accepted,
-    _default_cancel,
-    _default_open_ids,
-    _default_place,
     _order_id,
     own_sell_price,
     place_with_retry,
@@ -228,9 +225,10 @@ def _venue_defaults(venue: str) -> Dict[str, Callable[..., Any]]:
                 str(r.get("clientOrderId") or ""): str(r.get("orderId"))
                 for r in body if r.get("clientOrderId")
             }
-        # NonKYC / Xeggex-style userProvidedId rows (and generic open_ids helper).
+        # NonKYC / Xeggex-style userProvidedId rows (scoped to this ladder venue).
+        # Empty {} must stay {} — None means the open-order fetch failed and skips the symbol.
         if venue in ("nonkyc", "xeggex"):
-            return _default_open_ids(symbol) if venue == "nonkyc" else {
+            return {
                 str(row.get("userProvidedId") or row.get("clientOrderId") or ""): str(
                     row.get("id") or row.get("orderId") or ""
                 )
@@ -282,16 +280,13 @@ def _venue_defaults(venue: str) -> Dict[str, Callable[..., Any]]:
         return out
 
     def place(symbol: str, side: str, qty: float, price: float, coid: str) -> Dict[str, Any]:
-        if venue == "nonkyc":
-            return _default_place(symbol, side, qty, price, coid)
+        # Venue-scoped: maker helpers follow maker config (often Binance USDC).
         return place_limit_order(
             venue, symbol, side, qty, price,
             dry_run=False, quote=quote, client_order_id=coid, time_in_force="GTC",
         )
 
     def cancel(symbol: str, order_id: str) -> Dict[str, Any]:
-        if venue == "nonkyc":
-            return _default_cancel(symbol, order_id)
         return cancel_order(venue, symbol, order_id, dry_run=False, quote=quote)
 
     return {"open_ids": open_ids, "closed": closed, "market": market, "place": place, "cancel": cancel}

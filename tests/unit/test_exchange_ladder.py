@@ -385,3 +385,45 @@ def test_live_balance_path_runs_venue_quote_topup(tmp_path, monkeypatch):
     )
     assert calls and calls[0][0] == "nonkyc"
     assert calls[0][1]["quote"] == "USDT"
+
+
+def test_nonkyc_venue_defaults_do_not_follow_maker_venue(monkeypatch):
+    """Ladder NonKYC adapters must call NonKYC even when maker is on Binance."""
+    from backend.services import exchange_ladder_service as lad
+
+    calls = []
+
+    def fake_place(venue_id, symbol, side, qty, price, **kwargs):
+        calls.append(("place", venue_id, kwargs.get("quote"), symbol, side))
+        return {"success": True, "mode": "live", "body": {"id": "x1"}}
+
+    def fake_cancel(venue_id, symbol, order_id, **kwargs):
+        calls.append(("cancel", venue_id, kwargs.get("quote"), symbol, order_id))
+        return {"success": True}
+
+    def fake_open(venue_id, symbol, **kwargs):
+        calls.append(("open", venue_id, kwargs.get("quote"), symbol))
+        return {
+            "success": True,
+            "body": [{"userProvidedId": "ld-a", "id": "oid-1"}],
+        }
+
+    monkeypatch.setattr(lad, "place_limit_order", fake_place)
+    monkeypatch.setattr(lad, "cancel_order", fake_cancel)
+    monkeypatch.setattr(lad, "get_open_orders", fake_open)
+    monkeypatch.setattr(lad, "_venue_quote", lambda _v: "USDT")
+
+    adapters = lad._venue_defaults("nonkyc")
+    assert adapters["place"]("DOGE", "sell", 10.0, 0.067572, "ld-test")["success"]
+    assert adapters["cancel"]("DOGE", "oid-1")["success"]
+    assert adapters["open_ids"]("DOGE") == {"ld-a": "oid-1"}
+    assert calls[0] == ("place", "nonkyc", "USDT", "DOGE", "sell")
+    assert calls[1] == ("cancel", "nonkyc", "USDT", "DOGE", "oid-1")
+    assert calls[2] == ("open", "nonkyc", "USDT", "DOGE")
+
+    monkeypatch.setattr(
+        lad,
+        "get_open_orders",
+        lambda *_a, **_k: {"success": True, "body": []},
+    )
+    assert adapters["open_ids"]("DOGE") == {}
