@@ -1438,3 +1438,41 @@ def mn2_train_a_one(deliverable_id: str):
             limit=int(data.get("limit") or request.args.get("limit") or 20),
         )
     )
+
+
+# --- Train B tools & debuggers (v1.5.0.0 draft slice) ---
+
+
+@mn2_bp.route("/api/mn2/train-b", methods=["GET"])
+def mn2_train_b_manifest():
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.train_b_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-b/version", methods=["GET"])
+def mn2_train_b_version():
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.train_b_version())
+
+
+@mn2_bp.route("/api/mn2/train-b/run", methods=["GET", "POST"])
+def mn2_train_b_run():
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.run_train_b())
+
+
+@mn2_bp.route("/api/mn2/train-b/acceptance", methods=["GET", "POST"])
+def mn2_train_b_acceptance():
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.train_b_acceptance())
+
+
+@mn2_bp.route("/api/mn2/train-b/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_b_one(deliverable_id: str):
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.run_deliverable(deliverable_id))

@@ -32,6 +32,7 @@
         <section class="wallet-hero">
             <p class="wallet-muted">MN2 wallet portal</p>
             <div class="wallet-mega-badge" id="wallet-train-a-badge" hidden>Train A…</div>
+            <div class="wallet-mega-badge" id="wallet-train-b-badge" hidden>Train B…</div>
             <div class="wallet-mega-badge" id="wallet-mega-badge" hidden>Exchange mega…</div>
             <h1>Wallets</h1>
             <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, exchange wallet actions, and daemon downloads.</p>
@@ -83,6 +84,7 @@
                 .catch(function () { /* ignore */ });
         }
         fill('wallet-train-a-badge', '/api/mn2/train-a/version', 'Train A draft — Latest download unchanged');
+        fill('wallet-train-b-badge', '/api/mn2/train-b/version', 'Train B draft — Latest download unchanged');
         fill('wallet-mega-badge', '/api/exchange/wallet-mega/version', 'Draft mega channel — Latest download unchanged');
     })();
     </script>
