@@ -1875,6 +1875,29 @@ def exchange_wallet_mega_train_f_core():
     return jsonify(mega.run_train_f_core(user_id=_uid(from_body=False)))
 
 
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-desk", methods=["GET"])
+def exchange_wallet_mega_train_f_desk():
+    """T5.11–T5.20 — X-11…X-20 desk quality / tools & debuggers."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_desk(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-desk/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_train_f_desk_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+        )
+    )
+
+
 @crypto_exchange_bp.route("/api/exchange/wallet-mega/acceptance", methods=["GET", "POST"])
 def exchange_wallet_mega_acceptance():
     """Paper trade → settle posture → withdraw dry-run acceptance pack."""

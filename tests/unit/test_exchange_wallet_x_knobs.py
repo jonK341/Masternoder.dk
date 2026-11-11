@@ -195,6 +195,7 @@ def test_train_f_core_and_acceptance_routes(monkeypatch):
     assert ver_body["mega_target"] == "v32.6.6.0"
     assert ver_body["channel"] == "draft"
     assert ver_body["latest_wallet_download_unchanged"] is True
+    assert ver_body["train_f_desk_count"] == 10
 
     core = c.get("/api/exchange/wallet-mega/train-f-core")
     assert core.status_code == 200
@@ -213,3 +214,38 @@ def test_train_f_core_and_acceptance_routes(monkeypatch):
     ids = [row["id"] for row in acc_body["checks"]]
     assert "paper_trade" in ids
     assert "withdraw_dry_run" in ids
+
+
+def test_train_f_desk_routes(monkeypatch):
+    from backend.routes.crypto_exchange_routes import crypto_exchange_bp
+    from backend.services import mn2_spork_service as spork
+    from backend.services.exchange_wallet_x_knobs import TRAIN_F_DESK_IDS
+    from flask import Flask
+
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.delenv("MN2_SPORK_OVERRIDE_JSON", raising=False)
+    spork.invalidate_cache()
+
+    app = Flask(__name__)
+    app.register_blueprint(crypto_exchange_bp)
+    c = app.test_client()
+
+    desk = c.get("/api/exchange/wallet-mega/train-f-desk")
+    assert desk.status_code == 200
+    body = desk.get_json()
+    assert body["train"] == "F-desk"
+    assert body["count"] == 10
+    assert body["ok_count"] == 10
+    assert body["ids"] == list(TRAIN_F_DESK_IDS)
+    assert body["results"]["X-11"]["passed"] is True
+    assert body["results"]["X-16"]["case_count"] >= 5
+    assert body["results"]["X-18"]["count"] >= 10
+    assert body["results"]["X-19"]["passed"] is True
+    assert body["results"]["X-20"]["docs"]["release_stub_exists"] is True
+
+    one = c.get("/api/exchange/wallet-mega/train-f-desk/X-14")
+    assert one.status_code == 200
+    one_body = one.get_json()
+    assert one_body["enrichment"] == "X-14"
+    assert one_body["success"] is True
+    assert isinstance(one_body.get("findings"), list)
