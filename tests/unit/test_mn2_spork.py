@@ -256,6 +256,9 @@ def test_unused_and_new_spork_recap():
     assert 10102 in recap["id_gaps_10101_10115"]
     assert "SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT" in recap["unused_by_app"]
     assert "SPORK_116_WALLET_ONCHAIN_WITHDRAW" not in recap["unused_by_app"]
+    assert "SPORK_101_SERVICES_ENFORCEMENT" in recap["fixed_advisory"]
+    assert "SPORK_101_SERVICES_ENFORCEMENT" not in recap["unused_by_app"]
+    assert recap["intentional_hold"]["SPORK_112_EXCHANGE_LIVE_TRADING"] == "default_off_until_ops"
 
 
 @pytest.mark.unit

@@ -5,14 +5,27 @@ from flask import Flask
 
 
 def test_knob_catalog_is_complete():
-    from backend.services.exchange_wallet_x_knobs import MEGA_MIN_KNOBS, walkthrough
+    from backend.services.exchange_wallet_x_knobs import (
+        MEGA_MIN_KNOBS,
+        PRIORITY_BY_PILLAR,
+        PRIORITY_IDS,
+        walkthrough,
+    )
 
     full = walkthrough()
     assert full["success"] is True
     assert full["count"] == 50
     assert full["total_knob_slots"] == 600
     assert len(full["knob_glossary"]) == 12
-    assert set(full["priority_ids"]) == {"X-03", "X-08", "X-40", "X-46"}
+    assert full["priority_ids"] == list(PRIORITY_IDS)
+    assert len(PRIORITY_IDS) == 18
+    assert set(PRIORITY_IDS) == {
+        eid for ids in PRIORITY_BY_PILLAR.values() for eid in ids
+    }
+    assert PRIORITY_BY_PILLAR["custody"] == ("X-03", "X-04", "X-27", "X-38")
+    assert PRIORITY_BY_PILLAR["desk"] == ("X-02", "X-05", "X-08", "X-39", "X-40")
+    assert PRIORITY_BY_PILLAR["risk"] == ("X-22", "X-41", "X-46", "X-48")
+    assert PRIORITY_BY_PILLAR["ops"] == ("X-09", "X-31", "X-34", "X-35", "X-43")
 
     for block in full["enrichments"]:
         assert block["success"] is True
@@ -61,15 +74,35 @@ def test_wallet_mega_knob_routes():
     assert prio.status_code == 200
     prio_body = prio.get_json()
     assert prio_body["confirmed"] is True
-    assert len(prio_body["enrichments"]) == 4
+    assert prio_body["count"] == 18
+    assert len(prio_body["enrichments"]) == 18
+    assert set(prio_body["by_pillar"]) == {"custody", "desk", "risk", "ops"}
     assert "SPORK_116_WALLET_ONCHAIN_WITHDRAW" in prio_body["live_gates_default_off"]
     assert "SPORK_118_ANOMALY_HARD_ENFORCE" in prio_body["safety_gates_default_on"]
+
+    run = c.get("/api/exchange/wallet-mega/priority/run")
+    assert run.status_code == 200
+    run_body = run.get_json()
+    assert run_body["count"] == 18
+    assert run_body["ok_count"] == 18
+    assert run_body["results"]["X-38"]["enrichment"] == "X-38"
+    assert run_body["results"]["X-48"]["recommended"] is not None
+
+    one = c.get("/api/exchange/wallet-mega/priority/X-27")
+    assert one.status_code == 200
+    one_body = one.get_json()
+    assert one_body["success"] is True
+    assert one_body["enrichment"] == "X-27"
+    assert "files" in one_body
 
     sporks = c.get("/api/exchange/wallet-mega/sporks")
     assert sporks.status_code == 200
     spork_body = sporks.get_json()
     assert spork_body["success"] is True
     assert len(spork_body["new_wallet_gates"]) == 6
+    assert "SPORK_101_SERVICES_ENFORCEMENT" in spork_body["fixed_advisory"]
+    assert "SPORK_112_EXCHANGE_LIVE_TRADING" in spork_body["intentional_hold"]
+    assert "SPORK_101_SERVICES_ENFORCEMENT" not in spork_body["unused_by_app"]
     assert "gate_status" in spork_body
     assert "SPORK_118_ANOMALY_HARD_ENFORCE" in spork_body["gate_status"]["sporks"]
 

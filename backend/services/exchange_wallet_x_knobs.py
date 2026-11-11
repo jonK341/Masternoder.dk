@@ -135,64 +135,234 @@ _X_ROWS: Tuple[Tuple[str, str, str, str, Tuple[str, ...]], ...] = (
     ("X-50", "Event-Driven Processor", "Unified trade+wallet event bus", "desk", ("daemon", "web")),
 )
 
-# Explicit 12-knob walkthroughs for priority on-chain prototypes.
+# Product-confirmed priority install set (custody / desk / risk / ops).
+PRIORITY_BY_PILLAR: Dict[str, Tuple[str, ...]] = {
+    "custody": ("X-03", "X-04", "X-27", "X-38"),
+    "desk": ("X-02", "X-05", "X-08", "X-39", "X-40"),
+    "risk": ("X-22", "X-41", "X-46", "X-48"),
+    "ops": ("X-09", "X-31", "X-34", "X-35", "X-43"),
+}
+
+PRIORITY_IDS: Tuple[str, ...] = tuple(
+    eid for pillar in ("custody", "desk", "risk", "ops") for eid in PRIORITY_BY_PILLAR[pillar]
+)
+
+
+def _pa(**kwargs: str) -> Dict[str, str]:
+    """Fill all 12 knobs; missing keys get a short default from kwargs."""
+    out = {k: "" for k in ALL_KNOBS}
+    out.update(kwargs)
+    for k, v in list(out.items()):
+        if not v:
+            out[k] = f"Install {k} for this priority enrichment."
+    return out
+
+
+# Explicit 12-knob walkthroughs for the priority install set.
 _PRIORITY_ACTIONS: Dict[str, Dict[str, str]] = {
-    "X-03": {
-        "optimize_performance": "Index PoR + PPP ledger joins; avoid full-file scans on every glance.",
-        "enhance_security": "Redact balances in exports; admin-only raw PoR; no secret venue keys in glance.",
-        "improve_reliability": "If PoR RPC fails, return last good snapshot + error flag (no empty success).",
-        "scale_capacity": "Paginate ledger export; support ≥10k rows without blocking request workers.",
-        "reduce_latency": "Cache PoR snapshot ≤60s; venue filter in-memory after first read.",
-        "increase_throughput": "Batch multi-venue PoR glances in one request (`venues=` list).",
-        "add_monitoring": "Emit glance lag + ledger_count metrics; amber when PoR stale.",
-        "enable_auto_recovery": "On corrupt JSONL line, skip + continue; rewind reader offset.",
-        "improve_caching": "TTL cache for por_glance keyed by venue+limit.",
-        "enhance_logging": "Audit who exported PoR/ledger and which venue filter was used.",
-        "add_analytics": "Coverage ratio, liability delta, per-venue fill/fail counts on glance.",
-        "upgrade_algorithm": "Weighted PoR coverage that includes pending settles + hot-float gate.",
-    },
-    "X-08": {
-        "optimize_performance": "Parallel venue probes; short RPC failover probe budget.",
-        "enhance_security": "Never auto-broadcast on failover; credentials stay in vault; ACL on promote.",
-        "improve_reliability": "Idempotent promote/failback; sticky active RPC until standby proven healthy.",
-        "scale_capacity": "Track N venues + primary/standby RPC without serial bottlenecks.",
-        "reduce_latency": "Fail-fast unhealthy venue; prefer lowest RTT ready venue for reads.",
-        "increase_throughput": "Concurrent readiness probes; reuse HTTP sessions to venues.",
-        "add_monitoring": "Badge active RPC + preferred/standby venue on /wallets and /exchange.",
-        "enable_auto_recovery": "Auto failback to primary when healthy; resubscribe feeds after promote.",
-        "improve_caching": "Cache readiness ranking ≤15s; cache RPC status_summary ≤5s.",
-        "enhance_logging": "Log promote_reason, venue switch, and spork_112 gate on each ranking.",
-        "add_analytics": "Failover count, time-on-standby, venue probe fail rates.",
-        "upgrade_algorithm": "Score venues by creds + latency + live_ready + recent error rate.",
-    },
-    "X-40": {
-        "optimize_performance": "Prefetch deposit address + quote in parallel on guided start.",
-        "enhance_security": "Step-up on withdraw; never skip X-46 assess; no live venue unless SPORK_112.",
-        "improve_reliability": "Each step returns resume token; retry trade without double-spend.",
-        "scale_capacity": "Support many concurrent guided sessions per user without clobbering state.",
-        "reduce_latency": "Deep-link deposit→trade→withdraw; skip redundant wallet refreshes.",
-        "increase_throughput": "Batch status bundle (por+failover+gates) in one guided status call.",
-        "add_monitoring": "Funnel metrics: deposit_ok / trade_ok / withdraw_assessed / withdraw_sent.",
-        "enable_auto_recovery": "If trade fails (no balance), keep deposit address and retry trade later.",
-        "improve_caching": "Cache deposit address per user; cache quote ≤2 minutes with quote_id.",
-        "enhance_logging": "Structured step log: user, step, mode=on_chain_custody, tx/quote ids.",
-        "add_analytics": "Conversion + time-per-step analytics for the guided funnel.",
-        "upgrade_algorithm": "Recommend next step from balances, PoR, and anomaly score.",
-    },
-    "X-46": {
-        "optimize_performance": "Risk assess in-process; avoid extra RPC unless float-gate needs it.",
-        "enhance_security": "Hard-block high score; require step-up; bind assess to broadcast gate.",
-        "improve_reliability": "Fail closed on assessor error for live broadcast; paper may warn-only.",
-        "scale_capacity": "Score burst withdrawals without lock contention on risk log.",
-        "reduce_latency": "Sync assess before send; no post-broadcast scoring.",
-        "increase_throughput": "Batch assess for multi-out drafts; single log append.",
-        "add_monitoring": "Count blocks / step-ups / allows; alert on block spikes.",
-        "enable_auto_recovery": "After block, offer safe resume (lower amount / known address).",
-        "improve_caching": "Cache recent payout addresses per user for new-address detection.",
-        "enhance_logging": "Immutable risk log with score, reasons, kind=trade|withdraw.",
-        "add_analytics": "False-positive rate, block reasons histogram, trade vs withdraw mix.",
-        "upgrade_algorithm": "Tune thresholds with velocity + % balance + new address + float coverage.",
-    },
+    "X-02": _pa(
+        optimize_performance="Score quotes in-process from cached books; no cold venue hits on estimator.",
+        enhance_security="Never leak venue keys; estimator is advisory only until SPORK_112.",
+        improve_reliability="If book missing, return flat estimate + low confidence (no crash).",
+        reduce_latency="Serve estimate from ≤5s book/price cache.",
+        add_monitoring="Expose confidence_pct + expected_move_bps on desk strip.",
+        enable_auto_recovery="Fall back to internal mid when external cache empty.",
+        improve_caching="Reuse external price cache + wallet mid.",
+        enhance_logging="Log symbol, direction, confidence, venue_count.",
+        add_analytics="Track estimate vs realized fill slippage.",
+        upgrade_algorithm="Blend gap + dispersion into fill-probability hint.",
+    ),
+    "X-03": _pa(
+        optimize_performance="Index PoR + PPP ledger joins; avoid full-file scans on every glance.",
+        enhance_security="Redact balances in exports; gate raw rows behind SPORK_119.",
+        improve_reliability="If PoR RPC fails, return last good snapshot + error flag.",
+        scale_capacity="Paginate ledger export; support ≥10k rows without blocking workers.",
+        reduce_latency="Cache PoR snapshot ≤60s; venue filter in-memory after first read.",
+        increase_throughput="Batch multi-venue PoR glances in one request.",
+        add_monitoring="Emit glance lag + ledger_count; amber when PoR stale.",
+        enable_auto_recovery="On corrupt JSONL line, skip + continue; rewind reader offset.",
+        improve_caching="TTL cache for por_glance keyed by venue+limit.",
+        enhance_logging="Audit who exported PoR/ledger and which venue filter was used.",
+        add_analytics="Coverage ratio, liability delta, per-venue fill/fail counts.",
+        upgrade_algorithm="Weighted PoR coverage including pending settles + hot-float.",
+    ),
+    "X-04": _pa(
+        optimize_performance="Lazy-load vault index; decrypt only requested labels.",
+        enhance_security="Encrypted vault at rest; never return raw secrets in status APIs.",
+        improve_reliability="Vault missing → empty status success with encryption_available flag.",
+        add_monitoring="Secret + wallet counts on custody tile.",
+        enable_auto_recovery="Recreate vault file structure if corrupted header detected.",
+        improve_caching="Cache vault_status ≤10s.",
+        enhance_logging="Audit vault open / label list (no secret values).",
+        add_analytics="Secret_count / wallet_count trend for ops.",
+        upgrade_algorithm="Prefer hardware-backed key when available; else file vault.",
+    ),
+    "X-05": _pa(
+        optimize_performance="Serve book/balance from TTL cache on desk reads.",
+        enhance_security="Do not cache secrets; redact balances in shared caches.",
+        improve_reliability="Stale-while-revalidate: serve stale + flag when refresh fails.",
+        reduce_latency="Target ≤100ms cached book path.",
+        improve_caching="TTL + stale guards on orderbook and balance snapshots.",
+        add_monitoring="Cache hit/miss + age on desk health.",
+        enable_auto_recovery="Invalidate and refetch on checksum mismatch.",
+        enhance_logging="Log cache key, age, hit/miss.",
+        add_analytics="Hit rate and stale-serve counts.",
+        upgrade_algorithm="Adaptive TTL by symbol volatility.",
+    ),
+    "X-08": _pa(
+        optimize_performance="Parallel venue probes; short RPC failover probe budget.",
+        enhance_security="Never auto-broadcast on failover; credentials stay in vault; ACL on promote.",
+        improve_reliability="Idempotent promote/failback; sticky active RPC until standby healthy.",
+        scale_capacity="Track N venues + primary/standby RPC without serial bottlenecks.",
+        reduce_latency="Fail-fast unhealthy venue; prefer lowest RTT ready venue.",
+        increase_throughput="Concurrent readiness probes; reuse HTTP sessions.",
+        add_monitoring="Badge active RPC + preferred/standby venue.",
+        enable_auto_recovery="Auto failback when primary healthy; gated by SPORK_117.",
+        improve_caching="Cache readiness ≤15s; RPC status_summary ≤5s.",
+        enhance_logging="Log promote_reason, venue switch, SPORK_112 gate.",
+        add_analytics="Failover count, time-on-standby, probe fail rates.",
+        upgrade_algorithm="Score venues by creds + latency + live_ready + errors.",
+    ),
+    "X-09": _pa(
+        optimize_performance="Single mesh snapshot fan-in for wallet/exchange/bridge.",
+        enhance_security="Mesh status is read-only; no money paths.",
+        improve_reliability="Partial mesh OK: show red only for failed nodes.",
+        add_monitoring="Green/amber/red edges on wallet↔exchange↔casino.",
+        enable_auto_recovery="Suggest healer (X-43) when mesh edge red.",
+        enhance_logging="Log mesh edge failures with component ids.",
+        add_analytics="Edge uptime ratios.",
+        upgrade_algorithm="Weight edges by recent error rate + SPORK_101 services enforcement.",
+    ),
+    "X-22": _pa(
+        optimize_performance="Reuse withdrawal risk assess features for behavior hints.",
+        enhance_security="Hints never bypass SPORK_118 hard block.",
+        improve_reliability="Unknown user → low-risk empty pattern set.",
+        add_monitoring="Count unusual pattern hits per day.",
+        enable_auto_recovery="Offer lower amount / known address resume.",
+        enhance_logging="Log pattern ids without raw secrets.",
+        add_analytics="Pattern histogram for withdraw vs trade.",
+        upgrade_algorithm="Velocity + new-address + % balance composite.",
+    ),
+    "X-27": _pa(
+        optimize_performance="Hash only critical custody files (vault, security, addresses).",
+        enhance_security="Integrity miss blocks live withdraw until ops ACK.",
+        improve_reliability="Missing optional file → amber, not hard fail.",
+        add_monitoring="Integrity tile: ok/amber/red + file list.",
+        enable_auto_recovery="Re-run scan after vault rewrite.",
+        enhance_logging="Log path + sha16 + size (no contents).",
+        add_analytics="Integrity fail rate over time.",
+        upgrade_algorithm="Merkle over custody file set for quick compare.",
+    ),
+    "X-31": _pa(
+        optimize_performance="Reuse daemon probe + exchange health in one call.",
+        enhance_security="Health APIs never expose keys.",
+        improve_reliability="Probe never raises; always returns structured status.",
+        add_monitoring="Green/amber/red for daemon + venue + payout rails.",
+        enable_auto_recovery="Link to X-43 when daemon unhealthy.",
+        enhance_logging="Append health probe JSONL.",
+        add_analytics="Time-to-recover after red.",
+        upgrade_algorithm="Composite score: RPC + exchange + failover preferred.",
+    ),
+    "X-34": _pa(
+        optimize_performance="Derive alerts from existing health/failover without extra probes.",
+        enhance_security="Alert payloads redact balances and secrets.",
+        improve_reliability="Alert builder never fails the request; empty list on error.",
+        add_monitoring="Stuck settle / unlock / sync stall / spork maintenance alerts.",
+        enable_auto_recovery="Alerts include suggested X-43 action.",
+        enhance_logging="Log alert_id + severity.",
+        add_analytics="Alert volume by severity.",
+        upgrade_algorithm="Dedupe alerts within TTL window.",
+    ),
+    "X-35": _pa(
+        optimize_performance="Export counters from in-memory + small JSON snapshots.",
+        enhance_security="Metrics omit PII and secrets.",
+        improve_reliability="Missing explorer metrics → exchange-only subset.",
+        add_monitoring="Prometheus-style snapshot for trades/rejects/withdraws/gates.",
+        enhance_logging="Log scrape age.",
+        add_analytics="Gate deny counts by spork reason.",
+        upgrade_algorithm="Label metrics by enrichment id + pillar.",
+    ),
+    "X-38": _pa(
+        optimize_performance="Whitelist check is O(n) small list in-process.",
+        enhance_security="SPORK_121 forces whitelist; TOTP remains independent.",
+        improve_reliability="Empty whitelist + required → hard block with clear code.",
+        add_monitoring="Whitelist required/enforced + count on custody tile.",
+        enable_auto_recovery="Guide user to add address before retry.",
+        enhance_logging="Audit whitelist add/remove + gate denials.",
+        add_analytics="Deny rate for whitelist fence.",
+        upgrade_algorithm="Optional geo/policy tags on allow-list entries.",
+    ),
+    "X-39": _pa(
+        optimize_performance="Rank venues from cached readiness; no live order.",
+        enhance_security="Route picker never enables live legs without SPORK_112.",
+        improve_reliability="If no venues, return empty route with reason.",
+        reduce_latency="Prefer lowest RTT ready venue for reads.",
+        add_monitoring="Show preferred + alternatives on desk.",
+        enable_auto_recovery="Re-rank after failover promote.",
+        improve_caching="Reuse failover ranking ≤15s.",
+        enhance_logging="Log chosen venue_id + score inputs.",
+        add_analytics="Route win rate vs fee/slippage.",
+        upgrade_algorithm="Score = ready + creds + latency + recent errors.",
+    ),
+    "X-40": _pa(
+        optimize_performance="Prefetch deposit address + quote in parallel on guided start.",
+        enhance_security="Step-up on withdraw; always run X-46; gates 116/120.",
+        improve_reliability="Each step returns resume token; retry trade without double-spend.",
+        scale_capacity="Many concurrent guided sessions per user without clobbering state.",
+        reduce_latency="Deep-link deposit→trade→withdraw; skip redundant refreshes.",
+        increase_throughput="Batch status bundle (por+failover+gates) in one status call.",
+        add_monitoring="Funnel metrics: deposit_ok / trade_ok / withdraw_assessed / withdraw_sent.",
+        enable_auto_recovery="If trade fails (no balance), keep deposit address and retry later.",
+        improve_caching="Cache deposit address per user; cache quote ≤2 minutes with quote_id.",
+        enhance_logging="Structured step log: user, step, mode=on_chain_custody, ids.",
+        add_analytics="Conversion + time-per-step for the guided funnel.",
+        upgrade_algorithm="Recommend next step from balances, PoR, and anomaly score.",
+    ),
+    "X-41": _pa(
+        optimize_performance="Predict from cached prices only (no network in tick).",
+        enhance_security="Disclaimer required; never auto-trade from predictor.",
+        improve_reliability="No mids → flat + low confidence.",
+        add_monitoring="confidence_pct + edge_uplift on risk strip.",
+        enable_auto_recovery="Fall back to flat when cache empty.",
+        improve_caching="Read last external price cache.",
+        enhance_logging="Log symbol, direction, confidence.",
+        add_analytics="Prediction vs next mid move calibration.",
+        upgrade_algorithm="Blend gap, dispersion, coverage into edge_uplift_bps.",
+    ),
+    "X-43": _pa(
+        optimize_performance="Healer only runs cheap local checks first.",
+        enhance_security="Promote gated by SPORK_117; never broadcast money.",
+        improve_reliability="Idempotent heal plan; dry-run by default.",
+        add_monitoring="List heal actions + whether auto_promote allowed.",
+        enable_auto_recovery="Resubscribe/rewind suggestions when settles stuck.",
+        enhance_logging="Log heal plan steps and gate results.",
+        add_analytics="Heal success vs manual ops intervenes.",
+        upgrade_algorithm="Order heal steps by blast radius (RPC → feed → settle).",
+    ),
+    "X-46": _pa(
+        optimize_performance="Risk assess in-process; avoid extra RPC unless float-gate needs it.",
+        enhance_security="Hard-block high score when SPORK_118 on; bind to broadcast.",
+        improve_reliability="Fail closed on assessor error for live broadcast.",
+        scale_capacity="Score burst withdrawals without lock contention on risk log.",
+        reduce_latency="Sync assess before send; no post-broadcast scoring.",
+        increase_throughput="Batch assess for multi-out drafts; single log append.",
+        add_monitoring="Count blocks / step-ups / allows; alert on block spikes.",
+        enable_auto_recovery="After block, offer safe resume (lower amount / known address).",
+        improve_caching="Cache recent payout addresses per user for new-address detection.",
+        enhance_logging="Immutable risk log with score, reasons, kind=trade|withdraw.",
+        add_analytics="False-positive rate, block reasons histogram.",
+        upgrade_algorithm="Tune thresholds with velocity + % balance + new address + float.",
+    ),
+    "X-48": _pa(
+        optimize_performance="Decision strip from already-fetched wallet + gates + risk.",
+        enhance_security="Never recommend live venue trade while SPORK_112 off.",
+        improve_reliability="Always return ≥1 safe next action (deposit/status).",
+        add_monitoring="Show top recommendation + reasons on desk/risk strip.",
+        enable_auto_recovery="If withdraw blocked, recommend whitelist or lower amount.",
+        enhance_logging="Log chosen action id + inputs summary.",
+        add_analytics="Action accept rate.",
+        upgrade_algorithm="Rank deposit / trade / withdraw / wait by balances + gates + anomaly.",
+    ),
 }
 
 
@@ -226,13 +396,27 @@ def enrichment_meta(enrichment_id: str) -> Optional[Dict[str, Any]]:
                 "title": row[2],
                 "pillar": row[3],
                 "surfaces": list(row[4]),
-                "priority": eid in _PRIORITY_ACTIONS,
+                "priority": eid in PRIORITY_IDS,
+                "priority_pillar": next(
+                    (pillar for pillar, ids in PRIORITY_BY_PILLAR.items() if eid in ids),
+                    None,
+                ),
             }
     return None
 
 
 def list_enrichments() -> List[Dict[str, Any]]:
     return [enrichment_meta(row[0]) for row in _X_ROWS]  # type: ignore[misc]
+
+
+def priority_manifest() -> Dict[str, Any]:
+    return {
+        "success": True,
+        "count": len(PRIORITY_IDS),
+        "ids": list(PRIORITY_IDS),
+        "by_pillar": {k: list(v) for k, v in PRIORITY_BY_PILLAR.items()},
+        "mega_min_knobs": list(MEGA_MIN_KNOBS),
+    }
 
 
 def knobs_for(enrichment_id: str, *, installed_min_only: bool = False) -> Dict[str, Any]:
@@ -288,5 +472,6 @@ def walkthrough(*, enrichment_id: Optional[str] = None, installed_min_only: bool
             {"knob": k, **KNOB_META[k]} for k in ALL_KNOBS
         ],
         "enrichments": rows,
-        "priority_ids": sorted(_PRIORITY_ACTIONS.keys()),
+        "priority_ids": list(PRIORITY_IDS),
+        "priority_by_pillar": {k: list(v) for k, v in PRIORITY_BY_PILLAR.items()},
     }

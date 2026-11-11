@@ -46,7 +46,16 @@ Machine catalog: `backend/services/exchange_wallet_x_knobs.py` (50 × 12 = 600 i
 
 ---
 
-## Priority on-chain set (full 12×4)
+## Priority install set (confirmed)
+
+| Pillar | Enrichments |
+| ------ | ----------- |
+| Custody | X-03 PoR ledger, X-04 vault sync, X-27 integrity, X-38 withdraw fence |
+| Trading desk | X-02 estimator, X-05 book cache, X-08 failover, X-39 route, X-40 guided flow |
+| Risk | X-22 behavior, X-41 predictor, X-46 anomaly, X-48 decision strip |
+| Ops | X-09 mesh, X-31 health, X-34 alerts, X-35 metrics, X-43 self healer |
+
+APIs: `GET /api/exchange/wallet-mega/priority`, `GET|POST /api/exchange/wallet-mega/priority/run`, `GET|POST /api/exchange/wallet-mega/priority/<id>`.
 
 ### X-03 — Trading ledger + PoR glance (custody)
 

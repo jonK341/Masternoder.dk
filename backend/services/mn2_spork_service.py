@@ -421,8 +421,15 @@ def gate_status(*, now: Optional[int] = None) -> Dict[str, Any]:
     }
 
 
+def services_enforcement_active(*, now: Optional[int] = None) -> bool:
+    """SPORK_101 — advisory for ops mesh (X-09): services enforcement expected on."""
+    if not gates_enabled():
+        return False
+    return spork_is_active("SPORK_101_SERVICES_ENFORCEMENT", now=now, default=True)
+
+
 def unused_and_new_spork_recap() -> Dict[str, Any]:
-    """Inventory for ops: unused-by-app, default-off, gaps, and new wallet gates."""
+    """Inventory for ops: unused-by-app, fixed holds, gaps, and new wallet gates."""
     app_gated = {
         "SPORK_112_EXCHANGE_LIVE_TRADING",
         "SPORK_113_CASINO_REAL_MONEY",
@@ -435,14 +442,31 @@ def unused_and_new_spork_recap() -> Dict[str, Any]:
         "SPORK_120_GUIDED_TRADE_EXECUTE",
         "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
     }
-    unused = sorted(name for name in SPORK_IDS if name not in app_gated)
+    # Fixed: previously unused-by-app but now advisory on the exchange wallet surface.
+    fixed_advisory = {
+        "SPORK_101_SERVICES_ENFORCEMENT": {
+            "role": "advisory_ops_mesh",
+            "maps_to": "X-09",
+            "note": "Surfaced on mesh health; does not move money.",
+        },
+    }
+    intentional_hold = {
+        "SPORK_112_EXCHANGE_LIVE_TRADING": "default_off_until_ops",
+        "SPORK_114_PAYOUT_LIVE": "default_off_until_ops",
+    }
+    unused = sorted(
+        name for name in SPORK_IDS if name not in app_gated and name not in fixed_advisory
+    )
     default_off = sorted(name for name, val in SPORK_DEFAULTS.items() if val >= SPORK_OFF)
     gaps = [i for i in range(10101, 10116) if i not in SPORK_IDS.values()]
     return {
         "success": True,
         "defined_count": len(SPORK_IDS),
         "app_gated": sorted(app_gated),
+        "fixed_advisory": fixed_advisory,
+        "intentional_hold": intentional_hold,
         "unused_by_app": unused,
+        "unused_by_app_count": len(unused),
         "default_off": default_off,
         "id_gaps_10101_10115": gaps,
         "new_wallet_gates": [

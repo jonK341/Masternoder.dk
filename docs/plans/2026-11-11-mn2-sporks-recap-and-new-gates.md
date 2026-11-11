@@ -33,12 +33,24 @@ These live in `SPORK_IDS` for RPC show/active parity. The site does not enforce 
 | Spork | Notes |
 | ----- | ----- |
 | `SPORK_2`…`SPORK_7`, `SPORK_9`…`SPORK_10`, `SPORK_13`…`SPORK_29` | Classic chain / quorum / protocol flags |
-| `SPORK_101_SERVICES_ENFORCEMENT` | Services enforcement |
 | `SPORK_104_MAX_BLOCK_TIME` | Value-style spork (600), not a boolean gate |
 | `SPORK_106_STAKING_SKIP_MN_SYNC` | Referenced in tests; not an exchange gate |
 | `SPORK_109`…`SPORK_111` | Masternode force/payment/IP policy |
 
 Default **OFF** among those: payment enforcement (8, 9, 10), superblocks/protocol (13–16), MN2 server (25), force MN payment (110).
+
+### Fixed from unused (advisory only)
+
+| Spork | Fix |
+| ----- | --- |
+| `SPORK_101_SERVICES_ENFORCEMENT` | Surfaced on **X-09** mesh health as advisory (`services_enforcement_active`); still not a money gate |
+
+### Intentional hold (exist, stay off)
+
+| Spork | Why |
+| ----- | --- |
+| `SPORK_112_EXCHANGE_LIVE_TRADING` | Live venue legs — ops-signed only |
+| `SPORK_114_PAYOUT_LIVE` | Venue payout/sweep — ops-signed only |
 
 ## ID gaps (never allocated on chain)
 

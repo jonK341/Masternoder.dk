@@ -1,5 +1,6 @@
-"""Exchange-wallet mega prototype — X-03 / X-08 / X-40 / X-46 (on-chain capable).
+"""Exchange-wallet mega prototype — full priority install set (custody/desk/risk/ops).
 
+Priority IDs: X-02/03/04/05/08/09/22/27/31/34/35/38/39/40/41/43/46/48.
 Respects SPORK_112 / SPORK_114 default-off, plus wallet mega gates 116–121.
 On-chain deposit + MN2 withdraw paths are real custody rails; external venue
 live trading stays gated.
@@ -8,14 +9,20 @@ Knob walkthrough (50 × 12) lives in ``exchange_wallet_x_knobs``.
 """
 from __future__ import annotations
 
+import hashlib
+import os
+import time
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from backend.services import mn2_spork_service as spork
 from backend.services.exchange_wallet_x_knobs import (
     ALL_KNOBS,
     MEGA_MIN_KNOBS,
+    PRIORITY_BY_PILLAR,
+    PRIORITY_IDS,
     knobs_for,
+    priority_manifest,
     walkthrough,
 )
 
@@ -29,7 +36,7 @@ LIVE_GATES_DEFAULT_OFF = (
     "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
 )
 
-PRIORITY_IDS = ("X-03", "X-08", "X-40", "X-46")
+_BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def _iso() -> str:
@@ -55,6 +62,7 @@ def installed_knobs(enrichment_id: str) -> Dict[str, Any]:
         "tech": meta.get("tech"),
         "title": meta.get("title"),
         "pillar": meta.get("pillar"),
+        "priority_pillar": meta.get("priority_pillar"),
         "surfaces": list(meta.get("surfaces") or []),
         "priority": bool(meta.get("priority")),
         "knobs": levels,
@@ -66,12 +74,19 @@ def installed_knobs(enrichment_id: str) -> Dict[str, Any]:
 
 
 def priority_install_set() -> Dict[str, Any]:
+    by_pillar: Dict[str, List[Dict[str, Any]]] = {}
+    for pillar, ids in PRIORITY_BY_PILLAR.items():
+        by_pillar[pillar] = [installed_knobs(eid) for eid in ids]
     return {
         "success": True,
         "confirmed": True,
         "target": "v32.6.6.0",
-        "mode": "on_chain_trading_prototype",
+        "mode": "priority_exchange_wallet_install",
+        "count": len(PRIORITY_IDS),
+        "ids": list(PRIORITY_IDS),
+        "by_pillar": by_pillar,
         "enrichments": [installed_knobs(k) for k in PRIORITY_IDS],
+        "manifest": priority_manifest(),
         "knob_glossary_count": len(ALL_KNOBS),
         "mega_min_knobs": list(MEGA_MIN_KNOBS),
         "live_gates_default_off": list(LIVE_GATES_DEFAULT_OFF),
@@ -456,16 +471,530 @@ def guided_onchain(
     return out
 
 
+def quote_estimator(*, symbol: str = "BTC") -> Dict[str, Any]:
+    """X-02 — quote / slippage / fill-probability estimator from cached prices."""
+    from backend.services import exchange_prediction_service as pred
+
+    sym = (symbol or "BTC").strip().upper() or "BTC"
+    try:
+        forecast = pred.predict_symbol(sym) or {}
+    except Exception as exc:
+        forecast = {"success": False, "error": str(exc), "symbol": sym}
+    return {
+        "success": True,
+        "enrichment": "X-02",
+        "symbol": sym,
+        "estimate": forecast,
+        "live_gated": True,
+        "spork_112": {"allowed": spork.exchange_live_spork_ok()[0]},
+        "knobs": installed_knobs("X-02"),
+        "updated_at": _iso(),
+    }
+
+
+def vault_sync_status() -> Dict[str, Any]:
+    """X-04 — encrypted exchange-settings + API-key vault sync status."""
+    from backend.services import exchange_secrets_vault_service as vault
+
+    try:
+        status = vault.vault_status()
+    except Exception as exc:
+        status = {"encryption_available": False, "error": str(exc)}
+    return {
+        "success": True,
+        "enrichment": "X-04",
+        "vault": status,
+        "knobs": installed_knobs("X-04"),
+        "updated_at": _iso(),
+    }
+
+
+def book_cache_status(*, symbol: str = "BTC") -> Dict[str, Any]:
+    """X-05 — orderbook + balance cache with stale guards (price cache age)."""
+    from backend.services import crypto_exchange_service as ex
+    from backend.services import external_exchange_connector_service as conn
+
+    sym = (symbol or "BTC").strip().upper() or "BTC"
+    cache_path = getattr(conn, "_PRICE_CACHE_PATH", "")
+    age_sec: Optional[float] = None
+    stale = True
+    hit = False
+    venues: List[str] = []
+    try:
+        if cache_path and os.path.isfile(cache_path):
+            age_sec = max(0.0, time.time() - os.path.getmtime(cache_path))
+            hit = True
+            stale = age_sec > 30.0
+        prices = ex._read_json(cache_path, {}) if cache_path else {}
+        blob = (prices or {}).get("prices") if isinstance(prices, dict) else {}
+        if isinstance(blob, dict):
+            venues = list(blob.keys())
+    except Exception:
+        venues = []
+        age_sec = None
+        hit = False
+        stale = True
+    return {
+        "success": True,
+        "enrichment": "X-05",
+        "symbol": sym,
+        "cache": {
+            "hit": hit,
+            "stale": stale,
+            "age_sec": round(age_sec, 3) if age_sec is not None else None,
+            "venue_count": len(venues),
+            "venues": venues[:12],
+            "ttl_sec": 30,
+        },
+        "knobs": installed_knobs("X-05"),
+        "updated_at": _iso(),
+    }
+
+
+def mesh_health() -> Dict[str, Any]:
+    """X-09 — wallet ↔ exchange ↔ casino-bridge health mesh."""
+    from backend.services import crypto_exchange_service as ex
+    from backend.services import mn2_daemon_health_service as daemon_health
+
+    edges: List[Dict[str, Any]] = []
+    try:
+        d = daemon_health.probe_daemon(extended=False) or {}
+        edges.append(
+            {
+                "id": "wallet_daemon",
+                "status": "green" if d.get("healthy") else "red",
+                "detail": d.get("health") or d.get("error"),
+            }
+        )
+    except Exception as exc:
+        edges.append({"id": "wallet_daemon", "status": "red", "detail": str(exc)})
+    try:
+        h = ex.health() or {}
+        edges.append(
+            {
+                "id": "exchange",
+                "status": "green" if h.get("status") == "healthy" else "amber",
+                "detail": h.get("status"),
+            }
+        )
+    except Exception as exc:
+        edges.append({"id": "exchange", "status": "red", "detail": str(exc)})
+    casino_status = "amber"
+    try:
+        from backend.services import casino_bridge_service as casino  # type: ignore
+
+        ch = casino.health() if hasattr(casino, "health") else {"status": "unknown"}
+        casino_status = "green" if (ch or {}).get("status") in ("healthy", "ok") else "amber"
+        edges.append({"id": "casino_bridge", "status": casino_status, "detail": ch})
+    except Exception:
+        edges.append({"id": "casino_bridge", "status": "amber", "detail": "bridge_optional"})
+    services_on = spork.services_enforcement_active()
+    reds = sum(1 for e in edges if e.get("status") == "red")
+    overall = "red" if reds else ("amber" if any(e.get("status") == "amber" for e in edges) else "green")
+    return {
+        "success": True,
+        "enrichment": "X-09",
+        "overall": overall,
+        "edges": edges,
+        "spork_101_services_enforcement": services_on,
+        "knobs": installed_knobs("X-09"),
+        "updated_at": _iso(),
+    }
+
+
+def behavior_hints(*, user_id: str, amount: float = 1.0, balance: float = 10.0, address: str = "") -> Dict[str, Any]:
+    """X-22 — unusual trading / withdraw pattern hints."""
+    assessed = assess_anomaly(
+        user_id=user_id,
+        kind="withdraw",
+        address=address,
+        amount=amount,
+        balance=balance,
+    )
+    reasons = []
+    raw = assessed.get("assessment") if isinstance(assessed.get("assessment"), dict) else {}
+    for key in ("reasons", "signals", "flags", "notes"):
+        val = raw.get(key) if isinstance(raw, dict) else None
+        if isinstance(val, list):
+            reasons.extend(str(x) for x in val)
+        elif isinstance(val, str) and val:
+            reasons.append(val)
+    level = str((raw or {}).get("level") or ("high" if assessed.get("blocked") else "low"))
+    return {
+        "success": True,
+        "enrichment": "X-22",
+        "level": level,
+        "hints": reasons or (["anomaly_high"] if assessed.get("blocked") else ["patterns_clear"]),
+        "assessment": assessed,
+        "knobs": installed_knobs("X-22"),
+        "updated_at": _iso(),
+    }
+
+
+def integrity_scan() -> Dict[str, Any]:
+    """X-27 — hot/cold wallet file integrity checks for custody files."""
+    paths = [
+        os.path.join(_BASE, "data", "exchange_secrets_vault.json"),
+        os.path.join(_BASE, "data", "mn2_withdrawal_security.json"),
+        os.path.join(_BASE, "data", "mn2_user_addresses.json"),
+    ]
+    files: List[Dict[str, Any]] = []
+    missing = 0
+    for path in paths:
+        row: Dict[str, Any] = {"path": os.path.relpath(path, _BASE)}
+        if not os.path.isfile(path):
+            row["status"] = "missing"
+            missing += 1
+            files.append(row)
+            continue
+        try:
+            with open(path, "rb") as f:
+                data = f.read()
+            row["status"] = "ok"
+            row["size"] = len(data)
+            row["sha16"] = hashlib.sha256(data).hexdigest()[:16]
+            row["mtime"] = datetime.fromtimestamp(os.path.getmtime(path), timezone.utc).isoformat().replace("+00:00", "Z")
+        except Exception as exc:
+            row["status"] = "error"
+            row["error"] = str(exc)
+            missing += 1
+        files.append(row)
+    status = "green" if missing == 0 else ("amber" if missing < len(paths) else "red")
+    return {
+        "success": True,
+        "enrichment": "X-27",
+        "status": status,
+        "files": files,
+        "knobs": installed_knobs("X-27"),
+        "updated_at": _iso(),
+    }
+
+
+def health_rails() -> Dict[str, Any]:
+    """X-31 — green/amber/red for daemon + venue + payout rails."""
+    mesh = mesh_health()
+    fo = failover_status()
+    pay_ok, pay_reason = spork.payout_live_spork_ok()
+    maint = spork.maintenance_mode()
+    rails = {
+        "daemon": next((e for e in mesh.get("edges") or [] if e.get("id") == "wallet_daemon"), {}),
+        "exchange": next((e for e in mesh.get("edges") or [] if e.get("id") == "exchange"), {}),
+        "venues": {
+            "preferred": fo.get("preferred_venue"),
+            "standby": fo.get("standby_venue"),
+            "status": "green" if fo.get("preferred_venue") else "amber",
+        },
+        "payout": {
+            "status": "green" if pay_ok else "amber",
+            "allowed": pay_ok,
+            "reason": pay_reason or None,
+        },
+        "maintenance": {"status": "red" if maint else "green", "active": maint},
+    }
+    statuses = [str((rails["daemon"] or {}).get("status") or "amber"), str((rails["exchange"] or {}).get("status") or "amber")]
+    overall = "red" if "red" in statuses or maint else ("amber" if "amber" in statuses else "green")
+    return {
+        "success": True,
+        "enrichment": "X-31",
+        "overall": overall,
+        "rails": rails,
+        "knobs": installed_knobs("X-31"),
+        "updated_at": _iso(),
+    }
+
+
+def alert_monitor() -> Dict[str, Any]:
+    """X-34 — alerts for stuck rails, maintenance, and closed money gates."""
+    health = health_rails()
+    alerts: List[Dict[str, Any]] = []
+    if health.get("overall") == "red":
+        alerts.append({"id": "rails_red", "severity": "high", "message": "Daemon or exchange rail is red.", "heal": "X-43"})
+    if (health.get("rails") or {}).get("maintenance", {}).get("active"):
+        alerts.append({"id": "maintenance", "severity": "high", "message": "SPORK_115 maintenance mode active.", "heal": None})
+    if not spork.exchange_live_spork_ok()[0]:
+        alerts.append(
+            {
+                "id": "live_trading_off",
+                "severity": "info",
+                "message": "SPORK_112 live trading off (intentional hold).",
+                "heal": None,
+            }
+        )
+    fo = failover_status()
+    if fo.get("preferred_venue") is None:
+        alerts.append({"id": "no_venue", "severity": "medium", "message": "No preferred venue ranked.", "heal": "X-08"})
+    return {
+        "success": True,
+        "enrichment": "X-34",
+        "alert_count": len(alerts),
+        "alerts": alerts,
+        "knobs": installed_knobs("X-34"),
+        "updated_at": _iso(),
+    }
+
+
+def metrics_snapshot() -> Dict[str, Any]:
+    """X-35 — metrics snapshot for trades/rejects/withdraw gates."""
+    gates = spork.gate_status()
+    counters = {
+        "priority_enrichments": len(PRIORITY_IDS),
+        "gate_denies_default_off": len(LIVE_GATES_DEFAULT_OFF),
+        "anomaly_hard_enforce": 1 if gates.get("anomaly_hard_enforce", {}).get("allowed") else 0,
+        "exchange_live_allowed": 1 if gates.get("exchange_live", {}).get("allowed") else 0,
+        "payout_live_allowed": 1 if gates.get("payout_live", {}).get("allowed") else 0,
+        "wallet_onchain_withdraw_allowed": 1 if gates.get("wallet_onchain_withdraw", {}).get("allowed") else 0,
+        "guided_trade_execute_allowed": 1 if gates.get("guided_trade_execute", {}).get("allowed") else 0,
+        "whitelist_enforced": 1 if gates.get("withdraw_whitelist_required", {}).get("enforced") else 0,
+    }
+    explorer = {}
+    try:
+        from backend.services import mn2_explorer_metrics as explorer_metrics
+
+        if hasattr(explorer_metrics, "snapshot"):
+            explorer = explorer_metrics.snapshot() or {}
+        elif hasattr(explorer_metrics, "summary"):
+            explorer = explorer_metrics.summary() or {}
+    except Exception as exc:
+        explorer = {"available": False, "error": str(exc)}
+    return {
+        "success": True,
+        "enrichment": "X-35",
+        "counters": counters,
+        "explorer": explorer,
+        "knobs": installed_knobs("X-35"),
+        "updated_at": _iso(),
+    }
+
+
+def withdraw_fence(*, user_id: str = "proto_user") -> Dict[str, Any]:
+    """X-38 — withdraw allow-list + policy fence (SPORK_121)."""
+    from backend.services.mn2_withdrawal_security import get_security_status
+
+    uid = str(user_id or "proto_user")
+    try:
+        sec = get_security_status(uid) or {}
+    except Exception as exc:
+        sec = {"success": False, "error": str(exc), "whitelist_count": 0}
+    enforced = spork.withdraw_whitelist_required()
+    return {
+        "success": True,
+        "enrichment": "X-38",
+        "user_id": uid,
+        "whitelist_required": enforced,
+        "spork_121": {"enforced": enforced},
+        "security": sec,
+        "knobs": installed_knobs("X-38"),
+        "updated_at": _iso(),
+    }
+
+
+def route_picker() -> Dict[str, Any]:
+    """X-39 — best venue / fee / settle route from failover ranking."""
+    fo = failover_status()
+    preferred = fo.get("preferred_venue")
+    standby = fo.get("standby_venue")
+    score = None
+    if isinstance(preferred, dict):
+        score = {
+            "live_ready": bool(preferred.get("live_ready")),
+            "credentials_configured": bool(preferred.get("credentials_configured")),
+            "venue_id": preferred.get("venue_id"),
+        }
+    return {
+        "success": True,
+        "enrichment": "X-39",
+        "route": {
+            "preferred": preferred,
+            "standby": standby,
+            "score": score,
+            "live_trading_enabled": fo.get("live_trading_enabled"),
+            "auto_promote_allowed": fo.get("auto_promote_allowed"),
+        },
+        "knobs": installed_knobs("X-39"),
+        "updated_at": _iso(),
+        "note": "Route ranking only; live legs stay SPORK_112 gated.",
+    }
+
+
+def ml_predictor(*, symbol: str = "BTC") -> Dict[str, Any]:
+    """X-41 — confirm-time / fee / adverse-selection hint via prediction engine."""
+    est = quote_estimator(symbol=symbol)
+    return {
+        "success": True,
+        "enrichment": "X-41",
+        "symbol": est.get("symbol"),
+        "prediction": est.get("estimate"),
+        "disclaimer": (est.get("estimate") or {}).get("disclaimer"),
+        "knobs": installed_knobs("X-41"),
+        "updated_at": _iso(),
+    }
+
+
+def self_healer(*, dry_run: bool = True) -> Dict[str, Any]:
+    """X-43 — auto resubscribe / rewind plan (promote gated by SPORK_117)."""
+    fo = failover_status()
+    health = health_rails()
+    fo_ok = bool(fo.get("auto_promote_allowed"))
+    actions: List[Dict[str, Any]] = []
+    if health.get("overall") != "green":
+        actions.append({"id": "reprobe_daemon", "blast": "low", "auto": True})
+    if fo.get("preferred_venue") is None:
+        actions.append({"id": "rerank_venues", "blast": "low", "auto": True})
+    if fo_ok and fo.get("standby_venue"):
+        actions.append(
+            {
+                "id": "promote_standby",
+                "blast": "medium",
+                "auto": False,
+                "allowed": True,
+                "reason": None,
+            }
+        )
+    else:
+        actions.append(
+            {
+                "id": "promote_standby",
+                "blast": "medium",
+                "auto": False,
+                "allowed": False,
+                "reason": fo.get("auto_promote_reason") or "spork_exchange_venue_failover_off",
+            }
+        )
+    actions.append({"id": "resubscribe_feeds", "blast": "low", "auto": True})
+    return {
+        "success": True,
+        "enrichment": "X-43",
+        "dry_run": bool(dry_run),
+        "executed": False,
+        "actions": actions,
+        "spork_117": {"allowed": fo_ok, "reason": fo.get("auto_promote_reason")},
+        "knobs": installed_knobs("X-43"),
+        "updated_at": _iso(),
+        "note": "Healer returns a plan only; money paths never auto-broadcast.",
+    }
+
+
+def decision_strip(*, user_id: str = "proto_user") -> Dict[str, Any]:
+    """X-48 — recommended next action strip from balances + gates + anomaly."""
+    from backend.services import crypto_exchange_service as ex
+
+    uid = str(user_id or "proto_user")
+    bal_mn2 = 0.0
+    try:
+        w = ex.get_wallet(uid) or {}
+        bals = w.get("balances") if isinstance(w, dict) else {}
+        if isinstance(bals, dict):
+            bal_mn2 = float(bals.get("MN2") or 0)
+    except Exception:
+        bal_mn2 = 0.0
+    ex_ok, _ = spork.exchange_live_spork_ok()
+    w_ok, _ = spork.wallet_onchain_withdraw_spork_ok()
+    actions: List[Dict[str, Any]] = []
+    if bal_mn2 <= 0:
+        actions.append({"id": "deposit", "label": "Deposit MN2", "href": "/profile?tab=wallet&wallet=deposit", "priority": 1})
+    else:
+        actions.append({"id": "trade", "label": "Guided trade", "href": "/exchange", "api": "POST /api/exchange/wallet-mega/guided", "priority": 1})
+        if w_ok:
+            actions.append({"id": "withdraw", "label": "Withdraw on-chain", "api": "POST /api/exchange/wallet-mega/guided", "priority": 2})
+        else:
+            actions.append({"id": "withdraw_dry_run", "label": "Assess withdraw (broadcast gated)", "api": "POST /api/exchange/wallet-mega/assess", "priority": 2})
+    if not ex_ok:
+        actions.append({"id": "wait_live", "label": "Live venue trading held (SPORK_112)", "priority": 9})
+    actions.append({"id": "status", "label": "Refresh rails", "api": "GET /api/exchange/wallet-mega/priority", "priority": 8})
+    actions.sort(key=lambda a: int(a.get("priority") or 99))
+    return {
+        "success": True,
+        "enrichment": "X-48",
+        "user_id": uid,
+        "balance_mn2": bal_mn2,
+        "recommended": actions[0] if actions else None,
+        "actions": actions,
+        "knobs": installed_knobs("X-48"),
+        "updated_at": _iso(),
+    }
+
+
+_RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
+    "X-02": lambda **kw: quote_estimator(symbol=str(kw.get("symbol") or "BTC")),
+    "X-03": lambda **kw: por_glance(venue=kw.get("venue"), limit=int(kw.get("limit") or 40)),
+    "X-04": lambda **_kw: vault_sync_status(),
+    "X-05": lambda **kw: book_cache_status(symbol=str(kw.get("symbol") or "BTC")),
+    "X-08": lambda **_kw: failover_status(),
+    "X-09": lambda **_kw: mesh_health(),
+    "X-22": lambda **kw: behavior_hints(
+        user_id=str(kw.get("user_id") or "proto_user"),
+        amount=float(kw.get("amount") or 1.0),
+        balance=float(kw.get("balance") or 10.0),
+        address=str(kw.get("address") or ""),
+    ),
+    "X-27": lambda **_kw: integrity_scan(),
+    "X-31": lambda **_kw: health_rails(),
+    "X-34": lambda **_kw: alert_monitor(),
+    "X-35": lambda **_kw: metrics_snapshot(),
+    "X-38": lambda **kw: withdraw_fence(user_id=str(kw.get("user_id") or "proto_user")),
+    "X-39": lambda **_kw: route_picker(),
+    "X-40": lambda **kw: guided_onchain(
+        user_id=str(kw.get("user_id") or "proto_user"),
+        step=str(kw.get("step") or "status"),
+        amount_mn2=float(kw.get("amount_mn2") or 0),
+        to_asset=str(kw.get("to_asset") or "BTC"),
+        withdraw_address=str(kw.get("withdraw_address") or ""),
+        execute_withdraw=bool(kw.get("execute_withdraw") or False),
+    ),
+    "X-41": lambda **kw: ml_predictor(symbol=str(kw.get("symbol") or "BTC")),
+    "X-43": lambda **kw: self_healer(dry_run=bool(kw.get("dry_run", True))),
+    "X-46": lambda **kw: assess_anomaly(
+        user_id=str(kw.get("user_id") or "proto_user"),
+        kind=str(kw.get("kind") or "withdraw"),
+        address=str(kw.get("address") or ""),
+        amount=float(kw.get("amount") or 0),
+        balance=float(kw.get("balance") or 0),
+        symbol=str(kw.get("symbol") or "MN2"),
+    ),
+    "X-48": lambda **kw: decision_strip(user_id=str(kw.get("user_id") or "proto_user")),
+}
+
+
+def run_enrichment(enrichment_id: str, **kwargs: Any) -> Dict[str, Any]:
+    """Run one priority enrichment install snapshot."""
+    eid = str(enrichment_id or "").strip().upper()
+    if eid not in PRIORITY_IDS:
+        return {"success": False, "error": "not_priority_enrichment", "id": eid, "priority_ids": list(PRIORITY_IDS)}
+    runner = _RUNNERS.get(eid)
+    if not runner:
+        return {"success": False, "error": "runner_missing", "id": eid}
+    try:
+        return runner(**kwargs)
+    except Exception as exc:
+        return {"success": False, "error": str(exc), "id": eid, "enrichment": eid}
+
+
+def run_priority_install(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict[str, Any]:
+    """Execute all priority enrichment runners (dry / status mode)."""
+    results: Dict[str, Any] = {}
+    for eid in PRIORITY_IDS:
+        results[eid] = run_enrichment(eid, user_id=user_id, symbol=symbol, step="status", dry_run=True)
+    ok = sum(1 for v in results.values() if isinstance(v, dict) and v.get("success"))
+    return {
+        "success": ok == len(PRIORITY_IDS),
+        "target": "v32.6.6.0",
+        "count": len(PRIORITY_IDS),
+        "ok_count": ok,
+        "by_pillar": {
+            pillar: {eid: results.get(eid) for eid in ids} for pillar, ids in PRIORITY_BY_PILLAR.items()
+        },
+        "results": results,
+        "updated_at": _iso(),
+    }
+
+
 def prototype_bundle(*, user_id: str = "proto_user") -> Dict[str, Any]:
     """One-shot snapshot for tests and the wallets UI."""
     return {
         "success": True,
         "target": "v32.6.6.0",
         "priority": priority_install_set(),
+        "install": run_priority_install(user_id=user_id),
         "knobs": knob_walkthrough(enrichment_id=None, installed_min_only=False),
-        "x03": por_glance(limit=10),
-        "x08": failover_status(),
-        "x40": guided_onchain(user_id=user_id, step="status"),
-        "x46": assess_anomaly(user_id=user_id, kind="withdraw", amount=1.0, balance=10.0, address=""),
         "updated_at": _iso(),
     }

@@ -1745,6 +1745,50 @@ def exchange_wallet_mega_priority():
     return jsonify(mega.priority_install_set())
 
 
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/priority/run", methods=["GET", "POST"])
+def exchange_wallet_mega_priority_run():
+    """Run all priority enrichment install snapshots (status/dry-run)."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    return jsonify(
+        mega.run_priority_install(
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/priority/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_priority_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    args = request.args
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(data.get("symbol") or args.get("symbol") or "BTC"),
+            venue=data.get("venue") or args.get("venue"),
+            limit=int(data.get("limit") or args.get("limit") or 40),
+            step=str(data.get("step") or args.get("step") or "status"),
+            amount_mn2=float(data.get("amount_mn2") or args.get("amount_mn2") or 0),
+            amount=float(data.get("amount") or args.get("amount") or 0),
+            balance=float(data.get("balance") or args.get("balance") or 0),
+            address=str(data.get("address") or args.get("address") or ""),
+            withdraw_address=str(data.get("withdraw_address") or args.get("withdraw_address") or ""),
+            to_asset=str(data.get("to_asset") or args.get("to_asset") or "BTC"),
+            kind=str(data.get("kind") or args.get("kind") or "withdraw"),
+            dry_run=str(data.get("dry_run", args.get("dry_run", "1"))).lower() not in ("0", "false", "no"),
+            execute_withdraw=bool(data.get("execute_withdraw"))
+            if request.method == "POST"
+            else str(args.get("execute_withdraw") or "").lower() in ("1", "true", "yes"),
+        )
+    )
+
+
 @crypto_exchange_bp.route("/api/exchange/wallet-mega/por-glance", methods=["GET"])
 def exchange_wallet_mega_por_glance():
     from backend.services import exchange_wallet_mega_prototype_service as mega
