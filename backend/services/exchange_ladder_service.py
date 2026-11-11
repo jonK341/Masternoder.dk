@@ -11,7 +11,7 @@ its exit fills. Entries are refreshed to the current mid every ``refresh_minutes
 or when it drifts ``recenter_bps``; a rung is only replaced when its price moves
 ``reprice_bps``. Unfilled exits step toward the market over ``exit_decay_minutes``,
 down to ``min_exit_bps`` from their entry, so each pair stays profitable.
-If mark loss vs the entry exceeds ``stop_loss_pct`` (default 10%), the paired
+If mark loss vs the entry exceeds ``stop_loss_pct`` (default 4.5%), the paired
 spot is pulled and flattened through the spread. Orders are tagged ``ld-``.
 """
 from __future__ import annotations
@@ -85,7 +85,7 @@ def _default_config() -> Dict[str, Any]:
         # Cap how far entry rungs may sit from mid; farther opens are dead capital.
         "max_entry_bps": 75.0,
         # Flatten the paired exit spot when mark loss vs entry exceeds this percent.
-        "stop_loss_pct": 10.0,
+        "stop_loss_pct": 4.5,
         "fill_model_enabled": True,
         "fill_model_min_prob": 0.18,
     }

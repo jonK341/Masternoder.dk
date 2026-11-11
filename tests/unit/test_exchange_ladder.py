@@ -462,6 +462,8 @@ def test_stop_loss_helpers():
     assert abs(exit_mark_loss_pct("buy", 100.0, 90.0) - 10.0) < 1e-9
     assert exit_mark_loss_pct("buy", 100.0, 110.0) == 0.0
     assert abs(exit_mark_loss_pct("sell", 100.0, 110.0) - 10.0) < 1e-9
+    assert stop_loss_triggered("buy", 100.0, 95.4, 4.5) is True
+    assert stop_loss_triggered("buy", 100.0, 96.0, 4.5) is False
     assert stop_loss_triggered("buy", 100.0, 89.0, 10.0) is True
     assert stop_loss_triggered("buy", 100.0, 91.0, 10.0) is False
     assert aggressive_close_price("sell", {"bid": 0.09, "ask": 0.091}, 0.0905, 6) == 0.09
@@ -470,7 +472,7 @@ def test_stop_loss_helpers():
 
 def test_stop_loss_closes_underwater_exit(tmp_path):
     venue = FakeVenue()
-    cfg = _cfg(sides=["buy"], levels=1, stop_loss_pct=10.0, exit_bps=55.0)
+    cfg = _cfg(sides=["buy"], levels=1, stop_loss_pct=4.5, exit_bps=55.0)
     _run(venue, tmp_path, cfg=cfg, mid=1.0)
     entry = venue.placed[0]
     venue.fill(entry["coid"])
@@ -479,11 +481,11 @@ def test_stop_loss_closes_underwater_exit(tmp_path):
     exit_order = venue.placed[-1]
     assert exit_order["side"] == "sell"
     assert exit_order["coid"] in venue.open
-    # Crash >10% against the long — stop should pull TP and flatten through the bid.
-    rep = _run(venue, tmp_path, cfg=cfg, now=1120.0, mid=0.88, bal={"ALGO": entry["qty"], "USDT": 0.0})
+    # Crash >4.5% against the long — stop should pull TP and flatten through the bid.
+    rep = _run(venue, tmp_path, cfg=cfg, now=1120.0, mid=0.95, bal={"ALGO": entry["qty"], "USDT": 0.0})
     assert exit_order["coid"] in venue.cancelled
-    assert rep["stops"] and rep["stops"][0]["loss_pct"] >= 10.0
+    assert rep["stops"] and rep["stops"][0]["loss_pct"] >= 4.5
     stop = venue.placed[-1]
     assert stop["side"] == "sell"
-    assert abs(stop["price"] - 0.88) < 1e-9
+    assert abs(stop["price"] - 0.95) < 1e-9
     assert "x" in stop["coid"]

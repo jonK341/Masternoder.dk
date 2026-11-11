@@ -17,7 +17,7 @@
   "exit_decay_minutes": 120.0,
   "inventory_skew_bps": 25.0,
   "max_entry_bps": 75.0,
-  "stop_loss_pct": 10.0,
+  "stop_loss_pct": 4.5,
   "fill_model_enabled": true,
   "fill_model_min_prob": 0.18,
   "binance": {
@@ -35,7 +35,7 @@
     "min_exit_bps": 40.0,
     "inventory_skew_bps": 20.0,
     "max_entry_bps": 60.0,
-    "stop_loss_pct": 10.0,
+    "stop_loss_pct": 4.5,
     "quote_reserve": 5.0
   }
 }
