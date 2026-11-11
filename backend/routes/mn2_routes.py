@@ -1539,3 +1539,67 @@ def mn2_train_c_one(deliverable_id: str):
             limit=int(data.get("limit") or request.args.get("limit") or 20),
         )
     )
+
+
+# --- Train D monitors & navigation (v1.6.0.0 draft) ---
+
+
+@mn2_bp.route("/api/mn2/train-d", methods=["GET"])
+def mn2_train_d_manifest():
+    from backend.services import wallet_train_d_service as train_d
+
+    return jsonify(train_d.train_d_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-d/version", methods=["GET"])
+def mn2_train_d_version():
+    from backend.services import wallet_train_d_service as train_d
+
+    return jsonify(train_d.train_d_version())
+
+
+@mn2_bp.route("/api/mn2/train-d/run", methods=["GET", "POST"])
+def mn2_train_d_run():
+    from backend.services import wallet_train_d_service as train_d
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_d.run_train_d(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-d/acceptance", methods=["GET", "POST"])
+def mn2_train_d_acceptance():
+    from backend.services import wallet_train_d_service as train_d
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_d.train_d_acceptance(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-d/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_d_one(deliverable_id: str):
+    from backend.services import wallet_train_d_service as train_d
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(
+        train_d.run_deliverable(
+            deliverable_id,
+            user_id=uid,
+            conf_target=int(data.get("conf_target") or request.args.get("conf_target") or 6),
+            step=str(data.get("step") or request.args.get("step") or "status"),
+        )
+    )
