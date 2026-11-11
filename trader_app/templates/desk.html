@@ -42,6 +42,16 @@
   .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: #1e2a3d; color: var(--acc); }
   .pill.ok { background: #12332a; color: var(--pos); }
   .pill.bad { background: #3a1622; color: var(--neg); }
+  .pill.yt { background: #3a1622; color: var(--neg); }
+  .pill.dc { background: #1a2240; color: #9bb0ff; }
+  .stream-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 0 0 10px; }
+  .stream-bar button { background: #1a2434; color: var(--txt); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+  .stream-bar button:hover { border-color: var(--acc); }
+  .stream-feed { max-height: 280px; overflow: auto; border-top: 1px solid var(--line); margin-top: 4px; }
+  .stream-row { display: grid; grid-template-columns: 72px 1fr auto; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .stream-row .t { color: var(--mut); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .stream-row .tag { color: var(--acc); text-transform: uppercase; letter-spacing: .04em; font-size: 11px; margin-right: 6px; }
+  .stream-row .d { font-variant-numeric: tabular-nums; font-weight: 650; }
 </style>
 </head>
 <body>
@@ -49,12 +59,30 @@
   <h1>Fast desk</h1>
   <span id="mode" class="mode">paper</span>
   <span id="when" class="note"></span>
-  <a href="/" style="margin-left:auto">Full board</a>
+  <a href="/trade-stream" style="margin-left:auto">Trade stream</a>
+  <a href="/">Full board</a>
   <a href="/logout">Lock</a>
 </header>
 <main>
   <p id="note" class="note">Loading the latest pass…</p>
   <div id="kpis" class="kpis"></div>
+  <h2>Live trade stream</h2>
+  <article class="card" id="streamPanel">
+    <div class="meta">OBS / YouTube interest + live maker·ladder·arb ticks · Discord <code>/streamvote</code></div>
+    <div class="stream-bar" style="margin-top:10px">
+      <span class="pill" id="streamMode">collecting interest</span>
+      <span class="pill" id="votesLocal">local 0/5</span>
+      <span class="pill yt" id="votesSub">subscribers 0/5</span>
+      <span class="pill dc" id="votesDc">discord 0/5</span>
+    </div>
+    <div class="stream-bar">
+      <button type="button" id="voteLocal">Vote — local</button>
+      <button type="button" id="voteSub">Vote — YouTube sub</button>
+      <button type="button" id="voteDc">Vote — Discord</button>
+      <a href="/trade-stream" class="meta" style="margin-left:auto">Open overlay ↗</a>
+    </div>
+    <div class="stream-feed" id="streamFeed"><div class="meta">Loading trades…</div></div>
+  </article>
   <div class="split">
     <div>
       <h2>Gap board</h2>
@@ -231,8 +259,68 @@ function load() {
     document.getElementById("note").textContent = "The desk could not be read.";
   });
 }
+function voterId(key) {
+  var id = localStorage.getItem(key);
+  if (!id) {
+    id = "v" + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+function paintStream(d) {
+  var interest = d.interest || {};
+  var audiences = interest.audiences || {};
+  var local = audiences.local || {};
+  var sub = audiences.youtube_subscriber || {};
+  var dc = audiences.discord || {};
+  var localEl = document.getElementById("votesLocal");
+  var subEl = document.getElementById("votesSub");
+  var dcEl = document.getElementById("votesDc");
+  var modeEl = document.getElementById("streamMode");
+  localEl.textContent = "local " + (local.votes || interest.local_votes || 0) + "/" + (local.threshold || interest.local_threshold || 5);
+  subEl.textContent = "subscribers " + (sub.votes || interest.subscriber_votes || 0) + "/" + (sub.threshold || interest.subscriber_threshold || 5);
+  dcEl.textContent = "discord " + (dc.votes || interest.discord_votes || 0) + "/" + (dc.threshold || interest.discord_threshold || 5);
+  localEl.className = "pill" + (local.interested_enough ? " ok" : "");
+  subEl.className = "pill yt" + (sub.interested_enough ? " ok" : "");
+  dcEl.className = "pill dc" + (dc.interested_enough ? " ok" : "");
+  modeEl.textContent = interest.interested_enough ? "ready for YouTube" : "collecting interest";
+  modeEl.className = "pill" + (interest.interested_enough ? " ok" : "");
+  var rows = (d.trades || []).slice().reverse().slice(0, 24);
+  document.getElementById("streamFeed").innerHTML = rows.map(function (r) {
+    var dlt = Number(r.delta_usd || 0);
+    var cls = dlt > 0 ? "pos" : (dlt < 0 ? "neg" : "");
+    var ts = String(r.ts || "").replace("T", " ").slice(11, 19);
+    return '<div class="stream-row"><div class="t">' + esc(ts) + '</div><div class="m"><span class="tag">'
+      + esc(r.strategy || "trade") + "</span>" + esc(r.message || "") + '</div><div class="d ' + cls + '">'
+      + (dlt ? ((dlt > 0 ? "+" : "") + dlt.toFixed(2)) : "—") + "</div></div>";
+  }).join("") || '<div class="meta">Waiting for live fills…</div>';
+}
+function loadStream() {
+  fetch("/api/trade-stream").then(function (r) { return r.json(); }).then(paintStream).catch(function () {
+    document.getElementById("streamFeed").innerHTML = '<div class="meta">Trade stream unavailable.</div>';
+  });
+}
+function voteStream(audience) {
+  var body = { voter: voterId("yt_interest_id_" + audience), audience: audience };
+  if (audience === "youtube_subscriber") {
+    body.self_attest_subscriber = true;
+    var uid = localStorage.getItem("yt_user_id") || "";
+    if (uid) body.user_id = uid;
+  }
+  if (audience === "discord") body.discord_id = voterId("discord_vote_id");
+  fetch("/api/trade-stream/interest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  }).then(function (r) { return r.json(); }).then(function () { loadStream(); });
+}
+document.getElementById("voteLocal").onclick = function () { voteStream("local"); };
+document.getElementById("voteSub").onclick = function () { voteStream("youtube_subscriber"); };
+document.getElementById("voteDc").onclick = function () { voteStream("discord"); };
 load();
+loadStream();
 setInterval(load, 5000);
+setInterval(loadStream, 5000);
 </script>
 </body>
 </html>

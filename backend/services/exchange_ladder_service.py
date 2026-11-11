@@ -11,7 +11,8 @@ its exit fills. Entries are refreshed to the current mid every ``refresh_minutes
 or when it drifts ``recenter_bps``; a rung is only replaced when its price moves
 ``reprice_bps``. Unfilled exits step toward the market over ``exit_decay_minutes``,
 down to ``min_exit_bps`` from their entry, so each pair stays profitable.
-Orders are tagged ``ld-``.
+If mark loss vs the entry exceeds ``stop_loss_pct`` (default 4.5%), the paired
+spot is pulled and flattened through the spread. Orders are tagged ``ld-``.
 """
 from __future__ import annotations
 
@@ -57,7 +58,8 @@ LOST_AFTER_SEC = 600.0
 
 _FLOAT_KEYS = ("order_usd", "min_order_usd", "first_bps", "step_bps", "exit_bps", "fee_bps",
                "recenter_bps", "refresh_minutes", "reprice_bps", "min_exit_bps", "exit_decay_minutes",
-               "quote_reserve", "inventory_skew_bps", "fill_model_min_prob")
+               "quote_reserve", "inventory_skew_bps", "fill_model_min_prob", "max_entry_bps",
+               "stop_loss_pct")
 
 
 def _default_config() -> Dict[str, Any]:
@@ -67,19 +69,23 @@ def _default_config() -> Dict[str, Any]:
         "sides": ["sell", "buy"],
         "order_usd": 3.5,
         "min_order_usd": 3.0,
-        "levels": 6,
+        "levels": 3,
         "max_open_orders": 60,
-        "first_bps": 30.0,
-        "step_bps": 40.0,
-        "exit_bps": 80.0,
+        "first_bps": 18.0,
+        "step_bps": 22.0,
+        "exit_bps": 55.0,
         "fee_bps": 20.0,
         "recenter_bps": 30.0,
         "refresh_minutes": 10.0,
         "reprice_bps": 5.0,
-        "min_exit_bps": 55.0,
+        "min_exit_bps": 40.0,
         "exit_decay_minutes": 120.0,
         "quote_reserve": 0.0,
         "inventory_skew_bps": 25.0,
+        # Cap how far entry rungs may sit from mid; farther opens are dead capital.
+        "max_entry_bps": 75.0,
+        # Flatten the paired exit spot when mark loss vs entry exceeds this percent.
+        "stop_loss_pct": 4.5,
         "fill_model_enabled": True,
         "fill_model_min_prob": 0.18,
     }
@@ -333,6 +339,42 @@ def exit_bps_at(cfg: Dict[str, Any], age_sec: float) -> float:
     return far - (far - near) * frac
 
 
+def exit_mark_loss_pct(entry_side: str, entry: float, mid: float) -> float:
+    """Percent mark loss vs entry for an open paired inventory spot (0 = flat/profit)."""
+    if entry <= 0 or mid <= 0:
+        return 0.0
+    side = str(entry_side or "").lower()
+    if side == "buy":
+        # Long base: loss when mid falls below entry.
+        return max(0.0, (entry - mid) / entry * 100.0)
+    if side == "sell":
+        # Short base: loss when mid rises above entry.
+        return max(0.0, (mid - entry) / entry * 100.0)
+    return 0.0
+
+
+def stop_loss_triggered(entry_side: str, entry: float, mid: float, stop_pct: float) -> bool:
+    """True when mark loss vs entry is at least ``stop_pct`` percent."""
+    if stop_pct <= 0:
+        return False
+    return exit_mark_loss_pct(entry_side, entry, mid) + 1e-9 >= float(stop_pct)
+
+
+def aggressive_close_price(side: str, book: Dict[str, float], mid: float, decimals: int) -> float:
+    """Cross the spread so a stop flatten is likely to fill immediately."""
+    side_l = str(side or "").lower()
+    try:
+        bid = float(book.get("bid") or 0)
+        ask = float(book.get("ask") or 0)
+    except (TypeError, ValueError):
+        bid = ask = 0.0
+    if side_l == "sell":
+        px = bid if bid > 0 else mid * 0.999
+        return round_price(px, "sell", decimals)
+    px = ask if ask > 0 else mid * 1.001
+    return round_price(px, "buy", decimals)
+
+
 def exit_spec(entry_side: str, entry: float, filled: float, bps: float,
               cfg: Dict[str, Any], mk: Dict[str, float]) -> Dict[str, Any]:
     fee = cfg["fee_bps"] / 1e4
@@ -406,7 +448,8 @@ def run_ladder(
     cfg = cfg or load_config(venue)
     venue = cfg.get("venue") or venue
     report: Dict[str, Any] = {"venue": venue, "execute": cfg["execute"], "placed": [], "fills": [],
-                              "cancelled": [], "repriced": [], "kept": 0, "skipped": [], "errors": []}
+                              "cancelled": [], "repriced": [], "stops": [], "kept": 0, "skipped": [],
+                              "errors": []}
     if not cfg["execute"]:
         return report
     defaults = _venue_defaults(venue)
@@ -455,14 +498,19 @@ def run_ladder(
         report["strategy_improve_error"] = str(exc)
     cfg = tune_ladder_cfg(cfg, venue=venue, min_prob=float(cfg.get("fill_model_min_prob") or 0.18))
     report["_fill_prob_l0"] = cfg.get("_fill_prob_l0")
+    report["_spread_bps"] = cfg.get("_spread_bps")
     report["_dynamic_cap"] = cfg.get("_dynamic_cap")
     report["_ppp_filter"] = cfg.get("_ppp_filter")
     report["_exit_first"] = cfg.get("_exit_first")
     skews: Dict[str, float] = {}
+    regime_bps: Dict[str, Dict[str, float]] = {}
+    base_first_bps = float(cfg.get("first_bps") or 30.0)
+    base_step_bps = float(cfg.get("step_bps") or 40.0)
 
     markets: Dict[str, Dict[str, float]] = {}
     refs: Dict[str, float] = {}
     lives: Dict[str, Dict[str, Any]] = {}
+    stop_jobs: List[Dict[str, Any]] = []
     for symbol in cfg["symbols"]:
         book, live, mk = top(symbol), open_ids(symbol), market(symbol)
         if not book or live is None or not mk:
@@ -470,6 +518,20 @@ def run_ladder(
             report["skipped"].append({"symbol": symbol, "reason": reason})
             continue
         live = {k: v for k, v in live.items() if k.startswith(TAG)}
+        # Orphan ld- orders (live on venue, missing from local state) lock quote and
+        # starve new spots — cancel them so top-up / recenter can refill.
+        for coid, oid in list(live.items()):
+            if coid in orders:
+                continue
+            res = cancel(symbol, oid)
+            if res.get("success"):
+                live.pop(coid, None)
+                report.setdefault("orphan_cancelled", []).append(coid)
+            else:
+                report["errors"].append({
+                    "symbol": symbol, "coid": coid,
+                    "error": f"orphan_cancel:{res.get('error') or 'failed'}",
+                })
         lives[symbol] = live
         markets[symbol] = mk
         missing = [c for c, o in orders.items() if o["symbol"] == symbol and c not in live]
@@ -513,8 +575,49 @@ def run_ladder(
 
         mid = (float(book["bid"]) + float(book["ask"])) / 2
         # Available bal already excludes locked quote reserve; include locked base approx via open sells.
-        skews[symbol] = skew_factor(bal, symbol, mid, quote)
+        inv_skew = skew_factor(bal, symbol, mid, quote)
+        # Restore untuned distances before per-symbol regime so multipliers do not compound.
+        cfg["first_bps"] = base_first_bps
+        cfg["step_bps"] = base_step_bps
+        try:
+            from backend.services.exchange_microstructure_service import (
+                apply_regime_to_cfg,
+                blend_skew,
+                cached_imbalance,
+            )
+
+            imb = cached_imbalance(symbol)
+            skews[symbol] = blend_skew(inv_skew, imb)
+            tuned = apply_regime_to_cfg(cfg, symbol=symbol)
+            cfg["first_bps"] = float(tuned.get("first_bps") or base_first_bps)
+            cfg["step_bps"] = float(tuned.get("step_bps") or base_step_bps)
+            regime_bps[symbol] = {"first_bps": cfg["first_bps"], "step_bps": cfg["step_bps"]}
+            report.setdefault("_regimes", {})[symbol] = tuned.get("_regime")
+            report.setdefault("_imbalances", {})[symbol] = round(imb, 4)
+        except Exception:
+            skews[symbol] = inv_skew
+            regime_bps[symbol] = {"first_bps": base_first_bps, "step_bps": base_step_bps}
         cfg["_inventory_skew"] = skews[symbol]
+        max_entry = float(cfg.get("max_entry_bps") or 0.0)
+        # Pull entry rungs that drifted past the liveable band — dead spots lock quote/base.
+        if max_entry > 0:
+            for coid, o in list(orders.items()):
+                if o["symbol"] != symbol or o["kind"] != "entry" or o.get("cancelled") or coid not in live:
+                    continue
+                try:
+                    px = float(o["price"])
+                except (TypeError, ValueError, KeyError):
+                    continue
+                if px <= 0 or mid <= 0:
+                    continue
+                live_drift = abs(px / mid - 1.0) * 1e4
+                if live_drift <= max_entry:
+                    continue
+                if _pull(coid, o):
+                    report["cancelled"].append(coid)
+                    report.setdefault("dead_pulled", []).append({
+                        "coid": coid, "symbol": symbol, "drift_bps": round(live_drift, 2),
+                    })
         anchor = state["anchors"].get(symbol) or {}
         drift = abs(mid / float(anchor["ref"]) - 1) * 1e4 if anchor.get("ref") else None
         age_min = (now - float(anchor.get("at") or now)) / 60
@@ -531,9 +634,53 @@ def run_ladder(
             state["anchors"][symbol] = {"ref": mid, "at": now}
         refs[symbol] = float(state["anchors"][symbol]["ref"])
 
+        stop_pct = float(cfg.get("stop_loss_pct") or 0.0)
+        # Queue stop flattens for after _try_place exists (defined below the symbol loop).
+        if stop_pct > 0:
+            still_pending: List[Dict[str, Any]] = []
+            for spec in list(pending):
+                if str(spec.get("symbol") or "") != symbol:
+                    still_pending.append(spec)
+                    continue
+                if not stop_loss_triggered(
+                    str(spec.get("entry_side") or ""),
+                    float(spec.get("entry_price") or 0),
+                    mid,
+                    stop_pct,
+                ):
+                    still_pending.append(spec)
+                    continue
+                stop_jobs.append({
+                    "symbol": symbol, "book": book, "mid": mid, "mk": mk,
+                    "meta": dict(spec), "live_coid": None,
+                })
+            pending[:] = still_pending
+            state["pending"] = pending
+
+            for coid, o in list(orders.items()):
+                if o["symbol"] != symbol or o["kind"] != "exit" or o.get("cancelled") or coid not in live:
+                    continue
+                if o.get("stop_loss"):
+                    continue
+                if not stop_loss_triggered(
+                    str(o.get("entry_side") or ""),
+                    float(o.get("entry_price") or 0),
+                    mid,
+                    stop_pct,
+                ):
+                    continue
+                if not _pull(coid, o):
+                    continue
+                stop_jobs.append({
+                    "symbol": symbol, "book": book, "mid": mid, "mk": mk,
+                    "meta": dict(o), "live_coid": coid,
+                })
+
         # Aged exits step toward the market, never inside min_exit_bps of their entry.
         for coid, o in list(orders.items()):
             if o["symbol"] != symbol or o["kind"] != "exit" or o.get("cancelled") or coid not in live:
+                continue
+            if o.get("stop_loss"):
                 continue
             since = float(o.get("exit_since") or o.get("placed_at") or now)
             spec = exit_spec(o["entry_side"], float(o["entry_price"]), float(o["entry_qty"]),
@@ -570,6 +717,67 @@ def run_ladder(
         report["placed"].append({"symbol": symbol, "side": side, "kind": kind, "level": spec["level"],
                                  "qty": qty, "price": price, "usd": round(qty * price, 4), "coid": coid})
         return coid
+
+    # Fire queued stop-loss flattens before normal pending/entry placement.
+    for job in stop_jobs:
+        symbol = str(job["symbol"])
+        book = job["book"]
+        mid = float(job["mid"])
+        mk = job["mk"]
+        meta = job["meta"]
+        entry_side = str(meta.get("entry_side") or "")
+        entry_px = float(meta.get("entry_price") or 0)
+        entry_qty = float(meta.get("entry_qty") or meta.get("qty") or 0)
+        if entry_px <= 0 or entry_qty <= 0:
+            continue
+        loss_pct = exit_mark_loss_pct(entry_side, entry_px, mid)
+        close_side = "sell" if entry_side == "buy" else "buy"
+        close_px = aggressive_close_price(close_side, book, mid, int(mk["price_decimals"]))
+        spec = exit_spec(entry_side, entry_px, entry_qty, 0.0, cfg, mk)
+        spec["price"] = close_px
+        if float(spec.get("qty") or 0) <= 0:
+            spec["qty"] = floor_qty(entry_qty, int(mk["qty_decimals"]))
+        placed = _try_place(
+            {
+                "symbol": symbol,
+                "side": close_side,
+                "level": int(meta.get("level") or 0),
+                "entry_side": entry_side,
+                "entry_price": entry_px,
+                "entry_qty": entry_qty,
+                "price": float(spec["price"]),
+                "qty": float(spec["qty"]),
+                "exit_since": float(meta.get("exit_since") or now),
+                "stop_loss": True,
+            },
+            "exit",
+        )
+        report["stops"].append({
+            "symbol": symbol,
+            "entry_side": entry_side,
+            "entry_price": entry_px,
+            "mid": mid,
+            "loss_pct": round(loss_pct, 3),
+            "close_side": close_side,
+            "close_price": float(spec["price"]),
+            "qty": float(spec["qty"]),
+            "coid": placed,
+            "pulled": job.get("live_coid"),
+        })
+        if placed is None:
+            # Re-queue as pending so the next tick retries the flatten.
+            pending.append({
+                "symbol": symbol,
+                "level": int(meta.get("level") or 0),
+                "entry_side": entry_side,
+                "entry_price": entry_px,
+                "entry_qty": entry_qty,
+                "side": close_side,
+                "price": float(spec["price"]),
+                "qty": float(spec["qty"]),
+                "exit_since": float(meta.get("exit_since") or now),
+                "stop_loss": True,
+            })
 
     def _fundable(symbol: str, side: str, qty: float, price: float) -> bool:
         return bal.get(symbol, 0.0) >= qty if side == "sell" else bal.get(quote, 0.0) >= qty * price
@@ -706,6 +914,9 @@ def run_ladder(
         mk = markets[symbol]
         skew = float(skews.get(symbol, 0.0))
         cfg["_inventory_skew"] = skew
+        bps = regime_bps.get(symbol) or {"first_bps": base_first_bps, "step_bps": base_step_bps}
+        cfg["first_bps"] = float(bps["first_bps"])
+        cfg["step_bps"] = float(bps["step_bps"])
         # Heavy base inventory: skip new buy entries when skew pricing is on (unload first).
         if (
             side == "buy"
@@ -715,6 +926,15 @@ def run_ladder(
             report["skipped"].append(
                 {"symbol": symbol, "side": side, "reason": "skew_long_base", "skew": round(skew, 3)}
             )
+            continue
+        offset_bps = skewed_entry_offset_bps(side, level, cfg, skew=skew)
+        max_entry = float(cfg.get("max_entry_bps") or 0.0)
+        if max_entry > 0 and offset_bps > max_entry:
+            report["skipped"].append({
+                "symbol": symbol, "side": side, "level": level,
+                "reason": "max_entry_bps", "offset_bps": round(offset_bps, 2),
+                "max_entry_bps": max_entry,
+            })
             continue
         price = entry_price(refs[symbol], side, level, cfg, int(mk["price_decimals"]))
         if _crosses(state, symbol, side, price, maker_sell(symbol)):
@@ -771,7 +991,11 @@ def write_ladder_log(report: Dict[str, Any], *, root: Optional[str] = None) -> s
     with open(path, "a", encoding="utf-8") as handle:
         handle.write(format_ladder_block(report))
     if report.get("fills"):
+        spread = report.get("_spread_bps")
         with open(os.path.join(base, "ladder_fills.jsonl"), "a", encoding="utf-8") as handle:
             for fill in report["fills"]:
-                handle.write(json.dumps({"ts": time.time(), "venue": report.get("venue") or "nonkyc", **fill}) + "\n")
+                row = {"ts": time.time(), "venue": report.get("venue") or "nonkyc", **fill}
+                if spread is not None and "spread_bps" not in row:
+                    row["spread_bps"] = spread
+                handle.write(json.dumps(row) + "\n")
     return path

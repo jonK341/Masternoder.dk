@@ -14,6 +14,8 @@ workflow, 5-minute install guide, CI smoke).
 - [x] Calibrate fill-model online from new fills each hour (`run_desk_maintenance_tick` in `all_profit_daemons`)
 - [x] Auto NonKYC dust conversion schedules (same desk loop; also ladder top-up)
 - [x] Daemon-own resting book: ladder + maker loop in `all_profit_daemons` (cron limit-tick falls back)
+- [x] Market-data pack: Redis bus + Binance bookTicker feed loop + sklearn fill-model deps (`requirements-profit-market.txt`)
+- [x] Maker buy+sell sides (yields buys to ladder when NonKYC quote is thin)
 - One-click GitHub Release publish from `pdj-v*` tags (already wired)
 - Prefunded arb sender at 15–30s when `EXCHANGE_LIVE_PROFIT_MAX=1` (withdraw-latency plan)
 - Chain rebalance stays advisory until fee ≤30 bps and move ≥~$500

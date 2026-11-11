@@ -10,10 +10,14 @@ from backend.services import crypto_exchange_service as ex
 from backend.services.exchange_market_feed_service import cached_top
 from backend.services.exchange_profit_path_service import profit_path_summary
 from backend.services.exchange_venue_api_service import (
+    fetch_binance_symbol_filters,
+    normalize_order_qty,
     parse_spot_balances,
     place_limit_order,
+    place_market_order,
     venue_api_request,
     venue_has_credentials,
+    _quantize_down,
 )
 
 _FEE_PATH = os.path.join(ex._DATA_DIR, "venue_fee_table.json")
@@ -220,7 +224,27 @@ def top_up_venue_quote(
             sell_qty = min(qty * 0.99, max(5.05, need) / bid)
             if sell_qty * bid < 5.0:
                 continue
-        price = round(bid * 0.997, 8)
+        # Align to Binance PRICE_FILTER / LOT_SIZE — raw bid*0.997 at 8dp is rejected.
+        price = float(bid)
+        if vid == "binance":
+            pair = f"{sym}{q}"
+            filt = fetch_binance_symbol_filters(pair)
+            tick = float((filt or {}).get("tick_size") or 0)
+            if tick > 0:
+                price = _quantize_down(bid, tick)
+            norm = normalize_order_qty(
+                vid, sym, "sell", sell_qty, price=price, market=pair, quote=q,
+            )
+            if not norm.get("ok"):
+                sells.append({
+                    "symbol": sym, "qty": sell_qty, "price": price,
+                    "usd": round(sell_qty * price, 4), "venue": vid,
+                    "result": {"success": False, "error": norm.get("error") or "qty_filter"},
+                })
+                continue
+            sell_qty = float(norm["quantity"])
+        else:
+            price = round(bid * 0.997, 8)
         row = {"symbol": sym, "qty": sell_qty, "price": price, "usd": round(sell_qty * price, 4), "venue": vid}
         if dry_run:
             row["dry_run"] = True
@@ -236,6 +260,15 @@ def top_up_venue_quote(
             quote=q,
             client_order_id=f"pdj-topup-{vid}-{sym}-{int(time.time() * 1000) % 10**10}",
         )
+        # If the book moved / PRICE_FILTER still bites, market-sell to free quote now.
+        if (
+            vid == "binance"
+            and not res.get("success")
+            and "PRICE_FILTER" in str(res.get("error") or "").upper()
+        ):
+            mkt = place_market_order(vid, sym, "sell", sell_qty, quote=q)
+            res = mkt if mkt.get("success") else res
+            row["fallback"] = "market"
         row["result"] = {"success": bool(res.get("success")), "error": res.get("error")}
         sells.append(row)
         if res.get("success"):

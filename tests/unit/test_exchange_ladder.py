@@ -98,7 +98,7 @@ def test_sell_fill_places_profitable_buyback_and_rung_reopens_after_it_fills(tmp
     exit_order = venue.placed[-1]
     assert rep["fills"][0]["kind"] == "entry"
     assert exit_order["side"] == "buy"
-    assert exit_order["price"] <= entry["price"] * (1 - 0.008)
+    assert exit_order["price"] <= entry["price"] * (1 - 0.0055)
     assert exit_order["qty"] > entry["qty"]
     assert len(venue.placed) == 2  # the sell rung stays closed while its exit rests
 
@@ -119,7 +119,7 @@ def test_buy_fill_places_take_profit_sell(tmp_path):
     _run(venue, tmp_path, cfg=cfg, now=1060.0, bal={"ALGO": entry["qty"], "USDT": 0.0})
     exit_order = venue.placed[-1]
     assert exit_order["side"] == "sell"
-    assert exit_order["price"] >= entry["price"] * 1.008
+    assert exit_order["price"] >= entry["price"] * 1.0055
     assert exit_order["qty"] <= entry["qty"]
 
 
@@ -204,7 +204,8 @@ def test_binance_ladder_spends_usdc_above_the_reserve(tmp_path):
     venue = FakeVenue()
     mk = {"price_decimals": 4, "qty_decimals": 1, "min_qty": 0.1, "min_quote": 5.0}
     cfg = _cfg(venue="binance", quote="USDC", symbols=["XRP"], order_usd=5.5, min_order_usd=5.1,
-               quote_reserve=5.0, levels=10, fee_bps=10.0, exit_bps=50.0)
+               quote_reserve=5.0, levels=10, fee_bps=10.0, exit_bps=50.0,
+               max_entry_bps=500.0, first_bps=20.0, step_bps=30.0)
     rep = run_ladder(
         cfg=cfg, top=lambda _s: {"bid": 1.09, "ask": 1.0902},
         balances={"XRP": 20.0, "USDC": 17.0},
@@ -249,18 +250,18 @@ def test_unfilled_exit_steps_toward_market_but_keeps_its_profit(tmp_path):
     venue.fill(entry["coid"])
     _run(venue, tmp_path, cfg=cfg, now=1060.0, bal={"ALGO": 260.0, "USDT": 3.5})
     first_exit = venue.placed[-1]
-    assert first_exit["price"] <= entry["price"] * (1 - 0.008)
+    assert first_exit["price"] <= entry["price"] * (1 - 0.0055)
 
-    rep = _run(venue, tmp_path, cfg=cfg, now=1060.0 + 61 * 60, bal={"ALGO": 260.0, "USDT": 0.0})
+    rep = _run(venue, tmp_path, cfg=cfg, now=1060.0 + 61 * 60, bal={"ALGO": 260.0, "USDT": 3.5})
     mid_exit = venue.placed[-1]
     assert rep["repriced"] == [first_exit["coid"]]
-    assert first_exit["price"] < mid_exit["price"] < entry["price"] * (1 - 0.0055)
+    assert first_exit["price"] < mid_exit["price"] < entry["price"]
 
-    _run(venue, tmp_path, cfg=cfg, now=1060.0 + 200 * 60, bal={"ALGO": 260.0, "USDT": 0.0})
+    _run(venue, tmp_path, cfg=cfg, now=1060.0 + 200 * 60, bal={"ALGO": 260.0, "USDT": 3.5})
     last_exit = venue.placed[-1]
-    assert last_exit["price"] <= entry["price"] * (1 - 0.0055)
+    assert last_exit["price"] <= entry["price"] * (1 - 0.004)
     assert last_exit["price"] > mid_exit["price"]
-    _run(venue, tmp_path, cfg=cfg, now=1060.0 + 300 * 60, bal={"ALGO": 260.0, "USDT": 0.0})
+    _run(venue, tmp_path, cfg=cfg, now=1060.0 + 300 * 60, bal={"ALGO": 260.0, "USDT": 3.5})
     assert venue.placed[-1] == last_exit  # floor reached, no further moves
 
     venue.fill(last_exit["coid"])
@@ -427,3 +428,64 @@ def test_nonkyc_venue_defaults_do_not_follow_maker_venue(monkeypatch):
         lambda *_a, **_k: {"success": True, "body": []},
     )
     assert adapters["open_ids"]("DOGE") == {}
+
+
+def test_max_entry_bps_skips_far_rungs_and_pulls_dead(tmp_path):
+    import json
+
+    venue = FakeVenue()
+    cfg = _cfg(levels=6, first_bps=20.0, step_bps=30.0, max_entry_bps=55.0, sides=["sell", "buy"])
+    # Offsets: 20, 50, 80, 110… — only levels 0–1 should place under the 55 bps cap.
+    rep = _run(venue, tmp_path, cfg=cfg)
+    levels_placed = sorted({int(row["level"]) for row in rep["placed"]})
+    assert levels_placed == [0, 1]
+    assert any(s.get("reason") == "max_entry_bps" for s in rep["skipped"])
+
+    far = next(row for row in rep["placed"] if row["side"] == "sell" and int(row["level"]) == 0)
+    far_px = 0.093 * 1.02  # ~200 bps above mid
+    path = tmp_path / "ladder.json"
+    state = json.loads(path.read_text())
+    state["orders"][far["coid"]]["price"] = far_px
+    path.write_text(json.dumps(state))
+    rep2 = _run(venue, tmp_path, cfg=cfg, now=1060.0)
+    assert far["coid"] in rep2["cancelled"]
+    assert any(d.get("coid") == far["coid"] for d in (rep2.get("dead_pulled") or []))
+
+
+def test_stop_loss_helpers():
+    from backend.services.exchange_ladder_service import (
+        exit_mark_loss_pct,
+        stop_loss_triggered,
+        aggressive_close_price,
+    )
+
+    assert abs(exit_mark_loss_pct("buy", 100.0, 90.0) - 10.0) < 1e-9
+    assert exit_mark_loss_pct("buy", 100.0, 110.0) == 0.0
+    assert abs(exit_mark_loss_pct("sell", 100.0, 110.0) - 10.0) < 1e-9
+    assert stop_loss_triggered("buy", 100.0, 95.4, 4.5) is True
+    assert stop_loss_triggered("buy", 100.0, 96.0, 4.5) is False
+    assert stop_loss_triggered("buy", 100.0, 89.0, 10.0) is True
+    assert stop_loss_triggered("buy", 100.0, 91.0, 10.0) is False
+    assert aggressive_close_price("sell", {"bid": 0.09, "ask": 0.091}, 0.0905, 6) == 0.09
+    assert aggressive_close_price("buy", {"bid": 0.09, "ask": 0.091}, 0.0905, 6) == 0.091
+
+
+def test_stop_loss_closes_underwater_exit(tmp_path):
+    venue = FakeVenue()
+    cfg = _cfg(sides=["buy"], levels=1, stop_loss_pct=4.5, exit_bps=55.0)
+    _run(venue, tmp_path, cfg=cfg, mid=1.0)
+    entry = venue.placed[0]
+    venue.fill(entry["coid"])
+    # Place the take-profit exit while still near entry.
+    _run(venue, tmp_path, cfg=cfg, now=1060.0, mid=1.0, bal={"ALGO": entry["qty"], "USDT": 0.0})
+    exit_order = venue.placed[-1]
+    assert exit_order["side"] == "sell"
+    assert exit_order["coid"] in venue.open
+    # Crash >4.5% against the long — stop should pull TP and flatten through the bid.
+    rep = _run(venue, tmp_path, cfg=cfg, now=1120.0, mid=0.95, bal={"ALGO": entry["qty"], "USDT": 0.0})
+    assert exit_order["coid"] in venue.cancelled
+    assert rep["stops"] and rep["stops"][0]["loss_pct"] >= 4.5
+    stop = venue.placed[-1]
+    assert stop["side"] == "sell"
+    assert abs(stop["price"] - 0.95) < 1e-9
+    assert "x" in stop["coid"]

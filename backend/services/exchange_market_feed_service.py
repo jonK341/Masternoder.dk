@@ -3,14 +3,18 @@
 The one-minute ladder tick reads mids from here when they are fresher than
 ``max_age_sec`` (default 3s). NonKYC has no public WS for these pairs, so its
 quotes still come from REST; Binance is the pricing anchor either way.
+
+Speed pack (optional): ``orjson`` for parse/dumps, ``uvloop`` for the async
+loop, ``aiohttp`` for concurrent REST fan-out when WS is geo-blocked.
 """
 from __future__ import annotations
 
 import asyncio
-import json
 import time
 from typing import Any, Dict, Iterable, List, Optional
 
+from backend.services.exchange_fast_json import backend_name as json_backend
+from backend.services.exchange_fast_json import try_loads as json_try_loads
 from backend.services.exchange_redis_bus import bus_get, bus_set
 
 DEFAULT_SYMBOLS = ("XRP", "ALGO", "XLM", "TRX", "SOL", "DOGE", "ADA")
@@ -31,15 +35,40 @@ def stream_name(symbol: str, quote: str = QUOTE) -> str:
     return f"{symbol.lower()}{quote.lower()}@bookTicker"
 
 
+def depth_stream_name(symbol: str, quote: str = QUOTE) -> str:
+    return f"{symbol.lower()}{quote.lower()}@depth5@100ms"
+
+
 def feed_key(symbol: str) -> str:
     return f"mid:{str(symbol).upper()}"
 
 
+def _spread_bps(bid: float, ask: float) -> float:
+    mid = (bid + ask) / 2.0
+    if mid <= 0:
+        return 0.0
+    return round((ask - bid) / mid * 1e4, 4)
+
+
 def publish_top(symbol: str, bid: float, ask: float, *, source: str = "binance_ws") -> str:
     mid = (bid + ask) / 2.0
+    try:
+        from backend.services.exchange_microstructure_service import push_mid
+
+        push_mid(symbol, mid)
+    except Exception:
+        pass
     return bus_set(
         feed_key(symbol),
-        {"bid": bid, "ask": ask, "mid": mid, "quote": QUOTE, "source": source, "pair": f"{symbol}{QUOTE}"},
+        {
+            "bid": bid,
+            "ask": ask,
+            "mid": mid,
+            "spread_bps": _spread_bps(bid, ask),
+            "quote": QUOTE,
+            "source": source,
+            "pair": f"{symbol}{QUOTE}",
+        },
         ttl_sec=30,
     )
 
@@ -54,7 +83,13 @@ def cached_top(symbol: str, *, max_age_sec: float = FEED_MAX_AGE) -> Optional[Di
         return None
     if bid <= 0 or ask <= 0:
         return None
-    out = {"bid": bid, "ask": ask, "quote": row.get("quote") or QUOTE, "pair": row.get("pair") or f"{symbol}{QUOTE}"}
+    out = {
+        "bid": bid,
+        "ask": ask,
+        "quote": row.get("quote") or QUOTE,
+        "pair": row.get("pair") or f"{symbol}{QUOTE}",
+        "spread_bps": float(row.get("spread_bps") or _spread_bps(bid, ask)),
+    }
     if row.get("source"):
         out["source"] = str(row["source"])
     return out
@@ -76,11 +111,56 @@ def feed_status(symbols: Optional[Iterable[str]] = None) -> Dict[str, Any]:
             "backend": meta.get("backend"),
             "value": meta.get("value"),
         }
-    return {"backend": backend_name(), "symbols": rows}
+    return {
+        "backend": backend_name(),
+        "json": json_backend(),
+        "symbols": rows,
+    }
+
+
+def tech_pack_status() -> Dict[str, Any]:
+    """Report which optional speed/market packages are importable."""
+    out: Dict[str, Any] = {"json": json_backend()}
+    for name, mod in (
+        ("redis", "redis"),
+        ("websockets", "websockets"),
+        ("orjson", "orjson"),
+        ("uvloop", "uvloop"),
+        ("aiohttp", "aiohttp"),
+        ("sklearn", "sklearn"),
+        ("prometheus_client", "prometheus_client"),
+        ("msgpack", "msgpack"),
+        ("cachetools", "cachetools"),
+    ):
+        try:
+            m = __import__(mod)
+            ver = getattr(m, "__version__", None)
+            if ver is None and name == "msgpack":
+                ver = ".".join(str(x) for x in getattr(m, "version", ()))
+            out[name] = {"ok": True, "version": ver or "?"}
+        except Exception as exc:
+            out[name] = {"ok": False, "error": type(exc).__name__}
+    return out
+
+
+def _publish_from_book_body(symbol: str, body: Dict[str, Any], *, source: str) -> bool:
+    try:
+        bid = float(body.get("bidPrice") or 0)
+        ask = float(body.get("askPrice") or 0)
+    except (TypeError, ValueError):
+        return False
+    if bid <= 0 or ask <= 0:
+        return False
+    publish_top(symbol, bid, ask, source=source)
+    return True
 
 
 def _poll_rest_once(symbols: List[str], *, on_tick=None) -> int:
-    """One REST sweep through the vision/main hosts. Returns published count."""
+    """One REST sweep. Prefers aiohttp fan-out; falls back to urllib."""
+    try:
+        return asyncio.run(_poll_rest_aiohttp(symbols, on_tick=on_tick))
+    except Exception:
+        pass
     import urllib.request
 
     published = 0
@@ -90,37 +170,70 @@ def _poll_rest_once(symbols: List[str], *, on_tick=None) -> int:
         for template in REST_BOOK_URLS:
             try:
                 with urllib.request.urlopen(template.format(pair=pair), timeout=3) as resp:
-                    body = json.loads(resp.read().decode())
+                    body = json_try_loads(resp.read())
                 break
             except Exception:
                 body = None
         if not isinstance(body, dict):
             continue
-        try:
-            bid = float(body.get("bidPrice") or 0)
-            ask = float(body.get("askPrice") or 0)
-        except (TypeError, ValueError):
-            continue
-        if bid <= 0 or ask <= 0:
-            continue
-        backend = publish_top(symbol, bid, ask, source="binance_rest")
-        published += 1
-        if on_tick:
-            on_tick(symbol, bid, ask, backend)
+        if _publish_from_book_body(symbol, body, source="binance_rest"):
+            published += 1
+            if on_tick:
+                on_tick(symbol, float(body["bidPrice"]), float(body["askPrice"]), "rest")
+    return published
+
+
+async def _poll_rest_aiohttp(symbols: List[str], *, on_tick=None) -> int:
+    import aiohttp
+
+    published = 0
+
+    async def one(session: "aiohttp.ClientSession", symbol: str) -> bool:
+        pair = f"{symbol}{QUOTE}"
+        for template in REST_BOOK_URLS:
+            url = template.format(pair=pair)
+            try:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=3)) as resp:
+                    if resp.status != 200:
+                        continue
+                    body = json_try_loads(await resp.read())
+                if isinstance(body, dict) and _publish_from_book_body(symbol, body, source="binance_rest"):
+                    if on_tick:
+                        on_tick(symbol, float(body["bidPrice"]), float(body["askPrice"]), "rest")
+                    return True
+            except Exception:
+                continue
+        return False
+
+    async with aiohttp.ClientSession() as session:
+        results = await asyncio.gather(*(one(session, s) for s in symbols))
+    published = sum(1 for ok in results if ok)
     return published
 
 
 async def _run_ws(symbols: List[str], *, url: str, on_tick=None) -> None:
     import websockets
+    from backend.services.exchange_microstructure_service import publish_depth
 
     async with websockets.connect(url, ping_interval=20, ping_timeout=20, max_queue=1024) as ws:
         async for message in ws:
-            try:
-                payload = json.loads(message)
-            except Exception:
+            payload = json_try_loads(message)
+            if not isinstance(payload, dict):
                 continue
-            data = payload.get("data") if isinstance(payload, dict) else None
-            if not isinstance(data, dict):
+            stream = str(payload.get("stream") or "")
+            data = payload.get("data") if isinstance(payload.get("data"), dict) else None
+            if data is None:
+                continue
+            # Combined depth5 stream: stream ends with @depth5@100ms, data has bids/asks.
+            if "@depth5" in stream:
+                pair = stream.split("@", 1)[0].upper()
+                if not pair.endswith(QUOTE):
+                    continue
+                symbol = pair[: -len(QUOTE)]
+                bids = data.get("bids") or data.get("b") or []
+                asks = data.get("asks") or data.get("a") or []
+                if isinstance(bids, list) and isinstance(asks, list) and bids and asks:
+                    publish_depth(symbol, bids, asks)
                 continue
             pair = str(data.get("s") or "")
             if not pair.endswith(QUOTE):
@@ -138,6 +251,16 @@ async def _run_ws(symbols: List[str], *, url: str, on_tick=None) -> None:
                 on_tick(symbol, bid, ask, backend)
 
 
+def _run_coro(coro) -> Any:
+    """Run an async coroutine, preferring uvloop when installed."""
+    try:
+        import uvloop
+
+        return uvloop.run(coro)
+    except Exception:
+        return asyncio.run(coro)
+
+
 def run_feed_forever(symbols: Optional[List[str]] = None, *, reconnect_sec: float = 2.0) -> None:
     """Blocking loop used by ``scripts/run_exchange_market_feed.py``.
 
@@ -145,15 +268,27 @@ def run_feed_forever(symbols: Optional[List[str]] = None, *, reconnect_sec: floa
     a 1s REST poll against ``data-api.binance.vision``.
     """
     symbols = [str(s).upper() for s in (symbols or list(DEFAULT_SYMBOLS))]
-    streams = "/".join(stream_name(s) for s in symbols)
+    # bookTicker for mids + depth5 for imbalance (microstructure pack).
+    parts: List[str] = []
+    for s in symbols:
+        parts.append(stream_name(s))
+        parts.append(depth_stream_name(s))
+    streams = "/".join(parts)
     ws_failures = 0
+    pack = tech_pack_status()
+    print(
+        f"[market-feed] json={pack.get('json')} uvloop={pack.get('uvloop', {}).get('ok')} "
+        f"aiohttp={pack.get('aiohttp', {}).get('ok')} msgpack={pack.get('msgpack', {}).get('ok')} "
+        f"depth5=on",
+        flush=True,
+    )
     while True:
         if ws_failures < 3:
             for template in WS_URLS:
                 url = template.format(streams=streams)
                 try:
                     print(f"[market-feed] websocket {url.split('?')[0]}", flush=True)
-                    asyncio.run(_run_ws(symbols, url=url))
+                    _run_coro(_run_ws(symbols, url=url))
                     ws_failures = 0
                 except KeyboardInterrupt:
                     raise

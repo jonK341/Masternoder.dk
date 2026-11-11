@@ -3,10 +3,11 @@
   "venue": "nonkyc",
   "quote": "USDT",
   "symbols": ["XRP", "XLM", "ALGO", "SOL"],
-  "sides": ["sell"],
-  "clip_usd": 25.0,
+  "sides": ["buy", "sell"],
+  "clip_usd": 12.0,
   "fee_bps": 30.0,
   "edge_bps": 18.0,
   "reprice_bps": 5.0,
-  "max_age_minutes": 30.0
+  "max_age_minutes": 30.0,
+  "yield_to_ladder": true
 }

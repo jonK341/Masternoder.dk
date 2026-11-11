@@ -17,14 +17,32 @@ def test_summarize_book_includes_venues():
     assert "binance_pnl=$0.67" in summary
 
 
+def test_summarize_book_reads_open_orders_and_yield_flag():
+    summary = apd._summarize_book({
+        "maker": {"execute": True, "yielded_to_ladder": True, "quotes": [
+            {"symbol": "XRP", "side": "sell", "success": True, "coid": "mk-1"},
+            {"symbol": "XLM", "side": "sell", "skipped": "inventory"},
+        ]},
+        "ladders": {
+            "binance": {"open_orders": 5, "realized_usd": 0.77},
+            "nonkyc": {"open_orders": 20, "realized_usd": 0.02},
+        },
+    })
+    assert "maker_open=1" in summary
+    assert "maker_buys=yielded" in summary
+    assert "binance_open=5" in summary
+    assert "nonkyc_open=20" in summary
+
+
 def test_book_once_sets_ownership(monkeypatch):
     monkeypatch.delenv("EXCHANGE_DAEMON_OWNS_BOOK", raising=False)
+    trades = []
 
     def fake_maker():
-        return {"execute": True, "open": 1, "quotes": []}
+        return {"execute": True, "open": 1, "venue": "nonkyc", "quotes": []}
 
     def fake_ladder(venue=None):
-        return {"execute": True, "open": 3, "venue": venue, "realized_usd": 0.1}
+        return {"execute": True, "open_orders": 3, "venue": venue, "realized_usd": 0.1}
 
     monkeypatch.setattr(
         "backend.services.exchange_maker_quote_service.run_maker_quotes",
@@ -46,12 +64,22 @@ def test_book_once_sets_ownership(monkeypatch):
         "backend.services.exchange_registry_service.ladder_venues",
         lambda: ("nonkyc", "binance"),
     )
+    monkeypatch.setattr(
+        "backend.services.profit_trade_stream_service.append_trade",
+        lambda **kw: trades.append(kw),
+    )
 
     out = apd._book_once()
     assert out["owned_by"] == "all_profit_daemons"
     assert out["maker"]["open"] == 1
     assert set(out["ladders"]) == {"nonkyc", "binance"}
     assert os_environ_owns_book()
+    maker_msg = next(t for t in trades if t["strategy"] == "maker")
+    assert maker_msg["message"] == "open=1 · nonkyc"
+    assert maker_msg["extra"]["venue"] == "nonkyc"
+    ladder_msgs = [t["message"] for t in trades if t["strategy"] == "ladder"]
+    assert "binance open=3 pnl=$0.10" in ladder_msgs
+    assert "nonkyc open=3 pnl=$0.10" in ladder_msgs
 
 
 def os_environ_owns_book() -> bool:

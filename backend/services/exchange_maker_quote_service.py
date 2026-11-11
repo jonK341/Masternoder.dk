@@ -34,12 +34,13 @@ def _default_config() -> Dict[str, Any]:
         "venue": "nonkyc",
         "quote": "USDT",
         "symbols": ["ALGO", "XRP"],
-        "sides": ["sell"],
-        "clip_usd": 25.0,
+        "sides": ["buy", "sell"],
+        "clip_usd": 12.0,
         "fee_bps": 30.0,
         "edge_bps": 18.0,
         "reprice_bps": 5.0,
         "max_age_minutes": 30.0,
+        "yield_to_ladder": True,
     }
 
 
@@ -71,6 +72,10 @@ def load_config() -> Dict[str, Any]:
         cfg["sides"] = list(_default_config()["sides"])
     for key in ("clip_usd", "fee_bps", "edge_bps", "reprice_bps", "max_age_minutes"):
         cfg[key] = float(cfg.get(key) or _default_config()[key])
+    if "yield_to_ladder" in cfg:
+        cfg["yield_to_ladder"] = bool(cfg.get("yield_to_ladder"))
+    else:
+        cfg["yield_to_ladder"] = bool(_default_config()["yield_to_ladder"])
     return cfg
 
 
@@ -110,9 +115,19 @@ def price_decimals(price: float, *, venue: str = "nonkyc") -> int:
     return 4 if price >= 1 else 6
 
 
-def quote_price(ref: float, side: str, cfg: Dict[str, Any]) -> float:
-    """Sell rounds up and buy rounds down, so rounding never eats the edge."""
-    margin = (float(cfg["fee_bps"]) + float(cfg["edge_bps"])) / 1e4
+def quote_price(ref: float, side: str, cfg: Dict[str, Any], *, imbalance: float = 0.0) -> float:
+    """Sell rounds up and buy rounds down, so rounding never eats the edge.
+
+    When order-book imbalance is available, bid-heavy books tighten buy edges
+    and widen sell edges (and the reverse for ask-heavy).
+    """
+    try:
+        from backend.services.exchange_microstructure_service import maker_edge_bps
+
+        edge = maker_edge_bps(float(cfg["edge_bps"]), side, imbalance)
+    except Exception:
+        edge = float(cfg["edge_bps"])
+    margin = (float(cfg["fee_bps"]) + float(edge)) / 1e4
     raw = ref * (1 + margin) if side == "sell" else ref * (1 - margin)
     scale = 10 ** price_decimals(ref, venue=str(cfg.get("venue") or "nonkyc"))
     return (math.ceil(raw * scale) if side == "sell" else math.floor(raw * scale)) / scale
@@ -202,10 +217,22 @@ def run_maker_quotes(
     sleep: Callable[[float], None] = time.sleep,
 ) -> Dict[str, Any]:
     cfg = cfg or load_config()
-    report: Dict[str, Any] = {"execute": cfg["execute"], "quotes": [], "fills": []}
+    venue = str(cfg.get("venue") or "nonkyc")
+    quote = str(cfg.get("quote") or ("USDC" if venue == "binance" else "USDT")).upper()
+    report: Dict[str, Any] = {
+        "execute": cfg["execute"],
+        "venue": venue,
+        "quote": quote,
+        "quotes": [],
+        "fills": [],
+        "open": 0,
+    }
     if not cfg["execute"]:
         return report
-    top = top or _binance_top
+    if top is None:
+        from backend.services.exchange_market_feed_service import prefer_cached_binance_top
+
+        top = lambda symbol: prefer_cached_binance_top(symbol, _binance_top)
     open_ids = open_ids or _default_open_ids
     status = status or _default_status
     place = place or _default_place
@@ -213,10 +240,6 @@ def run_maker_quotes(
     now = (clock or time.time)()
     spath = state_path(path)
     state = load_state(spath)
-    venue = str(cfg.get("venue") or "nonkyc")
-    quote = str(cfg.get("quote") or ("USDC" if venue == "binance" else "USDT")).upper()
-    report["venue"] = venue
-    report["quote"] = quote
     if balances is None:
         balances = parse_spot_balances(venue, dry_run=False, force_refresh=True)
     bal = {str(k).upper(): float(v or 0) for k, v in (balances or {}).items()}
@@ -249,16 +272,22 @@ def run_maker_quotes(
     for symbol in cfg["symbols"]:
         book = top(symbol)
         live_ids = open_ids(symbol)
+        try:
+            from backend.services.exchange_microstructure_service import cached_imbalance
+
+            imbalance = cached_imbalance(symbol)
+        except Exception:
+            imbalance = 0.0
         for side in cfg["sides"]:
             key = f"{symbol}:{side}"
             row = state.get(key) or {}
-            item: Dict[str, Any] = {"symbol": symbol, "side": side}
+            item: Dict[str, Any] = {"symbol": symbol, "side": side, "imbalance": round(imbalance, 4)}
             report["quotes"].append(item)
             if not book or live_ids is None:
                 item["skipped"] = "no_book" if not book else "no_open_orders"
                 continue
             ref = float(book["ask"] if side == "sell" else book["bid"])
-            target = quote_price(ref, side, cfg)
+            target = quote_price(ref, side, cfg, imbalance=imbalance)
             item.update({"ref": ref, "target": target})
             coid = str(row.get("coid") or "")
             if coid and coid not in live_ids:
@@ -322,6 +351,11 @@ def run_maker_quotes(
         report["quotes"].append({"symbol": symbol, "side": key.split(":", 1)[1], "retired": coid})
         state.pop(key, None)
     _save_state(spath, state)
+    report["open"] = sum(
+        1
+        for q in (report.get("quotes") or [])
+        if isinstance(q, dict) and (q.get("resting") or (q.get("success") and q.get("coid")))
+    )
     return report
 
 
