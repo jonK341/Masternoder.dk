@@ -1374,3 +1374,67 @@ def mn2_withdraw_2fa_disable():
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# --- Train A core rail (v1.4.0.0 draft) ---
+
+
+@mn2_bp.route("/api/mn2/train-a", methods=["GET"])
+def mn2_train_a_manifest():
+    from backend.services import wallet_train_a_service as train_a
+
+    return jsonify(train_a.train_a_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-a/version", methods=["GET"])
+def mn2_train_a_version():
+    from backend.services import wallet_train_a_service as train_a
+
+    return jsonify(train_a.train_a_version())
+
+
+@mn2_bp.route("/api/mn2/train-a/run", methods=["GET", "POST"])
+def mn2_train_a_run():
+    from backend.services import wallet_train_a_service as train_a
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_a.run_train_a(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-a/acceptance", methods=["GET", "POST"])
+def mn2_train_a_acceptance():
+    from backend.services import wallet_train_a_service as train_a
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_a.train_a_acceptance(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-a/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_a_one(deliverable_id: str):
+    from backend.services import wallet_train_a_service as train_a
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(
+        train_a.run_deliverable(
+            deliverable_id,
+            user_id=uid,
+            conf_target=int(data.get("conf_target") or request.args.get("conf_target") or 6),
+            limit=int(data.get("limit") or request.args.get("limit") or 20),
+        )
+    )

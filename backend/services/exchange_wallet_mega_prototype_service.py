@@ -890,7 +890,7 @@ def compose_profile_status() -> Dict[str, Any]:
         },
         "knobs": installed_knobs("X-10"),
         "updated_at": _iso(),
-        "note": "Draft compose profile for local rails only.",,
+        "note": "Draft compose profile for local rails only.",
     }
 
 
