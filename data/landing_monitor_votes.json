@@ -1,0 +1,35 @@
+{
+  "updated_at": "2026-11-10T22:15:15.246834Z",
+  "polls": [
+    {
+      "id": "poll_192fa91ec3",
+      "question": "Which lobby stage should lead the next Jon Film cut?",
+      "options": [
+        {
+          "id": "opt_battlefield",
+          "label": "War battlefield 3500",
+          "votes": 0
+        },
+        {
+          "id": "opt_matrix",
+          "label": "MN2 matrix rails",
+          "votes": 0
+        },
+        {
+          "id": "opt_camgirl",
+          "label": "Camgirl agent stage",
+          "votes": 0
+        },
+        {
+          "id": "opt_daemon",
+          "label": "Daemon desk live",
+          "votes": 0
+        }
+      ],
+      "status": "open",
+      "channel": "landing",
+      "created_at": "2026-11-10T22:15:13.073937Z",
+      "discord_posted": false
+    }
+  ]
+}

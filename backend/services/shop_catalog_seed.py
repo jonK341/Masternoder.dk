@@ -699,4 +699,29 @@ def build_seed_shop_items(*, include_dynamic_offers=True):
     for nm, desc, icon, iid, price, rarity in lab_wave_v21:
         add(nm, desc, "lab", price, icon, rarity, tags=["lab", "lab_wave_v21", "shop_wave_jun2026"], item_id=iid)
 
+    # ---- Lobby monitor wave (Nov 2026): drums/guitar, pipeline, podcast ----
+    lobby_wave_nov2026 = [
+        ("Lobby Drums & Guitar Kit", "Unlocks drum kit + guitar riff palette in the lobby monitor soundtrack.", "🥁", "lobby-drums-guitar-kit", 95, "rare"),
+        ("Lobby Pipeline Booster 12m", "Priority refresh of the 50-scene / 12-minute AI lobby cut.", "🎬", "lobby-pipeline-booster-12m", 120, "epic"),
+        ("Lobby Scene Art Pack", "Extra AI still variety for monitor clips about sats and MasterNoder2.", "🖼️", "lobby-scene-art-pack", 75, "rare"),
+        ("Lobby Voice Host Pass", "Rotating camgirl host voices with human ElevenLabs delivery for one session window.", "🎙️", "lobby-voice-host-pass", 140, "epic"),
+        ("Top 25 Ticker Flair", "Cosmetic glow on your name when you appear on the lobby Top 25 ticker.", "🏅", "lobby-top25-ticker-flair", 55, "common"),
+        ("Podcast Listen Pack Nov", "Bundle credit toward November podcast episodes tied to lobby + shop drops.", "🎧", "podcast-listen-pack-nov", 80, "rare"),
+        ("Daemon Desk Chime Pack", "Extra trade-desk chimes synced to daemon fills on the monitor.", "💹", "daemon-desk-chime-pack", 65, "common"),
+        ("MN2 Lobby Glow Token", "Wallet-glow cosmetic for MN2 sats scenes on the lobby pipeline.", "💚", "mn2-lobby-glow-token", 90, "rare"),
+        ("Lobby Lightshow Remix", "Unlocks remix lightshow modes (spectrum/chase/wave) for the monitor bezel.", "🌈", "lobby-lightshow-remix", 70, "common"),
+        ("Creator Pipeline Bundle", "Combo: scene art pack + pipeline booster for streamers and VJs.", "📦", "creator-pipeline-bundle", 210, "legendary"),
+    ]
+    for nm, desc, icon, iid, price, rarity in lobby_wave_nov2026:
+        add(
+            nm,
+            desc,
+            "premium" if rarity in ("epic", "legendary") else "boosts",
+            price,
+            icon,
+            rarity,
+            tags=["lobby", "monitor", "shop_wave_nov2026"],
+            item_id=iid,
+        )
+
     return items

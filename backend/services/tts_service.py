@@ -13,8 +13,78 @@ _DEFAULT_MODEL = "eleven_multilingual_v2"
 
 
 def _elevenlabs_key() -> Optional[str]:
-    """Return ELEVENLABS_API_KEY if set."""
-    return (os.environ.get("ELEVENLABS_API_KEY") or "").strip() or None
+    """Return ELEVENLABS_API_KEY if set (env first, then project .env)."""
+    key = (os.environ.get("ELEVENLABS_API_KEY") or "").strip()
+    if key:
+        return key
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(override=False)
+        key = (os.environ.get("ELEVENLABS_API_KEY") or "").strip()
+        if key:
+            return key
+    except Exception:
+        pass
+    try:
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        env_path = os.path.join(base, ".env")
+        if os.path.isfile(env_path):
+            with open(env_path, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    if k.strip() == "ELEVENLABS_API_KEY":
+                        val = v.strip().strip("'").strip('"')
+                        if val:
+                            os.environ.setdefault("ELEVENLABS_API_KEY", val)
+                            return val
+    except Exception:
+        pass
+    return None
+
+
+def _synthesize_elevenlabs_http(text: str, voice_id: str, key: str) -> Optional[str]:
+    """Direct ElevenLabs REST call — works even when the SDK package is missing."""
+    import json
+    import urllib.error
+    import urllib.request
+
+    out_path = os.path.join(tempfile.gettempdir(), f"tts_el_{int(time.time())}_{os.getpid()}.mp3")
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_128"
+    payload = {
+        "text": text.strip()[:5000],
+        "model_id": _DEFAULT_MODEL,
+        "voice_settings": {
+            "stability": 0.32,
+            "similarity_boost": 0.82,
+            "style": 0.55,
+            "use_speaker_boost": True,
+        },
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "xi-api-key": key,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg",
+            "User-Agent": "MasterNoder-LobbyTTS/1.0",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            audio = resp.read()
+        if not audio or len(audio) < 200:
+            return None
+        with open(out_path, "wb") as f:
+            f.write(audio)
+        return out_path if os.path.isfile(out_path) and os.path.getsize(out_path) > 100 else None
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, Exception):
+        return None
 
 
 def _synthesize_elevenlabs(text: str, voice_id: str) -> Optional[str]:
@@ -24,26 +94,47 @@ def _synthesize_elevenlabs(text: str, voice_id: str) -> Optional[str]:
         return None
     try:
         from elevenlabs.client import ElevenLabs
+
         client = ElevenLabs(api_key=key)
         out_path = os.path.join(tempfile.gettempdir(), f"tts_el_{int(time.time())}_{os.getpid()}.mp3")
-        # API: text_to_speech.convert returns bytes or stream
-        audio = client.text_to_speech.convert(
-            voice_id=voice_id,
-            text=text.strip()[:5000],
-            model_id=_DEFAULT_MODEL,
-        )
-        with open(out_path, "wb") as f:
-            if hasattr(audio, "__iter__") and not isinstance(audio, (bytes, bytearray)):
-                for chunk in audio:
-                    if chunk:
-                        f.write(chunk)
-            else:
-                f.write(audio)
-        if os.path.isfile(out_path) and os.path.getsize(out_path) > 100:
-            return out_path
+        attempts = [
+            {
+                "voice_id": voice_id,
+                "text": text.strip()[:5000],
+                "model_id": _DEFAULT_MODEL,
+                "output_format": "mp3_44100_128",
+                "voice_settings": {
+                    "stability": 0.32,
+                    "similarity_boost": 0.82,
+                    "style": 0.55,
+                    "use_speaker_boost": True,
+                },
+            },
+            {
+                "voice_id": voice_id,
+                "text": text.strip()[:5000],
+                "model_id": _DEFAULT_MODEL,
+            },
+        ]
+        for kwargs in attempts:
+            try:
+                audio = client.text_to_speech.convert(**kwargs)
+                with open(out_path, "wb") as f:
+                    if hasattr(audio, "__iter__") and not isinstance(audio, (bytes, bytearray)):
+                        for chunk in audio:
+                            if chunk:
+                                f.write(chunk)
+                    else:
+                        f.write(audio)
+                if os.path.isfile(out_path) and os.path.getsize(out_path) > 100:
+                    return out_path
+            except TypeError:
+                continue
+            except Exception:
+                continue
     except Exception:
         pass
-    return None
+    return _synthesize_elevenlabs_http(text, voice_id, key)
 
 
 def _piper_model_path() -> Optional[str]:

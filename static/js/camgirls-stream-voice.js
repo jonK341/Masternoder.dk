@@ -40,7 +40,61 @@
     onActiveSpeaker: null,
     onLine: null,
     storageKey: "mn-camgirls-stream-voice",
+    preferServerTts: true,
+    ttsEndpoint: "/api/landing/monitor/tts",
+    audioEl: null,
+    voicesReady: false,
   };
+
+  function warmVoices() {
+    if (!window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.getVoices();
+      if (!state.voicesReady) {
+        window.speechSynthesis.onvoiceschanged = function () {
+          state.voicesReady = true;
+        };
+      }
+    } catch (e) {}
+  }
+
+  function pickHumanVoice(speaker) {
+    if (!window.speechSynthesis) return null;
+    var voices = window.speechSynthesis.getVoices() || [];
+    if (!voices.length) return null;
+    var name = ((speaker && speaker.name) || "").toLowerCase();
+    var preferFemale = !/sage|storm|rio|adam|josh/.test((speaker && speaker.id) || "");
+    var scored = voices
+      .map(function (v) {
+        var n = (v.name || "").toLowerCase();
+        var lang = (v.lang || "").toLowerCase();
+        var score = 0;
+        if (lang.indexOf("en") === 0) score += 5;
+        if (/natural|neural|premium|enhanced|google|microsoft|samantha|moira|karen|aria|jenny|guy|davis/.test(n))
+          score += 6;
+        if (preferFemale && /female|woman|zira|samantha|moira|karen|aria|jenny|susan/.test(n)) score += 3;
+        if (!preferFemale && /male|david|daniel|mark|guy|fred/.test(n)) score += 3;
+        if (/compact|robot|whisper|novelty/.test(n)) score -= 4;
+        if (name && n.indexOf(name.split(" ")[0]) >= 0) score += 2;
+        return { v: v, score: score };
+      })
+      .sort(function (a, b) {
+        return b.score - a.score;
+      });
+    return scored[0] && scored[0].score > 0 ? scored[0].v : voices[0];
+  }
+
+  function stopServerAudio() {
+    if (state.audioEl) {
+      try {
+        state.audioEl.onended = null;
+        state.audioEl.onerror = null;
+        state.audioEl.pause();
+        state.audioEl.src = "";
+      } catch (e) {}
+      state.audioEl = null;
+    }
+  }
 
   function loadPrefs() {
     try {
@@ -108,6 +162,7 @@
   }
 
   function cancelSpeech() {
+    stopServerAudio();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     state.speaking = false;
     state.queue = [];
@@ -116,59 +171,182 @@
   function processQueue() {
     if (state.speaking || !state.queue.length) return;
     var next = state.queue.shift();
-    speakUtterance(next.text, next.speaker, { force: next.force, rotate: next.rotate });
+    speakUtterance(next.text, next.speaker, {
+      force: next.force,
+      rotate: next.rotate,
+      onend: next.onend,
+      onstart: next.onstart,
+    });
+  }
+
+  function resolveSpeaker(opts) {
+    opts = opts || {};
+    if (opts.speakerId) {
+      var named = state.speakers.filter(function (s) {
+        return s.id === opts.speakerId;
+      })[0];
+      if (named) return named;
+    }
+    if (opts.speaker && opts.speaker.id) return opts.speaker;
+    return pickSpeaker(!!opts.rotate);
+  }
+
+  function finishSpeak(sp, text, opts) {
+    state.speaking = false;
+    if (typeof opts.onend === "function") {
+      try {
+        opts.onend(sp, text);
+      } catch (e) {}
+    }
+    if (state.queue.length) processQueue();
+  }
+
+  function speakBrowser(text, sp, opts) {
+    if (!window.speechSynthesis) {
+      finishSpeak(sp, text, opts);
+      return;
+    }
+    warmVoices();
+    var prof = state.profiles[sp.id] || { rate: 1, pitch: 1 };
+    var u = new SpeechSynthesisUtterance(text);
+    var voice = pickHumanVoice(sp);
+    if (voice) u.voice = voice;
+    u.volume = state.volume;
+    // Soften browser TTS toward conversational pacing.
+    u.rate = Math.min(1.08, Math.max(0.86, (prof.rate || 1) * state.rateMul * 0.94));
+    u.pitch = Math.min(1.15, Math.max(0.9, (prof.pitch || 1) * state.pitchMul * 0.96));
+    state.speaking = true;
+    u.onend = function () {
+      finishSpeak(sp, text, opts);
+    };
+    u.onerror = function () {
+      finishSpeak(sp, text, opts);
+    };
+    window.speechSynthesis.speak(u);
+  }
+
+  function playAudioUrl(url, sp, text, opts) {
+    stopServerAudio();
+    var audio = new Audio(url);
+    state.audioEl = audio;
+    audio.volume = state.volume;
+    state.speaking = true;
+    audio.onended = function () {
+      if (String(url).indexOf("blob:") === 0) {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (e) {}
+      }
+      stopServerAudio();
+      finishSpeak(sp, text, opts);
+    };
+    audio.onerror = function () {
+      stopServerAudio();
+      speakBrowser(text, sp, opts);
+    };
+    return audio.play().catch(function () {
+      stopServerAudio();
+      speakBrowser(text, sp, opts);
+    });
+  }
+
+  function speakServer(text, sp, opts) {
+    return fetch(state.ttsEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ text: text, speaker_id: sp && sp.id }),
+    }).then(function (r) {
+      var ctype = (r.headers.get("content-type") || "").toLowerCase();
+      if (!r.ok) {
+        return r.json().catch(function () {
+          return {};
+        }).then(function (d) {
+          throw new Error((d && d.error) || "tts_failed");
+        });
+      }
+      if (ctype.indexOf("audio/") === 0) {
+        return r.blob().then(function (blob) {
+          return playAudioUrl(URL.createObjectURL(blob), sp, text, opts);
+        });
+      }
+      return r.json().then(function (d) {
+        if (!d || !d.success || !d.url) throw new Error((d && d.error) || "tts_failed");
+        return playAudioUrl(d.url, sp, text, opts);
+      });
+    });
   }
 
   function speakUtterance(text, speaker, opts) {
     opts = opts || {};
-    if (!text || !window.speechSynthesis) return;
-    if (!opts.force && !state.enabled) return;
+    if (!text) {
+      if (typeof opts.onend === "function") {
+        try {
+          opts.onend(null);
+        } catch (e) {}
+      }
+      return;
+    }
+    if (!opts.force && !state.enabled) {
+      if (typeof opts.onend === "function") {
+        try {
+          opts.onend(null);
+        } catch (e) {}
+      }
+      return;
+    }
 
-    var sp = speaker || pickSpeaker(opts.rotate);
-    if (!sp) return;
+    var sp = speaker || resolveSpeaker(opts);
+    if (!sp) {
+      if (typeof opts.onend === "function") {
+        try {
+          opts.onend(null);
+        } catch (e) {}
+      }
+      return;
+    }
 
     if (state.speaking && opts.interrupt) {
-      window.speechSynthesis.cancel();
-      state.speaking = false;
-      state.queue = [];
-    } else if (state.speaking && opts.queue) {
-      state.queue.push({ text: text, speaker: sp, force: opts.force, rotate: opts.rotate });
-      return;
-    } else if (state.speaking && !opts.force) {
-      state.queue.push({ text: text, speaker: sp, force: opts.force, rotate: opts.rotate });
+      cancelSpeech();
+    } else if (state.speaking && (opts.queue || !opts.force)) {
+      state.queue.push({
+        text: text,
+        speaker: sp,
+        force: opts.force,
+        rotate: opts.rotate,
+        onend: opts.onend,
+        onstart: opts.onstart,
+      });
       return;
     }
 
     if (typeof state.onActiveSpeaker === "function") state.onActiveSpeaker(sp.id);
     setLine(sp, text);
+    if (typeof opts.onstart === "function") {
+      try {
+        opts.onstart(sp, text);
+      } catch (e) {}
+    }
 
-    var prof = state.profiles[sp.id] || { rate: 1, pitch: 1 };
-    var u = new SpeechSynthesisUtterance(text);
-    u.volume = state.volume;
-    u.rate = (prof.rate || 1) * state.rateMul;
-    u.pitch = (prof.pitch || 1) * state.pitchMul;
-
-    state.speaking = true;
-    u.onend = function () {
-      state.speaking = false;
-      if (state.queue.length) {
-        var next = state.queue.shift();
-        speakUtterance(next.text, next.speaker, { force: next.force, rotate: next.rotate });
-      }
-    };
-    u.onerror = function () {
-      state.speaking = false;
-    };
-    window.speechSynthesis.speak(u);
+    if (state.preferServerTts) {
+      speakServer(text, sp, opts).catch(function () {
+        speakBrowser(text, sp, opts);
+      });
+      return;
+    }
+    speakBrowser(text, sp, opts);
   }
 
   function speak(text, opts) {
     opts = opts || {};
-    speakUtterance(text, null, {
+    speakUtterance(text, resolveSpeaker(opts), {
       force: !!opts.force,
       rotate: !!opts.rotate,
       interrupt: !!opts.interrupt,
       queue: opts.queue !== false,
+      speakerId: opts.speakerId,
+      onend: opts.onend,
+      onstart: opts.onstart,
     });
   }
 
@@ -220,7 +398,7 @@
           .filter(function (p) {
             return p && p.active !== false;
           })
-          .slice(0, 8)
+          .slice(0, 12)
           .map(function (p) {
             return {
               id: p.id,
@@ -231,6 +409,9 @@
         if (!state.speakers.length) {
           state.speakers = [
             { id: "performer_nova", name: "Nova Star", avatar: "/static/camgirls/avatar-demo.svg" },
+            { id: "performer_luna", name: "Luna", avatar: "/static/camgirls/avatar-demo.svg" },
+            { id: "performer_ember", name: "Ember", avatar: "/static/camgirls/avatar-demo.svg" },
+            { id: "performer_venus", name: "Venus", avatar: "/static/camgirls/avatar-demo.svg" },
           ];
         }
         if (!state.leadSpeakerId) state.leadSpeakerId = state.speakers[0].id;
@@ -239,6 +420,8 @@
       .catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'camgirls-stream-voice.js', context: 'catch' }); }
         state.speakers = [
           { id: "performer_nova", name: "Nova Star", avatar: "/static/camgirls/avatar-demo.svg" },
+          { id: "performer_luna", name: "Luna", avatar: "/static/camgirls/avatar-demo.svg" },
+          { id: "performer_ember", name: "Ember", avatar: "/static/camgirls/avatar-demo.svg" },
         ];
         if (!state.leadSpeakerId) state.leadSpeakerId = state.speakers[0].id;
         return state.speakers;
@@ -336,9 +519,12 @@
     options = options || {};
     if (options.profiles) state.profiles = options.profiles;
     if (options.storageKey) state.storageKey = options.storageKey;
+    if (typeof options.preferServerTts === "boolean") state.preferServerTts = options.preferServerTts;
+    if (options.ttsEndpoint) state.ttsEndpoint = options.ttsEndpoint;
     state.onActiveSpeaker = options.onActiveSpeaker || null;
     state.onLine = options.onLine || null;
     loadPrefs();
+    warmVoices();
     if (!document._mnVoiceChapterBound) {
       document.addEventListener("mn:stream-chapter", onStreamChapter);
       document._mnVoiceChapterBound = true;

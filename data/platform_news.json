@@ -2,6 +2,56 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "news-sound-in-monitor-20261110",
+      "title": "Sound system moved into the lobby monitor",
+      "summary": "Frontpage ambient console is retired. Music, SFX, drums, and guitar now live inside the lobby monitor controls.",
+      "date": "2026-11-10",
+      "category": "platform",
+      "channel": "platform",
+      "href": "/",
+      "featured": false
+    },
+    {
+      "id": "news-shop-wave-nov2026",
+      "title": "Shop wave: lobby FX, pipeline boosts, podcast packs",
+      "summary": "New shop SKUs unlock lobby drums/guitar kits, pipeline boosters, and podcast listen packs.",
+      "date": "2026-11-10",
+      "category": "shop",
+      "channel": "shop",
+      "href": "/shop/",
+      "featured": true
+    },
+    {
+      "id": "news-podcast-wave-nov2026",
+      "title": "Podcast wave: lobby, daemon desk, and shop drops",
+      "summary": "New MasterNoder podcast episodes cover the AI lobby pipeline, daemon trade desk, and November shop wave.",
+      "date": "2026-11-10",
+      "category": "podcast",
+      "channel": "podcast",
+      "href": "/podcast/",
+      "featured": true
+    },
+    {
+      "id": "news-lobby-top25-20261110",
+      "title": "Top 25 users ticker on the lobby monitor",
+      "summary": "Online and XP ranks scroll in a single line under the monitor bezel \u2014 one board, twenty-five players.",
+      "date": "2026-11-10",
+      "category": "platform",
+      "channel": "platform",
+      "href": "/",
+      "featured": true
+    },
+    {
+      "id": "news-lobby-pipeline-50-20261110",
+      "title": "Lobby monitor: 50-scene AI pipeline is live",
+      "summary": "The frontpage lobby now runs a 12-minute AI cut with human voices, drums + guitar, fresh art each scene, and a Top 25 ticker.",
+      "date": "2026-11-10",
+      "category": "platform",
+      "channel": "platform",
+      "href": "/",
+      "featured": true
+    },
+    {
       "id": "news-page-portal-wallet-staking-20260706",
       "title": "Portal cleanup: wallets and staking pages are live",
       "summary": "Wallets, staking leaderboard, and staking teams now have first-class pages in the main portal with versioned uWSGI page serving instead of missing-page fallbacks.",

@@ -99,4 +99,9 @@ data/click_game/
 data/trophy_income/
 data/trophy_quests/
 data/paypal_shop_orders.json
+# Frontpage lobby monitor runtime (learn/store/cache)
+data/landing_monitor_cache.json
+data/landing_monitor_actions.json
+data/landing_monitor_learning.json
+data/landing_monitor_pipeline.json
 instance/*.lock
