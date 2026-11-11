@@ -1476,3 +1476,66 @@ def mn2_train_b_one(deliverable_id: str):
     from backend.services import wallet_train_b_service as train_b
 
     return jsonify(train_b.run_deliverable(deliverable_id))
+
+
+# --- Train C trackers & scanners (v1.5.0.0 draft finish) ---
+
+
+@mn2_bp.route("/api/mn2/train-c", methods=["GET"])
+def mn2_train_c_manifest():
+    from backend.services import wallet_train_c_service as train_c
+
+    return jsonify(train_c.train_c_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-c/version", methods=["GET"])
+def mn2_train_c_version():
+    from backend.services import wallet_train_c_service as train_c
+
+    return jsonify(train_c.train_c_version())
+
+
+@mn2_bp.route("/api/mn2/train-c/run", methods=["GET", "POST"])
+def mn2_train_c_run():
+    from backend.services import wallet_train_c_service as train_c
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_c.run_train_c(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-c/acceptance", methods=["GET", "POST"])
+def mn2_train_c_acceptance():
+    from backend.services import wallet_train_c_service as train_c
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_c.train_c_acceptance(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-c/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_c_one(deliverable_id: str):
+    from backend.services import wallet_train_c_service as train_c
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(
+        train_c.run_deliverable(
+            deliverable_id,
+            user_id=uid,
+            limit=int(data.get("limit") or request.args.get("limit") or 20),
+        )
+    )
