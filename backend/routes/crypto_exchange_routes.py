@@ -1947,6 +1947,36 @@ def exchange_wallet_mega_train_f_ops_one(enrichment_id: str):
     )
 
 
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-adv", methods=["GET"])
+def exchange_wallet_mega_train_f_adv():
+    """T5.41–T5.50 — X-41…X-50 advanced exchange differentiators."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_adv(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-adv/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_train_f_adv_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    step = data.get("step") or request.args.get("step") or "status"
+    eid = str(enrichment_id or "").upper()
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+            step=str(step),
+            append_heartbeat=eid == "X-50",
+            address=str(data.get("address") or request.args.get("address") or ""),
+            amount=float(data.get("amount") or request.args.get("amount") or 0),
+            balance=float(data.get("balance") or request.args.get("balance") or 0),
+        )
+    )
+
+
 @crypto_exchange_bp.route("/api/exchange/wallet-mega/acceptance", methods=["GET", "POST"])
 def exchange_wallet_mega_acceptance():
     """Paper trade → settle posture → withdraw dry-run acceptance pack."""

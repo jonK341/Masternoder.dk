@@ -334,3 +334,46 @@ def test_train_f_ops_routes(monkeypatch):
     one_body = one.get_json()
     assert one_body["enrichment"] == "X-40"
     assert one_body["success"] is True
+
+
+def test_train_f_adv_routes(monkeypatch):
+    from backend.routes.crypto_exchange_routes import crypto_exchange_bp
+    from backend.services import mn2_spork_service as spork
+    from backend.services.exchange_wallet_x_knobs import TRAIN_F_ADV_IDS
+    from flask import Flask
+
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.delenv("MN2_SPORK_OVERRIDE_JSON", raising=False)
+    spork.invalidate_cache()
+
+    app = Flask(__name__)
+    app.register_blueprint(crypto_exchange_bp)
+    c = app.test_client()
+
+    ver = c.get("/api/exchange/wallet-mega/version")
+    assert ver.status_code == 200
+    assert ver.get_json()["train_f_adv_count"] == 10
+
+    adv = c.get("/api/exchange/wallet-mega/train-f-adv")
+    assert adv.status_code == 200
+    body = adv.get_json()
+    assert body["train"] == "F-adv"
+    assert body["count"] == 10
+    assert body["ok_count"] == 10
+    assert body["ids"] == list(TRAIN_F_ADV_IDS)
+    assert body["results"]["X-41"]["enrichment"] == "X-41"
+    assert "actions" in body["results"]["X-42"]
+    assert body["results"]["X-44"]["policy"]["session_hits"] >= 1
+    assert body["results"]["X-45"]["label"] == "exchange"
+    assert body["results"]["X-46"]["enrichment"] == "X-46"
+    assert "profile" in body["results"]["X-47"]
+    assert body["results"]["X-48"]["recommended"] is not None
+    assert len(body["results"]["X-49"]["pipeline"]) >= 4
+    assert body["results"]["X-50"]["bus"]["exchange_exists"] is True
+
+    one = c.get("/api/exchange/wallet-mega/train-f-adv/X-49")
+    assert one.status_code == 200
+    one_body = one.get_json()
+    assert one_body["enrichment"] == "X-49"
+    assert one_body["success"] is True
+    assert one_body["next"] == "unlock"

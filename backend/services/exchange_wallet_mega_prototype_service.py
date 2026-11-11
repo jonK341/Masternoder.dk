@@ -24,6 +24,7 @@ from backend.services.exchange_wallet_x_knobs import (
     MEGA_MIN_KNOBS,
     PRIORITY_BY_PILLAR,
     PRIORITY_IDS,
+    TRAIN_F_ADV_IDS,
     TRAIN_F_CORE_IDS,
     TRAIN_F_DESK_IDS,
     TRAIN_F_OPS_IDS,
@@ -58,6 +59,14 @@ _EXCHANGE_SERVICE_FILES = (
     "backend/routes/crypto_exchange_routes.py",
 )
 _EXCHANGE_LOG = os.path.join(_BASE, "logs", "exchange_wallet_events.jsonl")
+_WALLET_EVENT_BUS = os.path.join(_BASE, "data", "mn2_wallet_events.jsonl")
+_EXCHANGE_POLICY_PATH = os.path.join(_BASE, "data", "mn2_exchange_session_policy.json")
+_KNOWN_ADDRESS_LABELS: Dict[str, str] = {
+    # Placeholders / patterns only — not live deposit addresses.
+    "platform_treasury": "platform",
+    "exchange_sales_pool": "exchange",
+    "bridge": "bridge",
+}
 
 # Stable exchange error codes surfaced to wallet + /api/exchange/* (X-18).
 EXCHANGE_ERROR_CODES: Dict[str, str] = {
@@ -127,6 +136,7 @@ def mega_version() -> Dict[str, Any]:
         "train_f_desk_count": len(TRAIN_F_DESK_IDS),
         "train_f_sense_count": len(TRAIN_F_SENSE_IDS),
         "train_f_ops_count": len(TRAIN_F_OPS_IDS),
+        "train_f_adv_count": len(TRAIN_F_ADV_IDS),
         "live_gates_default_off": list(LIVE_GATES_DEFAULT_OFF),
         "updated_at": _iso(),
     }
@@ -1741,6 +1751,7 @@ def exchange_endpoint_inventory() -> Dict[str, Any]:
         {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-desk", "acl": "public_draft"},
         {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-sense", "acl": "public_draft"},
         {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-ops", "acl": "public_draft"},
+        {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-adv", "acl": "public_draft"},
         {"method": "POST", "path": "/api/exchange/wallet-mega/guided", "acl": "user+gates"},
         {"method": "POST", "path": "/api/exchange/wallet-mega/assess", "acl": "user+gates"},
         {"method": "GET", "path": "/api/exchange/wallet-mega/acceptance", "acl": "public_draft"},
@@ -1889,6 +1900,48 @@ def ml_predictor(*, symbol: str = "BTC") -> Dict[str, Any]:
     }
 
 
+def order_auto_scaler() -> Dict[str, Any]:
+    """X-42 — auto throttle orders under venue / disk pressure."""
+    used_pct = None
+    free_gb = None
+    try:
+        st = os.statvfs(_BASE)
+        total = st.f_frsize * st.f_blocks
+        free = st.f_frsize * st.f_bavail
+        free_gb = round(free / (1024**3), 2)
+        used_pct = round((1.0 - (free / total)) * 100.0, 1) if total else None
+    except Exception:
+        pass
+    fo = failover_status()
+    preferred = fo.get("preferred_venue")
+    venue_pressure = preferred is None
+    actions: List[Dict[str, Any]] = []
+    throttle_pct = 0
+    if used_pct is not None and used_pct >= 90:
+        throttle_pct = 75
+        actions.append({"id": "throttle_orders", "auto": True, "reason": "disk_high", "throttle_pct": 75})
+        actions.append({"id": "shrink_book_cache", "auto": True, "reason": "disk_high"})
+    elif used_pct is not None and used_pct >= 80:
+        throttle_pct = 40
+        actions.append({"id": "throttle_orders", "auto": True, "reason": "disk_pressure", "throttle_pct": 40})
+    if venue_pressure:
+        throttle_pct = max(throttle_pct, 50)
+        actions.append({"id": "pause_new_venue_orders", "auto": True, "reason": "no_preferred_venue"})
+    if not actions:
+        actions.append({"id": "noop", "auto": True, "reason": "capacity_ok"})
+    return {
+        "success": True,
+        "enrichment": "X-42",
+        "disk": {"used_pct": used_pct, "free_gb": free_gb},
+        "venue_pressure": venue_pressure,
+        "throttle_pct": throttle_pct,
+        "actions": actions,
+        "executed": False,
+        "knobs": installed_knobs("X-42"),
+        "updated_at": _iso(),
+    }
+
+
 def self_healer(*, dry_run: bool = True) -> Dict[str, Any]:
     """X-43 — auto resubscribe / rewind plan (promote gated by SPORK_117)."""
     fo = failover_status()
@@ -1933,6 +1986,80 @@ def self_healer(*, dry_run: bool = True) -> Dict[str, Any]:
     }
 
 
+def adaptive_session_policy(*, user_id: str = "proto_user") -> Dict[str, Any]:
+    """X-44 — per-session fee / size / venue policy."""
+    uid = str(user_id or "proto_user")
+    policy: Dict[str, Any] = {
+        "fee_mode": "standard",
+        "size_mode": "standard",
+        "venue_mode": "failover_rank",
+        "session_hits": 1,
+    }
+    try:
+        blob: Dict[str, Any] = {}
+        if os.path.isfile(_EXCHANGE_POLICY_PATH):
+            try:
+                with open(_EXCHANGE_POLICY_PATH, encoding="utf-8") as handle:
+                    blob = json.loads(handle.read() or "{}") or {}
+            except Exception:
+                blob = {}
+        if not isinstance(blob, dict):
+            blob = {}
+        row = blob.get(uid)
+        if isinstance(row, dict):
+            policy["session_hits"] = int(row.get("session_hits") or 1) + 1
+            policy["fee_mode"] = row.get("fee_mode") or policy["fee_mode"]
+            policy["size_mode"] = row.get("size_mode") or policy["size_mode"]
+            policy["venue_mode"] = row.get("venue_mode") or policy["venue_mode"]
+        if policy["session_hits"] >= 5:
+            policy["fee_mode"] = "economy"
+            policy["size_mode"] = "conservative"
+        blob[uid] = {**policy, "updated_at": _iso()}
+        os.makedirs(os.path.dirname(_EXCHANGE_POLICY_PATH), exist_ok=True)
+        with open(_EXCHANGE_POLICY_PATH, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps(blob, indent=2))
+    except Exception as exc:
+        policy["persist_error"] = str(exc)
+    return {
+        "success": True,
+        "enrichment": "X-44",
+        "user_id": uid,
+        "policy": policy,
+        "path": "data/mn2_exchange_session_policy.json",
+        "knobs": installed_knobs("X-44"),
+        "updated_at": _iso(),
+    }
+
+
+def address_pattern_matcher(*, address: str = "") -> Dict[str, Any]:
+    """X-45 — label exchange / platform / bridge addresses."""
+    addr = (address or "").strip()
+    label = "unknown"
+    reason = "no_match"
+    lower = addr.lower()
+    if not addr:
+        label = "empty"
+        reason = "address_required"
+    else:
+        for needle, name in _KNOWN_ADDRESS_LABELS.items():
+            if needle in lower:
+                label = name
+                reason = f"pattern:{needle}"
+                break
+        if label == "unknown" and addr.startswith("M"):
+            label = "mn2_style"
+            reason = "prefix_M"
+    return {
+        "success": True,
+        "enrichment": "X-45",
+        "address": addr or None,
+        "label": label,
+        "reason": reason,
+        "knobs": installed_knobs("X-45"),
+        "updated_at": _iso(),
+    }
+
+
 def decision_strip(*, user_id: str = "proto_user") -> Dict[str, Any]:
     """X-48 — recommended next action strip from balances + gates + anomaly."""
     from backend.services import crypto_exchange_service as ex
@@ -1969,6 +2096,138 @@ def decision_strip(*, user_id: str = "proto_user") -> Dict[str, Any]:
         "recommended": actions[0] if actions else None,
         "actions": actions,
         "knobs": installed_knobs("X-48"),
+        "updated_at": _iso(),
+    }
+
+
+def trader_optimize_profile() -> Dict[str, Any]:
+    """X-47 — IBD + book warm + startup profile for traders."""
+    book = book_cache_status(symbol="BTC")
+    cache = book.get("cache") if isinstance(book.get("cache"), dict) else {}
+    health = health_rails()
+    warm = not bool(cache.get("stale")) and bool(cache.get("hit"))
+    profile = {
+        "book_warm": warm,
+        "dbcache_mb": 768 if not warm else 450,
+        "max_open_orders": 8 if health.get("overall") == "green" else 3,
+        "mode": "warmup" if not warm else "steady",
+        "prefer_failover_rank": True,
+    }
+    return {
+        "success": True,
+        "enrichment": "X-47",
+        "profile": profile,
+        "book": {
+            "hit": cache.get("hit"),
+            "stale": cache.get("stale"),
+            "age_sec": cache.get("age_sec"),
+        },
+        "health_overall": health.get("overall"),
+        "knobs": installed_knobs("X-47"),
+        "updated_at": _iso(),
+    }
+
+
+def exchange_workflow_orchestrator(*, user_id: str = "proto_user", step: str = "status") -> Dict[str, Any]:
+    """X-49 — one-click unlock → fund exchange → place paper → backup."""
+    uid = str(user_id or "proto_user")
+    step_norm = str(step or "status").strip().lower()
+    pipeline = [
+        {"id": "unlock", "label": "Unlock wallet session", "href": "/profile"},
+        {"id": "fund", "label": "Fund exchange (deposit MN2)", "href": "/profile?tab=wallet&wallet=deposit"},
+        {
+            "id": "paper",
+            "label": "Place paper trade",
+            "api": "POST /api/exchange/wallet-mega/guided",
+        },
+        {"id": "backup", "label": "Backup / verify rails", "api": "GET /api/exchange/wallet-mega/train-f-ops/X-31"},
+    ]
+    out: Dict[str, Any] = {
+        "success": True,
+        "enrichment": "X-49",
+        "user_id": uid,
+        "step": step_norm,
+        "pipeline": pipeline,
+        "knobs": installed_knobs("X-49"),
+        "updated_at": _iso(),
+    }
+    if step_norm in ("status", "plan"):
+        out["next"] = "unlock"
+        out["decision"] = decision_strip(user_id=uid).get("recommended")
+        return out
+    ids = [p["id"] for p in pipeline]
+    if step_norm not in ids:
+        out["success"] = False
+        out["error"] = "unknown_step"
+        out["allowed_steps"] = ["status"] + ids
+        return out
+    idx = ids.index(step_norm)
+    if step_norm == "paper":
+        trade = guided_onchain(user_id=uid, step="trade", amount_mn2=0.01, to_asset="BTC")
+        out["paper"] = {
+            "ok": bool(trade.get("success")),
+            "dry_run": (trade.get("trade") or {}).get("dry_run"),
+        }
+        if not trade.get("success"):
+            out["success"] = False
+            out["error"] = trade.get("error") or "paper_trade_failed"
+            return out
+    if step_norm == "backup":
+        health = health_rails()
+        out["backup"] = {"overall": health.get("overall")}
+    out["completed_step"] = step_norm
+    out["next"] = ids[idx + 1] if idx + 1 < len(ids) else "done"
+    return out
+
+
+def unified_event_bus(*, append_heartbeat: bool = False) -> Dict[str, Any]:
+    """X-50 — unified trade+wallet event bus for site + Qt."""
+    os.makedirs(os.path.dirname(_EXCHANGE_LOG), exist_ok=True)
+    os.makedirs(os.path.dirname(_WALLET_EVENT_BUS), exist_ok=True)
+    if append_heartbeat:
+        hb = json.dumps({"ts": _iso(), "kind": "heartbeat", "source": "train_f_adv"}) + "\n"
+        try:
+            with open(_EXCHANGE_LOG, "a", encoding="utf-8") as handle:
+                handle.write(hb)
+        except Exception:
+            pass
+        try:
+            with open(_WALLET_EVENT_BUS, "a", encoding="utf-8") as handle:
+                handle.write(hb)
+        except Exception:
+            pass
+
+    def _tail(path: str, limit: int = 12) -> List[Any]:
+        if not os.path.isfile(path):
+            return []
+        try:
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                lines = handle.read().splitlines()[-limit:]
+            rows: List[Any] = []
+            for line in lines:
+                try:
+                    rows.append(json.loads(line))
+                except Exception:
+                    rows.append({"raw": line})
+            return rows
+        except Exception as exc:
+            return [{"error": str(exc)}]
+
+    exchange_exists = os.path.isfile(_EXCHANGE_LOG) or append_heartbeat
+    wallet_exists = os.path.isfile(_WALLET_EVENT_BUS) or append_heartbeat
+    return {
+        "success": True,
+        "enrichment": "X-50",
+        "bus": {
+            "exchange_path": "logs/exchange_wallet_events.jsonl",
+            "wallet_path": "data/mn2_wallet_events.jsonl",
+            "exchange_exists": exchange_exists,
+            "wallet_exists": wallet_exists,
+            "recent_exchange": _tail(_EXCHANGE_LOG),
+            "recent_wallet": _tail(_WALLET_EVENT_BUS),
+            "consumers": ["site", "qt", "exchange_desk"],
+        },
+        "knobs": installed_knobs("X-50"),
         "updated_at": _iso(),
     }
 
@@ -2033,7 +2292,10 @@ _RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
         execute_withdraw=bool(kw.get("execute_withdraw") or False),
     ),
     "X-41": lambda **kw: ml_predictor(symbol=str(kw.get("symbol") or "BTC")),
+    "X-42": lambda **_kw: order_auto_scaler(),
     "X-43": lambda **kw: self_healer(dry_run=bool(kw.get("dry_run", True))),
+    "X-44": lambda **kw: adaptive_session_policy(user_id=str(kw.get("user_id") or "proto_user")),
+    "X-45": lambda **kw: address_pattern_matcher(address=str(kw.get("address") or "")),
     "X-46": lambda **kw: assess_anomaly(
         user_id=str(kw.get("user_id") or "proto_user"),
         kind=str(kw.get("kind") or "withdraw"),
@@ -2042,7 +2304,13 @@ _RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
         balance=float(kw.get("balance") or 0),
         symbol=str(kw.get("symbol") or "MN2"),
     ),
+    "X-47": lambda **_kw: trader_optimize_profile(),
     "X-48": lambda **kw: decision_strip(user_id=str(kw.get("user_id") or "proto_user")),
+    "X-49": lambda **kw: exchange_workflow_orchestrator(
+        user_id=str(kw.get("user_id") or "proto_user"),
+        step=str(kw.get("step") or "status"),
+    ),
+    "X-50": lambda **kw: unified_event_bus(append_heartbeat=bool(kw.get("append_heartbeat") or False)),
 }
 
 
@@ -2055,6 +2323,7 @@ def run_enrichment(enrichment_id: str, **kwargs: Any) -> Dict[str, Any]:
         | set(TRAIN_F_DESK_IDS)
         | set(TRAIN_F_SENSE_IDS)
         | set(TRAIN_F_OPS_IDS)
+        | set(TRAIN_F_ADV_IDS)
     )
     if eid not in allowed:
         return {
@@ -2066,6 +2335,7 @@ def run_enrichment(enrichment_id: str, **kwargs: Any) -> Dict[str, Any]:
             "train_f_desk_ids": list(TRAIN_F_DESK_IDS),
             "train_f_sense_ids": list(TRAIN_F_SENSE_IDS),
             "train_f_ops_ids": list(TRAIN_F_OPS_IDS),
+            "train_f_adv_ids": list(TRAIN_F_ADV_IDS),
         }
     runner = _RUNNERS.get(eid)
     if not runner:
@@ -2184,6 +2454,35 @@ def run_train_f_ops(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict
     }
 
 
+def run_train_f_adv(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict[str, Any]:
+    """T5.41–T5.50 — run X-41…X-50 advanced exchange differentiators."""
+    results: Dict[str, Any] = {}
+    for eid in TRAIN_F_ADV_IDS:
+        results[eid] = run_enrichment(
+            eid,
+            user_id=user_id,
+            symbol=symbol,
+            step="status",
+            dry_run=True,
+            append_heartbeat=(eid == "X-50"),
+            amount=0.01 if eid == "X-46" else 0,
+            balance=1.0 if eid == "X-46" else 0,
+            address="exchange_sales_pool" if eid == "X-45" else "",
+        )
+    ok = sum(1 for v in results.values() if isinstance(v, dict) and v.get("success"))
+    return {
+        "success": ok == len(TRAIN_F_ADV_IDS),
+        "target": MEGA_TARGET,
+        "train": "F-adv",
+        "ids": list(TRAIN_F_ADV_IDS),
+        "count": len(TRAIN_F_ADV_IDS),
+        "ok_count": ok,
+        "results": results,
+        "mega_min_knobs": list(MEGA_MIN_KNOBS),
+        "updated_at": _iso(),
+    }
+
+
 def paper_trade_acceptance(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict[str, Any]:
     """Phase 5 acceptance: paper trade → settle posture → withdraw dry-run; live gates off."""
     uid = str(user_id or "proto_user")
@@ -2263,6 +2562,7 @@ def prototype_bundle(*, user_id: str = "proto_user") -> Dict[str, Any]:
         "train_f_desk": run_train_f_desk(user_id=user_id),
         "train_f_sense": run_train_f_sense(user_id=user_id),
         "train_f_ops": run_train_f_ops(user_id=user_id),
+        "train_f_adv": run_train_f_adv(user_id=user_id),
         "install": run_priority_install(user_id=user_id),
         "acceptance": paper_trade_acceptance(user_id=user_id),
         "knobs": knob_walkthrough(enrichment_id=None, installed_min_only=False),
