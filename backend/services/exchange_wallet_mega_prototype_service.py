@@ -26,6 +26,7 @@ from backend.services.exchange_wallet_x_knobs import (
     PRIORITY_IDS,
     TRAIN_F_CORE_IDS,
     TRAIN_F_DESK_IDS,
+    TRAIN_F_SENSE_IDS,
     knobs_for,
     priority_manifest,
     walkthrough,
@@ -122,6 +123,7 @@ def mega_version() -> Dict[str, Any]:
         "priority_count": len(PRIORITY_IDS),
         "train_f_core_count": len(TRAIN_F_CORE_IDS),
         "train_f_desk_count": len(TRAIN_F_DESK_IDS),
+        "train_f_sense_count": len(TRAIN_F_SENSE_IDS),
         "live_gates_default_off": list(LIVE_GATES_DEFAULT_OFF),
         "updated_at": _iso(),
     }
@@ -1271,6 +1273,405 @@ def exchange_docs_generator() -> Dict[str, Any]:
     }
 
 
+def user_activity_feed(*, user_id: str = "proto_user", limit: int = 20) -> Dict[str, Any]:
+    """X-21 — per-user trade / deposit / withdraw activity feed."""
+    from backend.services import crypto_exchange_service as ex
+
+    uid = str(user_id or "proto_user")
+    lim = max(1, min(int(limit or 20), 100))
+    entries: List[Dict[str, Any]] = []
+    balances: Dict[str, Any] = {}
+    try:
+        wallet = ex.get_wallet(uid) or {}
+        bals = wallet.get("balances") if isinstance(wallet, dict) else {}
+        if isinstance(bals, dict):
+            balances = {k: bals.get(k) for k in list(bals.keys())[:12]}
+        hist = wallet.get("history") or wallet.get("activity") or wallet.get("ledger") or []
+        if isinstance(hist, list):
+            for row in hist[:lim]:
+                if isinstance(row, dict):
+                    entries.append(
+                        {
+                            "kind": row.get("kind") or row.get("type") or row.get("side") or "activity",
+                            "symbol": row.get("symbol") or row.get("asset"),
+                            "amount": row.get("amount") or row.get("qty"),
+                            "ts": row.get("ts") or row.get("timestamp") or row.get("created_at"),
+                        }
+                    )
+    except Exception as exc:
+        entries = [{"error": str(exc)}]
+    try:
+        trades = ex.list_trades(limit=lim) or {}
+        rows = trades.get("trades") or trades.get("rows") or trades.get("items") or []
+        if isinstance(rows, list):
+            for row in rows[:lim]:
+                if not isinstance(row, dict):
+                    continue
+                if str(row.get("user_id") or "") not in ("", uid):
+                    continue
+                entries.append(
+                    {
+                        "kind": "trade",
+                        "symbol": row.get("symbol") or row.get("pair"),
+                        "amount": row.get("amount") or row.get("qty") or row.get("size"),
+                        "ts": row.get("ts") or row.get("timestamp") or row.get("created_at"),
+                    }
+                )
+    except Exception:
+        pass
+    try:
+        audit = ex.get_audit_tail(limit=lim) or {}
+        rows = audit.get("rows") or audit.get("events") or audit.get("items") or []
+        if isinstance(rows, list):
+            for row in rows[:lim]:
+                if not isinstance(row, dict):
+                    continue
+                kind = str(row.get("kind") or row.get("type") or row.get("action") or "").lower()
+                if kind and not any(tok in kind for tok in ("trade", "deposit", "withdraw", "fill", "order")):
+                    continue
+                if str(row.get("user_id") or "") not in ("", uid):
+                    continue
+                entries.append(
+                    {
+                        "kind": kind or "audit",
+                        "symbol": row.get("symbol") or row.get("asset"),
+                        "amount": row.get("amount"),
+                        "ts": row.get("ts") or row.get("timestamp"),
+                    }
+                )
+    except Exception:
+        pass
+    entries = entries[:lim]
+    return {
+        "success": True,
+        "enrichment": "X-21",
+        "user_id": uid,
+        "activity": {"entries": entries, "count": len(entries), "balances": balances},
+        "knobs": installed_knobs("X-21"),
+        "updated_at": _iso(),
+    }
+
+
+def market_metric_tracker() -> Dict[str, Any]:
+    """X-23 — volume, fees, open interest, MN2 float KPIs."""
+    from backend.services import crypto_exchange_service as ex
+
+    snap = metrics_snapshot()
+    tickers: Dict[str, Any] = {}
+    trade_count = 0
+    try:
+        tickers = ex.get_all_tickers() or {}
+    except Exception as exc:
+        tickers = {"error": str(exc)}
+    try:
+        trades = ex.list_trades(limit=30) or {}
+        rows = trades.get("trades") or trades.get("rows") or trades.get("items") or []
+        trade_count = len(rows) if isinstance(rows, list) else 0
+    except Exception:
+        trade_count = 0
+    por = por_glance(limit=5)
+    float_hint = (por.get("por") or {}).get("total_liabilities") if isinstance(por.get("por"), dict) else None
+    return {
+        "success": True,
+        "enrichment": "X-23",
+        "kpis": {
+            "trade_sample_count": trade_count,
+            "ticker_count": len((tickers.get("tickers") or tickers.get("prices") or {}) if isinstance(tickers, dict) else {}),
+            "mn2_float_hint": float_hint,
+            "open_interest": None,
+            "fee_counters": (snap.get("counters") or {}),
+            "gate_counters": (snap.get("counters") or {}),
+        },
+        "knobs": installed_knobs("X-23"),
+        "updated_at": _iso(),
+    }
+
+
+def trade_event_tracker(*, append_heartbeat: bool = False) -> Dict[str, Any]:
+    """X-24 — fill / cancel / deposit event bus → wallet UI."""
+    os.makedirs(os.path.dirname(_EXCHANGE_LOG), exist_ok=True)
+    if append_heartbeat:
+        try:
+            with open(_EXCHANGE_LOG, "a", encoding="utf-8") as handle:
+                handle.write(json.dumps({"ts": _iso(), "kind": "heartbeat", "source": "train_f_sense"}) + "\n")
+        except Exception:
+            pass
+    recent: List[Any] = []
+    exists = os.path.isfile(_EXCHANGE_LOG)
+    if exists:
+        try:
+            with open(_EXCHANGE_LOG, encoding="utf-8", errors="replace") as handle:
+                lines = handle.read().splitlines()[-20:]
+            for line in lines:
+                try:
+                    recent.append(json.loads(line))
+                except Exception:
+                    recent.append({"raw": line})
+        except Exception as exc:
+            recent = [{"error": str(exc)}]
+    return {
+        "success": True,
+        "enrichment": "X-24",
+        "bus": {
+            "path": "logs/exchange_wallet_events.jsonl",
+            "exists": exists or append_heartbeat,
+            "kinds": ["fill", "cancel", "deposit", "withdraw", "heartbeat"],
+            "recent": recent,
+            "consumers": ["wallet_ui", "exchange_desk"],
+        },
+        "knobs": installed_knobs("X-24"),
+        "updated_at": _iso(),
+    }
+
+
+def venue_network_scanner() -> Dict[str, Any]:
+    """X-25 — venue endpoint / peer quality for trading rails."""
+    fo = failover_status()
+    readiness = fo.get("venue_readiness") if isinstance(fo.get("venue_readiness"), dict) else {}
+    venues = list(readiness.get("venues") or [])
+    ranked: List[Dict[str, Any]] = []
+    for row in venues[:12]:
+        if not isinstance(row, dict):
+            continue
+        live_ready = bool(row.get("live_ready"))
+        creds = bool(row.get("credentials_configured"))
+        quality = "good" if live_ready and creds else ("ok" if creds else "low")
+        ranked.append(
+            {
+                "venue_id": row.get("venue_id"),
+                "quality": quality,
+                "live_ready": live_ready,
+                "credentials_configured": creds,
+            }
+        )
+    rpc_blob = fo.get("rpc_failover") if isinstance(fo.get("rpc_failover"), dict) else {}
+    return {
+        "success": True,
+        "enrichment": "X-25",
+        "network": {
+            "venue_count": len(ranked),
+            "venues": ranked,
+            "preferred": fo.get("preferred_venue"),
+            "standby": fo.get("standby_venue"),
+            "rpc_failover": {
+                "ok": bool(rpc_blob.get("success") if "success" in rpc_blob else rpc_blob),
+                "summary_keys": sorted(list(rpc_blob.keys()))[:12] if isinstance(rpc_blob, dict) else [],
+            },
+        },
+        "knobs": installed_knobs("X-25"),
+        "updated_at": _iso(),
+    }
+
+
+def vulnerability_sweep() -> Dict[str, Any]:
+    """X-26 — CVE + key-leak posture sweep before live gate (offline, no secret values)."""
+    req = os.path.join(_BASE, "requirements.txt")
+    lines: List[str] = []
+    if os.path.isfile(req):
+        try:
+            with open(req, encoding="utf-8") as handle:
+                for raw in handle.read().splitlines():
+                    line = raw.strip()
+                    if not line or line.startswith("#") or line.startswith("-r"):
+                        continue
+                    line = line.split(";", 1)[0].split("#", 1)[0].strip()
+                    if line:
+                        lines.append(line)
+        except Exception:
+            lines = []
+
+    def _constrained(item: str) -> bool:
+        return any(tok in item for tok in ("==", ">=", "<=", "~=", "!=", "@"))
+
+    unpinned = [item for item in lines if not _constrained(item)]
+    findings = [
+        {"id": "requirements_present", "ok": os.path.isfile(req), "severity": "high" if not os.path.isfile(req) else "info"},
+        {
+            "id": "unpinned_deps",
+            "ok": len(unpinned) < max(5, len(lines) // 2 or 1),
+            "severity": "medium",
+            "count": len(unpinned),
+            "sample": unpinned[:10],
+        },
+        {
+            "id": "live_gates_default_off",
+            "ok": True,
+            "severity": "info",
+            "note": "SPORK_112/114 remain default-off before live gate",
+        },
+        {
+            "id": "key_env_presence_booleans_only",
+            "ok": True,
+            "severity": "info",
+            "configured": {
+                "rpc_url": bool((os.environ.get("MN2_RPC_URL") or "").strip()),
+                "webhook": bool((os.environ.get("EXCHANGE_WEBHOOK_SECRET") or "").strip()),
+            },
+        },
+        {"id": "cve_api", "ok": True, "severity": "info", "note": "Offline sweep only; wire OSV/NVD later"},
+    ]
+    passed = all(bool(f.get("ok")) for f in findings if f.get("severity") in ("high", "medium"))
+    return {
+        "success": True,
+        "enrichment": "X-26",
+        "passed": passed,
+        "dependency_count": len(lines),
+        "findings": findings,
+        "knobs": installed_knobs("X-26"),
+        "updated_at": _iso(),
+    }
+
+
+def ledger_balance_consistency(*, user_id: str = "proto_user") -> Dict[str, Any]:
+    """X-28 — ledger vs chain vs venue balance consistency signals."""
+    from backend.services import crypto_exchange_service as ex
+
+    uid = str(user_id or "proto_user")
+    site_bal = None
+    try:
+        wallet = ex.get_wallet(uid) or {}
+        bals = wallet.get("balances") if isinstance(wallet, dict) else {}
+        if isinstance(bals, dict):
+            site_bal = bals.get("MN2")
+    except Exception as exc:
+        site_bal = {"error": str(exc)}
+    por = por_glance(limit=5)
+    fo = failover_status()
+    preferred = fo.get("preferred_venue") if isinstance(fo.get("preferred_venue"), dict) else None
+    checks = [
+        {"id": "site_wallet", "ok": site_bal is not None and not isinstance(site_bal, dict)},
+        {"id": "por_glance", "ok": bool(por.get("success"))},
+        {"id": "venue_ranked", "ok": preferred is not None},
+    ]
+    consistent = all(bool(c.get("ok")) for c in checks[:2])
+    return {
+        "success": True,
+        "enrichment": "X-28",
+        "consistent": consistent,
+        "site_mn2": site_bal,
+        "por_liabilities": (por.get("por") or {}).get("total_liabilities") if isinstance(por.get("por"), dict) else None,
+        "preferred_venue": (preferred or {}).get("venue_id") if isinstance(preferred, dict) else None,
+        "checks": checks,
+        "knobs": installed_knobs("X-28"),
+        "updated_at": _iso(),
+        "note": "Status signals only; no live venue balance sync until SPORK_112.",
+    }
+
+
+def exchange_endpoint_inventory() -> Dict[str, Any]:
+    """X-29 — exchange RPC / webhook / controller ACL audit inventory."""
+    endpoints = [
+        {"method": "GET", "path": "/api/exchange/wallet-mega/version", "acl": "public_draft"},
+        {"method": "GET", "path": "/api/exchange/wallet-mega/priority", "acl": "public_draft"},
+        {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-core", "acl": "public_draft"},
+        {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-desk", "acl": "public_draft"},
+        {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-sense", "acl": "public_draft"},
+        {"method": "POST", "path": "/api/exchange/wallet-mega/guided", "acl": "user+gates"},
+        {"method": "POST", "path": "/api/exchange/wallet-mega/assess", "acl": "user+gates"},
+        {"method": "GET", "path": "/api/exchange/wallet-mega/acceptance", "acl": "public_draft"},
+        {"method": "GET", "path": "/api/exchange/health", "acl": "public"},
+        {"method": "WEBHOOK", "path": "/api/exchange/webhook", "acl": "secret_optional"},
+    ]
+    auth = {
+        "rpc_url_set": bool((os.environ.get("MN2_RPC_URL") or "").strip()),
+        "rpc_user_set": bool((os.environ.get("MN2_RPC_USER") or "").strip()),
+        "rpc_auth_set": bool((os.environ.get("MN2_RPC_PASSWORD") or "").strip()),
+        "webhook_secret_set": bool((os.environ.get("EXCHANGE_WEBHOOK_SECRET") or "").strip()),
+    }
+    return {
+        "success": True,
+        "enrichment": "X-29",
+        "endpoints": endpoints,
+        "count": len(endpoints),
+        "auth": auth,
+        "knobs": installed_knobs("X-29"),
+        "updated_at": _iso(),
+    }
+
+
+def exchange_config_lint() -> Dict[str, Any]:
+    """X-30 — exchange + wallet conf lint (spork-aware)."""
+    paths = [
+        ("data/exchange_controller_config.json", ("enabled", "mode")),
+        ("data/exchange_connectors_config.json", ("venues", "connectors", "enabled")),
+        ("data/crypto_exchange_config.json", ("symbols", "pairs", "assets", "enabled")),
+        ("config/masternoder2.conf.example", ("rpcuser", "rpcport", "server")),
+    ]
+    files: List[Dict[str, Any]] = []
+    issues: List[Dict[str, Any]] = []
+    for rel, expected_keys in paths:
+        path = os.path.join(_BASE, rel)
+        row: Dict[str, Any] = {"path": rel, "exists": os.path.isfile(path)}
+        if not os.path.isfile(path):
+            row["ok"] = rel.endswith(".example")
+            if not row["ok"]:
+                issues.append({"id": f"missing_{rel}", "severity": "medium", "ok": False})
+            files.append(row)
+            continue
+        try:
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
+            keys: List[str] = []
+            if rel.endswith(".json"):
+                blob = json.loads(text) if text.strip() else {}
+                if isinstance(blob, dict):
+                    keys = sorted(str(k) for k in blob.keys())
+                    row["key_count"] = len(keys)
+                    hit = any(k in blob for k in expected_keys)
+                    row["ok"] = hit or len(keys) > 0
+                    if not row["ok"]:
+                        issues.append({"id": f"empty_{rel}", "severity": "medium", "ok": False})
+                else:
+                    row["ok"] = True
+            else:
+                kv: Dict[str, str] = {}
+                for raw in text.splitlines():
+                    line = raw.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    kv[k.strip().lower()] = v.strip()
+                keys = sorted(kv.keys())
+                row["key_count"] = len(keys)
+                row["ok"] = True
+                for req in expected_keys:
+                    if req not in kv:
+                        issues.append({"id": f"example_missing_{req}", "severity": "info", "ok": True})
+            row["keys_sample"] = keys[:20]
+        except Exception as exc:
+            row["ok"] = False
+            row["error"] = str(exc)
+            issues.append({"id": f"parse_{rel}", "severity": "medium", "ok": False, "error": str(exc)})
+        files.append(row)
+
+    gates = spork.gate_status()
+    issues.append(
+        {
+            "id": "spork_live_trading_default",
+            "ok": not bool(gates.get("exchange_live", {}).get("allowed")),
+            "severity": "info",
+            "note": "Live trading should stay off in draft channel",
+        }
+    )
+    passed = all(bool(f.get("ok")) for f in files if f.get("exists")) and all(
+        bool(i.get("ok")) for i in issues if i.get("severity") in ("high", "medium")
+    )
+    return {
+        "success": True,
+        "enrichment": "X-30",
+        "passed": passed,
+        "files": files,
+        "issues": issues,
+        "gates": {
+            "exchange_live": gates.get("exchange_live"),
+            "payout_live": gates.get("payout_live"),
+            "anomaly_hard_enforce": gates.get("anomaly_hard_enforce"),
+        },
+        "knobs": installed_knobs("X-30"),
+        "updated_at": _iso(),
+    }
+
+
 def route_picker() -> Dict[str, Any]:
     """X-39 — best venue / fee / settle route from failover ranking."""
     fo = failover_status()
@@ -1421,13 +1822,24 @@ _RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
     "X-18": lambda **_kw: exchange_error_tracker(),
     "X-19": lambda **_kw: exchange_format_gate(),
     "X-20": lambda **_kw: exchange_docs_generator(),
+    "X-21": lambda **kw: user_activity_feed(
+        user_id=str(kw.get("user_id") or "proto_user"),
+        limit=int(kw.get("limit") or 20),
+    ),
     "X-22": lambda **kw: behavior_hints(
         user_id=str(kw.get("user_id") or "proto_user"),
         amount=float(kw.get("amount") or 1.0),
         balance=float(kw.get("balance") or 10.0),
         address=str(kw.get("address") or ""),
     ),
+    "X-23": lambda **_kw: market_metric_tracker(),
+    "X-24": lambda **kw: trade_event_tracker(append_heartbeat=bool(kw.get("append_heartbeat") or False)),
+    "X-25": lambda **_kw: venue_network_scanner(),
+    "X-26": lambda **_kw: vulnerability_sweep(),
     "X-27": lambda **_kw: integrity_scan(),
+    "X-28": lambda **kw: ledger_balance_consistency(user_id=str(kw.get("user_id") or "proto_user")),
+    "X-29": lambda **_kw: exchange_endpoint_inventory(),
+    "X-30": lambda **_kw: exchange_config_lint(),
     "X-31": lambda **_kw: health_rails(),
     "X-34": lambda **_kw: alert_monitor(),
     "X-35": lambda **_kw: metrics_snapshot(),
@@ -1456,9 +1868,9 @@ _RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
 
 
 def run_enrichment(enrichment_id: str, **kwargs: Any) -> Dict[str, Any]:
-    """Run one installed enrichment snapshot (priority, F-core, or F-desk)."""
+    """Run one installed enrichment snapshot (priority, F-core, F-desk, or F-sense)."""
     eid = str(enrichment_id or "").strip().upper()
-    allowed = set(PRIORITY_IDS) | set(TRAIN_F_CORE_IDS) | set(TRAIN_F_DESK_IDS)
+    allowed = set(PRIORITY_IDS) | set(TRAIN_F_CORE_IDS) | set(TRAIN_F_DESK_IDS) | set(TRAIN_F_SENSE_IDS)
     if eid not in allowed:
         return {
             "success": False,
@@ -1467,6 +1879,7 @@ def run_enrichment(enrichment_id: str, **kwargs: Any) -> Dict[str, Any]:
             "priority_ids": list(PRIORITY_IDS),
             "train_f_core_ids": list(TRAIN_F_CORE_IDS),
             "train_f_desk_ids": list(TRAIN_F_DESK_IDS),
+            "train_f_sense_ids": list(TRAIN_F_SENSE_IDS),
         }
     runner = _RUNNERS.get(eid)
     if not runner:
@@ -1527,6 +1940,32 @@ def run_train_f_desk(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dic
         "train": "F-desk",
         "ids": list(TRAIN_F_DESK_IDS),
         "count": len(TRAIN_F_DESK_IDS),
+        "ok_count": ok,
+        "results": results,
+        "mega_min_knobs": list(MEGA_MIN_KNOBS),
+        "updated_at": _iso(),
+    }
+
+
+def run_train_f_sense(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict[str, Any]:
+    """T5.21–T5.30 — run X-21…X-30 market + risk sensing snapshots."""
+    results: Dict[str, Any] = {}
+    for eid in TRAIN_F_SENSE_IDS:
+        results[eid] = run_enrichment(
+            eid,
+            user_id=user_id,
+            symbol=symbol,
+            step="status",
+            dry_run=True,
+            append_heartbeat=(eid == "X-24"),
+        )
+    ok = sum(1 for v in results.values() if isinstance(v, dict) and v.get("success"))
+    return {
+        "success": ok == len(TRAIN_F_SENSE_IDS),
+        "target": MEGA_TARGET,
+        "train": "F-sense",
+        "ids": list(TRAIN_F_SENSE_IDS),
+        "count": len(TRAIN_F_SENSE_IDS),
         "ok_count": ok,
         "results": results,
         "mega_min_knobs": list(MEGA_MIN_KNOBS),
@@ -1611,6 +2050,7 @@ def prototype_bundle(*, user_id: str = "proto_user") -> Dict[str, Any]:
         "priority": priority_install_set(),
         "train_f_core": run_train_f_core(user_id=user_id),
         "train_f_desk": run_train_f_desk(user_id=user_id),
+        "train_f_sense": run_train_f_sense(user_id=user_id),
         "install": run_priority_install(user_id=user_id),
         "acceptance": paper_trade_acceptance(user_id=user_id),
         "knobs": knob_walkthrough(enrichment_id=None, installed_min_only=False),

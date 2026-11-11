@@ -249,3 +249,45 @@ def test_train_f_desk_routes(monkeypatch):
     assert one_body["enrichment"] == "X-14"
     assert one_body["success"] is True
     assert isinstance(one_body.get("findings"), list)
+
+
+def test_train_f_sense_routes(monkeypatch):
+    from backend.routes.crypto_exchange_routes import crypto_exchange_bp
+    from backend.services import mn2_spork_service as spork
+    from backend.services.exchange_wallet_x_knobs import TRAIN_F_SENSE_IDS
+    from flask import Flask
+
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.delenv("MN2_SPORK_OVERRIDE_JSON", raising=False)
+    spork.invalidate_cache()
+
+    app = Flask(__name__)
+    app.register_blueprint(crypto_exchange_bp)
+    c = app.test_client()
+
+    ver = c.get("/api/exchange/wallet-mega/version")
+    assert ver.status_code == 200
+    assert ver.get_json()["train_f_sense_count"] == 10
+
+    sense = c.get("/api/exchange/wallet-mega/train-f-sense")
+    assert sense.status_code == 200
+    body = sense.get_json()
+    assert body["train"] == "F-sense"
+    assert body["count"] == 10
+    assert body["ok_count"] == 10
+    assert body["ids"] == list(TRAIN_F_SENSE_IDS)
+    assert body["results"]["X-21"]["enrichment"] == "X-21"
+    assert "activity" in body["results"]["X-21"]
+    assert body["results"]["X-22"]["enrichment"] == "X-22"
+    assert body["results"]["X-24"]["bus"]["exists"] is True
+    assert body["results"]["X-26"]["passed"] is True
+    assert body["results"]["X-27"]["enrichment"] == "X-27"
+    assert body["results"]["X-29"]["count"] >= 8
+    assert body["results"]["X-30"]["enrichment"] == "X-30"
+
+    one = c.get("/api/exchange/wallet-mega/train-f-sense/X-25")
+    assert one.status_code == 200
+    one_body = one.get_json()
+    assert one_body["enrichment"] == "X-25"
+    assert one_body["success"] is True
+    assert "network" in one_body

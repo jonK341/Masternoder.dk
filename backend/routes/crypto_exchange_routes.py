@@ -1898,6 +1898,30 @@ def exchange_wallet_mega_train_f_desk_one(enrichment_id: str):
     )
 
 
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-sense", methods=["GET"])
+def exchange_wallet_mega_train_f_sense():
+    """T5.21–T5.30 — X-21…X-30 market + risk sensing."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_sense(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-sense/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_train_f_sense_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+            append_heartbeat=str(enrichment_id or "").upper() == "X-24",
+        )
+    )
+
+
 @crypto_exchange_bp.route("/api/exchange/wallet-mega/acceptance", methods=["GET", "POST"])
 def exchange_wallet_mega_acceptance():
     """Paper trade → settle posture → withdraw dry-run acceptance pack."""

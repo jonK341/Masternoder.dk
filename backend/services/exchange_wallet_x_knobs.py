@@ -153,6 +153,9 @@ TRAIN_F_CORE_IDS: Tuple[str, ...] = tuple(f"X-{i:02d}" for i in range(1, 11))
 # Train F desk quality (T5.11–T5.20): X-11…X-20 tools & debuggers.
 TRAIN_F_DESK_IDS: Tuple[str, ...] = tuple(f"X-{i:02d}" for i in range(11, 21))
 
+# Train F market + risk sensing (T5.21–T5.30): X-21…X-30 trackers & scanners.
+TRAIN_F_SENSE_IDS: Tuple[str, ...] = tuple(f"X-{i:02d}" for i in range(21, 31))
+
 
 def _pa(**kwargs: str) -> Dict[str, str]:
     """Fill all 12 knobs; missing keys get a short default from kwargs."""
