@@ -291,3 +291,46 @@ def test_train_f_sense_routes(monkeypatch):
     assert one_body["enrichment"] == "X-25"
     assert one_body["success"] is True
     assert "network" in one_body
+
+
+def test_train_f_ops_routes(monkeypatch):
+    from backend.routes.crypto_exchange_routes import crypto_exchange_bp
+    from backend.services import mn2_spork_service as spork
+    from backend.services.exchange_wallet_x_knobs import TRAIN_F_OPS_IDS
+    from flask import Flask
+
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.delenv("MN2_SPORK_OVERRIDE_JSON", raising=False)
+    spork.invalidate_cache()
+
+    app = Flask(__name__)
+    app.register_blueprint(crypto_exchange_bp)
+    c = app.test_client()
+
+    ver = c.get("/api/exchange/wallet-mega/version")
+    assert ver.status_code == 200
+    assert ver.get_json()["train_f_ops_count"] == 10
+
+    ops = c.get("/api/exchange/wallet-mega/train-f-ops")
+    assert ops.status_code == 200
+    body = ops.get_json()
+    assert body["train"] == "F-ops"
+    assert body["count"] == 10
+    assert body["ok_count"] == 10
+    assert body["ids"] == list(TRAIN_F_OPS_IDS)
+    assert body["results"]["X-31"]["enrichment"] == "X-31"
+    assert body["results"]["X-31"]["overall"] in ("green", "amber", "red")
+    assert "resources" in body["results"]["X-32"]
+    assert body["results"]["X-33"]["uptime"]["sla"] in ("met", "at_risk", "breach")
+    assert "openmetrics" in body["results"]["X-35"]
+    assert body["results"]["X-36"]["optional"] is True
+    assert "map" in body["results"]["X-37"]
+    assert body["results"]["X-38"]["enrichment"] == "X-38"
+    assert body["results"]["X-39"]["enrichment"] == "X-39"
+    assert body["results"]["X-40"]["enrichment"] == "X-40"
+
+    one = c.get("/api/exchange/wallet-mega/train-f-ops/X-40")
+    assert one.status_code == 200
+    one_body = one.get_json()
+    assert one_body["enrichment"] == "X-40"
+    assert one_body["success"] is True

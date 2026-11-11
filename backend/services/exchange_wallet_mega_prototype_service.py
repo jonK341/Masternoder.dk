@@ -26,6 +26,7 @@ from backend.services.exchange_wallet_x_knobs import (
     PRIORITY_IDS,
     TRAIN_F_CORE_IDS,
     TRAIN_F_DESK_IDS,
+    TRAIN_F_OPS_IDS,
     TRAIN_F_SENSE_IDS,
     knobs_for,
     priority_manifest,
@@ -48,6 +49,7 @@ MEGA_TARGET = "v32.6.6.0"
 MEGA_CHANNEL = "draft"
 
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_BOOT_MONOTONIC = time.monotonic()
 _COMPOSE_REL = os.path.join("docker", "exchange-wallet", "docker-compose.yml")
 _EXCHANGE_SERVICE_FILES = (
     "backend/services/exchange_wallet_mega_prototype_service.py",
@@ -124,6 +126,7 @@ def mega_version() -> Dict[str, Any]:
         "train_f_core_count": len(TRAIN_F_CORE_IDS),
         "train_f_desk_count": len(TRAIN_F_DESK_IDS),
         "train_f_sense_count": len(TRAIN_F_SENSE_IDS),
+        "train_f_ops_count": len(TRAIN_F_OPS_IDS),
         "live_gates_default_off": list(LIVE_GATES_DEFAULT_OFF),
         "updated_at": _iso(),
     }
@@ -820,6 +823,69 @@ def health_rails() -> Dict[str, Any]:
     }
 
 
+def exchange_resource_monitor() -> Dict[str, Any]:
+    """X-32 — CPU/RAM/disk for feed + daemon beside wallet (site worker mirror)."""
+    rss_kb = None
+    try:
+        with open("/proc/self/status", "r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.startswith("VmRSS:"):
+                    rss_kb = int(line.split()[1])
+                    break
+    except Exception:
+        rss_kb = None
+    disk: Dict[str, Any] = {}
+    try:
+        st = os.statvfs(_BASE)
+        total = st.f_frsize * st.f_blocks
+        free = st.f_frsize * st.f_bavail
+        disk = {
+            "total_gb": round(total / (1024**3), 2),
+            "free_gb": round(free / (1024**3), 2),
+            "used_pct": round((1.0 - (free / total)) * 100.0, 1) if total else None,
+        }
+    except Exception as exc:
+        disk = {"error": str(exc)}
+    load1 = None
+    try:
+        load1 = os.getloadavg()[0]
+    except Exception:
+        load1 = None
+    return {
+        "success": True,
+        "enrichment": "X-32",
+        "resources": {
+            "rss_mb": round((rss_kb or 0) / 1024.0, 2) if rss_kb is not None else None,
+            "load1": load1,
+            "disk": disk,
+            "scope": "site_worker_exchange_mirror",
+            "targets": ["feed", "daemon", "exchange_controller"],
+        },
+        "knobs": installed_knobs("X-32"),
+        "updated_at": _iso(),
+    }
+
+
+def exchange_uptime_monitor() -> Dict[str, Any]:
+    """X-33 — exchange SLA + wallet uptime tiles for /wallets and /exchange."""
+    uptime_sec = max(0.0, time.monotonic() - _BOOT_MONOTONIC)
+    health = health_rails()
+    status = str(health.get("overall") or "amber")
+    sla = "met" if status == "green" else ("at_risk" if status == "amber" else "breach")
+    return {
+        "success": True,
+        "enrichment": "X-33",
+        "uptime": {
+            "worker_uptime_sec": round(uptime_sec, 1),
+            "health_status": status,
+            "sla": sla,
+            "tiles": ["wallets", "exchange"],
+        },
+        "knobs": installed_knobs("X-33"),
+        "updated_at": _iso(),
+    }
+
+
 def alert_monitor() -> Dict[str, Any]:
     """X-34 — alerts for stuck rails, maintenance, and closed money gates."""
     health = health_rails()
@@ -851,7 +917,7 @@ def alert_monitor() -> Dict[str, Any]:
 
 
 def metrics_snapshot() -> Dict[str, Any]:
-    """X-35 — metrics snapshot for trades/rejects/withdraw gates."""
+    """X-35 — metrics / OpenMetrics snapshot for trades, rejects, withdraw gates."""
     gates = spork.gate_status()
     counters = {
         "priority_enrichments": len(PRIORITY_IDS),
@@ -873,12 +939,120 @@ def metrics_snapshot() -> Dict[str, Any]:
             explorer = explorer_metrics.summary() or {}
     except Exception as exc:
         explorer = {"available": False, "error": str(exc)}
+    resources = exchange_resource_monitor()
+    uptime = exchange_uptime_monitor()
+    health = health_rails()
+    status_num = {"green": 2, "amber": 1, "red": 0}.get(str(health.get("overall") or ""), -1)
+    lines = [
+        "# HELP mn2_exchange_health Health status (2=green,1=amber,0=red)",
+        "# TYPE mn2_exchange_health gauge",
+        f"mn2_exchange_health {status_num}",
+        "# HELP mn2_exchange_worker_uptime_seconds Worker uptime",
+        "# TYPE mn2_exchange_worker_uptime_seconds counter",
+        f"mn2_exchange_worker_uptime_seconds {(uptime.get('uptime') or {}).get('worker_uptime_sec') or 0}",
+        "# HELP mn2_exchange_live_allowed Live trading gate",
+        "# TYPE mn2_exchange_live_allowed gauge",
+        f"mn2_exchange_live_allowed {counters['exchange_live_allowed']}",
+        "# HELP mn2_exchange_rss_mb Resident memory MB",
+        "# TYPE mn2_exchange_rss_mb gauge",
+        f"mn2_exchange_rss_mb {(resources.get('resources') or {}).get('rss_mb') or 0}",
+    ]
     return {
         "success": True,
         "enrichment": "X-35",
         "counters": counters,
         "explorer": explorer,
+        "content_type": "text/plain; version=0.0.4",
+        "openmetrics": "\n".join(lines) + "\n",
         "knobs": installed_knobs("X-35"),
+        "updated_at": _iso(),
+    }
+
+
+def region_venue_preference() -> Dict[str, Any]:
+    """X-36 — region-aware venue preference (optional)."""
+    region = (os.environ.get("MN2_REGION") or os.environ.get("FLY_REGION") or "").strip() or None
+    fo = failover_status()
+    preferred = fo.get("preferred_venue") if isinstance(fo.get("preferred_venue"), dict) else None
+    preference = []
+    if region:
+        preference.append(
+            {
+                "region": region,
+                "policy": "prefer_local_venue",
+                "enabled": True,
+                "preferred_venue_id": (preferred or {}).get("venue_id"),
+            }
+        )
+    else:
+        preference.append(
+            {
+                "region": None,
+                "policy": "default_failover_rank",
+                "enabled": False,
+                "preferred_venue_id": (preferred or {}).get("venue_id"),
+            }
+        )
+    return {
+        "success": True,
+        "enrichment": "X-36",
+        "preference": preference,
+        "optional": True,
+        "knobs": installed_knobs("X-36"),
+        "updated_at": _iso(),
+    }
+
+
+def venue_status_map() -> Dict[str, Any]:
+    """X-37 — masternode / venue status map for operators."""
+    fo = failover_status()
+    readiness = fo.get("venue_readiness") if isinstance(fo.get("venue_readiness"), dict) else {}
+    venues = []
+    for row in list(readiness.get("venues") or [])[:40]:
+        if not isinstance(row, dict):
+            continue
+        venues.append(
+            {
+                "venue_id": row.get("venue_id"),
+                "status": "ready" if row.get("live_ready") else "standby",
+                "live_ready": bool(row.get("live_ready")),
+                "credentials_configured": bool(row.get("credentials_configured")),
+            }
+        )
+    nodes: List[Dict[str, Any]] = []
+    err = None
+    try:
+        from backend.services import mn2_masternode_service as mn
+
+        if hasattr(mn, "list_masternodes"):
+            raw = mn.list_masternodes() or []
+            if isinstance(raw, dict):
+                raw = raw.get("masternodes") or raw.get("result") or []
+            for row in list(raw)[:40]:
+                if not isinstance(row, dict):
+                    continue
+                nodes.append(
+                    {
+                        "alias": row.get("alias") or row.get("proTxHash") or row.get("addr"),
+                        "status": row.get("status") or row.get("state"),
+                        "addr": row.get("addr") or row.get("address"),
+                    }
+                )
+    except Exception as exc:
+        err = str(exc)
+    return {
+        "success": True,
+        "enrichment": "X-37",
+        "map": {
+            "venue_count": len(venues),
+            "venues": venues,
+            "masternode_count": len(nodes),
+            "masternodes": nodes,
+            "preferred_venue": fo.get("preferred_venue"),
+            "error": err,
+            "tile": "venue_masternode_status",
+        },
+        "knobs": installed_knobs("X-37"),
         "updated_at": _iso(),
     }
 
@@ -1566,6 +1740,7 @@ def exchange_endpoint_inventory() -> Dict[str, Any]:
         {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-core", "acl": "public_draft"},
         {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-desk", "acl": "public_draft"},
         {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-sense", "acl": "public_draft"},
+        {"method": "GET", "path": "/api/exchange/wallet-mega/train-f-ops", "acl": "public_draft"},
         {"method": "POST", "path": "/api/exchange/wallet-mega/guided", "acl": "user+gates"},
         {"method": "POST", "path": "/api/exchange/wallet-mega/assess", "acl": "user+gates"},
         {"method": "GET", "path": "/api/exchange/wallet-mega/acceptance", "acl": "public_draft"},
@@ -1841,8 +2016,12 @@ _RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
     "X-29": lambda **_kw: exchange_endpoint_inventory(),
     "X-30": lambda **_kw: exchange_config_lint(),
     "X-31": lambda **_kw: health_rails(),
+    "X-32": lambda **_kw: exchange_resource_monitor(),
+    "X-33": lambda **_kw: exchange_uptime_monitor(),
     "X-34": lambda **_kw: alert_monitor(),
     "X-35": lambda **_kw: metrics_snapshot(),
+    "X-36": lambda **_kw: region_venue_preference(),
+    "X-37": lambda **_kw: venue_status_map(),
     "X-38": lambda **kw: withdraw_fence(user_id=str(kw.get("user_id") or "proto_user")),
     "X-39": lambda **_kw: route_picker(),
     "X-40": lambda **kw: guided_onchain(
@@ -1868,9 +2047,15 @@ _RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
 
 
 def run_enrichment(enrichment_id: str, **kwargs: Any) -> Dict[str, Any]:
-    """Run one installed enrichment snapshot (priority, F-core, F-desk, or F-sense)."""
+    """Run one installed enrichment snapshot (priority or Train F slices)."""
     eid = str(enrichment_id or "").strip().upper()
-    allowed = set(PRIORITY_IDS) | set(TRAIN_F_CORE_IDS) | set(TRAIN_F_DESK_IDS) | set(TRAIN_F_SENSE_IDS)
+    allowed = (
+        set(PRIORITY_IDS)
+        | set(TRAIN_F_CORE_IDS)
+        | set(TRAIN_F_DESK_IDS)
+        | set(TRAIN_F_SENSE_IDS)
+        | set(TRAIN_F_OPS_IDS)
+    )
     if eid not in allowed:
         return {
             "success": False,
@@ -1880,6 +2065,7 @@ def run_enrichment(enrichment_id: str, **kwargs: Any) -> Dict[str, Any]:
             "train_f_core_ids": list(TRAIN_F_CORE_IDS),
             "train_f_desk_ids": list(TRAIN_F_DESK_IDS),
             "train_f_sense_ids": list(TRAIN_F_SENSE_IDS),
+            "train_f_ops_ids": list(TRAIN_F_OPS_IDS),
         }
     runner = _RUNNERS.get(eid)
     if not runner:
@@ -1973,6 +2159,31 @@ def run_train_f_sense(*, user_id: str = "proto_user", symbol: str = "BTC") -> Di
     }
 
 
+def run_train_f_ops(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict[str, Any]:
+    """T5.31–T5.40 — run X-31…X-40 live trading ops monitors/navigation."""
+    results: Dict[str, Any] = {}
+    for eid in TRAIN_F_OPS_IDS:
+        results[eid] = run_enrichment(
+            eid,
+            user_id=user_id,
+            symbol=symbol,
+            step="status",
+            dry_run=True,
+        )
+    ok = sum(1 for v in results.values() if isinstance(v, dict) and v.get("success"))
+    return {
+        "success": ok == len(TRAIN_F_OPS_IDS),
+        "target": MEGA_TARGET,
+        "train": "F-ops",
+        "ids": list(TRAIN_F_OPS_IDS),
+        "count": len(TRAIN_F_OPS_IDS),
+        "ok_count": ok,
+        "results": results,
+        "mega_min_knobs": list(MEGA_MIN_KNOBS),
+        "updated_at": _iso(),
+    }
+
+
 def paper_trade_acceptance(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict[str, Any]:
     """Phase 5 acceptance: paper trade → settle posture → withdraw dry-run; live gates off."""
     uid = str(user_id or "proto_user")
@@ -2051,6 +2262,7 @@ def prototype_bundle(*, user_id: str = "proto_user") -> Dict[str, Any]:
         "train_f_core": run_train_f_core(user_id=user_id),
         "train_f_desk": run_train_f_desk(user_id=user_id),
         "train_f_sense": run_train_f_sense(user_id=user_id),
+        "train_f_ops": run_train_f_ops(user_id=user_id),
         "install": run_priority_install(user_id=user_id),
         "acceptance": paper_trade_acceptance(user_id=user_id),
         "knobs": knob_walkthrough(enrichment_id=None, installed_min_only=False),
