@@ -1,0 +1,31 @@
+# MN2 wallet/daemon compose profile (Train A W-10).
+# Draft local rails only — Latest download tag unchanged.
+services:
+  mn2-rpc:
+    image: masternoder2d:local
+    profiles: ["mn2-wallet"]
+    restart: unless-stopped
+    ports:
+      - "19998:19998"
+    volumes:
+      - mn2-wallet-data:/data
+    environment:
+      - MN2_RPC_USER=mn2
+      - MN2_RPC_PASSWORD=${MN2_RPC_PASSWORD}
+  site:
+    image: masternoder-site:local
+    profiles: ["mn2-wallet"]
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MN2_RPC_URL=http://mn2-rpc:19998
+      - OUTPUT_DIR=/app/output
+      - UPLOAD_DIR=/app/uploads
+      - FLASK_DEBUG=True
+    volumes:
+      - ../..:/app
+    depends_on:
+      - mn2-rpc
+volumes:
+  mn2-wallet-data:

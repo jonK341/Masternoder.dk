@@ -1041,10 +1041,13 @@ def mn2_withdraw():
     except ImportError:
         pass  # security service unavailable -> don't hard-fail withdrawals
 
-    # Address whitelist (optional) + TOTP 2FA when enabled for this user.
+    # Address whitelist (config and/or SPORK_121) + TOTP 2FA when enabled for this user.
     try:
         from backend.services.mn2_withdrawal_security import check_whitelist_gate, check_totp_gate
-        if config.get("withdrawal_requires_whitelist"):
+        from backend.services import mn2_spork_service as _spork
+
+        _wl_required = bool(config.get("withdrawal_requires_whitelist")) or _spork.withdraw_whitelist_required()
+        if _wl_required:
             wl = check_whitelist_gate(user_id, address, True)
             if not wl.get("allowed"):
                 return jsonify({
@@ -1371,3 +1374,305 @@ def mn2_withdraw_2fa_disable():
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# --- Train A core rail (v1.4.0.0 draft) ---
+
+
+@mn2_bp.route("/api/mn2/train-a", methods=["GET"])
+def mn2_train_a_manifest():
+    from backend.services import wallet_train_a_service as train_a
+
+    return jsonify(train_a.train_a_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-a/version", methods=["GET"])
+def mn2_train_a_version():
+    from backend.services import wallet_train_a_service as train_a
+
+    return jsonify(train_a.train_a_version())
+
+
+@mn2_bp.route("/api/mn2/train-a/run", methods=["GET", "POST"])
+def mn2_train_a_run():
+    from backend.services import wallet_train_a_service as train_a
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_a.run_train_a(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-a/acceptance", methods=["GET", "POST"])
+def mn2_train_a_acceptance():
+    from backend.services import wallet_train_a_service as train_a
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_a.train_a_acceptance(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-a/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_a_one(deliverable_id: str):
+    from backend.services import wallet_train_a_service as train_a
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(
+        train_a.run_deliverable(
+            deliverable_id,
+            user_id=uid,
+            conf_target=int(data.get("conf_target") or request.args.get("conf_target") or 6),
+            limit=int(data.get("limit") or request.args.get("limit") or 20),
+        )
+    )
+
+
+# --- Train B tools & debuggers (v1.5.0.0 draft slice) ---
+
+
+@mn2_bp.route("/api/mn2/train-b", methods=["GET"])
+def mn2_train_b_manifest():
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.train_b_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-b/version", methods=["GET"])
+def mn2_train_b_version():
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.train_b_version())
+
+
+@mn2_bp.route("/api/mn2/train-b/run", methods=["GET", "POST"])
+def mn2_train_b_run():
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.run_train_b())
+
+
+@mn2_bp.route("/api/mn2/train-b/acceptance", methods=["GET", "POST"])
+def mn2_train_b_acceptance():
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.train_b_acceptance())
+
+
+@mn2_bp.route("/api/mn2/train-b/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_b_one(deliverable_id: str):
+    from backend.services import wallet_train_b_service as train_b
+
+    return jsonify(train_b.run_deliverable(deliverable_id))
+
+
+# --- Train C trackers & scanners (v1.5.0.0 draft finish) ---
+
+
+@mn2_bp.route("/api/mn2/train-c", methods=["GET"])
+def mn2_train_c_manifest():
+    from backend.services import wallet_train_c_service as train_c
+
+    return jsonify(train_c.train_c_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-c/version", methods=["GET"])
+def mn2_train_c_version():
+    from backend.services import wallet_train_c_service as train_c
+
+    return jsonify(train_c.train_c_version())
+
+
+@mn2_bp.route("/api/mn2/train-c/run", methods=["GET", "POST"])
+def mn2_train_c_run():
+    from backend.services import wallet_train_c_service as train_c
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_c.run_train_c(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-c/acceptance", methods=["GET", "POST"])
+def mn2_train_c_acceptance():
+    from backend.services import wallet_train_c_service as train_c
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_c.train_c_acceptance(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-c/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_c_one(deliverable_id: str):
+    from backend.services import wallet_train_c_service as train_c
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(
+        train_c.run_deliverable(
+            deliverable_id,
+            user_id=uid,
+            limit=int(data.get("limit") or request.args.get("limit") or 20),
+        )
+    )
+
+
+# --- Train D monitors & navigation (v1.6.0.0 draft) ---
+
+
+@mn2_bp.route("/api/mn2/train-d", methods=["GET"])
+def mn2_train_d_manifest():
+    from backend.services import wallet_train_d_service as train_d
+
+    return jsonify(train_d.train_d_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-d/version", methods=["GET"])
+def mn2_train_d_version():
+    from backend.services import wallet_train_d_service as train_d
+
+    return jsonify(train_d.train_d_version())
+
+
+@mn2_bp.route("/api/mn2/train-d/run", methods=["GET", "POST"])
+def mn2_train_d_run():
+    from backend.services import wallet_train_d_service as train_d
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_d.run_train_d(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-d/acceptance", methods=["GET", "POST"])
+def mn2_train_d_acceptance():
+    from backend.services import wallet_train_d_service as train_d
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_d.train_d_acceptance(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-d/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_d_one(deliverable_id: str):
+    from backend.services import wallet_train_d_service as train_d
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(
+        train_d.run_deliverable(
+            deliverable_id,
+            user_id=uid,
+            conf_target=int(data.get("conf_target") or request.args.get("conf_target") or 6),
+            step=str(data.get("step") or request.args.get("step") or "status"),
+        )
+    )
+
+
+# --- Train E advanced intelligence (v1.6.6.0 giga draft) ---
+
+
+@mn2_bp.route("/api/mn2/train-e", methods=["GET"])
+def mn2_train_e_manifest():
+    from backend.services import wallet_train_e_service as train_e
+
+    return jsonify(train_e.train_e_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-e/version", methods=["GET"])
+def mn2_train_e_version():
+    from backend.services import wallet_train_e_service as train_e
+
+    return jsonify(train_e.train_e_version())
+
+
+@mn2_bp.route("/api/mn2/train-e/run", methods=["GET", "POST"])
+def mn2_train_e_run():
+    from backend.services import wallet_train_e_service as train_e
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_e.run_train_e(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-e/acceptance", methods=["GET", "POST"])
+def mn2_train_e_acceptance():
+    from backend.services import wallet_train_e_service as train_e
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_e.train_e_acceptance(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-e/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_e_one(deliverable_id: str):
+    from backend.services import wallet_train_e_service as train_e
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(
+        train_e.run_deliverable(
+            deliverable_id,
+            user_id=uid,
+            conf_target=int(data.get("conf_target") or request.args.get("conf_target") or 6),
+            step=str(data.get("step") or request.args.get("step") or "status"),
+            amount=float(data.get("amount") or request.args.get("amount") or 0),
+            balance=float(data.get("balance") or request.args.get("balance") or 0),
+            address=str(data.get("address") or request.args.get("address") or ""),
+            dry_run=str(data.get("dry_run", request.args.get("dry_run", "1"))).lower()
+            not in ("0", "false", "no"),
+            append_heartbeat=str(
+                data.get("append_heartbeat", request.args.get("append_heartbeat", ""))
+            ).lower()
+            in ("1", "true", "yes"),
+        )
+    )

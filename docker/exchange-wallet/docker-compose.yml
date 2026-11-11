@@ -1,0 +1,36 @@
+# Exchange-wallet compose profile (X-10 / W-10 train stub).
+# Draft local rails only — not a live deploy.  # pragma: allowlist secret
+services:
+  mn2-rpc:
+    image: masternoder2d:local
+    profiles: ["exchange-wallet"]
+    restart: unless-stopped
+    ports:
+      - "19998:19998"
+    volumes:
+      - mn2-data:/data
+    environment:
+      - MN2_RPC_USER=mn2
+      - MN2_RPC_PASSWORD=${MN2_RPC_PASSWORD}
+  site:
+    image: masternoder-site:local
+    profiles: ["exchange-wallet"]
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - MN2_RPC_URL=http://mn2-rpc:19998
+      - OUTPUT_DIR=/app/output
+      - UPLOAD_DIR=/app/uploads
+      - FLASK_DEBUG=True
+    volumes:
+      - ../..:/app
+    depends_on:
+      - mn2-rpc
+  feed:
+    image: masternoder-site:local
+    profiles: ["exchange-wallet"]
+    restart: "no"
+    command: ["python", "-c", "print('feed worker stub — wire venue WS later')"]
+volumes:
+  mn2-data:

@@ -1715,3 +1715,278 @@ def exchange_paypal_capture_mn2_order():
     result = ex.fulfill_paypal_mn2_order(user_id, order_id, capture)
     code = 200 if result.get("success") else 400
     return jsonify(result), code
+
+
+# --- Wallet mega prototype (v32.6.6.0 Train F priority X-set + 12 knobs) ---
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/knobs", methods=["GET"])
+def exchange_wallet_mega_knobs():
+    """Walk all 12 improvement knobs per X-* enrichment (50 × 12)."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    eid = (request.args.get("id") or request.args.get("enrichment") or "").strip() or None
+    min_only = str(request.args.get("min") or "").lower() in ("1", "true", "yes")
+    return jsonify(mega.knob_walkthrough(enrichment_id=eid, installed_min_only=min_only))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/knobs/<enrichment_id>", methods=["GET"])
+def exchange_wallet_mega_knobs_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    min_only = str(request.args.get("min") or "").lower() in ("1", "true", "yes")
+    return jsonify(mega.knob_walkthrough(enrichment_id=enrichment_id, installed_min_only=min_only))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/priority", methods=["GET"])
+def exchange_wallet_mega_priority():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.priority_install_set())
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/priority/run", methods=["GET", "POST"])
+def exchange_wallet_mega_priority_run():
+    """Run all priority enrichment install snapshots (status/dry-run)."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    return jsonify(
+        mega.run_priority_install(
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/priority/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_priority_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    args = request.args
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(data.get("symbol") or args.get("symbol") or "BTC"),
+            venue=data.get("venue") or args.get("venue"),
+            limit=int(data.get("limit") or args.get("limit") or 40),
+            step=str(data.get("step") or args.get("step") or "status"),
+            amount_mn2=float(data.get("amount_mn2") or args.get("amount_mn2") or 0),
+            amount=float(data.get("amount") or args.get("amount") or 0),
+            balance=float(data.get("balance") or args.get("balance") or 0),
+            address=str(data.get("address") or args.get("address") or ""),
+            withdraw_address=str(data.get("withdraw_address") or args.get("withdraw_address") or ""),
+            to_asset=str(data.get("to_asset") or args.get("to_asset") or "BTC"),
+            kind=str(data.get("kind") or args.get("kind") or "withdraw"),
+            dry_run=str(data.get("dry_run", args.get("dry_run", "1"))).lower() not in ("0", "false", "no"),
+            execute_withdraw=bool(data.get("execute_withdraw"))
+            if request.method == "POST"
+            else str(args.get("execute_withdraw") or "").lower() in ("1", "true", "yes"),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/por-glance", methods=["GET"])
+def exchange_wallet_mega_por_glance():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    venue = request.args.get("venue")
+    limit = request.args.get("limit", 40, type=int)
+    return jsonify(mega.por_glance(venue=venue, limit=limit or 40))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/failover", methods=["GET"])
+def exchange_wallet_mega_failover():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.failover_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/assess", methods=["POST"])
+def exchange_wallet_mega_assess():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(
+        mega.assess_anomaly(
+            user_id=_uid(from_body=True),
+            kind=str(data.get("kind") or "withdraw"),
+            address=str(data.get("address") or ""),
+            amount=float(data.get("amount") or 0),
+            balance=float(data.get("balance") or 0),
+            symbol=str(data.get("symbol") or "MN2"),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/guided", methods=["GET", "POST"])
+def exchange_wallet_mega_guided():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    args = request.args
+    step = data.get("step") or args.get("step") or "status"
+    amount = data.get("amount_mn2", args.get("amount_mn2", 0))
+    return jsonify(
+        mega.guided_onchain(
+            user_id=_uid(from_body=request.method == "POST"),
+            step=str(step),
+            amount_mn2=float(amount or 0),
+            to_asset=str(data.get("to_asset") or args.get("to_asset") or "BTC"),
+            withdraw_address=str(data.get("withdraw_address") or args.get("withdraw_address") or ""),
+            execute_withdraw=bool(data.get("execute_withdraw"))
+            if request.method == "POST"
+            else str(args.get("execute_withdraw") or "").lower() in ("1", "true", "yes"),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/bundle", methods=["GET"])
+def exchange_wallet_mega_bundle():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.prototype_bundle(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/sporks", methods=["GET"])
+def exchange_wallet_mega_sporks():
+    """Unused spork inventory + new wallet gates 116–121 + live gate_status."""
+    from backend.services import mn2_spork_service as spork
+
+    recap = spork.unused_and_new_spork_recap()
+    recap["gate_status"] = spork.gate_status()
+    return jsonify(recap)
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/version", methods=["GET"])
+def exchange_wallet_mega_version():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.mega_version())
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-core", methods=["GET"])
+def exchange_wallet_mega_train_f_core():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_core(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-desk", methods=["GET"])
+def exchange_wallet_mega_train_f_desk():
+    """T5.11–T5.20 — X-11…X-20 desk quality / tools & debuggers."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_desk(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-desk/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_train_f_desk_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-sense", methods=["GET"])
+def exchange_wallet_mega_train_f_sense():
+    """T5.21–T5.30 — X-21…X-30 market + risk sensing."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_sense(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-sense/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_train_f_sense_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+            append_heartbeat=str(enrichment_id or "").upper() == "X-24",
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-ops", methods=["GET"])
+def exchange_wallet_mega_train_f_ops():
+    """T5.31–T5.40 — X-31…X-40 live trading ops monitors/navigation."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_ops(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-ops/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_train_f_ops_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    step = data.get("step") or request.args.get("step") or "status"
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+            step=str(step),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-adv", methods=["GET"])
+def exchange_wallet_mega_train_f_adv():
+    """T5.41–T5.50 — X-41…X-50 advanced exchange differentiators."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_adv(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-adv/<enrichment_id>", methods=["GET", "POST"])
+def exchange_wallet_mega_train_f_adv_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    step = data.get("step") or request.args.get("step") or "status"
+    eid = str(enrichment_id or "").upper()
+    return jsonify(
+        mega.run_enrichment(
+            enrichment_id,
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+            step=str(step),
+            append_heartbeat=eid == "X-50",
+            address=str(data.get("address") or request.args.get("address") or ""),
+            amount=float(data.get("amount") or request.args.get("amount") or 0),
+            balance=float(data.get("balance") or request.args.get("balance") or 0),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/acceptance", methods=["GET", "POST"])
+def exchange_wallet_mega_acceptance():
+    """Paper trade → settle posture → withdraw dry-run acceptance pack."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    return jsonify(
+        mega.paper_trade_acceptance(
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+        )
+    )

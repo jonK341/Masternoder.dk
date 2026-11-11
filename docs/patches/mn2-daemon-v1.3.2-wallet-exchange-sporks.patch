@@ -1,0 +1,99 @@
+diff --git a/src/spork.cpp b/src/spork.cpp
+index 4df986e..c8e9a12 100755
+--- a/src/spork.cpp
++++ b/src/spork.cpp
+@@ -171,6 +171,12 @@ int64_t GetSporkValue(int nSporkID)
+         if (nSporkID == SPORK_112_EXCHANGE_LIVE_TRADING) r = SPORK_112_EXCHANGE_LIVE_TRADING_DEFAULT;
+         if (nSporkID == SPORK_113_CASINO_REAL_MONEY) r = SPORK_113_CASINO_REAL_MONEY_DEFAULT;
+         if (nSporkID == SPORK_114_PAYOUT_LIVE) r = SPORK_114_PAYOUT_LIVE_DEFAULT;
+         if (nSporkID == SPORK_115_MAINTENANCE_MODE) r = SPORK_115_MAINTENANCE_MODE_DEFAULT;
++        if (nSporkID == SPORK_116_WALLET_ONCHAIN_WITHDRAW) r = SPORK_116_WALLET_ONCHAIN_WITHDRAW_DEFAULT;
++        if (nSporkID == SPORK_117_EXCHANGE_VENUE_FAILOVER) r = SPORK_117_EXCHANGE_VENUE_FAILOVER_DEFAULT;
++        if (nSporkID == SPORK_118_ANOMALY_HARD_ENFORCE) r = SPORK_118_ANOMALY_HARD_ENFORCE_DEFAULT;
++        if (nSporkID == SPORK_119_POR_PUBLIC_EXPORT) r = SPORK_119_POR_PUBLIC_EXPORT_DEFAULT;
++        if (nSporkID == SPORK_120_GUIDED_TRADE_EXECUTE) r = SPORK_120_GUIDED_TRADE_EXECUTE_DEFAULT;
++        if (nSporkID == SPORK_121_WITHDRAW_WHITELIST_REQUIRED) r = SPORK_121_WITHDRAW_WHITELIST_REQUIRED_DEFAULT;
+ 
+         if (r == -1) LogPrintf("%s : Unknown Spork %d\n", __func__, nSporkID);
+     }
+@@ -737,6 +743,12 @@ int CSporkManager::GetSporkIDByName(std::string strName)
+     if (strName == "SPORK_112_EXCHANGE_LIVE_TRADING") return SPORK_112_EXCHANGE_LIVE_TRADING;
+     if (strName == "SPORK_113_CASINO_REAL_MONEY") return SPORK_113_CASINO_REAL_MONEY;
+     if (strName == "SPORK_114_PAYOUT_LIVE") return SPORK_114_PAYOUT_LIVE;
+     if (strName == "SPORK_115_MAINTENANCE_MODE") return SPORK_115_MAINTENANCE_MODE;
++    if (strName == "SPORK_116_WALLET_ONCHAIN_WITHDRAW") return SPORK_116_WALLET_ONCHAIN_WITHDRAW;
++    if (strName == "SPORK_117_EXCHANGE_VENUE_FAILOVER") return SPORK_117_EXCHANGE_VENUE_FAILOVER;
++    if (strName == "SPORK_118_ANOMALY_HARD_ENFORCE") return SPORK_118_ANOMALY_HARD_ENFORCE;
++    if (strName == "SPORK_119_POR_PUBLIC_EXPORT") return SPORK_119_POR_PUBLIC_EXPORT;
++    if (strName == "SPORK_120_GUIDED_TRADE_EXECUTE") return SPORK_120_GUIDED_TRADE_EXECUTE;
++    if (strName == "SPORK_121_WITHDRAW_WHITELIST_REQUIRED") return SPORK_121_WITHDRAW_WHITELIST_REQUIRED;
+ 
+     return -1;
+ }
+@@ -776,6 +788,12 @@ std::string CSporkManager::GetSporkNameByID(int id)
+     if (id == SPORK_112_EXCHANGE_LIVE_TRADING) return "SPORK_112_EXCHANGE_LIVE_TRADING";
+     if (id == SPORK_113_CASINO_REAL_MONEY) return "SPORK_113_CASINO_REAL_MONEY";
+     if (id == SPORK_114_PAYOUT_LIVE) return "SPORK_114_PAYOUT_LIVE";
+     if (id == SPORK_115_MAINTENANCE_MODE) return "SPORK_115_MAINTENANCE_MODE";
++    if (id == SPORK_116_WALLET_ONCHAIN_WITHDRAW) return "SPORK_116_WALLET_ONCHAIN_WITHDRAW";
++    if (id == SPORK_117_EXCHANGE_VENUE_FAILOVER) return "SPORK_117_EXCHANGE_VENUE_FAILOVER";
++    if (id == SPORK_118_ANOMALY_HARD_ENFORCE) return "SPORK_118_ANOMALY_HARD_ENFORCE";
++    if (id == SPORK_119_POR_PUBLIC_EXPORT) return "SPORK_119_POR_PUBLIC_EXPORT";
++    if (id == SPORK_120_GUIDED_TRADE_EXECUTE) return "SPORK_120_GUIDED_TRADE_EXECUTE";
++    if (id == SPORK_121_WITHDRAW_WHITELIST_REQUIRED) return "SPORK_121_WITHDRAW_WHITELIST_REQUIRED";
+ 
+     return "Unknown";
+ }
+diff --git a/src/spork.h b/src/spork.h
+index 47899df..a1f2b90 100755
+--- a/src/spork.h
++++ b/src/spork.h
+@@ -26,7 +26,7 @@ using namespace boost;
+     Sporks 11,12, and 16 to be removed with 1st zerocoin release
+ */
+ #define SPORK_START 10001
+-#define SPORK_END 10115
++#define SPORK_END 10121
+ 
+ #define SPORK_2_SWIFTTX 10001
+ #define SPORK_3_SWIFTTX_BLOCK_FILTERING 10002
+@@ -61,6 +61,12 @@ using namespace boost;
+ #define SPORK_112_EXCHANGE_LIVE_TRADING 10112
+ #define SPORK_113_CASINO_REAL_MONEY 10113
+ #define SPORK_114_PAYOUT_LIVE 10114
+ #define SPORK_115_MAINTENANCE_MODE 10115
++#define SPORK_116_WALLET_ONCHAIN_WITHDRAW 10116
++#define SPORK_117_EXCHANGE_VENUE_FAILOVER 10117
++#define SPORK_118_ANOMALY_HARD_ENFORCE 10118
++#define SPORK_119_POR_PUBLIC_EXPORT 10119
++#define SPORK_120_GUIDED_TRADE_EXECUTE 10120
++#define SPORK_121_WITHDRAW_WHITELIST_REQUIRED 10121
+ 
+ #define SPORK_2_SWIFTTX_DEFAULT 978307200                             //2001-1-1
+ #define SPORK_3_SWIFTTX_BLOCK_FILTERING_DEFAULT 1424217600            //2015-2-18
+@@ -95,6 +101,12 @@ using namespace boost;
+ #define SPORK_112_EXCHANGE_LIVE_TRADING_DEFAULT 4070908800                    //OFF until ops enables live exchange
+ #define SPORK_113_CASINO_REAL_MONEY_DEFAULT 1703122560                        //2024-12-21 Effective now
+ #define SPORK_114_PAYOUT_LIVE_DEFAULT 4070908800                              //OFF until ops enables payouts
+ #define SPORK_115_MAINTENANCE_MODE_DEFAULT 4070908800                          //OFF
++#define SPORK_116_WALLET_ONCHAIN_WITHDRAW_DEFAULT 4070908800                  //OFF until ops enables on-chain withdraw broadcast
++#define SPORK_117_EXCHANGE_VENUE_FAILOVER_DEFAULT 4070908800                  //OFF until ops trusts auto promote
++#define SPORK_118_ANOMALY_HARD_ENFORCE_DEFAULT 1703122560                     //ON — fail closed on high anomaly
++#define SPORK_119_POR_PUBLIC_EXPORT_DEFAULT 4070908800                        //OFF — public PoR export gated
++#define SPORK_120_GUIDED_TRADE_EXECUTE_DEFAULT 4070908800                     //OFF — guided trade execute gated
++#define SPORK_121_WITHDRAW_WHITELIST_REQUIRED_DEFAULT 4070908800              //OFF — whitelist fence optional
+ 
+ class CSporkMessage;
+ class CSporkManager;
+diff --git a/configure.ac b/configure.ac
+index a1b2c3d..d4e5f60 100755
+--- a/configure.ac
++++ b/configure.ac
+@@ -3,7 +3,7 @@ AC_PREREQ([2.60])
+ define(_CLIENT_VERSION_MAJOR, 1)
+ define(_CLIENT_VERSION_MINOR, 3)
+-define(_CLIENT_VERSION_REVISION, 1)
++define(_CLIENT_VERSION_REVISION, 2)
+ define(_CLIENT_VERSION_BUILD, 0)
+ define(_CLIENT_VERSION_IS_RELEASE, true)
+ define(_COPYRIGHT_YEAR, 2025)

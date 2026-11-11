@@ -27,7 +27,7 @@
                 <div class="fp-core-node fp-core-node-c">API</div>
             </div>
             <div class="fp-hero-copy">
-                <p class="fp-kicker"><span>MasterNoder finance</span><span id="cex-hero-user-pill">Guest trader</span></p>
+                <p class="fp-kicker"><span>MasterNoder finance</span><span id="cex-hero-user-pill">Guest trader</span><span id="cex-mega-badge" hidden>mega</span></p>
                 <h1 id="cex-hero-title"><i class="fas fa-chart-line"></i> Exchange</h1>
                 <p class="fp-tagline">25 cryptocurrencies · swap · PayPal · bots · treasury</p>
                 <p class="fp-hero-text">Same wallet as Shop and Casino — trade, stake, rent agents, and track profit-path research from one hub.</p>
@@ -728,5 +728,21 @@
     <script src="/static/js/crypto-exchange.js?v=20261010a"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
     <script src="/static/js/cex-nft-market.js?v=20261001a"></script>
+    <script>
+    (function () {
+        var el = document.getElementById('cex-mega-badge');
+        if (!el) return;
+        el.style.cssText = 'margin-left:8px;padding:2px 10px;border-radius:999px;border:1px solid rgba(0,212,255,0.4);background:rgba(0,212,255,0.12);font-size:0.75rem;font-weight:700;';
+        fetch('/api/exchange/wallet-mega/version')
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d || !d.success) return;
+                el.hidden = false;
+                el.textContent = d.mega_target || 'v32.6.6.0';
+                el.title = d.badge_label || 'Exchange mega draft channel';
+            })
+            .catch(function () { /* ignore */ });
+    })();
+    </script>
 </body>
 </html>
