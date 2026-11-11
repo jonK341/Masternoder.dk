@@ -1603,3 +1603,76 @@ def mn2_train_d_one(deliverable_id: str):
             step=str(data.get("step") or request.args.get("step") or "status"),
         )
     )
+
+
+# --- Train E advanced intelligence (v1.6.6.0 giga draft) ---
+
+
+@mn2_bp.route("/api/mn2/train-e", methods=["GET"])
+def mn2_train_e_manifest():
+    from backend.services import wallet_train_e_service as train_e
+
+    return jsonify(train_e.train_e_manifest())
+
+
+@mn2_bp.route("/api/mn2/train-e/version", methods=["GET"])
+def mn2_train_e_version():
+    from backend.services import wallet_train_e_service as train_e
+
+    return jsonify(train_e.train_e_version())
+
+
+@mn2_bp.route("/api/mn2/train-e/run", methods=["GET", "POST"])
+def mn2_train_e_run():
+    from backend.services import wallet_train_e_service as train_e
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_e.run_train_e(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-e/acceptance", methods=["GET", "POST"])
+def mn2_train_e_acceptance():
+    from backend.services import wallet_train_e_service as train_e
+
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(train_e.train_e_acceptance(user_id=uid))
+
+
+@mn2_bp.route("/api/mn2/train-e/<deliverable_id>", methods=["GET", "POST"])
+def mn2_train_e_one(deliverable_id: str):
+    from backend.services import wallet_train_e_service as train_e
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    uid = resolve_user_id(
+        from_body=request.method == "POST",
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+    ) or "proto_user"
+    return jsonify(
+        train_e.run_deliverable(
+            deliverable_id,
+            user_id=uid,
+            conf_target=int(data.get("conf_target") or request.args.get("conf_target") or 6),
+            step=str(data.get("step") or request.args.get("step") or "status"),
+            amount=float(data.get("amount") or request.args.get("amount") or 0),
+            balance=float(data.get("balance") or request.args.get("balance") or 0),
+            address=str(data.get("address") or request.args.get("address") or ""),
+            dry_run=str(data.get("dry_run", request.args.get("dry_run", "1"))).lower()
+            not in ("0", "false", "no"),
+            append_heartbeat=str(
+                data.get("append_heartbeat", request.args.get("append_heartbeat", ""))
+            ).lower()
+            in ("1", "true", "yes"),
+        )
+    )
