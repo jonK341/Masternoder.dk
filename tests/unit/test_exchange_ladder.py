@@ -204,7 +204,8 @@ def test_binance_ladder_spends_usdc_above_the_reserve(tmp_path):
     venue = FakeVenue()
     mk = {"price_decimals": 4, "qty_decimals": 1, "min_qty": 0.1, "min_quote": 5.0}
     cfg = _cfg(venue="binance", quote="USDC", symbols=["XRP"], order_usd=5.5, min_order_usd=5.1,
-               quote_reserve=5.0, levels=10, fee_bps=10.0, exit_bps=50.0)
+               quote_reserve=5.0, levels=10, fee_bps=10.0, exit_bps=50.0,
+               max_entry_bps=500.0, first_bps=20.0, step_bps=30.0)
     rep = run_ladder(
         cfg=cfg, top=lambda _s: {"bid": 1.09, "ask": 1.0902},
         balances={"XRP": 20.0, "USDC": 17.0},
@@ -427,3 +428,25 @@ def test_nonkyc_venue_defaults_do_not_follow_maker_venue(monkeypatch):
         lambda *_a, **_k: {"success": True, "body": []},
     )
     assert adapters["open_ids"]("DOGE") == {}
+
+
+def test_max_entry_bps_skips_far_rungs_and_pulls_dead(tmp_path):
+    import json
+
+    venue = FakeVenue()
+    cfg = _cfg(levels=6, first_bps=20.0, step_bps=30.0, max_entry_bps=55.0, sides=["sell", "buy"])
+    # Offsets: 20, 50, 80, 110… — only levels 0–1 should place under the 55 bps cap.
+    rep = _run(venue, tmp_path, cfg=cfg)
+    levels_placed = sorted({int(row["level"]) for row in rep["placed"]})
+    assert levels_placed == [0, 1]
+    assert any(s.get("reason") == "max_entry_bps" for s in rep["skipped"])
+
+    far = next(row for row in rep["placed"] if row["side"] == "sell" and int(row["level"]) == 0)
+    far_px = 0.093 * 1.02  # ~200 bps above mid
+    path = tmp_path / "ladder.json"
+    state = json.loads(path.read_text())
+    state["orders"][far["coid"]]["price"] = far_px
+    path.write_text(json.dumps(state))
+    rep2 = _run(venue, tmp_path, cfg=cfg, now=1060.0)
+    assert far["coid"] in rep2["cancelled"]
+    assert any(d.get("coid") == far["coid"] for d in (rep2.get("dead_pulled") or []))

@@ -57,7 +57,7 @@ LOST_AFTER_SEC = 600.0
 
 _FLOAT_KEYS = ("order_usd", "min_order_usd", "first_bps", "step_bps", "exit_bps", "fee_bps",
                "recenter_bps", "refresh_minutes", "reprice_bps", "min_exit_bps", "exit_decay_minutes",
-               "quote_reserve", "inventory_skew_bps", "fill_model_min_prob")
+               "quote_reserve", "inventory_skew_bps", "fill_model_min_prob", "max_entry_bps")
 
 
 def _default_config() -> Dict[str, Any]:
@@ -67,10 +67,10 @@ def _default_config() -> Dict[str, Any]:
         "sides": ["sell", "buy"],
         "order_usd": 3.5,
         "min_order_usd": 3.0,
-        "levels": 6,
+        "levels": 3,
         "max_open_orders": 60,
-        "first_bps": 30.0,
-        "step_bps": 40.0,
+        "first_bps": 18.0,
+        "step_bps": 22.0,
         "exit_bps": 80.0,
         "fee_bps": 20.0,
         "recenter_bps": 30.0,
@@ -80,6 +80,8 @@ def _default_config() -> Dict[str, Any]:
         "exit_decay_minutes": 120.0,
         "quote_reserve": 0.0,
         "inventory_skew_bps": 25.0,
+        # Cap how far entry rungs may sit from mid; farther opens are dead capital.
+        "max_entry_bps": 75.0,
         "fill_model_enabled": True,
         "fill_model_min_prob": 0.18,
     }
@@ -554,6 +556,26 @@ def run_ladder(
             skews[symbol] = inv_skew
             regime_bps[symbol] = {"first_bps": base_first_bps, "step_bps": base_step_bps}
         cfg["_inventory_skew"] = skews[symbol]
+        max_entry = float(cfg.get("max_entry_bps") or 0.0)
+        # Pull entry rungs that drifted past the liveable band — dead spots lock quote/base.
+        if max_entry > 0:
+            for coid, o in list(orders.items()):
+                if o["symbol"] != symbol or o["kind"] != "entry" or o.get("cancelled") or coid not in live:
+                    continue
+                try:
+                    px = float(o["price"])
+                except (TypeError, ValueError, KeyError):
+                    continue
+                if px <= 0 or mid <= 0:
+                    continue
+                live_drift = abs(px / mid - 1.0) * 1e4
+                if live_drift <= max_entry:
+                    continue
+                if _pull(coid, o):
+                    report["cancelled"].append(coid)
+                    report.setdefault("dead_pulled", []).append({
+                        "coid": coid, "symbol": symbol, "drift_bps": round(live_drift, 2),
+                    })
         anchor = state["anchors"].get(symbol) or {}
         drift = abs(mid / float(anchor["ref"]) - 1) * 1e4 if anchor.get("ref") else None
         age_min = (now - float(anchor.get("at") or now)) / 60
@@ -757,6 +779,15 @@ def run_ladder(
             report["skipped"].append(
                 {"symbol": symbol, "side": side, "reason": "skew_long_base", "skew": round(skew, 3)}
             )
+            continue
+        offset_bps = skewed_entry_offset_bps(side, level, cfg, skew=skew)
+        max_entry = float(cfg.get("max_entry_bps") or 0.0)
+        if max_entry > 0 and offset_bps > max_entry:
+            report["skipped"].append({
+                "symbol": symbol, "side": side, "level": level,
+                "reason": "max_entry_bps", "offset_bps": round(offset_bps, 2),
+                "max_entry_bps": max_entry,
+            })
             continue
         price = entry_price(refs[symbol], side, level, cfg, int(mk["price_decimals"]))
         if _crosses(state, symbol, side, price, maker_sell(symbol)):
