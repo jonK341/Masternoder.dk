@@ -1715,3 +1715,93 @@ def exchange_paypal_capture_mn2_order():
     result = ex.fulfill_paypal_mn2_order(user_id, order_id, capture)
     code = 200 if result.get("success") else 400
     return jsonify(result), code
+
+
+# --- Wallet mega prototype (v32.6.6.0 Train F priority X-set + 12 knobs) ---
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/knobs", methods=["GET"])
+def exchange_wallet_mega_knobs():
+    """Walk all 12 improvement knobs per X-* enrichment (50 × 12)."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    eid = (request.args.get("id") or request.args.get("enrichment") or "").strip() or None
+    min_only = str(request.args.get("min") or "").lower() in ("1", "true", "yes")
+    return jsonify(mega.knob_walkthrough(enrichment_id=eid, installed_min_only=min_only))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/knobs/<enrichment_id>", methods=["GET"])
+def exchange_wallet_mega_knobs_one(enrichment_id: str):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    min_only = str(request.args.get("min") or "").lower() in ("1", "true", "yes")
+    return jsonify(mega.knob_walkthrough(enrichment_id=enrichment_id, installed_min_only=min_only))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/priority", methods=["GET"])
+def exchange_wallet_mega_priority():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.priority_install_set())
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/por-glance", methods=["GET"])
+def exchange_wallet_mega_por_glance():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    venue = request.args.get("venue")
+    limit = request.args.get("limit", 40, type=int)
+    return jsonify(mega.por_glance(venue=venue, limit=limit or 40))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/failover", methods=["GET"])
+def exchange_wallet_mega_failover():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.failover_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/assess", methods=["POST"])
+def exchange_wallet_mega_assess():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {}
+    return jsonify(
+        mega.assess_anomaly(
+            user_id=_uid(from_body=True),
+            kind=str(data.get("kind") or "withdraw"),
+            address=str(data.get("address") or ""),
+            amount=float(data.get("amount") or 0),
+            balance=float(data.get("balance") or 0),
+            symbol=str(data.get("symbol") or "MN2"),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/guided", methods=["GET", "POST"])
+def exchange_wallet_mega_guided():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    args = request.args
+    step = data.get("step") or args.get("step") or "status"
+    amount = data.get("amount_mn2", args.get("amount_mn2", 0))
+    return jsonify(
+        mega.guided_onchain(
+            user_id=_uid(from_body=request.method == "POST"),
+            step=str(step),
+            amount_mn2=float(amount or 0),
+            to_asset=str(data.get("to_asset") or args.get("to_asset") or "BTC"),
+            withdraw_address=str(data.get("withdraw_address") or args.get("withdraw_address") or ""),
+            execute_withdraw=bool(data.get("execute_withdraw"))
+            if request.method == "POST"
+            else str(args.get("execute_withdraw") or "").lower() in ("1", "true", "yes"),
+        )
+    )
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/bundle", methods=["GET"])
+def exchange_wallet_mega_bundle():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.prototype_bundle(user_id=_uid(from_body=False)))
