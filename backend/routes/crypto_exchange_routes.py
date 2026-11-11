@@ -1859,3 +1859,32 @@ def exchange_wallet_mega_sporks():
     recap = spork.unused_and_new_spork_recap()
     recap["gate_status"] = spork.gate_status()
     return jsonify(recap)
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/version", methods=["GET"])
+def exchange_wallet_mega_version():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.mega_version())
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/train-f-core", methods=["GET"])
+def exchange_wallet_mega_train_f_core():
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    return jsonify(mega.run_train_f_core(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/acceptance", methods=["GET", "POST"])
+def exchange_wallet_mega_acceptance():
+    """Paper trade → settle posture → withdraw dry-run acceptance pack."""
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    symbol = data.get("symbol") or request.args.get("symbol") or "BTC"
+    return jsonify(
+        mega.paper_trade_acceptance(
+            user_id=_uid(from_body=request.method == "POST"),
+            symbol=str(symbol),
+        )
+    )

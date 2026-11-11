@@ -147,6 +147,9 @@ PRIORITY_IDS: Tuple[str, ...] = tuple(
     eid for pillar in ("custody", "desk", "risk", "ops") for eid in PRIORITY_BY_PILLAR[pillar]
 )
 
+# Train F core rail (T5.01–T5.10): X-01…X-10.
+TRAIN_F_CORE_IDS: Tuple[str, ...] = tuple(f"X-{i:02d}" for i in range(1, 11))
+
 
 def _pa(**kwargs: str) -> Dict[str, str]:
     """Fill all 12 knobs; missing keys get a short default from kwargs."""

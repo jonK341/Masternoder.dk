@@ -23,6 +23,7 @@
         .wallet-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
         .wallet-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(0,255,136,0.42); color: #00ff88; background: rgba(0,255,136,0.12); text-decoration: none; font-weight: 800; }
         .wallet-btn.secondary { border-color: rgba(0,212,255,0.42); color: #00d4ff; background: rgba(0,212,255,0.12); }
+        .wallet-mega-badge { display:inline-flex; align-items:center; gap:8px; margin: 0 0 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(0,212,255,0.35); background: rgba(0,212,255,0.1); color: #9be7ff; font-size: 0.85rem; font-weight: 700; }
         code { color: #9be7ff; }
     </style>
 </head>
@@ -30,6 +31,7 @@
     <main class="wallet-page">
         <section class="wallet-hero">
             <p class="wallet-muted">MN2 wallet portal</p>
+            <div class="wallet-mega-badge" id="wallet-mega-badge" hidden>Exchange mega…</div>
             <h1>Wallets</h1>
             <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, exchange wallet actions, and daemon downloads.</p>
             <div class="wallet-actions">
@@ -64,5 +66,20 @@
     <script src="/static/js/user-id.js?v=20261010b"></script>
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a"></script>
+    <script>
+    (function () {
+        var el = document.getElementById('wallet-mega-badge');
+        if (!el) return;
+        fetch('/api/exchange/wallet-mega/version')
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d || !d.success) return;
+                el.hidden = false;
+                el.textContent = d.badge_label || d.mega_target || 'Exchange mega';
+                el.title = 'Draft channel — wallet download Latest unchanged';
+            })
+            .catch(function () { /* ignore */ });
+    })();
+    </script>
 </body>
 </html>

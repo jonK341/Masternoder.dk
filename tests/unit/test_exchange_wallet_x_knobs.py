@@ -174,3 +174,42 @@ def test_withdraw_broadcast_respects_spork_116(monkeypatch):
     assert out["success"] is False
     assert out["withdraw"]["blocked"] is True
     assert "spork_wallet_onchain_withdraw_off" in (out.get("error") or "")
+
+
+def test_train_f_core_and_acceptance_routes(monkeypatch):
+    from backend.routes.crypto_exchange_routes import crypto_exchange_bp
+    from backend.services import mn2_spork_service as spork
+    from flask import Flask
+
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.delenv("MN2_SPORK_OVERRIDE_JSON", raising=False)
+    spork.invalidate_cache()
+
+    app = Flask(__name__)
+    app.register_blueprint(crypto_exchange_bp)
+    c = app.test_client()
+
+    ver = c.get("/api/exchange/wallet-mega/version")
+    assert ver.status_code == 200
+    ver_body = ver.get_json()
+    assert ver_body["mega_target"] == "v32.6.6.0"
+    assert ver_body["channel"] == "draft"
+    assert ver_body["latest_wallet_download_unchanged"] is True
+
+    core = c.get("/api/exchange/wallet-mega/train-f-core")
+    assert core.status_code == 200
+    core_body = core.get_json()
+    assert core_body["count"] == 10
+    assert core_body["ok_count"] == 10
+    assert core_body["results"]["X-01"]["enrichment"] == "X-01"
+    assert core_body["results"]["X-10"]["compose"]["exists"] is True
+
+    acc = c.get("/api/exchange/wallet-mega/acceptance")
+    assert acc.status_code == 200
+    acc_body = acc.get_json()
+    assert acc_body["passed"] is True
+    assert acc_body["gates"]["exchange_live"]["allowed"] is False
+    assert acc_body["gates"]["payout_live"]["allowed"] is False
+    ids = [row["id"] for row in acc_body["checks"]]
+    assert "paper_trade" in ids
+    assert "withdraw_dry_run" in ids

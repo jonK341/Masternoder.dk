@@ -21,6 +21,7 @@ from backend.services.exchange_wallet_x_knobs import (
     MEGA_MIN_KNOBS,
     PRIORITY_BY_PILLAR,
     PRIORITY_IDS,
+    TRAIN_F_CORE_IDS,
     knobs_for,
     priority_manifest,
     walkthrough,
@@ -36,7 +37,13 @@ LIVE_GATES_DEFAULT_OFF = (
     "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
 )
 
+GIGA_TARGET = "v1.6.6.0"
+MEGA_TARGET = "v32.6.6.0"
+# Draft channel: show mega badge without flipping wallet download Latest.
+MEGA_CHANNEL = "draft"
+
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_COMPOSE_REL = os.path.join("docker", "exchange-wallet", "docker-compose.yml")
 
 
 def _iso() -> str:
@@ -73,6 +80,25 @@ def installed_knobs(enrichment_id: str) -> Dict[str, Any]:
     }
 
 
+def mega_version() -> Dict[str, Any]:
+    """Draft mega channel metadata for /wallets + /exchange badges."""
+    return {
+        "success": True,
+        "giga_target": GIGA_TARGET,
+        "mega_target": MEGA_TARGET,
+        "channel": MEGA_CHANNEL,
+        "badge": MEGA_TARGET,
+        "badge_label": f"Exchange mega {MEGA_TARGET} ({MEGA_CHANNEL})",
+        "latest_wallet_download_unchanged": True,
+        "release_stub": "docs/releases/v32.6.6.0-exchange-mega.md",
+        "compose_profile": _COMPOSE_REL,
+        "priority_count": len(PRIORITY_IDS),
+        "train_f_core_count": len(TRAIN_F_CORE_IDS),
+        "live_gates_default_off": list(LIVE_GATES_DEFAULT_OFF),
+        "updated_at": _iso(),
+    }
+
+
 def priority_install_set() -> Dict[str, Any]:
     by_pillar: Dict[str, List[Dict[str, Any]]] = {}
     for pillar, ids in PRIORITY_BY_PILLAR.items():
@@ -80,13 +106,14 @@ def priority_install_set() -> Dict[str, Any]:
     return {
         "success": True,
         "confirmed": True,
-        "target": "v32.6.6.0",
+        "target": MEGA_TARGET,
         "mode": "priority_exchange_wallet_install",
         "count": len(PRIORITY_IDS),
         "ids": list(PRIORITY_IDS),
         "by_pillar": by_pillar,
         "enrichments": [installed_knobs(k) for k in PRIORITY_IDS],
         "manifest": priority_manifest(),
+        "version": mega_version(),
         "knob_glossary_count": len(ALL_KNOBS),
         "mega_min_knobs": list(MEGA_MIN_KNOBS),
         "live_gates_default_off": list(LIVE_GATES_DEFAULT_OFF),
@@ -471,6 +498,30 @@ def guided_onchain(
     return out
 
 
+def batch_withdraw_approve(*, user_id: str = "proto_user") -> Dict[str, Any]:
+    """X-01 — parallel signature + batch withdraw approve queue (dry status)."""
+    fence = withdraw_fence(user_id=user_id)
+    w_ok, w_reason = spork.wallet_onchain_withdraw_spork_ok()
+    return {
+        "success": True,
+        "enrichment": "X-01",
+        "queue": {
+            "pending": 0,
+            "mode": "dry_status",
+            "parallel_slots": 4,
+            "broadcast_allowed": w_ok,
+            "broadcast_reason": w_reason or None,
+        },
+        "fence": {
+            "whitelist_required": fence.get("whitelist_required"),
+            "whitelist_count": (fence.get("security") or {}).get("whitelist_count"),
+        },
+        "knobs": installed_knobs("X-01"),
+        "updated_at": _iso(),
+        "note": "Approve queue is status-only; broadcast still needs SPORK_116 + assess.",
+    }
+
+
 def quote_estimator(*, symbol: str = "BTC") -> Dict[str, Any]:
     """X-02 — quote / slippage / fill-probability estimator from cached prices."""
     from backend.services import exchange_prediction_service as pred
@@ -547,6 +598,42 @@ def book_cache_status(*, symbol: str = "BTC") -> Dict[str, Any]:
             "ttl_sec": 30,
         },
         "knobs": installed_knobs("X-05"),
+        "updated_at": _iso(),
+    }
+
+
+def worker_split_status() -> Dict[str, Any]:
+    """X-06 — trade-engine / settlement / notify worker split (logical roles)."""
+    roles = [
+        {"id": "trade_engine", "status": "ready", "surface": "web"},
+        {"id": "settlement", "status": "ready", "surface": "web"},
+        {"id": "notify", "status": "ready", "surface": "ops"},
+    ]
+    return {
+        "success": True,
+        "enrichment": "X-06",
+        "workers": roles,
+        "split": True,
+        "knobs": installed_knobs("X-06"),
+        "updated_at": _iso(),
+        "note": "Logical worker roles for mega; process isolation lands with compose profile.",
+    }
+
+
+def gateway_status() -> Dict[str, Any]:
+    """X-07 — exchange controller gateway + agent trade token posture."""
+    ex_ok, ex_reason = spork.exchange_live_spork_ok()
+    return {
+        "success": True,
+        "enrichment": "X-07",
+        "gateway": {
+            "controller": "/api/exchange/*",
+            "mega": "/api/exchange/wallet-mega/*",
+            "agent_trade_tokens": "optional",
+            "live_trading_allowed": ex_ok,
+            "live_trading_reason": ex_reason or None,
+        },
+        "knobs": installed_knobs("X-07"),
         "updated_at": _iso(),
     }
 
@@ -788,6 +875,25 @@ def withdraw_fence(*, user_id: str = "proto_user") -> Dict[str, Any]:
     }
 
 
+def compose_profile_status() -> Dict[str, Any]:
+    """X-10 — exchange-wallet compose profile presence."""
+    path = os.path.join(_BASE, _COMPOSE_REL)
+    exists = os.path.isfile(path)
+    return {
+        "success": True,
+        "enrichment": "X-10",
+        "compose": {
+            "path": _COMPOSE_REL,
+            "exists": exists,
+            "profile": "exchange-wallet",
+            "services": ["mn2-rpc", "site", "feed"],
+        },
+        "knobs": installed_knobs("X-10"),
+        "updated_at": _iso(),
+        "note": "Draft compose profile for local rails only.",,
+    }
+
+
 def route_picker() -> Dict[str, Any]:
     """X-39 — best venue / fee / settle route from failover ranking."""
     fo = failover_status()
@@ -915,12 +1021,16 @@ def decision_strip(*, user_id: str = "proto_user") -> Dict[str, Any]:
 
 
 _RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
+    "X-01": lambda **kw: batch_withdraw_approve(user_id=str(kw.get("user_id") or "proto_user")),
     "X-02": lambda **kw: quote_estimator(symbol=str(kw.get("symbol") or "BTC")),
     "X-03": lambda **kw: por_glance(venue=kw.get("venue"), limit=int(kw.get("limit") or 40)),
     "X-04": lambda **_kw: vault_sync_status(),
     "X-05": lambda **kw: book_cache_status(symbol=str(kw.get("symbol") or "BTC")),
+    "X-06": lambda **_kw: worker_split_status(),
+    "X-07": lambda **_kw: gateway_status(),
     "X-08": lambda **_kw: failover_status(),
     "X-09": lambda **_kw: mesh_health(),
+    "X-10": lambda **_kw: compose_profile_status(),
     "X-22": lambda **kw: behavior_hints(
         user_id=str(kw.get("user_id") or "proto_user"),
         amount=float(kw.get("amount") or 1.0),
@@ -956,10 +1066,17 @@ _RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
 
 
 def run_enrichment(enrichment_id: str, **kwargs: Any) -> Dict[str, Any]:
-    """Run one priority enrichment install snapshot."""
+    """Run one installed enrichment snapshot (priority or Train F core)."""
     eid = str(enrichment_id or "").strip().upper()
-    if eid not in PRIORITY_IDS:
-        return {"success": False, "error": "not_priority_enrichment", "id": eid, "priority_ids": list(PRIORITY_IDS)}
+    allowed = set(PRIORITY_IDS) | set(TRAIN_F_CORE_IDS)
+    if eid not in allowed:
+        return {
+            "success": False,
+            "error": "enrichment_not_installed_yet",
+            "id": eid,
+            "priority_ids": list(PRIORITY_IDS),
+            "train_f_core_ids": list(TRAIN_F_CORE_IDS),
+        }
     runner = _RUNNERS.get(eid)
     if not runner:
         return {"success": False, "error": "runner_missing", "id": eid}
@@ -977,7 +1094,7 @@ def run_priority_install(*, user_id: str = "proto_user", symbol: str = "BTC") ->
     ok = sum(1 for v in results.values() if isinstance(v, dict) and v.get("success"))
     return {
         "success": ok == len(PRIORITY_IDS),
-        "target": "v32.6.6.0",
+        "target": MEGA_TARGET,
         "count": len(PRIORITY_IDS),
         "ok_count": ok,
         "by_pillar": {
@@ -988,13 +1105,103 @@ def run_priority_install(*, user_id: str = "proto_user", symbol: str = "BTC") ->
     }
 
 
+def run_train_f_core(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict[str, Any]:
+    """T5.01–T5.10 — run X-01…X-10 mega-min install snapshots."""
+    results: Dict[str, Any] = {}
+    for eid in TRAIN_F_CORE_IDS:
+        results[eid] = run_enrichment(eid, user_id=user_id, symbol=symbol, step="status", dry_run=True)
+    ok = sum(1 for v in results.values() if isinstance(v, dict) and v.get("success"))
+    return {
+        "success": ok == len(TRAIN_F_CORE_IDS),
+        "target": MEGA_TARGET,
+        "train": "F-core",
+        "ids": list(TRAIN_F_CORE_IDS),
+        "count": len(TRAIN_F_CORE_IDS),
+        "ok_count": ok,
+        "results": results,
+        "mega_min_knobs": list(MEGA_MIN_KNOBS),
+        "updated_at": _iso(),
+    }
+
+
+def paper_trade_acceptance(*, user_id: str = "proto_user", symbol: str = "BTC") -> Dict[str, Any]:
+    """Phase 5 acceptance: paper trade → settle posture → withdraw dry-run; live gates off."""
+    uid = str(user_id or "proto_user")
+    sym = (symbol or "BTC").strip().upper() or "BTC"
+    gates = spork.gate_status()
+    checks: List[Dict[str, Any]] = []
+
+    live_off = not bool(gates.get("exchange_live", {}).get("allowed"))
+    payout_off = not bool(gates.get("payout_live", {}).get("allowed"))
+    checks.append({"id": "spork_112_off", "ok": live_off, "detail": gates.get("exchange_live")})
+    checks.append({"id": "spork_114_off", "ok": payout_off, "detail": gates.get("payout_live")})
+
+    status = guided_onchain(user_id=uid, step="status")
+    checks.append({"id": "guided_status", "ok": bool(status.get("success")), "detail": {"step": "status"}})
+
+    trade = guided_onchain(user_id=uid, step="trade", amount_mn2=0.01, to_asset=sym)
+    trade_ok = bool(trade.get("success")) and (
+        bool((trade.get("trade") or {}).get("dry_run"))
+        or bool((trade.get("trade") or {}).get("success"))
+        or bool(trade.get("quote"))
+    )
+    checks.append({"id": "paper_trade", "ok": trade_ok, "detail": {"dry_run": (trade.get("trade") or {}).get("dry_run")}})
+
+    withdraw = guided_onchain(
+        user_id=uid,
+        step="withdraw",
+        amount_mn2=0.01,
+        withdraw_address="",
+        execute_withdraw=False,
+    )
+    wd = withdraw.get("withdraw") if isinstance(withdraw.get("withdraw"), dict) else {}
+    withdraw_ok = bool(withdraw.get("success")) and bool(wd.get("dry_run"))
+    checks.append({"id": "withdraw_dry_run", "ok": withdraw_ok, "detail": wd})
+
+    fo = failover_status()
+    checks.append({"id": "failover_rank", "ok": bool(fo.get("success")), "detail": {"preferred": fo.get("preferred_venue") is not None}})
+
+    por = por_glance(limit=5)
+    checks.append(
+        {
+            "id": "por_glance",
+            "ok": bool(por.get("success")),
+            "detail": {"export_allowed": por.get("export_allowed"), "ledger_count": por.get("ledger_count")},
+        }
+    )
+
+    anomaly = assess_anomaly(user_id=uid, kind="withdraw", amount=0.01, balance=1.0, address="")
+    checks.append({"id": "anomaly_assess", "ok": bool(anomaly.get("success")), "detail": {"hard_enforce": anomaly.get("hard_enforce")}})
+
+    ok = all(bool(c.get("ok")) for c in checks)
+    return {
+        "success": ok,
+        "target": MEGA_TARGET,
+        "acceptance": "paper_trade_settle_withdraw_dry_run",
+        "passed": ok,
+        "checks": checks,
+        "version": mega_version(),
+        "gates": {
+            "exchange_live": gates.get("exchange_live"),
+            "payout_live": gates.get("payout_live"),
+            "wallet_onchain_withdraw": gates.get("wallet_onchain_withdraw"),
+            "guided_trade_execute": gates.get("guided_trade_execute"),
+            "anomaly_hard_enforce": gates.get("anomaly_hard_enforce"),
+        },
+        "updated_at": _iso(),
+    }
+
+
 def prototype_bundle(*, user_id: str = "proto_user") -> Dict[str, Any]:
     """One-shot snapshot for tests and the wallets UI."""
     return {
         "success": True,
-        "target": "v32.6.6.0",
+        "target": MEGA_TARGET,
+        "version": mega_version(),
         "priority": priority_install_set(),
+        "train_f_core": run_train_f_core(user_id=user_id),
         "install": run_priority_install(user_id=user_id),
+        "acceptance": paper_trade_acceptance(user_id=user_id),
         "knobs": knob_walkthrough(enrichment_id=None, installed_min_only=False),
         "updated_at": _iso(),
     }
