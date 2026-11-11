@@ -1041,10 +1041,13 @@ def mn2_withdraw():
     except ImportError:
         pass  # security service unavailable -> don't hard-fail withdrawals
 
-    # Address whitelist (optional) + TOTP 2FA when enabled for this user.
+    # Address whitelist (config and/or SPORK_121) + TOTP 2FA when enabled for this user.
     try:
         from backend.services.mn2_withdrawal_security import check_whitelist_gate, check_totp_gate
-        if config.get("withdrawal_requires_whitelist"):
+        from backend.services import mn2_spork_service as _spork
+
+        _wl_required = bool(config.get("withdrawal_requires_whitelist")) or _spork.withdraw_whitelist_required()
+        if _wl_required:
             wl = check_whitelist_gate(user_id, address, True)
             if not wl.get("allowed"):
                 return jsonify({

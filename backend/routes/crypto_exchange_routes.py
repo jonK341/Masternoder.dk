@@ -1805,3 +1805,13 @@ def exchange_wallet_mega_bundle():
     from backend.services import exchange_wallet_mega_prototype_service as mega
 
     return jsonify(mega.prototype_bundle(user_id=_uid(from_body=False)))
+
+
+@crypto_exchange_bp.route("/api/exchange/wallet-mega/sporks", methods=["GET"])
+def exchange_wallet_mega_sporks():
+    """Unused spork inventory + new wallet gates 116–121 + live gate_status."""
+    from backend.services import mn2_spork_service as spork
+
+    recap = spork.unused_and_new_spork_recap()
+    recap["gate_status"] = spork.gate_status()
+    return jsonify(recap)

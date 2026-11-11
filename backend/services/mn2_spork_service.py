@@ -56,6 +56,13 @@ SPORK_IDS: Dict[str, int] = {
     "SPORK_113_CASINO_REAL_MONEY": 10113,
     "SPORK_114_PAYOUT_LIVE": 10114,
     "SPORK_115_MAINTENANCE_MODE": 10115,
+    # Exchange-wallet mega gates (v32.6.6.0) — daemon patch mn2-daemon-v1.3.2-wallet-exchange-sporks.patch
+    "SPORK_116_WALLET_ONCHAIN_WITHDRAW": 10116,
+    "SPORK_117_EXCHANGE_VENUE_FAILOVER": 10117,
+    "SPORK_118_ANOMALY_HARD_ENFORCE": 10118,
+    "SPORK_119_POR_PUBLIC_EXPORT": 10119,
+    "SPORK_120_GUIDED_TRADE_EXECUTE": 10120,
+    "SPORK_121_WITHDRAW_WHITELIST_REQUIRED": 10121,
 }
 
 SPORK_DEFAULTS: Dict[str, int] = {
@@ -92,6 +99,12 @@ SPORK_DEFAULTS: Dict[str, int] = {
     "SPORK_113_CASINO_REAL_MONEY": 1703122560,
     "SPORK_114_PAYOUT_LIVE": SPORK_OFF,
     "SPORK_115_MAINTENANCE_MODE": SPORK_OFF,
+    "SPORK_116_WALLET_ONCHAIN_WITHDRAW": SPORK_OFF,  # OFF until ops enables on-chain withdraw broadcast
+    "SPORK_117_EXCHANGE_VENUE_FAILOVER": SPORK_OFF,  # OFF until ops trusts auto promote
+    "SPORK_118_ANOMALY_HARD_ENFORCE": 1703122560,  # ON — fail closed on high anomaly
+    "SPORK_119_POR_PUBLIC_EXPORT": SPORK_OFF,  # OFF — public PoR export gated
+    "SPORK_120_GUIDED_TRADE_EXECUTE": SPORK_OFF,  # OFF — guided trade execute gated
+    "SPORK_121_WITHDRAW_WHITELIST_REQUIRED": SPORK_OFF,  # OFF — whitelist fence optional
 }
 
 _ID_TO_NAME = {v: k for k, v in SPORK_IDS.items()}
@@ -249,6 +262,75 @@ def payout_live_spork_ok(*, now: Optional[int] = None) -> Tuple[bool, str]:
     return True, ""
 
 
+def wallet_onchain_withdraw_spork_ok(*, now: Optional[int] = None) -> Tuple[bool, str]:
+    """SPORK_116 — site on-chain MN2 withdraw broadcast (X-40 execute)."""
+    if not gates_enabled():
+        return True, ""
+    if maintenance_mode(now=now):
+        return False, "maintenance_mode"
+    if not spork_is_active("SPORK_116_WALLET_ONCHAIN_WITHDRAW", now=now, default=False):
+        return False, "spork_wallet_onchain_withdraw_off"
+    return True, ""
+
+
+def exchange_venue_failover_spork_ok(*, now: Optional[int] = None) -> Tuple[bool, str]:
+    """SPORK_117 — auto venue/RPC promote (X-08). Ranking always allowed."""
+    if not gates_enabled():
+        return True, ""
+    if maintenance_mode(now=now):
+        return False, "maintenance_mode"
+    if not spork_is_active("SPORK_117_EXCHANGE_VENUE_FAILOVER", now=now, default=False):
+        return False, "spork_exchange_venue_failover_off"
+    return True, ""
+
+
+def anomaly_hard_enforce_spork_ok(*, now: Optional[int] = None) -> Tuple[bool, str]:
+    """SPORK_118 — when active, high anomaly hard-blocks (default ON)."""
+    if not gates_enabled():
+        return True, ""
+    if not spork_is_active("SPORK_118_ANOMALY_HARD_ENFORCE", now=now, default=True):
+        return False, "spork_anomaly_hard_enforce_off"
+    return True, ""
+
+
+def por_public_export_spork_ok(*, now: Optional[int] = None) -> Tuple[bool, str]:
+    """SPORK_119 — public PoR/ledger export (X-03)."""
+    if not gates_enabled():
+        return True, ""
+    if maintenance_mode(now=now):
+        return False, "maintenance_mode"
+    if not spork_is_active("SPORK_119_POR_PUBLIC_EXPORT", now=now, default=False):
+        return False, "spork_por_public_export_off"
+    return True, ""
+
+
+def guided_trade_execute_spork_ok(*, now: Optional[int] = None) -> Tuple[bool, str]:
+    """SPORK_120 — guided custodial trade execute (X-40). Quote/status always ok."""
+    if not gates_enabled():
+        return True, ""
+    if maintenance_mode(now=now):
+        return False, "maintenance_mode"
+    if not spork_is_active("SPORK_120_GUIDED_TRADE_EXECUTE", now=now, default=False):
+        return False, "spork_guided_trade_execute_off"
+    return True, ""
+
+
+def withdraw_whitelist_required(*, now: Optional[int] = None) -> bool:
+    """True when SPORK_121 is active — withdrawals must use the address whitelist."""
+    if not gates_enabled():
+        return False
+    return spork_is_active("SPORK_121_WITHDRAW_WHITELIST_REQUIRED", now=now, default=False)
+
+
+def withdraw_whitelist_required_spork_ok(*, now: Optional[int] = None) -> Tuple[bool, str]:
+    """SPORK_121 fence status: (enforced, reason). Not an allow/deny money gate."""
+    if not gates_enabled():
+        return False, "gates_disabled"
+    if not spork_is_active("SPORK_121_WITHDRAW_WHITELIST_REQUIRED", now=now, default=False):
+        return False, "spork_withdraw_whitelist_required_off"
+    return True, ""
+
+
 def show_sporks(*, timeout_sec: Optional[float] = None) -> Dict[str, Any]:
     """RPC spork show — current values for all known sporks."""
     if timeout_sec is not None:
@@ -289,20 +371,117 @@ def interpret_spork(name: str, value: int, *, now: Optional[int] = None) -> Dict
 
 
 def gate_status(*, now: Optional[int] = None) -> Dict[str, Any]:
-    """Ops snapshot for exchange/casino/payout spork gates."""
+    """Ops snapshot for exchange/casino/payout + wallet-mega spork gates."""
     ex_ok, ex_reason = exchange_live_spork_ok(now=now)
     cas_ok, cas_reason = casino_real_money_spork_ok(now=now)
     pay_ok, pay_reason = payout_live_spork_ok(now=now)
+    w_ok, w_reason = wallet_onchain_withdraw_spork_ok(now=now)
+    f_ok, f_reason = exchange_venue_failover_spork_ok(now=now)
+    a_ok, a_reason = anomaly_hard_enforce_spork_ok(now=now)
+    p_ok, p_reason = por_public_export_spork_ok(now=now)
+    g_ok, g_reason = guided_trade_execute_spork_ok(now=now)
+    wl_ok, wl_reason = withdraw_whitelist_required_spork_ok(now=now)
     return {
         "gates_enabled": gates_enabled(),
         "maintenance_mode": maintenance_mode(now=now),
         "exchange_live": {"allowed": ex_ok, "reason": ex_reason or None},
         "casino_real_money": {"allowed": cas_ok, "reason": cas_reason or None},
         "payout_live": {"allowed": pay_ok, "reason": pay_reason or None},
+        "wallet_onchain_withdraw": {"allowed": w_ok, "reason": w_reason or None},
+        "exchange_venue_failover": {"allowed": f_ok, "reason": f_reason or None},
+        "anomaly_hard_enforce": {"allowed": a_ok, "reason": a_reason or None},
+        "por_public_export": {"allowed": p_ok, "reason": p_reason or None},
+        "guided_trade_execute": {"allowed": g_ok, "reason": g_reason or None},
+        "withdraw_whitelist_required": {"enforced": wl_ok, "reason": wl_reason or None},
         "sporks": {
             "SPORK_112_EXCHANGE_LIVE_TRADING": spork_is_active("SPORK_112_EXCHANGE_LIVE_TRADING", now=now, default=False),
             "SPORK_113_CASINO_REAL_MONEY": spork_is_active("SPORK_113_CASINO_REAL_MONEY", now=now, default=True),
             "SPORK_114_PAYOUT_LIVE": spork_is_active("SPORK_114_PAYOUT_LIVE", now=now, default=False),
             "SPORK_115_MAINTENANCE_MODE": maintenance_mode(now=now),
+            "SPORK_116_WALLET_ONCHAIN_WITHDRAW": spork_is_active("SPORK_116_WALLET_ONCHAIN_WITHDRAW", now=now, default=False),
+            "SPORK_117_EXCHANGE_VENUE_FAILOVER": spork_is_active("SPORK_117_EXCHANGE_VENUE_FAILOVER", now=now, default=False),
+            "SPORK_118_ANOMALY_HARD_ENFORCE": spork_is_active("SPORK_118_ANOMALY_HARD_ENFORCE", now=now, default=True),
+            "SPORK_119_POR_PUBLIC_EXPORT": spork_is_active("SPORK_119_POR_PUBLIC_EXPORT", now=now, default=False),
+            "SPORK_120_GUIDED_TRADE_EXECUTE": spork_is_active("SPORK_120_GUIDED_TRADE_EXECUTE", now=now, default=False),
+            "SPORK_121_WITHDRAW_WHITELIST_REQUIRED": spork_is_active(
+                "SPORK_121_WITHDRAW_WHITELIST_REQUIRED", now=now, default=False
+            ),
         },
+        "unused_app_sporks_note": (
+            "Most SPORK_2–111 flags are daemon/consensus only; site gates start at 112+."
+        ),
+        "new_wallet_gates": [
+            "SPORK_116_WALLET_ONCHAIN_WITHDRAW",
+            "SPORK_117_EXCHANGE_VENUE_FAILOVER",
+            "SPORK_118_ANOMALY_HARD_ENFORCE",
+            "SPORK_119_POR_PUBLIC_EXPORT",
+            "SPORK_120_GUIDED_TRADE_EXECUTE",
+            "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
+        ],
+    }
+
+
+def unused_and_new_spork_recap() -> Dict[str, Any]:
+    """Inventory for ops: unused-by-app, default-off, gaps, and new wallet gates."""
+    app_gated = {
+        "SPORK_112_EXCHANGE_LIVE_TRADING",
+        "SPORK_113_CASINO_REAL_MONEY",
+        "SPORK_114_PAYOUT_LIVE",
+        "SPORK_115_MAINTENANCE_MODE",
+        "SPORK_116_WALLET_ONCHAIN_WITHDRAW",
+        "SPORK_117_EXCHANGE_VENUE_FAILOVER",
+        "SPORK_118_ANOMALY_HARD_ENFORCE",
+        "SPORK_119_POR_PUBLIC_EXPORT",
+        "SPORK_120_GUIDED_TRADE_EXECUTE",
+        "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
+    }
+    unused = sorted(name for name in SPORK_IDS if name not in app_gated)
+    default_off = sorted(name for name, val in SPORK_DEFAULTS.items() if val >= SPORK_OFF)
+    gaps = [i for i in range(10101, 10116) if i not in SPORK_IDS.values()]
+    return {
+        "success": True,
+        "defined_count": len(SPORK_IDS),
+        "app_gated": sorted(app_gated),
+        "unused_by_app": unused,
+        "default_off": default_off,
+        "id_gaps_10101_10115": gaps,
+        "new_wallet_gates": [
+            {
+                "name": "SPORK_116_WALLET_ONCHAIN_WITHDRAW",
+                "id": 10116,
+                "default": "OFF",
+                "maps_to": "X-40 / X-38",
+            },
+            {
+                "name": "SPORK_117_EXCHANGE_VENUE_FAILOVER",
+                "id": 10117,
+                "default": "OFF",
+                "maps_to": "X-08",
+            },
+            {
+                "name": "SPORK_118_ANOMALY_HARD_ENFORCE",
+                "id": 10118,
+                "default": "ON",
+                "maps_to": "X-46",
+            },
+            {
+                "name": "SPORK_119_POR_PUBLIC_EXPORT",
+                "id": 10119,
+                "default": "OFF",
+                "maps_to": "X-03",
+            },
+            {
+                "name": "SPORK_120_GUIDED_TRADE_EXECUTE",
+                "id": 10120,
+                "default": "OFF",
+                "maps_to": "X-40",
+            },
+            {
+                "name": "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
+                "id": 10121,
+                "default": "OFF",
+                "maps_to": "X-38",
+            },
+        ],
+        "doc": "docs/plans/2026-11-11-mn2-sporks-recap-and-new-gates.md",
     }

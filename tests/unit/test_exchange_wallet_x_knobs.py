@@ -62,3 +62,82 @@ def test_wallet_mega_knob_routes():
     prio_body = prio.get_json()
     assert prio_body["confirmed"] is True
     assert len(prio_body["enrichments"]) == 4
+    assert "SPORK_116_WALLET_ONCHAIN_WITHDRAW" in prio_body["live_gates_default_off"]
+    assert "SPORK_118_ANOMALY_HARD_ENFORCE" in prio_body["safety_gates_default_on"]
+
+    sporks = c.get("/api/exchange/wallet-mega/sporks")
+    assert sporks.status_code == 200
+    spork_body = sporks.get_json()
+    assert spork_body["success"] is True
+    assert len(spork_body["new_wallet_gates"]) == 6
+    assert "gate_status" in spork_body
+    assert "SPORK_118_ANOMALY_HARD_ENFORCE" in spork_body["gate_status"]["sporks"]
+
+
+def test_guided_trade_respects_spork_120(monkeypatch):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+    from backend.services import mn2_spork_service as spork
+
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.setenv(
+        "MN2_SPORK_OVERRIDE_JSON",
+        '{"SPORK_120_GUIDED_TRADE_EXECUTE": %d}' % spork.SPORK_OFF,
+    )
+    spork.invalidate_cache()
+
+    def fake_quote(uid, symbol, side, amt, quote="MN2"):
+        return {"success": True, "quote_id": "q1", "symbol": symbol, "amount": amt}
+
+    monkeypatch.setattr(
+        "backend.services.crypto_exchange_service.quote_swap",
+        fake_quote,
+        raising=False,
+    )
+    # Import path used inside guided_onchain
+    import backend.services.crypto_exchange_service as ex
+
+    monkeypatch.setattr(ex, "quote_swap", fake_quote)
+
+    called = {"execute": False}
+
+    def fake_execute(*_a, **_k):
+        called["execute"] = True
+        return {"success": True}
+
+    monkeypatch.setattr(ex, "execute_swap", fake_execute)
+
+    out = mega.guided_onchain(user_id="u1", step="trade", amount_mn2=0.01)
+    assert out["success"] is True
+    assert out["trade"]["dry_run"] is True
+    assert called["execute"] is False
+    assert out["gates"]["spork_120"]["allowed"] is False
+
+
+def test_withdraw_broadcast_respects_spork_116(monkeypatch):
+    from backend.services import exchange_wallet_mega_prototype_service as mega
+    from backend.services import mn2_spork_service as spork
+
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.setenv(
+        "MN2_SPORK_OVERRIDE_JSON",
+        '{"SPORK_116_WALLET_ONCHAIN_WITHDRAW": %d, "SPORK_118_ANOMALY_HARD_ENFORCE": %d}'
+        % (spork.SPORK_OFF, spork.SPORK_OFF),
+    )
+    spork.invalidate_cache()
+
+    monkeypatch.setattr(
+        mega,
+        "assess_anomaly",
+        lambda **_k: {"success": True, "blocked": False, "allow_broadcast": True},
+    )
+
+    out = mega.guided_onchain(
+        user_id="u1",
+        step="withdraw",
+        amount_mn2=1.0,
+        withdraw_address="MNtestaddr",
+        execute_withdraw=True,
+    )
+    assert out["success"] is False
+    assert out["withdraw"]["blocked"] is True
+    assert "spork_wallet_onchain_withdraw_off" in (out.get("error") or "")

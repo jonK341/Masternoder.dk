@@ -101,9 +101,26 @@ def test_spork_ids_include_ops_gates():
         "SPORK_113_CASINO_REAL_MONEY",
         "SPORK_114_PAYOUT_LIVE",
         "SPORK_115_MAINTENANCE_MODE",
+        "SPORK_116_WALLET_ONCHAIN_WITHDRAW",
+        "SPORK_117_EXCHANGE_VENUE_FAILOVER",
+        "SPORK_118_ANOMALY_HARD_ENFORCE",
+        "SPORK_119_POR_PUBLIC_EXPORT",
+        "SPORK_120_GUIDED_TRADE_EXECUTE",
+        "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
     ):
         assert name in spork.SPORK_IDS
         assert name in spork.SPORK_DEFAULTS
+
+
+@pytest.mark.unit
+def test_wallet_mega_spork_defaults():
+    assert spork.SPORK_DEFAULTS["SPORK_116_WALLET_ONCHAIN_WITHDRAW"] == spork.SPORK_OFF
+    assert spork.SPORK_DEFAULTS["SPORK_117_EXCHANGE_VENUE_FAILOVER"] == spork.SPORK_OFF
+    assert spork.SPORK_DEFAULTS["SPORK_118_ANOMALY_HARD_ENFORCE"] == 1_703_122_560
+    assert spork.SPORK_DEFAULTS["SPORK_119_POR_PUBLIC_EXPORT"] == spork.SPORK_OFF
+    assert spork.SPORK_DEFAULTS["SPORK_120_GUIDED_TRADE_EXECUTE"] == spork.SPORK_OFF
+    assert spork.SPORK_DEFAULTS["SPORK_121_WITHDRAW_WHITELIST_REQUIRED"] == spork.SPORK_OFF
+    assert spork.SPORK_IDS["SPORK_121_WITHDRAW_WHITELIST_REQUIRED"] == 10121
 
 
 @pytest.mark.unit
@@ -177,6 +194,68 @@ def test_gate_status_snapshot(monkeypatch):
     status = spork.gate_status()
     assert status["exchange_live"]["allowed"] is True
     assert status["payout_live"]["allowed"] is True
+    assert status["wallet_onchain_withdraw"]["allowed"] is False
+    assert status["guided_trade_execute"]["allowed"] is False
+    assert status["anomaly_hard_enforce"]["allowed"] is True
+    assert status["withdraw_whitelist_required"]["enforced"] is False
+    assert "SPORK_116_WALLET_ONCHAIN_WITHDRAW" in status["new_wallet_gates"]
+
+
+@pytest.mark.unit
+def test_wallet_onchain_withdraw_gate_off(monkeypatch):
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.setenv(
+        "MN2_SPORK_OVERRIDE_JSON",
+        '{"SPORK_116_WALLET_ONCHAIN_WITHDRAW": %d}' % spork.SPORK_OFF,
+    )
+    spork.invalidate_cache()
+    ok, reason = spork.wallet_onchain_withdraw_spork_ok()
+    assert ok is False
+    assert reason == "spork_wallet_onchain_withdraw_off"
+
+
+@pytest.mark.unit
+def test_anomaly_hard_enforce_default_on(monkeypatch):
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.delenv("MN2_SPORK_OVERRIDE_JSON", raising=False)
+    spork.invalidate_cache()
+    ok, reason = spork.anomaly_hard_enforce_spork_ok()
+    assert ok is True
+    assert reason == ""
+
+
+@pytest.mark.unit
+def test_withdraw_whitelist_required_default_off(monkeypatch):
+    monkeypatch.setenv("MN2_SPORK_GATES", "1")
+    monkeypatch.delenv("MN2_SPORK_OVERRIDE_JSON", raising=False)
+    spork.invalidate_cache()
+    assert spork.withdraw_whitelist_required() is False
+    past = int(time.time()) - 60
+    monkeypatch.setenv(
+        "MN2_SPORK_OVERRIDE_JSON",
+        '{"SPORK_121_WITHDRAW_WHITELIST_REQUIRED": %d}' % past,
+    )
+    spork.invalidate_cache()
+    assert spork.withdraw_whitelist_required() is True
+
+
+@pytest.mark.unit
+def test_unused_and_new_spork_recap():
+    recap = spork.unused_and_new_spork_recap()
+    assert recap["success"] is True
+    assert recap["defined_count"] == len(spork.SPORK_IDS)
+    names = [row["name"] for row in recap["new_wallet_gates"]]
+    assert names == [
+        "SPORK_116_WALLET_ONCHAIN_WITHDRAW",
+        "SPORK_117_EXCHANGE_VENUE_FAILOVER",
+        "SPORK_118_ANOMALY_HARD_ENFORCE",
+        "SPORK_119_POR_PUBLIC_EXPORT",
+        "SPORK_120_GUIDED_TRADE_EXECUTE",
+        "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
+    ]
+    assert 10102 in recap["id_gaps_10101_10115"]
+    assert "SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT" in recap["unused_by_app"]
+    assert "SPORK_116_WALLET_ONCHAIN_WITHDRAW" not in recap["unused_by_app"]
 
 
 @pytest.mark.unit

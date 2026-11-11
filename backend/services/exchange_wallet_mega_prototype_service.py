@@ -1,7 +1,8 @@
 """Exchange-wallet mega prototype — X-03 / X-08 / X-40 / X-46 (on-chain capable).
 
-Respects SPORK_112 / SPORK_114 default-off. On-chain deposit + MN2 withdraw paths
-are real custody rails; external venue live trading stays gated.
+Respects SPORK_112 / SPORK_114 default-off, plus wallet mega gates 116–121.
+On-chain deposit + MN2 withdraw paths are real custody rails; external venue
+live trading stays gated.
 
 Knob walkthrough (50 × 12) lives in ``exchange_wallet_x_knobs``.
 """
@@ -10,11 +11,22 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
+from backend.services import mn2_spork_service as spork
 from backend.services.exchange_wallet_x_knobs import (
     ALL_KNOBS,
     MEGA_MIN_KNOBS,
     knobs_for,
     walkthrough,
+)
+
+LIVE_GATES_DEFAULT_OFF = (
+    "SPORK_112_EXCHANGE_LIVE_TRADING",
+    "SPORK_114_PAYOUT_LIVE",
+    "SPORK_116_WALLET_ONCHAIN_WITHDRAW",
+    "SPORK_117_EXCHANGE_VENUE_FAILOVER",
+    "SPORK_119_POR_PUBLIC_EXPORT",
+    "SPORK_120_GUIDED_TRADE_EXECUTE",
+    "SPORK_121_WITHDRAW_WHITELIST_REQUIRED",
 )
 
 PRIORITY_IDS = ("X-03", "X-08", "X-40", "X-46")
@@ -62,7 +74,9 @@ def priority_install_set() -> Dict[str, Any]:
         "enrichments": [installed_knobs(k) for k in PRIORITY_IDS],
         "knob_glossary_count": len(ALL_KNOBS),
         "mega_min_knobs": list(MEGA_MIN_KNOBS),
-        "live_gates_default_off": ["SPORK_112_EXCHANGE_LIVE_TRADING", "SPORK_114_PAYOUT_LIVE"],
+        "live_gates_default_off": list(LIVE_GATES_DEFAULT_OFF),
+        "safety_gates_default_on": ["SPORK_118_ANOMALY_HARD_ENFORCE"],
+        "spork_recap": spork.unused_and_new_spork_recap(),
         "updated_at": _iso(),
     }
 
@@ -75,10 +89,16 @@ def knob_walkthrough(*, enrichment_id: Optional[str] = None, installed_min_only:
 
 
 def por_glance(*, venue: Optional[str] = None, limit: int = 40) -> Dict[str, Any]:
-    """X-03: join MN2 PoR with profit-path ledger rows (optional venue filter)."""
+    """X-03: join MN2 PoR with profit-path ledger rows (optional venue filter).
+
+    Full public ledger export requires SPORK_119. Assess/status still returns
+    a redacted glance (counts + PoR summary) when the export gate is off.
+    """
     from backend.services import exchange_profit_path_service as ppp
     from backend.services import mn2_proof_of_reserves_service as por
-    from backend.services import mn2_spork_service as spork
+
+    por_ok, por_reason = spork.por_public_export_spork_ok()
+    gates = spork.gate_status()
 
     por_payload: Dict[str, Any] = {}
     try:
@@ -102,11 +122,26 @@ def por_glance(*, venue: Optional[str] = None, limit: int = 40) -> Dict[str, Any
                 continue
         filtered.append(row)
 
-    gates = {}
-    try:
-        gates = spork.gate_status()
-    except Exception:
-        gates = {}
+    cap = max(1, min(int(limit or 40), 200))
+    if not por_ok:
+        return {
+            "success": True,
+            "enrichment": "X-03",
+            "venue": venue_norm or None,
+            "por": {
+                "success": bool(por_payload.get("success")),
+                "summary_only": True,
+                "total_liabilities": por_payload.get("total_liabilities"),
+                "as_of": por_payload.get("as_of") or por_payload.get("updated_at"),
+            },
+            "ledger_count": len(filtered),
+            "ledger_rows": [],
+            "export_allowed": False,
+            "export_reason": por_reason or "spork_por_public_export_off",
+            "gates": gates,
+            "knobs": installed_knobs("X-03"),
+            "updated_at": _iso(),
+        }
 
     return {
         "success": True,
@@ -114,7 +149,9 @@ def por_glance(*, venue: Optional[str] = None, limit: int = 40) -> Dict[str, Any
         "venue": venue_norm or None,
         "por": por_payload,
         "ledger_count": len(filtered),
-        "ledger_rows": filtered[: max(1, min(int(limit or 40), 200))],
+        "ledger_rows": filtered[:cap],
+        "export_allowed": True,
+        "export_reason": None,
         "gates": gates,
         "knobs": installed_knobs("X-03"),
         "updated_at": _iso(),
@@ -122,10 +159,13 @@ def por_glance(*, venue: Optional[str] = None, limit: int = 40) -> Dict[str, Any
 
 
 def failover_status() -> Dict[str, Any]:
-    """X-08: RPC failover + venue readiness ordered pick (no auto live broadcast)."""
+    """X-08: RPC failover + venue readiness ordered pick.
+
+    Ranking always runs. Auto promote (mutating failover) needs SPORK_117.
+    Live external legs stay SPORK_112 gated.
+    """
     from backend.services import exchange_live_execution_service as live
     from backend.services import mn2_rpc_failover as failover
-    from backend.services import mn2_spork_service as spork
 
     rpc = failover.status_summary()
     readiness = live.live_readiness() or {}
@@ -141,6 +181,7 @@ def failover_status() -> Dict[str, Any]:
     preferred = ranked[0] if ranked else None
     standby = ranked[1] if len(ranked) > 1 else None
     ex_ok, ex_reason = spork.exchange_live_spork_ok()
+    fo_ok, fo_reason = spork.exchange_venue_failover_spork_ok()
 
     return {
         "success": True,
@@ -149,11 +190,17 @@ def failover_status() -> Dict[str, Any]:
         "venue_readiness": readiness,
         "preferred_venue": preferred,
         "standby_venue": standby,
+        "auto_promote_allowed": fo_ok,
+        "auto_promote_reason": fo_reason or None,
         "live_trading_enabled": bool(readiness.get("live_gate")),
         "spork_112": {"allowed": ex_ok, "reason": ex_reason or None},
+        "spork_117": {"allowed": fo_ok, "reason": fo_reason or None},
         "knobs": installed_knobs("X-08"),
         "updated_at": _iso(),
-        "note": "Failover ranks venues for routing; live external legs stay SPORK_112 gated.",
+        "note": (
+            "Failover ranks venues for routing; auto promote needs SPORK_117; "
+            "live external legs stay SPORK_112 gated."
+        ),
     }
 
 
@@ -166,7 +213,10 @@ def assess_anomaly(
     balance: float = 0.0,
     symbol: str = "MN2",
 ) -> Dict[str, Any]:
-    """X-46: pre-broadcast anomaly assessment for withdraw or trade notional."""
+    """X-46: pre-broadcast anomaly assessment for withdraw or trade notional.
+
+    SPORK_118 (default ON) hard-blocks high anomaly. When OFF, high is warn-only.
+    """
     from backend.services import mn2_withdrawal_risk as risk
 
     kind_norm = "trade" if str(kind).lower() in ("trade", "swap", "order") else "withdraw"
@@ -181,14 +231,23 @@ def assess_anomaly(
         balance=balance_f if balance_f > 0 else max(amount_f, 1.0),
         config={},
     )
-    blocked = bool(assessed.get("hard_block_if_no_password")) or (
-        str(assessed.get("level") or "") == "high"
-    )
+    hard_ok, hard_reason = spork.anomaly_hard_enforce_spork_ok()
+    high = str(assessed.get("level") or "") == "high"
+    password_block = bool(assessed.get("hard_block_if_no_password"))
+    if hard_ok:
+        blocked = password_block or high
+        soft_warn = False
+    else:
+        blocked = password_block
+        soft_warn = high
     return {
         "success": True,
         "enrichment": "X-46",
         "kind": kind_norm,
         "blocked": blocked,
+        "soft_warn": soft_warn,
+        "hard_enforce": hard_ok,
+        "hard_enforce_reason": hard_reason or None,
         "allow_broadcast": not blocked,
         "assessment": assessed,
         "knobs": installed_knobs("X-46"),
@@ -205,14 +264,20 @@ def guided_onchain(
     withdraw_address: str = "",
     execute_withdraw: bool = False,
 ) -> Dict[str, Any]:
-    """X-40: guided deposit → on-chain-backed trade → withdraw (assess-first)."""
+    """X-40: guided deposit → on-chain-backed trade → withdraw (assess-first).
+
+    Trade execute needs SPORK_120. On-chain withdraw broadcast needs SPORK_116.
+    Whitelist fence applies when SPORK_121 is active.
+    """
     from backend.services import crypto_exchange_service as ex
-    from backend.services import mn2_spork_service as spork
 
     uid = str(user_id or "").strip() or "anonymous"
     step_norm = str(step or "status").strip().lower()
     ex_ok, ex_reason = spork.exchange_live_spork_ok()
     pay_ok, pay_reason = spork.payout_live_spork_ok()
+    w_ok, w_reason = spork.wallet_onchain_withdraw_spork_ok()
+    g_ok, g_reason = spork.guided_trade_execute_spork_ok()
+    wl_enforced = spork.withdraw_whitelist_required()
     out: Dict[str, Any] = {
         "success": True,
         "enrichment": "X-40",
@@ -223,6 +288,9 @@ def guided_onchain(
         "gates": {
             "spork_112": {"allowed": ex_ok, "reason": ex_reason or None},
             "spork_114": {"allowed": pay_ok, "reason": pay_reason or None},
+            "spork_116": {"allowed": w_ok, "reason": w_reason or None},
+            "spork_120": {"allowed": g_ok, "reason": g_reason or None},
+            "spork_121": {"enforced": wl_enforced},
         },
         "updated_at": _iso(),
     }
@@ -270,22 +338,32 @@ def guided_onchain(
             out["success"] = False
             out["error"] = f"quote_failed:{exc}"
             return out
-        swap_result: Dict[str, Any]
-        if not quote.get("success"):
-            swap_result = quote
-        else:
-            try:
-                swap_result = ex.execute_swap(
-                    uid,
-                    str(quote.get("quote_id") or "mega"),
-                    symbol,
-                    "buy",
-                    amt,
-                    quote="MN2",
-                )
-            except Exception as exc:
-                swap_result = {"success": False, "error": str(exc), "quote": quote}
         out["quote"] = quote
+        if not quote.get("success"):
+            out["trade"] = quote
+            out["next"] = "withdraw"
+            return out
+        if not g_ok:
+            out["trade"] = {
+                "executed": False,
+                "dry_run": True,
+                "quote": quote,
+                "reason": g_reason or "spork_guided_trade_execute_off",
+            }
+            out["next"] = "withdraw"
+            out["note"] = "Quote only — SPORK_120 must be active to execute guided trade."
+            return out
+        try:
+            swap_result = ex.execute_swap(
+                uid,
+                str(quote.get("quote_id") or "mega"),
+                symbol,
+                "buy",
+                amt,
+                quote="MN2",
+            )
+        except Exception as exc:
+            swap_result = {"success": False, "error": str(exc), "quote": quote}
         out["trade"] = swap_result
         out["next"] = "withdraw"
         out["note"] = (
@@ -304,6 +382,22 @@ def guided_onchain(
                 bal = float(bals.get("MN2") or 0)
         except Exception:
             bal = 0.0
+        if wl_enforced and withdraw_address:
+            from backend.services.mn2_withdrawal_security import check_whitelist_gate
+
+            wl = check_whitelist_gate(uid, withdraw_address, True)
+            if not wl.get("allowed"):
+                out["success"] = False
+                out["error"] = wl.get("error") or "whitelist_required"
+                out["code"] = wl.get("code", "whitelist_required")
+                out["withdraw"] = {"executed": False, "blocked": True, "reason": "whitelist_required"}
+                return out
+        elif wl_enforced and execute_withdraw and not withdraw_address:
+            out["success"] = False
+            out["error"] = "withdraw_address_required"
+            out["code"] = "whitelist_required"
+            out["withdraw"] = {"executed": False, "blocked": True, "reason": "whitelist_required"}
+            return out
         assessment = assess_anomaly(
             user_id=uid,
             kind="withdraw",
@@ -319,8 +413,21 @@ def guided_onchain(
             out["withdraw"] = {
                 "executed": False,
                 "dry_run": True,
-                "allow_broadcast": True,
-                "hint": "Pass execute_withdraw=true to broadcast on-chain MN2 withdraw after assess.",
+                "allow_broadcast": bool(w_ok),
+                "spork_116": {"allowed": w_ok, "reason": w_reason or None},
+                "hint": (
+                    "Pass execute_withdraw=true after SPORK_116 is active "
+                    "to broadcast on-chain MN2 withdraw."
+                ),
+            }
+            return out
+        if not w_ok:
+            out["success"] = False
+            out["error"] = w_reason or "spork_wallet_onchain_withdraw_off"
+            out["withdraw"] = {
+                "executed": False,
+                "blocked": True,
+                "reason": w_reason or "spork_wallet_onchain_withdraw_off",
             }
             return out
         try:
