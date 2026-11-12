@@ -91,9 +91,9 @@ def test_configure_only_ready_binance_routes(monkeypatch, tmp_path):
     assert out["success"] is True
     ready_assets = {r["asset"] for r in out["ready_routes"]}
     assert "USDC" in ready_assets
-    # BN→NK only wires ready (whitelisted) assets
+    # BN→NK only wires ready (whitelisted) assets; LINK needs its own coin row / assume flag
     assert "USDC" in configured.get("binance", {})
-    assert "BNB" not in configured.get("binance", {})
+    assert "LINK" not in configured.get("binance", {})
     # NK→BN gets Binance deposit addresses for reverse hops
     assert "USDC" in configured.get("nonkyc", {})
     assert configured["nonkyc"]["USDC"]["address"].startswith("bn-")
@@ -101,3 +101,57 @@ def test_configure_only_ready_binance_routes(monkeypatch, tmp_path):
 
     saved = json.loads((tmp_path / "reg.json").read_text())
     assert saved["success"] is True
+
+
+def test_assume_whitelisted_marks_link_ready(monkeypatch, tmp_path):
+    monkeypatch.setattr(xfer, "_REGISTRY_PATH", str(tmp_path / "reg.json"))
+    monkeypatch.setenv("CROSS_VENUE_ASSUME_WHITELISTED", "LINK")
+
+    monkeypatch.setattr(
+        xfer,
+        "fetch_binance_deposit",
+        lambda coin, network: {
+            "success": True,
+            "address": f"bn-{coin}-{network}",
+            "tag": "",
+            "asset": coin,
+            "network": network,
+            "venue": "binance",
+        },
+    )
+    monkeypatch.setattr(
+        xfer,
+        "fetch_nonkyc_deposit",
+        lambda ticker: {
+            "success": True,
+            "address": "0x2c0b81D2c9bf95Fc66DBC6e2527fD22AEA91aDC8",
+            "tag": "",
+            "ticker": ticker,
+            "venue": "nonkyc",
+        },
+    )
+    monkeypatch.setattr(
+        xfer,
+        "binance_whitelist_rows",
+        lambda coin="USDC": [
+            {
+                "address": "0x2c0b81D2c9bf95Fc66DBC6e2527fD22AEA91aDC8",
+                "network": "BSC",
+                "coin": "USDC",
+                "name": "NK USDC",
+            }
+        ],
+    )
+    configured = {}
+    monkeypatch.setattr(
+        "backend.services.exchange_payout_service.configure_venue_withdraw",
+        lambda venue, targets: configured.setdefault(venue, targets) or {
+            "success": True,
+            "configured_coins": list(targets.keys()),
+        },
+    )
+    out = xfer.sync_cross_venue_addresses()
+    ready = {(r["asset"], r["network"]) for r in out["ready_routes"]}
+    assert ("LINK", "ETH") in ready
+    assert "LINK" in configured.get("binance", {})
+    assert configured["binance"]["LINK"]["network"] == "ETH"

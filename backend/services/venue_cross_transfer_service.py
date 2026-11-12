@@ -18,16 +18,13 @@ from backend.services import crypto_exchange_service as ex
 _REGISTRY_PATH = os.path.join(ex._DATA_DIR, "cross_venue_addresses.json")
 
 # Preferred networks for low-fee cross-venue hops.
+# Operator constraint: only LINK/ETH can be added as an extra Binance whitelist coin
+# (BNB/XRP/ALGO/ADA asset withdraws are not whitelisable on this account).
 PREFERRED_ROUTES: List[Dict[str, str]] = [
     {"asset": "USDC", "from": "binance", "to": "nonkyc", "network": "BSC", "nk_ticker": "USDC-BEP20"},
     {"asset": "USDT", "from": "binance", "to": "nonkyc", "network": "TRX", "nk_ticker": "USDT-TRC20"},
-    # NonKYC BEP20 deposits share the EVM address; Binance still needs a per-coin whitelist row.
-    {"asset": "BNB", "from": "binance", "to": "nonkyc", "network": "BSC", "nk_ticker": "BNB-BSC"},
     {"asset": "LINK", "from": "binance", "to": "nonkyc", "network": "ETH", "nk_ticker": "LINK-ERC20"},
-    {"asset": "XRP", "from": "binance", "to": "nonkyc", "network": "BSC", "nk_ticker": "XRP-BEP20"},
-    {"asset": "ADA", "from": "binance", "to": "nonkyc", "network": "ADA", "nk_ticker": "ADA"},
-    {"asset": "ALGO", "from": "binance", "to": "nonkyc", "network": "ALGO", "nk_ticker": "ALGO"},
-    # Reverse quote hop (NonKYC → Binance)
+    # Reverse quote hop (NonKYC → Binance) — still needs NonKYC UI whitelist.
     {"asset": "USDC", "from": "nonkyc", "to": "binance", "network": "BSC", "nk_ticker": "USDC-BEP20"},
     {"asset": "USDT", "from": "nonkyc", "to": "binance", "network": "TRX", "nk_ticker": "USDT-TRC20"},
 ]
@@ -36,7 +33,19 @@ PREFERRED_ROUTES: List[Dict[str, str]] = [
 _KNOWN_NK_DEPOSITS = {
     "USDC-BEP20": "0x2c0b81D2c9bf95Fc66DBC6e2527fD22AEA91aDC8",
     "USDT-TRC20": "TS7u7kVvLVyqEdeUPbwpJJVhYCRe4pitBj",
+    "LINK-ERC20": "0x2c0b81D2c9bf95Fc66DBC6e2527fD22AEA91aDC8",
 }
+
+
+def _assumed_whitelisted_coins() -> set:
+    """Coins the operator confirmed in Binance UI even if the address-list API lags.
+
+    ``CROSS_VENUE_ASSUME_WHITELISTED=LINK`` or ``LINK,USDC``.
+    """
+    raw = (os.environ.get("CROSS_VENUE_ASSUME_WHITELISTED") or "").strip()
+    if not raw:
+        return set()
+    return {p.strip().upper() for p in raw.split(",") if p.strip()}
 
 
 def _iso() -> str:
@@ -136,6 +145,8 @@ def is_binance_whitelisted(address: str, network: str, *, coin: str = "USDC") ->
     coin_u = str(coin or "USDC").upper()
     if not addr:
         return False
+    if coin_u in _assumed_whitelisted_coins():
+        return True
     # List is global; querying USDC is enough to load the book.
     for row in binance_whitelist_rows("USDC") + binance_whitelist_rows(coin_u):
         row_addr = str(row.get("address") or "").strip()

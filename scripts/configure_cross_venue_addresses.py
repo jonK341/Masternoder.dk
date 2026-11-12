@@ -57,8 +57,15 @@ def main() -> int:
         action="store_true",
         help="Append CYCLE_CIRCLES_XFER_LIVE + deposit addr to .env when USDC BSC is ready",
     )
+    ap.add_argument(
+        "--assume-whitelisted",
+        default="",
+        help="Comma coins treated as Binance-UI whitelisted (e.g. LINK) when API lags",
+    )
     args = ap.parse_args()
     _load_dotenv()
+    if args.assume_whitelisted.strip():
+        os.environ["CROSS_VENUE_ASSUME_WHITELISTED"] = args.assume_whitelisted.strip().upper()
 
     from backend.services.venue_cross_transfer_service import sync_cross_venue_addresses
 
@@ -89,16 +96,18 @@ def main() -> int:
             print(f"export {k}={v}")
     elif env.get("CYCLE_CIRCLES_XFER_LIVE") == "1":
         print("USDC BSC BN→NK ready — set CYCLE_CIRCLES_XFER_LIVE=1 to fund circles")
-    if args.write_xfer_env and env.get("CYCLE_CIRCLES_XFER_LIVE") == "1":
+    if args.write_xfer_env or args.assume_whitelisted.strip():
         env_path = os.path.join(ROOT, ".env")
         existing = ""
         if os.path.isfile(env_path):
             existing = open(env_path, encoding="utf-8").read()
+        to_write = dict(env) if (args.write_xfer_env and env.get("CYCLE_CIRCLES_XFER_LIVE") == "1") else {}
+        if args.assume_whitelisted.strip():
+            to_write["CROSS_VENUE_ASSUME_WHITELISTED"] = args.assume_whitelisted.strip().upper()
         additions = []
-        for k, v in env.items():
+        for k, v in to_write.items():
             line = f"{k}={v}"
             if f"{k}=" in existing:
-                # rewrite in-place for these keys
                 lines = []
                 for raw in existing.splitlines():
                     if raw.startswith(f"{k}="):
@@ -110,9 +119,10 @@ def main() -> int:
                 additions.append(line)
         if additions:
             existing = existing.rstrip("\n") + "\n" + "\n".join(additions) + "\n"
-        with open(env_path, "w", encoding="utf-8") as fh:
-            fh.write(existing if existing.endswith("\n") else existing + "\n")
-        print(f"wrote_xfer_env path={env_path} keys={list(env)}")
+        if to_write:
+            with open(env_path, "w", encoding="utf-8") as fh:
+                fh.write(existing if existing.endswith("\n") else existing + "\n")
+            print(f"wrote_xfer_env path={env_path} keys={list(to_write)}")
     return 0 if out.get("success") else 1
 
 
