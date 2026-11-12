@@ -1,0 +1,85 @@
+"""Mission Control interactive movie API (plan → render job)."""
+from __future__ import annotations
+
+import os
+import sys
+import time
+
+import pytest
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+
+@pytest.fixture
+def client(monkeypatch, tmp_path):
+    monkeypatch.setenv("FAL_API_KEY", "fal-test-key")
+    monkeypatch.setenv("DRAMACANVA_API_KEY", "drama-test-key")
+    monkeypatch.setenv("VIDEOS_DIR", str(tmp_path))
+    monkeypatch.setattr(
+        "backend.services.film_canvas_service._ENV_FILES",
+        (),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "backend.services.film_canvas_service._fal_dependencies_available",
+        lambda: True,
+    )
+
+    def fake_compose(prompt, dest_dir=None, timeout=180, plan=True, render_provider=None):
+        path = os.path.join(dest_dir or str(tmp_path), "interactive.mp4")
+        with open(path, "wb") as handle:
+            handle.write(b"\x00\x00\x00\x18ftypmp42" + b"0" * 64)
+        return {
+            "success": True,
+            "planner": "dramacanva",
+            "renderer": "fal_krea",
+            "prompt_used": prompt,
+            "local_path": path,
+            "canvas": "fal_krea",
+        }
+
+    monkeypatch.setattr(
+        "backend.services.film_canvas_service.compose_interactive_movie",
+        fake_compose,
+    )
+
+    from src.app import create_app
+
+    app = create_app()
+    app.config["TESTING"] = True
+    return app.test_client()
+
+
+def test_interactive_movie_job_completes_and_serves_video(client):
+    started = client.post(
+        "/api/film-canvas/interactive-movie",
+        json={"prompt": "harbour control room film"},
+    )
+    assert started.status_code == 202
+    body = started.get_json()
+    assert body["success"] is True
+    job_id = body["job_id"]
+    assert job_id.startswith("im_")
+
+    deadline = time.time() + 5
+    status = None
+    while time.time() < deadline:
+        response = client.get("/api/film-canvas/interactive-movie/" + job_id)
+        assert response.status_code == 200
+        status = response.get_json()
+        if status.get("status") in ("completed", "failed"):
+            break
+        time.sleep(0.05)
+
+    assert status is not None
+    assert status["status"] == "completed"
+    assert status["planner"] == "dramacanva"
+    assert status["renderer"] == "fal_krea"
+    assert status["video_url"].endswith("/video")
+
+    video = client.get(status["video_url"])
+    assert video.status_code == 200
+    assert video.mimetype == "video/mp4"
+    assert len(video.data) > 20

@@ -247,10 +247,43 @@ def test_pipeline_preferences_map_to_provider_capabilities(preference, provider)
     assert canvas.provider_for_preference(preference) == provider
 
 
+def test_fal_queue_fallback_downloads_mp4(clean_env, tmp_path, monkeypatch):
+    clean_env.setenv("FAL_API_KEY", SECRET)
+    clean_env.setenv("FAL_FORCE_QUEUE", "1")
+    calls = []
+
+    def fake_http(method, url, body=None, timeout=60):
+        calls.append((method, url, body))
+        if method == "POST":
+            return {
+                "status": "IN_QUEUE",
+                "request_id": "req-1",
+                "status_url": "https://queue.fal.run/status/req-1",
+                "response_url": "https://queue.fal.run/response/req-1",
+            }
+        if "status" in url:
+            return {"status": "COMPLETED"}
+        return {"video": {"url": "https://cdn.example/video.mp4"}}
+
+    def fake_download(url, dest_path, timeout=120):
+        assert url.endswith(".mp4")
+        with open(dest_path, "wb") as handle:
+            handle.write(b"mp4" * 40)
+
+    monkeypatch.setattr(canvas, "_fal_http_json", fake_http)
+    monkeypatch.setattr(canvas, "_download_url_to_path", fake_download)
+    result = canvas.generate_clip("harbour night", dest_dir=str(tmp_path), provider="fal_krea")
+    assert result["success"] is True, result
+    assert result["mode"] == "queue"
+    assert os.path.isfile(result["local_path"])
+    assert calls[0][0] == "POST"
+
+
 def test_fal_realtime_frames_are_encoded_as_a_local_clip(clean_env, tmp_path, monkeypatch):
     clean_env.setenv("FAL_API_KEY", SECRET)
     clean_env.setenv("FAL_KREA_FRAMES", "2")
     clean_env.setenv("FAL_KREA_FPS", "8")
+    clean_env.delenv("FAL_FORCE_QUEUE", raising=False)
 
     class FakeSocket:
         def __init__(self):
@@ -295,6 +328,7 @@ def test_fal_realtime_frames_are_encoded_as_a_local_clip(clean_env, tmp_path, mo
 
     assert result["success"] is True, result
     assert result["canvas"] == "fal_krea"
+    assert result["mode"] == "realtime"
     assert result["frame_count"] == 2
     assert os.path.isfile(result["local_path"])
     assert fake_socket.sent
@@ -362,3 +396,78 @@ def test_dramacanva_pipeline_attaches_planning_result(clean_env, monkeypatch):
     prep = result[0]["film_canvas_planning"]
     assert prep["success"] is True
     assert "Opening: A harbour at night" in prep["brief"]
+
+
+def test_planning_text_reads_mcp_content_blocks():
+    text = canvas._planning_text({
+        "content": [{"type": "text", "text": "Shot 1: harbour lights"}],
+    })
+    assert text == "Shot 1: harbour lights"
+
+
+def test_compose_interactive_movie_plans_then_renders(clean_env, tmp_path, monkeypatch):
+    clean_env.setenv("DRAMACANVA_API_KEY", SECRET)
+    clean_env.setenv("FAL_API_KEY", SECRET)
+    monkeypatch.setattr(canvas, "_fal_dependencies_available", lambda: True)
+    monkeypatch.setattr(
+        canvas,
+        "prepare_film_project",
+        lambda prompt, timeout: {
+            "success": True,
+            "canvas": "dramacanva",
+            "result": {"content": [{"type": "text", "text": "Keep the camera low"}]},
+        },
+    )
+
+    def fake_generate(prompt, dest_dir=None, timeout=180, provider=None):
+        path = os.path.join(dest_dir or str(tmp_path), "compose.mp4")
+        with open(path, "wb") as handle:
+            handle.write(b"mp4" * 40)
+        return {
+            "success": True,
+            "local_path": path,
+            "canvas": provider,
+            "frame_count": 4,
+            "fps": 12,
+            "prompt": prompt,
+        }
+
+    monkeypatch.setattr(canvas, "generate_clip", fake_generate)
+    result = canvas.compose_interactive_movie(
+        "harbour night",
+        dest_dir=str(tmp_path),
+        timeout=30,
+    )
+
+    assert result["success"] is True
+    assert result["planner"] == "dramacanva"
+    assert result["renderer"] == "fal_krea"
+    assert "Keep the camera low" in result["prompt_used"]
+    assert os.path.isfile(result["local_path"])
+
+
+def test_auto_segment_clips_use_compose_pipeline(clean_env, tmp_path, monkeypatch):
+    clean_env.setenv("DRAMACANVA_API_KEY", SECRET)
+    clean_env.setenv("FAL_API_KEY", SECRET)
+    monkeypatch.setattr(canvas, "_fal_dependencies_available", lambda: True)
+
+    def fake_compose(prompt, dest_dir=None, timeout=180, plan=True, render_provider=None):
+        path = os.path.join(dest_dir or str(tmp_path), "auto.mp4")
+        with open(path, "wb") as handle:
+            handle.write(b"mp4" * 20)
+        return {
+            "success": True,
+            "local_path": path,
+            "canvas": "fal_krea",
+            "planner": "dramacanva",
+            "planning": {"success": True},
+        }
+
+    monkeypatch.setattr(canvas, "compose_interactive_movie", fake_compose)
+    segments = [{"title": "Dock", "description": "Fog rolls in", "mood": "noir"}]
+    result = canvas.generate_segment_clips(segments, provider=None)
+
+    assert result[0]["ai_video_path"].endswith("auto.mp4")
+    assert result[0]["film_canvas"] == "fal_krea"
+    assert result[0]["film_canvas_planner"] == "dramacanva"
+    assert result[0]["film_canvas_planning"]["success"] is True

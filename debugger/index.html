@@ -1087,17 +1087,46 @@
                 .mc-health-ring { width:90px;height:90px;position:relative;margin:0 auto 12px; }
                 .mc-health-ring svg { transform:rotate(-90deg); }
                 .mc-health-score { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.5em;font-weight:bold; }
+                .mc-movie-stage { position:relative; background:radial-gradient(ellipse at center,#0b1a14 0%,#020605 70%); border:1px solid rgba(0,230,118,0.35); border-radius:14px; padding:16px; margin-bottom:20px; overflow:hidden; }
+                .mc-movie-stage::before { content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,140,0.03) 3px); pointer-events:none; animation:mc-scan 7s linear infinite; }
+                @keyframes mc-scan { from{transform:translateY(-8%)} to{transform:translateY(8%)} }
+                .mc-movie-frame { position:relative; aspect-ratio:16/9; max-height:360px; margin:0 auto 12px; background:#000; border:1px solid rgba(0,230,118,0.25); border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+                .mc-movie-frame video { width:100%; height:100%; object-fit:cover; display:none; }
+                .mc-movie-placeholder { color:#7dffb3; font-size:0.95em; text-align:center; padding:20px; opacity:0.85; z-index:1; }
+                .mc-movie-controls { display:flex; gap:10px; flex-wrap:wrap; align-items:center; position:relative; z-index:1; }
+                .mc-movie-controls input { flex:1; min-width:220px; background:rgba(0,0,0,0.55); border:1px solid rgba(0,230,118,0.35); color:#e8ffe8; border-radius:8px; padding:10px 12px; }
+                .mc-movie-status { margin-top:10px; color:#9ad7b0; font-size:0.85em; min-height:1.2em; position:relative; z-index:1; }
             </style>
 
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
                 <div>
                     <h2 style="margin:0;">🚀 Mission Control</h2>
-                    <p style="color:#aaa;margin-top:4px;font-size:0.9em;">Full platform status at a glance</p>
+                    <p style="color:#aaa;margin-top:4px;font-size:0.9em;">Full platform status — and an interactive film monitor</p>
                 </div>
                 <div style="display:flex;gap:10px;">
                     <button class="button" onclick="window.loadMissionControl()" style="background:rgba(0,230,118,0.3);border-color:#00e676;">&#128260; Refresh</button>
                     <button class="button" onclick="window.loadMissionControl(true)" style="background:rgba(33,150,243,0.3);border-color:#2196F3;">&#9889; Full Scan</button>
                 </div>
+            </div>
+
+            <!-- Interactive movie monitor -->
+            <div class="mc-movie-stage" id="mc-movie-stage">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px;position:relative;z-index:1;">
+                    <div>
+                        <div style="font-weight:bold;color:#00e676;">Interactive Movie Monitor</div>
+                        <div style="color:#8fbba0;font-size:0.82em;">DramaCanvas plans · fal/Comfy renders · plays here</div>
+                    </div>
+                    <div id="mc-movie-ready" style="font-size:0.8em;color:#888;">Checking film canvases…</div>
+                </div>
+                <div class="mc-movie-frame">
+                    <div class="mc-movie-placeholder" id="mc-movie-placeholder">Type a scene and press Play Movie</div>
+                    <video id="mc-movie-video" controls playsinline loop muted></video>
+                </div>
+                <div class="mc-movie-controls">
+                    <input id="mc-movie-prompt" type="text" maxlength="500" placeholder="Neon rain over a Danish harbour control room, cinematic, interactive film" />
+                    <button class="button" id="mc-movie-play" onclick="window.playMissionControlMovie()" style="background:rgba(0,230,118,0.35);border-color:#00e676;">▶ Play Movie</button>
+                </div>
+                <div class="mc-movie-status" id="mc-movie-status"></div>
             </div>
 
             <!-- Health score banner -->
@@ -1260,6 +1289,102 @@
         /* ═══════════════════════════════════════════════════
            MISSION CONTROL
            ═══════════════════════════════════════════════════ */
+        window._mcMoviePollTimer = null;
+        window._mcMovieJobId = null;
+
+        window._mcSetMovieReady = function(providers) {
+            const el = document.getElementById('mc-movie-ready');
+            if (!el) return;
+            const rows = providers || [];
+            const fal = rows.find(function(p){ return p.id === 'fal_krea'; });
+            const drama = rows.find(function(p){ return p.id === 'dramacanva'; });
+            const auto = rows.find(function(p){ return p.id === 'film_canvas_auto'; });
+            const bits = [];
+            bits.push(drama && drama.available ? 'DramaCanvas ready' : 'DramaCanvas offline');
+            bits.push(fal && fal.available ? 'fal ready' : 'fal offline');
+            if (auto && auto.available) {
+                bits.push('auto ' + (auto.selected_renderer || '—') + '/' + (auto.selected_planner || '—'));
+            }
+            const ok = (fal && fal.available) || (drama && drama.available);
+            el.style.color = ok ? '#00e676' : '#ff9800';
+            el.textContent = bits.join(' · ');
+        };
+
+        window.playMissionControlMovie = async function() {
+            const promptEl = document.getElementById('mc-movie-prompt');
+            const statusEl = document.getElementById('mc-movie-status');
+            const videoEl = document.getElementById('mc-movie-video');
+            const placeholder = document.getElementById('mc-movie-placeholder');
+            const playBtn = document.getElementById('mc-movie-play');
+            if (!promptEl || !statusEl) return;
+            const prompt = (promptEl.value || '').trim() || promptEl.placeholder || '';
+            if (window._mcMoviePollTimer) {
+                clearTimeout(window._mcMoviePollTimer);
+                window._mcMoviePollTimer = null;
+            }
+            if (playBtn) playBtn.disabled = true;
+            statusEl.textContent = 'Starting interactive movie…';
+            if (placeholder) placeholder.style.display = 'block';
+            if (videoEl) { videoEl.style.display = 'none'; videoEl.removeAttribute('src'); }
+            try {
+                const start = await fetch('/api/film-canvas/interactive-movie', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+                const job = await start.json();
+                if (!job || !job.job_id) {
+                    statusEl.textContent = (job && job.error) ? job.error : 'Could not start movie job';
+                    if (playBtn) playBtn.disabled = false;
+                    return;
+                }
+                window._mcMovieJobId = job.job_id;
+                statusEl.textContent = 'Job ' + job.job_id + ' — ' + (job.message || 'queued');
+
+                const poll = async function() {
+                    try {
+                        const r = await fetch('/api/film-canvas/interactive-movie/' + job.job_id);
+                        const d = await r.json();
+                        if (!d || d.success === false) {
+                            statusEl.textContent = (d && d.error) ? d.error : 'Job missing';
+                            if (playBtn) playBtn.disabled = false;
+                            return;
+                        }
+                        const prog = d.progress != null ? d.progress + '% · ' : '';
+                        statusEl.textContent = prog + (d.message || d.status || '…')
+                            + (d.planner ? ' · plan:' + d.planner : '')
+                            + (d.renderer ? ' · render:' + d.renderer : '');
+                        if (d.status === 'completed' && d.video_url) {
+                            if (placeholder) placeholder.style.display = 'none';
+                            if (videoEl) {
+                                videoEl.style.display = 'block';
+                                videoEl.src = d.video_url + '?t=' + Date.now();
+                                videoEl.play().catch(function(){});
+                            }
+                            statusEl.textContent = 'Playing interactive movie'
+                                + (d.planner ? ' · plan:' + d.planner : '')
+                                + (d.renderer ? ' · render:' + d.renderer : '');
+                            if (playBtn) playBtn.disabled = false;
+                            return;
+                        }
+                        if (d.status === 'failed' || d.status === 'error') {
+                            statusEl.textContent = 'Failed: ' + (d.error || d.message || 'unknown');
+                            if (playBtn) playBtn.disabled = false;
+                            return;
+                        }
+                        window._mcMoviePollTimer = setTimeout(poll, 2000);
+                    } catch (err) {
+                        statusEl.textContent = 'Poll error: ' + err;
+                        if (playBtn) playBtn.disabled = false;
+                    }
+                };
+                window._mcMoviePollTimer = setTimeout(poll, 1500);
+            } catch (err) {
+                statusEl.textContent = 'Start error: ' + err;
+                if (playBtn) playBtn.disabled = false;
+            }
+        };
+
         window.loadMissionControl = async function(fullScan) {
             const grid   = document.getElementById('mc-grid');
             const banner = document.getElementById('mc-health-banner');
@@ -1270,6 +1395,8 @@
                 const url = '/api/system/overview' + (fullScan ? '' : '?compact=1');
                 const r   = await fetch(url);
                 const d   = await r.json();
+
+                window._mcSetMovieReady(d.video_providers || []);
 
                 /* Health ring */
                 const h = d.health || {};
@@ -1399,6 +1526,8 @@
                 cards.push('<div class="mc-card" style="border-color:rgba(0,230,118,0.4);grid-column:span 1">'
                     + '<h3>&#127381; New Features This Session</h3>'
                     + '<div style="font-size:0.82em;line-height:1.8;color:#ccc;">'
+                    + '<div>&#9654; Interactive movie monitor (DramaCanvas → fal)</div>'
+                    + '<div>&#9654; Film canvas providers on Mission Control</div>'
                     + '<div>&#9654; RunwayML Gen-4 Turbo video generation</div>'
                     + '<div>&#9654; Pika 2.2 video generation</div>'
                     + '<div>&#9654; AI Quest system (daily + personal)</div>'
@@ -1407,8 +1536,6 @@
                     + '<div>&#9654; Profile AI (Gemini 1M context analysis)</div>'
                     + '<div>&#9654; Gallery AI descriptions + bulk enhance</div>'
                     + '<div>&#9654; AI Game Coach + Video Troubleshooter</div>'
-                    + '<div>&#9654; Agent Automation AI Strategy + Diagnose</div>'
-                    + '<div>&#9654; 20+ endpoint upgrades (real data, no zeros)</div>'
                     + '</div></div>');
 
                 grid.innerHTML = cards.join('');

@@ -8,8 +8,17 @@ Endpoints:
   POST /api/ai/chat                   — generic chat endpoint with provider/task_type routing
   GET  /api/ai/video-providers        — status of video generation providers (RunwayML, ModelsLab, etc.)
   POST /api/ai/video-providers/test   — generate a short test clip via RunwayML
+  POST /api/film-canvas/interactive-movie — start monitor interactive movie (plan→render)
+  GET  /api/film-canvas/interactive-movie/<job_id> — poll interactive movie job
+  GET  /api/film-canvas/interactive-movie/<job_id>/video — stream finished MP4
 """
-from flask import Blueprint, jsonify, request
+import json
+import os
+import threading
+import uuid
+from datetime import datetime
+
+from flask import Blueprint, jsonify, request, send_file
 
 from backend.services.llm_service import (
     get_provider_status,
@@ -23,6 +32,162 @@ from backend.services.llm_service import (
 ai_providers_bp = Blueprint("ai_providers", __name__)
 
 _TEST_PING = [{"role": "user", "content": "Reply with just the word: ok"}]
+_interactive_movie_jobs = {}
+_interactive_movie_lock = threading.Lock()
+
+
+def _interactive_videos_dir() -> str:
+    try:
+        from backend.services.video_generator_service import VIDEOS_DIR
+        if VIDEOS_DIR:
+            os.makedirs(VIDEOS_DIR, exist_ok=True)
+            return VIDEOS_DIR
+    except Exception:
+        pass
+    fallback = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "vidgenerator",
+        "videos",
+    )
+    os.makedirs(fallback, exist_ok=True)
+    return fallback
+
+
+def _interactive_job_path(job_id: str) -> str:
+    safe = "".join(ch for ch in str(job_id) if ch.isalnum() or ch in ("_", "-"))
+    return os.path.join(_interactive_videos_dir(), "interactive_%s.json" % safe)
+
+
+def _save_interactive_job(job: dict) -> dict:
+    job_id = str(job.get("job_id") or "")
+    with _interactive_movie_lock:
+        _interactive_movie_jobs[job_id] = dict(job)
+    path = _interactive_job_path(job_id)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as handle:
+        json.dump(job, handle)
+    os.replace(tmp, path)
+    return job
+
+
+def _load_interactive_job(job_id: str):
+    with _interactive_movie_lock:
+        cached = _interactive_movie_jobs.get(job_id)
+        if cached:
+            return dict(cached)
+    path = _interactive_job_path(job_id)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as handle:
+            job = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if isinstance(job, dict):
+        with _interactive_movie_lock:
+            _interactive_movie_jobs[job_id] = dict(job)
+        return job
+    return None
+
+
+def _public_interactive_job(job: dict) -> dict:
+    return {
+        "success": True,
+        "job_id": job.get("job_id"),
+        "status": job.get("status"),
+        "progress": job.get("progress", 0),
+        "message": job.get("message"),
+        "error": job.get("error"),
+        "planner": job.get("planner"),
+        "renderer": job.get("renderer"),
+        "prompt": job.get("prompt"),
+        "prompt_used": job.get("prompt_used"),
+        "video_url": job.get("video_url"),
+        "updated_at": job.get("updated_at"),
+    }
+
+
+def _touch_interactive_job(job_id: str, **fields) -> dict:
+    job = _load_interactive_job(job_id) or {"job_id": job_id}
+    job.update(fields)
+    job["updated_at"] = datetime.utcnow().isoformat() + "Z"
+    return _save_interactive_job(job)
+
+
+def _run_interactive_movie_job(job_id: str, prompt: str) -> None:
+    _touch_interactive_job(
+        job_id,
+        status="processing",
+        progress=8,
+        message="Planning storyboard...",
+        prompt=prompt,
+    )
+    try:
+        from backend.services.film_canvas_service import (
+            compose_interactive_movie,
+            is_available as film_ok,
+            select_canvas,
+        )
+
+        can_plan = film_ok("dramacanva", purpose="planning")
+        can_render = select_canvas("render") is not None
+        if can_plan and can_render:
+            _touch_interactive_job(
+                job_id,
+                progress=20,
+                message="DramaCanvas planning, then fal render...",
+            )
+        elif can_render:
+            _touch_interactive_job(
+                job_id,
+                progress=25,
+                message="Rendering film canvas clip...",
+            )
+        else:
+            _touch_interactive_job(
+                job_id,
+                progress=15,
+                message="Preparing DramaCanvas project...",
+            )
+
+        result = compose_interactive_movie(
+            prompt,
+            dest_dir=_interactive_videos_dir(),
+            timeout=300,
+            plan=can_plan,
+        )
+        if result.get("success") and result.get("local_path"):
+            _touch_interactive_job(
+                job_id,
+                status="completed",
+                progress=100,
+                message="Interactive movie ready",
+                planner=result.get("planner"),
+                renderer=result.get("renderer") or result.get("canvas"),
+                prompt_used=result.get("prompt_used"),
+                local_path=result.get("local_path"),
+                video_url="/api/film-canvas/interactive-movie/%s/video" % job_id,
+                error=None,
+            )
+        else:
+            _touch_interactive_job(
+                job_id,
+                status="failed",
+                progress=100,
+                message="Interactive movie failed",
+                planner=result.get("planner"),
+                renderer=result.get("renderer") or result.get("canvas"),
+                prompt_used=result.get("prompt_used"),
+                error=result.get("error") or "Film canvas compose failed",
+            )
+    except Exception as exc:
+        _touch_interactive_job(
+            job_id,
+            status="failed",
+            progress=100,
+            message="Interactive movie failed",
+            error=str(exc)[:300],
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -304,3 +469,61 @@ def test_runway():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 200
+
+
+# ---------------------------------------------------------------------------
+# Interactive movie (Mission Control monitor)
+# ---------------------------------------------------------------------------
+@ai_providers_bp.route("/api/film-canvas/interactive-movie", methods=["POST"])
+def start_interactive_movie():
+    """Start DramaCanvas → fal/Comfy interactive movie for the monitor."""
+    data = request.get_json(silent=True) or {}
+    prompt = str(data.get("prompt") or "").strip()
+    if not prompt:
+        prompt = "Cinematic control-room monitor: neon city rain, interactive film loop"
+    try:
+        from backend.services.film_canvas_service import is_available as film_ok, select_canvas
+        can_plan = film_ok("dramacanva", purpose="planning")
+        can_render = select_canvas("render") is not None
+        if not can_plan and not can_render:
+            return jsonify({
+                "success": False,
+                "error": "No film canvas is configured (need DramaCanvas and/or fal/Comfy)",
+            }), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)[:300]}), 200
+
+    job_id = "im_" + uuid.uuid4().hex[:12]
+    job = {
+        "job_id": job_id,
+        "status": "pending",
+        "progress": 0,
+        "message": "Queued",
+        "prompt": prompt[:500],
+        "updated_at": datetime.utcnow().isoformat() + "Z",
+    }
+    _save_interactive_job(job)
+    thread = threading.Thread(
+        target=_run_interactive_movie_job,
+        args=(job_id, prompt[:500]),
+        daemon=True,
+    )
+    thread.start()
+    return jsonify(_public_interactive_job(job)), 202
+
+
+@ai_providers_bp.route("/api/film-canvas/interactive-movie/<job_id>", methods=["GET"])
+def interactive_movie_status(job_id):
+    job = _load_interactive_job(job_id)
+    if not job:
+        return jsonify({"success": False, "error": "Job not found"}), 404
+    return jsonify(_public_interactive_job(job)), 200
+
+
+@ai_providers_bp.route("/api/film-canvas/interactive-movie/<job_id>/video", methods=["GET"])
+def interactive_movie_video(job_id):
+    job = _load_interactive_job(job_id) or {}
+    path = job.get("local_path")
+    if not path or not os.path.isfile(path):
+        return jsonify({"success": False, "error": "Video not ready"}), 404
+    return send_file(path, mimetype="video/mp4", conditional=True)

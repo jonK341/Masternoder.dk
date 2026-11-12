@@ -55,6 +55,8 @@ COMFY_CLOUD_WS = "wss://cloud.comfy.org/ws"
 FAL_KREA_WS = "wss://fal.run/fal-ai/krea-wan-14b/ws"
 FAL_TOKEN_HTTP = "https://rest.alpha.fal.ai/tokens/"
 FAL_TOKEN_EXPIRATION_SECONDS = 3600
+FAL_QUEUE_HTTP = "https://queue.fal.run"
+FAL_DEFAULT_VIDEO_MODEL = "fal-ai/minimax/video-01-live"
 DRAMACANVA_HTTP = "https://dramacanva.com/api/mcp"
 MCP_PROTOCOL_VERSION = "2025-11-25"
 _DEFAULT_LOCAL_HTTP = "http://127.0.0.1:8188"
@@ -253,7 +255,7 @@ def select_canvas(purpose: str = "render") -> Optional[str]:
         return "comfy_local"
     if _env("COMFY_CLOUD_API_KEY") and _comfy_workflow_available():
         return "comfy_cloud"
-    if _env("FAL_API_KEY") and _fal_dependencies_available():
+    if _env("FAL_API_KEY"):
         return "fal_krea"
     return None
 
@@ -278,7 +280,8 @@ def is_available(canvas_id: Optional[str] = None, *, purpose: str = "render") ->
             return bool(_env("COMFY_CLOUD_API_KEY"))
         return bool(_env("COMFYUI_BASE_URL"))
     if canvas_id == "fal_krea":
-        return bool(_env("FAL_API_KEY")) and _fal_dependencies_available()
+        # Queue HTTP works with only the key; realtime websocket needs extra deps.
+        return bool(_env("FAL_API_KEY"))
     if canvas_id == "dramacanva":
         return bool(_env("DRAMACANVA_API_KEY"))
     return False
@@ -527,18 +530,157 @@ def _write_frame_video(frames: List[bytes], path: str, fps: int) -> None:
         writer.close()
 
 
+def _fal_auth_headers() -> Dict[str, str]:
+    key = _env("FAL_API_KEY")
+    if not key:
+        raise RuntimeError("FAL_API_KEY is not configured")
+    return {
+        "Accept": "application/json",
+        "Authorization": "Key " + key,
+        "Content-Type": "application/json",
+    }
+
+
+def _fal_http_json(method: str, url: str, body: Optional[Dict[str, Any]] = None, timeout: int = 60) -> Dict[str, Any]:
+    data = None if body is None else json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers=_fal_auth_headers(), method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")[:300]
+        raise RuntimeError("fal HTTP %s: %s" % (exc.code, detail)) from exc
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError("fal HTTP failed: %s" % exc) from exc
+    if not raw.strip():
+        return {}
+    value = json.loads(raw)
+    return value if isinstance(value, dict) else {"result": value}
+
+
+def _download_url_to_path(url: str, dest_path: str, timeout: int = 120) -> None:
+    req = urllib.request.Request(url, headers={"User-Agent": "MasterNoder/1.0"}, method="GET")
+    with urllib.request.urlopen(req, timeout=timeout) as resp, open(dest_path, "wb") as handle:
+        while True:
+            chunk = resp.read(1024 * 256)
+            if not chunk:
+                break
+            handle.write(chunk)
+
+
+def _generate_fal_queue_clip(
+    prompt: str,
+    dest_dir: Optional[str] = None,
+    timeout: int = 180,
+) -> Dict[str, Any]:
+    """HTTP queue fallback when the Krea realtime websocket is unavailable."""
+    model = (_env("FAL_VIDEO_MODEL") or FAL_DEFAULT_VIDEO_MODEL).strip().strip("/")
+    submit_url = FAL_QUEUE_HTTP + "/" + model
+    try:
+        submitted = _fal_http_json(
+            "POST",
+            submit_url,
+            {"prompt": prompt[:2000]},
+            timeout=min(60, timeout),
+        )
+    except RuntimeError as exc:
+        return {"success": False, "error": str(exc), "canvas": "fal_krea", "mode": "queue"}
+
+    status_url = submitted.get("status_url")
+    response_url = submitted.get("response_url")
+    request_id = submitted.get("request_id")
+    if not status_url or not response_url:
+        return {
+            "success": False,
+            "error": "fal queue submit did not return status/response URLs",
+            "canvas": "fal_krea",
+            "mode": "queue",
+        }
+
+    deadline = time.time() + max(20, timeout)
+    status = str(submitted.get("status") or "IN_QUEUE")
+    while time.time() < deadline and status in ("IN_QUEUE", "IN_PROGRESS"):
+        time.sleep(2)
+        try:
+            payload = _fal_http_json("GET", status_url, timeout=30)
+        except RuntimeError as exc:
+            return {"success": False, "error": str(exc), "canvas": "fal_krea", "mode": "queue"}
+        status = str(payload.get("status") or "")
+        if status in ("FAILED", "ERROR", "CANCELLED"):
+            return {
+                "success": False,
+                "error": "fal queue %s: %s" % (status, payload.get("error") or payload.get("detail") or "failed"),
+                "canvas": "fal_krea",
+                "mode": "queue",
+                "request_id": request_id,
+            }
+
+    if status != "COMPLETED":
+        return {
+            "success": False,
+            "error": "fal queue timed out with status %s" % (status or "unknown"),
+            "canvas": "fal_krea",
+            "mode": "queue",
+            "request_id": request_id,
+        }
+
+    try:
+        result = _fal_http_json("GET", response_url, timeout=60)
+    except RuntimeError as exc:
+        return {"success": False, "error": str(exc), "canvas": "fal_krea", "mode": "queue"}
+
+    video = result.get("video") if isinstance(result.get("video"), dict) else {}
+    video_url = video.get("url") or result.get("video_url") or result.get("url")
+    if not isinstance(video_url, str) or not video_url.startswith("http"):
+        return {
+            "success": False,
+            "error": "fal queue completed without a video URL",
+            "canvas": "fal_krea",
+            "mode": "queue",
+            "request_id": request_id,
+        }
+
+    if dest_dir is None:
+        dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
+    os.makedirs(dest_dir, exist_ok=True)
+    path = os.path.join(dest_dir, "fal_queue_%s.mp4" % uuid.uuid4().hex[:8])
+    try:
+        _download_url_to_path(video_url, path, timeout=120)
+    except Exception as exc:
+        return {
+            "success": False,
+            "error": "fal queue download failed: %s" % _safe_error(exc),
+            "canvas": "fal_krea",
+            "mode": "queue",
+        }
+    return {
+        "success": True,
+        "local_path": path,
+        "canvas": "fal_krea",
+        "mode": "queue",
+        "model": model,
+        "request_id": request_id,
+    }
+
+
 def _generate_fal_clip(
     prompt: str,
     dest_dir: Optional[str] = None,
     timeout: int = 90,
 ) -> Dict[str, Any]:
-    """Capture Krea WAN realtime image frames and encode them as an MP4."""
-    if not _fal_dependencies_available():
-        return {"success": False, "error": "fal Krea needs websocket-client, msgpack, and imageio"}
+    """Try Krea realtime websocket frames; fall back to fal HTTP queue video."""
+    force_queue = (_env("FAL_FORCE_QUEUE") or "").strip().lower() in ("1", "true", "yes", "on")
+    if force_queue or not _fal_dependencies_available():
+        return _generate_fal_queue_clip(prompt, dest_dir=dest_dir, timeout=max(timeout, 120))
+
     try:
         token = _fal_token()
     except RuntimeError as exc:
-        return {"success": False, "error": str(exc), "canvas": "fal_krea"}
+        return _generate_fal_queue_clip(prompt, dest_dir=dest_dir, timeout=max(timeout, 120)) or {
+            "success": False,
+            "error": str(exc),
+            "canvas": "fal_krea",
+        }
 
     fps = max(1, min(30, int(_env("FAL_KREA_FPS") or 12)))
     frame_target = max(2, min(300, int(_env("FAL_KREA_FRAMES") or 48)))
@@ -549,6 +691,7 @@ def _generate_fal_clip(
     ws_url = FAL_KREA_WS + "?fal_jwt_token=" + urllib.parse.quote(token, safe="")
     frames: List[bytes] = []
     sock = None
+    ws_error: Optional[str] = None
     try:
         sock = websocket.create_connection(ws_url, timeout=min(30, timeout))
         deadline = time.time() + max(10, timeout)
@@ -575,31 +718,39 @@ def _generate_fal_clip(
             elif ready and isinstance(message, (bytes, bytearray)) and len(message) > 100:
                 frames.append(bytes(message))
     except Exception as exc:
-        return {
-            "success": False,
-            "error": "fal Krea websocket failed: %s" % _safe_error(exc, token),
-            "canvas": "fal_krea",
-        }
+        ws_error = _safe_error(exc, token)
     finally:
         if sock is not None:
             sock.close()
 
-    if len(frames) < 2:
-        return {"success": False, "error": "fal Krea returned fewer than two frames", "canvas": "fal_krea"}
-    if dest_dir is None:
-        dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
-    os.makedirs(dest_dir, exist_ok=True)
-    path = os.path.join(dest_dir, "fal_krea_%s.mp4" % uuid.uuid4().hex[:8])
-    try:
-        _write_frame_video(frames, path, fps)
-    except Exception as exc:
-        return {"success": False, "error": "fal Krea encode failed: %s" % exc, "canvas": "fal_krea"}
+    if len(frames) >= 2:
+        if dest_dir is None:
+            dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
+        os.makedirs(dest_dir, exist_ok=True)
+        path = os.path.join(dest_dir, "fal_krea_%s.mp4" % uuid.uuid4().hex[:8])
+        try:
+            _write_frame_video(frames, path, fps)
+        except Exception as exc:
+            return {"success": False, "error": "fal Krea encode failed: %s" % exc, "canvas": "fal_krea"}
+        return {
+            "success": True,
+            "local_path": path,
+            "canvas": "fal_krea",
+            "mode": "realtime",
+            "frame_count": len(frames),
+            "fps": fps,
+        }
+
+    # Realtime app may be offline/unavailable for this account — use queue video.
+    fallback = _generate_fal_queue_clip(prompt, dest_dir=dest_dir, timeout=max(timeout, 120))
+    if fallback.get("success"):
+        fallback["realtime_error"] = ws_error or "fewer than two realtime frames"
+        return fallback
     return {
-        "success": True,
-        "local_path": path,
+        "success": False,
+        "error": "fal realtime failed (%s); queue fallback: %s"
+        % (ws_error or "no frames", fallback.get("error") or "failed"),
         "canvas": "fal_krea",
-        "frame_count": len(frames),
-        "fps": fps,
     }
 
 
@@ -730,6 +881,40 @@ def prepare_film_project(prompt: str, timeout: int = 90) -> Dict[str, Any]:
     }
 
 
+def _planning_text(result: Any) -> str:
+    """Pull human-readable storyboard text from a DramaCanvas MCP result."""
+    if result is None:
+        return ""
+    if isinstance(result, str):
+        return result.strip()
+    if isinstance(result, list):
+        parts = [_planning_text(item) for item in result]
+        return "\n".join(part for part in parts if part).strip()[:2000]
+    if isinstance(result, dict):
+        content = result.get("content")
+        if isinstance(content, list):
+            parts: List[str] = []
+            for item in content:
+                if isinstance(item, dict) and item.get("text"):
+                    parts.append(str(item["text"]))
+                elif isinstance(item, str):
+                    parts.append(item)
+            if parts:
+                return "\n".join(parts).strip()[:2000]
+        for key in ("text", "message", "summary", "storyboard", "brief", "output"):
+            value = result.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()[:2000]
+            nested = _planning_text(value)
+            if nested:
+                return nested
+        try:
+            return json.dumps(result)[:2000]
+        except (TypeError, ValueError):
+            return str(result)[:2000]
+    return str(result)[:2000]
+
+
 def generate_clip(
     prompt: str,
     dest_dir: Optional[str] = None,
@@ -745,14 +930,107 @@ def generate_clip(
     return {"success": False, "error": "No render-capable film canvas is configured"}
 
 
+def compose_interactive_movie(
+    prompt: str,
+    *,
+    dest_dir: Optional[str] = None,
+    timeout: int = 180,
+    plan: bool = True,
+    render_provider: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Plan with DramaCanvas (when configured), then render with fal/Comfy.
+
+    This is the monitor interactive-movie path: storyboard first, realtime
+    canvas second, one local MP4 out.
+    """
+    brief = (prompt or "").strip()
+    if not brief:
+        return {"success": False, "error": "prompt is required"}
+
+    planning: Optional[Dict[str, Any]] = None
+    planner: Optional[str] = None
+    render_prompt = brief
+    if plan and is_available("dramacanva", purpose="planning"):
+        planner = "dramacanva"
+        # Keep planning short so the monitor can still render on time.
+        planning = prepare_film_project(brief, timeout=min(45, max(15, timeout // 4)))
+        if planning.get("success"):
+            planned = _planning_text(planning.get("result"))
+            if planned:
+                render_prompt = (brief + "\n\nStoryboard direction:\n" + planned)[:2000]
+
+    renderer = render_provider or select_canvas("render")
+    if not renderer or not is_available(renderer, purpose="render"):
+        return {
+            "success": False,
+            "error": "No render-capable film canvas is configured",
+            "planner": planner,
+            "renderer": None,
+            "planning": planning,
+            "prompt_used": render_prompt[:500],
+        }
+
+    render_timeout = max(90, timeout - 45) if planner else max(90, timeout)
+    clip = generate_clip(
+        render_prompt[:500],
+        dest_dir=dest_dir,
+        timeout=render_timeout,
+        provider=renderer,
+    )
+    return {
+        "success": bool(clip.get("success")),
+        "planner": planner,
+        "renderer": renderer,
+        "planning": planning,
+        "prompt_used": render_prompt[:500],
+        "local_path": clip.get("local_path"),
+        "canvas": clip.get("canvas") or renderer,
+        "frame_count": clip.get("frame_count"),
+        "fps": clip.get("fps"),
+        "error": None if clip.get("success") else clip.get("error"),
+    }
+
+
 def generate_segment_clips(
     segments: list,
     max_clips: int = 1,
     timeout_per_clip: int = 180,
     provider: Optional[str] = None,
 ) -> list:
-    """Use a canvas for rendering, or DramaCanvas for planning."""
-    canvas_id = provider or select_canvas("render")
+    """Fill segment clips from film canvases.
+
+    provider=None (auto): DramaCanvas plans, then fal/Comfy renders.
+    provider=dramacanva: planning metadata only.
+    provider=fal_krea/comfy_*: render only.
+    """
+    dest_dir = os.environ.get("VIDEOS_DIR")
+    if provider is None:
+        filled = 0
+        for seg in segments:
+            if filled >= max_clips:
+                break
+            if seg.get("ai_video_path"):
+                continue
+            title = seg.get("title", "")
+            desc = seg.get("description", "")
+            mood = seg.get("mood", "cinematic")
+            prompt = "Cinematic %s scene: %s. %s" % (mood, title, desc)
+            result = compose_interactive_movie(
+                prompt[:500],
+                dest_dir=dest_dir,
+                timeout=timeout_per_clip,
+                plan=True,
+            )
+            if result.get("planning"):
+                seg["film_canvas_planning"] = result.get("planning")
+            if result.get("success") and result.get("local_path"):
+                seg["ai_video_path"] = result["local_path"]
+                seg["film_canvas"] = result.get("canvas")
+                seg["film_canvas_planner"] = result.get("planner")
+                filled += 1
+        return segments
+
+    canvas_id = provider
     if canvas_id == "dramacanva":
         brief = "\n".join(
             "%s: %s" % (seg.get("title", ""), seg.get("description", ""))
@@ -762,9 +1040,8 @@ def generate_segment_clips(
         if segments:
             segments[0]["film_canvas_planning"] = result
         return segments
-    if canvas_id is None or not is_available(canvas_id):
+    if not is_available(canvas_id):
         return segments
-    dest_dir = os.environ.get("VIDEOS_DIR")
     filled = 0
     for seg in segments:
         if filled >= max_clips:

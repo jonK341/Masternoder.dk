@@ -2608,14 +2608,28 @@ def generate_rich_video_sync(
     if use_auto or pref in canvas_preferences:
         try:
             canvas_provider = provider_for_preference(pref)
-            canvas_purpose = "planning" if canvas_provider == "dramacanva" else "render"
-            if film_canvas_available(canvas_provider, purpose=canvas_purpose):
+            # auto/canvas: DramaCanvas plans then fal/Comfy renders (compose).
+            # Explicit drama = planning only. Explicit fal/comfy = render only.
+            if canvas_provider is None:
+                can_run = (
+                    film_canvas_available(None, purpose="render")
+                    or film_canvas_available("dramacanva", purpose="planning")
+                )
+                canvas_purpose = "compose"
+            elif canvas_provider == "dramacanva":
+                can_run = film_canvas_available("dramacanva", purpose="planning")
+                canvas_purpose = "planning"
+            else:
+                can_run = film_canvas_available(canvas_provider, purpose="render")
+                canvas_purpose = "render"
+            if can_run:
                 if on_progress:
-                    message = (
-                        "Preparing DramaCanvas storyboard project..."
-                        if canvas_provider == "dramacanva"
-                        else "Generating film canvas clip..."
-                    )
+                    if canvas_purpose == "compose":
+                        message = "Interactive movie: DramaCanvas plan → film canvas render..."
+                    elif canvas_purpose == "planning":
+                        message = "Preparing DramaCanvas storyboard project..."
+                    else:
+                        message = "Generating film canvas clip..."
                     on_progress(3, message)
                 segments = generate_canvas_segment_clips(
                     segments,
