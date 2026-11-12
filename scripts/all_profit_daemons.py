@@ -40,14 +40,16 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 45},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "dual_farm": 60},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 30},
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
-_LIVE_PROFIT_MAX_INTERVALS = {"exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90}
+_LIVE_PROFIT_MAX_INTERVALS = {
+    "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30,
+}
 
 
 def _resolve_intervals(profile: str, iv: dict) -> dict:
@@ -584,6 +586,45 @@ def _fast_loop(interval: int, profile: str, stop: threading.Event) -> None:
         stop.wait(max(30, interval))
 
 
+def _summarize_dual_farm(res: Dict[str, Any]) -> str:
+    top = res.get("top") or {}
+    parts = [
+        f"exec={'yes' if res.get('executed') else 'no'}",
+        f"qual={res.get('external_qualifying', 0)}",
+    ]
+    if top.get("net_bps") is not None:
+        parts.append(f"best={float(top['net_bps']):.1f}bps")
+        parts.append(f"sym={top.get('symbol') or '?'}")
+        route = f"{top.get('buy_venue') or '?'}→{top.get('sell_venue') or '?'}"
+        parts.append(f"route={route}")
+    if res.get("prefund"):
+        pref = res["prefund"]
+        if pref.get("action") == "prefund_sell":
+            parts.append(f"prefund={pref.get('symbol')}:${pref.get('sell_usd')}")
+        elif pref.get("reason"):
+            parts.append(f"prefund={pref.get('reason')}")
+    if res.get("skip_reason"):
+        parts.append(f"skip={res.get('skip_reason')}")
+    if res.get("skipped"):
+        parts.append(f"disabled={res.get('reason')}")
+    return " ".join(parts)
+
+
+def _dual_farm_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] dual-farm arm interval={interval}s (BN↔NK + prefund)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_dual_farm_arm_service import run_dual_farm_arm_tick
+
+            res = run_dual_farm_arm_tick()
+            summary = _summarize_dual_farm(res)
+            print(f"[all-profit] dual_farm {summary}", flush=True)
+            _write_heartbeat("dual_farm", summary)
+        except Exception as exc:
+            print(f"[all-profit] dual_farm error: {exc}", flush=True)
+        stop.wait(max(15, interval))
+
+
 def _casino_loop(interval: int, dry_run: bool, stop: threading.Event) -> None:
     label = "dry_run" if dry_run else "live"
     print(f"[all-profit] casino loop interval={interval}s {label}", flush=True)
@@ -697,6 +738,16 @@ def main() -> int:
     parser.add_argument("--skip-grid", action="store_true", help="Do not run grid bot loop")
     parser.add_argument("--skip-stuck", action="store_true", help="Do not run stuck-inventory strategy")
     parser.add_argument("--skip-micro-chain", action="store_true", help="Do not run portal micro-chain loop")
+    parser.add_argument(
+        "--skip-dual-farm",
+        action="store_true",
+        help="Do not run dedicated Binance↔NonKYC dual-farm arm",
+    )
+    parser.add_argument(
+        "--skip-feed",
+        action="store_true",
+        help="No-op (compat with ops wrappers that pass --skip-feed)",
+    )
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
@@ -733,6 +784,10 @@ def main() -> int:
                 out["stuck"] = _stuck_once(apply_grid=True)
             if not args.skip_micro_chain:
                 out["micro_chain"] = _micro_chain_once()
+            if not args.skip_dual_farm:
+                from backend.services.exchange_dual_farm_arm_service import run_dual_farm_arm_tick
+
+                out["dual_farm"] = run_dual_farm_arm_tick(force=True)
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -752,6 +807,8 @@ def main() -> int:
                 print(f"[all-profit] stuck {_summarize_stuck(out['stuck'])}", flush=True)
             if "micro_chain" in out:
                 print(f"[all-profit] micro_chain {_summarize_micro(out['micro_chain'])}", flush=True)
+            if "dual_farm" in out:
+                print(f"[all-profit] dual_farm {_summarize_dual_farm(out['dual_farm'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -767,6 +824,15 @@ def main() -> int:
         print(f"    interval={ex_iv}s")
         if fast_iv:
             print(f"    fast rescan interval={fast_iv}s")
+        dual_iv = iv.get("dual_farm") or 0
+        env_dual = os.environ.get("DUAL_FARM_INTERVAL_SEC", "").strip()
+        if env_dual:
+            try:
+                dual_iv = int(float(env_dual))
+            except ValueError:
+                pass
+        if dual_iv and not args.skip_dual_farm:
+            print(f"  dual-farm arm (BN↔NK live + prefund) interval={dual_iv}s")
         if not args.skip_grid:
             print(f"  grid market-maker interval={grid_iv}s")
         if not args.skip_stuck:
@@ -785,6 +851,17 @@ def main() -> int:
         if fast_iv:
             threads.append(threading.Thread(
                 target=_fast_loop, args=(fast_iv, profile, stop), name="fast", daemon=True,
+            ))
+        dual_iv = iv.get("dual_farm") or 0
+        env_dual = os.environ.get("DUAL_FARM_INTERVAL_SEC", "").strip()
+        if env_dual:
+            try:
+                dual_iv = int(float(env_dual))
+            except ValueError:
+                pass
+        if dual_iv and not args.skip_dual_farm:
+            threads.append(threading.Thread(
+                target=_dual_farm_loop, args=(dual_iv, stop), name="dual_farm", daemon=True,
             ))
         if not args.skip_grid:
             threads.append(threading.Thread(
