@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ideation: Battle page destiny</title>
+<style>
+:root {
+  --bg: #0f1419;
+  --panel: #1a222c;
+  --text: #e8eef4;
+  --muted: #9aabbc;
+  --accent: #3d9a7a;
+  --warn: #c4a35a;
+  --danger: #c45c5c;
+  --line: #2a3542;
+  --card: #15202b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  background: radial-gradient(1200px 600px at 10% -10%, #1d3a32 0%, transparent 55%),
+              radial-gradient(900px 500px at 100% 0%, #2a2438 0%, transparent 50%),
+              var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+}
+main { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+header h1 { font-size: 1.85rem; margin: 0.2rem 0 0.6rem; letter-spacing: -0.02em; }
+.meta { color: var(--muted); font-size: 0.95rem; display: grid; gap: 0.25rem; }
+.meta code { color: var(--accent); }
+.verdict {
+  margin: 1.5rem 0;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--accent);
+  background: linear-gradient(135deg, rgba(61,154,122,0.18), rgba(21,32,43,0.9));
+  border-radius: 10px;
+}
+.verdict strong { color: #7ed9b5; }
+section { margin: 2.2rem 0; }
+h2 { font-size: 1.25rem; border-bottom: 1px solid var(--line); padding-bottom: 0.4rem; }
+h3 { margin-top: 0; }
+.axes { display: grid; gap: 0.4rem; }
+.axes li { list-style: none; padding: 0.45rem 0.7rem; background: var(--panel); border-left: 3px solid var(--accent); }
+.jump { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.5rem; }
+.jump a {
+  color: var(--text); text-decoration: none; font-size: 0.85rem;
+  padding: 0.35rem 0.65rem; background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+}
+.jump a:hover { border-color: var(--accent); }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.15rem 1.25rem 1.3rem;
+  margin: 0 0 1.2rem;
+}
+.card .rank { color: var(--accent); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.04em; }
+.stats { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.7rem 0; font-size: 0.85rem; color: var(--muted); }
+.stats span { background: var(--panel); padding: 0.25rem 0.55rem; border-radius: 6px; }
+.basis { font-size: 0.92rem; color: #c9d7e4; background: #101820; padding: 0.7rem 0.85rem; border-radius: 8px; }
+.down { color: var(--warn); font-size: 0.92rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+th, td { border: 1px solid var(--line); padding: 0.55rem 0.65rem; text-align: left; vertical-align: top; }
+th { background: var(--panel); }
+.diagram {
+  margin: 0.9rem 0 0.2rem;
+  padding: 0.9rem;
+  background: #0c1218;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.diagram svg { max-width: 100%; height: auto; display: block; }
+footer.composition-signal { margin-top: 3rem; color: var(--muted); font-size: 0.82rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+ul.plain { padding-left: 1.1rem; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="meta">
+    <div>Type: ideation</div>
+    <div>Date: <time datetime="2026-11-10">2026-11-10</time></div>
+    <div>Topic: <code>battle-page-destiny</code></div>
+    <div>Focus: Battle page — revive with something fresh, use for microtransactions, or delete</div>
+    <div>Mode: repo-grounded</div>
+  </div>
+  <h1>Battle page destiny</h1>
+</header>
+
+<div class="verdict">
+  <strong>Recommendation:</strong> Do not delete competition, and do not slap microtransactions onto today’s fake ranked PvP.
+  Reinvent <code>/battle</code> as an <em>Agent Broadcast Arena</em>: agents fight (or ghosts race), humans watch and sponsor film/cosmetics, free skirmish stays honest and non-wagered.
+  If that reinvent is not funded next, hibernate the page and keep the verbs elsewhere — do not keep selling “ranked matches” that are house RNG.
+</div>
+
+<section id="grounding">
+  <h2>Grounding Context</h2>
+  <ul class="plain">
+    <li><strong>Codebase:</strong> Quick battle is difficulty-weighted random / optional RPS with unified points + Hunter XP side effects. UI still presents queue / ranked PvP while the API returns instant <code>matched</code>. Many tabs are stubs; clans/tournaments historically in-memory.</li>
+    <li><strong>Monetization:</strong> Shop already ships a battle-pass SKU (quests mostly non-battle). Arena plan allows shop flat purchases and human-pot rake; forbids real money on house-controlled AI quick fights. MN2 claim on Battle is a cost center.</li>
+    <li><strong>Leverage:</strong> Unwired spectator, replay share under vidgenerator, battle→video, agent match, and V2 progress contract already exist as rails.</li>
+    <li><strong>External:</strong> Underused human PvP is often hibernated (e.g. LoR). 2025–26 pattern favors agent arenas, async ghosts, and contests embedded in the flagship product — not GameFi random PvP + pass.</li>
+    <li><strong>Slack:</strong> Available this run; not opted in.</li>
+  </ul>
+</section>
+
+<section id="axes">
+  <h2>Topic Axes</h2>
+  <ul class="axes">
+    <li>Core loop — what a battle is</li>
+    <li>Monetization rails — pass, MN2, casino/arena, compliance</li>
+    <li>Surfaces — /battle vs /game vs battlegrounds vs delete</li>
+    <li>Progress identity — user_id, points, XP, V2 contract</li>
+    <li>Agents &amp; content — spectate, replay, battle→video</li>
+  </ul>
+</section>
+
+<section id="ranked-ideas">
+  <h2>Ranked Ideas</h2>
+  <nav class="jump" aria-label="Jump to ideas">
+    <a href="#i1">1. Agent Broadcast Arena</a>
+    <a href="#i2">2. Ghost Ladder</a>
+    <a href="#i3">3. Delete Destination, Keep Verbs</a>
+    <a href="#i4">4. Compliant Microtx Rails</a>
+    <a href="#i5">5. Bounty Desk</a>
+    <a href="#i6">6. Seed-Bank Hibernation</a>
+    <a href="#i7">7. One Progress Passport</a>
+  </nav>
+
+  <article class="card" id="i1">
+    <div class="rank">#1 · TOP PICK</div>
+    <h3>Agent Broadcast Arena</h3>
+    <div class="stats">
+      <span>Axis: Agents &amp; content</span>
+      <span>Confidence: 86%</span>
+      <span>Complexity: Medium–High</span>
+    </div>
+    <p>Make Battle a stadium, not a lying matchmaker. Primary session: agent-vs-agent (or agent-assisted) bouts with spectator list, LLM commentary, shareable replay URLs, and one-tap battle highlight video into the generator gallery. Humans pick agents / approve rematches; they do not wait in a fake human queue. Microtransactions here are <em>narrative rights</em> — clean export, trophy frames, commentary skins, season pass cosmetics — never house-AI outcome multipliers.</p>
+    <div class="diagram" aria-hidden="true">
+      <svg viewBox="0 0 720 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="10" y="50" width="120" height="60" rx="8" fill="#1a222c" stroke="#3d9a7a"/>
+        <text x="70" y="85" text-anchor="middle" fill="#e8eef4" font-size="13">Agents duel</text>
+        <path d="M140 80 H200" stroke="#9aabbc" stroke-width="2" marker-end="url(#a)"/>
+        <rect x="200" y="50" width="140" height="60" rx="8" fill="#1a222c" stroke="#3d9a7a"/>
+        <text x="270" y="85" text-anchor="middle" fill="#e8eef4" font-size="13">Spectate + replay</text>
+        <path d="M350 80 H410" stroke="#9aabbc" stroke-width="2"/>
+        <rect x="410" y="50" width="140" height="60" rx="8" fill="#1a222c" stroke="#c4a35a"/>
+        <text x="480" y="85" text-anchor="middle" fill="#e8eef4" font-size="13">Highlight video</text>
+        <path d="M560 80 H610" stroke="#9aabbc" stroke-width="2"/>
+        <rect x="610" y="50" width="100" height="60" rx="8" fill="#1a222c" stroke="#c4a35a"/>
+        <text x="660" y="85" text-anchor="middle" fill="#e8eef4" font-size="13">Shop SKUs</text>
+        <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#9aabbc"/></marker></defs>
+      </svg>
+    </div>
+    <p class="basis"><strong>Basis:</strong> direct: spectator + replay share under <code>/vidgenerator/battle/replay/...</code> + <code>battle_hunt_video</code> + <code>battle_agents_match</code> exist but are unwired from the hot path. external: Clawosseum-style agent arenas; MIDiA spectator monetization. Arena plan forbids RM on house AI.</p>
+    <p><strong>Rationale:</strong> Aligns Battle with agents + video (the real platform gravity) and answers microtx without pay-to-win RNG.</p>
+    <p class="down"><strong>Downsides:</strong> Needs product focus and wiring work; empty spectate feed until agents are scheduled; “narrative rights” SKUs must be invented in shop config.</p>
+  </article>
+
+  <article class="card" id="i2">
+    <div class="rank">#2</div>
+    <h3>Ghost Ladder (zero concurrent humans)</h3>
+    <div class="stats">
+      <span>Axis: Core loop</span>
+      <span>Confidence: 82%</span>
+      <span>Complexity: Medium</span>
+    </div>
+    <p>Delete the fake queue. Every fight is against an async ghost (recorded stance / prior match). Label free AI warm-ups as Instant Skirmish. Streaks, trophies, and leaderboards stay; live matchmaking does not pretend to exist.</p>
+    <p class="basis"><strong>Basis:</strong> direct: UI polls for queue fields the API never returns; PvP branch still uses weighted random. external: async ghost / time-trial patterns.</p>
+    <p><strong>Rationale:</strong> Restores trust — the cheapest “something new and fresh” that is still Battle-as-play.</p>
+    <p class="down"><strong>Downsides:</strong> Feels less “esports” until ghosts populate; still needs clear UX copy.</p>
+  </article>
+
+  <article class="card" id="i3">
+    <div class="rank">#3</div>
+    <h3>Delete the destination, keep the verbs</h3>
+    <div class="stats">
+      <span>Axis: Surfaces</span>
+      <span>Confidence: 78%</span>
+      <span>Complexity: Medium</span>
+    </div>
+    <p>Retire <code>/battle</code> as a nav destination. Keep quick-battle, progress, trophies, and pass progression as embeds inside Generator / Hunter Game / frontpage Game Hub (Heardle-inside-flagship pattern). Competition survives; the stub SPA does not.</p>
+    <p class="basis"><strong>Basis:</strong> direct: split Game+Battle favorites, bridge widgets already deep-link; PROJECT_RETHINK consolidate. external: Discord Activities / Spotify Heardle embed; HubSpot-style feature kill.</p>
+    <p><strong>Rationale:</strong> Clean answer to “delete” without throwing away competitive identity.</p>
+    <p class="down"><strong>Downsides:</strong> Nav/comms work; risk of orphaning battlegrounds/champions-league leftovers.</p>
+  </article>
+
+  <article class="card" id="i4">
+    <div class="rank">#4</div>
+    <h3>Compliant microtx rails (not P2W skirmish)</h3>
+    <div class="stats">
+      <span>Axis: Monetization rails</span>
+      <span>Confidence: 84%</span>
+      <span>Complexity: Low–Medium</span>
+    </div>
+    <p>If Battle stays monetized: (1) wire skirmish wins into existing battle-pass XP, (2) kill on-page MN2 faucet, (3) RM only on human-pot escrow/tournament rake, (4) sell film/cosmetics flat via shop. Do not require full Arena HTML merge before taking money on those rails.</p>
+    <p class="basis"><strong>Basis:</strong> direct: Arena compliance § house AI; shop pass quests omit battle today; MN2 claim UI on battle page; buy-in routes already on battle blueprint.</p>
+    <p><strong>Rationale:</strong> Answers “use for microtransactions” without repeating GameFi anti-patterns.</p>
+    <p class="down"><strong>Downsides:</strong> Revenue may stay modest until content/ghost loops produce repeat sessions.</p>
+  </article>
+
+  <article class="card" id="i5">
+    <div class="rank">#5</div>
+    <h3>Bounty Desk (not battlefield)</h3>
+    <div class="stats">
+      <span>Axis: Core loop</span>
+      <span>Confidence: 74%</span>
+      <span>Complexity: Medium</span>
+    </div>
+    <p>Redefine Battle as contest-against-world: timed bounties on generator jobs, hunt quotas, agent skill checks — scored challenges, not empty lobbies. Optional weekly same-prompt contests with leaderboards.</p>
+    <p class="basis"><strong>Basis:</strong> external: Axie bounty participation outdrawing pure PvP. direct: matchmaker fiction in code; Hunter/vidgenerator already move.</p>
+    <p><strong>Rationale:</strong> Fresh purpose that feeds the flagship loop instead of competing with it.</p>
+    <p class="down"><strong>Downsides:</strong> Naming/branding conflict with “Battle”; overlaps quest systems.</p>
+  </article>
+
+  <article class="card" id="i6">
+    <div class="rank">#6</div>
+    <h3>Seed-bank hibernation</h3>
+    <div class="stats">
+      <span>Axis: Surfaces</span>
+      <span>Confidence: 80%</span>
+      <span>Complexity: Low</span>
+    </div>
+    <p>If reinvent is not next: freeze Battle UI behind a hibernation banner, demote nav, keep API seeds (progress, arena economy, pass, replay/video). Schedule a kill review. Stub tabs gone from the surface now.</p>
+    <p class="basis"><strong>Basis:</strong> external: LoR PvP hibernation. direct: stub route headers + salvageable services.</p>
+    <p><strong>Rationale:</strong> Lowest-risk way to stop lying to users without burning future options.</p>
+    <p class="down"><strong>Downsides:</strong> Looks like retreat; requires clear public copy.</p>
+  </article>
+
+  <article class="card" id="i7">
+    <div class="rank">#7</div>
+    <h3>One Progress Passport</h3>
+    <div class="stats">
+      <span>Axis: Progress identity</span>
+      <span>Confidence: 77%</span>
+      <span>Complexity: Low–Medium</span>
+    </div>
+    <p>Whatever destiny wins, make <code>/api/battle/progress</code> the only Battle “save game,” status-match into Hunter XP, and stop rendering a guilt-trip of <code>missing_for_v2</code> on the hero. Agents and UI share one contract.</p>
+    <p class="basis"><strong>Basis:</strong> direct: battle-v2-requirements one progress contract; dual write to points + <code>award_xp</code> already exists.</p>
+    <p><strong>Rationale:</strong> Enabler that compounds any of #1–#6; not a full destiny alone.</p>
+    <p class="down"><strong>Downsides:</strong> Incremental; easy to under-scope as “just API polish.”</p>
+  </article>
+</section>
+
+<section id="rejection">
+  <h2>Rejection Summary</h2>
+  <table>
+    <thead><tr><th>Idea</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>Stance Coach microtx</td><td>Basis weak — free strategy tips already exist; fails meeting-test as a product</td></tr>
+      <tr><td>Museum gift shop alone</td><td>Absorbed into Compliant Microtx Rails (#4)</td></tr>
+      <tr><td>Battle Pass command deck alone</td><td>Duplicate of #4 with weaker “page as shop HQ” framing</td></tr>
+      <tr><td>Arena merge then collapse (alone)</td><td>Sequencing underspecified; better as follow-on to #1/#3</td></tr>
+      <tr><td>Agent clan autopilot</td><td>Interesting but narrower; subsumed by Agent Broadcast Arena</td></tr>
+      <tr><td>Queue UI That Lies (alone)</td><td>Pain confirmed — treated as constraint feeding #2/#6, not a ranked product idea</td></tr>
+      <tr><td>Progress guilt trip (alone)</td><td>Folded into #7</td></tr>
+      <tr><td>Wins→stories alone</td><td>Folded into #1 (auto-highlight is a feature of Broadcast Arena)</td></tr>
+      <tr><td>Honest Instant Casino alone</td><td>Absorbed into #2 labeling + #4 compliance</td></tr>
+      <tr><td>Monetize without merge alone</td><td>Absorbed into #4</td></tr>
+      <tr><td>~25 other raw variants</td><td>Duplicates of stronger survivors after dedupe / cross-cutting merge</td></tr>
+    </tbody>
+  </table>
+  <p>Axis coverage: all five axes represented in the survivor set. No deliberate gap.</p>
+</section>
+
+<footer class="composition-signal">
+  Composed 2026-11-10T22:30Z (Europe/Copenhagen local date 2026-11-10) by ce-ideate from user prompt on Battle page destiny; grounding under <code>/tmp/compound-engineering-1000/ce-ideate/72126c89/</code>; prior docs <code>docs/brainstorms/battle-v2-requirements.md</code>, <code>docs/ARENA_INCOME_MERGE_PLAN.md</code>, <code>docs/plans/game_and_battle_review.plan.md</code>.
+</footer>
+</main>
+</body>
+</html>
