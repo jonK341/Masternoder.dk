@@ -145,6 +145,59 @@ def test_hedged_fill_tracks_inventory_skew(ct, monkeypatch):
     assert by[("nonkyc", "DOGE")] == pytest.approx(-250.0)  # sell venue depletes coin
 
 
+def test_fast_usdt_coins_are_the_short_credit_set(ct):
+    symbols = [c["symbol"] for c in ct.fast_usdt_coins()]
+    assert symbols == ["XRP", "XLM", "ALGO", "TRX", "SOL"]
+    assert all(c["quote"] == "USDT" for c in ct.fast_usdt_coins())
+    assert "DOGE" not in symbols
+
+
+def test_walk_quote_ignores_dust_above_the_fee_hurdle(ct):
+    # Bids look rich at the touch, but only ten cents sits there. The rest is through the hurdle.
+    levels = [(1.20, 0.08), (1.00, 100.0)]
+    usd = ct.walk_quote_usd(levels, side="sell", counter_price=1.0, hurdle_bps=54.0)
+    assert usd == pytest.approx(1.20 * 0.08)
+    deep = ct.walk_quote_usd([(1.20, 30.0)], side="sell", counter_price=1.0, hurdle_bps=54.0)
+    assert deep == pytest.approx(36.0)
+
+
+def test_fast_mode_skips_thin_book_and_does_not_send_an_order(ct, monkeypatch):
+    ct.save_config({"fast_withdraw_only": True, "symbols": ["XRP", "XLM", "ALGO", "TRX", "SOL"],
+                    "min_net_bps": 18.0, "notional_usd": 25.0})
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "XLM", "buy_venue": "binance", "sell_venue": "nonkyc",
+         "buy_ask": 0.1503, "sell_bid": 0.15192, "net_bps": 71.8, "fee_bps": 36.0},
+        {"symbol": "DOGE", "buy_venue": "binance", "sell_venue": "nonkyc",
+         "buy_ask": 0.1, "sell_bid": 0.2, "net_bps": 500.0, "fee_bps": 36.0},
+    ])
+    calls = _stub_exec(ct, monkeypatch)
+    monkeypatch.setattr(ct, "fetch_nonkyc_book", lambda symbol: {"bids": [(0.15192, 0.64)], "asks": []})
+    r = ct.run_once(dry_run=True)
+    assert calls == []
+    assert r["executed"] == []
+    assert r["withdrawal_broadcast"] is False
+    assert r["skipped_thin"] and r["skipped_thin"][0]["symbol"] == "XLM"
+    assert r["skipped_thin"][0]["reason"] == "book_too_thin"
+
+
+def test_fast_mode_papers_a_book_that_covers_the_clip(ct, monkeypatch):
+    ct.save_config({"fast_withdraw_only": True, "symbols": ["XRP"],
+                    "min_net_bps": 18.0, "notional_usd": 25.0, "cooldown_seconds": 0.0})
+    _stub_diffs(ct, monkeypatch, [
+        {"symbol": "XRP", "buy_venue": "binance", "sell_venue": "nonkyc",
+         "buy_ask": 1.0, "sell_bid": 1.02, "net_bps": 40.0, "fee_bps": 36.0},
+    ])
+    calls = _stub_exec(ct, monkeypatch)
+    # 40 XRP at 1.02 is about $40, above the $25 clip, and 1.02 clears a 54 bps hurdle on a $1 ask.
+    monkeypatch.setattr(ct, "fetch_nonkyc_book", lambda symbol: {"bids": [(1.02, 40.0)], "asks": []})
+    r = ct.run_once(dry_run=True)
+    assert len(calls) == 1
+    assert calls[0]["dry_run"] is True
+    assert r["executed"][0]["symbol"] == "XRP"
+    assert r["executed"][0]["mode"] == "paper"
+    assert r["withdrawal_broadcast"] is False
+
+
 def test_live_gate_requires_both_flags(ct, monkeypatch):
     assert ct.cross_trade_live_enabled() is False
     monkeypatch.setenv("EXCHANGE_ARBITRAGE_LIVE", "1")

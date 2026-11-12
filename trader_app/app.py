@@ -29,6 +29,7 @@ os.environ.setdefault("DAEMON_QUIET", "1")
 
 from flask import Flask, Response, jsonify, redirect, render_template, request, session, url_for
 
+from backend.services.fast_desk_service import snapshot as desk_snapshot
 from trader_app import store
 
 from datetime import timedelta
@@ -278,7 +279,7 @@ def login():
                 store.record_alert("login", "Owner unlocked the app", "info")
             except Exception:
                 pass
-            return redirect(url_for("index"))
+            return redirect(url_for("desk"))
         ent = _LOGIN_FAILS.get(ip)
         if not ent or _t.time() - ent[1] > _LOCK_WINDOW:
             ent = [0, _t.time()]
@@ -304,6 +305,18 @@ def logout():
 @login_required
 def index():
     return render_template("dashboard.html")
+
+
+@app.route("/desk")
+@login_required
+def desk():
+    return render_template("desk.html")
+
+
+@app.route("/api/desk")
+@login_required
+def api_desk():
+    return jsonify(desk_snapshot())
 
 
 # ------------------------- tab data -------------------------
