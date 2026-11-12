@@ -743,6 +743,11 @@ def main() -> int:
         action="store_true",
         help="Do not run dedicated Binance↔NonKYC dual-farm arm",
     )
+    parser.add_argument(
+        "--skip-feed",
+        action="store_true",
+        help="No-op (compat with ops wrappers that pass --skip-feed)",
+    )
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
