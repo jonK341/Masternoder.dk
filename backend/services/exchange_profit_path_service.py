@@ -73,6 +73,13 @@ def load_config() -> Dict[str, Any]:
     cfg.setdefault("rotation_auto_types", [
         "internal_stable_swap", "external_market_buy", "external_market_sell", "reduce_notional",
     ])
+    # Quote cash rotation must not spend below these floors (profit-first inventory).
+    cfg.setdefault("quote_floor_usd", 75.0)
+    cfg.setdefault("quote_floor_by_venue", {"binance": 75.0, "nonkyc": 75.0})
+    # Priority sell-leg inventory floors (same line as quote floors).
+    cfg.setdefault("sell_leg_floor_usd", 75.0)
+    cfg.setdefault("sell_leg_floor_symbols", ["LINK", "XRP", "ALGO", "BNB"])
+    cfg.setdefault("min_sell_leg_usd", 25.0)
     _CFG_CACHE["mtime"] = mtime
     _CFG_CACHE["cfg"] = dict(cfg)
     return cfg
