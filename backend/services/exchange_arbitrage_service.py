@@ -75,15 +75,21 @@ def prepare_live_opportunity(
     if buy_ask <= 0 or not symbol or not buy_v or not sell_v:
         return {"ok": False, "reason": "invalid_opportunity"}
 
+    # Micro configs (e.g. $0.01) are below every venue min order. Prefer the live
+    # floor when funding can support it so external legs are not blocked by config.
+    want_usd = max(float(configured_usd), float(min_live_usd))
     cap = vapi.max_funded_notional_usd(
-        symbol, buy_v, sell_v, buy_ask, configured_usd=float(configured_usd), buffer_pct=buffer_pct,
+        symbol, buy_v, sell_v, buy_ask, configured_usd=want_usd, buffer_pct=buffer_pct,
     )
-    scaled_notional = min(float(configured_usd), cap)
+    scaled_notional = min(want_usd, cap)
     if scaled_notional < min_live_usd:
         return {
             "ok": False,
             "reason": "insufficient_venue_balance",
             "max_funded_usd": round(cap, 2),
+            "configured_usd": round(float(configured_usd), 4),
+            "requested_usd": round(want_usd, 4),
+            "min_live_usd": float(min_live_usd),
             "best": opp,
         }
 
@@ -465,6 +471,7 @@ def _attempt_global_best_live(
     strategy = str(agent_cfg.get("strategy") or "spatial_arb")
     tick_mode = "live" if live_enabled() else "paper"
 
+    prepare_skips: List[str] = []
     for opp in opps[:3]:
         trade_opp = opp
         if live_enabled():
@@ -472,6 +479,7 @@ def _attempt_global_best_live(
                 opp, configured_usd=notional, buffer_pct=0.03, min_live_usd=10.0,
             )
             if not prepared.get("ok"):
+                prepare_skips.append(str(prepared.get("reason") or "prepare_failed"))
                 continue
             trade_opp = prepared["opportunity"]
         path_id = record_scan(
@@ -506,12 +514,17 @@ def _attempt_global_best_live(
             actions.append(action)
         if exec_res.get("success"):
             return action
+    reason = "force_attempt_exhausted"
+    if prepare_skips and len(prepare_skips) >= min(3, len(opps)):
+        # Prefer the concrete prepare failure over a generic exhausted label.
+        reason = prepare_skips[0]
     return {
         "executed": False,
         "forced_global": True,
-        "reason": "force_attempt_exhausted",
+        "reason": reason,
         "force_floor_bps": force_floor,
         "opp_count": len(opps),
+        "prepare_skips": prepare_skips,
     }
 
 

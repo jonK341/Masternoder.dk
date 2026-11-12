@@ -180,6 +180,22 @@ def _venue_balances(*, cache_only: bool = False) -> Dict[str, Any]:
     if cache_only:
         if cached.get("venues"):
             out = dict(cached.get("venues") or {})
+            # Ancient no_creds rows are misleading when the vault already has keys —
+            # annotate so the monitor does not look like funding is permanently dead.
+            try:
+                from backend.services import exchange_venue_api_service as vapi
+                for vid in ("binance", "nonkyc", "xeggex"):
+                    row = out.get(vid)
+                    if not isinstance(row, dict):
+                        continue
+                    if row.get("reason") == "no_creds" and vapi.venue_has_credentials(vid):
+                        patched = dict(row)
+                        patched["reason"] = "stale_balance_cache"
+                        patched["credentials_configured"] = True
+                        patched["ok"] = False
+                        out[vid] = patched
+            except Exception:
+                pass
             out["_meta"] = {
                 "cached": True,
                 "cache_age_sec": round(age, 1) if age is not None else None,
@@ -217,11 +233,18 @@ def _connectors_snapshot() -> Dict[str, Any]:
         if isinstance(v, dict) and str(v.get("id")) == "xeggex":
             xeggex_live = bool(v.get("live_trading"))
             break
+    xeggex_creds = False
+    try:
+        from backend.services import exchange_venue_api_service as vapi
+        xeggex_creds = bool(vapi.venue_has_credentials("xeggex"))
+    except Exception:
+        xeggex_creds = False
     return {
         "min_margin_bps": float(cfg.get("min_margin_bps") or 14),
         "paper_trade_usd": float(cfg.get("paper_trade_usd") or 75),
         "prefunded_transfer_bps": float(cfg.get("prefunded_transfer_cost_bps") or 6),
         "xeggex_live_trading": xeggex_live,
+        "xeggex_credentials": xeggex_creds,
     }
 
 
@@ -368,10 +391,20 @@ def _build_stats(
                        status="good" if bbw.get("live_enabled") and bbw.get("ready_to_withdraw") else "warn",
                        hint=f"Fee ~{bbw.get('fee', '—')} {bbw.get('fee_currency', 'EUR')}"))
 
-    xeggex = "live" if conn.get("xeggex_live_trading") else "blocked (401)"
+    if conn.get("xeggex_live_trading"):
+        xeggex = "live"
+        xeggex_status = "good"
+        xeggex_hint = "Dual-venue farm includes XeggeX"
+    elif conn.get("xeggex_credentials"):
+        xeggex = "creds ok — live_trading off"
+        xeggex_status = "warn"
+        xeggex_hint = "Vault keys present; enable live_trading after probe OK"
+    else:
+        xeggex = "blocked (no creds/401)"
+        xeggex_status = "bad"
+        xeggex_hint = "Dual-venue farm needs XeggeX keys + probe OK"
     stats.append(_stat("xeggex", "XeggeX venue", xeggex, category="venues",
-                       status="good" if conn.get("xeggex_live_trading") else "bad",
-                       hint="Dual-venue farm needs XeggeX probe OK"))
+                       status=xeggex_status, hint=xeggex_hint))
     stats.append(_stat("critical_open", "Critical open", critical_open, category="ops",
                        status="good" if critical_open <= 3 else "warn"))
     stats.append(_stat("critical_done", "Critical done", critical_done, category="ops", status="good"))
