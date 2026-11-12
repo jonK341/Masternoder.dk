@@ -233,7 +233,15 @@ def test_suggest_quote_shortfall_prefers_reduce_notional_over_doge(rotation_env,
     )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
-        lambda vid, dry_run=False: {"USDT": 86.0, "DOGE": 200.0},
+        lambda vid, dry_run=False: {
+            "USDT": 86.0,
+            "DOGE": 200.0,
+            # Priority floors already met so quote-shortfall path is exercised.
+            "LINK": 10.0,
+            "XRP": 200.0,
+            "ALGO": 500.0,
+            "BNB": 0.2,
+        },
     )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.venue_quote_asset",
@@ -241,7 +249,13 @@ def test_suggest_quote_shortfall_prefers_reduce_notional_over_doge(rotation_env,
     )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.ex._price_usd",
-        lambda sym: {"DOGE": 0.15, "LINK": 7.5}.get(str(sym).upper(), 1.0),
+        lambda sym: {
+            "DOGE": 0.15,
+            "LINK": 15.0,
+            "XRP": 0.5,
+            "ALGO": 0.2,
+            "BNB": 600.0,
+        }.get(str(sym).upper(), 1.0),
     )
     monkeypatch.setattr(rot, "_active_sell_leg_symbols", lambda vid: frozenset({"DOGE"}))
 
@@ -254,6 +268,17 @@ def test_suggest_quote_shortfall_prefers_reduce_notional_over_doge(rotation_env,
 def test_execute_rotation_propagates_venue_error(rotation_env, monkeypatch):
     rot = rotation_env["rot"]
     monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
+    monkeypatch.setattr(
+        rot,
+        "load_config",
+        lambda: {
+            "quote_floor_usd": 75,
+            "quote_floor_by_venue": {"nonkyc": 75},
+            "sell_leg_floor_usd": 75,
+            "sell_leg_floor_symbols": ["LINK", "XRP", "ALGO", "BNB"],
+            "min_sell_leg_usd": 25,
+        },
+    )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.place_market_order",
         lambda venue, sym, side, qty, dry_run=None, rotation=False, **kw: {
@@ -272,7 +297,16 @@ def test_execute_rotation_propagates_venue_error(rotation_env, monkeypatch):
             "market": f"{sym}_USDT",
             "side": leg,
             "quantity": kw.get("quantity") or 100.0,
+            "notional_usd": float(usd or 20),
         },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False: {"USDT": 200.0},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_quote_asset",
+        lambda vid: "USDT",
     )
 
     action = {
@@ -426,7 +460,24 @@ def test_suggest_doge_sell_leg_resolves_market(rotation_env, monkeypatch):
     )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
-        lambda vid, dry_run=False: {"USDT": 100.0},
+        lambda vid, dry_run=False: {
+            "USDT": 100.0,
+            # Priority floors already met — DOGE sell-leg prefund should surface.
+            "LINK": 10.0,
+            "XRP": 200.0,
+            "ALGO": 500.0,
+            "BNB": 0.2,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.ex._price_usd",
+        lambda sym: {
+            "DOGE": 0.15,
+            "LINK": 15.0,
+            "XRP": 0.5,
+            "ALGO": 0.2,
+            "BNB": 600.0,
+        }.get(str(sym).upper(), 1.0),
     )
     monkeypatch.setattr(
         "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
@@ -520,6 +571,217 @@ def test_execute_rotation_blocks_sell_below_min_leg_reserve(rotation_env, monkey
         "side": "sell",
         "amount_usd": 6.0,
         "quantity": 40.0,
+    }
+    res = rot.execute_rotation(action, dry_run=False)
+    assert res.get("skipped") is True
+    assert res.get("error") == "sell_would_breach_min_leg_reserve"
+
+
+def test_execute_rotation_blocks_buy_below_quote_floor(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
+    monkeypatch.setattr(
+        rot,
+        "load_config",
+        lambda: {
+            "quote_floor_usd": 75,
+            "quote_floor_by_venue": {"nonkyc": 75, "binance": 75},
+            "sell_leg_floor_usd": 75,
+            "sell_leg_floor_symbols": ["LINK", "XRP", "ALGO", "BNB"],
+            "min_sell_leg_usd": 25,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda *a, **kw: {
+            "ok": True,
+            "base": "LINK",
+            "quantity": 2.0,
+            "market": "LINK_USDT",
+            "quote": "USDT",
+            "notional_usd": 20.0,
+            "price_usd": 10.0,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False: {"USDT": 80.0, "LINK": 0.1},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_quote_asset",
+        lambda vid: "USDT",
+    )
+
+    action = {
+        "type": "external_market_buy",
+        "venue_id": "nonkyc",
+        "symbol": "LINK",
+        "side": "buy",
+        "amount_usd": 20.0,
+        "quantity": 2.0,
+    }
+    # free 80 - floor 75 = spendable 5 < buy 20
+    res = rot.execute_rotation(action, dry_run=False)
+    assert res.get("skipped") is True
+    assert res.get("error") == "buy_would_breach_quote_floor"
+
+
+def test_fit_external_buy_caps_to_spendable_above_quote_floor(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(
+        rot,
+        "load_config",
+        lambda: {
+            "quote_floor_usd": 75,
+            "quote_floor_by_venue": {"nonkyc": 75},
+            "sell_leg_floor_usd": 75,
+            "sell_leg_floor_symbols": ["LINK", "XRP", "ALGO", "BNB"],
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False: {"USDT": 100.0},
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_quote_asset",
+        lambda vid: "USDT",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda venue, side, sym, usd, **kw: {
+            "ok": True,
+            "market": f"{sym}_USDT",
+            "quote": "USDT",
+            "quantity": round(float(usd) / 10.0, 8),
+            "notional_usd": float(usd),
+        },
+    )
+    monkeypatch.setattr(rot, "search_paths", lambda **kw: {"paths": []})
+
+    action = {
+        "type": "external_market_buy",
+        "venue_id": "nonkyc",
+        "symbol": "LINK",
+        "side": "buy",
+        "amount_usd": 40.0,
+        "quantity": 4.0,
+        "quote": "USDT",
+    }
+    capped = rot._fit_external_action_to_balance(action, max_usd=100)
+    # spendable = 100 - 75 = 25
+    assert float(capped.get("amount_usd") or 0) == pytest.approx(25.0, abs=0.05)
+
+
+def test_suggest_priority_sell_leg_floor_uses_spendable_quote(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    cfg_path = rotation_env["data"] / "profit_path_protocol.json"
+    cfg_path.write_text(
+        json.dumps({
+            "enabled": True,
+            "quote_floor_usd": 75,
+            "quote_floor_by_venue": {"nonkyc": 75, "binance": 75},
+            "sell_leg_floor_usd": 75,
+            "sell_leg_floor_symbols": ["LINK", "XRP", "ALGO", "BNB"],
+            "min_sell_leg_usd": 25,
+            "balance_summary_venues": ["nonkyc"],
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_has_credentials",
+        lambda vid: vid == "nonkyc",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False: {
+            "USDT": 120.0,
+            "LINK": 0.5,
+            "XRP": 10.0,
+            "ALGO": 50.0,
+            "BNB": 0.01,
+            "DOGE": 500.0,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_quote_asset",
+        lambda vid: "USDT",
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.venue_supports_symbol",
+        lambda vid, sym: True,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.ex._price_usd",
+        lambda sym: {"LINK": 15.0, "XRP": 0.5, "ALGO": 0.2, "BNB": 600.0, "DOGE": 0.15}.get(
+            str(sym).upper(), 1.0
+        ),
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda venue, side, sym, usd, **kw: {
+            "ok": True,
+            "market": f"{sym}_USDT",
+            "quote": "USDT",
+            "quantity": round(float(usd) / 10.0, 8),
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.external_exchange_connector_service.load_connectors_config",
+        lambda: {"paper_trade_usd": 75.0},
+    )
+    monkeypatch.setattr(rot, "search_paths", lambda **kw: {"paths": []})
+    monkeypatch.setattr(rot, "analyze_funding_gaps", lambda *a, **k: {"success": True, "short_legs": []})
+
+    out = rot.suggest_swap_actions(hours=24, limit=8)
+    labels = " | ".join(a.get("label", "") for a in (out.get("actions") or []))
+    assert "LINK" in labels or "BNB" in labels or "XRP" in labels or "ALGO" in labels
+    # spendable = 120-75=45 — buys must not request more than that in a single action
+    for act in out.get("actions") or []:
+        if act.get("type") == "external_market_buy" and act.get("side") == "buy":
+            assert float(act.get("amount_usd") or 0) <= 45.0 + 1e-6
+
+
+def test_execute_rotation_blocks_priority_sell_below_floor(rotation_env, monkeypatch):
+    rot = rotation_env["rot"]
+    monkeypatch.setattr(rot, "rotation_live_enabled", lambda: True)
+    monkeypatch.setattr(
+        rot,
+        "load_config",
+        lambda: {
+            "sell_leg_floor_usd": 75,
+            "sell_leg_floor_symbols": ["LINK", "XRP", "ALGO", "BNB"],
+            "min_sell_leg_usd": 25,
+            "quote_floor_usd": 75,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.market_order_for_leg",
+        lambda *a, **kw: {
+            "ok": True,
+            "base": "LINK",
+            "quantity": 1.0,
+            "market": "LINK_USDT",
+            "quote": "USDT",
+            "notional_usd": 15.0,
+            "price_usd": 15.0,
+        },
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.vapi.parse_spot_balances",
+        lambda vid, dry_run=False: {"LINK": 5.0},  # $75 inventory
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_swap_rotation_service.ex._price_usd",
+        lambda sym: 15.0 if sym == "LINK" else 0,
+    )
+
+    action = {
+        "type": "external_market_sell",
+        "venue_id": "nonkyc",
+        "symbol": "LINK",
+        "side": "sell",
+        "amount_usd": 15.0,
+        "quantity": 1.0,
     }
     res = rot.execute_rotation(action, dry_run=False)
     assert res.get("skipped") is True
