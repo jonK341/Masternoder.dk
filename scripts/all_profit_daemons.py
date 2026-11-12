@@ -40,14 +40,16 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "circles": 60},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "circles": 90},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "circles": 45},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "circles": 60},
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
-_LIVE_PROFIT_MAX_INTERVALS = {"exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90}
+_LIVE_PROFIT_MAX_INTERVALS = {
+    "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90, "circles": 45,
+}
 
 
 def _resolve_intervals(profile: str, iv: dict) -> dict:
@@ -495,6 +497,47 @@ def _maybe_hot_pair_prefund(res: Dict[str, Any]) -> None:
         pass
 
 
+def _maybe_cycle_circles() -> None:
+    """Always estimate BN↔NK circle profit; execute only when edge clears big-profit gate."""
+    try:
+        from backend.services.venue_cycle_circles_service import maybe_auto_cycle_circles
+
+        outcome = maybe_auto_cycle_circles(force=False)
+        if outcome.get("skipped") and outcome.get("reason") in ("throttled", "circles_disabled"):
+            return
+        best = outcome.get("best_net_bps")
+        est = outcome.get("est_arb_profit_usd")
+        big = outcome.get("big_profit_count")
+        print(
+            f"[all-profit] circles plan best={best}bps est=${est} "
+            f"profitable={outcome.get('profitable_count')} big={big} "
+            f"auto={outcome.get('auto_execute')}",
+            flush=True,
+        )
+        if outcome.get("skipped_exec") and outcome.get("skipped_exec") != "no_big_profit":
+            print(
+                f"[all-profit] circles skip_exec reason={outcome.get('skipped_exec')} "
+                f"top={outcome.get('top_candidate')}",
+                flush=True,
+            )
+        for row in outcome.get("executed") or []:
+            ok = row.get("success")
+            print(
+                f"[all-profit] circles exec {row.get('direction')} {row.get('symbol')} "
+                f"net={row.get('net_bps')}bps est=${row.get('est_profit_usd')} success={ok}",
+                flush=True,
+            )
+    except Exception as exc:
+        print(f"[all-profit] circles error: {exc}", flush=True)
+
+
+def _circles_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] cycle-circles loop interval={interval}s (plan always; exec on big profit)", flush=True)
+    while not stop.is_set():
+        _maybe_cycle_circles()
+        stop.wait(max(20, interval))
+
+
 def _maybe_auto_rotation(res: Dict[str, Any]) -> None:
     """After arb_exec=0 ticks, auto-execute top rotation suggestion when enabled."""
     try:
@@ -556,6 +599,7 @@ def _exchange_loop(interval: int, auto_sweep: bool, profile: str, stop: threadin
             streak = _track_zero_fill_streak(res)
             _maybe_hot_pair_prefund(res)
             _maybe_auto_rotation(res)
+            _maybe_cycle_circles()
             _write_heartbeat("exchange", summary, extra={"zero_fill_streak": streak})
             try:
                 from backend.services.profit_daemon_news_service import maybe_publish_tick_news
@@ -697,6 +741,11 @@ def main() -> int:
     parser.add_argument("--skip-grid", action="store_true", help="Do not run grid bot loop")
     parser.add_argument("--skip-stuck", action="store_true", help="Do not run stuck-inventory strategy")
     parser.add_argument("--skip-micro-chain", action="store_true", help="Do not run portal micro-chain loop")
+    parser.add_argument(
+        "--skip-feed",
+        action="store_true",
+        help="Accepted for systemd start scripts when exchange-feed runs as a separate unit (no-op here)",
+    )
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
@@ -715,6 +764,7 @@ def main() -> int:
     grid_iv = int(os.environ.get("EXCHANGE_GRID_INTERVAL") or 0) or iv.get("grid") or 30
     stuck_iv = int(os.environ.get("EXCHANGE_STUCK_INTERVAL") or 0) or iv.get("stuck") or 600
     micro_iv = int(os.environ.get("MN2_MICRO_CHAIN_INTERVAL") or 0) or iv.get("micro") or 120
+    circles_iv = int(os.environ.get("CYCLE_CIRCLES_INTERVAL_SEC") or 0) or iv.get("circles") or 60
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -773,6 +823,7 @@ def main() -> int:
             print(f"  stuck inventory → grid strategy interval={stuck_iv}s")
         if not args.skip_micro_chain:
             print(f"  portal micro-chain (MN2) interval={micro_iv}s")
+        print(f"  cycle-circles (profit estimate + big-edge exec) interval={circles_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -798,6 +849,9 @@ def main() -> int:
             threads.append(threading.Thread(
                 target=_micro_chain_loop, args=(micro_iv, stop), name="micro_chain", daemon=True,
             ))
+        threads.append(threading.Thread(
+            target=_circles_loop, args=(circles_iv, stop), name="cycle_circles", daemon=True,
+        ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(
             target=_casino_loop, args=(cas_iv, casino_dry_run, stop), name="casino", daemon=True,

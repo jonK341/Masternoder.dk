@@ -73,6 +73,18 @@ def load_config() -> Dict[str, Any]:
     cfg.setdefault("rotation_auto_types", [
         "internal_stable_swap", "external_market_buy", "external_market_sell", "reduce_notional",
     ])
+    # Continuous BN↔NK cycle circles (plan always; execute only on big estimated profit)
+    cfg.setdefault("cycle_circles_enabled", True)
+    cfg.setdefault("cycle_circles_auto_execute", True)
+    cfg.setdefault("cycle_circles_interval_sec", 60)
+    cfg.setdefault("cycle_circles_min_net_bps", 15.0)
+    cfg.setdefault("cycle_circles_min_profit_usd", 0.05)
+    cfg.setdefault("cycle_circles_notional_usd", 25.0)
+    cfg.setdefault("cycle_circles_max_per_tick", 2)
+    cfg.setdefault("cycle_circles_max_usd_per_tick", 50.0)
+    cfg.setdefault("cycle_circles_symbols", [
+        "BNB", "LINK", "XRP", "ALGO", "ADA", "SOL", "LTC", "DOGE", "AVAX", "TRX", "PEPE",
+    ])
     _CFG_CACHE["mtime"] = mtime
     _CFG_CACHE["cfg"] = dict(cfg)
     return cfg
