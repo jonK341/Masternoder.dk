@@ -117,7 +117,8 @@ def test_suggest_swap_actions_from_ledger(rotation_env, monkeypatch):
     assert out["funding_skip_count"] >= 1
     assert out["action_count"] >= 1
     types = {a["type"] for a in out["actions"]}
-    assert "external_market_buy" in types or "reduce_notional" in types
+    # Near/under quote floor → refill_quote; otherwise reduce_notional or external buy.
+    assert types & {"external_market_buy", "reduce_notional", "refill_quote"}
 
 
 def test_execute_rotation_dry_run_internal(rotation_env, monkeypatch):

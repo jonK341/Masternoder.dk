@@ -90,6 +90,16 @@ def test_leg_is_big_profit_gate():
     assert circles._leg_is_big_profit(leg, min_net_bps=15.0, min_profit_usd=0.10) is False
 
 
+def test_dynamic_big_profit_thresholds_scale(monkeypatch):
+    monkeypatch.setenv("CYCLE_CIRCLES_MIN_NET_BPS", "15")
+    monkeypatch.setenv("CYCLE_CIRCLES_MIN_PROFIT_USD", "0.05")
+    bps25, usd25 = circles.dynamic_big_profit_thresholds(25)
+    bps50, usd50 = circles.dynamic_big_profit_thresholds(50)
+    assert bps25 == 15.0
+    assert bps50 <= 10.0
+    assert usd50 >= usd25
+
+
 def test_maybe_auto_cycle_circles_disabled(monkeypatch, tmp_path):
     monkeypatch.setenv("CYCLE_CIRCLES_ENABLED", "0")
     monkeypatch.setattr(circles, "_STATE_PATH", str(tmp_path / "state.json"))

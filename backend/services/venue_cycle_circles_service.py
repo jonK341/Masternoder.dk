@@ -89,11 +89,92 @@ def _symbols_from_config() -> List[str]:
     return list(DEFAULT_SYMBOLS)
 
 
+def _venue_taker_bps(venue_id: str, default: float) -> float:
+    """Prefer connector-configured taker fee; fall back to env/default."""
+    try:
+        from backend.services import external_exchange_connector_service as conn
+
+        for v in (conn.list_venues().get("venues") or []):
+            if str(v.get("id") or "").lower() == str(venue_id).lower():
+                fee = v.get("fee_taker_bps")
+                if fee is not None:
+                    return float(fee)
+    except Exception:
+        pass
+    return float(default)
+
+
 def _fees_bps() -> Tuple[float, float, float]:
-    bn = float(os.environ.get("CYCLE_BN_TAKER_BPS", "10"))
-    nk = float(os.environ.get("CYCLE_NK_TAKER_BPS", "20"))
+    bn_default = float(os.environ.get("CYCLE_BN_TAKER_BPS", "10"))
+    nk_default = float(os.environ.get("CYCLE_NK_TAKER_BPS", "20"))
     xfer = float(os.environ.get("CYCLE_XFER_BPS", "0"))
-    return bn, nk, xfer
+    return _venue_taker_bps("binance", bn_default), _venue_taker_bps("nonkyc", nk_default), xfer
+
+
+def dynamic_big_profit_thresholds(notional_usd: float) -> Tuple[float, float]:
+    """Scale big-profit gate: larger funded size → slightly lower bps bar."""
+    base_bps = _cfg_float("cycle_circles_min_net_bps", "CYCLE_CIRCLES_MIN_NET_BPS", 15.0)
+    base_usd = _cfg_float("cycle_circles_min_profit_usd", "CYCLE_CIRCLES_MIN_PROFIT_USD", 0.05)
+    notion = max(0.0, float(notional_usd or 0))
+    if notion >= 50:
+        bps = max(8.0, base_bps - 5.0)
+    elif notion >= 30:
+        bps = max(10.0, base_bps - 3.0)
+    else:
+        bps = base_bps
+    # Keep dollar floor proportional but never below $0.03
+    usd = max(0.03, base_usd * (notion / 25.0) if notion > 0 else base_usd)
+    return bps, usd
+
+
+def wait_order_fill(
+    venue_id: str,
+    symbol: str,
+    order_res: Dict[str, Any],
+    *,
+    quote: Optional[str] = None,
+    timeout_sec: float = 45.0,
+    poll_sec: float = 2.0,
+) -> Dict[str, Any]:
+    """Poll NonKYC/Binance until market order leaves New/resting or timeout."""
+    from backend.services import exchange_venue_api_service as vapi
+
+    body = order_res.get("body") if isinstance(order_res.get("body"), dict) else {}
+    status = str(body.get("status") or order_res.get("status") or "").upper()
+    if status in ("FILLED", "CLOSED", "DONE", "COMPLETED"):
+        return {"filled": True, "status": status, "order": order_res, "polled": False}
+    order_id = (
+        body.get("orderId")
+        or body.get("id")
+        or body.get("_id")
+        or order_res.get("order_id")
+    )
+    if not order_id:
+        # NonKYC sometimes returns success without id — brief wait then accept
+        time.sleep(min(6.0, timeout_sec))
+        return {"filled": bool(order_res.get("success")), "status": status or "UNKNOWN", "order": order_res, "polled": False}
+
+    deadline = time.time() + max(3.0, float(timeout_sec))
+    last: Dict[str, Any] = {}
+    while time.time() < deadline:
+        last = vapi.get_order_status(
+            venue_id, symbol, order_id, dry_run=False, quote=quote,
+        )
+        if last.get("filled"):
+            return {"filled": True, "status": last.get("order_status"), "order": last, "polled": True}
+        if not last.get("resting") and last.get("success"):
+            # terminal non-fill
+            st = str(last.get("order_status") or "")
+            if st in ("CANCELED", "CANCELLED", "REJECTED", "EXPIRED"):
+                return {"filled": False, "status": st, "order": last, "polled": True}
+        time.sleep(max(0.5, float(poll_sec)))
+    return {
+        "filled": bool(last.get("filled")),
+        "status": last.get("order_status") or status or "TIMEOUT",
+        "order": last or order_res,
+        "polled": True,
+        "timeout": True,
+    }
 
 
 def refresh_balances() -> None:
@@ -251,7 +332,7 @@ def plan_circles(
         fn = getattr(rot, "_quote_floor_usd", None)
         if callable(fn):
             return float(fn(venue_id))
-        return 75.0
+        return 65.0
 
     def _spendable_quote_usd(venue_id: str, quote: Optional[str] = None) -> float:
         fn = getattr(rot, "_spendable_quote_usd", None)
@@ -411,7 +492,7 @@ def plan_circles(
 
 
 def execute_arb_circle(leg: Dict[str, Any], *, ignore_quote_floor: bool = False) -> Dict[str, Any]:
-    """Live multi-leg arb: buy on cheap venue, sell on rich venue."""
+    """Live multi-leg arb sized to sell-side inventory (no implicit cross-venue xfer)."""
     from backend.services import exchange_venue_api_service as vapi
     from backend.services import exchange_swap_rotation_service as rot
 
@@ -421,6 +502,7 @@ def execute_arb_circle(leg: Dict[str, Any], *, ignore_quote_floor: bool = False)
     sym = str(leg.get("symbol") or "").upper()
     notion = float(leg.get("notional_usd") or 0)
     qty = float(leg.get("qty") or 0)
+    ask = float(leg.get("ask_buy") or 0)
     if direction == "binance->nonkyc":
         buy_v, sell_v, buy_q = "binance", "nonkyc", "USDC"
     elif direction == "nonkyc->binance":
@@ -438,37 +520,152 @@ def execute_arb_circle(leg: Dict[str, Any], *, ignore_quote_floor: bool = False)
             notion = round(min(notion, spend), 2)
             if notion < 10:
                 return {"success": False, "error": "below_quote_floor", "spendable": spend, "leg": leg}
-            ask = float(leg.get("ask_buy") or 0)
             qty = round(notion / ask, 8) if ask > 0 else qty
 
     fund = float(leg.get("max_funded_usd") or 0)
     if fund > 0:
         notion = min(notion, fund)
-        ask = float(leg.get("ask_buy") or 0)
         qty = round(notion / ask, 8) if ask > 0 else qty
+
+    # Transfer-aware: only sell what already sits on the sell venue.
+    refresh_balances()
+    sell_free = float(vapi.parse_spot_balances(sell_v, dry_run=False, force_refresh=True).get(sym) or 0)
+    if ask > 0 and sell_free > 0:
+        max_sell_usd = sell_free * ask
+        if max_sell_usd + 1e-9 < notion:
+            notion = round(max_sell_usd * 0.995, 2)
+            qty = round(min(sell_free * 0.995, notion / ask), 8) if ask > 0 else qty
+        qty = min(qty, sell_free * 0.995)
+    if notion < 10 or qty <= 0:
+        return {
+            "success": False,
+            "error": "insufficient_sell_inventory",
+            "sell_venue": sell_v,
+            "sell_free": sell_free,
+            "leg": leg,
+        }
 
     buy = vapi.place_market_order(buy_v, sym, "buy", qty, dry_run=False, quote=buy_q)
     if not buy.get("success"):
         return {"success": False, "error": "buy_failed", "buy": buy, "leg": leg}
-    if buy_v == "nonkyc":
-        time.sleep(6)
+    buy_fill = wait_order_fill(buy_v, sym, buy, quote=buy_q, timeout_sec=40)
+    if not buy_fill.get("filled"):
+        return {
+            "success": False,
+            "error": "buy_not_filled",
+            "buy": buy,
+            "buy_fill": buy_fill,
+            "leg": leg,
+        }
     sell_q = "USDT" if sell_v == "nonkyc" else "USDC"
     sell = vapi.place_market_order(sell_v, sym, "sell", qty, dry_run=False, quote=sell_q)
+    sell_fill = wait_order_fill(sell_v, sym, sell, quote=sell_q, timeout_sec=40)
     refresh_balances()
     return {
-        "success": bool(sell.get("success")),
+        "success": bool(sell.get("success") and sell_fill.get("filled")),
         "direction": direction,
         "symbol": sym,
         "notional_usd": notion,
         "est_profit_usd": leg.get("est_profit_usd"),
         "net_bps": leg.get("net_bps"),
         "leg_count": leg.get("leg_count") or 3,
-        "buy": {"success": buy.get("success"), "status_code": buy.get("status_code")},
+        "buy": {"success": buy.get("success"), "status_code": buy.get("status_code"), "fill": buy_fill},
         "sell": {
             "success": sell.get("success"),
             "status_code": sell.get("status_code"),
             "error": sell.get("error"),
+            "fill": sell_fill,
         },
+    }
+
+
+def execute_fund_circle_bn_to_nk(
+    *,
+    target_symbol: str,
+    notional_usd: float,
+    raise_symbol: str = "ADA",
+) -> Dict[str, Any]:
+    """4-leg fund: sell raise@BN → USDC → BSC withdraw → buy target@NK.
+
+    Requires ``CYCLE_CIRCLES_XFER_LIVE=1`` and ``NONKYC_USDC_BEP20_DEPOSIT`` (or known default).
+    """
+    from backend.services import exchange_venue_api_service as vapi
+    from backend.services import external_exchange_connector_service as conn
+    from backend.services.exchange_binance_withdraw_service import withdraw_asset
+
+    if os.environ.get("CYCLE_CIRCLES_XFER_LIVE", "").strip().lower() not in ("1", "true", "yes", "on"):
+        return {"success": False, "error": "xfer_live_off", "hint": "Set CYCLE_CIRCLES_XFER_LIVE=1"}
+
+    addr = (
+        os.environ.get("NONKYC_USDC_BEP20_DEPOSIT")
+        or os.environ.get("NONKYC_USDC_DEPOSIT")
+        or "0x2c0b81D2c9bf95Fc66DBC6e2527fD22AEA91aDC8"
+    )
+    target = str(target_symbol or "").upper()
+    raise_sym = str(raise_symbol or "ADA").upper()
+    notion = max(10.0, float(notional_usd or 0))
+    legs: List[Dict[str, Any]] = []
+
+    refresh_balances()
+    tick = conn.fetch_ticker("binance", raise_sym) or {}
+    bid = float(tick.get("bid") or 0)
+    if bid <= 0:
+        return {"success": False, "error": "no_raise_bid", "symbol": raise_sym}
+    qty = round((notion / bid) * 1.005, 2)
+    sell = vapi.place_market_order("binance", raise_sym, "sell", qty, dry_run=False, quote="USDC")
+    sell_fill = wait_order_fill("binance", raise_sym, sell, quote="USDC")
+    legs.append({"n": 1, "action": "sell", "symbol": raise_sym, "qty": qty, "fill": sell_fill})
+    if not sell.get("success") or not sell_fill.get("filled"):
+        return {"success": False, "error": "raise_sell_failed", "legs": legs}
+
+    body = sell.get("body") if isinstance(sell.get("body"), dict) else {}
+    raised = float(body.get("cummulativeQuoteQty") or notion)
+    withdraw_amt = round(min(raised * 0.995, raised - 0.5), 2)
+    if withdraw_amt < 10:
+        return {"success": False, "error": "raise_too_small", "raised": raised, "legs": legs}
+
+    w = withdraw_asset("USDC", withdraw_amt, addr, "BSC", dry_run=False)
+    legs.append({"n": 2, "action": "withdraw_usdc_bsc", "amount": withdraw_amt, "address": addr, "result": {
+        "success": w.get("success"), "error": w.get("error"), "id": w.get("withdraw_id") or w.get("id"),
+    }})
+    if not w.get("success"):
+        return {"success": False, "error": "withdraw_failed", "legs": legs, "withdraw": w}
+
+    # Wait for NonKYC credit (poll USDT/USDC balance growth)
+    before = float(vapi.parse_spot_balances("nonkyc", dry_run=False, force_refresh=True).get("USDT") or 0)
+    credited = False
+    for _ in range(36):  # ~3 min
+        time.sleep(5)
+        vapi.invalidate_venue_balance_cache("nonkyc")
+        now_q = float(vapi.parse_spot_balances("nonkyc", dry_run=False, force_refresh=True).get("USDT") or 0)
+        # Some books credit USDC; check both
+        bals = vapi.parse_spot_balances("nonkyc", dry_run=False) or {}
+        usdc_nk = float(bals.get("USDC") or 0)
+        if now_q >= before + withdraw_amt * 0.9 or usdc_nk >= withdraw_amt * 0.9:
+            credited = True
+            break
+    legs.append({"n": 3, "action": "wait_deposit", "credited": credited, "usdt_before": before})
+    if not credited:
+        return {"success": False, "error": "deposit_timeout", "legs": legs}
+
+    ask = float((conn.fetch_ticker("nonkyc", target) or {}).get("ask") or 0)
+    if ask <= 0:
+        return {"success": False, "error": "no_target_ask", "legs": legs}
+    buy_usd = round(min(withdraw_amt * 0.98, float(
+        vapi.parse_spot_balances("nonkyc", dry_run=False, force_refresh=True).get("USDT") or 0
+    ) - 1), 2)
+    buy_qty = round((buy_usd / ask) * 0.99, 6)
+    buy = vapi.place_market_order("nonkyc", target, "buy", buy_qty, dry_run=False, quote="USDT")
+    buy_fill = wait_order_fill("nonkyc", target, buy, quote="USDT")
+    legs.append({"n": 4, "action": "buy", "symbol": target, "usd": buy_usd, "qty": buy_qty, "fill": buy_fill})
+    refresh_balances()
+    return {
+        "success": bool(buy.get("success") and buy_fill.get("filled")),
+        "kind": "fund_circle_bn_to_nk",
+        "target_symbol": target,
+        "notional_usd": notion,
+        "leg_count": 4,
+        "legs": legs,
     }
 
 
@@ -544,10 +741,9 @@ def maybe_auto_cycle_circles(*, force: bool = False) -> Dict[str, Any]:
         }
 
     notional = _cfg_float("cycle_circles_notional_usd", "CYCLE_CIRCLES_NOTIONAL", 25.0)
-    min_net = _cfg_float("cycle_circles_min_net_bps", "CYCLE_CIRCLES_MIN_NET_BPS", 15.0)
-    min_usd = _cfg_float("cycle_circles_min_profit_usd", "CYCLE_CIRCLES_MIN_PROFIT_USD", 0.05)
     max_per = _cfg_int("cycle_circles_max_per_tick", "CYCLE_CIRCLES_MAX_PER_TICK", 2)
     max_usd = _cfg_float("cycle_circles_max_usd_per_tick", "CYCLE_CIRCLES_MAX_USD", 50.0)
+    min_net, min_usd = dynamic_big_profit_thresholds(notional)
 
     plan = plan_circles(_symbols_from_config(), notional_usd=notional, force_refresh=True)
     _save_last_plan(plan)
@@ -558,10 +754,13 @@ def maybe_auto_cycle_circles(*, force: bool = False) -> Dict[str, Any]:
     state["last_profitable_count"] = len(plan.get("profitable_arb") or [])
     _save_state(state)
 
-    candidates = [
-        leg for leg in (plan.get("profitable_arb") or [])
-        if _leg_is_big_profit(leg, min_net_bps=min_net, min_profit_usd=min_usd)
-    ]
+    candidates = []
+    for leg in plan.get("profitable_arb") or []:
+        funded = min(float(notional), float(leg.get("max_funded_usd") or 0), float(max_usd))
+        dyn_bps, dyn_usd = dynamic_big_profit_thresholds(funded)
+        if _leg_is_big_profit(leg, min_net_bps=dyn_bps, min_profit_usd=dyn_usd):
+            candidates.append({**leg, "_gate_bps": dyn_bps, "_gate_usd": dyn_usd, "_sized_usd": funded})
+
     out: Dict[str, Any] = {
         "planned": True,
         "planned_at": plan.get("planned_at"),
@@ -574,8 +773,43 @@ def maybe_auto_cycle_circles(*, force: bool = False) -> Dict[str, Any]:
         "min_profit_usd": min_usd,
         "auto_execute": cycle_circles_auto_execute_enabled(),
         "executed": [],
+        "prefund": None,
         "skipped_exec": None,
     }
+
+    # Near-gate hot prefund: edge within 5 bps of gate but underfunded inventory/quote.
+    near = []
+    for leg in plan.get("profitable_arb") or []:
+        funded = min(float(notional), float(leg.get("max_funded_usd") or 0), float(max_usd))
+        dyn_bps, _dyn_usd = dynamic_big_profit_thresholds(max(funded, 25.0))
+        net = float(leg.get("net_bps") or 0)
+        if dyn_bps - 5 <= net < dyn_bps and funded < 20:
+            near.append(leg)
+    if near and cycle_circles_auto_execute_enabled():
+        try:
+            from backend.services.exchange_swap_rotation_service import maybe_hot_pair_prefund
+
+            top = near[0]
+            fake_res = {
+                "platform": {
+                    "results": {
+                        "arbitrage": {
+                            "executed_count": 0,
+                            "best_qualifying": {
+                                "qualifies": True,
+                                "funded": False,
+                                "symbol": top.get("symbol"),
+                                "agent_id": "venue_cycle_circles",
+                                "net_bps": top.get("net_bps"),
+                            },
+                        }
+                    },
+                    "profit_pair_search": {"success": True, "hot_symbols": [top.get("symbol")]},
+                }
+            }
+            out["prefund"] = maybe_hot_pair_prefund(fake_res)
+        except Exception as exc:
+            out["prefund"] = {"skipped": True, "reason": f"prefund_error:{exc}"}
 
     if not candidates:
         out["skipped_exec"] = "no_big_profit"
@@ -589,12 +823,14 @@ def maybe_auto_cycle_circles(*, force: bool = False) -> Dict[str, Any]:
             "net_bps": candidates[0].get("net_bps"),
             "est_profit_usd": candidates[0].get("est_profit_usd"),
         }
+        _maybe_alert_big_skip(out)
         return out
 
     from backend.services import exchange_venue_api_service as vapi
 
     if not vapi.live_allowed():
         out["skipped_exec"] = "live_gate_off"
+        _maybe_alert_big_skip(out)
         return out
 
     try:
@@ -603,17 +839,14 @@ def maybe_auto_cycle_circles(*, force: bool = False) -> Dict[str, Any]:
         if kill:
             out["skipped_exec"] = "profit_kill"
             out["kill"] = kill
+            _maybe_alert_big_skip(out)
             return out
     except Exception:
         pass
 
     executed: List[Dict[str, Any]] = []
     for leg in candidates[: max(1, max_per)]:
-        notion = min(
-            float(notional),
-            float(leg.get("max_funded_usd") or 0),
-            float(max_usd),
-        )
+        notion = float(leg.get("_sized_usd") or 0)
         if notion < 10:
             continue
         ask = float(leg.get("ask_buy") or 0)
@@ -622,8 +855,6 @@ def maybe_auto_cycle_circles(*, force: bool = False) -> Dict[str, Any]:
             "notional_usd": round(notion, 2),
             "qty": round(notion / ask, 8) if ask > 0 else leg.get("qty"),
         }
-        # Daemon ignores quote floor only when spendable is already validated via max_funded;
-        # still respect floor unless CYCLE_CIRCLES_IGNORE_FLOOR=1.
         ignore_floor = os.environ.get("CYCLE_CIRCLES_IGNORE_FLOOR", "").strip().lower() in (
             "1", "true", "yes", "on",
         )
@@ -643,6 +874,7 @@ def maybe_auto_cycle_circles(*, force: bool = False) -> Dict[str, Any]:
                     "net_bps": sized.get("net_bps"),
                     "est_profit_usd": sized.get("est_profit_usd"),
                     "leg_count": sized.get("leg_count"),
+                    "gate_bps": sized.get("_gate_bps"),
                     "success": bool(result.get("success")),
                 },
             )
@@ -658,6 +890,38 @@ def maybe_auto_cycle_circles(*, force: bool = False) -> Dict[str, Any]:
     out["executed"] = executed
     out["executed_count"] = len(executed)
     return out
+
+
+def _maybe_alert_big_skip(out: Dict[str, Any]) -> None:
+    """Ops alert when a big circle edge exists but exec was skipped."""
+    try:
+        from backend.services.profit_daemon_ops_service import _post_ops_alert, _should_alert
+    except Exception:
+        return
+    if int(out.get("big_profit_count") or 0) < 1:
+        return
+    reason = str(out.get("skipped_exec") or "")
+    if reason in ("", "no_big_profit"):
+        return
+    key = f"cycle_circles_big_skip:{reason}"
+    try:
+        if not _should_alert(key, cooldown_sec=1800):
+            return
+        top = out.get("top_candidate") or {}
+        _post_ops_alert(
+            "Cycle circles big edge skipped",
+            (
+                f"best={out.get('best_net_bps')}bps est=${out.get('est_arb_profit_usd')} "
+                f"reason={reason} top={top.get('direction')} {top.get('symbol')}"
+            ),
+            alert_key=key,
+            fields=[
+                {"name": "reason", "value": reason},
+                {"name": "best_bps", "value": str(out.get("best_net_bps"))},
+            ],
+        )
+    except Exception:
+        pass
 
 
 def last_plan_snapshot() -> Dict[str, Any]:

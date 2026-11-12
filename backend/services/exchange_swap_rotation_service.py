@@ -1096,13 +1096,39 @@ def _reduce_notional_action(
     configured_usd: float,
     *,
     score: float,
-) -> Dict[str, Any]:
-    cap = round(max(10.0, free_usd * 0.95), 2)
+) -> Optional[Dict[str, Any]]:
+    """Suggest a notional cap only when quote can still fund a viable trade.
+
+    When free quote is at/under the venue floor (or below ~$15), lowering notional
+    to $10 is a death spiral — prefer a refill advisory instead.
+    """
+    free = float(free_usd or 0)
+    floor = _quote_floor_usd(venue_id)
+    min_viable = 15.0
+    if free <= floor + 1e-9 or free < min_viable:
+        return {
+            "type": "refill_quote",
+            "priority": "high",
+            "priority_score": max(score, 8.0),
+            "label": (
+                f"Refill {venue_id} {quote_asset} above ${floor:.0f} floor "
+                f"(free ~${free:.0f}; skip notional death-spiral)"
+            ),
+            "venue_id": venue_id,
+            "quote": quote_asset,
+            "free_usd": round(free, 2),
+            "quote_floor_usd": floor,
+            "reason": "quote_below_floor_refill_required",
+            "top25_items": ["quote_floor", "skip_reason_funding", "refill_quote"],
+            "dry_run_safe": True,
+            "advisory_only": True,
+        }
+    cap = round(max(min_viable, free * 0.95), 2)
     return {
         "type": "reduce_notional",
         "priority": "medium",
         "priority_score": score,
-        "label": f"Lower notional to ${cap:.0f} (fits {venue_id} {quote_asset} ~${free_usd:.0f})",
+        "label": f"Lower notional to ${cap:.0f} (fits {venue_id} {quote_asset} ~${free:.0f})",
         "venue_id": venue_id,
         "suggested_notional_usd": cap,
         "configured_notional_usd": round(configured_usd, 2),
@@ -1241,7 +1267,7 @@ def suggest_swap_actions(
                 vid, quote, max(notion_cap, free_q * 0.95), default_notion,
                 score=6.0 if free_q <= q_floor else 3.0,
             )
-            if act["label"] not in seen_labels:
+            if act and act.get("label") not in seen_labels:
                 seen_labels.add(act["label"])
                 actions.append(act)
         # Priority sell-leg floors (LINK/XRP/ALGO/BNB) — only spend quote above floor.
@@ -1365,6 +1391,15 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
         return {"success": False, "error": "invalid_action"}
 
     atype = str(action["type"])
+    if atype == "refill_quote":
+        return {
+            "success": True,
+            "dry_run": dry_run,
+            "skipped": True,
+            "reason": "advisory_only",
+            "action": action,
+            "hint": "Refill quote above floor instead of lowering notional into a death spiral.",
+        }
     if atype == "reduce_notional":
         if dry_run:
             return {
