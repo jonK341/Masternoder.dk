@@ -350,6 +350,30 @@ def _build_stats(
                        status="good" if usdc and usdc >= 25 else "warn", hint="Buy-leg quote balance"))
     stats.append(_stat("nonkyc_usdt", "NonKYC USDT", round(nk.get("usdt") or nk.get("quote_free") or 0, 2),
                        unit="USD", category="funding"))
+    try:
+        from backend.services.venue_cycle_circles_service import last_plan_snapshot
+
+        circ = last_plan_snapshot() or {}
+        c_best = circ.get("best_net_bps")
+        c_est = circ.get("est_arb_profit_usd")
+        c_n = len(circ.get("profitable_arb") or [])
+        c_at = circ.get("planned_at") or "—"
+        stats.append(_stat(
+            "circles_best_bps", "Circles best", c_best if c_best is not None else "—",
+            unit="bps", category="circles",
+            status="good" if c_best and float(c_best) >= 15 else ("warn" if c_best else "neutral"),
+            hint=f"Last plan {c_at}",
+        ))
+        stats.append(_stat(
+            "circles_est_usd", "Circles est $", c_est if c_est is not None else "—",
+            unit="USD", category="circles",
+        ))
+        stats.append(_stat(
+            "circles_profitable", "Circles profitable", c_n, category="circles",
+            hint="Fundable+profitable legs last plan",
+        ))
+    except Exception:
+        pass
     stats.append(_stat("nonkyc_doge_usd", "NonKYC DOGE", nk.get("doge_usd", "—"),
                        unit="USD", category="funding",
                        status="good" if nk.get("doge_usd") and nk["doge_usd"] >= 25 else "warn"))

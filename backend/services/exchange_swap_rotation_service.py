@@ -26,6 +26,9 @@ _STATE_PATH = os.path.join(ex._DATA_DIR, "rotation_auto_state.json")
 _CONNECTORS_PATH = os.path.join(ex._BASE, "data", "exchange_connectors_config.json")
 _EXTENDED_PROFIT_PATH = os.path.join(ex._BASE, "data", "exchange_extended_profit_config.json")
 _DEDUPE_MINUTES = 30
+_DEFAULT_QUOTE_FLOOR_USD = 65.0
+_DEFAULT_SELL_LEG_FLOOR_USD = 65.0
+_DEFAULT_FLOOR_SYMBOLS = ("LINK", "XRP", "ALGO", "BNB")
 _TYPE_ORDER = {
     "internal_stable_swap": 0,
     "reduce_notional": 1,
@@ -68,18 +71,61 @@ def _filter_rotation_actions(actions: List[Dict[str, Any]]) -> List[Dict[str, An
 
 
 def _min_sell_leg_usd() -> float:
+    """Generic sell-leg reserve for non-priority symbols."""
     return float(load_config().get("min_sell_leg_usd") or 25)
+
+
+def _sell_leg_floor_symbols() -> frozenset[str]:
+    cfg = load_config()
+    raw = cfg.get("sell_leg_floor_symbols")
+    if isinstance(raw, list) and raw:
+        return frozenset(str(s).upper() for s in raw if s)
+    return frozenset(_DEFAULT_FLOOR_SYMBOLS)
+
+
+def _sell_leg_floor_usd(symbol: Optional[str] = None) -> float:
+    """USD inventory floor — priority symbols share the configured floor line."""
+    cfg = load_config()
+    floor = float(cfg.get("sell_leg_floor_usd") or _DEFAULT_SELL_LEG_FLOOR_USD)
+    if symbol is None:
+        return floor
+    sym = str(symbol or "").upper()
+    if sym in _sell_leg_floor_symbols():
+        return floor
+    return _min_sell_leg_usd()
+
+
+def _quote_floor_usd(venue_id: str) -> float:
+    """Minimum free quote (USDT/USDC) rotation must leave on a venue."""
+    cfg = load_config()
+    vid = str(venue_id or "").lower()
+    by = cfg.get("quote_floor_by_venue")
+    if isinstance(by, dict) and vid in by:
+        try:
+            return max(0.0, float(by.get(vid) or 0))
+        except (TypeError, ValueError):
+            pass
+    try:
+        return max(0.0, float(cfg.get("quote_floor_usd") or _DEFAULT_QUOTE_FLOOR_USD))
+    except (TypeError, ValueError):
+        return _DEFAULT_QUOTE_FLOOR_USD
+
+
+def _spendable_quote_usd(venue_id: str, quote: Optional[str] = None) -> float:
+    """Quote USD available above the venue floor (rotation must not spend the floor)."""
+    free = _quote_free_usd(venue_id, quote)
+    return max(0.0, round(free - _quote_floor_usd(venue_id), 2))
 
 
 def _active_sell_leg_symbols(venue_id: str) -> frozenset[str]:
     """Symbols currently used as sell-leg base on this venue (live scan + recent PPP skips)."""
     venue = str(venue_id or "").lower()
-    symbols: set[str] = set()
+    symbols: set[str] = set(_sell_leg_floor_symbols())
     try:
         from backend.services import exchange_arbitrage_service as arb
 
         scan = arb.scan_opportunities(
-            symbols=["DOGE", "XRP", "BTC", "ETH", "SOL", "LINK", "LTC", "AVAX"],
+            symbols=["DOGE", "XRP", "BTC", "ETH", "SOL", "LINK", "LTC", "AVAX", "ALGO", "BNB"],
             venues=["binance", "nonkyc"],
             notional_usd=25,
         )
@@ -108,12 +154,13 @@ def _active_sell_leg_symbols(venue_id: str) -> frozenset[str]:
 
 def _protected_sell_assets(venue_id: str) -> frozenset[str]:
     """Base coins that must not be sold for quote shortfall (sell-leg inventory reserve)."""
-    min_usd = _min_sell_leg_usd()
     active = _active_sell_leg_symbols(venue_id)
     protected: set[str] = set(active)
+    protected.update(_sell_leg_floor_symbols())
     for usd_val, asset, _qty, _px in _sellable_base_on_venue(venue_id, min_usd=0):
         sym = str(asset or "").upper()
-        if usd_val < min_usd or sym in active:
+        reserve = _sell_leg_floor_usd(sym)
+        if usd_val < reserve or sym in active:
             protected.add(sym)
     return frozenset(protected)
 
@@ -416,8 +463,12 @@ def _fit_external_action_to_balance(action: Dict[str, Any], max_usd: float) -> D
     fund_cap = usd
     if side == "buy":
         free_q = _quote_free_usd(venue, quote)
-        if free_q > 0:
-            fund_cap = min(fund_cap, round(free_q * 0.95, 2))
+        spendable = _spendable_quote_usd(venue, quote)
+        if spendable <= 0:
+            fund_cap = 0.0
+        elif free_q > 0:
+            # Never spend into the quote floor; also keep a tiny fee buffer on free quote.
+            fund_cap = min(fund_cap, spendable, round(free_q * 0.95, 2))
         try:
             rows = search_paths(hours=6, limit=30).get("paths") or []
             for row in reversed(rows):
@@ -924,9 +975,10 @@ def _quote_shortfall_action(
         )
 
     for usd_val, asset, qty, px in _sellable_base_on_venue(venue_id, min_usd=2.0):
-        if str(asset or "").upper() in protected:
+        sym_u = str(asset or "").upper()
+        if sym_u in protected:
             continue
-        min_reserve = _min_sell_leg_usd()
+        min_reserve = _sell_leg_floor_usd(sym_u)
         max_sell_usd = round(usd_val - min_reserve, 2)
         if max_sell_usd < 5:
             continue
@@ -1044,13 +1096,39 @@ def _reduce_notional_action(
     configured_usd: float,
     *,
     score: float,
-) -> Dict[str, Any]:
-    cap = round(max(10.0, free_usd * 0.95), 2)
+) -> Optional[Dict[str, Any]]:
+    """Suggest a notional cap only when quote can still fund a viable trade.
+
+    When free quote is at/under the venue floor (or below ~$15), lowering notional
+    to $10 is a death spiral — prefer a refill advisory instead.
+    """
+    free = float(free_usd or 0)
+    floor = _quote_floor_usd(venue_id)
+    min_viable = 15.0
+    if free <= floor + 1e-9 or free < min_viable:
+        return {
+            "type": "refill_quote",
+            "priority": "high",
+            "priority_score": max(score, 8.0),
+            "label": (
+                f"Refill {venue_id} {quote_asset} above ${floor:.0f} floor "
+                f"(free ~${free:.0f}; skip notional death-spiral)"
+            ),
+            "venue_id": venue_id,
+            "quote": quote_asset,
+            "free_usd": round(free, 2),
+            "quote_floor_usd": floor,
+            "reason": "quote_below_floor_refill_required",
+            "top25_items": ["quote_floor", "skip_reason_funding", "refill_quote"],
+            "dry_run_safe": True,
+            "advisory_only": True,
+        }
+    cap = round(max(min_viable, free * 0.95), 2)
     return {
         "type": "reduce_notional",
         "priority": "medium",
         "priority_score": score,
-        "label": f"Lower notional to ${cap:.0f} (fits {venue_id} {quote_asset} ~${free_usd:.0f})",
+        "label": f"Lower notional to ${cap:.0f} (fits {venue_id} {quote_asset} ~${free:.0f})",
         "venue_id": venue_id,
         "suggested_notional_usd": cap,
         "configured_notional_usd": round(configured_usd, 2),
@@ -1173,32 +1251,81 @@ def suggest_swap_actions(
     from backend.services import external_exchange_connector_service as conn
 
     default_notion = float(conn.load_connectors_config().get("paper_trade_usd") or 75.0)
+    floor_syms = list(_sell_leg_floor_symbols())
     for vid in venue_ids:
         if not vapi.venue_has_credentials(vid):
             continue
         bals = vapi.parse_spot_balances(vid, dry_run=False)
         quote = vapi.venue_quote_asset(vid)
         free_q = float(bals.get(quote) or 0)
-        if 0 < free_q < default_notion and free_q < 100:
-            act = _reduce_notional_action(vid, quote, free_q, default_notion, score=3.0)
-            if act["label"] not in seen_labels:
+        q_floor = _quote_floor_usd(vid)
+        spendable = _spendable_quote_usd(vid, quote)
+        # Keep notional at/under spendable when quote is near/below floor.
+        notion_cap = max(spendable, min(free_q, q_floor)) if free_q > 0 else 0.0
+        if 0 < free_q < default_notion and (free_q < 100 or free_q <= q_floor + 5):
+            act = _reduce_notional_action(
+                vid, quote, max(notion_cap, free_q * 0.95), default_notion,
+                score=6.0 if free_q <= q_floor else 3.0,
+            )
+            if act and act.get("label") not in seen_labels:
                 seen_labels.add(act["label"])
                 actions.append(act)
-        if vid == "nonkyc":
+        # Priority sell-leg floors (LINK/XRP/ALGO/BNB) — only spend quote above floor.
+        if vid == "nonkyc" and spendable >= 5:
+            for sym in floor_syms:
+                if not vapi.venue_supports_symbol("nonkyc", sym):
+                    continue
+                coin = float(bals.get(sym) or 0)
+                px = float(ex._price_usd(sym) or 0)
+                inv_usd = coin * px if px > 0 else 0.0
+                target = _sell_leg_floor_usd(sym)
+                if inv_usd + 1e-9 >= target:
+                    continue
+                need_usd = round(min(max(target - inv_usd, 5.0), spendable), 2)
+                if need_usd < 5:
+                    continue
+                # Prefer most-underfunded priority symbol first.
+                under = target - inv_usd
+                sym_score = 12.0 if under >= 50 else 9.0 if under >= 25 else 7.0
+                spec = vapi.market_order_for_leg("nonkyc", "buy", sym, need_usd)
+                if not spec.get("ok"):
+                    continue
+                act = _external_buy_action(
+                    "nonkyc", sym, "buy",
+                    amount_usd=need_usd,
+                    qty=spec["quantity"],
+                    reason=(
+                        f"NonKYC {sym} ${inv_usd:.2f} below ${target:.0f} sell-leg floor "
+                        f"(spendable quote ${spendable:.2f}, floor ${q_floor:.0f})"
+                    ),
+                    priority="critical" if under >= 40 else "high",
+                    score=sym_score,
+                    top25=["sell_leg_floor", "skip_reason_funding", f"nonkyc_{sym.lower()}_low"],
+                    market=spec.get("market"),
+                    quote=spec.get("quote"),
+                )
+                if act["label"] not in seen_labels:
+                    seen_labels.add(act["label"])
+                    actions.append(act)
+        # Legacy DOGE minimum only when spendable quote remains after priority floors.
+        if vid == "nonkyc" and spendable >= 10:
             doge = float(bals.get("DOGE") or 0)
             doge_usd = doge * float(ex._price_usd("DOGE") or 0)
-            if doge_usd < 25 and vapi.venue_supports_symbol("nonkyc", "DOGE"):
-                need_usd = max(25.0 - doge_usd, 10.0)
-                # Stronger priority when inventory is far below sell-leg minimum.
-                doge_score = 8.0 if doge_usd < 15 else 6.5 if doge_usd < 20 else 5.0
+            doge_floor = _min_sell_leg_usd()
+            if doge_usd < doge_floor and vapi.venue_supports_symbol("nonkyc", "DOGE"):
+                need_usd = round(min(max(doge_floor - doge_usd, 10.0), spendable), 2)
+                doge_score = 5.5 if doge_usd < 15 else 4.0
                 spec = vapi.market_order_for_leg("nonkyc", "buy", "DOGE", need_usd)
                 if spec.get("ok"):
                     act = _external_buy_action(
                         "nonkyc", "DOGE", "buy",
                         amount_usd=need_usd,
                         qty=spec["quantity"],
-                        reason=f"NonKYC DOGE ${doge_usd:.2f} below $25 sell-leg minimum (prefund: prefund_arb_legs.py --live --symbol DOGE)",
-                        priority="critical" if doge_usd < 15 else "high",
+                        reason=(
+                            f"NonKYC DOGE ${doge_usd:.2f} below ${doge_floor:.0f} sell-leg minimum "
+                            f"(after quote floor ${q_floor:.0f})"
+                        ),
+                        priority="high" if doge_usd < 15 else "medium",
                         score=doge_score,
                         top25=["nonkyc_doge_low", "skip_reason_funding"],
                         market=spec.get("market"),
@@ -1264,6 +1391,15 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
         return {"success": False, "error": "invalid_action"}
 
     atype = str(action["type"])
+    if atype == "refill_quote":
+        return {
+            "success": True,
+            "dry_run": dry_run,
+            "skipped": True,
+            "reason": "advisory_only",
+            "action": action,
+            "hint": "Refill quote above floor instead of lowering notional into a death spiral.",
+        }
     if atype == "reduce_notional":
         if dry_run:
             return {
@@ -1343,8 +1479,26 @@ def execute_rotation(action: Dict[str, Any], *, dry_run: bool = True) -> Dict[st
         market = str(spec.get("market") or market or "")
         quote = spec.get("quote")
         usd = float(spec.get("notional_usd") or usd)
+        if side == "buy" and usd > 0 and not dry_run and rotation_live_enabled():
+            spendable = _spendable_quote_usd(venue, quote)
+            floor = _quote_floor_usd(venue)
+            if spendable + 1e-9 < max(5.0, usd * 0.98):
+                return {
+                    "success": False,
+                    "skipped": True,
+                    "error": "buy_would_breach_quote_floor",
+                    "reason": (
+                        f"spendable {quote or vapi.venue_quote_asset(venue)} "
+                        f"${spendable:.2f} below buy ${usd:.2f} (floor ${floor:.0f})"
+                    ),
+                    "action": action,
+                    "venue_id": venue,
+                    "symbol": sym,
+                    "quote_floor_usd": floor,
+                    "spendable_quote_usd": spendable,
+                }
         if side == "sell" and usd > 0:
-            min_reserve = _min_sell_leg_usd()
+            min_reserve = _sell_leg_floor_usd(sym)
             bals = vapi.parse_spot_balances(venue, dry_run=False)
             coin_free = float(bals.get(sym) or 0)
             px = float(spec.get("price_usd") or ex._price_usd(sym) or 0)

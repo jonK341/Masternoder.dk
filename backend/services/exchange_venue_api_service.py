@@ -235,6 +235,15 @@ def venue_api_request(
     api_base = str(vcfg.get("api_base") or "").rstrip("/")
     method = str(endpoint.get("method") or "GET").upper()
     path = str(endpoint.get("path") or "")
+    # Support `/getdepositaddress/{ticker}` style paths; consumed keys are removed from query/body.
+    if "{" in path and "}" in path:
+        try:
+            path = path.format(**{k: params[k] for k in params if f"{{{k}}}" in path})
+            for k in list(params.keys()):
+                if f"{{{k}}}" in str(endpoint.get("path") or ""):
+                    params.pop(k, None)
+        except (KeyError, ValueError) as exc:
+            return {"success": False, "error": "path_format_error", "detail": str(exc), "path": path}
 
     api_key = creds["api_key"] or ""
     api_secret = creds["api_secret"] or ""
