@@ -1,0 +1,87 @@
+.sm25-monitor {
+    display: grid;
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.sm25-monitor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+    gap: 4px;
+}
+
+.sm25-cell {
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.sm25-cell.done { background: rgba(255, 215, 0, 0.35); color: #ffd700; }
+.sm25-cell.secured { background: rgba(0, 212, 255, 0.35); color: #7ee7ff; }
+
+.sm25-monitor-line {
+    margin: 0;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.sm25-monitor-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.8fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.sm25-daemon {
+    border: 1px solid rgba(0, 255, 136, 0.35);
+    border-radius: 12px;
+    padding: 14px;
+    background: rgba(0, 255, 136, 0.06);
+}
+
+.sm25-daemon h3 {
+    margin: 0 0 8px;
+    color: #00ff88;
+    font-size: 1rem;
+}
+
+.sm25-daemon p {
+    margin: 0 0 8px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.86);
+}
+
+.sm25-daemon a {
+    color: #00ff88;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.sm25-stream iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 12px;
+    background: #000;
+}
+
+.sm25-stream p {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.sm25-stream a { color: #c4a7ff; }
+
+.sm25-monitor--dock { margin-top: 16px; }
+
+@media (max-width: 800px) {
+    .sm25-monitor-stage { grid-template-columns: 1fr; }
+}

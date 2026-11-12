@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
-    <link rel="stylesheet" href="/static/css/profit-daemon-monitor.css?v=20260704b">
+    <link rel="stylesheet" href="/static/css/profit-daemon-monitor.css?v=20261110a">
 </head>
 <body>
     <div class="pdm-page">
@@ -30,6 +30,7 @@
             <button type="button" class="pdm-tab" data-pdm-tab="news" role="tab">Profit news</button>
             <button type="button" class="pdm-tab" data-pdm-tab="rent" role="tab">Rent / buy</button>
             <button type="button" class="pdm-tab" data-pdm-tab="rewards" role="tab">Rewards</button>
+            <button type="button" class="pdm-tab" data-pdm-tab="level" role="tab">Level</button>
         </nav>
 
         <section class="pdm-panel active" data-pdm-panel="monitor" id="pdm-panel-monitor">
@@ -70,10 +71,34 @@
             </ul>
             <a class="pdm-btn" href="/exchange?tab=marketplace">Exchange shop</a>
         </section>
+
+        <section class="pdm-panel" data-pdm-panel="level" id="pdm-panel-level" hidden>
+            <h2>Daemon level</h2>
+            <p class="pdm-muted" id="pdm-level-summary">Loading level…</p>
+            <p class="pdm-level-active" id="pdm-level-active"></p>
+            <p class="pdm-yt" id="pdm-level-youtube">Checking YouTube…</p>
+            <div class="pdm-level-form">
+                <label>Vision
+                    <textarea id="pdm-level-vision" rows="2" maxlength="400" placeholder="What this level is for"></textarea>
+                </label>
+                <label>Next profit move
+                    <textarea id="pdm-level-move" rows="2" maxlength="400" placeholder="The move the daemon should follow"></textarea>
+                </label>
+                <div id="pdm-level-assigns" class="pdm-assign-list"></div>
+                <label class="pdm-admin-key">Admin key
+                    <input id="pdm-level-admin" type="password" autocomplete="off" placeholder="Only if PROFIT_DAEMON_ADMIN_KEY is set">
+                </label>
+                <p>
+                    <button type="button" class="pdm-btn" id="pdm-level-save">Save 20 assignments</button>
+                    <button type="button" class="pdm-btn" id="pdm-level-yt">Check YouTube live</button>
+                </p>
+                <p class="pdm-muted" id="pdm-level-msg"></p>
+            </div>
+        </section>
     </div>
     <script src="/static/js/user-id.js?v=20261010b"></script>
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js" defer></script>
-    <script src="/static/js/profit-daemon-monitor.js?v=20260704b" defer></script>
+    <script src="/static/js/profit-daemon-monitor.js?v=20261110b" defer></script>
 </body>
 </html>

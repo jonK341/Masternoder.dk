@@ -3,7 +3,49 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
+from backend.services.profit_daemon_leveling_service import (
+    LevelInputError,
+    assign_level,
+    check_youtube_live,
+    snapshot as daemon_level_snapshot,
+)
+from backend.services.profit_daemon_ops_service import require_profit_daemon_admin
+
 profit_daemon_bp = Blueprint("profit_daemon", __name__)
+
+
+@profit_daemon_bp.route("/api/profit-daemon/level", methods=["GET"])
+def profit_daemon_level():
+    board = daemon_level_snapshot()
+    if request.args.get("check_youtube") in ("1", "true", "yes"):
+        board["youtube"] = check_youtube_live()
+    return jsonify(board)
+
+
+@profit_daemon_bp.route("/api/profit-daemon/level", methods=["POST"])
+def profit_daemon_level_save():
+    ok, reason = require_profit_daemon_admin(dict(request.headers))
+    if not ok:
+        return jsonify({"success": False, "error": reason}), 403
+    body = request.get_json(silent=True) or {}
+    level = body.get("level")
+    try:
+        saved = assign_level(
+            body.get("vision"),
+            body.get("next_profit_move"),
+            body.get("assignments"),
+            level=int(level) if level is not None else None,
+        )
+    except LevelInputError as exc:
+        return jsonify({"success": False, "error": exc.code}), 400
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "level_out_of_range"}), 400
+    return jsonify(saved)
+
+
+@profit_daemon_bp.route("/api/profit-daemon/level/youtube-check", methods=["POST"])
+def profit_daemon_level_youtube():
+    return jsonify(check_youtube_live())
 
 
 @profit_daemon_bp.route("/api/profit-daemon/metrics", methods=["GET"])

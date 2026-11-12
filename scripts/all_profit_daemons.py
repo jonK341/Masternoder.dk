@@ -38,6 +38,7 @@ os.environ.setdefault("LITE_APP", "1")
 os.environ.setdefault("PYTHONUNBUFFERED", "1")
 
 from scripts.daemon_env import daemon_mode_label, load_dotenv
+from backend.services.profit_daemon_leveling_service import active_directive, level_pulse
 
 PROFILE_INTERVALS = {
     "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120},
@@ -163,6 +164,13 @@ def _write_heartbeat(loop: str, summary: str, extra: Optional[Dict[str, Any]] = 
     }
     if extra:
         payload.update(extra)
+    try:
+        directive = active_directive()
+        payload["level"] = directive.get("level")
+        payload["vision"] = directive.get("vision") or ""
+        payload["next_profit_move"] = directive.get("next_profit_move") or ""
+    except Exception:
+        pass
     try:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
@@ -813,6 +821,12 @@ def main() -> int:
         print(format_preflight(pf), flush=True)
 
     _warm_flask_for_daemons()
+    try:
+        pulse = level_pulse()
+        if pulse.get("log"):
+            print(pulse["log"], flush=True)
+    except Exception as exc:
+        print(f"[all-profit] level pulse skipped: {exc}", flush=True)
 
     for t in threads:
         t.start()
@@ -821,6 +835,12 @@ def main() -> int:
     try:
         while True:
             stop.wait(timeout=30)
+            try:
+                pulse = level_pulse()
+                if pulse.get("log"):
+                    print(pulse["log"], flush=True)
+            except Exception as exc:
+                print(f"[all-profit] level pulse skipped: {exc}", flush=True)
             if stop.is_set():
                 break
             dead = [t.name for t in threads if not t.is_alive()]

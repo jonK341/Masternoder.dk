@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from backend.services import crypto_exchange_service as ex
+from backend.services.profit_daemon_leveling_service import snapshot as daemon_level_snapshot
 from backend.services.profit_daemon_paths import heartbeat_path
 
 _HEARTBEAT = heartbeat_path()
@@ -762,6 +763,7 @@ def monitor_status() -> Dict[str, Any]:
         "zero_fill_streak": hb.get("zero_fill_streak"),
         "hot_symbols": hb.get("hot_symbols") or [],
         "server": server_state,
+        "level": daemon_level_snapshot(),
         "checked_at": _iso(),
         **extras,
     }

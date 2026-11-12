@@ -810,6 +810,27 @@
                 <div><button type="button" id="print-map-btn">Print map</button></div>
             </div>
             <div class="monitor-result-line" id="monitor-result-line">Showing all systems.</div>
+            <div class="sm25-monitor sm25-monitor--dock" data-starmap-monitor>
+                <div class="sm25-monitor-stage">
+                    <article class="sm25-daemon" data-daemon-jon>
+                        <h3>Profit daemon Jon</h3>
+                        <p data-daemon-level>Loading Jon…</p>
+                        <p data-daemon-vision></p>
+                        <p data-daemon-move></p>
+                        <a href="/profit/">Daemon board</a>
+                    </article>
+                </div>
+                <div class="sm25-stream">
+                    <iframe
+                        data-live-stream
+                        title="Jon live stream"
+                        src="https://www.youtube.com/embed/-iSYSBSn_8E?rel=0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen></iframe>
+                    <p data-live-note>Loading the live stream…</p>
+                </div>
+            </div>
         </div>
         <div class="monitor-panel buildup-panel" id="buildup-panel">
             <h3>Buildup command — build, deploy, collect</h3>
@@ -2064,6 +2085,8 @@
 
     <!-- Hypnotic Point Counters -->
     <script src="/static/js/hypnotic-point-counters.js"></script>
+    <link rel="stylesheet" href="/static/css/starmap25-front-monitor.css?v=20261110c">
+    <script src="/static/js/starmap25-front-monitor.js?v=20261110c" defer></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="starmap25" defer></script>
 </body>
 </html>
