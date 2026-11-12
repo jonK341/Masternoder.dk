@@ -228,9 +228,19 @@ def maybe_alert_venue_balance_low(*, venues: Optional[Dict[str, Any]] = None) ->
 
 
 def maybe_scale_paper_trade_usd(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
-    """Align paper_trade_usd with smallest max_funded_usd when cap exceeds funding."""
+    """Keep paper_trade_usd at/above the live floor; scale down only when funding is tighter.
+
+    Live prepare requires ``min_live_usd`` (>= $10). A sunk micro notional like $0.01
+    makes every external leg fail before the venue is even called. Recover toward the
+    floor even when no max_funded caps are present yet.
+    """
     if os.environ.get("EXCHANGE_AUTO_SCALE_NOTIONAL", "1").strip().lower() in ("0", "false", "no", "off"):
         return {"skipped": True, "reason": "disabled"}
+    cfg = ex._read_json(_CONNECTORS_PATH, {})
+    if not isinstance(cfg, dict):
+        return {"skipped": True, "reason": "no_config"}
+    current = float(cfg.get("paper_trade_usd") or 75)
+    floor = float(os.environ.get("EXCHANGE_PAPER_TRADE_FLOOR_USD", "10"))
     plat = exchange_res.get("platform") or {}
     arb = (plat.get("results") or {}).get("arbitrage") or {}
     caps = [
@@ -242,25 +252,44 @@ def maybe_scale_paper_trade_usd(exchange_res: Dict[str, Any]) -> Dict[str, Any]:
         bq = arb.get("best_qualifying") or {}
         if bq.get("max_funded_usd") is not None:
             caps = [float(bq["max_funded_usd"])]
-    if not caps:
-        return {"skipped": True, "reason": "no_caps"}
-    max_funded = min(caps)
-    cfg = ex._read_json(_CONNECTORS_PATH, {})
-    if not isinstance(cfg, dict):
-        return {"skipped": True, "reason": "no_config"}
-    current = float(cfg.get("paper_trade_usd") or 75)
-    floor = float(os.environ.get("EXCHANGE_PAPER_TRADE_FLOOR_USD", "10"))
-    target = max(floor, min(current, round(max_funded * 0.95, 2)))
-    if target >= current - 0.5:
-        return {"skipped": True, "reason": "already_scaled", "paper_trade_usd": current}
+    max_funded = min(caps) if caps else None
+    if max_funded is None:
+        # No funding signal yet — still lift micro notionals back to the live floor.
+        target = max(floor, current)
+        source = "floor_recover" if current < floor else "unchanged"
+    else:
+        funded_cap = round(float(max_funded) * 0.95, 2)
+        if current < floor:
+            # Restore to floor when funding can support it; otherwise sit at funding.
+            target = floor if funded_cap >= floor else funded_cap
+            source = "floor_recover"
+        else:
+            # Scale down toward funding, never below the floor.
+            target = max(floor, min(current, funded_cap))
+            source = "max_funded_usd"
+    if abs(target - current) < 0.5:
+        return {
+            "skipped": True,
+            "reason": "already_scaled",
+            "paper_trade_usd": current,
+            "max_funded_usd": max_funded,
+            "floor_usd": floor,
+        }
     cfg["paper_trade_usd"] = target
     cfg["paper_trade_usd_scaled_at"] = _iso()
-    cfg["paper_trade_usd_scale_source"] = "max_funded_usd"
+    cfg["paper_trade_usd_scale_source"] = source
     try:
         ex._write_json(_CONNECTORS_PATH, cfg)
     except Exception as exc:
         return {"success": False, "error": str(exc)}
-    return {"success": True, "paper_trade_usd": target, "previous": current, "max_funded_usd": max_funded}
+    return {
+        "success": True,
+        "paper_trade_usd": target,
+        "previous": current,
+        "max_funded_usd": max_funded,
+        "floor_usd": floor,
+        "source": source,
+    }
 
 
 def maybe_auto_tune_sweep_min() -> Dict[str, Any]:
@@ -1031,6 +1060,7 @@ def run_exchange_tick_ops(
         out["reason"] = "tick_budget_exceeded"
         return out
     out["compound"] = compound_pause_on_kill()
+    out["notional_scale"] = maybe_scale_paper_trade_usd(exchange_res)
     out["stash_cap"] = maybe_alert_stash_cap_before_sweep()
     out["stash_milestone"] = maybe_alert_stash_milestone()
     out["binance_preflight"] = binance_withdraw_preflight()
