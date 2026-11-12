@@ -208,6 +208,44 @@ def video_provider_status():
         providers.append({"name": "Replicate SVD", "key_env": "REPLICATE_API_TOKEN", "available": False, "type": "video"})
 
     try:
+        from backend.services.film_canvas_service import (
+            is_available as film_canvas_available,
+            list_canvases,
+            select_canvas,
+        )
+        for row in list_canvases():
+            canvas_id = str(row.get("id") or "")
+            purpose = "planning" if canvas_id == "dramacanva" else "render"
+            providers.append({
+                "name": row.get("label") or canvas_id,
+                "id": canvas_id,
+                "key_env": row.get("key_env"),
+                "available": film_canvas_available(canvas_id, purpose=purpose),
+                "type": "film_canvas",
+                "uses": row.get("uses") or [],
+                "websocket": row.get("websocket") or None,
+                "http_base": row.get("http_base") or None,
+                "generates_mp4": bool(row.get("generates_mp4")),
+                "configured": bool(row.get("key_configured")),
+            })
+        providers.append({
+            "name": "Film canvas auto-select",
+            "id": "film_canvas_auto",
+            "key_env": "FILM_CANVAS",
+            "available": select_canvas("render") is not None,
+            "type": "film_canvas",
+            "selected_renderer": select_canvas("render"),
+            "selected_planner": select_canvas("planning"),
+        })
+    except Exception:
+        providers.append({
+            "name": "Film canvases",
+            "key_env": "FAL_API_KEY",
+            "available": False,
+            "type": "film_canvas",
+        })
+
+    try:
         from backend.services.stability_image_service import is_available as stab_ok
         providers.append({"name": "Stability AI", "key_env": "STABILITY_AI_API_KEY", "available": stab_ok(), "type": "image"})
     except Exception:
