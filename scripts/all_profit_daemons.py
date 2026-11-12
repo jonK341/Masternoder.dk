@@ -40,15 +40,15 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "hunter": 20},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "hunter": 30},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "hunter": 15},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "hunter": 15},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 45, "hunter": 20},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "dual_farm": 60, "hunter": 30},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 30, "hunter": 15},
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
 _LIVE_PROFIT_MAX_INTERVALS = {
-    "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90, "hunter": 15,
+    "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15,
 }
 
 
@@ -460,6 +460,45 @@ def _summarize_fast(res: Dict[str, Any]) -> str:
     return " ".join(parts)
 
 
+def _summarize_dual_farm(res: Dict[str, Any]) -> str:
+    top = res.get("top") or {}
+    parts = [
+        f"exec={'yes' if res.get('executed') else 'no'}",
+        f"qual={res.get('external_qualifying', 0)}",
+    ]
+    if top.get("net_bps") is not None:
+        parts.append(f"best={float(top['net_bps']):.1f}bps")
+        parts.append(f"sym={top.get('symbol') or '?'}")
+        route = f"{top.get('buy_venue') or '?'}→{top.get('sell_venue') or '?'}"
+        parts.append(f"route={route}")
+    if res.get("prefund"):
+        pref = res["prefund"]
+        if pref.get("action") == "prefund_sell":
+            parts.append(f"prefund={pref.get('symbol')}:${pref.get('sell_usd')}")
+        elif pref.get("reason"):
+            parts.append(f"prefund={pref.get('reason')}")
+    if res.get("skip_reason"):
+        parts.append(f"skip={res.get('skip_reason')}")
+    if res.get("skipped"):
+        parts.append(f"disabled={res.get('reason')}")
+    return " ".join(parts)
+
+
+def _dual_farm_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] dual-farm arm interval={interval}s (BN↔NK + prefund)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_dual_farm_arm_service import run_dual_farm_arm_tick
+
+            res = run_dual_farm_arm_tick()
+            summary = _summarize_dual_farm(res)
+            print(f"[all-profit] dual_farm {summary}", flush=True)
+            _write_heartbeat("dual_farm", summary)
+        except Exception as exc:
+            print(f"[all-profit] dual_farm error: {exc}", flush=True)
+        stop.wait(max(15, interval))
+
+
 def _summarize_hunter(res: Dict[str, Any]) -> str:
     top = res.get("top") or {}
     parts = [
@@ -745,6 +784,16 @@ def main() -> int:
         action="store_true",
         help="Do not run spread-hunter arm (wide BN↔NK catalog hunt)",
     )
+    parser.add_argument(
+        "--skip-dual-farm",
+        action="store_true",
+        help="Do not run dedicated dual-farm arm (Binance↔NonKYC + prefund)",
+    )
+    parser.add_argument(
+        "--skip-feed",
+        action="store_true",
+        help="No-op (compat with ops wrappers that pass --skip-feed)",
+    )
     parser.add_argument("--auto-sweep", action="store_true",
                         help="Force PayPal sweep when ready (also set EXCHANGE_AUTO_PAYPAL_SWEEP=1; "
                              "min threshold via EXCHANGE_AUTO_SWEEP_MIN_USD or payout_config min_sweep_usd)")
@@ -764,6 +813,7 @@ def main() -> int:
     stuck_iv = int(os.environ.get("EXCHANGE_STUCK_INTERVAL") or 0) or iv.get("stuck") or 600
     micro_iv = int(os.environ.get("MN2_MICRO_CHAIN_INTERVAL") or 0) or iv.get("micro") or 120
     hunter_iv = int(os.environ.get("SPREAD_HUNTER_INTERVAL_SEC") or 0) or iv.get("hunter") or 20
+    dual_iv = int(os.environ.get("DUAL_FARM_INTERVAL_SEC") or 0) or iv.get("dual_farm") or 0
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -782,6 +832,10 @@ def main() -> int:
                 out["stuck"] = _stuck_once(apply_grid=True)
             if not args.skip_micro_chain:
                 out["micro_chain"] = _micro_chain_once()
+            if not args.skip_dual_farm:
+                from backend.services.exchange_dual_farm_arm_service import run_dual_farm_arm_tick
+
+                out["dual_farm"] = run_dual_farm_arm_tick(force=True)
             if not args.skip_hunter:
                 from backend.services.exchange_spread_hunter_arm_service import run_spread_hunter_tick
 
@@ -805,6 +859,8 @@ def main() -> int:
                 print(f"[all-profit] stuck {_summarize_stuck(out['stuck'])}", flush=True)
             if "micro_chain" in out:
                 print(f"[all-profit] micro_chain {_summarize_micro(out['micro_chain'])}", flush=True)
+            if "dual_farm" in out:
+                print(f"[all-profit] dual_farm {_summarize_dual_farm(out['dual_farm'])}", flush=True)
             if "hunter" in out:
                 print(f"[all-profit] hunter {_summarize_hunter(out['hunter'])}", flush=True)
         return 0 if out else 1
@@ -828,6 +884,8 @@ def main() -> int:
             print(f"  stuck inventory → grid strategy interval={stuck_iv}s")
         if not args.skip_micro_chain:
             print(f"  portal micro-chain (MN2) interval={micro_iv}s")
+        if dual_iv and not args.skip_dual_farm:
+            print(f"  dual-farm arm interval={dual_iv}s")
         if hunter_iv and not args.skip_hunter:
             print(f"  spread-hunter arm interval={hunter_iv}s")
     if not skip_casino and not args.skip_exchange:
@@ -854,6 +912,10 @@ def main() -> int:
         if not args.skip_micro_chain:
             threads.append(threading.Thread(
                 target=_micro_chain_loop, args=(micro_iv, stop), name="micro_chain", daemon=True,
+            ))
+        if dual_iv and not args.skip_dual_farm:
+            threads.append(threading.Thread(
+                target=_dual_farm_loop, args=(dual_iv, stop), name="dual_farm", daemon=True,
             ))
         if hunter_iv and not args.skip_hunter:
             threads.append(threading.Thread(
