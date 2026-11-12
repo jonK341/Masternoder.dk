@@ -5,7 +5,13 @@ Star Map 25: 25 WH40K-themed investigation points; investigate to earn game_poin
 """
 import os
 import json
+from contextlib import contextmanager
 from flask import Blueprint, jsonify, request
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - non-Unix
+    fcntl = None
 
 star_map_bp = Blueprint("star_map", __name__)
 
@@ -54,14 +60,204 @@ def _active_starmap25_boosters(user_id: str):
     boosters = points.get("active_boosters") or []
     active = []
     for booster in boosters:
-        text = ((booster.get("id") or "") + " " + (booster.get("name") or "")).lower()
-        if "star map 25" in text or "starmap25" in text or "star-map-25" in text:
+        bid = str(booster.get("id") or "").lower()
+        text = (bid + " " + (booster.get("name") or "")).lower()
+        if (
+            "star map 25" in text
+            or "starmap25" in text
+            or "star-map-25" in text
+            or bid.startswith("starmap25-booster")
+            or bid in ("shop-22", "shop-23", "shop-24")
+        ):
             active.append(booster)
     return active
 
 
 def _starmap25_booster_multiplier(user_id: str) -> float:
     return 2.0 if _active_starmap25_boosters(user_id) else 1.0
+
+
+STARMAP25_CONSUMABLE_ALIASES = {
+    "starmap25-level-skip": "starmap25_level_skip",
+    "shop-32": "starmap25_level_skip",
+    "starmap25-daily-reset-bonus": "starmap25_daily_reset_bonus",
+    "shop-33": "starmap25_daily_reset_bonus",
+    "starmap25-structure-unlock": "starmap25_structure_unlock",
+    "shop-34": "starmap25_structure_unlock",
+}
+
+STARMAP25_HIGH_STRUCTURES = {"orbital_fortress", "cathedral", "primarch_gate"}
+
+
+def _ensure_buildup_user(user_id: str):
+    buildup = _load_buildup()
+    users = buildup.setdefault("users", {})
+    user = users.setdefault(user_id, {})
+    user.setdefault("placements", [])
+    user.setdefault("last_collect_ts", None)
+    user.setdefault("level_overrides", {})
+    user.setdefault("structure_unlocks", 0)
+    user.setdefault("daily_reset_bonus_until", None)
+    user.setdefault("unlocked_specials", ["guard", "fleet", "scout", "garrison"])
+    user.setdefault("classified_lore_ids", [])
+    return buildup, user
+
+
+def unlock_starmap25_special_unit(user_id: str, unit_id: str):
+    """Shop/quest unlock for special units. Safe to call multiple times."""
+    unit_id = (unit_id or "").strip()
+    if not unit_id:
+        return False
+    buildup, user = _ensure_buildup_user(user_id)
+    unlocked = user.setdefault("unlocked_specials", [])
+    if unit_id not in unlocked:
+        unlocked.append(unit_id)
+        _save_buildup(buildup)
+    return True
+
+
+def _user_unlocked_specials(user_id: str):
+    _, user = _ensure_buildup_user(user_id)
+    base = ["guard", "fleet", "scout", "garrison"]
+    unlocked = list(user.get("unlocked_specials") or [])
+    for uid in base:
+        if uid not in unlocked:
+            unlocked.append(uid)
+    return unlocked
+
+
+def _resolve_consumable_effect(item_id: str):
+    item_id = (item_id or "").strip()
+    if item_id in STARMAP25_CONSUMABLE_ALIASES:
+        return STARMAP25_CONSUMABLE_ALIASES[item_id]
+    low = item_id.lower()
+    if "level-skip" in low or "level_skip" in low:
+        return "starmap25_level_skip"
+    if "daily-reset" in low or "daily_reset" in low:
+        return "starmap25_daily_reset_bonus"
+    if "structure-unlock" in low or "structure_unlock" in low:
+        return "starmap25_structure_unlock"
+    return None
+
+
+def _consume_inventory_item(user_id: str, item_id: str):
+    from backend.services.shop_db_service import get_inventory, reserve_inventory
+
+    candidates = [item_id]
+    # Accept legacy shop-* ids still sitting in inventories after catalog id freeze.
+    reverse = {
+        "starmap25_level_skip": ["starmap25-level-skip", "shop-32"],
+        "starmap25_daily_reset_bonus": ["starmap25-daily-reset-bonus", "shop-33"],
+        "starmap25_structure_unlock": ["starmap25-structure-unlock", "shop-34"],
+    }
+    effect = _resolve_consumable_effect(item_id)
+    for alt in reverse.get(effect or "", []):
+        if alt not in candidates:
+            candidates.append(alt)
+    inv = {row.get("item_id"): row for row in (get_inventory(user_id) or []) if row.get("item_id")}
+    for cid in candidates:
+        row = inv.get(cid)
+        if row and int(row.get("quantity") or 0) > 0:
+            reserved = reserve_inventory(user_id, cid, 1)
+            if reserved:
+                return cid, reserved
+    return None, None
+
+
+def _apply_starmap25_consumable(user_id: str, effect: str, point_id: str = None, building_id: str = None):
+    buildup, user = _ensure_buildup_user(user_id)
+    from datetime import timedelta
+
+    if effect == "starmap25_level_skip":
+        if not point_id:
+            return False, "point_id required for level skip", None
+        inv = _load_investigations()
+        if point_id not in inv.get(user_id, []):
+            return False, "Investigate this system before using a level skip", None
+        levels = _get_user_system_levels(user_id)
+        current = int(levels.get(point_id, 0) or 0)
+        if current <= 0:
+            return False, "System has no level yet", None
+        if current >= 5:
+            return False, "System already at max level", None
+        overrides = user.setdefault("level_overrides", {})
+        overrides[point_id] = min(5, max(current + 1, int(overrides.get(point_id, 0) or 0) + 1))
+        _save_buildup(buildup)
+        return True, None, {"point_id": point_id, "new_level": overrides[point_id]}
+
+    if effect == "starmap25_daily_reset_bonus":
+        until = (_utc_now() + timedelta(hours=24)).isoformat()
+        user["daily_reset_bonus_until"] = until
+        _save_buildup(buildup)
+        return True, None, {"daily_reset_bonus_until": until}
+
+    if effect == "starmap25_structure_unlock":
+        user["structure_unlocks"] = int(user.get("structure_unlocks") or 0) + 1
+        _save_buildup(buildup)
+        return True, None, {"structure_unlocks": user["structure_unlocks"], "building_id": building_id}
+
+    return False, "Unknown consumable effect", None
+
+
+def _personal_daily_reset_bonus_active(user_id: str) -> bool:
+    _, user = _ensure_buildup_user(user_id)
+    until = _parse_iso_utc(user.get("daily_reset_bonus_until"))
+    return bool(until and until > _utc_now())
+
+
+def _apply_special_rule_bonus(unit: dict, point: dict, base_reward: float, special_unit: dict = None):
+    """Return (reward, classified_lore, rule_notes)."""
+    reward = float(base_reward)
+    classified = False
+    notes = []
+    point_tags = set(point.get("tags") or _point_tags(point.get("id", "")))
+    units = [u for u in (unit, special_unit) if u]
+    for u in units:
+        rule = (u.get("special_rule") or "").strip()
+        if rule == "bonus_legion_homeworld" and "legion_homeworld" in point_tags:
+            reward = round(reward * 1.5, 2)
+            notes.append("legion_homeworld_bonus")
+        elif rule == "bonus_forge_world" and "forge" in point_tags:
+            reward = round(reward * 1.5, 2)
+            notes.append("forge_world_bonus")
+        elif rule == "unlock_lore":
+            classified = True
+            notes.append("classified_lore")
+            if "throne" in point_tags or "fortress" in point_tags:
+                reward = round(reward + 5, 2)
+    return reward, classified, notes
+
+
+def _generate_invasion_blurb(unit_name: str, point_name: str, event_suffix: str = ""):
+    template = f"{unit_name} secured {point_name}; the system is now marked as held.{event_suffix}"
+    try:
+        from backend.services.llm_service import llm_service
+        if llm_service and llm_service.is_available():
+            from backend.services.llm_service import chat
+            resp = chat(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Write one short Warhammer 40K-flavoured invasion blurb (max 20 words). No quotes.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Unit: {unit_name}. System: {point_name}.",
+                    },
+                ],
+                task_type="speed",
+                max_tokens=60,
+                temperature=0.8,
+            )
+            if resp and getattr(resp, "success", False) and getattr(resp, "content", ""):
+                text = " ".join(str(resp.content).strip().split())
+                if text:
+                    if event_suffix and event_suffix.strip() not in text:
+                        text = text.rstrip(".") + "." + event_suffix
+                    return text, getattr(resp, "provider", None) or "llm"
+    except Exception:
+        pass
+    return template, "template"
 
 
 def _utc_now():
@@ -112,42 +308,161 @@ def _load_star_map_25():
     return {"name": "Star Map 25", "points": [], "specials": ["run_verification", "run_dna_test", "view_star_map"]}
 
 
-def _load_investigations():
-    if os.path.exists(STAR_MAP_25_INVESTIGATIONS_PATH):
+@contextmanager
+def _json_state_lock(path):
+    """Exclusive file lock for Star Map JSON state (Top 25 #24)."""
+    lock_path = path + ".lock"
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    handle = open(lock_path, "a+", encoding="utf-8")
+    try:
+        if fcntl is not None:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        yield handle
+    finally:
         try:
-            with open(STAR_MAP_25_INVESTIGATIONS_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
+            if fcntl is not None:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        finally:
+            handle.close()
+
+
+def _read_json_file(path, default):
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def _load_investigations():
+    with _json_state_lock(STAR_MAP_25_INVESTIGATIONS_PATH):
+        data = _read_json_file(STAR_MAP_25_INVESTIGATIONS_PATH, {})
+        return data if isinstance(data, dict) else {}
+
+
+def _save_json_state(path, data, label):
+    """Atomic JSON write under exclusive lock with audible failure logging (Top 25 #14/#24)."""
+    try:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with _json_state_lock(path):
+            tmp = path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, path)
+        return True
+    except Exception as exc:
+        try:
+            import logging
+            logging.getLogger("starmap25").error("Failed to save %s (%s): %s", label, path, exc)
         except Exception:
             pass
-    return {}
+        try:
+            os.makedirs(os.path.dirname(STAR_MAP_25_EVENT_LOG_PATH), exist_ok=True)
+            with open(STAR_MAP_25_EVENT_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "ts": _utc_now().isoformat(),
+                    "action": "state_save_error",
+                    "label": label,
+                    "path": path,
+                    "error": str(exc),
+                }) + "\n")
+        except Exception:
+            pass
+        return False
 
 
 def _save_investigations(data):
-    try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_INVESTIGATIONS_PATH), exist_ok=True)
-        with open(STAR_MAP_25_INVESTIGATIONS_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception:
-        pass
+    return _save_json_state(STAR_MAP_25_INVESTIGATIONS_PATH, data, "investigations")
 
 
 def _load_invasions():
-    if os.path.exists(STAR_MAP_25_INVASIONS_PATH):
-        try:
-            with open(STAR_MAP_25_INVASIONS_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"users": {}}
+    with _json_state_lock(STAR_MAP_25_INVASIONS_PATH):
+        data = _read_json_file(STAR_MAP_25_INVASIONS_PATH, {"users": {}})
+        if not isinstance(data, dict):
+            return {"users": {}}
+        data.setdefault("users", {})
+        return data
 
 
 def _save_invasions(data):
+    return _save_json_state(STAR_MAP_25_INVASIONS_PATH, data, "invasions")
+
+
+def _point_unlock_requirement(point, sm25=None):
+    """Return optional unlock_requirement dict for a point (investigate list)."""
+    if not point:
+        return None
+    req = point.get("unlock_requirement")
+    if req is None and sm25 is not None:
+        meta = (sm25.get("point_metadata") or {}).get(point.get("id") or "", {})
+        req = meta.get("unlock_requirement")
+    if not req:
+        return None
+    if isinstance(req, dict):
+        return req
+    if isinstance(req, str):
+        return {"investigate": [req]}
+    if isinstance(req, list):
+        return {"investigate": [str(x) for x in req]}
+    return None
+
+
+def _unlock_requirement_met(requirement, investigated_ids):
+    """Check unlock_requirement against investigated point ids. Returns (ok, missing)."""
+    if not requirement:
+        return True, []
+    investigated = set(investigated_ids or [])
+    needed = [str(x) for x in (requirement.get("investigate") or []) if x]
+    missing = [pid for pid in needed if pid not in investigated]
+    return (len(missing) == 0), missing
+
+
+def starmap25_ai_context(user_id: str):
+    """Compact Star Map 25 + tech context for shop AI / agent strategy (Top 25 #23)."""
+    user_id = (user_id or "default_user").strip() or "default_user"
     try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_INVASIONS_PATH), exist_ok=True)
-        with open(STAR_MAP_25_INVASIONS_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        investigated = list(_load_investigations().get(user_id) or [])
     except Exception:
-        pass
+        investigated = []
+    try:
+        sm25 = _load_star_map_25()
+        total_points = len(sm25.get("points") or [])
+    except Exception:
+        total_points = 25
+    try:
+        invasion_user = (_load_invasions().get("users") or {}).get(user_id) or {}
+        secured = list(invasion_user.get("invaded_ids") or [])
+    except Exception:
+        secured = []
+    try:
+        buildup_user = (_load_buildup().get("users") or {}).get(user_id) or {}
+        placements = len(buildup_user.get("placements") or [])
+        unlocked_specials = list(buildup_user.get("unlocked_specials") or [])
+    except Exception:
+        placements = 0
+        unlocked_specials = []
+    return {
+        "investigated_count": len(investigated),
+        "investigated_ids": investigated[:12],
+        "total_points": total_points,
+        "secured_count": len(secured),
+        "placements": placements,
+        "unlocked_specials": unlocked_specials[:8],
+        "monitor_url": "/starmap25/",
+        "techs": [
+            {"id": "agent_electric_magnet", "role": "view_star_map"},
+            {"id": "agent_event_tracker", "role": "track_starmap25_actions"},
+        ],
+        "shop_focus_hint": (
+            "starmap25 boosters and special units"
+            if len(investigated) >= 3
+            else "starmap25 entry boosters and Terra investigation"
+        ),
+    }
 
 
 def _load_trophy_awards():
@@ -161,12 +476,7 @@ def _load_trophy_awards():
 
 
 def _save_trophy_awards(data):
-    try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_TROPHIES_PATH), exist_ok=True)
-        with open(STAR_MAP_25_TROPHIES_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception:
-        pass
+    return _save_json_state(STAR_MAP_25_TROPHIES_PATH, data, "trophies")
 
 
 def _load_crypto_state():
@@ -180,12 +490,7 @@ def _load_crypto_state():
 
 
 def _save_crypto_state(data):
-    try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_CRYPTO_PATH), exist_ok=True)
-        with open(STAR_MAP_25_CRYPTO_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception:
-        pass
+    return _save_json_state(STAR_MAP_25_CRYPTO_PATH, data, "crypto")
 
 
 def _starmap25_crypto_options():
@@ -354,25 +659,56 @@ def _claim_starmap25_crypto(user_id: str, option_id: str):
 
 def _starmap25_trophy_definitions():
     return {
-        "terra": {"name": "Terra Trophy", "description": "Investigate Terra.", "reward": 25},
-        "segmentum_clear": {"name": "Segmentum Clear", "description": "Investigate all five Segmentum fortress points.", "reward": 50},
-        "full_clear": {"name": "Full Clear", "description": "Investigate all 25 Star Map systems.", "reward": 100},
-        "lore_master": {"name": "Lore Master", "description": "Unlock all 25 lore entries.", "reward": 75},
+        "terra": {
+            "name": "Terra Trophy",
+            "description": "Make Terra your first investigation on Star Map 25.",
+            "reward": 25,
+        },
+        "segmentum_clear": {
+            "name": "Segmentum Clear",
+            "description": "Fully investigate every system in at least one Segmentum.",
+            "reward": 50,
+        },
+        "full_clear": {
+            "name": "Full Clear",
+            "description": "Investigate all 25 Star Map systems.",
+            "reward": 100,
+        },
+        "lore_master": {
+            "name": "Lore Master",
+            "description": "Full clear plus classified lore on at least 5 systems (Inquisition).",
+            "reward": 75,
+        },
     }
 
 
 def _compute_starmap25_trophies(user_id: str):
     data = _load_star_map_25()
     inv = _load_investigations()
-    investigated = set(inv.get(user_id, []))
-    total_points = len(data.get("points", []))
-    segmentums = data.get("segmentums", {})
-    fortress_ids = [s.get("fortress_point_id") for s in segmentums.values() if s.get("fortress_point_id")]
+    investigated_list = list(inv.get(user_id, []) or [])
+    investigated = set(investigated_list)
+    points = data.get("points", [])
+    total_points = len(points)
+    full_clear = total_points > 0 and len(investigated) >= total_points
+    # Segmentum Clear = every system in at least one Segmentum investigated
+    by_seg = {}
+    for point in points:
+        seg = point.get("segmentum") or "Unknown"
+        by_seg.setdefault(seg, []).append(point.get("id"))
+    segmentum_clear = False
+    for ids in by_seg.values():
+        if ids and all(pid in investigated for pid in ids):
+            segmentum_clear = True
+            break
+    _, user = _ensure_buildup_user(user_id)
+    classified = set(user.get("classified_lore_ids") or [])
+    lore_master = full_clear and len(classified) >= 5
+    terra = bool(investigated_list) and investigated_list[0] == "terra_sol"
     return {
-        "terra": "terra_sol" in investigated,
-        "segmentum_clear": bool(fortress_ids) and all(fid in investigated for fid in fortress_ids),
-        "full_clear": total_points > 0 and len(investigated) >= total_points,
-        "lore_master": total_points > 0 and len(investigated) >= total_points,
+        "terra": terra,
+        "segmentum_clear": segmentum_clear,
+        "full_clear": full_clear,
+        "lore_master": lore_master,
     }
 
 
@@ -510,17 +846,18 @@ def _event_reward_modifier(action, point):
 
 
 def _log_event_participation(user_id, action, point_id, event_matches, metadata=None):
-    if not event_matches:
-        return
+    """Append always-on Star Map action telemetry (events optional)."""
     try:
         from datetime import datetime, timezone
         os.makedirs(os.path.dirname(STAR_MAP_25_EVENT_LOG_PATH), exist_ok=True)
+        matches = event_matches or []
         row = {
             "ts": datetime.now(timezone.utc).isoformat(),
             "user_id": user_id,
             "action": action,
             "point_id": point_id,
-            "event_ids": [e.get("id") for e in event_matches],
+            "event_ids": [e.get("id") for e in matches if isinstance(e, dict)],
+            "event_active": bool(matches),
             "metadata": metadata or {},
         }
         with open(STAR_MAP_25_EVENT_LOG_PATH, "a", encoding="utf-8") as f:
@@ -671,22 +1008,44 @@ def _load_units():
 
 
 def _load_buildup():
-    if os.path.exists(STAR_MAP_25_BUILDUP_PATH):
-        try:
-            with open(STAR_MAP_25_BUILDUP_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"users": {}}
+    with _json_state_lock(STAR_MAP_25_BUILDUP_PATH):
+        data = _read_json_file(STAR_MAP_25_BUILDUP_PATH, {"users": {}})
+        if not isinstance(data, dict):
+            return {"users": {}}
+        data.setdefault("users", {})
+        return data
 
 
 def _save_buildup(data):
+    return _save_json_state(STAR_MAP_25_BUILDUP_PATH, data, "buildup")
+
+
+def _track_starmap25_with_event_tracker(user_id: str, action: str, metadata=None):
+    """Forward Star Map actions to agent_event_tracker (new tech integration)."""
     try:
-        os.makedirs(os.path.dirname(STAR_MAP_25_BUILDUP_PATH), exist_ok=True)
-        with open(STAR_MAP_25_BUILDUP_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        from backend.services.agent_techs.agent_event_tracker import agent_event_tracker
+        agent_event_tracker.track_new_task(
+            user_id=user_id,
+            task_name="starmap25_%s" % action,
+            params={"action": action, "source": "star_map_25", **(metadata or {})},
+        )
     except Exception:
         pass
+
+
+def _investigate_rate_limited(user_id: str):
+    """Simple per-user investigate cooldown (Top 25 #20). Returns (limited, retry_after_sec)."""
+    cooldown_sec = 2
+    buildup, user = _ensure_buildup_user(user_id)
+    last = _parse_iso_utc(user.get("last_investigate_ts"))
+    now = _utc_now()
+    if last:
+        elapsed = (now - last).total_seconds()
+        if elapsed < cooldown_sec:
+            return True, int(cooldown_sec - elapsed) + 1
+    user["last_investigate_ts"] = now.isoformat()
+    _save_buildup(buildup)
+    return False, 0
 
 
 def _get_user_system_levels(user_id):
@@ -723,6 +1082,15 @@ def _get_user_system_levels(user_id):
             levels[pid] = 2
         else:
             levels[pid] = 1
+    # Shop level-skip overrides (never lower a computed level)
+    overrides = (buildup.get("users", {}).get(user_id, {}) or {}).get("level_overrides") or {}
+    for pid, override in overrides.items():
+        try:
+            ov = int(override or 0)
+        except (TypeError, ValueError):
+            continue
+        if pid in levels:
+            levels[pid] = max(int(levels.get(pid) or 0), min(5, ov))
     return levels
 
 
@@ -782,6 +1150,7 @@ def _compute_pending_buildup_points(user_id):
     """Compute game_points generated by user's buildings and units since last collect (or since placed). Applies daily_reset_bonus (2x) for 12h after midnight UTC."""
     from datetime import datetime, timezone
     _, in_bonus_window = _next_daily_reset_utc()
+    personal_bonus = _personal_daily_reset_bonus_active(user_id)
     buildup = _load_buildup()
     users = buildup.get("users", {})
     user_data = users.get(user_id, {})
@@ -818,6 +1187,8 @@ def _compute_pending_buildup_points(user_id):
                     pts_per_day = float(b.get("points_per_day", pts_per_day))
                 if b.get("daily_reset_bonus") and in_bonus_window:
                     pts_per_day *= float(_load_system_levels_config().get("daily_reset_bonus_multiplier", 2.0))
+                elif personal_bonus:
+                    pts_per_day *= 2.0
         elif p.get("type") == "unit":
             u = units_by_id.get(p.get("id", ""))
             if u:
@@ -826,6 +1197,8 @@ def _compute_pending_buildup_points(user_id):
                 pt_tags = _point_tags(p.get("point_id", ""))
                 if bonus_tags and any(t in pt_tags for t in bonus_tags):
                     pts_per_day += float(u.get("bonus_points_per_day", 0))
+                if personal_bonus:
+                    pts_per_day *= 2.0
         total += days * pts_per_day
     return round(total, 2)
 
@@ -856,9 +1229,19 @@ def get_stars_list():
 
 @star_map_bp.route("/api/star-map/25", methods=["GET"])
 def get_star_map_25():
-    """Get full 25-point starmap (WH40K Segmentum + Legion homeworlds)."""
+    """Get full 25-point starmap (WH40K Segmentum + Legion homeworlds). Optional ?segmentum= filter."""
     try:
         data = _load_star_map_25()
+        segmentum = (request.args.get("segmentum") or "").strip()
+        if segmentum:
+            points = [
+                p for p in (data.get("points") or [])
+                if str(p.get("segmentum") or "").lower() == segmentum.lower()
+            ]
+            filtered = dict(data)
+            filtered["points"] = points
+            filtered["filter"] = {"segmentum": segmentum, "count": len(points)}
+            return jsonify({"success": True, "star_map_25": filtered}), 200
         return jsonify({"success": True, "star_map_25": data}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -866,7 +1249,8 @@ def get_star_map_25():
 
 def _star_map_25_point_state(user_id, point):
     point_id = point.get("id", "")
-    investigated = set(_load_investigations().get(user_id, []))
+    investigated_list = list(_load_investigations().get(user_id, []))
+    investigated = set(investigated_list)
     invasion_user = _load_invasions().get("users", {}).get(user_id, {})
     invaded = set(invasion_user.get("invaded_ids", []))
     levels = _get_user_system_levels(user_id)
@@ -875,6 +1259,8 @@ def _star_map_25_point_state(user_id, point):
         p for p in buildup_user.get("placements", [])
         if p.get("point_id") == point_id
     ]
+    requirement = _point_unlock_requirement(point)
+    unlocked, missing = _unlock_requirement_met(requirement, investigated_list)
     return {
         "investigated": point_id in investigated,
         "secured": point_id in invaded,
@@ -883,6 +1269,9 @@ def _star_map_25_point_state(user_id, point):
         "invasion_blurb": (invasion_user.get("blurbs") or {}).get(point_id, ""),
         "invasion_unit": (invasion_user.get("units") or {}).get(point_id, ""),
         "invasion_reward": (invasion_user.get("rewards") or {}).get(point_id, 0),
+        "unlock_requirement": requirement,
+        "unlocked": unlocked if point_id not in investigated else True,
+        "unlock_missing": missing if point_id not in investigated else [],
     }
 
 
@@ -1131,6 +1520,11 @@ def get_star_map_25_status():
             "crypto": _starmap25_crypto_status(user_id),
             "trophies": trophy_status.get("trophies", []),
             "newly_awarded_trophies": trophy_status.get("newly_awarded", []),
+            "unlocked_specials": _user_unlocked_specials(user_id),
+            "structure_unlocks": int((_ensure_buildup_user(user_id)[1].get("structure_unlocks") or 0)),
+            "daily_reset_bonus_until": _ensure_buildup_user(user_id)[1].get("daily_reset_bonus_until"),
+            "personal_daily_reset_bonus_active": _personal_daily_reset_bonus_active(user_id),
+            "classified_lore_count": len(_ensure_buildup_user(user_id)[1].get("classified_lore_ids") or []),
             "walkthrough": {
                 "current_level": wt["current_level"],
                 "current_feature": (wt.get("current_entry") or {}).get("feature"),
@@ -1185,6 +1579,28 @@ def investigate_star_map_25_point():
                 "message": "Already investigated",
             }), 200
 
+        requirement = _point_unlock_requirement(point, sm25)
+        unlocked, missing = _unlock_requirement_met(requirement, inv[user_id])
+        if not unlocked:
+            return jsonify({
+                "success": False,
+                "error": "Point locked — investigate required systems first",
+                "unlock_requirement": requirement,
+                "unlock_missing": missing,
+                "point_id": point_id,
+            }), 403
+
+        limited, retry_after = _investigate_rate_limited(user_id)
+        if limited:
+            resp = jsonify({
+                "success": False,
+                "error": "Investigate rate limited — retry shortly",
+                "retry_after": retry_after,
+            })
+            resp.status_code = 429
+            resp.headers["Retry-After"] = str(retry_after)
+            return resp
+
         base_amount = _sm25_investigation_reward(point.get("point_value", 10))
         booster_multiplier = _starmap25_booster_multiplier(user_id)
         amount = round(base_amount * booster_multiplier, 2)
@@ -1209,6 +1625,18 @@ def investigate_star_map_25_point():
         _sync_starmap25_to_user_profile(user_id)
         _update_starmap25_quests(user_id, investigations=1, game_points=amount)
         trophy_status = _award_starmap25_trophies(user_id)
+        event_multiplier, event_flat_bonus, event_matches = _event_reward_modifier("investigate", point)
+        _log_event_participation(user_id, "investigate", point_id, event_matches, {
+            "points_awarded": amount,
+            "base_points_awarded": base_amount,
+            "booster_multiplier": booster_multiplier,
+            "event_multiplier": event_multiplier,
+            "event_flat_bonus": event_flat_bonus,
+        })
+        _track_starmap25_with_event_tracker(user_id, "investigate", {
+            "point_id": point_id,
+            "points_awarded": amount,
+        })
         try:
             from backend.routes.social_routes import push_activity
             push_activity(user_id, "starmap25_investigate", f"Investigated {point.get('name', point_id)}", {"point_id": point_id})
@@ -1225,6 +1653,7 @@ def investigate_star_map_25_point():
             "booster_multiplier": booster_multiplier,
             "active_starmap25_boosters": _active_starmap25_boosters(user_id),
             "newly_awarded_trophies": trophy_status.get("newly_awarded", []),
+            "event_ids": [e.get("id") for e in event_matches],
             "lore": point.get("lore", ""),
         }), 200
     except Exception as e:
@@ -1247,11 +1676,19 @@ def get_star_map_25_buildings():
 def get_star_map_25_units():
     """List units and special_units: id, name, icon, points_per_day, deploy_cost."""
     try:
+        user_id = request.args.get("user_id") or "default_user"
         data = _load_units()
+        unlocked = set(_user_unlocked_specials(user_id))
+        specials = []
+        for unit in data.get("special_units", []):
+            row = dict(unit)
+            row["unlocked"] = unit.get("id") in unlocked
+            specials.append(row)
         return jsonify({
             "success": True,
             "units": data.get("units", []),
-            "special_units": data.get("special_units", []),
+            "special_units": specials,
+            "unlocked_specials": sorted(unlocked),
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -1347,8 +1784,16 @@ def build_star_map_25():
             return jsonify({"success": False, "error": "Unknown building_id"}), 404
         required_level = int(building.get("min_level", 1))
         user_levels = _get_user_system_levels(user_id)
+        used_structure_unlock = False
         if user_levels.get(point_id, 0) < required_level:
-            return jsonify({"success": False, "error": "System level too low (need level %d)" % required_level}), 400
+            buildup_gate, user_gate = _ensure_buildup_user(user_id)
+            unlocks = int(user_gate.get("structure_unlocks") or 0)
+            if building_id in STARMAP25_HIGH_STRUCTURES and unlocks > 0:
+                user_gate["structure_unlocks"] = unlocks - 1
+                _save_buildup(buildup_gate)
+                used_structure_unlock = True
+            else:
+                return jsonify({"success": False, "error": "System level too low (need level %d)" % required_level}), 400
         build_cost = int(building.get("build_cost", 0))
         if build_cost > 0:
             try:
@@ -1370,10 +1815,21 @@ def build_star_map_25():
         if user_id not in buildup.setdefault("users", {}):
             buildup["users"][user_id] = {"placements": [], "last_collect_ts": None}
         placements = buildup["users"][user_id]["placements"]
-        slot_key = f"{point_id}|{planet}"
-        existing = [pl for pl in placements if pl.get("type") == "building" and pl.get("point_id") == point_id and pl.get("planet") == planet]
-        if existing:
-            return jsonify({"success": False, "error": "Already have a building on this planet"}), 400
+        max_per_planet = int(building.get("max_per_planet", 1) or 1)
+        same_building = [
+            pl for pl in placements
+            if pl.get("type") == "building"
+            and pl.get("point_id") == point_id
+            and pl.get("planet") == planet
+            and pl.get("id") == building_id
+        ]
+        if len(same_building) >= max_per_planet:
+            return jsonify({
+                "success": False,
+                "error": "Planet already has the maximum of this building (%d)" % max_per_planet,
+                "max_per_planet": max_per_planet,
+                "existing_count": len(same_building),
+            }), 400
         placements.append({
             "point_id": point_id,
             "planet": planet,
@@ -1410,6 +1866,9 @@ def build_star_map_25():
             "event_bonus_points": event_bonus,
             "booster_multiplier": booster_multiplier,
         })
+        _track_starmap25_with_event_tracker(user_id, "build", {
+            "point_id": point_id, "planet": planet, "building_id": building_id,
+        })
         return jsonify({
             "success": True,
             "user_id": user_id,
@@ -1421,6 +1880,7 @@ def build_star_map_25():
             "base_event_bonus_points": base_event_bonus,
             "booster_multiplier": booster_multiplier,
             "event_ids": [e.get("id") for e in event_matches],
+            "used_structure_unlock": used_structure_unlock,
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -1450,9 +1910,16 @@ def deploy_star_map_25():
             return jsonify({"success": False, "error": "Investigate this system first"}), 400
 
         units_data = _load_units()
+        special_ids = {u.get("id") for u in units_data.get("special_units", [])}
         unit = next((u for u in units_data.get("units", []) + units_data.get("special_units", []) if u.get("id") == unit_id), None)
         if not unit:
             return jsonify({"success": False, "error": "Unknown unit_id"}), 404
+        if unit_id in special_ids and unit_id not in _user_unlocked_specials(user_id):
+            return jsonify({
+                "success": False,
+                "error": "Special unit not unlocked. Buy it in the Star Map shop first.",
+                "shop_hint": "/shop?category=starmap25",
+            }), 400
         deploy_cost = int(unit.get("deploy_cost", 0))
         if deploy_cost > 0:
             try:
@@ -1509,6 +1976,9 @@ def deploy_star_map_25():
             "unit_id": unit_id,
             "event_bonus_points": event_bonus,
             "booster_multiplier": booster_multiplier,
+        })
+        _track_starmap25_with_event_tracker(user_id, "deploy", {
+            "point_id": point_id, "planet": planet, "unit_id": unit_id,
         })
         return jsonify({
             "success": True,
@@ -1584,12 +2054,63 @@ def collect_star_map_25_buildup():
                         seen.add(eid)
                         event_matches.append(event)
             _log_event_participation(user_id, "collect", "multiple", event_matches, {"points_collected": pending})
+            _track_starmap25_with_event_tracker(user_id, "collect", {"points_collected": pending})
         except Exception:
             pass
         return jsonify({
             "success": True,
             "user_id": user_id,
             "points_collected": pending,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@star_map_bp.route("/api/star-map/25/consume-shop-item", methods=["POST"])
+def consume_star_map_25_shop_item():
+    """Consume a Star Map shop inventory item (level skip, daily reset bonus, structure unlock)."""
+    try:
+        data = request.get_json() or {}
+        user_id = data.get("user_id") or request.args.get("user_id") or "default_user"
+        item_id = (data.get("item_id") or "").strip()
+        point_id = (data.get("point_id") or "").strip() or None
+        building_id = (data.get("building_id") or "").strip() or None
+        if not item_id:
+            return jsonify({"success": False, "error": "item_id required"}), 400
+        effect = _resolve_consumable_effect(item_id)
+        if not effect:
+            return jsonify({"success": False, "error": "Item is not a Star Map consumable"}), 400
+        consumed_id, reserved = _consume_inventory_item(user_id, item_id)
+        if not reserved:
+            return jsonify({
+                "success": False,
+                "error": "Item not in inventory",
+                "shop_hint": "/shop?category=starmap25",
+            }), 400
+        ok, err, result = _apply_starmap25_consumable(user_id, effect, point_id=point_id, building_id=building_id)
+        if not ok:
+            try:
+                from backend.services.shop_db_service import add_to_inventory
+                add_to_inventory(user_id, consumed_id, reserved.get("item_name") or consumed_id, 1, purchase_id=None)
+            except Exception:
+                pass
+            return jsonify({"success": False, "error": err or "Consume failed"}), 400
+        _log_event_participation(user_id, "consume_shop_item", point_id or "none", [], {
+            "item_id": consumed_id,
+            "effect": effect,
+            "result": result,
+        })
+        levels = _get_user_system_levels(user_id)
+        _, user = _ensure_buildup_user(user_id)
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "item_id": consumed_id,
+            "effect": effect,
+            "result": result,
+            "system_levels": levels,
+            "structure_unlocks": int(user.get("structure_unlocks") or 0),
+            "daily_reset_bonus_until": user.get("daily_reset_bonus_until"),
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -1603,6 +2124,7 @@ def invade_star_map_25():
         user_id = data.get("user_id") or request.args.get("user_id") or "default_user"
         point_id = (data.get("point_id") or "").strip()
         unit_id = (data.get("unit_id") or "").strip()
+        special_unit_id = (data.get("special_unit_id") or "").strip() or None
         if not point_id or not unit_id:
             return jsonify({"success": False, "error": "point_id and unit_id required"}), 400
 
@@ -1616,10 +2138,21 @@ def invade_star_map_25():
             return jsonify({"success": False, "error": "Investigate this system first"}), 400
 
         units_data = _load_units()
+        special_ids = {u.get("id") for u in units_data.get("special_units", [])}
         all_units = units_data.get("units", []) + units_data.get("special_units", [])
         unit = next((u for u in all_units if u.get("id") == unit_id), None)
         if not unit:
             return jsonify({"success": False, "error": "Unknown unit_id"}), 404
+        if unit_id in special_ids and unit_id not in _user_unlocked_specials(user_id):
+            return jsonify({"success": False, "error": "Special unit not unlocked"}), 400
+
+        special_unit = None
+        if special_unit_id:
+            special_unit = next((u for u in units_data.get("special_units", []) if u.get("id") == special_unit_id), None)
+            if not special_unit:
+                return jsonify({"success": False, "error": "Unknown special_unit_id"}), 404
+            if special_unit_id not in _user_unlocked_specials(user_id):
+                return jsonify({"success": False, "error": "Special unit not unlocked"}), 400
 
         buildup = _load_buildup()
         placements = buildup.get("users", {}).get(user_id, {}).get("placements", [])
@@ -1629,6 +2162,13 @@ def invade_star_map_25():
         ), None)
         if not deployed:
             return jsonify({"success": False, "error": "Deploy this unit to the system before invading"}), 400
+        if special_unit_id:
+            special_deployed = next((
+                p for p in placements
+                if p.get("type") == "unit" and p.get("point_id") == point_id and p.get("id") == special_unit_id
+            ), None)
+            if not special_deployed:
+                return jsonify({"success": False, "error": "Deploy the special unit to the system before invading"}), 400
 
         invasions = _load_invasions()
         users = invasions.setdefault("users", {})
@@ -1648,12 +2188,17 @@ def invade_star_map_25():
         base_reward = 10 + int(unit.get("points_per_day", 0) or 0) * 2 + int(unit.get("bonus_points_per_day", 0) or 0)
         event_multiplier, event_flat_bonus, event_matches = _event_reward_modifier("invade", point)
         reward = round((base_reward * event_multiplier) + event_flat_bonus, 2)
+        reward, classified, rule_notes = _apply_special_rule_bonus(unit, point, reward, special_unit)
+        booster_multiplier = _starmap25_booster_multiplier(user_id)
+        reward = round(reward * booster_multiplier, 2)
         unit_name = unit.get("name", unit_id)
+        if special_unit:
+            unit_name = f"{unit_name} + {special_unit.get('name', special_unit_id)}"
         point_name = point.get("name", point_id)
         event_suffix = ""
         if event_matches:
             event_suffix = " Event bonus: " + ", ".join(e.get("name", e.get("id", "event")) for e in event_matches) + "."
-        blurb = f"{unit_name} secured {point_name}; the system is now marked as held.{event_suffix}"
+        blurb, blurb_source = _generate_invasion_blurb(unit_name, point_name, event_suffix)
         try:
             from backend.services.unified_points_database import unified_points_db
             unified_points_db.add_points(
@@ -1663,9 +2208,12 @@ def invade_star_map_25():
                     "point_id": point_id,
                     "point_name": point_name,
                     "unit_id": unit_id,
+                    "special_unit_id": special_unit_id,
                     "base_reward": base_reward,
                     "event_multiplier": event_multiplier,
                     "event_flat_bonus": event_flat_bonus,
+                    "booster_multiplier": booster_multiplier,
+                    "special_rules": rule_notes,
                     "event_ids": [e.get("id") for e in event_matches],
                 },
             )
@@ -1675,16 +2223,30 @@ def invade_star_map_25():
         from datetime import datetime, timezone
         user_state.setdefault("invaded_ids", []).append(point_id)
         user_state.setdefault("blurbs", {})[point_id] = blurb
-        user_state.setdefault("units", {})[point_id] = unit_id
+        user_state.setdefault("units", {})[point_id] = special_unit_id or unit_id
         user_state.setdefault("rewards", {})[point_id] = reward
         user_state["updated_at"] = datetime.now(timezone.utc).isoformat()
         _save_invasions(invasions)
+        if classified:
+            buildup2, buildup_user = _ensure_buildup_user(user_id)
+            lore_ids = buildup_user.setdefault("classified_lore_ids", [])
+            if point_id not in lore_ids:
+                lore_ids.append(point_id)
+                _save_buildup(buildup2)
+        trophy_status = _award_starmap25_trophies(user_id)
         _log_event_participation(user_id, "invade", point_id, event_matches, {
             "unit_id": unit_id,
+            "special_unit_id": special_unit_id,
             "base_reward": base_reward,
             "points_awarded": reward,
             "event_multiplier": event_multiplier,
             "event_flat_bonus": event_flat_bonus,
+            "booster_multiplier": booster_multiplier,
+            "special_rules": rule_notes,
+            "blurb_source": blurb_source,
+        })
+        _track_starmap25_with_event_tracker(user_id, "invade", {
+            "point_id": point_id, "unit_id": unit_id, "special_unit_id": special_unit_id,
         })
         try:
             from backend.routes.social_routes import push_activity
@@ -1698,12 +2260,17 @@ def invade_star_map_25():
             "point_id": point_id,
             "point_name": point_name,
             "unit_id": unit_id,
+            "special_unit_id": special_unit_id,
             "points_awarded": reward,
             "base_points_awarded": base_reward,
             "event_multiplier": event_multiplier,
             "event_flat_bonus": event_flat_bonus,
+            "booster_multiplier": booster_multiplier,
+            "special_rules": rule_notes,
             "event_ids": [e.get("id") for e in event_matches],
             "blurb": blurb,
+            "blurb_source": blurb_source,
+            "newly_awarded_trophies": trophy_status.get("newly_awarded", []),
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -1874,6 +2441,7 @@ def _star_map_25_agent_tools():
         {"name": "deploy", "method": "POST", "path": "/api/star-map/25/deploy", "mutates": True, "required": ["user_id", "point_id", "planet", "unit_id", "approved"]},
         {"name": "collect", "method": "POST", "path": "/api/star-map/25/collect", "mutates": True, "required": ["user_id", "approved"]},
         {"name": "invade", "method": "POST", "path": "/api/star-map/25/invade", "mutates": True, "required": ["user_id", "point_id", "unit_id", "approved"]},
+        {"name": "consume_shop_item", "method": "POST", "path": "/api/star-map/25/consume-shop-item", "mutates": True, "required": ["user_id", "item_id", "approved"]},
     ]
 
 
@@ -1941,6 +2509,7 @@ def star_map_25_agent_action():
             "deploy": ("/api/star-map/25/deploy", deploy_star_map_25),
             "collect": ("/api/star-map/25/collect", collect_star_map_25_buildup),
             "invade": ("/api/star-map/25/invade", invade_star_map_25),
+            "consume_shop_item": ("/api/star-map/25/consume-shop-item", consume_star_map_25_shop_item),
         }
         if action not in mutating:
             return jsonify({"success": False, "error": "Unknown action", "tools": _star_map_25_agent_tools()}), 400
@@ -1960,12 +2529,15 @@ def star_map_25_agent_action():
 
 def _star_map_25_openapi_spec():
     routes = [
-        ("GET", "/api/star-map/25", "Full Star Map 25 data"),
+        ("GET", "/api/star-map/25", "Full Star Map 25 data (optional ?segmentum=)"),
         ("GET", "/api/star-map/25/point/{point_id}", "Single point with user state"),
         ("GET", "/api/star-map/25/segmentums", "All Segmentum progress summaries"),
         ("GET", "/api/star-map/25/segmentum/{segmentum}", "One Segmentum progress summary"),
+        ("GET", "/api/star-map/25/planet-intel", "Five-level planet intel drill-down"),
         ("GET", "/api/star-map/25/status", "User progress, invasion state, trophies, crypto status"),
+        ("POST", "/api/star-map/25/sync-profile", "Sync Star Map progress into user profile"),
         ("POST", "/api/star-map/25/investigate", "Investigate one point and award game_points"),
+        ("POST", "/api/star-map/25/consume-shop-item", "Consume Level Skip / Daily Reset / Structure Unlock"),
         ("GET", "/api/star-map/25/buildings", "Building catalog"),
         ("GET", "/api/star-map/25/units", "Unit catalog"),
         ("GET", "/api/star-map/25/events", "Active/upcoming event windows"),
@@ -1980,6 +2552,8 @@ def _star_map_25_openapi_spec():
         ("GET", "/api/star-map/25/analytics", "Action/event analytics summary"),
         ("GET", "/api/star-map/25/leaderboard", "Star Map 25 leaderboard"),
         ("GET", "/api/star-map/25/health", "Data and writable-state health check"),
+        ("GET/POST", "/api/star-map/25/ai-hint", "AI tactical hints"),
+        ("GET/POST", "/api/star-map/25/ai-guide", "AI field guide with proof docs"),
         ("GET", "/api/star-map/25/agent-tools", "Agent-safe capability map"),
         ("POST", "/api/star-map/25/agent-action", "Execute read or explicitly approved agent action"),
         ("GET", "/api/star-map/25/openapi", "This OpenAPI document"),
@@ -1988,8 +2562,8 @@ def _star_map_25_openapi_spec():
         "openapi": "3.0.3",
         "info": {
             "title": "MasterNoder Star Map 25 API",
-            "version": "2026-04-29",
-            "description": "Star Map 25 gameplay, analytics, health, and agent-safe action surface.",
+            "version": "2026-11-10",
+            "description": "Star Map 25 gameplay, analytics, health, Electric Magnet/Event Tracker hooks, and agent-safe action surface.",
         },
         "paths": {
             path: {

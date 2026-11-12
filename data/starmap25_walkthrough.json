@@ -1,6 +1,6 @@
 {
   "name": "Star Map 25 — Profile walkthrough",
-  "description": "Ten tutorial-style levels tied to investigations and features; each unlocks a named capability in the monitor.",
+  "description": "Ten progress milestones tied to investigations. Features listed are guidance/progress markers (not hard UI gates) unless a tech panel notes otherwise.",
   "version": 1,
   "levels": [
     {

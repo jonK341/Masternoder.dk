@@ -693,11 +693,12 @@
             <button type="button" class="starmap-hub-tab" data-starmap-tab="guide" role="tab" aria-selected="false">🤖 AI Guide</button>
             <button type="button" class="starmap-hub-tab" data-starmap-tab="monitor" role="tab" aria-selected="false">📡 Monitor</button>
         </nav>
-        <div id="starmap-route-note" class="starmap-route-note">Viewing: Play grid. Switch tabs to browse progress, economy, AI guide, and monitor tools.</div>
+        <div id="starmap-route-note" class="starmap-route-note">Viewing: Play grid (cards + map views). Monitor keeps the same cards with filters and buildup.</div>
 
         <section class="starmap-tab-panel" data-starmap-tab="progress" hidden>
         <div class="walkthrough-panel" id="walkthrough-panel">
-            <h4>Profile walkthrough — 10 levels (tutorial game)</h4>
+            <h4>Profile walkthrough — 10 progress milestones</h4>
+            <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px;">Guidance markers for your investigation path (not hard UI locks).</p>
             <p id="walkthrough-summary" style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:8px;">Loading…</p>
             <div class="walkthrough-track" id="walkthrough-track"></div>
         </div>
@@ -715,6 +716,28 @@
             <p id="ai-guide-status" style="font-size:0.8rem;color:var(--text-secondary);margin-top:8px;"></p>
             <div class="ai-guide-narrative" id="ai-guide-narrative">Loading…</div>
             <div id="ai-guide-proofs"></div>
+        </div>
+        <div class="ai-guide-panel" id="tech-panel" style="margin-top:16px;">
+            <h4>Agent techs — Electric Magnet &amp; Event Tracker</h4>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">Live techs for verification, DNA, Star Map 25 view, and action telemetry.</p>
+            <div class="economy-grid" style="margin-bottom:10px;">
+                <div class="economy-card"><div class="k">Electric Magnet</div><div class="v" id="tech-em-status">—</div></div>
+                <div class="economy-card"><div class="k">Event Tracker</div><div class="v" id="tech-et-status">—</div></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                <button type="button" class="btn-investigate" id="btn-tech-view-map" style="max-width:220px;">View Star Map (EM)</button>
+                <button type="button" class="btn-investigate" id="btn-tech-verify" style="max-width:180px;background:#333;">Run Verification</button>
+                <button type="button" class="btn-investigate" id="btn-tech-dna" style="max-width:160px;background:#333;">DNA Test</button>
+            </div>
+            <p id="tech-panel-status" style="font-size:0.8rem;color:var(--text-secondary);"></p>
+            <div id="tech-panel-result" style="font-size:0.85rem;color:var(--text-secondary);white-space:pre-wrap;"></div>
+        </div>
+        <div class="ai-guide-panel" id="leaderboard-panel" style="margin-top:16px;">
+            <h4>Leaderboard &amp; analytics</h4>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">Secured systems lead; analytics summarize recent map actions.</p>
+            <button type="button" class="btn-investigate" id="btn-refresh-leaderboard" style="max-width:220px;">Refresh standings</button>
+            <div id="leaderboard-list" style="margin-top:10px;"></div>
+            <div id="analytics-summary" style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary);"></div>
         </div>
         </section>
 
@@ -876,12 +899,14 @@
     <script>
         (function initStarmapTabs() {
             var TAB_LABELS = {
-                play: 'Play grid',
+                play: 'Play grid (cards + map views)',
                 progress: 'Progress & walkthrough',
                 economy: 'Economy & crypto',
                 guide: 'AI field guide',
-                monitor: 'Monitor & buildup'
+                monitor: 'Monitor filters, buildup, and cards'
             };
+            // Point cards must stay visible on Play and Monitor so filters/buildup can target them.
+            var TABS_WITH_CARDS = { play: true, monitor: true };
             var nav = document.getElementById('starmap-hub-nav');
             var note = document.getElementById('starmap-route-note');
             var content = document.getElementById('content');
@@ -898,7 +923,7 @@
                     btn.setAttribute('aria-selected', on ? 'true' : 'false');
                 });
                 if (content) {
-                    content.classList.toggle('starmap-play-hidden', tabId !== 'play');
+                    content.classList.toggle('starmap-play-hidden', !TABS_WITH_CARDS[tabId]);
                 }
                 if (note) {
                     note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Switch tabs above to browse other Star Map systems.';
@@ -1819,28 +1844,68 @@
                 pointer3d.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
                 pointer3d.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
             }
-            function onClick() {
+            var dragState = { active: false, moved: false, lastX: 0, lastY: 0, rotY: 0, rotX: 0.18 };
+            scene.rotation.x = dragState.rotX;
+            function onPointerDown(ev) {
+                dragState.active = true;
+                dragState.moved = false;
+                dragState.lastX = ev.clientX;
+                dragState.lastY = ev.clientY;
+            }
+            function onPointerUp() { dragState.active = false; }
+            function onPointerDrag(ev) {
+                onPointerMove(ev);
+                if (!dragState.active) return;
+                var dx = ev.clientX - dragState.lastX;
+                var dy = ev.clientY - dragState.lastY;
+                if (Math.abs(dx) + Math.abs(dy) > 2) dragState.moved = true;
+                dragState.lastX = ev.clientX;
+                dragState.lastY = ev.clientY;
+                dragState.rotY += dx * 0.005;
+                dragState.rotX = Math.max(-0.9, Math.min(0.9, dragState.rotX + dy * 0.004));
+                scene.rotation.y = dragState.rotY;
+                scene.rotation.x = dragState.rotX;
+            }
+            function onClick(ev) {
+                if (dragState.moved) return;
                 raycaster3d.setFromCamera(pointer3d, camera);
                 var hits = raycaster3d.intersectObjects(meshPoints);
                 if (!hits.length) return;
                 var pid = hits[0].object.userData.pointId;
                 if (!pid) return;
-                var card = document.querySelector('.point-card[data-point-id="' + pid + '"]');
-                if (card) {
-                    showGridView();
-                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    card.classList.remove('flash');
-                    void card.offsetWidth;
-                    card.classList.add('flash');
-                }
+                focusCardFromPoint(pid);
             }
-            renderer.domElement.addEventListener('mousemove', onPointerMove);
+            // labels
+            for (var li = 0; li < meshPoints.length; li++) {
+                var mp = meshPoints[li];
+                var canvas = document.createElement('canvas');
+                canvas.width = 256; canvas.height = 64;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                ctx.fillRect(0, 0, 256, 64);
+                ctx.fillStyle = '#ffd700';
+                ctx.font = '28px sans-serif';
+                ctx.fillText(String((mp.userData.point && mp.userData.point.name) || mp.userData.pointId).slice(0, 18), 12, 40);
+                var tex = new THREE.CanvasTexture(canvas);
+                var sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.85 }));
+                sprite.scale.set(1.6, 0.4, 1);
+                sprite.position.copy(mp.position);
+                sprite.position.y += 0.35;
+                scene.add(sprite);
+            }
+            renderer.domElement.addEventListener('mousemove', onPointerDrag);
+            renderer.domElement.addEventListener('mousedown', onPointerDown);
+            renderer.domElement.addEventListener('mouseup', onPointerUp);
+            renderer.domElement.addEventListener('mouseleave', onPointerUp);
             renderer.domElement.addEventListener('click', onClick);
             function animate(now) {
                 if (!renderer3d || !scene3d || !camera3d) return;
                 animFrame3d = requestAnimationFrame(animate);
                 var t = ((now != null ? now : performance.now()) - t0) * 0.001;
-                scene.rotation.y += 0.0016;
+                if (!dragState.active) {
+                    dragState.rotY += 0.0016;
+                    scene.rotation.y = dragState.rotY;
+                }
                 if (starPointsParticles) starPointsParticles.rotation.y -= 0.0004;
                 raycaster3d.setFromCamera(pointer3d, camera);
                 var hits = raycaster3d.intersectObjects(meshPoints);
@@ -2010,10 +2075,130 @@
                     btnAi.dataset.bound = '1';
                     btnAi.addEventListener('click', loadAiGuide);
                 }
+                bindTechPanel();
+                bindLeaderboardPanel();
                 loadAiGuide();
+                loadTechPanel();
+                loadLeaderboardPanel();
             } catch (e) {
                 showError('Error: ' + (e.message || 'Unknown'));
                 content.innerHTML = '<div class="loading">Could not load Star Map 25. Check console.</div>';
+            }
+        }
+
+        function focusCardFromPoint(pid) {
+            var card = document.querySelector('.point-card[data-point-id="' + pid + '"]');
+            if (!card) return;
+            showGridView();
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.remove('flash');
+            void card.offsetWidth;
+            card.classList.add('flash');
+        }
+
+        async function loadTechPanel() {
+            var emEl = document.getElementById('tech-em-status');
+            var etEl = document.getElementById('tech-et-status');
+            var statusEl = document.getElementById('tech-panel-status');
+            try {
+                var [emRes, etRes] = await Promise.all([
+                    fetch('/api/agent-tech/agent_electric_magnet/status'),
+                    fetch('/api/agent-tech/agent_event_tracker/status')
+                ]);
+                var em = emRes.ok ? await emRes.json() : {};
+                var et = etRes.ok ? await etRes.json() : {};
+                if (emEl) emEl.textContent = em.success ? (em.status || 'active') : 'offline';
+                if (etEl) etEl.textContent = et.success ? (et.status || 'active') : 'offline';
+                if (statusEl) statusEl.textContent = 'Techs ready. View Star Map returns Star Map 25 + classic 7 stars.';
+            } catch (e) {
+                if (emEl) emEl.textContent = 'error';
+                if (etEl) etEl.textContent = 'error';
+            }
+        }
+
+        function bindTechPanel() {
+            async function callTech(path, body) {
+                var resultEl = document.getElementById('tech-panel-result');
+                var statusEl = document.getElementById('tech-panel-status');
+                if (statusEl) statusEl.textContent = 'Running…';
+                try {
+                    var r = await fetch(path, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body || { user_id: userId })
+                    });
+                    var d = await r.json();
+                    if (statusEl) statusEl.textContent = d.success ? 'OK' : (d.error || 'Failed');
+                    if (resultEl) {
+                        if (d.star_map_25 && d.star_map_25.points) {
+                            resultEl.textContent = 'Star Map 25: ' + d.star_map_25.points.length + ' systems · investigated ' +
+                                (d.investigated_count || 0) + '/25 · monitor ' + (d.monitor_url || '/starmap25/');
+                        } else {
+                            resultEl.textContent = JSON.stringify(d, null, 2).slice(0, 800);
+                        }
+                    }
+                } catch (e) {
+                    if (statusEl) statusEl.textContent = 'Request failed';
+                    if (resultEl) resultEl.textContent = String(e.message || e);
+                }
+            }
+            var bView = document.getElementById('btn-tech-view-map');
+            if (bView && !bView.dataset.bound) {
+                bView.dataset.bound = '1';
+                bView.addEventListener('click', function() {
+                    callTech('/api/agent-tech/agent_electric_magnet/view_star_map', { user_id: userId });
+                });
+            }
+            var bVer = document.getElementById('btn-tech-verify');
+            if (bVer && !bVer.dataset.bound) {
+                bVer.dataset.bound = '1';
+                bVer.addEventListener('click', function() {
+                    callTech('/api/agent-tech/agent_electric_magnet/run_verification', { user_id: userId });
+                });
+            }
+            var bDna = document.getElementById('btn-tech-dna');
+            if (bDna && !bDna.dataset.bound) {
+                bDna.dataset.bound = '1';
+                bDna.addEventListener('click', function() {
+                    callTech('/api/agent-tech/agent_electric_magnet/run_dna_test', { user_id: userId });
+                });
+            }
+        }
+
+        async function loadLeaderboardPanel() {
+            var listEl = document.getElementById('leaderboard-list');
+            var analyticsEl = document.getElementById('analytics-summary');
+            if (!listEl) return;
+            try {
+                var [lbRes, anRes] = await Promise.all([
+                    fetch(API_BASE + '/star-map/25/leaderboard?limit=8'),
+                    fetch(API_BASE + '/star-map/25/analytics?user_id=' + encodeURIComponent(userId))
+                ]);
+                var lb = lbRes.ok ? await lbRes.json() : {};
+                var an = anRes.ok ? await anRes.json() : {};
+                var rows = lb.leaderboard || [];
+                listEl.innerHTML = rows.length ? rows.map(function(row) {
+                    return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+                        '<span>#' + row.rank + ' ' + String(row.user_id).replace(/</g, '') + '</span>' +
+                        '<span style="color:#00ff88;">' + row.secured_count + ' secured · ' + row.investigated_count + ' inv · score ' + row.score + '</span></div>';
+                }).join('') : '<div style="opacity:0.7;">No standings yet — investigate to appear.</div>';
+                if (analyticsEl) {
+                    var totals = an.totals || an.actions || {};
+                    analyticsEl.textContent = an.success === false
+                        ? 'Analytics unavailable'
+                        : ('Your actions logged: investigate/build/deploy/collect/invade feed Event Tracker + analytics' +
+                            (totals.investigate != null ? (' · investigate=' + totals.investigate) : ''));
+                }
+            } catch (e) {
+                listEl.innerHTML = '<div style="opacity:0.7;">Leaderboard unavailable.</div>';
+            }
+        }
+
+        function bindLeaderboardPanel() {
+            var btn = document.getElementById('btn-refresh-leaderboard');
+            if (btn && !btn.dataset.bound) {
+                btn.dataset.bound = '1';
+                btn.addEventListener('click', loadLeaderboardPanel);
             }
         }
 

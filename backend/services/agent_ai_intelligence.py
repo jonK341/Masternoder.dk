@@ -436,28 +436,53 @@ class AgentAIIntelligence:
     def develop_strategy(self, agent_id: str, goal: str, constraints: Dict = None) -> Dict:
         """Develop an intelligent strategy to achieve a goal"""
         strategy_id = f"{agent_id}_{goal}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
+        constraints = constraints or {}
+        user_id = str(constraints.get('user_id') or constraints.get('owner_id') or 'default_user')
+
+        starmap_ctx = {}
+        try:
+            from backend.routes.star_map_routes import starmap25_ai_context
+            starmap_ctx = starmap25_ai_context(user_id) or {}
+        except Exception:
+            starmap_ctx = {}
+
         # Analyze goal and constraints
         strategy = {
             'strategy_id': strategy_id,
             'agent_id': agent_id,
             'goal': goal,
-            'constraints': constraints or {},
+            'constraints': constraints,
             'phases': [],
             'risk_level': 'moderate',
             'estimated_success': 0.7,
-            'created_at': datetime.now().isoformat()
+            'created_at': datetime.now().isoformat(),
+            'starmap25': starmap_ctx,
+            'techs': starmap_ctx.get('techs') or [
+                {'id': 'agent_electric_magnet', 'role': 'view_star_map'},
+                {'id': 'agent_event_tracker', 'role': 'track_starmap25_actions'},
+            ],
         }
-        
+
+        goal_l = (goal or '').lower()
         # Generate strategy phases based on goal
-        if 'optimize' in goal.lower():
+        if 'star map' in goal_l or 'starmap' in goal_l or 'investigate' in goal_l:
+            investigated = int(starmap_ctx.get('investigated_count') or 0)
+            strategy['phases'] = [
+                {'phase': 1, 'action': 'view_star_map_via_electric_magnet', 'priority': 'high'},
+                {'phase': 2, 'action': 'investigate_unlocked_systems', 'priority': 'high',
+                 'detail': f'{investigated}/{starmap_ctx.get("total_points", 25)} already investigated'},
+                {'phase': 3, 'action': 'build_deploy_collect_on_secured_routes', 'priority': 'medium'},
+                {'phase': 4, 'action': 'track_actions_with_event_tracker', 'priority': 'medium'},
+            ]
+            strategy['estimated_success'] = 0.8 if investigated >= 1 else 0.65
+        elif 'optimize' in goal_l:
             strategy['phases'] = [
                 {'phase': 1, 'action': 'analyze_current_state', 'priority': 'high'},
                 {'phase': 2, 'action': 'identify_optimizations', 'priority': 'high'},
                 {'phase': 3, 'action': 'implement_changes', 'priority': 'medium'},
                 {'phase': 4, 'action': 'monitor_results', 'priority': 'medium'}
             ]
-        elif 'fix' in goal.lower() or 'repair' in goal.lower():
+        elif 'fix' in goal_l or 'repair' in goal_l:
             strategy['phases'] = [
                 {'phase': 1, 'action': 'diagnose_issue', 'priority': 'high'},
                 {'phase': 2, 'action': 'identify_root_cause', 'priority': 'high'},
@@ -472,14 +497,21 @@ class AgentAIIntelligence:
                 {'phase': 3, 'action': 'monitor', 'priority': 'medium'},
                 {'phase': 4, 'action': 'optimize', 'priority': 'low'}
             ]
-        
+            if starmap_ctx:
+                strategy['phases'].append({
+                    'phase': 5,
+                    'action': 'consult_starmap25_progress',
+                    'priority': 'low',
+                    'detail': starmap_ctx.get('shop_focus_hint'),
+                })
+
         # Store strategy
         if agent_id not in self.intelligence['strategies']:
             self.intelligence['strategies'][agent_id] = []
         self.intelligence['strategies'][agent_id].append(strategy)
         if len(self.intelligence['strategies'][agent_id]) > 50:
             self.intelligence['strategies'][agent_id] = self.intelligence['strategies'][agent_id][-50:]
-        
+
         self.save_intelligence()
         return strategy
     

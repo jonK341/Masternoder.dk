@@ -858,6 +858,11 @@
                     <button type="button" class="special-btn" id="btn-view-star-map">View Star Map</button>
                     <a href="/starmap25/" class="special-btn" style="text-decoration: none; display: inline-flex; align-items: center;">Star Map 25 Monitor (25 points)</a>
                 </div>
+                <div id="starmap25-trophy-progress" style="margin-bottom: 20px; padding: 16px; background: rgba(21,21,32,0.75); border: 1px solid rgba(255,215,0,0.28); border-radius: 12px;">
+                    <strong style="color: var(--trophy-primary);">Star Map 25 trophies</strong>
+                    <p id="starmap25-trophy-summary" style="margin: 8px 0 12px; opacity: 0.85; font-size: 0.92rem;">Loading progress…</p>
+                    <div id="starmap25-trophy-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;"></div>
+                </div>
                 <div id="em-download-status" style="margin-bottom: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
                 <div id="star-map-grid" class="trophies-grid"><div class="loading">Loading star map…</div></div>
                 <div class="star-map-info" style="margin-top: 20px; padding: 16px; background: rgba(21,21,32,0.6); border-radius: 12px;"><strong style="color: var(--trophy-primary);">Info</strong><p id="star-map-info-slot" style="margin: 8px 0 0;">—</p></div>
@@ -2060,9 +2065,41 @@
             }
         }
 
+        async function loadStarMap25TrophyProgress() {
+            const summaryEl = document.getElementById('starmap25-trophy-summary');
+            const listEl = document.getElementById('starmap25-trophy-list');
+            if (!summaryEl || !listEl) return;
+            try {
+                const uid = localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || 'default_user';
+                const r = await fetch('/api/star-map/25/status?user_id=' + encodeURIComponent(uid));
+                const d = r.ok ? await r.json() : {};
+                if (!d.success) throw new Error('status failed');
+                const trophies = d.trophies || [];
+                const done = trophies.filter(function(t) { return t.completed; }).length;
+                summaryEl.textContent = 'Investigated ' + (d.investigated_count || 0) + '/' + (d.total_points || 25) +
+                    ' · Secured ' + (d.invaded_count || 0) + '/25 · Trophies ' + done + '/' + trophies.length +
+                    ' · Classified lore ' + (d.classified_lore_count || 0);
+                listEl.innerHTML = trophies.map(function(t) {
+                    const ok = !!t.completed;
+                    const awarded = !!t.awarded;
+                    return '<div style="padding:12px;border-radius:10px;border:1px solid ' + (ok ? 'rgba(0,255,136,0.45)' : 'rgba(255,255,255,0.12)') +
+                        ';background:' + (ok ? 'rgba(0,255,136,0.08)' : 'rgba(0,0,0,0.25)') + ';">' +
+                        '<div style="font-weight:700;color:' + (ok ? '#00ff88' : '#FFD700') + ';">' + (t.name || t.id) + '</div>' +
+                        '<div style="font-size:0.82rem;opacity:0.85;margin-top:4px;">' + (t.description || '') + '</div>' +
+                        '<div style="font-size:0.78rem;margin-top:8px;opacity:0.8;">' +
+                        (ok ? (awarded ? 'Completed & awarded' : 'Completed') : 'In progress') +
+                        ' · +' + (t.reward || 0) + ' trophy pts</div></div>';
+                }).join('') || '<div class="info-message">No Star Map 25 trophies yet.</div>';
+            } catch (e) {
+                summaryEl.textContent = 'Could not load Star Map 25 trophy progress.';
+                listEl.innerHTML = '<a href="/starmap25/" style="color:#FFD700;">Open Star Map 25 Monitor</a>';
+            }
+        }
+
         async function loadStarMap() {
             const el = document.getElementById('star-map-grid');
             if (!el) return;
+            loadStarMap25TrophyProgress();
             let data = {};
             var urls = [API_BASE + '/star-map', '/api/star-map', API_BASE + '/game/hunters/star-map'];
             for (var ui = 0; ui < urls.length; ui++) {

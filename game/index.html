@@ -2182,13 +2182,15 @@
                 const invasionUnits = statusData.invasion_units || {};
                 const invasionPoints = statusData.total_invasion_points_earned || 0;
                 const totalEarned = statusData.total_points_earned || 0;
-                const mult = statusData.investigation_reward_multiplier != null ? statusData.investigation_reward_multiplier : 1.2;
+                const baseMult = statusData.investigation_reward_multiplier != null ? statusData.investigation_reward_multiplier : 1.2;
+                const boosterMult = statusData.starmap25_booster_multiplier != null ? statusData.starmap25_booster_multiplier : 1;
+                const mult = Math.round((baseMult * boosterMult) * 100) / 100;
                 if (countEl) countEl.textContent = investigated.length;
                 if (pointsEl) pointsEl.textContent = Math.round(totalEarned);
                 if (invadedCountEl) invadedCountEl.textContent = invaded.length;
                 if (invasionPointsEl) invasionPointsEl.textContent = Math.round(invasionPoints);
                 var multEl = document.getElementById('starmap25-multiplier');
-                if (multEl) multEl.textContent = String(mult);
+                if (multEl) multEl.textContent = String(mult) + (boosterMult > 1 ? ' (booster)' : '');
                 var wt = statusData.walkthrough || {};
                 var wlEl = document.getElementById('starmap25-walk-level');
                 if (wlEl) wlEl.textContent = wt.current_level != null ? String(wt.current_level) : '0';
@@ -2262,14 +2264,23 @@
                     if (isSecured && invasionBlurbs[id]) {
                         html += '<div style="font-size:0.76rem;color:#b9f6ff;margin:6px 0 8px;line-height:1.35;">' + escapeHtml(invasionBlurbs[id]) + '</div>';
                     } else if (isDone) {
-                        html += '<div style="font-size:0.76rem;color:rgba(255,255,255,0.58);margin:6px 0 8px;">Ready for deploy/invade in the full monitor.</div>';
+                        html += '<div style="font-size:0.76rem;color:rgba(255,255,255,0.58);margin:6px 0 8px;">Deploy Guard then Invade, or open the full monitor for build controls.</div>';
                     }
                     if (isSecured && invasionUnits[id]) {
                         html += '<div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-bottom:6px;">Secured by: ' + escapeHtml(invasionUnits[id]) + '</div>';
                     }
                     html += '<button type="button" class="game-tab starmap25-investigate-btn" data-point-id="' + safeId + '" ' + (isDone ? ' disabled' : '') + ' style="width:100%; padding:8px; background: ' + (isSecured ? 'rgba(0,212,255,0.22)' : (isDone ? '#444' : 'linear-gradient(135deg, #00ff88, #00d4ff)')) + '; border:none; border-radius:8px; color:' + (isSecured ? '#b9f6ff' : '#0a0a0a') + '; font-weight:600; cursor: ' + (isDone ? 'default' : 'pointer') + ';">';
                     html += isSecured ? 'Secured' : (isDone ? 'Done (+' + awarded + ')' : 'Investigate (+' + awarded + ' pts)');
-                    html += '</button><div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:4px;">' + baseVal + ' × ' + mult + ' = ' + awarded + '</div></div>';
+                    html += '</button>';
+                    if (isDone && !isSecured) {
+                        const planet = (p.planets && p.planets[0]) ? String(p.planets[0]) : '';
+                        html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">';
+                        html += '<button type="button" class="starmap25-deploy-btn" data-point-id="' + safeId + '" data-planet="' + escapeHtml(planet) + '" style="flex:1;min-width:90px;padding:7px;background:rgba(0,212,255,0.18);border:1px solid rgba(0,212,255,0.45);border-radius:8px;color:#b9f6ff;cursor:pointer;font-weight:600;">Deploy Guard</button>';
+                        html += '<button type="button" class="starmap25-invade-btn" data-point-id="' + safeId + '" style="flex:1;min-width:90px;padding:7px;background:rgba(255,107,157,0.18);border:1px solid rgba(255,107,157,0.45);border-radius:8px;color:#ffb3cb;cursor:pointer;font-weight:600;">Invade</button>';
+                        html += '<a href="/starmap25/?tab=monitor&point=' + encodeURIComponent(id) + '" style="flex:1;min-width:90px;padding:7px;text-align:center;background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.35);border-radius:8px;color:#FFD700;text-decoration:none;font-weight:600;">Build…</a>';
+                        html += '</div>';
+                    }
+                    html += '<div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:4px;">' + baseVal + ' × ' + mult + ' = ' + awarded + '</div></div>';
                 });
                 html += '</div><p style="margin-top: 16px;"><a href="/starmap25/" style="color: #00ff88; font-weight: 600;">Open full Star Map 25 Monitor (3D, live) →</a></p>';
                 listEl.innerHTML = html;
@@ -2288,6 +2299,43 @@
                             const d = await r.json();
                             if (d.success) { loadStarMap25Tab(); } else { btn.disabled = false; btn.textContent = 'Investigate'; }
                         } catch (e) { btn.disabled = false; btn.textContent = 'Investigate'; }
+                    });
+                });
+                listEl.querySelectorAll('.starmap25-deploy-btn').forEach(function(btn) {
+                    btn.addEventListener('click', async function() {
+                        const pid = btn.getAttribute('data-point-id');
+                        const planet = btn.getAttribute('data-planet') || '';
+                        if (!pid || !planet) return;
+                        btn.disabled = true;
+                        btn.textContent = '…';
+                        try {
+                            const r = await fetch(base + '/star-map/25/deploy', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: userId, point_id: pid, planet: planet, unit_id: 'guard' })
+                            });
+                            const d = await r.json();
+                            if (d.success) { loadStarMap25Tab(); }
+                            else { btn.disabled = false; btn.textContent = 'Deploy Guard'; alert(d.error || 'Deploy failed'); }
+                        } catch (e) { btn.disabled = false; btn.textContent = 'Deploy Guard'; }
+                    });
+                });
+                listEl.querySelectorAll('.starmap25-invade-btn').forEach(function(btn) {
+                    btn.addEventListener('click', async function() {
+                        const pid = btn.getAttribute('data-point-id');
+                        if (!pid) return;
+                        btn.disabled = true;
+                        btn.textContent = '…';
+                        try {
+                            const r = await fetch(base + '/star-map/25/invade', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: userId, point_id: pid, unit_id: 'guard' })
+                            });
+                            const d = await r.json();
+                            if (d.success) { loadStarMap25Tab(); }
+                            else { btn.disabled = false; btn.textContent = 'Invade'; alert(d.error || 'Invade failed — deploy Guard first'); }
+                        } catch (e) { btn.disabled = false; btn.textContent = 'Invade'; }
                     });
                 });
                 var collectBtn = document.getElementById('starmap25-collect-btn');
