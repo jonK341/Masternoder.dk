@@ -19,6 +19,27 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 
+def _load_dotenv() -> None:
+    """Load repo ``.env`` into empty os.environ slots (does not override)."""
+    path = os.path.join(ROOT, ".env")
+    if not os.path.isfile(path):
+        return
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key = key.strip()
+                if not key or key in os.environ:
+                    continue
+                val = val.strip().strip("'").strip('"')
+                os.environ[key] = val
+    except OSError:
+        return
+
+
 def _safe(s: Any) -> str:
     return str(s or "")
 
@@ -31,7 +52,13 @@ def main() -> int:
         action="store_true",
         help="Print export lines for CYCLE_CIRCLES_XFER_LIVE when USDC BSC is ready",
     )
+    ap.add_argument(
+        "--write-xfer-env",
+        action="store_true",
+        help="Append CYCLE_CIRCLES_XFER_LIVE + deposit addr to .env when USDC BSC is ready",
+    )
     args = ap.parse_args()
+    _load_dotenv()
 
     from backend.services.venue_cross_transfer_service import sync_cross_venue_addresses
 
@@ -62,6 +89,30 @@ def main() -> int:
             print(f"export {k}={v}")
     elif env.get("CYCLE_CIRCLES_XFER_LIVE") == "1":
         print("USDC BSC BN→NK ready — set CYCLE_CIRCLES_XFER_LIVE=1 to fund circles")
+    if args.write_xfer_env and env.get("CYCLE_CIRCLES_XFER_LIVE") == "1":
+        env_path = os.path.join(ROOT, ".env")
+        existing = ""
+        if os.path.isfile(env_path):
+            existing = open(env_path, encoding="utf-8").read()
+        additions = []
+        for k, v in env.items():
+            line = f"{k}={v}"
+            if f"{k}=" in existing:
+                # rewrite in-place for these keys
+                lines = []
+                for raw in existing.splitlines():
+                    if raw.startswith(f"{k}="):
+                        lines.append(line)
+                    else:
+                        lines.append(raw)
+                existing = "\n".join(lines) + ("\n" if existing.endswith("\n") else "")
+            else:
+                additions.append(line)
+        if additions:
+            existing = existing.rstrip("\n") + "\n" + "\n".join(additions) + "\n"
+        with open(env_path, "w", encoding="utf-8") as fh:
+            fh.write(existing if existing.endswith("\n") else existing + "\n")
+        print(f"wrote_xfer_env path={env_path} keys={list(env)}")
     return 0 if out.get("success") else 1
 
 

@@ -60,18 +60,20 @@ def test_configure_only_ready_binance_routes(monkeypatch, tmp_path):
     monkeypatch.setattr(
         xfer,
         "binance_whitelist_rows",
-        lambda coin="USDC": (
-            [
-                {
-                    "address": "0x2c0b81D2c9bf95Fc66DBC6e2527fD22AEA91aDC8",
-                    "network": "BSC",
-                    "coin": "USDC",
-                    "name": "NK USDC",
-                }
-            ]
-            if coin == "USDC"
-            else []
-        ),
+        lambda coin="USDC": [
+            {
+                "address": "0x2c0b81D2c9bf95Fc66DBC6e2527fD22AEA91aDC8",
+                "network": "BSC",
+                "coin": "USDC",
+                "name": "NK USDC",
+            },
+            {
+                "address": "TS7u7kVvLVyqEdeUPbwpJJVhYCRe4pitBj",
+                "network": "TRX",
+                "coin": "USDT",
+                "name": "NK USDT",
+            },
+        ],
     )
 
     configured = {}

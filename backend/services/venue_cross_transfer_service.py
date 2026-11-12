@@ -21,9 +21,10 @@ _REGISTRY_PATH = os.path.join(ex._DATA_DIR, "cross_venue_addresses.json")
 PREFERRED_ROUTES: List[Dict[str, str]] = [
     {"asset": "USDC", "from": "binance", "to": "nonkyc", "network": "BSC", "nk_ticker": "USDC-BEP20"},
     {"asset": "USDT", "from": "binance", "to": "nonkyc", "network": "TRX", "nk_ticker": "USDT-TRC20"},
-    {"asset": "BNB", "from": "binance", "to": "nonkyc", "network": "BSC", "nk_ticker": "BNB"},
-    {"asset": "LINK", "from": "binance", "to": "nonkyc", "network": "BSC", "nk_ticker": "LINK"},
-    {"asset": "XRP", "from": "binance", "to": "nonkyc", "network": "XRP", "nk_ticker": "XRP"},
+    # NonKYC BEP20 deposits share the EVM address; Binance still needs a per-coin whitelist row.
+    {"asset": "BNB", "from": "binance", "to": "nonkyc", "network": "BSC", "nk_ticker": "BNB-BSC"},
+    {"asset": "LINK", "from": "binance", "to": "nonkyc", "network": "ETH", "nk_ticker": "LINK-ERC20"},
+    {"asset": "XRP", "from": "binance", "to": "nonkyc", "network": "BSC", "nk_ticker": "XRP-BEP20"},
     {"asset": "ADA", "from": "binance", "to": "nonkyc", "network": "ADA", "nk_ticker": "ADA"},
     {"asset": "ALGO", "from": "binance", "to": "nonkyc", "network": "ALGO", "nk_ticker": "ALGO"},
     # Reverse quote hop (NonKYC → Binance)
@@ -122,19 +123,25 @@ def binance_whitelist_rows(coin: str = "USDC") -> List[Dict[str, Any]]:
 
 
 def is_binance_whitelisted(address: str, network: str, *, coin: str = "USDC") -> bool:
-    from backend.services.exchange_binance_withdraw_service import (
-        _address_whitelisted,
-        binance_network_code,
-    )
+    """True when address+network is whitelisted for this withdraw coin.
 
-    rows = binance_whitelist_rows(coin)
-    if _address_whitelisted(address, binance_network_code(network), rows):
-        return True
-    # Some accounts return a coin-agnostic list; also probe USDC/USDT lists.
-    for alt in ("USDC", "USDT"):
-        if alt == str(coin).upper():
-            continue
-        if _address_whitelisted(address, binance_network_code(network), binance_whitelist_rows(alt)):
+    Binance's address-list API returns the full book for any ``coin`` query, so we
+    require the row's ``coin`` field to match the asset being withdrawn (USDC row
+    must not authorize a BNB withdraw).
+    """
+    from backend.services.exchange_binance_withdraw_service import binance_network_code
+
+    addr = (address or "").strip()
+    net = binance_network_code(network)
+    coin_u = str(coin or "USDC").upper()
+    if not addr:
+        return False
+    # List is global; querying USDC is enough to load the book.
+    for row in binance_whitelist_rows("USDC") + binance_whitelist_rows(coin_u):
+        row_addr = str(row.get("address") or "").strip()
+        row_net = str(row.get("network") or "").upper()
+        row_coin = str(row.get("coin") or "").upper()
+        if row_addr == addr and row_net == net and (not row_coin or row_coin == coin_u):
             return True
     return False
 
