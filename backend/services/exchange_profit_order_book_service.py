@@ -256,26 +256,27 @@ def score_techniques_for_deal(
             priority = 100 if recommend else 5
             note = "block_exec" if recommend else "floor_clear"
         elif tid == "recheck_regime_deweight":
+            # Always advised before fire; lower priority so funding actions win as best_technique.
             recommend = True
-            priority = 90
+            priority = 55
             note = f"mid_skew_bps={round(mid_skew_bps, 2)}"
         elif tid == "size_to_funded":
             recommend = (not funded_ok) or (0 < max_funded < want)
-            priority = 85 if recommend else 20
+            priority = 88 if recommend else 20
             note = f"max_funded={max_funded}"
         elif tid == "prefund_buy_quote":
             recommend = (not funded_ok) and net >= min_bps and est >= min_profit
-            priority = 80 if recommend else 10
+            priority = 92 if recommend else 10
             note = str(funding.get("reason") or "buy_quote")
         elif tid == "prefund_sell_inventory":
             recommend = (not funded_ok) and net >= min_bps
-            priority = 75 if recommend else 10
+            priority = 86 if recommend else 10
             note = "sell_leg_base"
         elif tid == "quote_bridge_rotation":
             buy_v = str(opp.get("buy_venue") or "").lower()
             sell_v = str(opp.get("sell_venue") or "").lower()
-            recommend = buy_v != sell_v and (buy_v in _EXTERNAL and sell_v in _EXTERNAL)
-            priority = 55 if recommend else 5
+            recommend = buy_v != sell_v and (buy_v in _EXTERNAL and sell_v in _EXTERNAL) and (not funded_ok)
+            priority = 70 if recommend else 5
             note = "USDC↔USDT / raise rotate"
         elif tid == "micro_split_fills":
             recommend = want >= 20.0 or (funded_ok and net >= min_bps)
@@ -283,15 +284,15 @@ def score_techniques_for_deal(
             note = "clip=$5–10"
         elif tid == "stale_route_cooldown":
             recommend = _cooldown_active(route, state)
-            priority = 95 if recommend else 8
+            priority = 97 if recommend else 8
             note = "on_cooldown" if recommend else "clear"
         elif tid == "restore_post_trade":
-            recommend = True
-            priority = 40
+            recommend = funded_ok and net >= min_bps
+            priority = 35 if recommend else 5
             note = "after_fill"
         elif tid == "orphan_leg_hedge":
-            recommend = True
-            priority = 70
+            recommend = funded_ok and net >= min_bps
+            priority = 45 if recommend else 5
             note = "arm_on_partial_fill"
         else:
             note = "unknown"

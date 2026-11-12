@@ -40,15 +40,15 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 45, "hunter": 20, "book": 25},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "dual_farm": 60, "hunter": 30, "book": 45},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15, "book": 20},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 30, "hunter": 15, "book": 20},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 45, "hunter": 20, "pbook": 25},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "dual_farm": 60, "hunter": 30, "pbook": 45},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15, "pbook": 20},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 30, "hunter": 15, "pbook": 20},
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
 _LIVE_PROFIT_MAX_INTERVALS = {
-    "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15, "book": 20,
+    "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15, "pbook": 20,
 }
 
 
@@ -540,7 +540,7 @@ def _hunter_loop(interval: int, stop: threading.Event) -> None:
         stop.wait(max(10, interval))
 
 
-def _summarize_book(res: Dict[str, Any]) -> str:
+def _summarize_pbook(res: Dict[str, Any]) -> str:
     best = res.get("best") or ((res.get("top5") or [{}])[0] if res.get("top5") else {})
     parts = [
         f"deals={res.get('deal_count', 0)}",
@@ -563,18 +563,18 @@ def _summarize_book(res: Dict[str, Any]) -> str:
     return " ".join(parts)
 
 
-def _book_loop(interval: int, stop: threading.Event) -> None:
+def _pbook_loop(interval: int, stop: threading.Event) -> None:
     print(f"[all-profit] profit-order-book leg interval={interval}s (top5 + ledger + techniques)", flush=True)
     while not stop.is_set():
         try:
             from backend.services.exchange_profit_order_book_service import run_profit_order_book_tick
 
             res = run_profit_order_book_tick()
-            summary = _summarize_book(res)
-            print(f"[all-profit] book {summary}", flush=True)
-            _write_heartbeat("book", summary)
+            summary = _summarize_pbook(res)
+            print(f"[all-profit] pbook {summary}", flush=True)
+            _write_heartbeat("pbook", summary)
         except Exception as exc:
-            print(f"[all-profit] book error: {exc}", flush=True)
+            print(f"[all-profit] pbook error: {exc}", flush=True)
         stop.wait(max(10, interval))
 
 
@@ -823,7 +823,7 @@ def main() -> int:
         help="Do not run spread-hunter arm (wide BN↔NK catalog hunt)",
     )
     parser.add_argument(
-        "--skip-book",
+        "--skip-pbook",
         action="store_true",
         help="Do not run profit order-book leg (top5 hitlist + ledger + techniques)",
     )
@@ -856,7 +856,7 @@ def main() -> int:
     stuck_iv = int(os.environ.get("EXCHANGE_STUCK_INTERVAL") or 0) or iv.get("stuck") or 600
     micro_iv = int(os.environ.get("MN2_MICRO_CHAIN_INTERVAL") or 0) or iv.get("micro") or 120
     hunter_iv = int(os.environ.get("SPREAD_HUNTER_INTERVAL_SEC") or 0) or iv.get("hunter") or 20
-    book_iv = int(os.environ.get("PROFIT_BOOK_INTERVAL_SEC") or 0) or iv.get("book") or 25
+    pbook_iv = int(os.environ.get("PROFIT_BOOK_INTERVAL_SEC") or 0) or iv.get("pbook") or 25
     dual_iv = int(os.environ.get("DUAL_FARM_INTERVAL_SEC") or 0) or iv.get("dual_farm") or 0
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
@@ -884,10 +884,10 @@ def main() -> int:
                 from backend.services.exchange_spread_hunter_arm_service import run_spread_hunter_tick
 
                 out["hunter"] = run_spread_hunter_tick(force=True)
-            if not args.skip_book:
+            if not args.skip_pbook:
                 from backend.services.exchange_profit_order_book_service import run_profit_order_book_tick
 
-                out["book"] = run_profit_order_book_tick(force=True)
+                out["pbook"] = run_profit_order_book_tick(force=True)
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -911,8 +911,8 @@ def main() -> int:
                 print(f"[all-profit] dual_farm {_summarize_dual_farm(out['dual_farm'])}", flush=True)
             if "hunter" in out:
                 print(f"[all-profit] hunter {_summarize_hunter(out['hunter'])}", flush=True)
-            if "book" in out:
-                print(f"[all-profit] book {_summarize_book(out['book'])}", flush=True)
+            if "pbook" in out:
+                print(f"[all-profit] pbook {_summarize_pbook(out['pbook'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -938,8 +938,8 @@ def main() -> int:
             print(f"  dual-farm arm interval={dual_iv}s")
         if hunter_iv and not args.skip_hunter:
             print(f"  spread-hunter arm interval={hunter_iv}s")
-        if book_iv and not args.skip_book:
-            print(f"  profit-order-book leg interval={book_iv}s")
+        if pbook_iv and not args.skip_pbook:
+            print(f"  profit-order-book leg interval={pbook_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -973,9 +973,9 @@ def main() -> int:
             threads.append(threading.Thread(
                 target=_hunter_loop, args=(hunter_iv, stop), name="hunter", daemon=True,
             ))
-        if book_iv and not args.skip_book:
+        if pbook_iv and not args.skip_pbook:
             threads.append(threading.Thread(
-                target=_book_loop, args=(book_iv, stop), name="book", daemon=True,
+                target=_pbook_loop, args=(pbook_iv, stop), name="pbook", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(
