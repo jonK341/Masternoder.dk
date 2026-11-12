@@ -54,9 +54,16 @@ COMFY_CLOUD_HTTP = "https://cloud.comfy.org"
 COMFY_CLOUD_WS = "wss://cloud.comfy.org/ws"
 FAL_KREA_WS = "wss://fal.run/fal-ai/krea-wan-14b/ws"
 FAL_TOKEN_HTTP = "https://rest.alpha.fal.ai/tokens/"
+FAL_TOKEN_EXPIRATION_SECONDS = 3600
 DRAMACANVA_HTTP = "https://dramacanva.com/api/mcp"
+MCP_PROTOCOL_VERSION = "2025-11-25"
 _DEFAULT_LOCAL_HTTP = "http://127.0.0.1:8188"
-_ENV_FILES = ("/var/www/html/.env", "/var/www/html/vidgenerator/.env")
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_ENV_FILES = (
+    os.path.join(_REPO_ROOT, ".env"),
+    "/var/www/html/.env",
+    "/var/www/html/vidgenerator/.env",
+)
 
 # id -> how to reach it. key_env None means the canvas has no secret.
 CANVASES: Dict[str, Dict[str, Any]] = {
@@ -481,7 +488,7 @@ def _fal_token(timeout: int = 30) -> str:
         raise RuntimeError("FAL_API_KEY is not configured")
     payload = json.dumps({
         "allowed_apps": ["krea-wan-14b"],
-        "token_expiration": 5000,
+        "token_expiration": FAL_TOKEN_EXPIRATION_SECONDS,
     }).encode("utf-8")
     req = urllib.request.Request(
         FAL_TOKEN_HTTP,
@@ -498,7 +505,12 @@ def _fal_token(timeout: int = 30) -> str:
             data = json.loads(resp.read().decode("utf-8"))
     except (urllib.error.URLError, OSError, json.JSONDecodeError) as exc:
         raise RuntimeError("fal token request failed: %s" % exc) from exc
-    token = data.get("token") or data.get("jwt") or data.get("access_token")
+    if isinstance(data, str):
+        token = data
+    elif isinstance(data, dict):
+        token = data.get("token") or data.get("jwt") or data.get("access_token")
+    else:
+        token = None
     if not isinstance(token, str) or not token:
         raise RuntimeError("fal token response did not include a token")
     return token
@@ -614,7 +626,8 @@ def _mcp_post(
 ) -> tuple[Dict[str, Any], Optional[str]]:
     headers = auth_headers("dramacanva")
     headers["Accept"] = "application/json, text/event-stream"
-    headers["MCP-Protocol-Version"] = "2025-03-26"
+    headers["MCP-Protocol-Version"] = MCP_PROTOCOL_VERSION
+    headers["User-Agent"] = "MasterNoder/1.0"
     if session_id:
         headers["Mcp-Session-Id"] = session_id
     req = urllib.request.Request(
@@ -669,7 +682,7 @@ def prepare_film_project(prompt: str, timeout: int = 90) -> Dict[str, Any]:
         "id": request_id,
         "method": "initialize",
         "params": {
-            "protocolVersion": "2025-03-26",
+            "protocolVersion": MCP_PROTOCOL_VERSION,
             "capabilities": {},
             "clientInfo": {"name": "MasterNoder film pipeline", "version": "1"},
         },

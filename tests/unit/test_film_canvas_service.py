@@ -19,6 +19,7 @@ SECRET = "cloud-key-should-not-leak"
 
 @pytest.fixture
 def clean_env(monkeypatch):
+    monkeypatch.setattr(canvas, "_ENV_FILES", ())
     for name in (
         "COMFY_CLOUD_API_KEY",
         "COMFYUI_BASE_URL",
@@ -33,6 +34,29 @@ def clean_env(monkeypatch):
     ):
         monkeypatch.delenv(name, raising=False)
     return monkeypatch
+
+
+def test_provider_protocol_limits_match_current_services():
+    assert canvas.FAL_TOKEN_EXPIRATION_SECONDS == 3600
+    assert canvas.MCP_PROTOCOL_VERSION == "2025-11-25"
+
+
+def test_fal_token_accepts_string_response(clean_env, monkeypatch):
+    clean_env.setenv("FAL_API_KEY", SECRET)
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return json.dumps("temporary-jwt").encode("utf-8")
+
+    monkeypatch.setattr(canvas.urllib.request, "urlopen", lambda _req, timeout: FakeResponse())
+
+    assert canvas._fal_token() == "temporary-jwt"
 
 
 def test_public_listing_has_websockets_and_no_secret(clean_env):
