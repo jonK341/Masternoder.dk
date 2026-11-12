@@ -26,7 +26,11 @@ from backend.services import external_exchange_connector_service as conn
 _STATE_PATH = os.path.join(ex._DATA_DIR, "spread_hunter_arm_state.json")
 _BOARD_PATH = os.path.join(ex._DATA_DIR, "spread_hunter_board.json")
 _EXTERNAL = ("binance", "nonkyc")
-_SEED_SYMBOLS = ["ADA", "LINK", "BNB", "XRP", "SOL", "AVAX", "DOT", "ATOM", "NEAR", "TRX", "UNI", "LTC"]
+_SEED_SYMBOLS = [
+    "ADA", "LINK", "BNB", "XRP", "SOL", "AVAX", "DOT", "ATOM", "NEAR", "TRX", "UNI", "LTC",
+    "BTC", "ETH", "DOGE", "SHIB", "MATIC", "POL", "APT", "SUI", "ARB", "OP", "FIL", "AAVE",
+    "MKR", "CRV", "PEPE", "WIF", "TON", "INJ", "RENDER", "FET", "TIA", "SEI", "HBAR", "ALGO",
+]
 
 
 def _iso() -> str:
