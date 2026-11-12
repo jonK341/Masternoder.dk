@@ -393,6 +393,17 @@ def build_order_book(
 
     scanned = _scan_deals(notional_usd=notional, scan_limit=limit)
     deals = list(scanned.get("deals") or [])
+    # Drop dust / broken books (e.g. 1e-8 asks that invent million-bps phantoms).
+    sane: List[Dict[str, Any]] = []
+    for d in deals:
+        ask = float(d.get("buy_ask") or 0)
+        bid = float(d.get("sell_bid") or 0)
+        if ask <= 0 or bid <= 0 or ask < 1e-6:
+            continue
+        if bid / ask > 1.25:  # >25% gross is not a retail spatial fill we can trust
+            continue
+        sane.append(d)
+    deals = sane
     deals.sort(
         key=lambda d: (float(d.get("est_profit_usd") or 0), float(d.get("net_bps") or 0)),
         reverse=True,

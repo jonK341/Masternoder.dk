@@ -266,6 +266,11 @@ def _batch_scan(
         for opp in scan.get("opportunities") or []:
             if not _is_external_opp(opp):
                 continue
+            ask = float(opp.get("buy_ask") or 0)
+            bid = float(opp.get("sell_bid") or 0)
+            # Reject dust/broken books that invent phantom million-bps edges.
+            if ask <= 0 or bid <= 0 or ask < 1e-6 or (bid / ask) > 1.25:
+                continue
             annotated.append(
                 _annotate_opportunity(opp, notional_usd=notional_usd, cfg=cfg, xfer_bps=xfer_bps)
             )
