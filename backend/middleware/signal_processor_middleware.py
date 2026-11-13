@@ -56,7 +56,12 @@ def process_invoke_in_request():
 
 # Paths that never need correction; skip path_corrector (avoids AI path correction / recursion on health checks)
 _SKIP_PATH_CORRECTION = {'/api/health', '/api/version'}
-_SKIP_PATH_CORRECTION_PREFIXES = ('/api/profit-daemon/',)
+# Frontpage news/podcast are hot paths — path_corrector can add tens of seconds per request in dev.
+_SKIP_PATH_CORRECTION_PREFIXES = (
+    '/api/profit-daemon/',
+    '/api/news/',
+    '/api/podcast/',
+)
 
 
 def correct_paths_in_request():

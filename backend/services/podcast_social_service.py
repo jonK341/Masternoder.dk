@@ -176,7 +176,7 @@ def get_activity_feed(limit: int = 30) -> List[Dict[str, Any]]:
         return list(data.get("activity") or [])[:limit]
 
 
-def get_portal_lines(site_id: Optional[str] = None) -> Dict[str, Any]:
+def get_portal_lines(site_id: Optional[str] = None, lite: bool = False) -> Dict[str, Any]:
     path = os.path.join(_BASE, "data", "podcast_portal_lines.json")
     raw = {}
     try:
@@ -199,24 +199,35 @@ def get_portal_lines(site_id: Optional[str] = None) -> Dict[str, Any]:
 
     news_headline = None
     try:
-        feed = get_news_feed(limit=1)
-        if feed:
-            news_headline = {"id": feed[0].get("id"), "title": feed[0].get("title")}
+        # Lite home strip only needs the top headline — skip comment-count fanout.
+        if lite:
+            news_items = _load_platform_news(1)
+            if news_items:
+                news_headline = {"id": news_items[0].get("id"), "title": news_items[0].get("title")}
+        else:
+            feed = get_news_feed(limit=1)
+            if feed:
+                news_headline = {"id": feed[0].get("id"), "title": feed[0].get("title")}
     except Exception:
         pass
 
-    return {
+    payload = {
         "success": True,
         "site": site,
         "line": (site or {}).get("line") or raw.get("default_line"),
         "comment_hint": (site or {}).get("comment_hint") or raw.get("default_comment_hint"),
         "flavor": raw.get("flavor") or "blue_bubble_cheese_gum",
-        "sites": sites,
         "latest_episode": latest,
         "latest_news": news_headline,
         "podcast_url": "/podcast",
         "news_url": "/podcast#news",
+        "lite": bool(lite),
     }
+    if lite:
+        payload["sites"] = [site] if site else []
+    else:
+        payload["sites"] = sites
+    return payload
 
 
 def _load_platform_news(limit: int = 30) -> List[Dict[str, Any]]:
@@ -283,12 +294,22 @@ def add_news_comment(news_id: str, user_id: str, content: str) -> Dict[str, Any]
 
 def get_news_feed(limit: int = 20) -> List[Dict[str, Any]]:
     items = _load_platform_news(limit)
+    # Single social-file read — avoid N+1 get_news_comments opens (podcast news lag).
+    comment_counts: Dict[str, int] = {}
+    try:
+        with _LOCK:
+            data = _read_social()
+            nc = data.get("news_comments") or {}
+            for nid, comments in nc.items():
+                comment_counts[str(nid)] = len(comments or [])
+    except Exception:
+        comment_counts = {}
     out = []
     for item in items:
         nid = item.get("id") or ""
         out.append({
             **item,
-            "comment_count": len(get_news_comments(nid, limit=999)),
+            "comment_count": comment_counts.get(str(nid), 0),
             "podcast_discuss_url": f"/podcast#news-{nid}",
         })
     return out

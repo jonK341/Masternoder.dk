@@ -1,7 +1,37 @@
 {
   "version": "1.0.0",
-  "updated_at": "2026-06-22",
+  "updated_at": "2026-11-13",
   "episodes": [
+    {
+      "id": "ep-006-upgrade-briefing-nov13",
+      "channel_id": "masternoder-main",
+      "title": "Upgrade Briefing — Portals, Star Map Ideas, Fast News",
+      "description": "November upgrade wave: site-wide Portals void bar, frontpage News+Podcast speed-up, Star Map Season 3 Ideas board, and the left loading-ring cleanup. Comment on News & Changes for MN2.",
+      "duration_sec": 960,
+      "audio_url": "/static/audio/podcast/ep-006-upgrade-briefing.mp3",
+      "published_at": "2026-11-13T12:00:00Z",
+      "view_count": 120,
+      "play_count": 48,
+      "share_count": 12,
+      "premium": false,
+      "shop_item_id": null,
+      "generator_intelligence": true,
+      "encode_profile": "premium",
+      "assigned_agent": "podcast_producer_agent",
+      "tags": [
+        "upgrades",
+        "portals",
+        "starmap",
+        "news",
+        "mn2"
+      ],
+      "platform_links": {
+        "youtube": "https://youtube.com/watch?v=upgrade-briefing-nov13",
+        "facebook": "https://facebook.com/MasterNoder/posts/upgrade-nov13",
+        "discord": "https://discord.gg/masternoder",
+        "github": "https://github.com/MasterNoder/releases/tag/podcast-upgrade-nov13"
+      }
+    },
     {
       "id": "ep-001-welcome",
       "channel_id": "masternoder-main",
@@ -33,7 +63,7 @@
     {
       "id": "ep-002-generator-ai",
       "channel_id": "generator-intelligence",
-      "title": "Generator Intelligence \u2014 AI Podcast Pipeline",
+      "title": "Generator Intelligence — AI Podcast Pipeline",
       "description": "How TTS, AI script, and the AI audio encoder produce episodes from generator intelligence.",
       "duration_sec": 1080,
       "audio_url": "/static/audio/podcast/ep-002-generator-ai.mp3",
@@ -92,7 +122,7 @@
       "id": "ep-004-view-rewards",
       "channel_id": "crypto-hunters",
       "title": "View Counting & Crypto Rewards",
-      "description": "Listen, share, and earn MN2 \u2014 view counting with daily caps and staking bonuses.",
+      "description": "Listen, share, and earn MN2 — view counting with daily caps and staking bonuses.",
       "duration_sec": 840,
       "audio_url": "/static/audio/podcast/ep-004-view-rewards.mp3",
       "published_at": "2026-06-15T16:00:00Z",

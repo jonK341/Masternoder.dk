@@ -2,6 +2,46 @@
   "$schema": "masternoder.platform_news.v1",
   "items": [
     {
+      "id": "news-upgrade-wave-fast-news-podcast-20261113",
+      "title": "Upgrade wave: faster home News + Podcast panels",
+      "summary": "Home news no longer waits on idle or cold aggregator feeds. Platform upgrades paint first; tech intel loads in the background with a short timeout so the panel stays snappy.",
+      "date": "2026-11-13",
+      "category": "platform",
+      "channel": "platform",
+      "href": "/",
+      "featured": true
+    },
+    {
+      "id": "news-upgrade-portals-void-sitewide-20261113",
+      "title": "Upgrade: one Portals void bar across every page",
+      "summary": "Category-dropdown nav clutter is gone. Every route now uses the start-page Portals button with neon MasterNoder tema — same catalog, cleaner chrome.",
+      "date": "2026-11-13",
+      "category": "platform",
+      "channel": "platform",
+      "href": "/",
+      "featured": true
+    },
+    {
+      "id": "news-upgrade-starmap-ideas-loading-20261113",
+      "title": "Upgrade: Star Map Ideas + loading ring cleanup",
+      "summary": "Season 3 Ideas board is live (constellations, warp pulse, chronoscout). The left-edge spinner that looked like a progress ring is replaced with plain status text.",
+      "date": "2026-11-13",
+      "category": "game",
+      "channel": "game",
+      "href": "/starmap25/?tab=ideas",
+      "featured": true
+    },
+    {
+      "id": "news-upgrade-podcast-episode-november-20261113",
+      "title": "New podcast episode — November upgrade briefing",
+      "summary": "Discuss Portals void, frontpage cleanup, Star Map Ideas, and MN2 comment rewards on Podcast News & Changes. New episode drop: Upgrade Briefing Nov 13.",
+      "date": "2026-11-13",
+      "category": "podcast",
+      "channel": "podcast",
+      "href": "/podcast#episodes",
+      "featured": true
+    },
+    {
       "id": "news-frontpage-cleanup-portal-void-20261113",
       "title": "Frontpage cleanup — shared Portals bar, no Agent void",
       "summary": "The start-page Portals button is now the site-wide nav. Dead Agent void, Live surface patch cards, and the embedded Game hub collector strip are gone from the home page. News and Podcast sit side by side.",
