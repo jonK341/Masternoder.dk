@@ -223,6 +223,73 @@ def test_scanner_credits_user_not_treasury(tmp_path, monkeypatch):
     assert round(after2, 8) == round(after, 8)
 
 
+def test_gift_resolves_ledger_receive_id(tmp_path, monkeypatch):
+    from backend.services import mn2_gift_service as gift
+    from backend.services import mn2_wallet_service as ws
+    from backend.services.unified_points_database import unified_points_db
+
+    addr_path = tmp_path / "mn2_user_addresses.json"
+    uid = "eco_gift_recv"
+    lgr = ws._ledger_receive_id(uid)
+    addr_path.write_text(json.dumps({
+        uid: {
+            "primary": lgr,
+            "wallet_type": "ledger",
+            "ledger_only": True,
+            "addresses": [{"label": "primary", "address": lgr, "type": "ledger", "active": True, "ledger_only": True}],
+        }
+    }), encoding="utf-8")
+    monkeypatch.setattr(ws, "_addresses_path", lambda: str(addr_path))
+    monkeypatch.setattr(gift, "_DAILY_PATH", str(tmp_path / "mn2_gift_daily.json"))
+    monkeypatch.setattr(gift, "_load_config", lambda: {
+        "enabled": True,
+        "max_per_transfer_mn2": 1000,
+        "max_per_day_mn2": 5000,
+        "min_balance_after_mn2": 0,
+    })
+    monkeypatch.setattr(
+        "backend.services.mn2_hold_registry.assert_withdrawable",
+        lambda user, amt: {"allowed": True},
+    )
+    sender = "eco_gift_sender"
+    unified_points_db.add_points(sender, "mn2_balance", 2.0, source="test_seed")
+    out = gift.transfer(sender, lgr, 0.4, note="via LGR")
+    assert out.get("success") is True
+    assert out.get("to_user") == uid
+
+
+def test_micro_burst_in_app_without_chain(monkeypatch):
+    from backend.services import mn2_micro_transactions_service as micro
+
+    monkeypatch.setattr(micro, "micro_config", lambda: {
+        "enabled": True,
+        "amount_mn2": 0.0001,
+        "max_per_run": 2,
+        "max_per_user_per_day": 10,
+        "split_parts": 1,
+        "actions": ["aggregator_pulse"],
+        "chain_enabled": False,
+        "min_chain_mn2": 0.0001,
+    })
+    monkeypatch.setattr(micro, "_discover_users", lambda limit=80: ["eco_micro_user"])
+    monkeypatch.setattr(micro, "_load_state", lambda: {"users": {}, "runs": []})
+    monkeypatch.setattr(micro, "_save_state", lambda state: None)
+    monkeypatch.setattr(
+        micro,
+        "_credit_micro",
+        lambda user_id, amount, action, slot=0, dry_run=False: {
+            "success": True,
+            "amount": amount,
+            "user_id": user_id,
+        },
+    )
+    out = micro.run_micro_transaction_burst(max_txs=1)
+    assert out.get("success") is True
+    assert out.get("mode") == "in_app_only"
+    assert out.get("in_app_only") == 1
+    assert out.get("skipped_reason") != "chain_reward_payouts_disabled"
+
+
 def test_first_withdraw_skips_cooldown(tmp_path, monkeypatch):
     from backend.services import mn2_withdrawal_guard as guard
 

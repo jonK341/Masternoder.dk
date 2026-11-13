@@ -6,7 +6,7 @@ See docs/MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md Phase 3.
 import os
 import json
 import threading
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 _SCANNER_LOCK = threading.Lock()
 
@@ -156,6 +156,81 @@ def apply_order_payment(
         except Exception:
             pass
     return {"action": "underpaid_credited"}
+
+
+def last_scanner_run() -> Optional[Dict[str, Any]]:
+    """Most recent deposit-scanner log line (for wallet status badges)."""
+    try:
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        log_file = os.path.join(base, "logs", "mn2_deposit_scanner.jsonl")
+        if not os.path.exists(log_file):
+            return None
+        with open(log_file, "r", encoding="utf-8") as handle:
+            lines = [ln.strip() for ln in handle.readlines() if ln.strip()]
+        if not lines:
+            return None
+        return json.loads(lines[-1])
+    except Exception:
+        return None
+
+
+def pending_deposits_for_user(user_id: str, *, limit: int = 10) -> List[Dict[str, Any]]:
+    """Unconfirmed receives to this user's chain deposit addresses (best-effort).
+
+    Returns [] when RPC is down or the user only has a ledger-only LGR id.
+    """
+    uid = str(user_id or "").strip()
+    if not uid:
+        return []
+    try:
+        from backend.services.mn2_wallet_service import get_address_to_user_map
+        from backend.services.mn2_rpc_client import listtransactions
+        from backend.services.mn2_ledger import is_txid_processed
+    except Exception:
+        return []
+
+    config = _load_config()
+    required = int(config.get("confirmations") or 6)
+    addr_map = get_address_to_user_map(include_ledger=False)
+    mine = {addr for addr, owner in addr_map.items() if owner == uid}
+    if not mine:
+        return []
+
+    r = listtransactions(count=200, skip=0)
+    if r.get("error") or not isinstance(r.get("result"), list):
+        return []
+
+    pending: List[Dict[str, Any]] = []
+    for tx in r["result"]:
+        category = (tx.get("category") or tx.get("type") or "").strip().lower()
+        if category not in ("receive", "recv"):
+            continue
+        address = (tx.get("address") or "").strip()
+        if address not in mine:
+            continue
+        txid = (tx.get("txid") or "").strip()
+        if not txid or is_txid_processed(txid):
+            continue
+        try:
+            amount = float(tx.get("amount") or 0)
+        except (TypeError, ValueError):
+            continue
+        if amount <= 0:
+            continue
+        confs = int(tx.get("confirmations") or 0)
+        if confs >= required:
+            continue
+        pending.append({
+            "txid": txid,
+            "address": address,
+            "amount_mn2": round(amount, 8),
+            "confirmations": confs,
+            "required_confirmations": required,
+            "progress": f"{confs}/{required}",
+        })
+        if len(pending) >= max(1, min(int(limit), 25)):
+            break
+    return pending
 
 
 def run_scanner() -> Dict[str, Any]:

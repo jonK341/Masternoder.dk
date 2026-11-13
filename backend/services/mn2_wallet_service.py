@@ -650,10 +650,11 @@ def connect_external_wallet(user_id: str, address: str, wallet_type: str = "watc
     return {"success": True, "user_id": uid, "address": addr, "wallet_type": wtype}
 
 
-def get_address_to_user_map() -> Dict[str, str]:
-    """Return dict address -> user_id for all assigned deposit addresses (for scanner).
+def get_address_to_user_map(*, include_ledger: bool = False) -> Dict[str, str]:
+    """Return dict address -> user_id for assigned deposit addresses.
 
-    Ledger-only ``LGR…`` ids are excluded — they are not chain deposit targets.
+    By default ledger-only ``LGR…`` ids are excluded (scanner must never credit them).
+    Pass ``include_ledger=True`` for gift/transfer recipient resolution.
     """
     addresses = _load_addresses()
     out: Dict[str, str] = {}
@@ -661,7 +662,7 @@ def get_address_to_user_map() -> Dict[str, str]:
         if not uid or uid.startswith("pool_"):
             continue
         for addr in _all_addresses_for_entry(entry):
-            if _is_ledger_only_address(addr):
+            if not include_ledger and _is_ledger_only_address(addr):
                 continue
             out[addr] = uid
     try:
@@ -736,6 +737,7 @@ def frame_user_mn2_wallet(user_id: str) -> Dict[str, Any]:
         or (isinstance(entry, dict) and entry.get("ledger_only"))
         or str(primary or "").startswith("LGR")
     )
+    mode = _wallet_mode()
     payload = {
         "success": True,
         "user_id": uid,
@@ -747,7 +749,8 @@ def frame_user_mn2_wallet(user_id: str) -> Dict[str, Any]:
         "coins_per_mn2": rate,
         "mn2_coins": int(round(mn2 * rate)),
         "ledger_only": ledger_only,
-        "wallet_mode": _wallet_mode(),
+        "wallet_mode": mode,
+        "upgraded_from_ledger": bool(created.get("upgraded_from_ledger")),
     }
     if created.get("address_warning"):
         payload["address_warning"] = created["address_warning"]
@@ -755,6 +758,47 @@ def frame_user_mn2_wallet(user_id: str) -> Dict[str, Any]:
         payload["address_warning"] = (
             "In-app ledger wallet. Balance and peer transfers work without the chain daemon."
         )
+
+    # Status badges / deposit UX addons for the profile wallet.
+    try:
+        from backend.services.mn2_rpc_client import _rpc_url, getblockcount
+        url = (_rpc_url() or "").strip()
+        if not url:
+            payload["rpc_status"] = "unconfigured"
+        else:
+            probe = getblockcount(timeout_sec=3)
+            payload["rpc_status"] = "up" if not probe.get("error") else "down"
+            if probe.get("error"):
+                payload["rpc_error"] = str(probe.get("error"))[:120]
+            elif probe.get("result") is not None:
+                payload["block_height"] = probe.get("result")
+    except Exception:
+        payload["rpc_status"] = "unknown"
+
+    try:
+        from backend.services.mn2_onchain_wallet import fee_payer_config
+        fee = fee_payer_config()
+        payload["fee_payer_configured"] = bool((fee.get("address") or "").strip())
+    except Exception:
+        payload["fee_payer_configured"] = False
+
+    try:
+        from backend.services.mn2_deposit_scanner import last_scanner_run, pending_deposits_for_user
+        last = last_scanner_run()
+        if last:
+            payload["last_scan"] = {
+                "end": last.get("end"),
+                "credits_applied": last.get("credits_applied"),
+                "txs_checked": last.get("txs_checked"),
+                "error": last.get("error"),
+            }
+        if not ledger_only:
+            payload["pending_deposits"] = pending_deposits_for_user(uid, limit=8)
+        else:
+            payload["pending_deposits"] = []
+    except Exception:
+        payload["pending_deposits"] = []
+
     return payload
 
 

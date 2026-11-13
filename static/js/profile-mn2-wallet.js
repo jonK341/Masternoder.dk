@@ -152,6 +152,97 @@
     }
   }
 
+  function badge(label, kind) {
+    var colors = {
+      ok: 'background:rgba(0,255,136,0.18);color:#00ff88;border:1px solid rgba(0,255,136,0.35)',
+      warn: 'background:rgba(255,170,0,0.16);color:#ffaa00;border:1px solid rgba(255,170,0,0.35)',
+      bad: 'background:rgba(255,80,80,0.16);color:#ff8888;border:1px solid rgba(255,80,80,0.35)',
+      info: 'background:rgba(0,212,255,0.14);color:#00d4ff;border:1px solid rgba(0,212,255,0.35)',
+    };
+    return '<span style="padding:3px 8px;border-radius:999px;' + (colors[kind] || colors.info) + ';">' + label + '</span>';
+  }
+
+  function renderStatusBadges(frameData) {
+    var el = document.getElementById('profile-mn2-status-badges');
+    if (!el || !frameData) return;
+    var parts = [];
+    var mode = frameData.wallet_mode || 'ledger';
+    parts.push(badge('mode ' + mode, 'info'));
+    if (frameData.ledger_only) {
+      parts.push(badge('ledger receive', 'warn'));
+    } else {
+      parts.push(badge('chain deposit', 'ok'));
+    }
+    var rpc = frameData.rpc_status || 'unknown';
+    parts.push(badge('RPC ' + rpc, rpc === 'up' ? 'ok' : rpc === 'unconfigured' ? 'warn' : 'bad'));
+    if (frameData.fee_payer_configured === false && mode === 'onchain') {
+      parts.push(badge('fee payer missing', 'bad'));
+    } else if (frameData.fee_payer_configured) {
+      parts.push(badge('fee payer ready', 'ok'));
+    }
+    if (frameData.last_scan && frameData.last_scan.end) {
+      parts.push(badge('scan ok', frameData.last_scan.error ? 'bad' : 'ok'));
+    }
+    el.innerHTML = parts.join('');
+  }
+
+  function renderPendingDeposits(frameData) {
+    var el = document.getElementById('profile-mn2-pending-deposits');
+    if (!el) return;
+    var rows = (frameData && frameData.pending_deposits) || [];
+    if (!rows.length) {
+      el.innerHTML = frameData && frameData.ledger_only
+        ? '<span style="opacity:0.75;">No on-chain pending deposits while using a ledger receive id.</span>'
+        : '<span style="opacity:0.75;">No pending deposits awaiting confirmations.</span>';
+      return;
+    }
+    el.innerHTML =
+      '<strong style="color:#00d4ff;">Pending deposits</strong><ul style="margin:6px 0 0;padding-left:1.1rem;">' +
+      rows
+        .map(function (r) {
+          return (
+            '<li>' +
+            (Number(r.amount_mn2) || 0).toFixed(4) +
+            ' MN2 · ' +
+            (r.progress || r.confirmations + '/' + r.required_confirmations) +
+            ' conf' +
+            (r.txid ? ' · ' + String(r.txid).slice(0, 10) + '…' : '') +
+            '</li>'
+          );
+        })
+        .join('') +
+      '</ul>';
+  }
+
+  var _upgradePollTimer = null;
+  function maybeStartUpgradePoll(frameData) {
+    if (_upgradePollTimer) {
+      clearInterval(_upgradePollTimer);
+      _upgradePollTimer = null;
+    }
+    if (!(frameData && frameData.ledger_only)) return;
+    var ticks = 0;
+    _upgradePollTimer = setInterval(function () {
+      ticks += 1;
+      if (ticks > 20) {
+        clearInterval(_upgradePollTimer);
+        _upgradePollTimer = null;
+        return;
+      }
+      fetchJson(base() + '/api/mn2/wallet-frame?user_id=' + encodeURIComponent(uid()), { timeout: 12000 }).then(function (res) {
+        var data = res.data || {};
+        if (data.success && !data.ledger_only && data.deposit_address) {
+          clearInterval(_upgradePollTimer);
+          _upgradePollTimer = null;
+          renderDeposit(data);
+          renderStatusBadges(data);
+          renderPendingDeposits(data);
+          if (typeof toast !== 'undefined') toast.success('Chain deposit address ready');
+        }
+      });
+    }, 45000);
+  }
+
   function renderDeposit(addrData) {
     var addrEl = document.getElementById('profile-mn2-deposit-address');
     var qrEl = document.getElementById('profile-mn2-qr');
@@ -160,6 +251,9 @@
     var depositHintEl = document.getElementById('profile-mn2-deposit-hint');
     var depositRetryBtn = document.getElementById('profile-mn2-deposit-retry');
     var requestAddrBtn = document.getElementById('profile-mn2-request-addr');
+    renderStatusBadges(addrData || {});
+    renderPendingDeposits(addrData || {});
+    maybeStartUpgradePoll(addrData || {});
     if (addrData && addrData.success && addrData.deposit_address) {
       if (addrEl) addrEl.textContent = addrData.deposit_address;
       if (depositErrEl) {

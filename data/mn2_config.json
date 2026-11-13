@@ -137,6 +137,10 @@
     "max_per_day_mn2": 5000,
     "min_balance_after_mn2": 0
   },
+  "chain_reward_payouts": {
+    "enabled": false,
+    "comment": "Keep false while wallet_mode=ledger. Micro rewards credit in-app balance; enable only when hot wallet + fee payer are funded."
+  },
   "onchain_fee_payer": {
     "address": "",
     "account": "",

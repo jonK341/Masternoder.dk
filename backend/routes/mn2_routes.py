@@ -282,8 +282,14 @@ def mn2_transfer():
     from backend.services.mn2_onchain_wallet import ensure_user_address, send_from_user_site_pays_fee, wallet_mode
     from backend.services.mn2_wallet_service import get_address_to_user_map
 
-    mapped = (get_address_to_user_map().get(target) or "").strip()
-    internal = bool(mapped) or not looks_like_chain_address(target)
+    mapped = (get_address_to_user_map(include_ledger=True).get(target) or "").strip()
+    internal = bool(mapped) or (not looks_like_chain_address(target) and not str(target).startswith("LGR"))
+    if str(target).startswith("LGR") and not mapped:
+        return jsonify({
+            "success": False,
+            "error": "Unknown ledger receive id.",
+            "code": "recipient_not_found",
+        }), 400
     if internal:
         recipient = mapped or target
         if recipient == user_id:
