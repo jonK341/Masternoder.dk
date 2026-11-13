@@ -11,6 +11,9 @@ Endpoints:
   POST /api/film-canvas/interactive-movie — start monitor interactive movie (plan→render)
   GET  /api/film-canvas/interactive-movie/<job_id> — poll interactive movie job
   GET  /api/film-canvas/interactive-movie/<job_id>/video — stream finished MP4
+  POST /api/frontpage/create-clip — frontpage create vid/clip (same sellable_v1 live-check pipeline)
+  GET  /api/frontpage/create-clip/<job_id> — poll frontpage clip job
+  GET  /api/frontpage/create-clip/<job_id>/video — stream frontpage clip MP4
   GET  /api/film-canvas/billing — free-trial + MN2/PayPal pay status for film monitor
   POST /api/film-canvas/billing/pay-mn2 — buy 1 play credit with MN2 coins
   POST /api/film-canvas/billing/paypal-order — start PayPal checkout for 1 play credit
@@ -97,6 +100,8 @@ def _load_interactive_job(job_id: str):
 
 
 def _public_interactive_job(job: dict) -> dict:
+    """Public job payload — includes full live-check / sellable_v1 metadata for frontpage."""
+    video_url = job.get("video_url")
     return {
         "success": True,
         "job_id": job.get("job_id"),
@@ -116,22 +121,32 @@ def _public_interactive_job(job: dict) -> dict:
         "pipeline_run_id": job.get("pipeline_run_id"),
         "pipeline_style": job.get("pipeline_style"),
         "pipeline_mood": job.get("pipeline_mood"),
+        "pipeline_title": job.get("pipeline_title"),
         "fx_pack": job.get("fx_pack"),
         "story": job.get("story"),
         "narration": job.get("narration"),
         "sellable": job.get("sellable"),
         "quality": job.get("quality"),
-        "pipeline": job.get("pipeline"),
+        "quality_pct": job.get("quality_pct"),
+        "quality_score": job.get("quality_score"),
+        "pipeline": job.get("pipeline") or "sellable_v1",
         "has_audio": job.get("has_audio"),
+        "has_narration": job.get("has_narration"),
+        "sfx_count": job.get("sfx_count"),
+        "fx_count": job.get("fx_count"),
         "motion_backends": job.get("motion_backends"),
-        "video_url": job.get("video_url"),
+        "gallery": job.get("gallery"),
+        "gallery_id": job.get("gallery_id"),
+        "voice_profile": job.get("voice_profile") or "george",
+        "api": job.get("api") or "interactive-movie",
+        "video_url": video_url,
         "download_url": (
-            (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1")
-            if job.get("video_url") else None
+            (video_url + ("&" if "?" in str(video_url or "") else "?") + "download=1")
+            if video_url else None
         ),
         "xvid_url": (
-            (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1&format=xvid")
-            if job.get("video_url") and job.get("xvid_path") else None
+            (video_url + ("&" if "?" in str(video_url or "") else "?") + "download=1&format=xvid")
+            if video_url and job.get("xvid_path") else None
         ),
         "updated_at": job.get("updated_at"),
     }
@@ -145,11 +160,12 @@ def _touch_interactive_job(job_id: str, **fields) -> dict:
 
 
 def _clamp_duration_sec(raw) -> int:
+    """Match sellable_v1 live-check: each story GIF panel needs 4–5s."""
     try:
         value = int(round(float(raw)))
     except (TypeError, ValueError):
         value = 8
-    return max(2, min(120, value))
+    return max(4, min(120, value))
 
 
 def _save_face_image_data_url(data_url: str, dest_dir: str, job_id: str) -> str:
@@ -189,16 +205,25 @@ def _run_interactive_movie_job(
     prompt: str,
     duration_sec: int = 8,
     face_path: str = None,
+    video_url_base: str = "/api/film-canvas/interactive-movie",
+    api_name: str = "interactive-movie",
 ) -> None:
+    """
+    Run the same sellable_v1 live-check pipeline used for frontpage clips:
+    story GIF line + human voice + FX-matched SFX + gallery auto-store when kval > 90.
+    """
     duration_sec = _clamp_duration_sec(duration_sec)
+    base = (video_url_base or "/api/film-canvas/interactive-movie").rstrip("/")
     _touch_interactive_job(
         job_id,
         status="processing",
         progress=8,
-        message="Planning %ss storyboard..." % duration_sec,
+        message="Sellable v1 live-check pipeline — %ss…" % duration_sec,
         prompt=prompt,
         duration_sec=duration_sec,
         has_face=bool(face_path),
+        api=api_name,
+        video_url="%s/%s/video" % (base, job_id),
     )
     try:
         from backend.services.sellable_film_pipeline import compose_sellable_movie
@@ -209,10 +234,10 @@ def _run_interactive_movie_job(
         _touch_interactive_job(
             job_id,
             progress=10,
-            message="Sellable pipeline v1 — story, hero frames, real motion, soundtrack…",
+            message="Sellable pipeline v1 — story, hero frames, GIF line, human voice, SFX…",
         )
 
-        # Paid I2V needs headroom; scale with length but keep monitor UX bounded.
+        # Same headroom as the successful live-check smoke runs.
         timeout = max(180, min(600, 90 + int(duration_sec) * 8))
         result = compose_sellable_movie(
             prompt,
@@ -228,6 +253,10 @@ def _run_interactive_movie_job(
             mode = result.get("mode")
             style = result.get("pipeline_style")
             sellable = bool(result.get("sellable"))
+            quality_pct = result.get("quality_pct")
+            sfx_count = result.get("sfx_count")
+            fx_count = result.get("fx_count")
+            gallery_id = result.get("gallery_id")
             _touch_interactive_job(
                 job_id,
                 status="completed",
@@ -236,6 +265,13 @@ def _run_interactive_movie_job(
                     ("Sellable movie ready" if sellable else "Draft movie ready")
                     + ((" · %s scenes" % beats) if beats else "")
                     + (" · audio" if result.get("has_audio") else "")
+                    + (" · voice" if result.get("has_narration") else "")
+                    + (
+                        (" · %ssfx/%sfx" % (sfx_count, fx_count))
+                        if sfx_count is not None and fx_count is not None else ""
+                    )
+                    + ((" · kval %s%%" % quality_pct) if quality_pct is not None else "")
+                    + ((" · gallery" if gallery_id else ""))
                     + ((" · %s" % style) if style else "")
                     + (
                         (" · " + ",".join(result.get("motion_backends") or [])[:40])
@@ -247,28 +283,30 @@ def _run_interactive_movie_job(
                 prompt_used=result.get("prompt_used"),
                 local_path=result.get("local_path"),
                 xvid_path=result.get("xvid_path"),
-                video_url="/api/film-canvas/interactive-movie/%s/video" % job_id,
+                video_url="%s/%s/video" % (base, job_id),
+                api=api_name,
                 beats=beats,
                 beat_plan=result.get("beat_plan"),
                 mode=mode,
                 pipeline_run_id=result.get("pipeline_run_id"),
                 pipeline_style=style,
                 pipeline_mood=result.get("pipeline_mood"),
+                pipeline_title=result.get("pipeline_title"),
                 fx_pack=result.get("fx_pack"),
                 story=result.get("story"),
                 narration=result.get("narration"),
                 sellable=sellable,
                 quality=result.get("quality"),
-                quality_pct=result.get("quality_pct"),
+                quality_pct=quality_pct,
                 quality_score=result.get("quality_score"),
                 pipeline=result.get("pipeline") or "sellable_v1",
                 has_audio=bool(result.get("has_audio")),
                 has_narration=bool(result.get("has_narration")),
-                sfx_count=result.get("sfx_count"),
-                fx_count=result.get("fx_count"),
+                sfx_count=sfx_count,
+                fx_count=fx_count,
                 motion_backends=result.get("motion_backends"),
                 gallery=result.get("gallery"),
-                gallery_id=result.get("gallery_id"),
+                gallery_id=gallery_id,
                 voice_profile=result.get("voice_profile") or "george",
                 error=None,
             )
@@ -282,6 +320,7 @@ def _run_interactive_movie_job(
                 renderer=result.get("renderer") or result.get("canvas") or "sellable_v1",
                 prompt_used=result.get("prompt_used"),
                 pipeline="sellable_v1",
+                api=api_name,
                 sellable=False,
                 quality="failed",
                 error=result.get("error") or "Sellable film compose failed",
@@ -293,10 +332,103 @@ def _run_interactive_movie_job(
             progress=100,
             message="Sellable pipeline failed",
             pipeline="sellable_v1",
+            api=api_name,
             sellable=False,
             quality="failed",
             error=str(exc)[:300],
         )
+
+
+def _start_sellable_clip_job(
+    *,
+    prompt: str,
+    duration_sec: int,
+    face_image: str = "",
+    user_payload: dict = None,
+    video_url_base: str = "/api/film-canvas/interactive-movie",
+    api_name: str = "interactive-movie",
+    job_prefix: str = "im_",
+):
+    """
+    Shared starter for frontpage + monitor — always sellable_v1 live-check pipeline.
+    Returns (payload_dict, http_status).
+    """
+    data = user_payload if isinstance(user_payload, dict) else {}
+    brief = str(prompt or "").strip()
+    if not brief:
+        brief = "Cinematic control-room monitor: neon city rain, interactive film loop"
+    duration_sec = _clamp_duration_sec(duration_sec)
+
+    user_id, trial_id = _film_billing_identity_from_request(data)
+    try:
+        from backend.services.film_monitor_billing_service import assert_can_play
+
+        access = assert_can_play(user_id, trial_id, consume_credit=True)
+        if not access.get("can_play"):
+            return access, 402
+    except Exception as exc:
+        return {"success": False, "error": str(exc)[:300]}, 200
+
+    # Sellable_v1 always runs via Pollinations + story_gif_line; no paid canvas required.
+    try:
+        from backend.services.film_canvas_service import pipeline_render_available
+        from backend.services import free_image_service as free_img
+        if not (pipeline_render_available() or free_img.is_available()):
+            return {
+                "success": False,
+                "error": "No film/video pipeline renderer is available",
+            }, 200
+    except Exception:
+        # Still attempt — compose_sellable_movie has its own fallbacks.
+        pass
+
+    job_id = job_prefix + uuid.uuid4().hex[:12]
+    face_path = None
+    if isinstance(face_image, str) and face_image.strip():
+        try:
+            face_path = _save_face_image_data_url(
+                face_image,
+                _interactive_videos_dir(),
+                job_id,
+            )
+        except ValueError as exc:
+            return {"success": False, "error": str(exc)}, 200
+        except Exception as exc:
+            return {"success": False, "error": "Could not save face image: %s" % exc}, 200
+
+    if face_path and "[face reference" not in brief.lower():
+        brief = (brief + " [face reference attached]").strip()
+
+    base = (video_url_base or "/api/film-canvas/interactive-movie").rstrip("/")
+    job = {
+        "job_id": job_id,
+        "status": "pending",
+        "progress": 0,
+        "message": "Queued sellable_v1 live-check pipeline",
+        "prompt": brief[:500],
+        "duration_sec": duration_sec,
+        "has_face": bool(face_path),
+        "face_path": face_path,
+        "api": api_name,
+        "pipeline": "sellable_v1",
+        "video_url": "%s/%s/video" % (base, job_id),
+        "billing": {
+            "free_active": bool(access.get("free_active")),
+            "reason": access.get("reason"),
+            "credits_left": access.get("credits"),
+        },
+        "updated_at": datetime.utcnow().isoformat() + "Z",
+    }
+    _save_interactive_job(job)
+    thread = threading.Thread(
+        target=_run_interactive_movie_job,
+        args=(job_id, brief[:500], duration_sec, face_path, base, api_name),
+        daemon=True,
+    )
+    thread.start()
+    payload = _public_interactive_job(job)
+    payload["billing"] = job.get("billing")
+    return payload, 202
 
 
 # ---------------------------------------------------------------------------
@@ -645,86 +777,43 @@ def film_canvas_paypal_order():
 # ---------------------------------------------------------------------------
 @ai_providers_bp.route("/api/film-canvas/interactive-movie", methods=["POST"])
 def start_interactive_movie():
-    """Start interactive movie for the monitor (prompt + optional face + duration)."""
+    """Start interactive movie for the monitor (same sellable_v1 live-check pipeline)."""
     data = request.get_json(silent=True) or {}
-    prompt = str(data.get("prompt") or "").strip()
-    if not prompt:
-        prompt = "Cinematic control-room monitor: neon city rain, interactive film loop"
-    duration_sec = _clamp_duration_sec(
-        data.get("duration_sec", data.get("duration", data.get("timer_sec", 8)))
+    payload, code = _start_sellable_clip_job(
+        prompt=str(data.get("prompt") or "").strip(),
+        duration_sec=data.get("duration_sec", data.get("duration", data.get("timer_sec", 8))),
+        face_image=data.get("face_image") or data.get("face") or "",
+        user_payload=data,
+        video_url_base="/api/film-canvas/interactive-movie",
+        api_name="interactive-movie",
+        job_prefix="im_",
     )
-    face_image = data.get("face_image") or data.get("face") or ""
+    return jsonify(payload), code
 
-    user_id, trial_id = _film_billing_identity_from_request(data)
-    try:
-        from backend.services.film_monitor_billing_service import assert_can_play
 
-        access = assert_can_play(user_id, trial_id, consume_credit=True)
-        if not access.get("can_play"):
-            return jsonify(access), 402
-    except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)[:300]}), 200
-
-    try:
-        from backend.services.film_canvas_service import (
-            is_available as film_ok,
-            pipeline_render_available,
-        )
-        can_plan = film_ok("dramacanva", purpose="planning")
-        if not can_plan and not pipeline_render_available():
-            return jsonify({
-                "success": False,
-                "error": "No film/video pipeline renderer is available",
-            }), 200
-    except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)[:300]}), 200
-
-    job_id = "im_" + uuid.uuid4().hex[:12]
-    face_path = None
-    if isinstance(face_image, str) and face_image.strip():
-        try:
-            face_path = _save_face_image_data_url(
-                face_image,
-                _interactive_videos_dir(),
-                job_id,
-            )
-        except ValueError as exc:
-            return jsonify({"success": False, "error": str(exc)}), 200
-        except Exception as exc:
-            return jsonify({"success": False, "error": "Could not save face image: %s" % exc}), 200
-
-    if face_path and "[face reference" not in prompt.lower():
-        prompt = (prompt + " [face reference attached]").strip()
-
-    job = {
-        "job_id": job_id,
-        "status": "pending",
-        "progress": 0,
-        "message": "Queued",
-        "prompt": prompt[:500],
-        "duration_sec": duration_sec,
-        "has_face": bool(face_path),
-        "face_path": face_path,
-        "billing": {
-            "free_active": bool(access.get("free_active")),
-            "reason": access.get("reason"),
-            "credits_left": access.get("credits"),
-        },
-        "updated_at": datetime.utcnow().isoformat() + "Z",
-    }
-    _save_interactive_job(job)
-    thread = threading.Thread(
-        target=_run_interactive_movie_job,
-        args=(job_id, prompt[:500], duration_sec, face_path),
-        daemon=True,
+@ai_providers_bp.route("/api/frontpage/create-clip", methods=["POST"])
+@ai_providers_bp.route("/api/frontpage/create-video", methods=["POST"])
+def start_frontpage_create_clip():
+    """
+    Frontpage API to create a vid/clip — identical to the successful live-check path:
+    sellable_v1 story GIF line + human voice + FX-matched SFX + gallery when kval > 90.
+    """
+    data = request.get_json(silent=True) or {}
+    payload, code = _start_sellable_clip_job(
+        prompt=str(data.get("prompt") or data.get("text") or data.get("brief") or "").strip(),
+        duration_sec=data.get("duration_sec", data.get("duration", data.get("timer_sec", 8))),
+        face_image=data.get("face_image") or data.get("face") or "",
+        user_payload=data,
+        video_url_base="/api/frontpage/create-clip",
+        api_name="frontpage-create-clip",
+        job_prefix="fp_",
     )
-    thread.start()
-    payload = _public_interactive_job(job)
-    payload["billing"] = job.get("billing")
-    return jsonify(payload), 202
+    return jsonify(payload), code
 
 
 @ai_providers_bp.route("/api/film-canvas/interactive-movie/<job_id>", methods=["GET"])
+@ai_providers_bp.route("/api/frontpage/create-clip/<job_id>", methods=["GET"])
+@ai_providers_bp.route("/api/frontpage/create-video/<job_id>", methods=["GET"])
 def interactive_movie_status(job_id):
     job = _load_interactive_job(job_id)
     if not job:
@@ -733,6 +822,8 @@ def interactive_movie_status(job_id):
 
 
 @ai_providers_bp.route("/api/film-canvas/interactive-movie/<job_id>/video", methods=["GET"])
+@ai_providers_bp.route("/api/frontpage/create-clip/<job_id>/video", methods=["GET"])
+@ai_providers_bp.route("/api/frontpage/create-video/<job_id>/video", methods=["GET"])
 def interactive_movie_video(job_id):
     job = _load_interactive_job(job_id) or {}
     fmt = str(request.args.get("format") or "").strip().lower()

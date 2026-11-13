@@ -57,15 +57,24 @@ def client(monkeypatch, tmp_path):
             "duration_sec": duration_sec,
             "has_face": bool(face_path),
             "sellable": True,
-            "quality": "sellable",
+            "quality": "sellable_local",
+            "quality_pct": 96,
+            "quality_score": 0.96,
             "has_audio": True,
-            "motion_backends": ["runway"],
-            "mode": "sellable_i2v",
+            "has_narration": True,
+            "sfx_count": 12,
+            "fx_count": 12,
+            "motion_backends": ["story_gif_line"],
+            "mode": "sellable_local",
             "beats": 2,
             "story": "A sellable harbour story",
             "narration": ["Scene 1", "Scene 2"],
             "pipeline_style": "documentary realism",
             "pipeline_run_id": "sell_test123",
+            "fx_pack": {"live_count": 12, "sfx_count": 12, "effects": ["mist_01"] * 12},
+            "gallery_id": "film_testgallery",
+            "gallery": {"stored": True, "gallery_id": "film_testgallery", "quality_pct": 96},
+            "voice_profile": "george",
         }
 
     monkeypatch.setattr(
@@ -107,6 +116,11 @@ def test_interactive_movie_job_completes_and_serves_video(client):
     assert status["renderer"] == "sellable_v1"
     assert status["sellable"] is True
     assert status["pipeline"] == "sellable_v1"
+    assert status["quality_pct"] == 96
+    assert status["sfx_count"] == status["fx_count"] == 12
+    assert status["has_narration"] is True
+    assert status["voice_profile"] == "george"
+    assert status["gallery_id"] == "film_testgallery"
     assert status["video_url"].endswith("/video")
     assert status["download_url"] == status["video_url"] + "?download=1"
 
@@ -225,3 +239,40 @@ def test_interactive_movie_can_require_payment_when_paid_mode(client, monkeypatc
     assert body["code"] == "PAYMENT_REQUIRED"
     assert "mn2" in body["pay_options"]
     assert "paypal" in body["pay_options"]
+
+
+def test_frontpage_create_clip_uses_live_check_pipeline(client):
+    """Frontpage create-clip API = same sellable_v1 path as the harbour live check."""
+    started = client.post(
+        "/api/frontpage/create-clip",
+        json={"prompt": "two sailors on a red wooden harbour boat at sunrise", "duration_sec": 8},
+    )
+    assert started.status_code == 202
+    body = started.get_json()
+    assert body["success"] is True
+    assert body["job_id"].startswith("fp_")
+    assert body["api"] == "frontpage-create-clip"
+    assert body["pipeline"] == "sellable_v1"
+    assert "/api/frontpage/create-clip/" in body["video_url"]
+
+    deadline = time.time() + 5
+    status = None
+    while time.time() < deadline:
+        response = client.get("/api/frontpage/create-clip/" + body["job_id"])
+        assert response.status_code == 200
+        status = response.get_json()
+        if status.get("status") in ("completed", "failed"):
+            break
+        time.sleep(0.05)
+
+    assert status is not None
+    assert status["status"] == "completed"
+    assert status["pipeline"] == "sellable_v1"
+    assert status["quality_pct"] == 96
+    assert status["sfx_count"] == 12
+    assert status["fx_count"] == 12
+    assert status["voice_profile"] == "george"
+    assert status["gallery_id"] == "film_testgallery"
+    video = client.get(status["video_url"])
+    assert video.status_code == 200
+    assert video.mimetype == "video/mp4"

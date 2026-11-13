@@ -1,7 +1,8 @@
 /**
  * Frontpage interactive film monitor — canvas stage + prompt + play.
- * Uses /api/film-canvas/interactive-movie (plan → pipeline render).
- * Prompt extras: + face reference and 2–120s duration.
+ * Uses /api/frontpage/create-clip (sellable_v1 live-check pipeline).
+ * Same path as the harbour smoke: story GIF line + human voice + FX-matched SFX.
+ * Prompt extras: + face reference and 4–120s duration.
  */
 (function () {
     'use strict';
@@ -18,9 +19,10 @@
     var shopSfxIndex = 0;
     var voiceReady = false;
     var TRIAL_KEY = 'fp_film_trial_id';
-    var MIN_DURATION = 2;
+    var MIN_DURATION = 4;
     var MAX_DURATION = 120;
     var DEFAULT_DURATION = 8;
+    var CREATE_CLIP_API = '/api/frontpage/create-clip';
     // Story-first ambient pack — soft FX only (was 107 loud overlays).
     var LIVE_FX_COUNT = 12;
 
@@ -1092,7 +1094,7 @@
                 trial_id: getTrialId(),
             };
             if (faceDataUrl) payload.face_image = faceDataUrl;
-            var start = await fetch('/api/film-canvas/interactive-movie', {
+            var start = await fetch(CREATE_CLIP_API, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -1113,11 +1115,15 @@
                 return;
             }
             refreshBilling();
-            setStatus('Job ' + job.job_id + ' — ' + (job.message || 'queued'));
+            setStatus(
+                'Job ' + job.job_id
+                + ' — ' + (job.message || 'queued')
+                + ' · sellable_v1 live-check'
+            );
 
             var poll = async function () {
                 try {
-                    var r = await fetch('/api/film-canvas/interactive-movie/' + job.job_id);
+                    var r = await fetch(CREATE_CLIP_API + '/' + job.job_id);
                     var d = await readJsonResponse(r);
                     if (!d || d.success === false) {
                         setStatus((d && d.error) || 'Job missing');
