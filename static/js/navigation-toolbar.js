@@ -7,7 +7,7 @@
     'use strict';
 
     const APP_BASE = (typeof window !== 'undefined' && window.APP_BASE !== undefined) ? window.APP_BASE : '';
-    const NAV_PORTAL_ASSET_V = '20261002';
+    const NAV_PORTAL_ASSET_V = '20261113a';
 
     /** Every page with the toolbar gets tema CSS before first paint when possible. */
     (function ensureNavPortalThemesCss() {
@@ -308,9 +308,10 @@
      * Create navigation toolbar HTML
      */
     function createToolbarHTML() {
+        // Default matches start page (Portals void). Only opt out with MN_NAV_PORTAL_VOID=false.
         const portalVoid = window.NavPortalTemplate
             ? window.NavPortalTemplate.isPortalVoid()
-            : (typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID);
+            : (typeof window === 'undefined' || window.MN_NAV_PORTAL_VOID !== false);
         const byId = _linksById();
         const categorizedPanelHTML = _renderCategorizedPortalPanel(byId);
         const favoriteLinksHTML = NAV_CONFIG.favorites.map(function (id) {
@@ -535,7 +536,7 @@
     function setupMobileMenu() {
         const portalVoid = window.NavPortalTemplate
             ? window.NavPortalTemplate.isPortalVoid()
-            : (typeof window !== 'undefined' && window.MN_NAV_PORTAL_VOID);
+            : (typeof window === 'undefined' || window.MN_NAV_PORTAL_VOID !== false);
         const toggle = document.getElementById('navToolbarToggle');
         const mobileMenu = document.getElementById('navToolbarMobile');
         const portalPanel = document.getElementById('navPortalPanel');

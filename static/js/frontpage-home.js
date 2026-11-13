@@ -324,7 +324,7 @@
                 render();
             });
         });
-        document.querySelectorAll('.fp-smart-card, .fp-agent-card, .fp-primary-action, .fp-secondary-action').forEach((el) => {
+        document.querySelectorAll('.fp-smart-card, .fp-podcast-card, .fp-primary-action, .fp-secondary-action').forEach((el) => {
             el.addEventListener('mouseenter', () => sound.playPing(880, 0.012));
             el.addEventListener('focus', () => sound.playPing(880, 0.012));
         });
@@ -440,71 +440,132 @@
             .join('')}</div>`;
     }
 
+    function fetchJsonTimed(url, ms) {
+        const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (_) {} }, ms || 1200) : null;
+        return fetch(url, ctrl ? { signal: ctrl.signal } : undefined)
+            .then(function (r) { return r.json(); })
+            .catch(function () {
+                if (window.ErrorManager && window.ErrorManager.logJSError) {
+                    window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'fetchJsonTimed' });
+                }
+                return null;
+            })
+            .finally(function () { if (timer) clearTimeout(timer); });
+    }
+
+    function appendPlatformNewsItems(ul, items) {
+        items.forEach(function (n) {
+            const li = document.createElement('li');
+            li.className = 'fp-news-platform' + ((n.channel || n.category) === 'profit' ? ' fp-news-profit' : '');
+            const a = document.createElement('a');
+            a.href = n.href || '/news/';
+            a.textContent = n.title || 'Platform update';
+            const meta = document.createElement('span');
+            meta.className = 'fp-news-meta';
+            meta.textContent = ((n.channel || n.category) === 'profit' ? 'Profit · ' : 'MasterNoder · ') + (n.date || '').slice(0, 10);
+            li.appendChild(a);
+            li.appendChild(meta);
+            if (n.summary) {
+                const sum = document.createElement('span');
+                sum.className = 'fp-news-summary';
+                sum.textContent = n.summary;
+                li.appendChild(sum);
+            }
+            ul.appendChild(li);
+        });
+    }
+
+    function appendExternalNewsItems(ul, items) {
+        if (!items.length) return;
+        if (ul.children.length) {
+            const sep = document.createElement('li');
+            sep.className = 'fp-news-divider';
+            sep.textContent = 'Tech feed';
+            ul.appendChild(sep);
+        }
+        items.forEach(function (n) {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = n.url || '#';
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = n.title || 'Uden titel';
+            const meta = document.createElement('span');
+            meta.className = 'fp-news-meta';
+            meta.textContent = (n.source || 'feed') + ' · ' + (n.published || '').slice(0, 16);
+            li.appendChild(a);
+            li.appendChild(meta);
+            ul.appendChild(li);
+        });
+    }
+
     async function loadNews() {
         const ul = document.getElementById('fp-news-list');
         if (!ul) return;
         ul.innerHTML = '<li class="fp-muted">Henter nyheder…</li>';
         try {
-            const [platformRes, profitRes, feedRes] = await Promise.all([
-                fetch(`${BASE}/api/news/platform?limit=5`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
-                fetch(`${BASE}/api/profit-daemon/news?limit=4`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
-                fetch(`${BASE}/api/aggregators/intelligence/news?limit=5`).then((r) => r.json()).catch(() => ({ if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'frontpage-home.js', context: 'catch' }); } news: [] })),
+            // Fast path first — local platform + profit feeds (do not wait on cold aggregator).
+            const [platformRes, profitRes] = await Promise.all([
+                fetchJsonTimed(`${BASE}/api/news/platform?limit=8`, 2500),
+                fetchJsonTimed(`${BASE}/api/profit-daemon/news?limit=4`, 1500),
             ]);
             const profit = (profitRes && profitRes.news) || [];
             const platform = (platformRes && platformRes.news) || [];
-            const profitIds = new Set(profit.map((n) => n.id));
-            const platformFiltered = platform.filter((n) => !profitIds.has(n.id));
-            const mergedPlatform = [...profit, ...platformFiltered].slice(0, 6);
-            const external = (feedRes && feedRes.news) || [];
-            if (!mergedPlatform.length && !external.length) {
-                ul.innerHTML = '<li class="fp-muted">Ingen nyheder lige nu.</li>';
-                return;
-            }
+            const profitIds = new Set(profit.map(function (n) { return n.id; }));
+            const platformFiltered = platform.filter(function (n) { return !profitIds.has(n.id); });
+            const mergedPlatform = profit.concat(platformFiltered).slice(0, 8);
+
             ul.textContent = '';
-            mergedPlatform.forEach((n) => {
-                const li = document.createElement('li');
-                li.className = 'fp-news-platform' + ((n.channel || n.category) === 'profit' ? ' fp-news-profit' : '');
-                const a = document.createElement('a');
-                a.href = n.href || '/news/';
-                a.textContent = (n.title || 'Platform update');
-                const meta = document.createElement('span');
-                meta.className = 'fp-news-meta';
-                meta.textContent = ((n.channel || n.category) === 'profit' ? 'Profit · ' : 'MasterNoder · ') + (n.date || '').slice(0, 10);
-                li.appendChild(a);
-                li.appendChild(meta);
-                if (n.summary) {
-                    const sum = document.createElement('span');
-                    sum.className = 'fp-news-summary';
-                    sum.textContent = n.summary;
-                    li.appendChild(sum);
-                }
-                ul.appendChild(li);
-            });
-            if (mergedPlatform.length && external.length) {
-                const sep = document.createElement('li');
-                sep.className = 'fp-news-divider';
-                sep.textContent = 'Tech feed';
-                ul.appendChild(sep);
+            if (!mergedPlatform.length) {
+                ul.innerHTML = '<li class="fp-muted">Ingen platform-nyheder lige nu.</li>';
+            } else {
+                appendPlatformNewsItems(ul, mergedPlatform);
             }
-            external.forEach((n) => {
-                const li = document.createElement('li');
-                const a = document.createElement('a');
-                a.href = n.url || '#';
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                a.textContent = n.title || 'Uden titel';
-                const meta = document.createElement('span');
-                meta.className = 'fp-news-meta';
-                const src = n.source || 'feed';
-                const pub = (n.published || '').slice(0, 16);
-                meta.textContent = `${src} · ${pub}`;
-                li.appendChild(a);
-                li.appendChild(meta);
-                ul.appendChild(li);
+
+            // Slow / optional external intel — never block the home news panel.
+            fetchJsonTimed(`${BASE}/api/aggregators/intelligence/news?limit=4`, 900).then(function (feedRes) {
+                const external = (feedRes && feedRes.news) || [];
+                if (!external.length) return;
+                if (!mergedPlatform.length) ul.textContent = '';
+                appendExternalNewsItems(ul, external.slice(0, 4));
             });
-        } catch (_) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' }); }
+        } catch (_) {
+            if (window.ErrorManager && window.ErrorManager.logJSError) {
+                window.ErrorManager.logJSError(_ instanceof Error ? _ : new Error(String(_)), { source: 'frontpage-home.js', context: 'catch' });
+            }
             ul.innerHTML = '<li class="fp-muted">Nyheder midlertidigt utilgængelige.</li>';
         }
+    }
+
+    async function loadPodcastPanel() {
+        const host = document.getElementById('fp-podcast-latest');
+        if (!host) return;
+        host.innerHTML = '<p class="fp-muted">Henter podcast…</p>';
+        const data = await fetchJsonTimed(`${BASE}/api/podcast/portal-lines?site=home&lite=1`, 2000);
+        if (!data || !data.success) {
+            host.innerHTML = '<p class="fp-muted">Podcast portal klar — åbn for episodes &amp; komment.</p>';
+            return;
+        }
+        const bits = [];
+        if (data.latest_episode && data.latest_episode.title) {
+            bits.push(
+                '<p class="fp-podcast-latest-line">🎙️ <a href="/podcast#episodes">' +
+                String(data.latest_episode.title).replace(/</g, '&lt;') +
+                '</a></p>'
+            );
+        }
+        if (data.latest_news && data.latest_news.title) {
+            bits.push(
+                '<p class="fp-podcast-latest-line">📰 <a href="/podcast#news">' +
+                String(data.latest_news.title).replace(/</g, '&lt;') +
+                '</a> <span class="fp-muted">· komment + MN2</span></p>'
+            );
+        }
+        if (data.line) {
+            bits.push('<p class="fp-podcast-portal-line">' + String(data.line).replace(/</g, '&lt;') + '</p>');
+        }
+        host.innerHTML = bits.join('') || '<p class="fp-muted">Podcast portal klar.</p>';
     }
 
     const SEGMENTUM_INDEX = {
@@ -663,6 +724,9 @@
         buildSmartLinks();
         wireVisitTracking();
         wireSoundSystem();
+        // News + podcast are above-the-fold content — fetch immediately (do not wait for idle).
+        loadNews();
+        loadPodcastPanel();
         const runWhenIdle = (fn) => {
             if (typeof requestIdleCallback !== 'undefined') {
                 requestIdleCallback(fn, { timeout: 4000 });
@@ -671,7 +735,6 @@
             }
         };
         runWhenIdle(() => {
-            loadNews();
             const sm = new StarMap4D('fp-starmap4d');
             sm.load();
         });

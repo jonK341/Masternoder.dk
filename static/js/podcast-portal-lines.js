@@ -59,7 +59,7 @@
         }
     }
 
-    fetch('/api/podcast/portal-lines?site=' + encodeURIComponent(siteId))
+    fetch('/api/podcast/portal-lines?site=' + encodeURIComponent(siteId) + '&lite=1')
         .then(function (r) { return r.json(); })
         .then(render)
         .catch(function () {});

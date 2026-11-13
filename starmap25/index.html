@@ -4,7 +4,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Map 25 — Imperium Investigation Monitor</title>
+    <title>Star Map 25 — Ideas & Investigation Monitor</title>
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
@@ -283,7 +283,27 @@
             background: rgba(0, 212, 255, 0.18);
             color: var(--secondary);
         }
-        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        /* Plain status text — do NOT use MDS .loading (20px spinner); it looked like a left-side progress ring. */
+        .starmap-status,
+        #content .loading,
+        .loading {
+            display: block !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: 0 !important;
+            margin: 24px auto !important;
+            padding: 28px 16px !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: none !important;
+            box-shadow: none !important;
+            animation: none !important;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.45;
+            opacity: 0.85;
+        }
         .error { color: #ff6b9d; padding: 12px; background: rgba(255, 107, 157, 0.1); border-radius: 8px; margin-bottom: 16px; }
         .walkthrough-panel {
             margin-top: 20px;
@@ -651,6 +671,73 @@
         }
         .starmap-tab-panel[hidden] { display: none !important; }
         #content.starmap-play-hidden { display: none !important; }
+        .ideas-panel {
+            margin-top: 8px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.07), rgba(0, 212, 255, 0.05)), var(--bg-card);
+            text-align: left;
+        }
+        .ideas-panel h3 { color: var(--primary); margin-bottom: 8px; }
+        .ideas-lede {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            line-height: 1.45;
+        }
+        .ideas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+        }
+        .idea-card {
+            padding: 14px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.32);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .idea-card.tracked {
+            border-color: rgba(0, 255, 136, 0.55);
+            box-shadow: 0 0 16px rgba(0, 255, 136, 0.12);
+        }
+        .idea-card .idea-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .idea-card .idea-title {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        .idea-card .idea-icon { font-size: 1.25rem; }
+        .idea-card .idea-summary,
+        .idea-card .idea-play,
+        .idea-card .idea-reward {
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            margin-top: 6px;
+        }
+        .idea-card .idea-reward { color: var(--gold); }
+        .idea-card button {
+            margin-top: 12px;
+            width: 100%;
+            padding: 9px 10px;
+            border: 0;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: #0a0a0f;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .idea-card.tracked button {
+            background: #333;
+            color: #eee;
+        }
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
@@ -658,7 +745,7 @@
     <div class="starmap-header">
         <h1>Star Map 25 — Imperium Investigation Grid</h1>
         <p>25 star systems across the Segmentae Majoris. Investigate each point to earn game_points and unlock lore. Warhammer 40,000 themed.</p>
-        <p style="font-size:0.95em;color:var(--gold);margin-top:10px;">Season 2: +20% investigation rewards · system levels 1–5 · daily reset 2× bonus window</p>
+        <p style="font-size:0.95em;color:var(--gold);margin-top:10px;">Season 3 Ideas: constellation arcs · warp pulse · chronoscout 4D · fortress relays</p>
         <div class="progress-bar-wrap">
             <div class="progress-stat">
                 <div class="label">Investigated</div>
@@ -688,12 +775,21 @@
 
         <nav class="starmap-hub-nav" id="starmap-hub-nav" aria-label="Star Map sections" role="tablist">
             <button type="button" class="starmap-hub-tab active" data-starmap-tab="play" role="tab" aria-selected="true">🎮 Play</button>
+            <button type="button" class="starmap-hub-tab" data-starmap-tab="ideas" role="tab" aria-selected="false">💡 Ideas</button>
             <button type="button" class="starmap-hub-tab" data-starmap-tab="progress" role="tab" aria-selected="false">📈 Progress</button>
             <button type="button" class="starmap-hub-tab" data-starmap-tab="economy" role="tab" aria-selected="false">💰 Economy</button>
             <button type="button" class="starmap-hub-tab" data-starmap-tab="guide" role="tab" aria-selected="false">🤖 AI Guide</button>
             <button type="button" class="starmap-hub-tab" data-starmap-tab="monitor" role="tab" aria-selected="false">📡 Monitor</button>
         </nav>
-        <div id="starmap-route-note" class="starmap-route-note">Viewing: Play grid. Switch tabs to browse progress, economy, AI guide, and monitor tools.</div>
+        <div id="starmap-route-note" class="starmap-route-note">Viewing: Play grid. Switch tabs to browse ideas, progress, economy, AI guide, and monitor tools.</div>
+
+        <section class="starmap-tab-panel" data-starmap-tab="ideas" hidden>
+            <div class="ideas-panel" id="ideas-panel">
+                <h3>Season 3 idea board</h3>
+                <p class="ideas-lede">Pin concepts while you investigate. Tracked ideas stay in this browser so you can chase constellation arcs, warp pulses, and chronoscout runs without losing the thread.</p>
+                <div class="ideas-grid" id="ideas-grid"></div>
+            </div>
+        </section>
 
         <section class="starmap-tab-panel" data-starmap-tab="progress" hidden>
         <div class="walkthrough-panel" id="walkthrough-panel">
@@ -861,7 +957,7 @@
 
     <div id="error-box" class="error" style="display: none;"></div>
     <div id="content">
-        <div class="loading">Loading Star Map 25…</div>
+        <div class="starmap-status" role="status">Loading Star Map 25…</div>
     </div>
 
     <div id="planet-modal-backdrop" aria-hidden="true">
@@ -877,6 +973,7 @@
         (function initStarmapTabs() {
             var TAB_LABELS = {
                 play: 'Play grid',
+                ideas: 'Ideas board',
                 progress: 'Progress & walkthrough',
                 economy: 'Economy & crypto',
                 guide: 'AI field guide',
@@ -1259,7 +1356,7 @@
             var resultLine = document.getElementById('monitor-result-line');
             if (resultLine) resultLine.textContent = 'Showing ' + filtered.length + ' of ' + points.length + ' systems.';
             if (!filtered.length) {
-                content.innerHTML = '<div class="loading">No systems match the current filters.</div>';
+                content.innerHTML = '<div class="starmap-status" role="status">No systems match the current filters.</div>';
                 return;
             }
 
@@ -1648,7 +1745,7 @@
             var title = document.getElementById('planet-modal-title');
             if (!back || !body || !title) return;
             title.textContent = planetName + ' — archive';
-            body.innerHTML = '<p class="loading">Loading five-level intel…</p>';
+            body.innerHTML = '<p class="starmap-status" role="status">Loading five-level intel…</p>';
             back.classList.add('open');
             back.setAttribute('aria-hidden', 'false');
             try {
@@ -1873,6 +1970,66 @@
             animFrame3d = requestAnimationFrame(animate);
         }
 
+        var IDEAS_FALLBACK = [
+            { id: 'constellation_arcs', title: 'Constellation arcs', icon: '✨', summary: 'Chain 3–5 investigated systems into a named arc for a segmentum completion bonus.', play: 'Investigate linked systems, then claim the arc once all nodes are secured.', reward_hint: '+segmentum bonus · lore unlock' },
+            { id: 'warp_pulse_windows', title: 'Warp pulse windows', icon: '🌀', summary: 'Timed pulse events that double investigation yield on a rotating segmentum.', play: 'Watch the Ideas board for the active pulse; investigate during the window.', reward_hint: '2× investigation · event badge' },
+            { id: 'alliance_scan', title: 'Alliance scan', icon: '📡', summary: 'Share scout intel across staking teams — mark systems as scanned for the crew.', play: 'Pin a system idea, then open staking teams to broadcast the scan.', reward_hint: 'Team XP · shared map pin' },
+            { id: 'chronoscout_4d', title: 'Chronoscout (4D)', icon: '⏳', summary: 'Use the w-axis (time) projection to find systems that only light up at certain phases.', play: 'Sweep the 4D view, then investigate highlighted nodes.', reward_hint: 'Chronoscout title · w-axis lore' },
+            { id: 'fortress_relay', title: 'Fortress relay routes', icon: '🛡️', summary: 'Connect fortress points into a logistics relay.', play: 'Secure each fortress, then track Fortress relay.', reward_hint: 'Relay MN2 drip · naval lore pack' },
+            { id: 'traitor_scar_audit', title: 'Traitor scar audit', icon: '☠️', summary: 'Filter traitor-tagged worlds and clear temporary revolt events before they spread.', play: 'Use Monitor traitor filters, investigate, clear the event card.', reward_hint: 'Scar clearance · Inquisition note' }
+        ];
+        var IDEAS_TRACK_KEY = 'starmap25_tracked_ideas';
+
+        function readTrackedIdeas() {
+            try {
+                return JSON.parse(localStorage.getItem(IDEAS_TRACK_KEY) || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function writeTrackedIdeas(ids) {
+            try {
+                localStorage.setItem(IDEAS_TRACK_KEY, JSON.stringify(ids || []));
+            } catch (e) { /* ignore */ }
+        }
+
+        function renderIdeasBoard(ideas) {
+            var grid = document.getElementById('ideas-grid');
+            if (!grid) return;
+            var list = (ideas && ideas.length) ? ideas : IDEAS_FALLBACK;
+            var tracked = new Set(readTrackedIdeas());
+            grid.textContent = '';
+            list.forEach(function (idea) {
+                var card = document.createElement('article');
+                card.className = 'idea-card' + (tracked.has(idea.id) ? ' tracked' : '');
+                card.dataset.ideaId = idea.id;
+                card.innerHTML =
+                    '<div class="idea-top"><span class="idea-title">' + (idea.icon || '💡') + ' ' + (idea.title || idea.id) + '</span></div>' +
+                    '<p class="idea-summary">' + (idea.summary || '') + '</p>' +
+                    '<p class="idea-play"><strong>Play:</strong> ' + (idea.play || '') + '</p>' +
+                    '<p class="idea-reward"><strong>Reward hint:</strong> ' + (idea.reward_hint || '') + '</p>' +
+                    '<button type="button" data-idea-toggle="' + idea.id + '">' +
+                    (tracked.has(idea.id) ? 'Untrack idea' : 'Track idea') +
+                    '</button>';
+                grid.appendChild(card);
+            });
+            if (!grid.dataset.bound) {
+                grid.dataset.bound = '1';
+                grid.addEventListener('click', function (ev) {
+                    var btn = ev.target.closest('[data-idea-toggle]');
+                    if (!btn) return;
+                    var id = btn.getAttribute('data-idea-toggle');
+                    var ids = readTrackedIdeas();
+                    var idx = ids.indexOf(id);
+                    if (idx >= 0) ids.splice(idx, 1);
+                    else ids.push(id);
+                    writeTrackedIdeas(ids);
+                    renderIdeasBoard((lastMapData && lastMapData.ideas) || IDEAS_FALLBACK);
+                });
+            }
+        }
+
         function showGridView() {
             viewMode3d = 'grid';
             stop3dAnim();
@@ -1924,7 +2081,7 @@
         async function loadStarMap25() {
             hideError();
             var content = document.getElementById('content');
-            content.innerHTML = '<div class="loading">Loading Star Map 25…</div>';
+            content.innerHTML = '<div class="starmap-status" role="status">Loading Star Map 25…</div>';
 
             var mapUrl = API_BASE + '/star-map/25';
             var statusUrl = API_BASE + '/star-map/25/status?user_id=' + encodeURIComponent(userId);
@@ -1968,6 +2125,7 @@
                 var mult = statusData.investigation_reward_multiplier != null ? statusData.investigation_reward_multiplier : 1.2;
                 var boosterMult = statusData.starmap25_booster_multiplier != null ? statusData.starmap25_booster_multiplier : 1;
                 var totalSystems = statusData.total_points || points.length || 25;
+                renderIdeasBoard(lastMapData.ideas || []);
 
                 document.getElementById('progress-count').textContent = investigated.length;
                 var progressTotal = document.querySelector('#progress-count');
@@ -2013,7 +2171,7 @@
                 loadAiGuide();
             } catch (e) {
                 showError('Error: ' + (e.message || 'Unknown'));
-                content.innerHTML = '<div class="loading">Could not load Star Map 25. Check console.</div>';
+                content.innerHTML = '<div class="starmap-status" role="status">Could not load Star Map 25. Check console.</div>';
             }
         }
 

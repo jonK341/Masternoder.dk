@@ -2,11 +2,66 @@
   "name": "Star Map 25 — Imperium Investigation Grid",
   "description": "25 star systems across the Segmentae Majoris. Investigate each point to earn game_points and unlock lore. Warhammer 40,000 themed.",
   "center": "Terra",
-  "version": "2026.04-data-content",
-  "updated_at": "2026-04-28",
-  "info": "First Starmap 25: Segmentum fortresses and Legion homeworlds. Each investigation awards game_points.",
+  "version": "2026.11-ideas-board",
+  "updated_at": "2026-11-13",
+  "info": "Star Map 25: Segmentum fortresses, Legion homeworlds, and an Ideas board for constellation arcs, warp pulses, and chronoscout runs.",
   "specials": ["run_verification", "run_dna_test", "view_star_map"],
+  "ideas": [
+    {
+      "id": "constellation_arcs",
+      "title": "Constellation arcs",
+      "icon": "✨",
+      "summary": "Chain 3–5 investigated systems into a named arc for a segmentum completion bonus.",
+      "play": "Investigate linked systems in any order, then claim the arc once all nodes are secured.",
+      "reward_hint": "+segmentum bonus · lore unlock"
+    },
+    {
+      "id": "warp_pulse_windows",
+      "title": "Warp pulse windows",
+      "icon": "🌀",
+      "summary": "Timed pulse events that double investigation yield on a rotating segmentum.",
+      "play": "Watch the Ideas board for the active pulse; investigate during the window.",
+      "reward_hint": "2× investigation · event badge"
+    },
+    {
+      "id": "alliance_scan",
+      "title": "Alliance scan",
+      "icon": "📡",
+      "summary": "Share scout intel across staking teams — mark systems as scanned for the crew.",
+      "play": "Pin a system idea, then open staking teams to broadcast the scan.",
+      "reward_hint": "Team XP · shared map pin"
+    },
+    {
+      "id": "chronoscout_4d",
+      "title": "Chronoscout (4D)",
+      "icon": "⏳",
+      "summary": "Use the w-axis (time) projection to find systems that only light up at certain phases.",
+      "play": "Sweep the home 4D slider or the in-map 4D view, then investigate highlighted nodes.",
+      "reward_hint": "Chronoscout title · w-axis lore"
+    },
+    {
+      "id": "fortress_relay",
+      "title": "Fortress relay routes",
+      "icon": "🛡️",
+      "summary": "Connect fortress points (Mars, Cypra Mundi, Hydraphur, Bakka, Kar Duniash) into a logistics relay.",
+      "play": "Secure each fortress, then open Ideas → Track on Fortress relay.",
+      "reward_hint": "Relay MN2 drip · naval lore pack"
+    },
+    {
+      "id": "traitor_scar_audit",
+      "title": "Traitor scar audit",
+      "icon": "☠️",
+      "summary": "Filter traitor-tagged worlds and clear temporary revolt events before they spread.",
+      "play": "Use Monitor filters for traitor tags, investigate, then clear the event card.",
+      "reward_hint": "Scar clearance · Inquisition note"
+    }
+  ],
   "changelog": [
+    {
+      "version": "2026.11-ideas-board",
+      "date": "2026-11-13",
+      "notes": "Added Ideas board concepts: constellation arcs, warp pulse windows, alliance scan, chronoscout 4D, fortress relays, traitor scar audit."
+    },
     {
       "version": "2026.04-data-content",
       "date": "2026-04-28",

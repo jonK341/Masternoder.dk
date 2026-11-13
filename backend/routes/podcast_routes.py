@@ -227,7 +227,8 @@ def podcast_stats():
 def podcast_portal_lines():
     from backend.services.podcast_social_service import get_portal_lines
     site_id = request.args.get("site") or request.args.get("site_id")
-    return jsonify(get_portal_lines(site_id)), 200
+    lite = (request.args.get("lite") or "").strip().lower() in ("1", "true", "yes")
+    return jsonify(get_portal_lines(site_id, lite=lite)), 200
 
 
 @podcast_bp.route("/api/podcast/episodes/<episode_id>/comments", methods=["GET"])
