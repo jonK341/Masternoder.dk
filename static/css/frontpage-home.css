@@ -91,62 +91,144 @@
     z-index: 2;
 }
 
-.fp-mc-bezel {
-    background:
-        linear-gradient(180deg, rgba(10, 28, 24, 0.96), rgba(2, 8, 10, 0.98));
+/* Original Mission Control interactive movie stage (no canvas) */
+.fp-mc-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 230, 118, 0.35);
+    padding: 16px;
+    background: radial-gradient(ellipse at center, #0b1a14 0%, #020605 70%);
 }
 
-.fp-mc-screen {
+.fp-mc-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 140, 0.03) 3px
+    );
+    animation: fpMcScan 7s linear infinite;
+}
+
+@keyframes fpMcScan {
+    from { transform: translateY(-8%); }
+    to { transform: translateY(8%); }
+}
+
+.fp-mc-top {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.fp-mc-title {
+    color: #00e676;
+    font-weight: 800;
+    font-size: 0.95rem;
+}
+
+.fp-mc-sub {
+    margin-top: 2px;
+    color: #8fbba0;
+    font-size: 0.82rem;
+}
+
+.fp-mc-ready {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.fp-mc-ready.is-ready { color: #00e676; }
+.fp-mc-ready.is-wait { color: #ff9800; }
+
+.fp-mc-frame {
+    position: relative;
+    z-index: 1;
+    aspect-ratio: 16 / 9;
+    max-height: 360px;
+    margin: 0 auto 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 230, 118, 0.25);
     background: #000;
 }
 
-.fp-mc-screen video {
-    position: absolute;
-    inset: 0;
+.fp-mc-frame video {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: none;
-    z-index: 1;
 }
 
 .fp-mc-placeholder {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(125, 255, 179, 0.75);
-    font-size: 0.92rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    color: #7dffb3;
+    font-size: 0.95rem;
     text-align: center;
     padding: 20px;
-    background:
-        radial-gradient(ellipse at center, rgba(0, 255, 136, 0.1), transparent 58%),
-        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 140, 0.04) 3px);
+    opacity: 0.85;
+    z-index: 1;
 }
 
-.fp-mc-ready {
-    margin-left: auto;
-    color: rgba(140, 220, 180, 0.55);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+.fp-mc-controls {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
-.fp-mc-ready.is-ready { color: #00ff88; }
-.fp-mc-ready.is-wait { color: #ffb74d; }
+.fp-mc-controls input {
+    flex: 1 1 220px;
+    min-width: 180px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 230, 118, 0.35);
+    color: #e8ffe8;
+    background: rgba(0, 0, 0, 0.55);
+    font-size: 0.9rem;
+}
+
+.fp-mc-play {
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 8px;
+    border: 1px solid #00e676;
+    color: #e8ffe8;
+    background: rgba(0, 230, 118, 0.35);
+    font-size: 0.85rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.fp-mc-play:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
 
 .fp-mc-status {
-    min-height: 1.25em;
-    margin: 10px 2px 0;
-    color: rgba(154, 215, 176, 0.9);
+    position: relative;
+    z-index: 1;
+    min-height: 1.2em;
+    margin: 10px 0 0;
+    color: #9ad7b0;
     font-size: 0.85rem;
 }
 
-.fp-mc-monitor.is-busy .fp-film-play {
+.fp-mc-monitor.is-busy .fp-mc-play {
     animation: fpFilmPulse 1.2s ease-in-out infinite;
 }
 

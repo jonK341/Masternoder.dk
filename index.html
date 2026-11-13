@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113h">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113i">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -47,30 +47,26 @@
                 <div class="fp-monitors-desk" aria-hidden="true"></div>
                 <div class="fp-monitors-grid">
                     <article class="fp-mc-monitor" id="fp-mc-monitor" aria-label="Mission Control interactive movie monitor">
-                        <div class="fp-film-bezel fp-mc-bezel" id="fp-mc-stage">
-                            <div class="fp-film-chrome">
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-monitor-name">Mission Control</span>
-                                <a class="fp-film-chip" href="/debugger#mission-control" title="Open full Mission Control">OPS</a>
-                                <span class="fp-mc-ready" id="fp-mc-ready">Checking…</span>
+                        <div class="fp-mc-stage" id="fp-mc-stage">
+                            <div class="fp-mc-top">
+                                <div>
+                                    <div class="fp-mc-title">Interactive Movie Monitor</div>
+                                    <div class="fp-mc-sub">DramaCanvas plans · fal/Comfy renders · plays here</div>
+                                </div>
+                                <div class="fp-mc-ready" id="fp-mc-ready">Checking film canvases…</div>
                             </div>
-                            <div class="fp-film-screen fp-mc-screen">
-                                <div class="fp-mc-placeholder" id="fp-mc-placeholder">Mission Control standby</div>
-                                <video id="fp-mc-video" playsinline loop muted controls></video>
-                                <button type="button" class="fp-film-play" id="fp-mc-play" aria-label="Play movie on Mission Control">▶</button>
+                            <div class="fp-mc-frame">
+                                <div class="fp-mc-placeholder" id="fp-mc-placeholder">Type a scene and press Play Movie</div>
+                                <video id="fp-mc-video" controls playsinline loop muted></video>
                             </div>
-                            <div class="fp-film-ledge" aria-hidden="true"></div>
+                            <div class="fp-mc-controls">
+                                <input id="fp-mc-prompt" type="text" maxlength="500"
+                                    placeholder="Neon rain over a Danish harbour control room, cinematic, interactive film"
+                                    autocomplete="off" />
+                                <button type="button" class="fp-mc-play" id="fp-mc-play">▶ Play Movie</button>
+                            </div>
+                            <p class="fp-mc-status" id="fp-mc-status" role="status" aria-live="polite"></p>
                         </div>
-                        <label class="fp-film-prompt-label" for="fp-mc-prompt">Scene prompt</label>
-                        <div class="fp-film-prompt-row">
-                            <input id="fp-mc-prompt" type="text" maxlength="500"
-                                placeholder="Neon rain over a Danish harbour control room, cinematic, interactive film"
-                                autocomplete="off" />
-                            <button type="button" class="fp-film-go" id="fp-mc-go">Play Movie</button>
-                        </div>
-                        <p class="fp-mc-status" id="fp-mc-status" role="status" aria-live="polite"></p>
                     </article>
 
                     <article class="fp-film-monitor" id="fp-film-monitor" aria-label="Film Canvas monitor">
@@ -417,7 +413,7 @@
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
     <script src="/static/js/frontpage-film-monitor.js?v=20261113g" defer></script>
-    <script src="/static/js/frontpage-mission-monitor.js?v=20261113g" defer></script>
+    <script src="/static/js/frontpage-mission-monitor.js?v=20261113i" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

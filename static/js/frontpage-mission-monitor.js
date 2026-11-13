@@ -1,6 +1,6 @@
 /**
- * Frontpage Mission Control monitor — same interactive-movie pipeline as /debugger.
- * Shares free-24h / MN2 / PayPal billing with the Film Canvas monitor.
+ * Frontpage Mission Control monitor — original interactive movie stage (no canvas).
+ * Same DramaCanvas → fal pipeline as /debugger Mission Control.
  */
 (function () {
     'use strict';
@@ -52,9 +52,7 @@
 
     function setBusy(busy) {
         var play = $('fp-mc-play');
-        var go = $('fp-mc-go');
         if (play) play.disabled = !!busy;
-        if (go) go.disabled = !!busy;
         var monitor = $('fp-mc-monitor');
         if (monitor) monitor.classList.toggle('is-busy', !!busy);
     }
@@ -68,15 +66,15 @@
             var drama = rows.find(function (p) { return p.id === 'dramacanva'; });
             var auto = rows.find(function (p) { return p.id === 'film_canvas_auto'; });
             var bits = [];
-            bits.push(drama && drama.available ? 'Drama ready' : 'Drama offline');
+            bits.push(drama && drama.available ? 'DramaCanvas ready' : 'DramaCanvas offline');
             bits.push(fal && fal.available ? 'fal ready' : 'fal offline');
             if (auto && auto.available) {
-                bits.push((auto.selected_renderer || '—') + '/' + (auto.selected_planner || '—'));
+                bits.push('auto ' + (auto.selected_renderer || '—') + '/' + (auto.selected_planner || '—'));
             }
             var ok = (fal && fal.available) || (drama && drama.available);
             setReady(bits.join(' · '), ok);
         } catch (_) {
-            setReady('Offline', false);
+            setReady('Canvas status unavailable', false);
         }
     }
 
@@ -94,7 +92,7 @@
         }
         setBusy(true);
         setStatus('Starting interactive movie…');
-        if (placeholder) placeholder.style.display = 'flex';
+        if (placeholder) placeholder.style.display = 'block';
         if (video) {
             video.style.display = 'none';
             video.removeAttribute('src');
@@ -153,7 +151,7 @@
                             video.play().catch(function () {});
                         };
                         setStatus(
-                            'Playing on Mission Control'
+                            'Playing interactive movie'
                             + (d.planner ? ' · plan:' + d.planner : '')
                             + (d.renderer ? ' · render:' + d.renderer : '')
                         );
@@ -182,10 +180,8 @@
         var stage = $('fp-mc-stage');
         if (!stage) return;
         var play = $('fp-mc-play');
-        var go = $('fp-mc-go');
         var prompt = $('fp-mc-prompt');
         if (play) play.addEventListener('click', playMovie);
-        if (go) go.addEventListener('click', playMovie);
         if (prompt) {
             prompt.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
