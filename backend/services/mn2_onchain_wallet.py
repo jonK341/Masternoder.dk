@@ -157,7 +157,7 @@ def ensure_user_address(user_id: str) -> Dict[str, Any]:
     """Create the user's daemon address if missing, and label it when the RPC exists."""
     uid = str(user_id or "").strip()
     if not uid or uid == "default_user":
-        return {"success": False, "error": "user_id required"}
+        return {"success": False, "error": "user_id required", "code": "user_id_required"}
     from backend.services.mn2_wallet_service import get_or_create_deposit_address
 
     created = get_or_create_deposit_address(uid)
@@ -166,6 +166,114 @@ def ensure_user_address(user_id: str) -> Dict[str, Any]:
     address = str(created.get("deposit_address") or "")
     label = _try_label(address, uid)
     return {**created, "label": label}
+
+
+def provision_signup_deposit_address(user_id: str, *, attempts: int = 3) -> Dict[str, Any]:
+    """Assign a deposit address during signup/identify with retries.
+
+    Never raises to callers — always returns a structured status so UI/ops can
+    see assignment failures instead of silent ``except: pass``.
+    """
+    uid = str(user_id or "").strip()
+    if not uid or uid == "default_user":
+        return {
+            "success": False,
+            "assigned": False,
+            "deposit_address": None,
+            "error": "user_id required",
+            "code": "user_id_required",
+            "attempts": 0,
+            "retryable": False,
+        }
+
+    tries = max(1, int(attempts or 1))
+    last: Dict[str, Any] = {}
+    for i in range(tries):
+        try:
+            last = ensure_user_address(uid)
+        except Exception as exc:
+            last = {
+                "success": False,
+                "error": str(exc) or "provision_exception",
+                "code": "provision_exception",
+            }
+            _log.warning(
+                "mn2 signup deposit provision failed user=%s attempt=%s/%s err=%s",
+                uid,
+                i + 1,
+                tries,
+                last.get("error"),
+            )
+            continue
+
+        addr = str(last.get("deposit_address") or "").strip()
+        if last.get("success") and addr:
+            ledger_only = bool(last.get("ledger_only") or addr.startswith("LGR"))
+            payload = {
+                "success": True,
+                "assigned": True,
+                "deposit_address": addr,
+                "ledger_only": ledger_only,
+                "attempts": i + 1,
+                "code": last.get("code")
+                or ("ledger_receive" if ledger_only else "chain_address"),
+                "address_warning": last.get("address_warning"),
+                "label": last.get("label"),
+            }
+            if ledger_only:
+                _log.info(
+                    "mn2 signup deposit provisioned ledger-only user=%s addr=%s attempt=%s",
+                    uid,
+                    addr[:12],
+                    i + 1,
+                )
+            return payload
+
+        _log.warning(
+            "mn2 signup deposit provision incomplete user=%s attempt=%s/%s err=%s code=%s",
+            uid,
+            i + 1,
+            tries,
+            last.get("error"),
+            last.get("code"),
+        )
+
+    return {
+        "success": False,
+        "assigned": False,
+        "deposit_address": None,
+        "error": last.get("error") or "deposit_address_provision_failed",
+        "code": last.get("code") or "provision_failed",
+        "attempts": tries,
+        "retryable": True,
+    }
+
+
+def repair_missing_deposit_address(user_id: str) -> Dict[str, Any]:
+    """If the user has no deposit address yet, provision one (login / lazy repair)."""
+    uid = str(user_id or "").strip()
+    if not uid or uid == "default_user":
+        return {
+            "success": False,
+            "assigned": False,
+            "repaired": False,
+            "error": "user_id required",
+            "code": "user_id_required",
+        }
+    existing = _user_addresses(uid)
+    if existing:
+        primary = str(existing[0] or "").strip()
+        return {
+            "success": True,
+            "assigned": True,
+            "repaired": False,
+            "deposit_address": primary,
+            "ledger_only": primary.startswith("LGR"),
+            "code": "already_assigned",
+        }
+    out = provision_signup_deposit_address(uid, attempts=3)
+    out["repaired"] = bool(out.get("assigned"))
+    return out
 
 
 def _try_label(address: str, user_id: str) -> Dict[str, Any]:
