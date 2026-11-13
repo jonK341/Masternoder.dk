@@ -320,3 +320,78 @@ def test_battle_quick_player_queue_skirmish_uses_weights(monkeypatch):
         assert data.get("result") == "loss"
         assert data.get("battle_mode") == "skirmish"
         assert data.get("opponent_type") == "player"
+
+
+def test_battle_mn2_click_faucet(isolated_battle_social_state, monkeypatch):
+    from backend.routes import battle_routes as br
+
+    class _FakePoints:
+        def __init__(self):
+            self.balances = {}
+
+        def add_points(self, user_id, key, amount, source=None, metadata=None):
+            bag = self.balances.setdefault(user_id, {})
+            bag[key] = float(bag.get(key, 0) or 0) + float(amount)
+            return {"success": True, "points": dict(bag)}
+
+        def get_all_points(self, user_id):
+            return {"success": True, "points": dict(self.balances.get(user_id, {}))}
+
+    fake = _FakePoints()
+    monkeypatch.setattr(
+        "backend.services.unified_points_database.unified_points_db",
+        fake,
+        raising=False,
+    )
+    monkeypatch.setattr("backend.routes.social_routes.push_activity", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "backend.services.mn2_wallet_service.get_or_create_deposit_address",
+        lambda uid: {"success": True, "deposit_address": "MN2TestAddress123", "user_id": uid},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_rpc_client.sendtoaddress",
+        lambda address, amount: {"result": "txid_battle_faucet_test_001", "error": None},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_chain_rewards_service.chain_payouts_enabled",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_chain_rewards_service._min_payout",
+        lambda: 0.00001,
+    )
+    monkeypatch.setattr("backend.services.mn2_ledger.append_entry", lambda **k: None)
+    monkeypatch.setattr("backend.services.mn2_ledger._load_entries", lambda: [])
+
+    app = _battle_app()
+    with app.test_client() as c:
+        status = c.get("/api/battle/crypto?user_id=faucet-user")
+        assert status.status_code == 200
+        payload = status.get_json()
+        assert payload.get("success") is True
+        option_ids = [o["id"] for o in payload.get("options") or []]
+        assert "click_tap" in option_ids
+        tap = next(o for o in payload["options"] if o["id"] == "click_tap")
+        assert tap.get("unlocked") is True
+        assert tap.get("ready") is True
+
+        click = c.post(
+            "/api/battle/faucet/click",
+            json={"user_id": "faucet-user", "combo_streak": 5},
+        )
+        assert click.status_code == 200
+        body = click.get_json()
+        assert body.get("success") is True
+        assert body.get("faucet") == "mn2_click"
+        assert body["claim"]["option_id"] == "click_tap"
+        assert float(body["claim"]["amount_mn2"]) > 0
+        assert float(fake.balances["faucet-user"]["mn2_balance"]) > 0
+        assert body.get("on_chain") is True
+        assert body.get("chain_txid") == "txid_battle_faucet_test_001"
+        assert body.get("settlement") == "onchain"
+
+        again = c.post(
+            "/api/battle/faucet/click",
+            json={"user_id": "faucet-user", "combo_streak": 6},
+        )
+        assert again.status_code == 429

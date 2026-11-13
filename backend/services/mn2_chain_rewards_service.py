@@ -36,6 +36,21 @@ def _min_payout() -> float:
         return 0.0001
 
 
+def _chain_reward_already_paid(reference: str) -> bool:
+    ref = (reference or "").strip()
+    if not ref:
+        return False
+    from backend.services.mn2_ledger import _load_entries
+
+    for entry in _load_entries():
+        if (entry.get("type") or "") != "chain_reward_payout":
+            continue
+        meta = entry.get("metadata") if isinstance(entry.get("metadata"), dict) else {}
+        if (meta.get("reference") or "").strip() == ref:
+            return True
+    return False
+
+
 def payout_reward_on_chain(
     user_id: str,
     amount: float,
@@ -57,11 +72,11 @@ def payout_reward_on_chain(
         return {"success": True, "skipped": True, "reason": "below_min_payout"}
 
     from backend.services.mn2_wallet_service import get_or_create_deposit_address
-    from backend.services.mn2_ledger import is_txid_processed
+    from backend.services.mn2_ledger import append_entry
 
-    ref_key = f"chain-reward:{reference}"
-    if is_txid_processed(ref_key):
-        return {"success": True, "duplicate": True, "reference": reference}
+    ref = (reference or "").strip()
+    if ref and _chain_reward_already_paid(ref):
+        return {"success": True, "duplicate": True, "reference": ref, "on_chain": True}
 
     addr_res = get_or_create_deposit_address(str(user_id).strip())
     if not addr_res.get("success"):
@@ -82,6 +97,28 @@ def payout_reward_on_chain(
         txid = (send.get("result") or "").strip()
         if not txid:
             return {"success": False, "error": "rpc_no_txid"}
-        return {"success": True, "txid": txid, "address": address, "amount": amt}
+        meta = dict(metadata or {})
+        meta["reference"] = ref
+        meta["source"] = source
+        meta["chain_paid"] = True
+        try:
+            append_entry(
+                user_id=str(user_id).strip(),
+                entry_type="chain_reward_payout",
+                amount=amt,
+                txid=txid,
+                address=address,
+                metadata=meta,
+            )
+        except Exception:
+            pass
+        return {
+            "success": True,
+            "txid": txid,
+            "address": address,
+            "amount": amt,
+            "on_chain": True,
+            "reference": ref,
+        }
     finally:
         _LOCK.release()

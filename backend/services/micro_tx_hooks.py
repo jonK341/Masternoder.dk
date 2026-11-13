@@ -107,6 +107,58 @@ def _amount_fits_micro_tx(amount_mn2: Optional[float]) -> bool:
         return amount_mn2 is None
 
 
+def _maybe_chain_payout(
+    user_id: str,
+    amount_mn2: float,
+    *,
+    source: str,
+    reference: str,
+    metadata: Optional[dict] = None,
+) -> Dict[str, Any]:
+    """Best-effort treasury -> user deposit send when chain_reward_payouts is enabled."""
+    try:
+        from backend.services.mn2_chain_rewards_service import payout_reward_on_chain
+
+        chain = payout_reward_on_chain(
+            user_id,
+            float(amount_mn2 or 0),
+            source=source,
+            reference=reference or f"{source}:{user_id}",
+            metadata=metadata,
+        )
+    except Exception as exc:
+        return {
+            "on_chain": False,
+            "chain_skipped": True,
+            "chain_error": str(exc)[:240],
+        }
+    if chain.get("duplicate"):
+        return {
+            "on_chain": True,
+            "chain_duplicate": True,
+            "chain_txid": chain.get("txid"),
+            "chain_address": chain.get("address"),
+        }
+    if chain.get("skipped"):
+        return {
+            "on_chain": False,
+            "chain_skipped": True,
+            "chain_skip_reason": chain.get("reason") or "skipped",
+        }
+    if chain.get("success") and chain.get("txid"):
+        return {
+            "on_chain": True,
+            "chain_txid": chain.get("txid"),
+            "chain_address": chain.get("address"),
+            "chain_amount": chain.get("amount"),
+        }
+    return {
+        "on_chain": False,
+        "chain_skipped": True,
+        "chain_error": chain.get("error") or "chain_payout_failed",
+    }
+
+
 def credit_mn2_reward(
     user_id: str,
     amount_mn2: Optional[float] = None,
@@ -121,6 +173,7 @@ def credit_mn2_reward(
     """
     Unified MN2 credit path: micro-tx instant_payout when source maps to config
     and amount is within micro-tx limits; otherwise direct unified_points + ledger.
+    When chain_reward_payouts is enabled, also sends treasury MN2 to the user deposit address.
     """
     from backend.services.mn2_earn_auth import require_earn_user
 
@@ -154,6 +207,24 @@ def credit_mn2_reward(
                 metadata=meta,
             )
             if result.get("success"):
+                out = {
+                    "success": True,
+                    "amount": result.get("amount_mn2"),
+                    "user_id": uid,
+                    "source": source,
+                    "micro_tx": True,
+                    "payout_id": result.get("payout_id"),
+                    "duplicate": result.get("duplicate"),
+                    "mn2_balance": result.get("mn2_balance"),
+                }
+                if not result.get("duplicate"):
+                    out.update(_maybe_chain_payout(
+                        uid,
+                        float(result.get("amount_mn2") or amt or 0),
+                        source=source,
+                        reference=ref or idem or result.get("payout_id") or "",
+                        metadata=meta,
+                    ))
                 if emit_event:
                     try:
                         from backend.services.activity_events_service import emit
@@ -169,20 +240,12 @@ def credit_mn2_reward(
                                 "micro_tx_source": mtx_source,
                                 "reference": ref or idem,
                                 "micro_tx": True,
+                                "chain_txid": out.get("chain_txid"),
                             },
                         )
                     except Exception:
                         pass
-                return {
-                    "success": True,
-                    "amount": result.get("amount_mn2"),
-                    "user_id": uid,
-                    "source": source,
-                    "micro_tx": True,
-                    "payout_id": result.get("payout_id"),
-                    "duplicate": result.get("duplicate"),
-                    "mn2_balance": result.get("mn2_balance"),
-                }
+                return out
             if result.get("code") in _MICRO_TX_BLOCK_CODES:
                 return result
         except Exception:
@@ -213,6 +276,9 @@ def credit_mn2_reward(
     except Exception:
         pass
 
+    out = {"success": True, "amount": amt, "user_id": uid, "source": source, "micro_tx": False}
+    out.update(_maybe_chain_payout(uid, amt, source=source, reference=ref or "", metadata=meta))
+
     if emit_event:
         try:
             from backend.services.activity_events_service import emit
@@ -222,9 +288,15 @@ def credit_mn2_reward(
                 user_id=uid,
                 channel="game",
                 text=f"+{amt} MN2 ({source})",
-                payload={"amount": amt, "source": source, "reference": ref, "micro_tx": False},
+                payload={
+                    "amount": amt,
+                    "source": source,
+                    "reference": ref,
+                    "micro_tx": False,
+                    "chain_txid": out.get("chain_txid"),
+                },
             )
         except Exception:
             pass
 
-    return {"success": True, "amount": amt, "user_id": uid, "source": source, "micro_tx": False}
+    return out
