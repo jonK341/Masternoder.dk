@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113j">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113k">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -46,6 +46,42 @@
             <div class="fp-monitors-bay" id="fp-monitors-bay" aria-label="Film Canvas and Mission Control monitors">
                 <div class="fp-monitors-desk" aria-hidden="true"></div>
                 <div class="fp-monitors-grid">
+                    <article class="fp-film-monitor" id="fp-film-monitor" aria-label="Film Canvas pipeline monitor">
+                        <div class="fp-film-bezel">
+                            <div class="fp-film-chrome">
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-monitor-name">Film Canvas</span>
+                                <span class="fp-film-version">v2.0</span>
+                                <div class="fp-film-node-row" role="group" aria-label="System nodes">
+                                    <button type="button" class="fp-film-chip" id="fp-film-node-ai" title="AI film canvas — play movie">AI</button>
+                                    <button type="button" class="fp-film-chip" id="fp-film-node-snd" title="Toggle neural sound" aria-pressed="false">SND</button>
+                                    <a class="fp-film-chip" id="fp-film-node-xp" href="/trophies" title="XP &amp; trophies">XP</a>
+                                    <span class="fp-film-chip fp-film-chip-pulse" title="System v2.0">2.0</span>
+                                </div>
+                                <span class="fp-film-ready" id="fp-film-ready">Checking…</span>
+                            </div>
+                            <div class="fp-film-screen">
+                                <canvas id="fp-film-canvas" width="960" height="540" aria-label="Film canvas"></canvas>
+                                <video id="fp-film-video" playsinline loop muted aria-hidden="true"></video>
+                                <div class="fp-film-overlay" id="fp-film-overlay">
+                                    <p class="fp-film-idle">Canvas standby — type a scene below</p>
+                                </div>
+                                <button type="button" class="fp-film-play" id="fp-film-play" aria-label="Play movie on Film Canvas">▶</button>
+                            </div>
+                            <div class="fp-film-ledge" aria-hidden="true"></div>
+                        </div>
+                        <label class="fp-film-prompt-label" for="fp-film-prompt">Scene prompt</label>
+                        <div class="fp-film-prompt-row">
+                            <input id="fp-film-prompt" type="text" maxlength="500"
+                                placeholder="Neon rain over a Danish harbour control room, cinematic interactive film"
+                                autocomplete="off" />
+                            <button type="button" class="fp-film-go" id="fp-film-go">Play Movie</button>
+                        </div>
+                        <p class="fp-film-status" id="fp-film-status" role="status" aria-live="polite"></p>
+                    </article>
+
                     <article class="fp-mc-monitor" id="fp-mc-monitor" aria-label="Mission Control interactive movie monitor">
                         <div class="fp-mc-stage" id="fp-mc-stage">
                             <div class="fp-mc-chrome">
@@ -77,42 +113,6 @@
                             </div>
                             <p class="fp-mc-status" id="fp-mc-status" role="status" aria-live="polite"></p>
                         </div>
-                    </article>
-
-                    <article class="fp-film-monitor" id="fp-film-monitor" aria-label="Film Canvas monitor">
-                        <div class="fp-film-bezel">
-                            <div class="fp-film-chrome">
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-monitor-name">Film Canvas</span>
-                                <span class="fp-film-version">v2.0</span>
-                                <div class="fp-film-node-row" role="group" aria-label="System nodes">
-                                    <button type="button" class="fp-film-chip" id="fp-film-node-ai" title="AI film canvas — play movie">AI</button>
-                                    <button type="button" class="fp-film-chip" id="fp-film-node-snd" title="Toggle neural sound" aria-pressed="false">SND</button>
-                                    <a class="fp-film-chip" id="fp-film-node-xp" href="/trophies" title="XP &amp; trophies">XP</a>
-                                    <span class="fp-film-chip fp-film-chip-pulse" title="System v2.0">2.0</span>
-                                </div>
-                                <span class="fp-film-ready" id="fp-film-ready">Checking…</span>
-                            </div>
-                            <div class="fp-film-screen">
-                                <canvas id="fp-film-canvas" width="960" height="540" aria-label="Film canvas"></canvas>
-                                <video id="fp-film-video" playsinline loop muted aria-hidden="true"></video>
-                                <div class="fp-film-overlay" id="fp-film-overlay">
-                                    <p class="fp-film-idle">Canvas standby</p>
-                                </div>
-                                <button type="button" class="fp-film-play" id="fp-film-play" aria-label="Play movie on Film Canvas">▶</button>
-                            </div>
-                            <div class="fp-film-ledge" aria-hidden="true"></div>
-                        </div>
-                        <label class="fp-film-prompt-label" for="fp-film-prompt">Scene prompt</label>
-                        <div class="fp-film-prompt-row">
-                            <input id="fp-film-prompt" type="text" maxlength="500"
-                                placeholder="Neon rain over a Danish harbour control room"
-                                autocomplete="off" />
-                            <button type="button" class="fp-film-go" id="fp-film-go">Play</button>
-                        </div>
-                        <p class="fp-film-status" id="fp-film-status" role="status" aria-live="polite"></p>
                     </article>
                 </div>
 
