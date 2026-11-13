@@ -14,12 +14,22 @@ One score, three bands — `cutting_edge()` in the technique executor:
 
 `cut_bps = net − max(0, \|mid_skew\| − local_noise)` where local_noise is average half micro-spread. Hunter keeps only top `CUTTING_EDGE_TOP_N` (default 3) fire/latch deals.
 
-## Best-fit addons to look through
+## Precision level swing (named)
+
+Systematic technical analysis + trend bias + **repeatable** entries at floor-pivot S1/R1 with stops beyond swing high/low = **`precision_level_swing`** (limb `swing`). Discipline is the levels; prediction is the MA trend bias — not discretionary.
+
+## Installed high-fit addons
+
+| Profile | Limb | Status |
+|---------|------|--------|
+| **Hummingbot spot–perp / funding** | `basis` | Installed — paper signals; `FUNDING_BASIS_LIVE=1` later |
+| **DataMaxi CEX–CEX spread** | `datamaxi` | Installed — Premium API if `DTMX_API_KEY`, else local BN↔NK playbook |
+| **Precision level swing** | `swing` | Installed |
+
+## Still worth looking through
 
 | Profile | Fit | Why |
 |---------|-----|-----|
-| **Hummingbot spot–perp / funding** | high | Delta-neutral basis — next limb after spatial |
-| **DataMaxi CEX–CEX spread** | high | Same job as BN↔NK hunter; fee/slip playbooks |
 | **Hummingbot cross-exchange MM** | medium | Cousin of latch + courier |
 | **Factor-residual stat arb** | medium | Literature behind residual filters (strip BTC PC1) |
 | **Stoic Meta regime** | inspiration | Head limb enable / kill-shot switching |

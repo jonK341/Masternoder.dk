@@ -11,6 +11,18 @@ from typing import Any, Dict, List
 _LIMBS = ("hunter", "dual_farm", "courier", "latch", "closer", "executor", "pbook", "grid", "head")
 
 PROFIT_TRADING_PROFILES: Dict[str, Dict[str, Any]] = {
+    "precision_level_swing": {
+        "name": "Precision level swing",
+        "source": "classic floor pivots + swing H/L",
+        "style": "swing_ta",
+        "limbs": ["swing", "grid", "latch"],
+        "when": "systematic TA with disciplined S/R / pivot entries",
+        "notes": (
+            "THIS is the repeatable swing system: trend bias from MA cross, "
+            "entries at pivot S1/R1, stops beyond swing high/low — discipline + precision price levels."
+        ),
+        "fit": "installed",
+    },
     "spatial_taker_cut": {
         "name": "Spatial taker (cutting edge)",
         "source": "internal",
@@ -46,16 +58,16 @@ PROFIT_TRADING_PROFILES: Dict[str, Dict[str, Any]] = {
     },
     "hummingbot_spot_perp_basis": {
         "name": "Spot–perp basis / funding",
-        "source": "Hummingbot spot_perpetual_arbitrage",
+        "source": "Hummingbot spot_perpetual_arbitrage + DataMaxi funding",
         "style": "basis",
-        "limbs": ["head"],  # future limb candidate
-        "when": "funding dislocation > min_opening_arbitrage_pct",
-        "notes": "Delta-neutral open/close on spot vs perp. Strong profit profile; needs perp connector.",
+        "limbs": ["basis"],
+        "when": "funding APR / basis divergence clears thresholds",
+        "notes": "Installed as `basis` limb. Paper signals by default; FUNDING_BASIS_LIVE=1 for perp later.",
         "addon_refs": [
-            "https://github.com/hummingbot/hummingbot",
-            "https://hummingbot.org/strategies/spot-perpetual-arbitrage/",
+            "https://hummingbot.org/strategies/v1-strategies/spot-perpetual-arbitrage/",
+            "https://docs.datamaxiplus.com/strategies/funding-rate-arb",
         ],
-        "fit": "high",
+        "fit": "installed",
     },
     "hummingbot_cross_exchange_mm": {
         "name": "Cross-exchange market making",
@@ -124,11 +136,11 @@ PROFIT_TRADING_PROFILES: Dict[str, Dict[str, Any]] = {
         "name": "CEX–CEX spread playbook",
         "source": "DataMaxi+",
         "style": "cex_cex_arb",
-        "limbs": ["hunter", "pbook"],
+        "limbs": ["datamaxi", "hunter", "pbook"],
         "when": "capital constrained, low ops",
-        "notes": "Matches our BN↔NK spatial path; playbooks for fee/slip modeling.",
-        "addon_refs": ["https://docs.datamaxiplus.com/strategies/overview"],
-        "fit": "high",
+        "notes": "Installed as `datamaxi` limb — Premium API when keyed, else local BN↔NK playbook gates.",
+        "addon_refs": ["https://docs.datamaxiplus.com/strategies/cex-cex-spread"],
+        "fit": "installed",
     },
 }
 
@@ -150,7 +162,7 @@ def profiles_for_limb(limb: str) -> List[Dict[str, Any]]:
 
 def actionable_addons() -> List[Dict[str, Any]]:
     """Profiles worth looking through for next profit-maker work."""
-    want = {"high", "medium", "inspiration", "browse", "already_present"}
+    want = {"high", "medium", "inspiration", "browse", "already_present", "installed"}
     return [
         {"id": pid, **meta}
         for pid, meta in PROFIT_TRADING_PROFILES.items()

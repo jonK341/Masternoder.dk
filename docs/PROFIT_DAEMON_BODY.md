@@ -11,8 +11,11 @@
 | **Tool** | `latch` | Arm on skew/phantom residual; **maker** rest while waiting; strike when residual clears |
 | **Tool** | `closer` | Finish half-filled spatial legs (micro-clips) + harvest dust into quote |
 | **Tool** | `executor` | Apply pbook techniques (prefund / quote-bridge / size-to-funded) for top deal |
+| **Arm 4** | `basis` | Hummingbot-style spot–perp / funding basis (paper signals; live perp gated) |
+| **Tool** | `swing` | **Precision level swing** — pivot S/R discipline + trend bias |
 | **Leg 1** | `pbook` | Top5 profit order book / techniques map — **APPLY on** in live (executor stack) |
 | **Leg 2** | `grid` | Maker ladders — thin-quote = fully quiet until auto-resume+reseed |
+| **Leg 3** | `datamaxi` | DataMaxi CEX–CEX Premium playbook → hunter kill-shot handoff |
 
 ## Head control file
 
