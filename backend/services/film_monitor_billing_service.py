@@ -184,7 +184,7 @@ def get_status(
         remaining = max(remaining, 365 * 24 * 3600)
         ends_at = None
         can_play = True
-        message = "Free to use — Film Canvas and Mission Control movies are free."
+        message = "Free to use — write a scene and press Play Movie."
     else:
         can_play = free_active or credits > 0
         if free_active:
