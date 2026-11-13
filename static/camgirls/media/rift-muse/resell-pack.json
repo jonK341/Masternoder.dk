@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave3_rift_muse",
+  "slug": "rift-muse",
+  "display_name": "Rift Muse",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/rift-muse/icon.webp",
+    "logo": "/static/camgirls/media/rift-muse/logo.svg",
+    "avatar_hd": "/static/camgirls/media/rift-muse/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/rift-muse/gallery-1.webp",
+      "/static/camgirls/media/rift-muse/gallery-2.webp",
+      "/static/camgirls/media/rift-muse/gallery-3.webp",
+      "/static/camgirls/media/rift-muse/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/rift-muse/preview.webm",
+    "preview_poster": "/static/camgirls/media/rift-muse/gallery-1.webp"
+  },
+  "initials": "RM",
+  "brand_colors": [
+    "#f43f5e",
+    "#881337"
+  ]
+}

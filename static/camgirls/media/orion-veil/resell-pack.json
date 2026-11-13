@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave3_orion_veil",
+  "slug": "orion-veil",
+  "display_name": "Orion Veil",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/orion-veil/icon.webp",
+    "logo": "/static/camgirls/media/orion-veil/logo.svg",
+    "avatar_hd": "/static/camgirls/media/orion-veil/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/orion-veil/gallery-1.webp",
+      "/static/camgirls/media/orion-veil/gallery-2.webp",
+      "/static/camgirls/media/orion-veil/gallery-3.webp",
+      "/static/camgirls/media/orion-veil/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/orion-veil/preview.webm",
+    "preview_poster": "/static/camgirls/media/orion-veil/gallery-1.webp"
+  },
+  "initials": "OV",
+  "brand_colors": [
+    "#818cf8",
+    "#312e81"
+  ]
+}

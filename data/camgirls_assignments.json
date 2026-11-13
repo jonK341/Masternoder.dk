@@ -1,0 +1,965 @@
+{
+  "assignments": {
+    "performer_nova": {
+      "agent_id": "camgirl_agent_nova",
+      "aggregator_category": "media",
+      "skill_set": [
+        "welcome_host",
+        "odds_explainer",
+        "exchange_onramp_nudge"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:15.612714Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_nova"
+    },
+    "performer_luna": {
+      "agent_id": "camgirl_agent_luna",
+      "aggregator_category": "media",
+      "skill_set": [
+        "night_shift_host",
+        "responsible_play_soft_nudge",
+        "social_invite"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:37:42.915524Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_luna"
+    },
+    "performer_sage": {
+      "agent_id": "camgirl_agent_sage",
+      "aggregator_category": "media",
+      "skill_set": [
+        "risk_sentinel",
+        "mindful_breaks",
+        "tax_record_explainer"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:37:45.775066Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_sage"
+    },
+    "performer_ember": {
+      "agent_id": "camgirl_agent_ember",
+      "aggregator_category": "media",
+      "skill_set": [
+        "vip_host",
+        "tournament_hype",
+        "big_win_reactivation"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:37:48.693760Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_ember"
+    },
+    "performer_iris": {
+      "agent_id": "camgirl_agent_iris",
+      "aggregator_category": "media",
+      "skill_set": [
+        "fan_club_goal",
+        "gift_recommendation",
+        "cross_sell_casino_exchange"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:37:51.595397Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_iris"
+    },
+    "performer_aurora": {
+      "agent_id": "camgirl_agent_aurora",
+      "aggregator_category": "media",
+      "skill_set": [
+        "welcome_host",
+        "winter_promo",
+        "exchange_onramp_nudge"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:37:54.438345Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_aurora"
+    },
+    "performer_jade": {
+      "agent_id": "camgirl_agent_jade",
+      "aggregator_category": "media",
+      "skill_set": [
+        "mindful_breaks",
+        "gift_recommendation",
+        "social_invite"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:37:57.308936Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_jade"
+    },
+    "performer_velvet": {
+      "agent_id": "camgirl_agent_velvet",
+      "aggregator_category": "media",
+      "skill_set": [
+        "vip_host",
+        "private_show_upsell",
+        "fan_club_goal"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:00.107537Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_velvet"
+    },
+    "performer_skylar": {
+      "agent_id": "camgirl_agent_skylar",
+      "aggregator_category": "media",
+      "skill_set": [
+        "tournament_hype",
+        "odds_explainer",
+        "big_win_reactivation"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:02.939407Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_skylar"
+    },
+    "performer_rio": {
+      "agent_id": "camgirl_agent_rio",
+      "aggregator_category": "media",
+      "skill_set": [
+        "welcome_host",
+        "cross_sell_casino_exchange",
+        "social_invite"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:05.762629Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_rio"
+    },
+    "performer_mist": {
+      "agent_id": "camgirl_agent_mist",
+      "aggregator_category": "media",
+      "skill_set": [
+        "responsible_play_soft_nudge",
+        "mindful_breaks",
+        "risk_sentinel"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:08.582332Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_mist"
+    },
+    "performer_honey": {
+      "agent_id": "camgirl_agent_honey",
+      "aggregator_category": "media",
+      "skill_set": [
+        "gift_recommendation",
+        "fan_club_goal",
+        "welcome_host"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:11.369716Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_honey"
+    },
+    "performer_storm": {
+      "agent_id": "camgirl_agent_storm",
+      "aggregator_category": "media",
+      "skill_set": [
+        "vip_host",
+        "tournament_hype",
+        "leaderboard_push"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:14.154052Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_storm"
+    },
+    "performer_pixie": {
+      "agent_id": "camgirl_agent_pixie",
+      "aggregator_category": "media",
+      "skill_set": [
+        "meme_engagement",
+        "wheel_hype",
+        "social_invite"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:16.985091Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_pixie"
+    },
+    "performer_venus": {
+      "agent_id": "camgirl_agent_venus",
+      "aggregator_category": "media",
+      "skill_set": [
+        "private_show_upsell",
+        "tax_record_explainer",
+        "exchange_onramp_nudge"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:19.798885Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_venus"
+    },
+    "performer_wave2_studio_host_a": {
+      "agent_id": "camgirl_agent_wave2_studio_host_a",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:22.551586Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_a"
+    },
+    "performer_wave2_studio_host_b": {
+      "agent_id": "camgirl_agent_wave2_studio_host_b",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:25.331214Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_b"
+    },
+    "performer_wave2_studio_host_c": {
+      "agent_id": "camgirl_agent_wave2_studio_host_c",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:28.150551Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_c"
+    },
+    "performer_wave2_studio_host_d": {
+      "agent_id": "camgirl_agent_wave2_studio_host_d",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:30.946346Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_d"
+    },
+    "performer_wave2_studio_host_e": {
+      "agent_id": "camgirl_agent_wave2_studio_host_e",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:33.751443Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_e"
+    },
+    "performer_wave2_studio_host_f": {
+      "agent_id": "camgirl_agent_wave2_studio_host_f",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:36.567324Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_f"
+    },
+    "performer_wave2_studio_host_g": {
+      "agent_id": "camgirl_agent_wave2_studio_host_g",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:39.384989Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_g"
+    },
+    "performer_wave2_studio_host_h": {
+      "agent_id": "camgirl_agent_wave2_studio_host_h",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:42.135142Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_h"
+    },
+    "performer_wave2_studio_host_i": {
+      "agent_id": "camgirl_agent_wave2_studio_host_i",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:44.924817Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_i"
+    },
+    "performer_wave2_studio_host_j": {
+      "agent_id": "camgirl_agent_wave2_studio_host_j",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:47.676439Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_j"
+    },
+    "performer_wave2_studio_host_k": {
+      "agent_id": "camgirl_agent_wave2_studio_host_k",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:50.444083Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_k"
+    },
+    "performer_wave2_studio_host_l": {
+      "agent_id": "camgirl_agent_wave2_studio_host_l",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:53.198802Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_l"
+    },
+    "performer_wave2_studio_host_m": {
+      "agent_id": "camgirl_agent_wave2_studio_host_m",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:55.950291Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_m"
+    },
+    "performer_wave2_studio_host_n": {
+      "agent_id": "camgirl_agent_wave2_studio_host_n",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:38:58.749189Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_n"
+    },
+    "performer_wave2_studio_host_o": {
+      "agent_id": "camgirl_agent_wave2_studio_host_o",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:01.598033Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_o"
+    },
+    "performer_wave2_studio_host_p": {
+      "agent_id": "camgirl_agent_wave2_studio_host_p",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:04.460326Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_p"
+    },
+    "performer_wave2_studio_host_q": {
+      "agent_id": "camgirl_agent_wave2_studio_host_q",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:07.306678Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_q"
+    },
+    "performer_wave2_studio_host_r": {
+      "agent_id": "camgirl_agent_wave2_studio_host_r",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:10.138600Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_r"
+    },
+    "performer_wave2_studio_host_s": {
+      "agent_id": "camgirl_agent_wave2_studio_host_s",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:12.952553Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_s"
+    },
+    "performer_wave2_studio_host_t": {
+      "agent_id": "camgirl_agent_wave2_studio_host_t",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:15.760826Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_t"
+    },
+    "performer_wave2_studio_host_u": {
+      "agent_id": "camgirl_agent_wave2_studio_host_u",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:18.584446Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_u"
+    },
+    "performer_wave2_studio_host_v": {
+      "agent_id": "camgirl_agent_wave2_studio_host_v",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:21.464493Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_v"
+    },
+    "performer_wave2_studio_host_w": {
+      "agent_id": "camgirl_agent_wave2_studio_host_w",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:24.297294Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_w"
+    },
+    "performer_wave2_studio_host_x": {
+      "agent_id": "camgirl_agent_wave2_studio_host_x",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:27.133448Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_x"
+    },
+    "performer_wave2_studio_host_y": {
+      "agent_id": "camgirl_agent_wave2_studio_host_y",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:29.979958Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave2_studio_host_y"
+    },
+    "performer_wave3_nebula_prime": {
+      "agent_id": "camgirl_agent_wave3_nebula_prime",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:32.788549Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_nebula_prime"
+    },
+    "performer_wave3_cosmic_rift": {
+      "agent_id": "camgirl_agent_wave3_cosmic_rift",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:35.601019Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_cosmic_rift"
+    },
+    "performer_wave3_stellar_dawn": {
+      "agent_id": "camgirl_agent_wave3_stellar_dawn",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:38.449957Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_stellar_dawn"
+    },
+    "performer_wave3_lunar_cascade": {
+      "agent_id": "camgirl_agent_wave3_lunar_cascade",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:41.323872Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_lunar_cascade"
+    },
+    "performer_wave3_solar_flare": {
+      "agent_id": "camgirl_agent_wave3_solar_flare",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:44.206820Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_solar_flare"
+    },
+    "performer_wave3_orion_veil": {
+      "agent_id": "camgirl_agent_wave3_orion_veil",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:47.072853Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_orion_veil"
+    },
+    "performer_wave3_comet_whisper": {
+      "agent_id": "camgirl_agent_wave3_comet_whisper",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:49.853067Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_comet_whisper"
+    },
+    "performer_wave3_void_dancer": {
+      "agent_id": "camgirl_agent_wave3_void_dancer",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:52.681991Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_void_dancer"
+    },
+    "performer_wave3_pulsar_heart": {
+      "agent_id": "camgirl_agent_wave3_pulsar_heart",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:55.534041Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_pulsar_heart"
+    },
+    "performer_wave3_galaxy_silk": {
+      "agent_id": "camgirl_agent_wave3_galaxy_silk",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:39:58.356867Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_galaxy_silk"
+    },
+    "performer_wave3_drift_queen": {
+      "agent_id": "camgirl_agent_wave3_drift_queen",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:01.188598Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_drift_queen"
+    },
+    "performer_wave3_cyber_rose": {
+      "agent_id": "camgirl_agent_wave3_cyber_rose",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:03.993471Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_cyber_rose"
+    },
+    "performer_wave3_holo_muse": {
+      "agent_id": "camgirl_agent_wave3_holo_muse",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:06.855871Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_holo_muse"
+    },
+    "performer_wave3_neon_siren": {
+      "agent_id": "camgirl_agent_wave3_neon_siren",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:09.734257Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_neon_siren"
+    },
+    "performer_wave3_quantum_lace": {
+      "agent_id": "camgirl_agent_wave3_quantum_lace",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:12.629663Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_quantum_lace"
+    },
+    "performer_wave3_midnight_orbit": {
+      "agent_id": "camgirl_agent_wave3_midnight_orbit",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:15.469266Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_midnight_orbit"
+    },
+    "performer_wave3_coral_signal": {
+      "agent_id": "camgirl_agent_wave3_coral_signal",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:18.326306Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_coral_signal"
+    },
+    "performer_wave3_mint_signal": {
+      "agent_id": "camgirl_agent_wave3_mint_signal",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:21.149856Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_mint_signal"
+    },
+    "performer_wave3_amber_signal": {
+      "agent_id": "camgirl_agent_wave3_amber_signal",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:23.956185Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_amber_signal"
+    },
+    "performer_wave3_azure_signal": {
+      "agent_id": "camgirl_agent_wave3_azure_signal",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:26.724052Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_azure_signal"
+    },
+    "performer_wave3_violet_signal": {
+      "agent_id": "camgirl_agent_wave3_violet_signal",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:29.558068Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_violet_signal"
+    },
+    "performer_wave3_chrome_vox": {
+      "agent_id": "camgirl_agent_wave3_chrome_vox",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:32.436132Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_chrome_vox"
+    },
+    "performer_wave3_plasma_silk": {
+      "agent_id": "camgirl_agent_wave3_plasma_silk",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:35.327216Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_plasma_silk"
+    },
+    "performer_wave3_rift_muse": {
+      "agent_id": "camgirl_agent_wave3_rift_muse",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:38.193695Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_rift_muse"
+    },
+    "performer_wave3_nova_drift": {
+      "agent_id": "camgirl_agent_wave3_nova_drift",
+      "aggregator_category": "media",
+      "skill_set": [
+        "studio_host",
+        "mn2_tips",
+        "fan_club_goal",
+        "gift_router"
+      ],
+      "payout_address": null,
+      "assigned_at": "2026-11-07T22:40:41.045392Z",
+      "assigner_user_id": "platform_camgirls",
+      "status": "active",
+      "reward_reference": "camgirl-assign:performer_wave3_nova_drift"
+    }
+  },
+  "updated_at": "2026-11-07T22:40:41.045401Z"
+}

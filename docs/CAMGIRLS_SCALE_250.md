@@ -5,7 +5,9 @@ Goal: grow from ~15 live performers toward **250** using **waves** of 15–50 st
 ## Wave file
 
 - Template: `data/camgirls_performers_wave.template.json`
-- Copy to e.g. `waves/wave2.json` (gitignored locally if it contains ops data).
+- **Wave 2 (25 stubs, committed):** `data/camgirls_performers_wave2.json` — copy to `waves/wave2.json` on the server if you prefer that path.
+- **Wave 3 (25 stubs, committed):** `data/camgirls_performers_wave3.json` — 65 roster total after onboard with waves 1–2.
+- Copy other waves to e.g. `waves/waveN.json` (gitignored locally if it contains ops data).
 - CSV is also supported (`display_name` required; optional `slug`, `initials`, `c1`, `c2`, prices).
 
 Each stub needs at least `display_name`. IDs default to `{id_prefix}{slug}` (prefix from `wave` / `--batch` / `id_prefix` field).
@@ -35,6 +37,20 @@ bash scripts/camgirls_batch_onboard.sh --file waves/wave2.json --batch 2 --wave-
 - `--provision-addresses` calls `provision_payout_rails(performer_ids=…)` (MN2 `getnewaddress` + PayPal checkout metadata).
 - On production: `bash scripts/camgirls_py.sh scripts/camgirls_provision_payout_addresses.py --check-rpc`
 - Per-id repair: `scripts/camgirls_provision_payout_addresses.py --performer performer_wave2_studio_host_a`
+
+### Scale paused — wallets, assignments, MN2 rewards
+
+Roster wave 4+ is paused (`data/camgirls_ops_state.json` → `scale_paused`). Ops focus:
+
+```bash
+.venv/bin/python scripts/camgirls_assign_and_reward.py --audit --no-rpc
+
+bash scripts/camgirls_py.sh scripts/camgirls_provision_payout_addresses.py --check-rpc
+bash scripts/camgirls_py.sh scripts/camgirls_assign_and_reward.py --provision --assign --reward --amount 0.0001
+```
+
+- State: `data/camgirls_assignments.json`, checkout flags in `data/camgirls_payout_addresses.json` (MN2 `address` filled on server)
+- Ops APIs: `GET/POST /api/camgirls/ops/wallet-audit`, `GET/POST /api/camgirls/ops/assign-agents`
 
 ### Media
 

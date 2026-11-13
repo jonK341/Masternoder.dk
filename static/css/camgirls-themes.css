@@ -1,0 +1,181 @@
+/**
+ * Studio themes (camgirls + aggregator) — tokens + picker chrome.
+ * html.cg-giga (camgirls) or html.agg-themed (aggregator) + data-cg-theme=…
+ */
+
+html.cg-giga,
+html.agg-themed {
+  --cg-bg: #04060c;
+  --cg-bg-elevated: #0a0f1a;
+  --cg-surface: rgba(0, 0, 0, 0.35);
+  --cg-glass: rgba(12, 18, 32, 0.72);
+  --cg-text: #f0f4ff;
+  --cg-text-muted: rgba(255, 255, 255, 0.72);
+  --cg-border: rgba(255, 255, 255, 0.12);
+  --cg-border-accent: rgba(0, 232, 255, 0.22);
+  --cg-accent-primary: #00e8ff;
+  --cg-accent-secondary: #ff2da8;
+  --cg-accent-success: #9dff66;
+  --cg-accent-warn: #ffd166;
+  --cg-accent-hot: #ff66cc;
+  --cg-input-bg: #161b22;
+  --cg-body-gradient-a: rgba(255, 45, 168, 0.18);
+  --cg-body-gradient-b: rgba(0, 232, 255, 0.15);
+  --cg-hero-conic-a: rgba(0, 232, 255, 0.08);
+  --cg-hero-conic-b: rgba(255, 45, 168, 0.1);
+  --cg-font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cg-font-mono: ui-monospace, "JetBrains Mono", monospace;
+  /* Legacy giga aliases */
+  --cg-giga-bg: var(--cg-bg);
+  --cg-giga-cyan: var(--cg-accent-primary);
+  --cg-giga-magenta: var(--cg-accent-secondary);
+  --cg-giga-lime: var(--cg-accent-success);
+  --cg-giga-glass: var(--cg-glass);
+  --cg-giga-border: var(--cg-border-accent);
+}
+
+/* Cosmic (default intelligence) */
+html.cg-giga[data-cg-theme="cosmic"],
+html.agg-themed[data-cg-theme="cosmic"] {
+  color-scheme: dark;
+}
+
+/* Velvet noir */
+html.cg-giga[data-cg-theme="velvet"],
+html.agg-themed[data-cg-theme="velvet"] {
+  --cg-bg: #0a0308;
+  --cg-bg-elevated: #140a12;
+  --cg-glass: rgba(28, 10, 22, 0.82);
+  --cg-accent-primary: #e8b4ff;
+  --cg-accent-secondary: #ff3d6e;
+  --cg-accent-success: #c9a227;
+  --cg-border-accent: rgba(232, 180, 255, 0.28);
+  --cg-body-gradient-a: rgba(255, 61, 110, 0.22);
+  --cg-body-gradient-b: rgba(100, 40, 120, 0.35);
+  --cg-hero-conic-a: rgba(232, 180, 255, 0.1);
+  --cg-hero-conic-b: rgba(255, 61, 110, 0.12);
+  color-scheme: dark;
+}
+
+/* Signal neon (telemetry / mesh) */
+html.cg-giga[data-cg-theme="signal"],
+html.agg-themed[data-cg-theme="signal"] {
+  --cg-bg: #020806;
+  --cg-bg-elevated: #041210;
+  --cg-glass: rgba(4, 24, 18, 0.85);
+  --cg-accent-primary: #00ff9d;
+  --cg-accent-secondary: #ffe600;
+  --cg-accent-success: #00ff9d;
+  --cg-accent-hot: #ffe600;
+  --cg-border-accent: rgba(0, 255, 157, 0.35);
+  --cg-body-gradient-a: rgba(0, 255, 157, 0.12);
+  --cg-body-gradient-b: rgba(255, 230, 0, 0.08);
+  --cg-font-body: var(--cg-font-mono);
+  color-scheme: dark;
+}
+
+/* Aurora frost */
+html.cg-giga[data-cg-theme="aurora"],
+html.agg-themed[data-cg-theme="aurora"] {
+  --cg-bg: #060c14;
+  --cg-bg-elevated: #0c1624;
+  --cg-glass: rgba(12, 28, 48, 0.75);
+  --cg-accent-primary: #7ecbff;
+  --cg-accent-secondary: #b388ff;
+  --cg-accent-success: #a8f0ff;
+  --cg-border-accent: rgba(126, 203, 255, 0.3);
+  --cg-body-gradient-a: rgba(126, 203, 255, 0.2);
+  --cg-body-gradient-b: rgba(179, 136, 255, 0.15);
+  color-scheme: dark;
+}
+
+/* Champagne light (readable light studio) */
+html.cg-giga[data-cg-theme="champagne"],
+html.agg-themed[data-cg-theme="champagne"] {
+  --cg-bg: #f6f2eb;
+  --cg-bg-elevated: #fff;
+  --cg-surface: rgba(255, 255, 255, 0.92);
+  --cg-glass: rgba(255, 255, 255, 0.88);
+  --cg-text: #1a1520;
+  --cg-text-muted: rgba(26, 21, 32, 0.72);
+  --cg-border: rgba(26, 21, 32, 0.12);
+  --cg-border-accent: rgba(180, 120, 60, 0.35);
+  --cg-accent-primary: #c45c26;
+  --cg-accent-secondary: #8b4d9e;
+  --cg-accent-success: #2d8a5c;
+  --cg-accent-warn: #b8860b;
+  --cg-accent-hot: #c45c26;
+  --cg-input-bg: #fff;
+  --cg-body-gradient-a: rgba(196, 92, 38, 0.08);
+  --cg-body-gradient-b: rgba(139, 77, 158, 0.06);
+  color-scheme: light;
+}
+
+html.cg-giga[data-cg-theme="champagne"] body,
+html.agg-themed[data-cg-theme="champagne"] body {
+  color: var(--cg-text);
+}
+
+html.cg-giga[data-cg-theme="champagne"] .cg-giga-stat,
+html.cg-giga[data-cg-theme="champagne"] .cg-top10-row,
+html.cg-giga[data-cg-theme="champagne"] .cg-card,
+html.cg-giga[data-cg-theme="champagne"] .cg-studio-btn,
+html.cg-giga[data-cg-theme="champagne"] .cg-chat-input,
+html.cg-giga[data-cg-theme="champagne"] .cg-filter-bar button {
+  color: var(--cg-text);
+}
+
+/* Theme dock (camgirls + aggregator) */
+.cg-theme-dock,
+.agg-theme-dock {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin: 0 0 16px;
+  border-radius: 14px;
+  border: 1px solid var(--cg-border-accent);
+  background: var(--cg-glass);
+  backdrop-filter: blur(12px);
+  font-size: 0.78rem;
+  font-family: var(--cg-font-mono);
+}
+.cg-theme-dock-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cg-accent-primary);
+  margin-right: 4px;
+}
+.cg-theme-btn {
+  border: 1px solid var(--cg-border);
+  background: var(--cg-surface);
+  color: var(--cg-text-muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.cg-theme-btn:hover {
+  border-color: var(--cg-accent-primary);
+  color: var(--cg-text);
+}
+.cg-theme-btn.active {
+  border-color: var(--cg-accent-secondary);
+  background: color-mix(in srgb, var(--cg-accent-secondary) 18%, transparent);
+  color: var(--cg-text);
+}
+.cg-theme-btn:focus-visible {
+  outline: 2px solid var(--cg-accent-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .cg-theme-dock { position: relative; }
+}

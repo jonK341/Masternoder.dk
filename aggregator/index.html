@@ -9,14 +9,21 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
-    <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=7">
-    <link rel="stylesheet" href="/static/css/aggregator-hub-v2.css?v=20260618a">
+    <link rel="stylesheet" href="/static/css/aggregator-monitor.css?v=8">
+    <link rel="stylesheet" href="/static/css/aggregator-hub-v2.css?v=2026110711">
+    <link rel="stylesheet" href="/static/css/aggregator-linux-theme.css?v=2026110711">
+    <link rel="stylesheet" href="/static/css/camgirls-themes.css?v=20261108c">
+    <link rel="stylesheet" href="/static/css/aggregator-studio-themes.css?v=20261110a">
+    <link rel="stylesheet" href="/static/css/aggregator-readability-fix.css?v=20261110a">
     <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=1">
+    <script>
+    (function(){try{var k='cg_studio_theme_v1';var t=localStorage.getItem(k);if(!t)t='cosmic';document.documentElement.classList.add('agg-themed');document.documentElement.setAttribute('data-cg-theme',t);}catch(e){document.documentElement.classList.add('agg-themed');document.documentElement.setAttribute('data-cg-theme','cosmic');}})();
+    </script>
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 </head>
-<body class="layout-standard layout-aggregator-tech">
-    <div class="bg-animated"></div>
+<body class="layout-standard layout-aggregator-tech layout-aggregator-linux">
+    <div class="bg-animated" aria-hidden="true"></div>
     <nav class="agg-top-nav" aria-label="Primary">
         <div class="agg-top-nav-inner">
             <a href="/" class="nav-link nav-link--home">Home</a>
@@ -34,14 +41,14 @@
 
     <div class="agg-tech-row" aria-label="Aggregator technology footprint">
         <div class="agg-tech-stack">
-            <span class="agg-tech-chip">Holodeck grid</span>
-            <span class="agg-tech-chip">battle_quick API</span>
-            <span class="agg-tech-chip">List encoder (Base64)</span>
-            <span class="agg-tech-chip">Intel feeds</span>
-            <span class="agg-tech-chip">Engagement award</span>
-            <span class="agg-tech-chip">Unified points</span>
-            <span class="agg-tech-chip">5D σ narrative</span>
-            <span class="agg-tech-chip">Web Audio resonance</span>
+            <span class="agg-tech-chip">eBPF trace (aggmon)</span>
+            <span class="agg-tech-chip">Wayland layer shell</span>
+            <span class="agg-tech-chip">systemd user unit</span>
+            <span class="agg-tech-chip">journald JSON stream</span>
+            <span class="agg-tech-chip">MN2 peer mesh</span>
+            <span class="agg-tech-chip">agent skill router</span>
+            <span class="agg-tech-chip">UTF-8 catalog bus</span>
+            <span class="agg-tech-chip">Assignment chain burst</span>
         </div>
         <div class="agg-points-hud" role="status" aria-live="polite">
             <span class="agg-hud-bit">Session <strong id="agg-session-points">0</strong></span>
@@ -90,7 +97,7 @@
             class="agg-story-monitor-block"
             data-story-monitor-5d
             data-story-context="aggregator"
-            data-tech-label="Panoptic σ field engine · Web Audio storyscape + chroniton τ"
+            data-tech-label="aggmon v3 · eBPF viewport + journald event stream + MN2 assignment ledger"
             aria-label="Five dimensional story monitor"
         ></div>
 
@@ -99,7 +106,7 @@
                 <div class="agg-monitor-wrap">
                     <div class="agg-monitor-frame">
                         <div class="agg-monitor-bezel">
-                            <span>Holodeck viewport · 3 drift axes + τ + layer · story σ on chronicle monitor</span>
+                            <span>aggmon viewport · dim grid + assignment τ · journald + peer-MN2 settlement</span>
                             <span class="agg-dims" id="agg-dim-readout">x:0 y:0 z:0 · t:0 · layer:1</span>
                         </div>
                         <div class="agg-play-surface" id="agg-play-surface">
@@ -214,6 +221,7 @@
         </section>
     </main>
 
+    <script src="/static/js/camgirls-themes.js?v=20261108c"></script>
     <script src="/static/js/user-id.js?v=20261010b"></script>
 <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="aggregator"></script>
@@ -222,8 +230,8 @@
     <script src="/static/js/story-monitor-5d.js?v=1"></script>
     <script src="/static/js/aggregator-engagement.js"></script>
     <script src="/static/js/aggregator-ideas.js"></script>
-    <script src="/static/js/aggregator-hub-v2.js?v=20260618a"></script>
-    <script src="/static/js/aggregator-monitor-game.js?v=3"></script>
+    <script src="/static/js/aggregator-hub-v2.js?v=20261108c"></script>
+    <script src="/static/js/aggregator-monitor-game.js?v=4"></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function () {

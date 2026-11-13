@@ -1,0 +1,457 @@
+{
+  "wave": 3,
+  "id_prefix": "performer_wave3_",
+  "notes": "Wave 3 \u2014 25 AI stubs (65 roster after onboard with wave 1\u20132).",
+  "performers": [
+    {
+      "slug": "nebula-prime",
+      "display_name": "Nebula Prime",
+      "bio": "Nebula Prime \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "nebula-prime",
+        "initials": "NP",
+        "c1": "#7c3aed",
+        "c2": "#1e1b4b"
+      }
+    },
+    {
+      "slug": "cosmic-rift",
+      "display_name": "Cosmic Rift",
+      "bio": "Cosmic Rift \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "cosmic-rift",
+        "initials": "CR",
+        "c1": "#2563eb",
+        "c2": "#1e3a8a"
+      }
+    },
+    {
+      "slug": "stellar-dawn",
+      "display_name": "Stellar Dawn",
+      "bio": "Stellar Dawn \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "stellar-dawn",
+        "initials": "SD",
+        "c1": "#f472b6",
+        "c2": "#831843"
+      }
+    },
+    {
+      "slug": "lunar-cascade",
+      "display_name": "Lunar Cascade",
+      "bio": "Lunar Cascade \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "lunar-cascade",
+        "initials": "LC",
+        "c1": "#2dd4bf",
+        "c2": "#115e59"
+      }
+    },
+    {
+      "slug": "solar-flare",
+      "display_name": "Solar Flare",
+      "bio": "Solar Flare \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "solar-flare",
+        "initials": "SF",
+        "c1": "#fb7185",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "orion-veil",
+      "display_name": "Orion Veil",
+      "bio": "Orion Veil \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "orion-veil",
+        "initials": "OV",
+        "c1": "#818cf8",
+        "c2": "#312e81"
+      }
+    },
+    {
+      "slug": "comet-whisper",
+      "display_name": "Comet Whisper",
+      "bio": "Comet Whisper \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "comet-whisper",
+        "initials": "CW",
+        "c1": "#38bdf8",
+        "c2": "#0c4a6e"
+      }
+    },
+    {
+      "slug": "void-dancer",
+      "display_name": "Void Dancer",
+      "bio": "Void Dancer \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "void-dancer",
+        "initials": "VD",
+        "c1": "#a78bfa",
+        "c2": "#4c1d95"
+      }
+    },
+    {
+      "slug": "pulsar-heart",
+      "display_name": "Pulsar Heart",
+      "bio": "Pulsar Heart \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "pulsar-heart",
+        "initials": "PH",
+        "c1": "#fbbf24",
+        "c2": "#78350f"
+      }
+    },
+    {
+      "slug": "galaxy-silk",
+      "display_name": "Galaxy Silk",
+      "bio": "Galaxy Silk \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "galaxy-silk",
+        "initials": "GS",
+        "c1": "#34d399",
+        "c2": "#065f46"
+      }
+    },
+    {
+      "slug": "drift-queen",
+      "display_name": "Drift Queen",
+      "bio": "Drift Queen \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "drift-queen",
+        "initials": "DQ",
+        "c1": "#f97316",
+        "c2": "#7c2d12"
+      }
+    },
+    {
+      "slug": "cyber-rose",
+      "display_name": "Cyber Rose",
+      "bio": "Cyber Rose \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "cyber-rose",
+        "initials": "CR",
+        "c1": "#e11d48",
+        "c2": "#881337"
+      }
+    },
+    {
+      "slug": "holo-muse",
+      "display_name": "Holo Muse",
+      "bio": "Holo Muse \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "holo-muse",
+        "initials": "HM",
+        "c1": "#06b6d4",
+        "c2": "#164e63"
+      }
+    },
+    {
+      "slug": "neon-siren",
+      "display_name": "Neon Siren",
+      "bio": "Neon Siren \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "neon-siren",
+        "initials": "NS",
+        "c1": "#d946ef",
+        "c2": "#701a75"
+      }
+    },
+    {
+      "slug": "quantum-lace",
+      "display_name": "Quantum Lace",
+      "bio": "Quantum Lace \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "quantum-lace",
+        "initials": "QL",
+        "c1": "#6366f1",
+        "c2": "#3730a3"
+      }
+    },
+    {
+      "slug": "midnight-orbit",
+      "display_name": "Midnight Orbit",
+      "bio": "Midnight Orbit \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "midnight-orbit",
+        "initials": "MO",
+        "c1": "#64748b",
+        "c2": "#1e293b"
+      }
+    },
+    {
+      "slug": "coral-signal",
+      "display_name": "Coral Signal",
+      "bio": "Coral Signal \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "coral-signal",
+        "initials": "CS",
+        "c1": "#fda4af",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "mint-signal",
+      "display_name": "Mint Signal",
+      "bio": "Mint Signal \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "mint-signal",
+        "initials": "MS",
+        "c1": "#6ee7b7",
+        "c2": "#065f46"
+      }
+    },
+    {
+      "slug": "amber-signal",
+      "display_name": "Amber Signal",
+      "bio": "Amber Signal \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "amber-signal",
+        "initials": "AS",
+        "c1": "#fcd34d",
+        "c2": "#92400e"
+      }
+    },
+    {
+      "slug": "azure-signal",
+      "display_name": "Azure Signal",
+      "bio": "Azure Signal \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "azure-signal",
+        "initials": "AS",
+        "c1": "#60a5fa",
+        "c2": "#1e40af"
+      }
+    },
+    {
+      "slug": "violet-signal",
+      "display_name": "Violet Signal",
+      "bio": "Violet Signal \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "violet-signal",
+        "initials": "VS",
+        "c1": "#c084fc",
+        "c2": "#581c87"
+      }
+    },
+    {
+      "slug": "chrome-vox",
+      "display_name": "Chrome Vox",
+      "bio": "Chrome Vox \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "chrome-vox",
+        "initials": "CV",
+        "c1": "#94a3b8",
+        "c2": "#334155"
+      }
+    },
+    {
+      "slug": "plasma-silk",
+      "display_name": "Plasma Silk",
+      "bio": "Plasma Silk \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "plasma-silk",
+        "initials": "PS",
+        "c1": "#4ade80",
+        "c2": "#166534"
+      }
+    },
+    {
+      "slug": "rift-muse",
+      "display_name": "Rift Muse",
+      "bio": "Rift Muse \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "rift-muse",
+        "initials": "RM",
+        "c1": "#f43f5e",
+        "c2": "#881337"
+      }
+    },
+    {
+      "slug": "nova-drift",
+      "display_name": "Nova Drift",
+      "bio": "Nova Drift \u2014 wave 3 AI studio host with gifts, chat, and MN2 unlock flows.",
+      "tagline": "Live AI \u00b7 wave 3",
+      "unlock_price_mn2": 12,
+      "chat_price_mn2": 2,
+      "tip_min_mn2": 5,
+      "goal_mn2": 150,
+      "active": true,
+      "ai_enabled": true,
+      "media": {
+        "slug": "nova-drift",
+        "initials": "ND",
+        "c1": "#22d3ee",
+        "c2": "#155e75"
+      }
+    }
+  ]
+}

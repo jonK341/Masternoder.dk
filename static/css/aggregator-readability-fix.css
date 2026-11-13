@@ -1,0 +1,118 @@
+/**
+ * Aggregator — force readable contrast (solid bg, no gradient text).
+ * Loads after hub-v2 + studio themes; pairs layout-aggregator-linux + layout-aggregator-tech.
+ */
+
+body.layout-aggregator-linux.layout-aggregator-tech {
+  background: var(--agg-linux-bg) !important;
+  color: var(--agg-linux-fg) !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech::before {
+  display: none !important;
+  content: none !important;
+}
+
+html.agg-themed body.layout-aggregator-linux {
+  background: var(--agg-linux-bg) !important;
+  background-image: none !important;
+}
+
+html.agg-themed body.layout-aggregator-linux.layout-aggregator-tech .agg-hero h1,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-hero h1 {
+  color: var(--agg-linux-green) !important;
+  -webkit-text-fill-color: var(--agg-linux-green) !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  text-shadow: none !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-hero p,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-route-note,
+body.layout-aggregator-linux.layout-aggregator-tech #agg-global-progress-label,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-hub-tab,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-monitor-hint,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-desc,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-meta,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-playbook,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-tab-panel p,
+body.layout-aggregator-linux.layout-aggregator-tech .aggregator-ideas-ol,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-points-hud,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-crypto-hud,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-crypto-chip,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-tech-chip,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-top-nav .nav-link {
+  color: var(--agg-linux-fg) !important;
+  opacity: 1 !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-top-nav .nav-link--home,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-top-nav .nav-link--current {
+  color: var(--agg-linux-green) !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-muted,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-meta {
+  color: var(--agg-linux-muted) !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-hero,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-hub-nav,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-tab-panel,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-card,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-panel,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-points-hud,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-crypto-hud {
+  background: var(--agg-linux-panel) !important;
+  border-color: var(--agg-linux-border) !important;
+  color: var(--agg-linux-fg) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-hub-tab {
+  background: #2a2a2a !important;
+  color: var(--agg-linux-fg) !important;
+  border-color: var(--agg-linux-border) !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-hub-tab.active {
+  background: var(--agg-linux-green) !important;
+  color: #0a0a0a !important;
+  border-color: var(--agg-linux-green) !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-card h3,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-panel h3,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-playbook strong {
+  color: var(--agg-linux-green) !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-toolbar select,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-toolbar input {
+  background: #111 !important;
+  color: #fff !important;
+  border: 1px solid var(--agg-linux-border) !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-v2-btn {
+  color: #fff !important;
+}
+
+body.layout-aggregator-linux.layout-aggregator-tech .agg-encoder textarea,
+body.layout-aggregator-linux.layout-aggregator-tech .agg-encoder code {
+  color: #e8f4ff !important;
+}
+
+/* Champagne/light studio token would wash out hub text — keep terminal contrast */
+html.agg-themed[data-cg-theme="champagne"] body.layout-aggregator-linux {
+  --cg-bg: #1a1a1a;
+  --cg-bg-elevated: #252525;
+  --cg-text: #f0f0f0;
+  --cg-text-muted: #b8b8b8;
+  --cg-border: #4a4a4a;
+  --cg-accent-success: #33d17a;
+  --cg-accent-primary: #62a0ea;
+  color-scheme: dark;
+}

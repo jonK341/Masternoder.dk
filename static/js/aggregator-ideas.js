@@ -10,7 +10,7 @@
     var ol = document.createElement('ol');
     ol.className = 'aggregator-ideas-ol';
     ol.style.cssText =
-      'margin:0;padding-left:1.2rem;line-height:1.45;font-size:0.88rem;color:var(--text-secondary,#bbb);';
+      'margin:0;padding-left:1.2rem;line-height:1.55;font-size:0.95rem;color:var(--text-primary,#f2f2f2);';
     items.forEach(function (it) {
       var li = document.createElement('li');
       li.style.marginBottom = '10px';

@@ -1,0 +1,70 @@
+/**
+ * Aggregator hub — maps shared studio theme tokens onto Linux terminal chrome.
+ */
+
+html.agg-themed body.layout-aggregator-linux {
+  --agg-linux-bg: var(--cg-bg);
+  --agg-linux-panel: color-mix(in srgb, var(--cg-bg-elevated) 88%, #000);
+  --agg-linux-border: color-mix(in srgb, var(--cg-border-accent) 55%, var(--cg-border));
+  --agg-linux-fg: var(--cg-text);
+  --agg-linux-muted: var(--cg-text-muted);
+  --agg-linux-green: var(--cg-accent-success);
+  --agg-linux-blue: var(--cg-accent-primary);
+  --agg-linux-red: var(--cg-accent-secondary);
+  --agg-linux-yellow: var(--cg-accent-warn);
+  color: var(--agg-linux-fg);
+  background: var(--agg-linux-bg);
+}
+
+html.agg-themed[data-cg-theme="signal"] body.layout-aggregator-linux {
+  font-family: var(--cg-font-mono);
+}
+
+html.agg-themed[data-cg-theme="champagne"] body.layout-aggregator-linux .agg-top-nav {
+  background: color-mix(in srgb, var(--cg-bg) 95%, #fff);
+  border-bottom-color: var(--cg-accent-primary);
+}
+
+html.agg-themed[data-cg-theme="champagne"] body.layout-aggregator-linux .agg-hub-tab.active {
+  color: #fff;
+}
+
+html.agg-themed body.layout-aggregator-linux .agg-theme-dock {
+  margin: 0 16px 12px;
+  max-width: 1368px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+html.agg-themed body.layout-aggregator-linux .agg-hub-tab.active {
+  background: linear-gradient(135deg, var(--cg-accent-success), var(--cg-accent-primary));
+  color: #0a0a0a;
+  border-color: transparent;
+}
+
+html.agg-themed body.layout-aggregator-linux .agg-v2-btn,
+html.agg-themed body.layout-aggregator-linux .agg-v2-btn--assign {
+  background: color-mix(in srgb, var(--cg-accent-primary) 85%, #000);
+  border: 1px solid color-mix(in srgb, var(--cg-accent-primary) 50%, transparent);
+}
+
+html.agg-themed body.layout-aggregator-linux .agg-monitor-frame {
+  border-color: var(--cg-accent-success);
+  box-shadow: 0 0 0 3px #000, 0 0 32px color-mix(in srgb, var(--cg-accent-primary) 25%, transparent),
+    inset 0 0 24px #000;
+}
+
+html.agg-themed body.layout-aggregator-linux .agg-tech-chip {
+  border-color: var(--cg-border-accent);
+  background: color-mix(in srgb, var(--cg-accent-primary) 8%, var(--agg-linux-panel));
+}
+
+html.agg-themed body.layout-aggregator-linux .agg-route-note {
+  border-color: var(--cg-border-accent);
+  background: color-mix(in srgb, var(--cg-accent-primary) 10%, transparent);
+  color: var(--cg-text-muted);
+}
+
+html.agg-themed body.layout-aggregator-linux .agg-v2-progress-fill {
+  background: linear-gradient(90deg, var(--cg-accent-success), var(--cg-accent-primary));
+}

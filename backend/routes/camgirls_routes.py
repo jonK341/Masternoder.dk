@@ -187,6 +187,63 @@ def ops_payout_addresses():
     return jsonify(result), code
 
 
+@camgirls_bp.route("/api/camgirls/ops/wallet-audit", methods=["GET", "POST"])
+def ops_wallet_audit():
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.camgirls_payout_service import audit_performer_wallets, provision_payout_addresses
+
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        performer_id = (body.get("performer_id") or body.get("id") or "").strip()
+        if body.get("provision"):
+            ids = [performer_id] if performer_id else None
+            provision_payout_addresses(performer_ids=ids)
+        ids = [performer_id] if performer_id else None
+    else:
+        performer_id = (request.args.get("performer_id") or request.args.get("id") or "").strip()
+        ids = [performer_id] if performer_id else None
+    check_rpc = request.args.get("check_rpc", "1") not in ("0", "false", "no")
+    if request.method == "POST":
+        body = request.get_json(silent=True) or {}
+        if "check_rpc" in body:
+            check_rpc = bool(body.get("check_rpc"))
+    result = audit_performer_wallets(ids, check_rpc=check_rpc)
+    return jsonify(result), 200
+
+
+@camgirls_bp.route("/api/camgirls/ops/assign-agents", methods=["GET", "POST"])
+def ops_assign_agents():
+    if not _ops_ok():
+        return jsonify({"success": False, "error": "admin_required"}), 403
+    from backend.services.camgirls_assignments_service import assign_all_performers, assign_performer, list_assignments
+
+    if request.method == "GET":
+        return jsonify(list_assignments()), 200
+    body = request.get_json(silent=True) or {}
+    performer_id = (body.get("performer_id") or body.get("id") or "").strip()
+    dry_run = bool(body.get("dry_run"))
+    reward = bool(body.get("reward_on_chain", True))
+    amount = float(body.get("reward_amount_mn2") or body.get("amount_mn2") or 0.0001)
+    provision = bool(body.get("provision_addresses", True))
+    if performer_id:
+        result = assign_performer(
+            performer_id,
+            reward_on_chain=reward,
+            reward_amount_mn2=amount,
+            dry_run=dry_run,
+        )
+    else:
+        result = assign_all_performers(
+            provision_missing_addresses=provision,
+            reward_on_chain=reward,
+            reward_amount_mn2=amount,
+            dry_run=dry_run,
+        )
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
 @camgirls_bp.route("/api/camgirls/studio/catalog", methods=["GET"])
 def camgirls_studio_catalog():
     try:
@@ -442,6 +499,14 @@ def performer_chat(performer_id: str):
 def performer_goal(performer_id: str):
     from backend.services.camgirls_social_service import get_goal_status
     return jsonify(get_goal_status(performer_id)), 200
+
+
+@camgirls_bp.route("/api/camgirls/intel/top10", methods=["GET"])
+def camgirls_intel_top10():
+    user_id = _resolve_user_id(anonymous_ok=True)
+    from backend.services.camgirls_ui_intel_service import top10_performers
+
+    return jsonify(top10_performers(user_id=user_id)), 200
 
 
 @camgirls_bp.route("/api/camgirls/status", methods=["GET"])

@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave2_studio_host_b",
+  "slug": "studio-host-b",
+  "display_name": "Host Blake",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/studio-host-b/icon.webp",
+    "logo": "/static/camgirls/media/studio-host-b/logo.svg",
+    "avatar_hd": "/static/camgirls/media/studio-host-b/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/studio-host-b/gallery-1.webp",
+      "/static/camgirls/media/studio-host-b/gallery-2.webp",
+      "/static/camgirls/media/studio-host-b/gallery-3.webp",
+      "/static/camgirls/media/studio-host-b/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/studio-host-b/preview.webm",
+    "preview_poster": "/static/camgirls/media/studio-host-b/gallery-1.webp"
+  },
+  "initials": "B",
+  "brand_colors": [
+    "#3b82f6",
+    "#1e3a5f"
+  ]
+}

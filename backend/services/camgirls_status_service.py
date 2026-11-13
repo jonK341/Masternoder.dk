@@ -12,6 +12,7 @@ from backend.services.camgirls_livekit_service import public_status as livekit_s
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _NEXT_TODOS_FILE = os.path.join(_ROOT, "data", "camgirls_next_todos.json")
+_OPS_STATE_FILE = os.path.join(_ROOT, "data", "camgirls_ops_state.json")
 
 # Studio stack every active AI performer is wired for (UI + API parity).
 STUDIO_TECH_FEATURES = [
@@ -37,6 +38,37 @@ def paypal_configured() -> bool:
         (os.environ.get("PAYPAL_CLIENT_ID") or "").strip()
         and (os.environ.get("PAYPAL_CLIENT_SECRET") or "").strip()
     )
+
+
+def _read_ops_state_file() -> Dict[str, Any]:
+    if not os.path.isfile(_OPS_STATE_FILE):
+        return {}
+    try:
+        with open(_OPS_STATE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return {}
+
+
+def _roster_scale_snapshot(performer_count: int) -> Dict[str, Any]:
+    ops = _read_ops_state_file()
+    target = int(ops.get("roster_target") or 250)
+    waves = ops.get("waves") if isinstance(ops.get("waves"), list) else []
+    next_milestone = int(ops.get("next_milestone") or 50)
+    return {
+        "target": target,
+        "current": performer_count,
+        "remaining": max(0, target - performer_count),
+        "progress_pct": round(min(100.0, (performer_count / target) * 100.0), 1) if target else 0.0,
+        "next_milestone": next_milestone,
+        "milestone_reached": performer_count >= next_milestone,
+        "waves": waves,
+        "scale_paused": bool(ops.get("scale_paused")),
+        "scale_pause_reason": ops.get("scale_pause_reason"),
+    }
 
 
 def _read_next_todos_file() -> Dict[str, Any]:
@@ -205,11 +237,13 @@ def platform_status() -> Dict[str, Any]:
     except Exception:
         catalog_source = "json"
 
+    scale = _roster_scale_snapshot(len(roster))
     return {
         "success": True,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "catalog_source": catalog_source,
         "studio_mode": "ai_always_on",
+        "roster_scale": scale,
         "performers_count": len(roster),
         "performers_online": len(roster),
         "agents_linked": agents_linked,

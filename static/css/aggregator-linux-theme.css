@@ -1,0 +1,186 @@
+/**
+ * Aggregator — Linux desktop / GNOME Terminal readability theme.
+ * High contrast, no animated wallpaper, monospace-first UI.
+ */
+
+body.layout-aggregator-linux {
+  --agg-linux-bg: #1a1a1a;
+  --agg-linux-panel: #252525;
+  --agg-linux-border: #4a4a4a;
+  --agg-linux-fg: #f0f0f0;
+  --agg-linux-muted: #b8b8b8;
+  --agg-linux-green: #33d17a;
+  --agg-linux-blue: #62a0ea;
+  --agg-linux-red: #e01b24;
+  --agg-linux-yellow: #f6d32d;
+  font-family: ui-monospace, "Ubuntu Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--agg-linux-fg);
+  background: var(--agg-linux-bg);
+}
+
+body.layout-aggregator-linux .bg-animated {
+  display: none !important;
+}
+
+body.layout-aggregator-linux::before {
+  display: none !important;
+}
+
+body.layout-aggregator-linux .agg-top-nav {
+  background: #121212;
+  border-bottom: 2px solid var(--agg-linux-green);
+  box-shadow: 0 2px 0 #000;
+}
+
+body.layout-aggregator-linux .agg-top-nav .nav-link {
+  color: var(--agg-linux-muted);
+  font-weight: 600;
+}
+
+body.layout-aggregator-linux .agg-top-nav .nav-link--home,
+body.layout-aggregator-linux .agg-top-nav .nav-link--current {
+  color: var(--agg-linux-green);
+}
+
+body.layout-aggregator-linux .agg-tech-chip {
+  color: var(--agg-linux-fg);
+  background: #2e2e2e;
+  border: 1px solid var(--agg-linux-border);
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+body.layout-aggregator-linux .agg-points-hud,
+body.layout-aggregator-linux .agg-crypto-hud,
+body.layout-aggregator-linux .agg-hero,
+body.layout-aggregator-linux .agg-hub-nav,
+body.layout-aggregator-linux .agg-tab-panel,
+body.layout-aggregator-linux .agg-panel,
+body.layout-aggregator-linux .agg-v2-card,
+body.layout-aggregator-linux .agg-encoder-inner {
+  background: var(--agg-linux-panel);
+  border: 1px solid var(--agg-linux-border);
+  color: var(--agg-linux-fg);
+  box-shadow: inset 0 0 0 1px #111;
+}
+
+body.layout-aggregator-linux .agg-hero h1 {
+  color: var(--agg-linux-green);
+  -webkit-text-fill-color: var(--agg-linux-green);
+  text-shadow: none;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+body.layout-aggregator-linux .agg-hero p,
+body.layout-aggregator-linux .agg-route-note,
+body.layout-aggregator-linux #agg-global-progress-label,
+body.layout-aggregator-linux .agg-v2-desc,
+body.layout-aggregator-linux .agg-tab-panel p {
+  color: var(--agg-linux-fg);
+  opacity: 1;
+}
+
+body.layout-aggregator-linux .agg-hub-tab {
+  color: var(--agg-linux-fg);
+  background: #2a2a2a;
+  border: 1px solid var(--agg-linux-border);
+  font-family: inherit;
+}
+
+body.layout-aggregator-linux .agg-hub-tab.active {
+  color: #0a0a0a;
+  background: var(--agg-linux-green);
+  border-color: var(--agg-linux-green);
+}
+
+body.layout-aggregator-linux .agg-v2-btn {
+  background: var(--agg-linux-blue);
+  color: #fff;
+}
+
+body.layout-aggregator-linux .agg-v2-card h3,
+body.layout-aggregator-linux .agg-panel h3 {
+  color: var(--agg-linux-green);
+}
+
+body.layout-aggregator-linux .agg-v2-muted {
+  color: var(--agg-linux-muted);
+}
+
+body.layout-aggregator-linux .agg-monitor-frame {
+  background: #101010;
+  border: 2px solid var(--agg-linux-green);
+  box-shadow: 0 0 0 3px #000, inset 0 0 24px #000;
+  transform: none;
+}
+
+body.layout-aggregator-linux .agg-monitor-bezel {
+  color: var(--agg-linux-yellow);
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-size: 0.78rem;
+}
+
+body.layout-aggregator-linux .agg-dims {
+  color: var(--agg-linux-blue);
+}
+
+body.layout-aggregator-linux .agg-play-surface {
+  background: #0d0d0d;
+  border: 1px solid #333;
+}
+
+body.layout-aggregator-linux .agg-cell {
+  border-color: #3d3d3d;
+  background: #1c1c1c;
+}
+
+body.layout-aggregator-linux .agg-cell.player {
+  border-color: var(--agg-linux-green);
+  background: rgba(51, 209, 122, 0.22);
+}
+
+body.layout-aggregator-linux .agg-user-print,
+body.layout-aggregator-linux .agg-chat-log {
+  background: #0a0a0a;
+  color: #e8ffe8;
+  border: 1px solid #333;
+}
+
+body.layout-aggregator-linux .agg-chat-input-row input {
+  background: #111;
+  color: #fff;
+  border: 1px solid #555;
+}
+
+body.layout-aggregator-linux .sm5d-root {
+  background: #151515;
+  border-color: var(--agg-linux-border);
+}
+
+body.layout-aggregator-linux .sm5d-tech,
+body.layout-aggregator-linux .sm5d-readout {
+  color: var(--agg-linux-fg);
+}
+
+body.layout-aggregator-linux .intel-card {
+  background: #222;
+  border-color: var(--agg-linux-border);
+}
+
+body.layout-aggregator-linux .intel-card-title,
+body.layout-aggregator-linux .intel-card-title a {
+  color: #fff;
+}
+
+body.layout-aggregator-linux .intel-card-summary {
+  color: var(--agg-linux-muted);
+}
+
+body.layout-aggregator-linux .aggregator-ideas-ol {
+  color: var(--agg-linux-fg) !important;
+}

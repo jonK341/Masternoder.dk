@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave3_holo_muse",
+  "slug": "holo-muse",
+  "display_name": "Holo Muse",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure.",
+  "assets": {
+    "icon": "/static/camgirls/media/holo-muse/icon.webp",
+    "logo": "/static/camgirls/media/holo-muse/logo.svg",
+    "avatar_hd": "/static/camgirls/media/holo-muse/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/holo-muse/gallery-1.webp",
+      "/static/camgirls/media/holo-muse/gallery-2.webp",
+      "/static/camgirls/media/holo-muse/gallery-3.webp",
+      "/static/camgirls/media/holo-muse/gallery-4.webp"
+    ],
+    "preview_video": "/static/camgirls/media/holo-muse/preview.webm",
+    "preview_poster": "/static/camgirls/media/holo-muse/gallery-1.webp"
+  },
+  "initials": "HM",
+  "brand_colors": [
+    "#06b6d4",
+    "#164e63"
+  ]
+}

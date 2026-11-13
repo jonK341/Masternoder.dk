@@ -191,6 +191,28 @@ def get_performer_detail(performer_id: str, user_id: str = "default_user") -> Di
     catalog = list_performers_catalog(user_id=user_id, lite=False)
     for row in catalog.get("performers") or []:
         if str(row.get("id")) == pid:
+            try:
+                from backend.services.camgirls_payout_service import get_payout_address, validate_payout_address_on_chain
+                from backend.services.camgirls_assignments_service import get_assignment
+
+                pa = get_payout_address(pid)
+                wallet = {
+                    "payout_address": pa.get("address"),
+                    "paypal_checkout_enabled": pa.get("paypal_checkout_enabled"),
+                }
+                if wallet.get("payout_address"):
+                    wallet["on_chain"] = validate_payout_address_on_chain(str(wallet["payout_address"]))
+                assign = get_assignment(pid)
+                if isinstance(assign, dict):
+                    wallet["assignment"] = {
+                        "agent_id": assign.get("agent_id"),
+                        "status": assign.get("status"),
+                        "assigned_at": assign.get("assigned_at"),
+                        "last_reward_txid": assign.get("last_reward_txid"),
+                    }
+                row = {**row, "wallet": wallet}
+            except Exception:
+                pass
             return {"success": True, "performer": row}
     if not _get_performer(pid):
         return {"success": False, "error": "performer_not_found"}

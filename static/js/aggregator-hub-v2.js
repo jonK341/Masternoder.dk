@@ -41,14 +41,17 @@
         return (
           '<article class="agg-v2-card">' +
           '<h3>' + esc(a.name) + '</h3>' +
-          '<p class="agg-v2-meta">' + esc(a.category) + ' · ' + esc(a.agent_id) + '</p>' +
+          '<p class="agg-v2-meta">' + esc(a.category) + ' · ' + esc(a.agent_id) + ' · ' + esc(a.status || 'active') + '</p>' +
           '<p class="agg-v2-desc">' + esc(a.description) + '</p>' +
           '<div class="agg-v2-tags">' +
+          (a.skill_set || []).map(function (s) {
+            return '<span class="agg-v2-tag" title="skill">' + esc(s) + '</span>';
+          }).join('') +
           (a.technologies || []).map(function (t) {
             return '<span class="agg-v2-tag">' + esc(t) + '</span>';
           }).join('') +
           '</div>' +
-          '<button type="button" class="agg-v2-btn agg-assign-btn" data-agg-id="' + esc(a.id) + '" data-agent-id="' + esc(a.agent_id) + '">Assign agent</button>' +
+          '<button type="button" class="agg-v2-btn agg-assign-btn" data-agg-id="' + esc(a.id) + '" data-agent-id="' + esc(a.agent_id) + '">Assign + MN2 mesh</button>' +
           '</article>'
         );
       })
@@ -60,13 +63,19 @@
         fetch('/api/aggregators/assign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: uid(), aggregator_id: aggId, agent_id: agentId }),
+          body: JSON.stringify({
+            user_id: uid(),
+            aggregator_id: aggId,
+            agent_id: agentId,
+            chain_burst: 5,
+          }),
         })
           .then(function (r) {
             return r.json();
           })
           .then(function (res) {
-            btn.textContent = res.success ? 'Assigned ✓' : 'Failed';
+            var txs = (res.chain_settlement && res.chain_settlement.on_chain) || 0;
+            btn.textContent = res.success ? 'Active ✓ (' + txs + ' tx)' : 'Failed';
             if (res.success) loadProgress();
           });
       });
@@ -150,6 +159,7 @@
               user_id: uid(),
               aggregator_id: btn.getAttribute('data-agg-id'),
               agent_id: btn.getAttribute('data-agent-id'),
+              chain_burst: 5,
             }),
           }).then(function (r) {
             return r.json();

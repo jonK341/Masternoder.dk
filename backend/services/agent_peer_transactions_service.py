@@ -372,6 +372,126 @@ def _send_peer_tx(
     }
 
 
+def _resolve_two_agents(orchestrator_id: str, worker_id: str) -> Tuple[Optional[Dict[str, str]], Optional[Dict[str, str]]]:
+    prefix = peer_config()["user_id_prefix"]
+    agents = _resolve_addresses(discover_mesh_agents())
+    by_id = {a["agent_id"]: a for a in agents}
+
+    def pick(agent_id: str) -> Optional[Dict[str, str]]:
+        if agent_id in by_id:
+            return by_id[agent_id]
+        uid = _agent_user_id(agent_id, prefix)
+        res = None
+        try:
+            from backend.services.mn2_wallet_service import get_or_create_deposit_address
+            res = get_or_create_deposit_address(uid)
+        except Exception:
+            res = None
+        addr = (res.get("deposit_address") or "").strip() if isinstance(res, dict) and res.get("success") else ""
+        if not addr:
+            return None
+        return {"agent_id": agent_id, "user_id": uid, "address": addr, "source": "assignment_provision"}
+
+    return pick(orchestrator_id), pick(worker_id)
+
+
+def fire_aggregator_assignment_transfers(
+    user_id: str,
+    orchestrator_agent_id: str,
+    worker_agent_id: str,
+    *,
+    aggregator_id: str = "",
+    burst: int = 5,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """
+    On completing an aggregator assignment, fire a burst of agent→agent MN2 transfers
+    (each is a separate on-chain tx when chain payouts are enabled).
+    """
+    cfg = peer_config()
+    burst = max(1, min(int(burst), 20))
+    out: Dict[str, Any] = {
+        "success": True,
+        "user_id": user_id,
+        "aggregator_id": aggregator_id,
+        "orchestrator_agent": orchestrator_agent_id,
+        "worker_agent": worker_agent_id,
+        "burst_requested": burst,
+        "attempted": 0,
+        "on_chain": 0,
+        "transfers": [],
+        "errors": [],
+    }
+
+    if not cfg["enabled"]:
+        out["skipped_reason"] = "agent_peer_transactions_disabled"
+        return out
+
+    provision_mesh_agent_wallets()
+    from_agent, to_agent = _resolve_two_agents(orchestrator_agent_id, worker_agent_id)
+    if not from_agent or not to_agent:
+        out["success"] = False
+        out["skipped_reason"] = "missing_agent_addresses"
+        return out
+
+    chain_ok = cfg["chain_enabled"] or dry_run
+    if not chain_ok:
+        out["skipped_reason"] = "chain_reward_payouts_disabled"
+        dry_run = True
+
+    amount = max(cfg["amount_mn2"], cfg["min_chain_mn2"])
+    state = _load_state()
+
+    for slot in range(burst):
+        if _pair_daily_count(state, from_agent["agent_id"], to_agent["agent_id"]) >= cfg["max_per_pair_per_day"]:
+            out["errors"].append("pair_daily_cap")
+            break
+        out["attempted"] += 1
+        try:
+            res = _send_peer_tx(from_agent, to_agent, amount, slot=slot, dry_run=dry_run)
+            if res.get("txid"):
+                out["on_chain"] += 1
+                out["transfers"].append(
+                    {
+                        "from": from_agent["agent_id"],
+                        "to": to_agent["agent_id"],
+                        "txid": res["txid"],
+                        "amount": amount,
+                        "aggregator_id": aggregator_id,
+                    }
+                )
+                _bump_pair_count(state, from_agent["agent_id"], to_agent["agent_id"])
+            elif res.get("dry_run"):
+                out["transfers"].append(
+                    {
+                        "from": from_agent["agent_id"],
+                        "to": to_agent["agent_id"],
+                        "dry_run": True,
+                        "amount": amount,
+                    }
+                )
+            else:
+                out["errors"].append(res.get("error") or "send_failed")
+        except Exception as exc:
+            out["errors"].append(str(exc)[:120])
+
+    if not dry_run:
+        state.setdefault("assignment_runs", []).append(
+            {
+                "at": datetime.now(timezone.utc).isoformat(),
+                "user_id": user_id,
+                "aggregator_id": aggregator_id,
+                "on_chain": out["on_chain"],
+            }
+        )
+        state["assignment_runs"] = state["assignment_runs"][-100:]
+        _save_state(state)
+
+    if out["errors"] and out["on_chain"] == 0 and not out["transfers"]:
+        out["success"] = False
+    return out
+
+
 def run_agent_peer_mesh(
     *,
     max_txs: Optional[int] = None,

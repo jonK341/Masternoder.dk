@@ -197,16 +197,6 @@
     );
   }
 
-  function infobarPill(label, on) {
-    return (
-      '<span class="cg-infobar-pill' +
-      (on ? ' cg-infobar-on' : '') +
-      '">' +
-      esc(label) +
-      '</span>'
-    );
-  }
-
   var CG_UPGRADE_LABELS = {
     portrait_pictures: 'Portrait',
     close_up: 'Close-up',
@@ -855,6 +845,9 @@
     });
 
     if (window.CamgirlsStudio) window.CamgirlsStudio.enhanceCards(grid, performers);
+    if (window.CamgirlsGiga && typeof window.CamgirlsGiga.onGridRendered === 'function') {
+      window.CamgirlsGiga.onGridRendered(performers, rows);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function () {

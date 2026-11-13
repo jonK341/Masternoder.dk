@@ -15,6 +15,9 @@ class TestAggregatorCatalog(unittest.TestCase):
         r = list_catalog(limit=200)
         self.assertTrue(r["success"])
         self.assertEqual(r["count"], 75)
+        first = r["aggregators"][0]
+        self.assertTrue(first.get("skill_set"))
+        self.assertEqual(first.get("status"), "active")
 
     def test_top25(self):
         r = top25_list()
@@ -28,8 +31,11 @@ class TestAggregatorCatalog(unittest.TestCase):
         self.assertTrue(len(r.get("playbook") or []) >= 3)
 
     def test_assign_and_progress(self):
-        assign_agent("test_agg_user", "agg_001", "test_agent")
-        p = progress_snapshot("test_agg_user")
+        r = assign_agent("test_agg_user_v2", "agg_001", "agent_intelligence_01", chain_burst=2)
+        self.assertTrue(r["success"])
+        self.assertEqual(r["agent_status"], "active")
+        self.assertTrue(r.get("skill_set"))
+        p = progress_snapshot("test_agg_user_v2")
         self.assertTrue(p["success"])
         self.assertGreaterEqual(p["assigned_count"], 1)
 

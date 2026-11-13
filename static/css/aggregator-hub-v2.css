@@ -257,3 +257,141 @@
 .agg-encoder code {
   color: #b8efff;
 }
+
+/* ── Readability layer: tame animated bg, lift content, stronger type ─────── */
+
+body.layout-aggregator-tech {
+  --agg-read-surface: rgba(14, 16, 24, 0.92);
+  --agg-read-surface-soft: rgba(22, 26, 36, 0.88);
+}
+
+body.layout-aggregator-tech .bg-animated {
+  opacity: 0.22;
+  filter: saturate(0.65) brightness(0.55);
+  animation: none;
+}
+
+body.layout-aggregator-tech::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 12, 18, 0.94) 0%,
+    rgba(12, 14, 22, 0.88) 45%,
+    rgba(8, 10, 16, 0.93) 100%
+  );
+}
+
+body.layout-aggregator-tech .agg-top-nav,
+body.layout-aggregator-tech .agg-tech-row,
+body.layout-aggregator-tech .agg-main-wrap {
+  position: relative;
+  z-index: 3;
+}
+
+body.layout-aggregator-tech .agg-top-nav {
+  background: rgba(8, 10, 16, 0.97);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+body.layout-aggregator-tech .agg-tech-chip {
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+body.layout-aggregator-tech .agg-points-hud,
+body.layout-aggregator-tech .agg-crypto-hud {
+  background: var(--agg-read-surface-soft);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body.layout-aggregator-tech .agg-crypto-chip {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+body.layout-aggregator-tech .agg-hero {
+  margin: 0 0 8px;
+  padding: 1.25rem 1rem 0.75rem;
+  border-radius: 16px;
+  background: var(--agg-read-surface);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+body.layout-aggregator-tech .agg-hero h1 {
+  color: #e8fff4;
+  -webkit-text-fill-color: #e8fff4;
+  text-shadow: 0 0 24px rgba(0, 255, 136, 0.25);
+}
+
+body.layout-aggregator-tech .agg-hero p {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+body.layout-aggregator-tech .agg-hub-nav {
+  background: var(--agg-read-surface);
+  border-color: rgba(0, 255, 136, 0.35);
+}
+
+body.layout-aggregator-tech .agg-hub-tab {
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+body.layout-aggregator-tech .agg-route-note,
+body.layout-aggregator-tech #agg-global-progress-label {
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 1;
+}
+
+body.layout-aggregator-tech .agg-monitor-bezel {
+  color: rgba(180, 255, 220, 0.92);
+}
+
+body.layout-aggregator-tech .agg-monitor-hint {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+body.layout-aggregator-tech .agg-tab-panel {
+  background: var(--agg-read-surface-soft);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+body.layout-aggregator-tech .agg-v2-muted {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+body.layout-aggregator-tech .aggregator-ideas-ol {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+body.layout-aggregator-tech .intel-card {
+  background: rgba(18, 22, 32, 0.96);
+  border-color: rgba(0, 212, 255, 0.35);
+}
+
+body.layout-aggregator-tech .intel-card-title,
+body.layout-aggregator-tech .intel-card-title a {
+  color: #fff;
+}
+
+body.layout-aggregator-tech .intel-card-summary {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.layout-aggregator-tech .bg-animated {
+    animation: none;
+  }
+}
