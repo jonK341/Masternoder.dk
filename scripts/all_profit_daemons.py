@@ -43,22 +43,22 @@ PROFILE_INTERVALS = {
     "max": {
         "exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120,
         "dual_farm": 45, "hunter": 20, "pbook": 25, "head": 45,
-        "courier": 60, "latch": 20, "closer": 45,
+        "courier": 60, "latch": 20, "closer": 45, "executor": 30,
     },
     "standard": {
         "exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180,
         "dual_farm": 60, "hunter": 30, "pbook": 45, "head": 60,
-        "courier": 90, "latch": 30, "closer": 60,
+        "courier": 90, "latch": 30, "closer": 60, "executor": 45,
     },
     "fast": {
         "exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90,
         "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
-        "courier": 45, "latch": 15, "closer": 30,
+        "courier": 45, "latch": 15, "closer": 30, "executor": 20,
     },
     "live-only": {
         "exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120,
         "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 45,
-        "courier": 45, "latch": 15, "closer": 30,
+        "courier": 45, "latch": 15, "closer": 30, "executor": 25,
     },
 }
 
@@ -66,7 +66,7 @@ PROFILE_INTERVALS = {
 _LIVE_PROFIT_MAX_INTERVALS = {
     "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90,
     "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
-    "courier": 45, "latch": 15, "closer": 30,
+    "courier": 45, "latch": 15, "closer": 30, "executor": 20,
 }
 
 
@@ -579,6 +579,9 @@ def _summarize_hunter(res: Dict[str, Any]) -> str:
             parts.append(f"backfill=${float(bf['raised_usd']):.2f}")
         else:
             parts.append(f"backfill={bf.get('reason') or ('ok' if bf.get('success') else 'no')}")
+    tech = res.get("technique_executor")
+    if isinstance(tech, dict) and tech.get("applied"):
+        parts.append(f"tech={'+'.join(str(t) for t in tech['applied'][:3])}")
     if res.get("prefund"):
         pref = res["prefund"]
         if pref.get("success"):
@@ -590,6 +593,25 @@ def _summarize_hunter(res: Dict[str, Any]) -> str:
     if res.get("skipped"):
         parts.append(f"disabled={res.get('reason')}")
     return " ".join(parts)
+
+
+def _summarize_executor(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"ready={'yes' if res.get('ready') else 'no'} skip={res.get('skip_reason') or '-'}")
+
+
+def _executor_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] technique-executor interval={interval}s (pbook tech → live apply)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_technique_executor_service import run_technique_executor_tick
+
+            res = run_technique_executor_tick()
+            summary = _summarize_executor(res)
+            print(f"[all-profit] executor {summary}", flush=True)
+            _write_heartbeat("executor", summary)
+        except Exception as exc:
+            print(f"[all-profit] executor error: {exc}", flush=True)
+        stop.wait(max(15, interval))
 
 
 def _hunter_loop(interval: int, stop: threading.Event) -> None:
@@ -977,6 +999,11 @@ def main() -> int:
         help="Do not run closer claw (half-legs + dust harvest)",
     )
     parser.add_argument(
+        "--skip-executor",
+        action="store_true",
+        help="Do not run technique executor loop (pbook tech → live apply)",
+    )
+    parser.add_argument(
         "--skip-feed",
         action="store_true",
         help="No-op (compat with ops wrappers that pass --skip-feed)",
@@ -1006,6 +1033,7 @@ def main() -> int:
     courier_iv = int(os.environ.get("COURIER_INTERVAL_SEC") or 0) or iv.get("courier") or 60
     latch_iv = int(os.environ.get("LATCH_INTERVAL_SEC") or 0) or iv.get("latch") or 20
     closer_iv = int(os.environ.get("CLOSER_INTERVAL_SEC") or 0) or iv.get("closer") or 45
+    executor_iv = int(os.environ.get("TECH_EXECUTOR_INTERVAL_SEC") or 0) or iv.get("executor") or 30
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -1050,6 +1078,10 @@ def main() -> int:
                 from backend.services.exchange_closer_claw_service import run_closer_tick
 
                 out["closer"] = run_closer_tick(force=True)
+            if not args.skip_executor:
+                from backend.services.exchange_technique_executor_service import run_technique_executor_tick
+
+                out["executor"] = run_technique_executor_tick(force=True)
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -1083,6 +1115,8 @@ def main() -> int:
                 print(f"[all-profit] latch {_summarize_latch(out['latch'])}", flush=True)
             if "closer" in out:
                 print(f"[all-profit] closer {_summarize_closer(out['closer'])}", flush=True)
+            if "executor" in out:
+                print(f"[all-profit] executor {_summarize_executor(out['executor'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -1118,6 +1152,8 @@ def main() -> int:
             print(f"  latch sniper interval={latch_iv}s")
         if closer_iv and not args.skip_closer:
             print(f"  closer claw interval={closer_iv}s")
+        if executor_iv and not args.skip_executor:
+            print(f"  technique-executor interval={executor_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -1170,6 +1206,10 @@ def main() -> int:
         if closer_iv and not args.skip_closer:
             threads.append(threading.Thread(
                 target=_closer_loop, args=(closer_iv, stop), name="closer", daemon=True,
+            ))
+        if executor_iv and not args.skip_executor:
+            threads.append(threading.Thread(
+                target=_executor_loop, args=(executor_iv, stop), name="executor", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(

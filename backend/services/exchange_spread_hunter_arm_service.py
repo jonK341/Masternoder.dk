@@ -6,15 +6,15 @@ fee-compounded, rechecked immediately before fill, and sized only to fundable ba
 Assignments per tick (hunter does more than one job):
 * ``backfill`` — when quote is thin / head posts a prefund hint / last skip was funding:
   sell raise inventory (and optional rotation) to rebuild free USDC/USDT toward a floor.
-* ``hunt`` — wide catalog scan → regime recheck → opportunistic prefund wheel → execute.
+* ``hunt`` — wide catalog scan → residual-edge gate → technique executor → execute.
 
 Flow per tick:
 1. Decide assignments (backfill and/or hunt).
 2. Run backfill first when needed (head prefund_hint is the priority brief).
 3. Build a large BN↔NK universe (catalog ∩ hot list, up to ``SPREAD_HUNTER_SCAN_LIMIT``).
 4. Batch-scan spreads; recompute compounded ``est_profit_usd`` / ``net_bps``.
-5. Regime deweight: skip routes whose mid-skew collapses the edge or flipped on recheck.
-6. Prefund / rotate quote inventory when edge is real but a leg is short.
+5. Regime deweight + residual-edge filter (net − |mid_skew| must clear floor).
+6. Technique executor applies pbook techniques (prefund / quote-bridge / size-to-funded).
 7. Execute spatial arb (buy cheap venue + sell rich venue) only when prepare+recheck pass.
 
 Enable with ``SPREAD_HUNTER_ENABLED=1`` (default on when live arb is on).
@@ -865,6 +865,7 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         "board_top": [],
         "executed": False,
         "prefund": None,
+        "technique_executor": None,
         "backfill": backfill_res,
         "skip_reason": None,
     }
@@ -886,13 +887,30 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         cfg=cfg,
     )
     out["opportunity_count"] = len(annotated)
-    qualifying = [
-        o for o in annotated
-        if _is_external_opp(o)
-        and float(o.get("net_bps") or 0) >= min_bps
-        and float(o.get("est_profit_usd") or 0) >= min_profit
-        and o.get("profitable")
-    ]
+    from backend.services.exchange_technique_executor_service import residual_edge_ok
+
+    residual_floor = _cfg_float("TECH_RESIDUAL_EDGE_BPS", 15.0)
+    qualifying = []
+    for o in annotated:
+        if not _is_external_opp(o):
+            continue
+        if float(o.get("net_bps") or 0) < min_bps:
+            continue
+        if float(o.get("est_profit_usd") or 0) < min_profit:
+            continue
+        if not o.get("profitable"):
+            continue
+        # Soft residual filter on board: keep skewed phantoms off the hunt list.
+        edge = residual_edge_ok(
+            net_bps=float(o.get("net_bps") or 0),
+            mid_skew_bps=float(o.get("mid_skew_bps") or 0),
+            floor_bps=residual_floor,
+        )
+        o = dict(o)
+        o["residual_bps"] = edge["residual_bps"]
+        if not edge["ok"] and float(o.get("mid_skew_bps") or 0) > 0:
+            continue
+        qualifying.append(o)
     # Keep Binance live: when BN quote is funded, prefer buy-on-binance routes.
     bn_free = 0.0
     try:
@@ -1006,11 +1024,68 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             out["skip_reason"] = "recheck_below_min_profit"
             continue
 
+        from backend.services.exchange_technique_executor_service import (
+            execute_techniques_for_opportunity,
+            residual_edge_ok,
+        )
+
+        edge = residual_edge_ok(
+            net_bps=float(trade_opp.get("net_bps") or 0),
+            mid_skew_bps=float(trade_opp.get("mid_skew_bps") or 0),
+            floor_bps=residual_floor,
+        )
+        trade_opp = dict(trade_opp)
+        trade_opp["residual_bps"] = edge["residual_bps"]
+        if not edge["ok"]:
+            out["skip_reason"] = "phantom_skew_no_residual"
+            out["residual_edge"] = edge
+            try:
+                from backend.services.exchange_latch_sniper_service import arm_latch
+
+                arm_latch(
+                    symbol=str(trade_opp.get("symbol") or ""),
+                    buy_venue=str(trade_opp.get("buy_venue") or ""),
+                    sell_venue=str(trade_opp.get("sell_venue") or ""),
+                    net_bps=float(trade_opp.get("net_bps") or 0),
+                    mid_skew_bps=float(trade_opp.get("mid_skew_bps") or 0),
+                    est_profit_usd=float(trade_opp.get("est_profit_usd") or 0),
+                    notional_usd=float(trade_opp.get("notional_usd") or notional),
+                    source="hunter_residual",
+                )
+                out["latch_armed"] = True
+            except Exception:
+                pass
+            continue
+
+        tech_res = execute_techniques_for_opportunity(
+            trade_opp,
+            agent_id=agent_id,
+            raise_symbols=symbols,
+            mid_skew_bps=float(trade_opp.get("mid_skew_bps") or 0),
+            min_bps=min_bps,
+            min_profit=min_profit,
+        )
+        out["technique_executor"] = {
+            "ready": tech_res.get("ready"),
+            "skip_reason": tech_res.get("skip_reason"),
+            "applied": [a.get("technique") for a in (tech_res.get("applied") or [])],
+            "residual_bps": edge.get("residual_bps"),
+        }
+        if tech_res.get("opportunity"):
+            trade_opp = tech_res["opportunity"]
+        if any(
+            a.get("success") and not a.get("skipped")
+            for a in (tech_res.get("applied") or [])
+            if a.get("technique") in ("prefund_buy_quote", "prefund_sell_inventory", "quote_bridge_rotation")
+        ):
+            time.sleep(1.0)
+            vapi.refresh_venue_balances(venues, force=True)
+
         prepared = arb.prepare_live_opportunity(
             trade_opp, configured_usd=float(trade_opp.get("notional_usd") or notional),
             buffer_pct=0.03, min_live_usd=min_live,
         )
-        if not prepared.get("ok") and _prefund_enabled():
+        if not prepared.get("ok") and _prefund_enabled() and not tech_res.get("ready"):
             need = max(min_live, float(prepared.get("requested_usd") or notional))
             wheel = _try_fund_wheel(
                 trade_opp, agent_id=agent_id, need_usd=need, raise_symbols=symbols,
@@ -1030,6 +1105,9 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             continue
 
         ready = prepared["opportunity"]
+        if trade_opp.get("micro_split") and float(ready.get("notional_usd") or 0) > float(trade_opp.get("clip_usd") or 8):
+            ready = dict(ready)
+            ready["notional_usd"] = float(trade_opp.get("clip_usd") or 8.0)
         # Final math stamp after sizing.
         ready = _annotate_opportunity(
             ready,
@@ -1039,6 +1117,15 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         )
         if float(ready.get("est_profit_usd") or 0) < min_profit or float(ready.get("net_bps") or 0) < min_bps:
             out["skip_reason"] = "sized_below_profit_gate"
+            continue
+        edge2 = residual_edge_ok(
+            net_bps=float(ready.get("net_bps") or 0),
+            mid_skew_bps=float(ready.get("mid_skew_bps") or trade_opp.get("mid_skew_bps") or 0),
+            floor_bps=residual_floor,
+        )
+        if not edge2["ok"]:
+            out["skip_reason"] = "phantom_skew_no_residual"
+            out["residual_edge"] = edge2
             continue
 
         path_id = record_scan(
@@ -1122,6 +1209,8 @@ def _persist_tick(out: Dict[str, Any]) -> None:
             "recheck": out.get("recheck"),
             "latch_armed": out.get("latch_armed"),
             "prefund": out.get("prefund"),
+            "technique_executor": out.get("technique_executor"),
+            "residual_edge": out.get("residual_edge"),
             "backfill": {
                 "success": (out.get("backfill") or {}).get("success"),
                 "reason": (out.get("backfill") or {}).get("reason"),

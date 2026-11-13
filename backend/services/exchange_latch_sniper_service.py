@@ -1,8 +1,12 @@
 """Latch sniper — wait for mid-skew to compress, then strike.
 
 Arms a pending latch when hunter/pbook sees a real edge but
-``regime_skew_too_wide``. Rechecks until skew clears or TTL expires, then
-executes spatial arb once.
+``regime_skew_too_wide`` / phantom residual. Rechecks until skew clears or TTL
+expires, then executes spatial arb once.
+
+Maker mode (``LATCH_MAKER=1``, default on): while waiting, park a limit sell on
+the rich venue at residual-safe price so we capture edge as maker if the book
+comes to us.
 """
 from __future__ import annotations
 
@@ -228,7 +232,93 @@ def _recheck_latch(row: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": False, "reason": reason or "still_skewed", "opportunity": opp, "mid_skew_bps": skew}
     if float(opp.get("net_bps") or 0) < min_bps:
         return {"ok": False, "reason": "edge_faded", "opportunity": opp, "mid_skew_bps": skew}
+    from backend.services.exchange_technique_executor_service import residual_edge_ok
+
+    edge = residual_edge_ok(
+        net_bps=float(opp.get("net_bps") or 0),
+        mid_skew_bps=float(skew or 0),
+        floor_bps=_cfg_float("TECH_RESIDUAL_EDGE_BPS", 15.0),
+    )
+    opp["residual_bps"] = edge["residual_bps"]
+    if not edge["ok"]:
+        return {
+            "ok": False,
+            "reason": "phantom_skew_no_residual",
+            "opportunity": opp,
+            "mid_skew_bps": skew,
+            "residual_edge": edge,
+        }
     return {"ok": True, "opportunity": opp, "mid_skew_bps": skew}
+
+
+def _maker_enabled() -> bool:
+    return os.environ.get("LATCH_MAKER", "1").strip().lower() not in ("0", "false", "no", "off")
+
+
+def _place_maker_latch(row: Dict[str, Any], check: Dict[str, Any]) -> Dict[str, Any]:
+    """Park a maker sell on the rich venue while skew is still wide."""
+    if not _maker_enabled():
+        return {"success": False, "skipped": True, "reason": "maker_disabled"}
+    if row.get("maker_order_id"):
+        return {"success": True, "skipped": True, "reason": "maker_already_armed", "order_id": row.get("maker_order_id")}
+
+    from backend.services import exchange_venue_api_service as vapi
+
+    opp = check.get("opportunity") or {}
+    sell_v = str(row.get("sell_venue") or opp.get("sell_venue") or "").lower()
+    buy_v = str(row.get("buy_venue") or opp.get("buy_venue") or "").lower()
+    sym = str(row.get("symbol") or opp.get("symbol") or "").upper()
+    if not sell_v or not sym:
+        return {"success": False, "skipped": True, "reason": "bad_route"}
+
+    sell_bid = float(opp.get("sell_bid") or 0)
+    buy_ask = float(opp.get("buy_ask") or 0)
+    if sell_bid <= 0 or buy_ask <= 0:
+        return {"success": False, "skipped": True, "reason": "no_price"}
+
+    # Maker target: still above buy ask by residual floor + fee pad.
+    pad_bps = _cfg_float("LATCH_MAKER_PAD_BPS", 25.0)
+    target = buy_ask * (1.0 + pad_bps / 10_000.0)
+    # Never chase above the current bid; sit inside the spread if possible.
+    px = min(sell_bid * 0.9995, max(target, buy_ask * 1.001))
+    if px <= buy_ask:
+        return {"success": False, "skipped": True, "reason": "no_maker_edge"}
+
+    bals = vapi.parse_spot_balances(sell_v, dry_run=False, force_refresh=True) or {}
+    qty = float(bals.get(sym) or 0)
+    notional = float(row.get("notional_usd") or 15.0)
+    need_qty = notional / max(px, 1e-9)
+    if qty < need_qty * 0.5:
+        return {"success": False, "skipped": True, "reason": "no_sell_inventory", "have": qty, "need": need_qty}
+
+    use_qty = min(qty * 0.95, need_qty)
+    quote = vapi.venue_quote_asset(sell_v)
+    order = vapi.place_limit_order(
+        sell_v, sym, "sell", use_qty, px,
+        dry_run=False, quote=quote,
+        client_order_id=f"latch-mkr-{sym[:6]}-{int(time.time())}",
+    )
+    ok = bool(order.get("success"))
+    _append(
+        "maker_place",
+        symbol=sym,
+        sell_venue=sell_v,
+        buy_venue=buy_v,
+        price=round(px, 8),
+        qty=use_qty,
+        success=ok,
+        error=order.get("error"),
+        order_id=order.get("order_id") or order.get("id"),
+    )
+    return {
+        "success": ok,
+        "skipped": False,
+        "price": round(px, 8),
+        "qty": use_qty,
+        "order_id": order.get("order_id") or order.get("id") or order.get("clientOrderId"),
+        "error": order.get("error"),
+        "raw": {k: order.get(k) for k in ("order_id", "id", "status", "error") if k in order},
+    }
 
 
 def run_latch_tick(*, force: bool = False) -> Dict[str, Any]:
@@ -264,6 +354,7 @@ def run_latch_tick(*, force: bool = False) -> Dict[str, Any]:
         "pending": len(pending),
         "armed": bool(armed and armed.get("success")),
         "fired": False,
+        "maker": None,
         "skip_reason": None,
         "top": pending[0] if pending else None,
     }
@@ -295,7 +386,22 @@ def run_latch_tick(*, force: bool = False) -> Dict[str, Any]:
                 "reason": check.get("reason"),
                 "mid_skew_bps": check.get("mid_skew_bps"),
                 "net_bps": (check.get("opportunity") or {}).get("net_bps"),
+                "residual_bps": (check.get("opportunity") or {}).get("residual_bps"),
             }
+            # While skewed / residual-blocked, try a maker rest on the rich venue.
+            if check.get("reason") in ("still_skewed", "regime_skew_too_wide", "phantom_skew_no_residual", "regime_deweight"):
+                maker = _place_maker_latch(row, check)
+                row["maker"] = {
+                    "ts": _iso(),
+                    "success": maker.get("success"),
+                    "skipped": maker.get("skipped"),
+                    "reason": maker.get("reason"),
+                    "price": maker.get("price"),
+                    "order_id": maker.get("order_id"),
+                }
+                if maker.get("order_id"):
+                    row["maker_order_id"] = maker.get("order_id")
+                out["maker"] = row["maker"]
             remaining.append(row)
             continue
 

@@ -229,6 +229,19 @@ def run_dual_farm_arm_tick(*, force: bool = False) -> Dict[str, Any]:
     from backend.services.exchange_profit_path_service import record_execution, record_scan
 
     for opp in opps[: max(1, max_exec)]:
+        try:
+            from backend.services.exchange_technique_executor_service import residual_edge_ok
+
+            edge = residual_edge_ok(
+                net_bps=float(opp.get("net_bps") or 0),
+                mid_skew_bps=float(opp.get("mid_skew_bps") or 0),
+            )
+            if not edge["ok"]:
+                out["skip_reason"] = "phantom_skew_no_residual"
+                out["residual_edge"] = edge
+                continue
+        except Exception:
+            pass
         prepared = arb.prepare_live_opportunity(
             opp, configured_usd=notional, buffer_pct=0.03, min_live_usd=min_live,
         )

@@ -207,9 +207,21 @@ def test_hunter_prefers_prefund_wheel(monkeypatch, tmp_path):
     monkeypatch.setenv("SPREAD_HUNTER_PREFUND", "1")
     monkeypatch.setenv("SPREAD_HUNTER_BACKFILL", "0")
     monkeypatch.setenv("SPREAD_HUNTER_MIN_BPS", "12")
+    monkeypatch.setenv("TECH_EXECUTOR_ENABLED", "0")
     monkeypatch.setattr(hunt, "_STATE_PATH", str(tmp_path / "state.json"))
     monkeypatch.setattr(hunt, "_BOARD_PATH", str(tmp_path / "board.json"))
     monkeypatch.setattr(hunt.arb, "live_enabled", lambda: True)
+    monkeypatch.setattr(
+        "backend.services.exchange_technique_executor_service.execute_techniques_for_opportunity",
+        lambda opp, **kw: {
+            "success": False,
+            "ready": False,
+            "opportunity": opp,
+            "applied": [],
+            "skipped": True,
+            "reason": "executor_disabled",
+        },
+    )
     monkeypatch.setattr(
         hunt,
         "_build_universe",

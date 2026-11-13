@@ -110,7 +110,13 @@ def _cfg_int(env_key: str, default: int) -> int:
 
 
 def _apply_enabled() -> bool:
-    return os.environ.get("PROFIT_BOOK_APPLY", "0").strip().lower() in ("1", "true", "yes", "on")
+    # Default ON in live mode so pbook techniques actually fund legs; set PROFIT_BOOK_APPLY=0 to disable.
+    raw = os.environ.get("PROFIT_BOOK_APPLY", "").strip().lower()
+    if raw in ("0", "false", "no", "off"):
+        return False
+    if raw in ("1", "true", "yes", "on"):
+        return True
+    return bool(arb.live_enabled())
 
 
 def _load_state() -> Dict[str, Any]:
@@ -262,10 +268,12 @@ def score_techniques_for_deal(
             priority = 100 if recommend else 5
             note = "block_exec" if recommend else "floor_clear"
         elif tid == "recheck_regime_deweight":
-            # Always advised before fire; lower priority so funding actions win as best_technique.
+            # Residual edge = net − |mid_skew|; phantoms get high priority kill note.
+            residual = float(net) - abs(float(mid_skew_bps or 0))
+            floor = _cfg_float("TECH_RESIDUAL_EDGE_BPS", 15.0)
             recommend = True
-            priority = 55
-            note = f"mid_skew_bps={round(mid_skew_bps, 2)}"
+            priority = 96 if residual < floor else 55
+            note = f"mid_skew_bps={round(mid_skew_bps, 2)} residual={round(residual, 2)}"
         elif tid == "size_to_funded":
             recommend = (not funded_ok) or (0 < max_funded < want)
             priority = 88 if recommend else 20
@@ -377,6 +385,17 @@ def _apply_technique(
     if tech_id == "size_to_funded":
         snap = _funding_snapshot(opp, min_live_usd=_cfg_float("PROFIT_BOOK_MIN_LIVE_USD", 10.0))
         return {"success": bool(snap.get("ok")), "funding": snap, "action": "size_to_funded"}
+    if tech_id == "quote_bridge_rotation":
+        try:
+            from backend.services.exchange_courier_arm_service import quote_bridge_for_route
+
+            return quote_bridge_for_route(
+                opp,
+                need_usd=float(opp.get("notional_usd") or 15.0),
+                raise_symbols=raise_symbols,
+            )
+        except Exception as exc:
+            return {"success": False, "error": str(exc)[:200], "technique": tech_id}
     # Advisory-only techniques
     return {"success": True, "skipped": True, "reason": "advisory_only", "technique": tech_id}
 
@@ -440,11 +459,14 @@ def build_order_book(
             opp, funding=funding, state=state, min_bps=min_bps, min_profit=min_profit, mid_skew_bps=skew,
         )
         best_tech = next((t for t in techniques if t.get("recommend")), techniques[0] if techniques else None)
+        residual = float(opp.get("net_bps") or 0) - abs(float(skew or 0))
+        residual_floor = _cfg_float("TECH_RESIDUAL_EDGE_BPS", 15.0)
         qualifies = (
             float(opp.get("net_bps") or 0) >= min_bps
             and float(opp.get("est_profit_usd") or 0) >= min_profit
             and bool(opp.get("profitable"))
             and not _cooldown_active(route, state)
+            and residual >= residual_floor
         )
         row = {
             "rank": rank,
@@ -463,6 +485,7 @@ def build_order_book(
             "funded": bool(funding.get("ok")),
             "max_funded_usd": funding.get("max_funded_usd"),
             "mid_skew_bps": round(skew, 2),
+            "residual_bps": round(residual, 2),
             "action": (
                 f"BUY {opp.get('symbol')} @{opp.get('buy_venue')} / "
                 f"SELL @{opp.get('sell_venue')}"
@@ -583,52 +606,63 @@ def run_profit_order_book_tick(*, force: bool = False, apply: Optional[bool] = N
     if not top.get("qualifies"):
         out["skip_reason"] = out.get("skip_reason") or "top_below_threshold"
 
-    if do_apply and top.get("qualifies") and not top.get("funded"):
-        tech_id = str(top.get("best_technique") or "prefund_buy_quote")
-        if tech_id in ("profit_floor_kill", "stale_route_cooldown"):
-            out["skip_reason"] = tech_id
-            return out
-        agent_id = (os.environ.get("PROFIT_BOOK_AGENT_ID") or "arb_live_dual_farm").strip()
-        symbols = [str(r.get("symbol") or "") for r in (book.get("hitlist") or []) if r.get("symbol")]
-        applied = _apply_technique(
-            tech_id,
-            {
-                "symbol": top.get("symbol"),
-                "buy_venue": top.get("buy_venue"),
-                "sell_venue": top.get("sell_venue"),
-                "buy_ask": top.get("buy_ask"),
-                "sell_bid": top.get("sell_bid"),
-                "notional_usd": top.get("notional_usd"),
-                "net_bps": top.get("net_bps"),
-                "est_profit_usd": top.get("est_profit_usd"),
-            },
-            agent_id=agent_id,
-            raise_symbols=symbols,
-        )
-        out["applied"] = {"technique": tech_id, **(applied if isinstance(applied, dict) else {"result": applied})}
-        if not applied.get("success"):
-            _set_cooldown(state, route, seconds=_cfg_float("PROFIT_BOOK_COOLDOWN_SEC", 120), reason=tech_id)
-            _save_state(state)
-            out["skip_reason"] = "apply_failed"
-        else:
-            _append_ledger({
-                "ts": _iso(),
-                "kind": "technique_apply",
-                "route": route,
-                "technique": tech_id,
-                "success": True,
-            })
-    elif do_apply and top.get("qualifies") and top.get("funded"):
-        # Funded + qualifies → hand off to hunter/dual-farm execution path by recording ready flag.
-        out["ready_to_exec"] = True
-        out["skip_reason"] = None
-        _append_ledger({
-            "ts": _iso(),
-            "kind": "ready_to_exec",
-            "route": route,
-            "net_bps": top.get("net_bps"),
-            "est_profit_usd": top.get("est_profit_usd"),
-        })
+    if do_apply and top.get("qualifies"):
+        # Hand the top deal to the technique executor (full stack, not just one technique).
+        try:
+            from backend.services.exchange_technique_executor_service import execute_techniques_for_opportunity
+
+            agent_id = (os.environ.get("PROFIT_BOOK_AGENT_ID") or "arb_live_dual_farm").strip()
+            symbols = [str(r.get("symbol") or "") for r in (book.get("hitlist") or []) if r.get("symbol")]
+            exec_res = execute_techniques_for_opportunity(
+                {
+                    "symbol": top.get("symbol"),
+                    "buy_venue": top.get("buy_venue"),
+                    "sell_venue": top.get("sell_venue"),
+                    "buy_ask": top.get("buy_ask"),
+                    "sell_bid": top.get("sell_bid"),
+                    "notional_usd": top.get("notional_usd"),
+                    "net_bps": top.get("net_bps"),
+                    "est_profit_usd": top.get("est_profit_usd"),
+                    "mid_skew_bps": top.get("mid_skew_bps"),
+                    "profitable": True,
+                },
+                agent_id=agent_id,
+                raise_symbols=symbols,
+                mid_skew_bps=float(top.get("mid_skew_bps") or 0),
+                force=True,
+            )
+            out["applied"] = {
+                "technique": "executor_stack",
+                "ready": exec_res.get("ready"),
+                "applied": exec_res.get("applied"),
+                "skip_reason": exec_res.get("skip_reason"),
+            }
+            if exec_res.get("ready") or top.get("funded"):
+                out["ready_to_exec"] = True
+                out["skip_reason"] = None
+                _append_ledger({
+                    "ts": _iso(),
+                    "kind": "ready_to_exec",
+                    "route": route,
+                    "net_bps": top.get("net_bps"),
+                    "est_profit_usd": top.get("est_profit_usd"),
+                    "executor_ready": bool(exec_res.get("ready")),
+                })
+            elif not exec_res.get("success"):
+                tech_id = str(top.get("best_technique") or "prefund_buy_quote")
+                _set_cooldown(state, route, seconds=_cfg_float("PROFIT_BOOK_COOLDOWN_SEC", 120), reason=tech_id)
+                _save_state(state)
+                out["skip_reason"] = exec_res.get("skip_reason") or "apply_failed"
+            else:
+                _append_ledger({
+                    "ts": _iso(),
+                    "kind": "technique_apply",
+                    "route": route,
+                    "technique": "executor_stack",
+                    "success": True,
+                })
+        except Exception as exc:
+            out["skip_reason"] = f"executor_error:{str(exc)[:80]}"
     return out
 
 
