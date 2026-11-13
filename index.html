@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113f">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113g">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -40,24 +40,19 @@
                 </p>
                 <h1 id="fp-hero-title">MasterNoder.dk</h1>
                 <p class="fp-tagline">AI · video · battle · agenter · sonic control</p>
-                <p class="fp-hero-text">Et hurtigere kontrolrum til video, battle og agenter — to monitorer på forsiden: Film Canvas og Mission Control.</p>
+                <p class="fp-hero-text">To live monitorer. Samme pipeline. Skriv en scene, tryk play.</p>
             </div>
 
             <div class="fp-monitors-bay" id="fp-monitors-bay" aria-label="Film Canvas and Mission Control monitors">
-                <div class="fp-monitors-bay-head">
-                    <p class="fp-monitors-bay-kicker">Dual monitors · same DramaCanvas → fal pipeline</p>
-                    <h2 class="fp-monitors-bay-title">Film Canvas + Mission Control</h2>
-                    <p class="fp-monitors-bay-note">Begge monitorer kører på samme site — ops-fuld Mission Control også i <a href="/debugger#mission-control">Debugger</a>.</p>
-                </div>
-
+                <div class="fp-monitors-desk" aria-hidden="true"></div>
                 <div class="fp-monitors-grid">
-                    <div class="fp-film-monitor" id="fp-film-monitor" aria-label="Film Canvas monitor">
-                        <p class="fp-monitor-label">Film Canvas</p>
+                    <article class="fp-film-monitor" id="fp-film-monitor" aria-label="Film Canvas monitor">
                         <div class="fp-film-bezel">
                             <div class="fp-film-chrome">
                                 <span class="fp-film-dot" aria-hidden="true"></span>
                                 <span class="fp-film-dot" aria-hidden="true"></span>
                                 <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-monitor-name">Film Canvas</span>
                                 <span class="fp-film-version">v2.0</span>
                                 <div class="fp-film-node-row" role="group" aria-label="System nodes">
                                     <button type="button" class="fp-film-chip" id="fp-film-node-ai" title="AI film canvas — play movie">AI</button>
@@ -65,13 +60,13 @@
                                     <a class="fp-film-chip" id="fp-film-node-xp" href="/trophies" title="XP &amp; trophies">XP</a>
                                     <span class="fp-film-chip fp-film-chip-pulse" title="System v2.0">2.0</span>
                                 </div>
-                                <span class="fp-film-ready" id="fp-film-ready">Checking canvases…</span>
+                                <span class="fp-film-ready" id="fp-film-ready">Checking…</span>
                             </div>
                             <div class="fp-film-screen">
                                 <canvas id="fp-film-canvas" width="960" height="540" aria-label="Film canvas"></canvas>
                                 <video id="fp-film-video" playsinline loop muted aria-hidden="true"></video>
                                 <div class="fp-film-overlay" id="fp-film-overlay">
-                                    <p class="fp-film-idle">Canvas standby — type a scene below</p>
+                                    <p class="fp-film-idle">Canvas standby</p>
                                 </div>
                                 <button type="button" class="fp-film-play" id="fp-film-play" aria-label="Play movie on Film Canvas">▶</button>
                             </div>
@@ -80,40 +75,46 @@
                         <label class="fp-film-prompt-label" for="fp-film-prompt">Scene prompt</label>
                         <div class="fp-film-prompt-row">
                             <input id="fp-film-prompt" type="text" maxlength="500"
-                                placeholder="Neon rain over a Danish harbour control room, cinematic interactive film"
+                                placeholder="Neon rain over a Danish harbour control room"
                                 autocomplete="off" />
-                            <button type="button" class="fp-film-go" id="fp-film-go">Play Movie</button>
+                            <button type="button" class="fp-film-go" id="fp-film-go">Play</button>
                         </div>
                         <p class="fp-film-status" id="fp-film-status" role="status" aria-live="polite"></p>
-                    </div>
+                    </article>
 
-                    <div class="fp-mc-monitor" id="fp-mc-monitor" aria-label="Mission Control interactive movie monitor">
-                        <p class="fp-monitor-label">Mission Control</p>
-                        <div class="fp-mc-stage" id="fp-mc-stage">
-                            <div class="fp-mc-top">
-                                <div>
-                                    <div class="fp-mc-title">Interactive Movie Monitor</div>
-                                    <div class="fp-mc-sub">DramaCanvas plans · fal/Comfy renders · plays here</div>
-                                </div>
-                                <div class="fp-mc-ready" id="fp-mc-ready">Checking film canvases…</div>
+                    <article class="fp-mc-monitor" id="fp-mc-monitor" aria-label="Mission Control interactive movie monitor">
+                        <div class="fp-film-bezel fp-mc-bezel" id="fp-mc-stage">
+                            <div class="fp-film-chrome">
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-monitor-name">Mission Control</span>
+                                <a class="fp-film-chip" href="/debugger#mission-control" title="Open full Mission Control">OPS</a>
+                                <span class="fp-mc-ready" id="fp-mc-ready">Checking…</span>
                             </div>
-                            <div class="fp-mc-frame">
-                                <div class="fp-mc-placeholder" id="fp-mc-placeholder">Type a scene and press Play Movie</div>
-                                <video id="fp-mc-video" controls playsinline loop muted></video>
+                            <div class="fp-film-screen fp-mc-screen">
+                                <div class="fp-mc-placeholder" id="fp-mc-placeholder">Mission Control standby</div>
+                                <video id="fp-mc-video" playsinline loop muted controls></video>
+                                <button type="button" class="fp-film-play" id="fp-mc-play" aria-label="Play movie on Mission Control">▶</button>
                             </div>
-                            <div class="fp-mc-controls">
-                                <input id="fp-mc-prompt" type="text" maxlength="500"
-                                    placeholder="Neon rain over a Danish harbour control room, cinematic, interactive film"
-                                    autocomplete="off" />
-                                <button type="button" class="fp-mc-play" id="fp-mc-play">▶ Play Movie</button>
-                            </div>
-                            <p class="fp-mc-status" id="fp-mc-status" role="status" aria-live="polite"></p>
+                            <div class="fp-film-ledge" aria-hidden="true"></div>
                         </div>
-                    </div>
+                        <label class="fp-film-prompt-label" for="fp-mc-prompt">Scene prompt</label>
+                        <div class="fp-film-prompt-row">
+                            <input id="fp-mc-prompt" type="text" maxlength="500"
+                                placeholder="Control-room rain, interactive film loop"
+                                autocomplete="off" />
+                            <button type="button" class="fp-film-go" id="fp-mc-go">Play</button>
+                        </div>
+                        <p class="fp-mc-status" id="fp-mc-status" role="status" aria-live="polite"></p>
+                    </article>
                 </div>
 
                 <div class="fp-film-pay" id="fp-film-pay" aria-label="Film monitor payment">
-                    <p class="fp-film-pay-banner" id="fp-film-pay-banner">Free for the first 24 hours — then MN2 coins or PayPal.</p>
+                    <div class="fp-film-pay-copy">
+                        <p class="fp-film-pay-banner" id="fp-film-pay-banner">Free for the first 24 hours</p>
+                        <p class="fp-film-pay-hint" id="fp-film-pay-hint">Then unlock plays with MN2 coins or PayPal — both monitors share the same window.</p>
+                    </div>
                     <div class="fp-film-pay-options" role="group" aria-label="Pay options">
                         <button type="button" class="fp-film-pay-mn2" id="fp-film-pay-mn2">
                             <span class="fp-film-pay-kicker">MN2 coins</span>
@@ -124,7 +125,6 @@
                             <span class="fp-film-pay-title" id="fp-film-pay-paypal-label">Pay with PayPal</span>
                         </button>
                     </div>
-                    <p class="fp-film-pay-hint" id="fp-film-pay-hint">Shared free window for both monitors — then MN2 or PayPal unlocks 1 play.</p>
                 </div>
             </div>
 
@@ -424,8 +424,8 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/frontpage-film-monitor.js?v=20261113f" defer></script>
-    <script src="/static/js/frontpage-mission-monitor.js?v=20261113f" defer></script>
+    <script src="/static/js/frontpage-film-monitor.js?v=20261113g" defer></script>
+    <script src="/static/js/frontpage-mission-monitor.js?v=20261113g" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
