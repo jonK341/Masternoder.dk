@@ -31,7 +31,13 @@ def test_daemon_extras_maps_rpc_fields(monkeypatch):
     monkeypatch.setattr(rpc, "getblockchaininfo", lambda: {"result": {
         "chain": "main", "verificationprogress": 0.9999, "mediantime": 111,
         "size_on_disk": 123456, "headers": 500}, "error": None})
-    monkeypatch.setattr(rpc, "getinfo", lambda: {"result": {"moneysupply": 21000000}, "error": None})
+    monkeypatch.setattr(rpc, "getblockcount", lambda timeout_sec=None: {"result": 499, "error": None})
+    monkeypatch.setattr(rpc, "getinfo", lambda: {"result": {
+        "moneysupply": 21000000, "relayfee": 0.0001, "testnet": False, "staking status": "Staking Active",
+    }, "error": None})
+    monkeypatch.setattr(rpc, "getstakingstatus", lambda timeout_sec=None: {"result": {
+        "mnsync": 100.0, "walletunlocked": True,
+    }, "error": None})
 
     de = mn2_chainz.daemon_extras()
     assert de["reachable"] is True
@@ -43,12 +49,21 @@ def test_daemon_extras_maps_rpc_fields(monkeypatch):
     assert de["chain"] == "main"
     assert de["size_on_disk"] == 123456
     assert de["money_supply"] == 21000000
+    assert de["block_height"] == 499
+    assert de["header_lag"] == 1
+    assert de["staking_status"] == "Staking Active"
+    assert de["masternode_sync_pct"] == 100.0
+    assert de["wallet_unlocked_for_staking"] is True
+    assert de["relay_fee"] == 0.0001
 
 
 def test_daemon_extras_unreachable_is_safe(monkeypatch):
     err = {"result": None, "error": "connection refused"}
-    for name in ("getconnectioncount", "getnetworkinfo", "getmempoolinfo", "getblockchaininfo", "getinfo"):
-        if name == "getconnectioncount":
+    for name in (
+        "getconnectioncount", "getnetworkinfo", "getmempoolinfo",
+        "getblockchaininfo", "getinfo", "getblockcount", "getstakingstatus",
+    ):
+        if name in ("getconnectioncount", "getblockcount", "getstakingstatus"):
             monkeypatch.setattr(rpc, name, lambda timeout_sec=None: dict(err))
         else:
             monkeypatch.setattr(rpc, name, lambda: dict(err))

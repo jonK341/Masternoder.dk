@@ -35,8 +35,13 @@
     <link rel="stylesheet" href="/static/css/casino.css?v=20260625b">
     <link rel="stylesheet" href="/static/css/casino-mobile.css?v=20260625b">
     <link rel="stylesheet" href="/static/css/casino-twa-shell.css?v=20260625b">
+    <link rel="stylesheet" href="/static/css/mn2-explorer-ww2.css?v=20261108c">
+    <link rel="stylesheet" href="/static/css/mn2-hub-ww2.css?v=20261108c">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="explorer-theme-ww2">
     <div class="casino-page">
         <header class="casino-header">
             <div class="casino-hero-banner" aria-hidden="false">
@@ -49,6 +54,26 @@
             <p class="casino-tagline">Ride the rocket. Hit the jackpot. Own the lounge.</p>
             <p class="casino-header-sub">Play with virtual coins, MN2 wallet balance, or PayPal-funded USD stakes.</p>
         </header>
+
+        <section class="hub-daemon-terminal" aria-label="MN2 field terminal">
+            <h2>MN2 field terminal</h2>
+            <p class="hub-daemon-upd" id="hub-daemon-updated">Loading daemon…</p>
+            <div class="hub-daemon-grid">
+                <div><span class="k">Block</span><span class="v" id="hub-d-block">—</span></div>
+                <div><span class="k">Peers</span><span class="v" id="hub-d-peers">—</span></div>
+                <div><span class="k">Mempool</span><span class="v" id="hub-d-mempool">—</span></div>
+                <div><span class="k">MN2 USD</span><span class="v" id="hub-d-price">—</span></div>
+                <div><span class="k">Version</span><span class="v" id="hub-d-ver">—</span></div>
+                <div><span class="k">Staking</span><span class="v" id="hub-d-stake">—</span></div>
+                <div><span class="k">MN sync</span><span class="v" id="hub-d-mnsync">—</span></div>
+                <div><span class="k">Header lag</span><span class="v" id="hub-d-lag">—</span></div>
+                <div><span class="k">Relay fee</span><span class="v" id="hub-d-relay">—</span></div>
+            </div>
+            <div class="hub-daemon-links">
+                <a href="/explorer/">Explorer ↗</a>
+                <a href="/aggregator/">Aggregator ↗</a>
+            </div>
+        </section>
 
         <div id="casino-ticker" class="casino-ticker" aria-live="polite" aria-label="Recent winners">
             <span class="casino-ticker-label">🏆 Live wins</span>
@@ -852,5 +877,7 @@
     })();
     </script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="casino" defer></script>
+    <script src="/static/js/mn2-site-bridge.js?v=20260614a" defer></script>
+    <script src="/static/js/mn2-hub-daemon.js?v=20261108c" defer></script>
 </body>
 </html>

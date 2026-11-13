@@ -1,0 +1,157 @@
+/**
+ * AI Video Generator — WW2 field terminal theme (MN2), scoped performance overrides.
+ */
+body.gen-page-body.explorer-theme-ww2 {
+  --ww2-bg: #12180e;
+  --ww2-panel: #1a2114;
+  --ww2-border: #4a5c38;
+  --ww2-amber: #d4b06a;
+  --ww2-green: #8fc86a;
+  --ww2-dim: #9aa88a;
+  --ww2-mn2: #6ecf4e;
+  background: var(--ww2-bg) !important;
+  color: var(--ww2-amber) !important;
+  font-family: "IBM Plex Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-header h1 {
+  color: var(--ww2-mn2) !important;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-header h1::before {
+  content: "[MN2/] ";
+  color: var(--ww2-dim);
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-header p {
+  color: var(--ww2-dim) !important;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-card,
+body.gen-page-body.explorer-theme-ww2 .gen-mn2-strip,
+body.gen-page-body.explorer-theme-ww2 .gen-daemon-terminal,
+body.gen-page-body.explorer-theme-ww2 .gen-stats-strip {
+  background: var(--ww2-panel) !important;
+  border: 1px solid var(--ww2-border) !important;
+  border-radius: 4px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-stat-pill,
+body.gen-page-body.explorer-theme-ww2 .gen-mn2-metric {
+  background: rgba(0, 0, 0, 0.22) !important;
+  border-color: var(--ww2-border) !important;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-stat-pill strong,
+body.gen-page-body.explorer-theme-ww2 .gen-mn2-metric strong {
+  color: var(--ww2-mn2) !important;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-stat-pill span,
+body.gen-page-body.explorer-theme-ww2 .gen-mn2-metric span {
+  color: var(--ww2-dim) !important;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-tab.active,
+body.gen-page-body.explorer-theme-ww2 .gen-hub-tab.is-active {
+  background: rgba(110, 207, 78, 0.15) !important;
+  color: var(--ww2-mn2) !important;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-tab,
+body.gen-page-body.explorer-theme-ww2 .gen-hub-tab,
+body.gen-page-body.explorer-theme-ww2 .gen-nav a {
+  border-radius: 3px;
+  color: var(--ww2-dim);
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-btn {
+  background: var(--ww2-green) !important;
+  color: #0a1208 !important;
+  border-radius: 3px;
+  transform: none !important;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-input,
+body.gen-page-body.explorer-theme-ww2 .gen-textarea {
+  background: #0e120a !important;
+  border-color: var(--ww2-border) !important;
+  color: var(--ww2-amber) !important;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-daemon-terminal h2 {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ww2-green);
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-daemon-upd {
+  margin: 0 0 8px;
+  font-size: 0.65rem;
+  color: var(--ww2-dim);
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-daemon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-daemon-grid .k {
+  display: block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: var(--ww2-dim);
+  letter-spacing: 0.04em;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-daemon-grid .v {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ww2-amber);
+  font-variant-numeric: tabular-nums;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-daemon-links a {
+  font-size: 0.72rem;
+  color: var(--ww2-mn2);
+  margin-right: 12px;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-status.processing {
+  animation: none !important;
+  box-shadow: none !important;
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-progress-active #progressBox {
+  animation: none !important;
+}
+
+body.gen-page-body.explorer-theme-ww2::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.035;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.35) 2px,
+    rgba(0, 0, 0, 0.35) 4px
+  );
+}
+
+body.gen-page-body.explorer-theme-ww2 .gen-page {
+  position: relative;
+  z-index: 1;
+}

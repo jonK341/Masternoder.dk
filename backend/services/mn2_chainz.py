@@ -195,7 +195,11 @@ def daemon_extras() -> Dict[str, Any]:
         "connections": None, "version": None, "subversion": None,
         "protocol_version": None, "mempool_tx": None, "mempool_bytes": None,
         "chain": None, "verification_progress": None, "median_time": None,
-        "size_on_disk": None, "headers": None, "money_supply": None,
+        "size_on_disk": None, "headers": None, "block_height": None,
+        "header_lag": None, "money_supply": None,
+        "staking_status": None, "masternode_sync_pct": None,
+        "wallet_unlocked_for_staking": None, "relay_fee": None,
+        "testnet": None,
         "reachable": False,
     }
     try:
@@ -204,6 +208,11 @@ def daemon_extras() -> Dict[str, Any]:
         cc = rpc.getconnectioncount(timeout_sec=4)
         if not cc.get("error") and cc.get("result") is not None:
             out["connections"] = int(cc["result"]); out["reachable"] = True
+
+        bc = rpc.getblockcount(timeout_sec=4)
+        if not bc.get("error") and bc.get("result") is not None:
+            out["block_height"] = int(bc["result"])
+            out["reachable"] = True
 
         ni = rpc.getnetworkinfo()
         if not ni.get("error") and isinstance(ni.get("result"), dict):
@@ -244,8 +253,36 @@ def daemon_extras() -> Dict[str, Any]:
                     out["protocol_version"] = r.get("protocolversion")
                 if out["connections"] is None:
                     out["connections"] = r.get("connections")
+                if r.get("relayfee") is not None:
+                    out["relay_fee"] = r.get("relayfee")
+                if r.get("testnet") is not None:
+                    out["testnet"] = bool(r.get("testnet"))
+                st = r.get("staking status") or r.get("staking_status")
+                if st:
+                    out["staking_status"] = str(st)
+
+        stx = rpc.getstakingstatus(timeout_sec=4)
+        if not stx.get("error") and isinstance(stx.get("result"), dict):
+            sr = stx["result"]
+            out["reachable"] = True
+            if sr.get("mnsync") is not None:
+                try:
+                    out["masternode_sync_pct"] = float(sr.get("mnsync"))
+                except (TypeError, ValueError):
+                    pass
+            if sr.get("walletunlocked") is not None:
+                out["wallet_unlocked_for_staking"] = bool(sr.get("walletunlocked"))
+            if out["staking_status"] is None and sr.get("staking_status"):
+                out["staking_status"] = str(sr.get("staking_status"))
     except Exception:
         pass
+
+    if out.get("headers") is not None and out.get("block_height") is not None:
+        try:
+            lag = int(out["headers"]) - int(out["block_height"])
+            out["header_lag"] = max(0, lag)
+        except (TypeError, ValueError):
+            pass
 
     _DAEMON_CACHE["value"] = out
     _DAEMON_CACHE["ts"] = now

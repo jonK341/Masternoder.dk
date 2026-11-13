@@ -1,0 +1,180 @@
+/**
+ * MN2 Explorer — WWII field-terminal × early Linux console (performance-first).
+ * Scoped to body.explorer-theme-ww2 on /explorer/
+ */
+body.mn2-crypto-hub.explorer-theme-ww2 {
+  --ww2-bg: #12180e;
+  --ww2-panel: #1a2114;
+  --ww2-border: #4a5c38;
+  --ww2-amber: #d4b06a;
+  --ww2-green: #8fc86a;
+  --ww2-dim: #9aa88a;
+  --ww2-mn2: #6ecf4e;
+  background: var(--ww2-bg);
+  color: var(--ww2-amber);
+  font-family: "IBM Plex Mono", "DejaVu Sans Mono", "Liberation Mono", ui-monospace, monospace;
+}
+
+body.explorer-theme-ww2 .bg-animated {
+  display: none !important;
+}
+
+body.explorer-theme-ww2 .mn2-hub-wrap {
+  max-width: 1120px;
+}
+
+body.explorer-theme-ww2 .mn2-hub-header h1 {
+  color: var(--ww2-mn2);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+}
+
+body.explorer-theme-ww2 .mn2-hub-header h1::before {
+  content: "[MN2/]";
+  color: var(--ww2-dim);
+  margin-right: 0.35em;
+}
+
+body.explorer-theme-ww2 .mn2-hub-header p,
+body.explorer-theme-ww2 .sub-note,
+body.explorer-theme-ww2 .ex-note {
+  color: var(--ww2-dim) !important;
+  opacity: 1 !important;
+}
+
+body.explorer-theme-ww2 .mn2-hub-nav {
+  background: var(--ww2-panel);
+  border: 1px solid var(--ww2-border);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+body.explorer-theme-ww2 .mn2-hub-tab {
+  border-radius: 3px;
+  border: 1px solid var(--ww2-border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--ww2-dim);
+}
+
+body.explorer-theme-ww2 .mn2-hub-tab.active,
+body.explorer-theme-ww2 .mn2-hub-tab:hover {
+  background: rgba(110, 207, 78, 0.12);
+  color: var(--ww2-mn2);
+  border-color: var(--ww2-mn2);
+}
+
+body.explorer-theme-ww2 .mn2-route-note {
+  background: var(--ww2-panel);
+  border: 1px dashed var(--ww2-border);
+  border-radius: 3px;
+  color: var(--ww2-dim);
+}
+
+body.explorer-theme-ww2 .ex-section-title {
+  color: var(--ww2-green);
+  border-bottom: 1px solid var(--ww2-border);
+  padding-bottom: 4px;
+}
+
+body.explorer-theme-ww2 .ex-tile,
+body.explorer-theme-ww2 .mon-card,
+body.explorer-theme-ww2 .hub-card {
+  background: var(--ww2-panel) !important;
+  border: 1px solid var(--ww2-border) !important;
+  border-radius: 3px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+body.explorer-theme-ww2 .ex-tile .label,
+body.explorer-theme-ww2 .mon-name {
+  color: var(--ww2-dim) !important;
+  opacity: 1 !important;
+}
+
+body.explorer-theme-ww2 .ex-tile .value,
+body.explorer-theme-ww2 .mon-last {
+  color: var(--ww2-amber) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+body.explorer-theme-ww2 .ex-tile .sub {
+  color: var(--ww2-dim) !important;
+}
+
+body.explorer-theme-ww2 .ex-search input {
+  background: #0e120a;
+  border: 1px solid var(--ww2-border);
+  color: var(--ww2-amber);
+  border-radius: 3px;
+}
+
+body.explorer-theme-ww2 .ex-search button {
+  background: var(--ww2-green);
+  color: #0a1208;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+body.explorer-theme-ww2 .ex-open,
+body.explorer-theme-ww2 .mn2-hub-wrap a {
+  color: var(--ww2-mn2);
+}
+
+body.explorer-theme-ww2 .mn2-hub-wrap th {
+  color: var(--ww2-green);
+}
+
+body.explorer-theme-ww2 .mn2-hub-wrap td {
+  color: var(--ww2-amber);
+}
+
+body.explorer-theme-ww2 .ex-health.ok {
+  background: rgba(110, 207, 78, 0.1);
+  border-color: var(--ww2-mn2);
+  color: var(--ww2-mn2);
+}
+
+body.explorer-theme-ww2 .ex-health.warn {
+  background: rgba(212, 176, 106, 0.12);
+  border-color: var(--ww2-amber);
+  color: var(--ww2-amber);
+}
+
+body.explorer-theme-ww2 .ex-health.bad {
+  background: rgba(180, 80, 60, 0.15);
+  border-color: #c45a4a;
+  color: #e8a090;
+}
+
+/* CRT hint — static, no animation (GPU-friendly) */
+body.explorer-theme-ww2 .explorer-page::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.04;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.35) 2px,
+    rgba(0, 0, 0, 0.35) 4px
+  );
+}
+
+body.explorer-theme-ww2 .mn2-tab-panel[hidden] {
+  display: none !important;
+}
+
+body.explorer-theme-ww2 .mn2-tab-panel[data-mn2-tab="explorer"] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+body.explorer-theme-ww2 .mn2-tab-panel:not([data-mn2-tab="explorer"]) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}

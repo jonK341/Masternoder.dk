@@ -142,6 +142,19 @@
     q('ex-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
   }
 
+  function fmtDaemonVer(v) {
+    if (v == null || v === '') return '—';
+    var n = Number(v);
+    if (!isNaN(n) && n >= 1000000) {
+      var maj = Math.floor(n / 1000000);
+      var min = Math.floor((n % 1000000) / 10000);
+      var rev = Math.floor((n % 10000) / 100);
+      var build = n % 100;
+      return maj + '.' + min + '.' + rev + '.' + build;
+    }
+    return String(v);
+  }
+
   function fmtBytes(n) {
     if (n == null || isNaN(Number(n))) return '—';
     var v = Number(n);
@@ -157,7 +170,7 @@
     if (state) state.textContent = dm.reachable ? '— online' : '— unreachable';
     q('t-conn').textContent = dm.connections != null ? fmtNum(dm.connections, 0) : '—';
     q('t-mempool').textContent = dm.mempool_tx != null ? (fmtNum(dm.mempool_tx, 0) + (dm.mempool_bytes != null ? ' · ' + fmtBytes(dm.mempool_bytes) : '')) : '—';
-    q('t-ver').textContent = dm.version != null ? String(dm.version) : '—';
+    q('t-ver').textContent = dm.version != null ? fmtDaemonVer(dm.version) : '—';
     q('t-subver').textContent = dm.subversion ? String(dm.subversion).replace(/[\/]/g, '') : (dm.protocol_version != null ? 'proto ' + dm.protocol_version : '');
     if (dm.verification_progress != null) {
       q('t-sync').textContent = (Number(dm.verification_progress) * 100).toFixed(2) + '%';
@@ -165,6 +178,33 @@
     q('t-chain').textContent = dm.chain ? ('chain: ' + dm.chain) : '';
     q('t-disk').textContent = dm.size_on_disk != null ? fmtBytes(dm.size_on_disk) : '—';
     q('t-supply2').textContent = dm.money_supply != null ? (fmtCompact(dm.money_supply) + ' MN2') : '—';
+    if (q('t-daemon-height')) {
+      q('t-daemon-height').textContent = dm.block_height != null ? fmtNum(dm.block_height, 0) : '—';
+    }
+    if (q('t-headers')) {
+      q('t-headers').textContent = dm.headers != null ? ('headers ' + fmtNum(dm.headers, 0)) : 'headers —';
+    }
+    if (q('t-header-lag')) {
+      q('t-header-lag').textContent = dm.header_lag != null ? fmtNum(dm.header_lag, 0) : '—';
+    }
+    if (q('t-stake-status')) {
+      q('t-stake-status').textContent = dm.staking_status ? String(dm.staking_status) : '—';
+    }
+    if (q('t-wallet-unlock')) {
+      if (dm.wallet_unlocked_for_staking === true) q('t-wallet-unlock').textContent = 'wallet unlocked';
+      else if (dm.wallet_unlocked_for_staking === false) q('t-wallet-unlock').textContent = 'wallet locked';
+      else q('t-wallet-unlock').textContent = 'wallet';
+    }
+    if (q('t-mnsync')) {
+      q('t-mnsync').textContent = dm.masternode_sync_pct != null
+        ? (fmtNum(dm.masternode_sync_pct, 1) + '%') : '—';
+    }
+    if (q('t-relayfee')) {
+      q('t-relayfee').textContent = dm.relay_fee != null ? (fmtNum(dm.relay_fee, 6) + ' MN2/kB') : '—';
+    }
+    if (q('t-net-mode')) {
+      q('t-net-mode').textContent = dm.testnet === true ? 'testnet' : (dm.testnet === false ? 'mainnet' : 'network');
+    }
   }
 
   function refresh() {

@@ -1,0 +1,256 @@
+/**
+ * Shared WW2 field-terminal theme for MasterNoder hub pages (casino, profile, game, shop, NFT).
+ */
+body.explorer-theme-ww2:not(.mn2-crypto-hub):not(.layout-aggregator-tech) {
+  --ww2-bg: #12180e;
+  --ww2-panel: #1a2114;
+  --ww2-border: #4a5c38;
+  --ww2-amber: #d4b06a;
+  --ww2-green: #8fc86a;
+  --ww2-dim: #9aa88a;
+  --ww2-mn2: #6ecf4e;
+  background: var(--ww2-bg) !important;
+  color: var(--ww2-amber);
+  font-family: "IBM Plex Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+}
+
+body.explorer-theme-ww2 .bg-animated,
+body.explorer-theme-ww2 .frontpage-bg,
+body.explorer-theme-ww2 .particles,
+body.explorer-theme-ww2 .casino-hero-banner picture {
+  display: none !important;
+}
+
+body.explorer-theme-ww2::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.035;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.35) 2px,
+    rgba(0, 0, 0, 0.35) 4px
+  );
+}
+
+body.explorer-theme-ww2 .casino-page,
+body.explorer-theme-ww2 .profile-page,
+body.explorer-theme-ww2 .shop-page,
+body.explorer-theme-ww2 .nft-fp-main,
+body.explorer-theme-ww2 .hunter-game-app {
+  position: relative;
+  z-index: 1;
+}
+
+/* Daemon strip */
+body.explorer-theme-ww2 .hub-daemon-terminal {
+  margin: 12px auto 16px;
+  padding: 12px 14px;
+  max-width: 1180px;
+  background: var(--ww2-panel);
+  border: 1px solid var(--ww2-border);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.explorer-theme-ww2 .hub-daemon-terminal h2 {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ww2-green);
+}
+
+body.explorer-theme-ww2 .hub-daemon-upd {
+  margin: 0 0 8px;
+  font-size: 0.65rem;
+  color: var(--ww2-dim);
+}
+
+body.explorer-theme-ww2 .hub-daemon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+body.explorer-theme-ww2 .hub-daemon-grid .k {
+  display: block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: var(--ww2-dim);
+  letter-spacing: 0.04em;
+}
+
+body.explorer-theme-ww2 .hub-daemon-grid .v {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ww2-amber);
+  font-variant-numeric: tabular-nums;
+}
+
+body.explorer-theme-ww2 .hub-daemon-links a {
+  font-size: 0.72rem;
+  color: var(--ww2-mn2);
+  margin-right: 12px;
+  text-decoration: none;
+}
+
+body.explorer-theme-ww2 .hub-daemon-links a:hover {
+  text-decoration: underline;
+}
+
+/* Frontpage-style hubs */
+body.explorer-theme-ww2 .fp-hero,
+body.explorer-theme-ww2 .fp-stats,
+body.explorer-theme-ww2 .section-card,
+body.explorer-theme-ww2 .shop-item,
+body.explorer-theme-ww2 .nft-frame,
+body.explorer-theme-ww2 .shop-vision-bar,
+body.explorer-theme-ww2 .shop-account-bar {
+  background: var(--ww2-panel) !important;
+  border: 1px solid var(--ww2-border) !important;
+  border-radius: 4px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+body.explorer-theme-ww2 .fp-hero h1,
+body.explorer-theme-ww2 .hunter-game-hero h1,
+body.explorer-theme-ww2 .casino-header h1 {
+  color: var(--ww2-mn2) !important;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+body.explorer-theme-ww2 .fp-tagline,
+body.explorer-theme-ww2 .fp-hero-text,
+body.explorer-theme-ww2 .fp-kicker,
+body.explorer-theme-ww2 .casino-tagline,
+body.explorer-theme-ww2 .casino-header-sub {
+  color: var(--ww2-dim) !important;
+}
+
+body.explorer-theme-ww2 .fp-stat .v,
+body.explorer-theme-ww2 .fp-stat-mn2 .v {
+  color: var(--ww2-mn2) !important;
+}
+
+body.explorer-theme-ww2 .fp-stat .l {
+  color: var(--ww2-dim) !important;
+}
+
+body.explorer-theme-ww2 .gh-tab.is-active,
+body.explorer-theme-ww2 .shop-tab-btn.is-active {
+  background: rgba(110, 207, 78, 0.15) !important;
+  color: var(--ww2-mn2) !important;
+  border-color: var(--ww2-mn2) !important;
+}
+
+body.explorer-theme-ww2 .gh-tab,
+body.explorer-theme-ww2 .shop-tab-btn {
+  border-radius: 3px;
+  color: var(--ww2-dim);
+}
+
+body.explorer-theme-ww2 .fp-primary-action,
+body.explorer-theme-ww2 .btn-purchase,
+body.explorer-theme-ww2 .casino-btn-primary {
+  background: var(--ww2-green) !important;
+  color: #0a1208 !important;
+  border-radius: 3px !important;
+}
+
+body.explorer-theme-ww2 .fp-secondary-action {
+  border-color: var(--ww2-border) !important;
+  color: var(--ww2-amber) !important;
+}
+
+body.explorer-theme-ww2 .shop-item .item-name,
+body.explorer-theme-ww2 .nft-frame-head h2 {
+  color: var(--ww2-green) !important;
+}
+
+body.explorer-theme-ww2 .shop-item {
+  transition: none;
+}
+
+body.explorer-theme-ww2 .shop-item:hover {
+  border-color: var(--ww2-mn2) !important;
+  transform: none !important;
+}
+
+/* Casino */
+body.explorer-theme-ww2 .casino-page {
+  background: var(--ww2-bg) !important;
+}
+
+body.explorer-theme-ww2 .casino-header {
+  background: var(--ww2-panel) !important;
+  border: 1px solid var(--ww2-border) !important;
+  border-radius: 4px;
+  padding: 12px 16px;
+}
+
+body.explorer-theme-ww2 .casino-cockpit,
+body.explorer-theme-ww2 .casino-game-card,
+body.explorer-theme-ww2 .casino-ticker,
+body.explorer-theme-ww2 .casino-jackpot-bar,
+body.explorer-theme-ww2 .casino-exchange-bridge {
+  background: var(--ww2-panel) !important;
+  border-color: var(--ww2-border) !important;
+  border-radius: 4px !important;
+}
+
+body.explorer-theme-ww2 .casino-game-card h3 {
+  color: var(--ww2-green) !important;
+}
+
+/* Hunter game */
+body.explorer-theme-ww2 .hunter-game-hero {
+  background: var(--ww2-panel) !important;
+  border: 1px solid var(--ww2-border) !important;
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+
+body.explorer-theme-ww2 .hunter-game-badge {
+  background: rgba(110, 207, 78, 0.12) !important;
+  color: var(--ww2-mn2) !important;
+  border: 1px solid var(--ww2-border);
+}
+
+body.explorer-theme-ww2 #game-at-a-glance {
+  background: var(--ww2-panel) !important;
+  border-color: var(--ww2-border) !important;
+  border-radius: 4px !important;
+}
+
+body.explorer-theme-ww2 #game-at-a-glance strong {
+  color: var(--ww2-mn2) !important;
+}
+
+body.explorer-theme-ww2 .champion-pulse,
+body.explorer-theme-ww2 .champion-level-card {
+  background: var(--ww2-panel) !important;
+  border-color: var(--ww2-border) !important;
+}
+
+body.explorer-theme-ww2 .page-nav {
+  background: var(--ww2-panel) !important;
+  border-bottom: 1px solid var(--ww2-border) !important;
+}
+
+body.explorer-theme-ww2 .nav-link.active {
+  color: var(--ww2-mn2) !important;
+}
+
+body.explorer-theme-ww2 .fp-core-ring,
+body.explorer-theme-ww2 .fp-core-pulse {
+  opacity: 0.35;
+}

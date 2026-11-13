@@ -198,11 +198,23 @@ a.mn2-hub-tab--link {
 /* ── Readability: calm explorer (no glow/shadow on text) ── */
 body.mn2-crypto-hub { background: #0b1020; color: #eef3ff; }
 body.mn2-crypto-hub .bg-animated { opacity: 0.12 !important; filter: none !important; }
-body.mn2-crypto-hub .mn2-hub-wrap,
-body.mn2-crypto-hub .mn2-hub-wrap * {
-  text-shadow: none !important;
+body.mn2-crypto-hub.explorer-theme-ww2 .bg-animated { display: none !important; }
+body.mn2-crypto-hub .mn2-hub-wrap {
+  text-shadow: none;
+}
+body.mn2-crypto-hub .mn2-hub-header h1,
+body.mn2-crypto-hub .mn2-hub-header p,
+body.mn2-crypto-hub .ex-tile .value,
+body.mn2-crypto-hub .sm-tile .value,
+body.mn2-crypto-hub .pr-tile .value,
+body.mn2-crypto-hub .mn2-hub-tab,
+body.mn2-crypto-hub .mn2-hub-wrap td,
+body.mn2-crypto-hub .mn2-hub-wrap th {
+  text-shadow: none;
   filter: none;
 }
+.mn2-tab-panel[hidden] { display: none !important; }
+.mn2-tab-panel { content-visibility: auto; contain-intrinsic-size: auto 480px; }
 body.mn2-crypto-hub .mn2-hub-header h1 { color: #5dffb0; font-weight: 800; }
 body.mn2-crypto-hub .sub-note,
 body.mn2-crypto-hub .ex-note,

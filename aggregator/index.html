@@ -14,9 +14,14 @@
     <link rel="stylesheet" href="/static/css/story-monitor-5d.css?v=1">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
+    <link rel="stylesheet" href="/static/css/mn2-explorer-ww2.css?v=20261108a">
+    <link rel="stylesheet" href="/static/css/mn2-aggregator-ww2.css?v=20261108a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="layout-standard layout-aggregator-tech">
-    <div class="bg-animated"></div>
+<body class="layout-standard layout-aggregator-tech explorer-theme-ww2">
+    <div class="bg-animated" aria-hidden="true"></div>
     <nav class="agg-top-nav" aria-label="Primary">
         <div class="agg-top-nav-inner">
             <a href="/" class="nav-link nav-link--home">Home</a>
@@ -57,8 +62,12 @@
             <span class="agg-crypto-chip">Users <strong id="agg-crypto-users">—</strong></span>
             <span class="agg-crypto-chip">Market vol <strong id="agg-crypto-market">—</strong></span>
             <span class="agg-crypto-chip">Earned today <strong id="agg-crypto-earned">—</strong></span>
+            <span class="agg-crypto-chip">Peers <strong id="agg-crypto-peers">—</strong></span>
+            <span class="agg-crypto-chip">Height <strong id="agg-crypto-height">—</strong></span>
+            <span class="agg-crypto-chip">Staking <strong id="agg-crypto-stake">—</strong></span>
             <a class="agg-crypto-link" href="/profile#mn2-wallet">Wallet</a>
             <a class="agg-crypto-link" href="/shop">Shop MN2</a>
+            <a class="agg-crypto-link" href="/explorer/">Explorer</a>
         </div>
     </div>
 
@@ -121,6 +130,21 @@
             </div>
 
             <aside class="agg-explorer">
+                <div class="agg-panel agg-daemon-panel" aria-live="polite">
+                    <h3>MN2 field terminal</h3>
+                    <p class="agg-daemon-upd" id="agg-daemon-updated">Loading daemon…</p>
+                    <div class="agg-daemon-grid" id="agg-daemon-grid">
+                        <div><span class="k">Block</span><span class="v" id="agg-d-block">—</span></div>
+                        <div><span class="k">Peers</span><span class="v" id="agg-d-peers">—</span></div>
+                        <div><span class="k">Mempool</span><span class="v" id="agg-d-mempool">—</span></div>
+                        <div><span class="k">Version</span><span class="v" id="agg-d-ver">—</span></div>
+                        <div><span class="k">Staking</span><span class="v" id="agg-d-stake">—</span></div>
+                        <div><span class="k">MN sync</span><span class="v" id="agg-d-mnsync">—</span></div>
+                        <div><span class="k">Header lag</span><span class="v" id="agg-d-lag">—</span></div>
+                        <div><span class="k">Relay fee</span><span class="v" id="agg-d-relay">—</span></div>
+                    </div>
+                    <a class="agg-daemon-link" href="/explorer/">Open full explorer ↗</a>
+                </div>
                 <div class="agg-panel">
                     <h3>User print log</h3>
                     <p id="agg-user-strip-meta" style="font-size:.8rem;color:var(--text-secondary);margin:0 0 6px;"></p>
@@ -218,7 +242,7 @@
 <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="aggregator"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260614a"></script>
-    <script src="/static/js/aggregator-mn2-crypto.js?v=20260614d"></script>
+    <script src="/static/js/aggregator-mn2-crypto.js?v=20261108a"></script>
     <script src="/static/js/story-monitor-5d.js?v=1"></script>
     <script src="/static/js/aggregator-engagement.js"></script>
     <script src="/static/js/aggregator-ideas.js"></script>
