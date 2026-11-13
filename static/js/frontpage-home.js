@@ -324,7 +324,7 @@
                 render();
             });
         });
-        document.querySelectorAll('.fp-smart-card, .fp-agent-card, .fp-primary-action, .fp-secondary-action').forEach((el) => {
+        document.querySelectorAll('.fp-smart-card, .fp-podcast-card, .fp-primary-action, .fp-secondary-action').forEach((el) => {
             el.addEventListener('mouseenter', () => sound.playPing(880, 0.012));
             el.addEventListener('focus', () => sound.playPing(880, 0.012));
         });

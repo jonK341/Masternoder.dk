@@ -19,6 +19,27 @@ def test_frontpage_and_nav_include_wallet_staking_portal_links():
     assert "/staking-teams" in index
 
 
+def test_frontpage_drops_dead_blocks_and_keeps_news_podcast():
+    index = (ROOT / "index.html").read_text(encoding="utf-8")
+    assert "Agent void" not in index
+    assert "Live surface" not in index
+    assert "fp-game-hub" not in index
+    assert "fp-v20-upgrade" not in index
+    assert 'id="fp-news-list"' in index
+    assert 'id="fp-podcast-title"' in index
+    assert "game-hub-panel.js" not in index
+
+
+def test_starmap25_ideas_board_present():
+    starmap = (ROOT / "starmap25/index.html").read_text(encoding="utf-8")
+    map_data = json.loads((ROOT / "data/star_map_25.json").read_text(encoding="utf-8"))
+    assert 'data-starmap-tab="ideas"' in starmap
+    assert "ideas-grid" in starmap
+    ideas = map_data.get("ideas") or []
+    assert len(ideas) >= 4
+    assert any(i.get("id") == "chronoscout_4d" for i in ideas)
+
+
 def test_navigation_primary_order_and_portal_grouping():
     nav = (ROOT / "static/js/navigation-toolbar.js").read_text(encoding="utf-8")
     expected_order = [
