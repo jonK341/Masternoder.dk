@@ -18,9 +18,13 @@ SECRET = "cloud-key-should-not-leak"
 
 
 @pytest.fixture
-def clean_env(monkeypatch):
+def clean_env(monkeypatch, tmp_path):
     monkeypatch.setattr(canvas, "_ENV_FILES", ())
+    skip_file = tmp_path / "fal_skip.json"
+    monkeypatch.setattr(canvas, "_FAL_SKIP_FILE", str(skip_file))
     canvas._fal_skip_until = 0.0
+    if skip_file.exists():
+        skip_file.unlink()
     for name in (
         "COMFY_CLOUD_API_KEY",
         "COMFYUI_BASE_URL",
@@ -404,6 +408,28 @@ def test_planning_text_reads_mcp_content_blocks():
         "content": [{"type": "text", "text": "Shot 1: harbour lights"}],
     })
     assert text == "Shot 1: harbour lights"
+
+
+def test_free_still_uses_local_ffmpeg_when_network_images_fail(clean_env, tmp_path, monkeypatch):
+    monkeypatch.setattr(canvas, "_free_image_service", None)
+    monkeypatch.setattr(canvas, "_MoviePyImageClip", None)
+    monkeypatch.setattr(
+        canvas,
+        "_write_local_standby_image",
+        lambda dest_dir, prompt: None,
+    )
+
+    def fake_ffmpeg(dest_dir, duration=5.0):
+        path = os.path.join(dest_dir, "ffmpeg.mp4")
+        with open(path, "wb") as handle:
+            handle.write(b"mp4" * 20)
+        return {"success": True, "local_path": path, "canvas": "free_still", "source_image": "ffmpeg_lavfi"}
+
+    monkeypatch.setattr(canvas, "_ffmpeg_color_movie", fake_ffmpeg)
+    out = canvas._generate_free_still_movie("harbour", dest_dir=str(tmp_path), duration=3)
+    assert out["success"] is True
+    assert out["source_image"] == "ffmpeg_lavfi"
+    assert os.path.isfile(out["local_path"])
 
 
 def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, monkeypatch):

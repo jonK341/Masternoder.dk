@@ -28,6 +28,7 @@ import io
 import json
 import os
 import secrets
+import subprocess
 import time
 import urllib.error
 import urllib.parse
@@ -110,9 +111,10 @@ _ENV_FILES = (
     "/var/www/html/vidgenerator/.env",
 )
 
-# Skip fal after exhausted-balance / locked account errors for this process.
+# Skip fal after exhausted-balance / locked account errors (shared across workers).
 _fal_skip_until = 0.0
-_FAL_SKIP_SECONDS = 3600
+_FAL_SKIP_SECONDS = 6 * 3600
+_FAL_SKIP_FILE = os.path.join(_REPO_ROOT, "instance", "film_canvas_fal_skip.json")
 
 # External clip backends used when film canvases cannot render (e.g. fal balance gone).
 _EXTERNAL_CLIP_BACKENDS = (
@@ -299,8 +301,22 @@ def list_canvases() -> List[Dict[str, Any]]:
     return rows
 
 
+def _read_fal_skip_until() -> float:
+    global _fal_skip_until
+    latest = float(_fal_skip_until or 0)
+    try:
+        if os.path.isfile(_FAL_SKIP_FILE):
+            with open(_FAL_SKIP_FILE, "r", encoding="utf-8") as handle:
+                data = json.load(handle)
+            latest = max(latest, float((data or {}).get("until") or 0))
+            _fal_skip_until = latest
+    except Exception:
+        pass
+    return latest
+
+
 def _fal_is_skipped() -> bool:
-    return time.time() < float(_fal_skip_until or 0)
+    return time.time() < _read_fal_skip_until()
 
 
 def _note_fal_error(error: Any) -> None:
@@ -313,9 +329,20 @@ def _note_fal_error(error: Any) -> None:
         "top up your balance",
         "insufficient balance",
         "payment required",
+        "fal http 403",
     )
-    if any(marker in text for marker in markers):
-        _fal_skip_until = time.time() + _FAL_SKIP_SECONDS
+    if not any(marker in text for marker in markers):
+        return
+    until = time.time() + _FAL_SKIP_SECONDS
+    _fal_skip_until = until
+    try:
+        os.makedirs(os.path.dirname(_FAL_SKIP_FILE), exist_ok=True)
+        tmp = _FAL_SKIP_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump({"until": until, "reason": str(error or "")[:300]}, handle)
+        os.replace(tmp, _FAL_SKIP_FILE)
+    except Exception:
+        pass
 
 
 def list_render_canvases() -> List[str]:
@@ -1007,6 +1034,12 @@ def _generate_one_canvas_clip(
     if canvas_id in ("comfy_local", "comfy_cloud"):
         return _generate_comfy_clip(prompt, dest_dir, timeout, canvas_id=canvas_id)
     if canvas_id == "fal_krea":
+        if _fal_is_skipped():
+            return {
+                "success": False,
+                "error": "fal skipped (exhausted/locked balance)",
+                "canvas": "fal_krea",
+            }
         clip = _generate_fal_clip(prompt, dest_dir, timeout)
         if not clip.get("success"):
             _note_fal_error(clip.get("error"))
@@ -1129,62 +1162,154 @@ def _generate_external_clip(
     }
 
 
-def _generate_free_still_movie(
-    prompt: str,
-    dest_dir: Optional[str] = None,
-    duration: float = 6.0,
-) -> Dict[str, Any]:
-    """Last-resort MP4 from a free still so Play Movie never hard-fails on fal alone."""
-    if _free_image_service is None or not hasattr(_free_image_service, "generate_image"):
-        return {"success": False, "error": "free image unavailable", "canvas": "free_still"}
-    if _MoviePyImageClip is None:
-        return {"success": False, "error": "moviepy unavailable for free still", "canvas": "free_still"}
-
-    image = _free_image_service.generate_image(prompt[:400], dest_dir=dest_dir)
-    if not image.get("success") or not image.get("local_path"):
-        return {
-            "success": False,
-            "error": image.get("error") or "free still failed",
-            "canvas": "free_still",
-        }
-
-    if dest_dir is None:
-        dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
+def _write_local_standby_image(dest_dir: str, prompt: str) -> Optional[str]:
+    """Network-free standby frame so Play Movie still works offline."""
     os.makedirs(dest_dir, exist_ok=True)
-    path = os.path.join(dest_dir, "free_still_%s.mp4" % uuid.uuid4().hex[:8])
+    path = os.path.join(dest_dir, "standby_%s.jpg" % uuid.uuid4().hex[:8])
+    label = (prompt or "FILM CANVAS").strip()[:48] or "FILM CANVAS"
+    try:
+        from PIL import Image, ImageDraw
+        img = Image.new("RGB", (1280, 720), (2, 20, 12))
+        draw = ImageDraw.Draw(img)
+        for y in range(0, 720, 4):
+            shade = 12 + (y % 40) // 4
+            draw.line([(0, y), (1280, y)], fill=(0, shade, 8))
+        draw.rectangle([(40, 40), (1240, 680)], outline=(0, 220, 120), width=3)
+        draw.text((70, 300), "FILM CANVAS · STANDBY", fill=(180, 255, 220))
+        draw.text((70, 350), label, fill=(120, 200, 160))
+        img.save(path, format="JPEG", quality=85)
+        return path
+    except Exception:
+        pass
+    if imageio is not None:
+        try:
+            import numpy as np
+            frame = np.zeros((720, 1280, 3), dtype="uint8")
+            frame[:, :, 1] = 24
+            imageio.imwrite(path, frame)
+            return path
+        except Exception:
+            pass
+    return None
+
+
+def _ffmpeg_color_movie(dest_dir: str, duration: float = 5.0) -> Dict[str, Any]:
+    """Guaranteed local MP4 via ffmpeg lavfi (no API keys, no network images)."""
+    os.makedirs(dest_dir, exist_ok=True)
+    path = os.path.join(dest_dir, "ffmpeg_still_%s.mp4" % uuid.uuid4().hex[:8])
+    seconds = max(3, int(round(float(duration) or 5)))
+    cmd = [
+        "ffmpeg", "-y",
+        "-f", "lavfi",
+        "-i", "color=c=0x02140c:s=1280x720:d=%s" % seconds,
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
+        path,
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=max(20, seconds + 15),
+            check=False,
+        )
+    except Exception as exc:
+        return {"success": False, "error": "ffmpeg still failed: %s" % exc, "canvas": "free_still"}
+    if proc.returncode != 0 or not os.path.isfile(path):
+        err = (proc.stderr or proc.stdout or "ffmpeg failed")[-300:]
+        return {"success": False, "error": "ffmpeg still failed: %s" % err, "canvas": "free_still"}
+    return {
+        "success": True,
+        "local_path": path,
+        "canvas": "free_still",
+        "source_image": "ffmpeg_lavfi",
+        "fps": 25,
+    }
+
+
+def _encode_image_to_mp4(image_path: str, dest_path: str, duration: float = 6.0) -> Dict[str, Any]:
+    if _MoviePyImageClip is None:
+        return {"success": False, "error": "moviepy unavailable for free still"}
     clip = None
     try:
-        clip = _MoviePyImageClip(image["local_path"], duration=max(3.0, float(duration)))
+        clip = _MoviePyImageClip(image_path, duration=max(3.0, float(duration)))
         if hasattr(clip, "resized"):
             clip = clip.resized(height=480)
         elif hasattr(clip, "resize"):
             clip = clip.resize(height=480)
         write_kwargs = {"codec": "libx264", "audio": False, "fps": 12}
         try:
-            clip.write_videofile(path, logger=None, **write_kwargs)
+            clip.write_videofile(dest_path, logger=None, **write_kwargs)
         except TypeError:
-            clip.write_videofile(path, verbose=False, logger=None, **write_kwargs)
+            clip.write_videofile(dest_path, verbose=False, logger=None, **write_kwargs)
     except Exception as exc:
-        return {
-            "success": False,
-            "error": "free still encode failed: %s" % _safe_error(exc),
-            "canvas": "free_still",
-        }
+        return {"success": False, "error": "free still encode failed: %s" % _safe_error(exc)}
     finally:
         try:
             if clip is not None:
                 clip.close()
         except Exception:
             pass
+    if not os.path.isfile(dest_path):
+        return {"success": False, "error": "free still mp4 missing"}
+    return {"success": True, "local_path": dest_path, "fps": 12}
 
-    if not os.path.isfile(path):
-        return {"success": False, "error": "free still mp4 missing", "canvas": "free_still"}
+
+def _generate_free_still_movie(
+    prompt: str,
+    dest_dir: Optional[str] = None,
+    duration: float = 6.0,
+) -> Dict[str, Any]:
+    """Last-resort MP4: free image → local standby frame → ffmpeg color (always works)."""
+    if dest_dir is None:
+        dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
+    os.makedirs(dest_dir, exist_ok=True)
+    errors: List[str] = []
+
+    image_path = None
+    source = None
+    if _free_image_service is not None and hasattr(_free_image_service, "generate_image"):
+        try:
+            image = _free_image_service.generate_image(prompt[:400], dest_dir=dest_dir)
+            if image.get("success") and image.get("local_path"):
+                image_path = image["local_path"]
+                source = image.get("source") or "free"
+            else:
+                errors.append(str(image.get("error") or "free image failed"))
+        except Exception as exc:
+            errors.append("free image: %s" % exc)
+
+    if not image_path:
+        image_path = _write_local_standby_image(dest_dir, prompt)
+        source = "local_standby" if image_path else None
+        if not image_path:
+            errors.append("local standby frame unavailable")
+
+    if image_path and _MoviePyImageClip is not None:
+        dest = os.path.join(dest_dir, "free_still_%s.mp4" % uuid.uuid4().hex[:8])
+        encoded = _encode_image_to_mp4(image_path, dest, duration=duration)
+        if encoded.get("success"):
+            return {
+                "success": True,
+                "local_path": encoded["local_path"],
+                "canvas": "free_still",
+                "source_image": source or "free",
+                "fps": encoded.get("fps") or 12,
+            }
+        errors.append(str(encoded.get("error") or "encode failed"))
+
+    ffmpeg_clip = _ffmpeg_color_movie(dest_dir, duration=duration)
+    if ffmpeg_clip.get("success"):
+        if errors:
+            ffmpeg_clip["prior_errors"] = errors[:5]
+        return ffmpeg_clip
+    errors.append(str(ffmpeg_clip.get("error") or "ffmpeg failed"))
     return {
-        "success": True,
-        "local_path": path,
+        "success": False,
+        "error": "free still failed: " + " | ".join(errors)[:400],
         "canvas": "free_still",
-        "source_image": image.get("source") or "free",
-        "fps": 12,
     }
 
 
@@ -1320,13 +1445,33 @@ def compose_interactive_movie(
         attempts.append("%s: %s" % (canvas_id, err))
 
     if not render_provider:
-        for backend in _EXTERNAL_CLIP_BACKENDS:
-            clip = _generate_external_clip(
-                backend,
-                render_prompt[:500],
-                dest_dir=dest_dir,
-                timeout=min(render_timeout, 150),
-            )
+        # When fal/paid balances are dead, prefer a guaranteed local movie first so
+        # the monitor does not sit on a chain of credit errors.
+        prefer_reliable = _fal_is_skipped() or any(
+            "exhausted" in (a or "").lower() or "403" in (a or "") for a in attempts
+        )
+        backend_order: List[str] = []
+        if prefer_reliable:
+            backend_order.append("free_still")
+            backend_order.extend(_EXTERNAL_CLIP_BACKENDS)
+        else:
+            backend_order.extend(_EXTERNAL_CLIP_BACKENDS)
+            backend_order.append("free_still")
+
+        for backend in backend_order:
+            if backend == "free_still":
+                clip = _generate_free_still_movie(
+                    render_prompt[:400],
+                    dest_dir=dest_dir,
+                    duration=6.0,
+                )
+            else:
+                clip = _generate_external_clip(
+                    backend,
+                    render_prompt[:500],
+                    dest_dir=dest_dir,
+                    timeout=min(45, render_timeout),
+                )
             if clip.get("success") and clip.get("local_path"):
                 return {
                     "success": True,
@@ -1336,28 +1481,12 @@ def compose_interactive_movie(
                     "planning": planning,
                     "prompt_used": render_prompt[:500],
                     "local_path": clip.get("local_path"),
-                    "canvas": backend,
+                    "canvas": clip.get("canvas") or backend,
+                    "fps": clip.get("fps"),
                     "attempts": attempts,
                     "error": None,
                 }
             attempts.append("%s: %s" % (backend, clip.get("error") or "failed"))
-
-        free_clip = _generate_free_still_movie(render_prompt[:400], dest_dir=dest_dir)
-        if free_clip.get("success") and free_clip.get("local_path"):
-            return {
-                "success": True,
-                "planner": planner,
-                "llm_plan": llm_plan,
-                "renderer": "free_still",
-                "planning": planning,
-                "prompt_used": render_prompt[:500],
-                "local_path": free_clip.get("local_path"),
-                "canvas": "free_still",
-                "fps": free_clip.get("fps"),
-                "attempts": attempts,
-                "error": None,
-            }
-        attempts.append("free_still: %s" % (free_clip.get("error") or "failed"))
 
     return {
         "success": False,
