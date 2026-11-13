@@ -130,6 +130,12 @@
   "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
   "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)",
   "wallet_mode": "ledger",
+  "gift": {
+    "enabled": true,
+    "max_per_transfer_mn2": 1000,
+    "max_per_day_mn2": 5000,
+    "min_balance_after_mn2": 0
+  },
   "onchain_fee_payer": {
     "address": "",
     "account": "",

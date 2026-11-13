@@ -134,13 +134,16 @@ def _user_facing_rpc_error(rpc_error: str) -> str:
     if not rpc_error:
         return "Wallet temporarily unavailable."
     err = (rpc_error or "").strip()
+    low = err.lower()
+    if "rpc_unconfigured" in low:
+        return "Wallet node is not configured (set MN2_RPC_URL). In-app ledger balance and peer transfers still work."
     if "401" in err:
         return "Wallet RPC authentication failed. Server must set MN2_RPC_USER and MN2_RPC_PASSWORD to match the wallet node."
     if "403" in err:
         return "Wallet RPC access forbidden. Check RPC user/password."
-    if "connection" in err.lower() or "refused" in err.lower() or "timeout" in err.lower():
+    if "connection" in low or "refused" in low or "timeout" in low:
         return "Wallet RPC unreachable. Ensure the MN2 wallet node is running and MN2_RPC_URL is correct."
-    if "passphrase" in err.lower() or "wallet is locked" in err.lower() or "unlock" in err.lower():
+    if "passphrase" in low or "wallet is locked" in low or "unlock" in low:
         return "Wallet is locked. The server needs MN2_WALLET_PASSPHRASE to create a new address."
     if len(err) > 120:
         return err[:117] + "..."
@@ -161,13 +164,17 @@ def mn2_deposit_address():
             "deposit_address": None,
         }), 200
     addr = result.get("deposit_address") or ""
+    ledger_only = bool(result.get("ledger_only") or str(addr).startswith("LGR"))
     base = _explorer_base_url().rstrip("/")
-    explorer_address_url = f"{base}/address.dws?addr={addr}" if addr else ""
+    explorer_address_url = "" if ledger_only else (f"{base}/address.dws?addr={addr}" if addr else "")
     return jsonify({
         "success": True,
         "user_id": result.get("user_id"),
         "deposit_address": addr,
         "explorer_address_url": explorer_address_url,
+        "ledger_only": ledger_only,
+        "address_warning": result.get("address_warning"),
+        "wallet_mode": (_load_mn2_config().get("wallet_mode") or "ledger"),
     }), 200
 
 
@@ -184,8 +191,10 @@ def mn2_wallet_frame():
             "deposit_address": None,
         }), 200
     addr = result.get("deposit_address") or ""
+    ledger_only = bool(result.get("ledger_only") or str(addr).startswith("LGR"))
     base = _explorer_base_url().rstrip("/")
-    result["explorer_address_url"] = f"{base}/address.dws?addr={addr}" if addr else ""
+    result["explorer_address_url"] = "" if ledger_only else (f"{base}/address.dws?addr={addr}" if addr else "")
+    result["ledger_only"] = ledger_only
     return jsonify(result), 200
 
 
@@ -237,10 +246,12 @@ def mn2_address_book():
 
 @mn2_bp.route("/api/mn2/transfer", methods=["POST"])
 def mn2_transfer():
-    """User-to-user send is an on-chain payment to their deposit address.
+    """User-to-user send.
 
-    The site fee payer covers the miner fee. An external MN2 address uses the
-    withdrawal path (user pays withdrawal_fee unless onchain_fee_payer.pay_external_withdrawal_fee).
+    In ``wallet_mode=ledger`` (default), internal peer sends move in-app balances
+    via the gift/ledger path (no RPC / fee payer required). In ``onchain`` mode,
+    internal sends use site-pays-fee coin control. External chain addresses always
+    use the withdrawal path.
     """
     user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
     if not user_id or user_id == "default_user":
@@ -264,8 +275,8 @@ def mn2_transfer():
     except ImportError:
         pass
 
-    from backend.services.mn2_gift_service import looks_like_chain_address
-    from backend.services.mn2_onchain_wallet import ensure_user_address, send_from_user_site_pays_fee
+    from backend.services.mn2_gift_service import looks_like_chain_address, transfer as ledger_transfer
+    from backend.services.mn2_onchain_wallet import ensure_user_address, send_from_user_site_pays_fee, wallet_mode
     from backend.services.mn2_wallet_service import get_address_to_user_map
 
     mapped = (get_address_to_user_map().get(target) or "").strip()
@@ -274,6 +285,19 @@ def mn2_transfer():
         recipient = mapped or target
         if recipient == user_id:
             return jsonify({"success": False, "error": "Cannot send to yourself.", "code": "self_transfer"}), 400
+        if wallet_mode() == "ledger":
+            note = str(data.get("note") or data.get("memo") or "")[:200]
+            sent = ledger_transfer(user_id, recipient, amount, note=note)
+            if sent.get("success"):
+                sent["mode"] = "ledger"
+                sent["wallet_mode"] = "ledger"
+                return jsonify(sent), 200
+            status = 400
+            if sent.get("code") in ("auth_required",):
+                status = 401
+            elif sent.get("code") in ("hold_blocked", "cap_exceeded", "daily_cap", "disabled"):
+                status = 403
+            return jsonify(sent), status
         dest = ensure_user_address(recipient)
         if not dest.get("success"):
             return jsonify({"success": False, "error": dest.get("error"), "code": dest.get("code")}), 400
@@ -299,9 +323,9 @@ def mn2_transfer():
 @mn2_bp.route("/api/mn2/transactions", methods=["GET"])
 def mn2_transactions():
     """Return ledger entries for the current user with explorer links."""
-    # Server-resolved identity only: a caller can't read another account's ledger by
-    # passing ?user_id= (privacy; matches the §9.2 hardening). Falls back to identification.
-    user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
+    # Match balance/deposit identity resolution so profile wallet history lines up
+    # with the balance the UI already loaded via ?user_id= (session still wins).
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
     limit = min(100, max(1, int(request.args.get("limit", 50))))
     entries = get_entries_by_user(user_id, limit=limit)
     base = _explorer_base_url().rstrip("/")
@@ -324,18 +348,25 @@ def mn2_transactions():
 @mn2_bp.route("/api/mn2/statement", methods=["GET"])
 def mn2_statement():
     """
-    Personal MN2 audit log + tax export (Top-10 #4). Server-resolved identity ONLY.
+    Personal MN2 audit log + tax export (Top-10 #4).
     Lists every ledger event with a signed balance delta and a derived running balance,
     plus per-type and per-year summaries. ?year=YYYY filters the rows (summaries cover all);
     ?format=csv returns a tax/accounting export.
     """
-    user_id = resolve_user_id(from_body=False, from_query=False, use_session=True, use_identification=True)
+    # Same identity rules as balance/transactions so the statement matches the wallet UI.
+    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
     if not user_id or user_id == "default_user":
         return jsonify({"success": False, "error": "Sign in to view your statement.", "code": "auth_required"}), 401
 
     # Convention for the derived balance view (mn2_balance perspective):
-    _INFLOW = {"deposit", "staking_reward", "onramp_purchase", "unstake", "p2p_buy", "p2p_escrow_return"}
-    _OUTFLOW = {"withdrawal", "shop_payment", "onramp_clawback", "stake", "p2p_sell_escrow"}
+    _INFLOW = {
+        "deposit", "staking_reward", "onramp_purchase", "unstake", "p2p_buy",
+        "p2p_escrow_return", "gift_received", "micro_tx_reward", "swap_buy",
+    }
+    _OUTFLOW = {
+        "withdrawal", "shop_payment", "onramp_clawback", "stake", "p2p_sell_escrow",
+        "gift_sent", "swap_sell", "encoder_payment",
+    }
 
     entries = get_entries_by_user(user_id, limit=100000)  # newest-first
     chrono = list(reversed(entries))
@@ -1079,10 +1110,18 @@ def mn2_withdraw():
     if amount_sent <= 0:
         return jsonify({"success": False, "error": f"Amount must be greater than withdrawal fee ({fee} MN2)"}), 400
 
-    # Validate address (RPC)
+    # Validate address (RPC). Fail clearly when the node is unconfigured/unreachable
+    # instead of a generic 500 — external withdraw needs the daemon.
     r = validateaddress(address)
     if r.get("error"):
-        return jsonify({"success": False, "error": f"Address check failed: {r['error']}"}), 500
+        err = str(r.get("error") or "")
+        code = r.get("code") or ("rpc_unconfigured" if "rpc_unconfigured" in err.lower() else "rpc_error")
+        return jsonify({
+            "success": False,
+            "error": _user_facing_rpc_error(err),
+            "code": code,
+            "hint": "Peer transfers work in ledger mode via POST /api/mn2/transfer without the chain daemon.",
+        }), 503 if code == "rpc_unconfigured" else 500
     res = r.get("result")
     is_valid = res is True if isinstance(res, bool) else (isinstance(res, dict) and res.get("isvalid") is True)
     if not is_valid:

@@ -17,6 +17,37 @@
     return global.location.origin;
   }
 
+  function readSecurityToken() {
+    try {
+      var casino = localStorage.getItem('casino_security_token') || '';
+      if (casino) return casino;
+    } catch (e) { /* ignore */ }
+    try {
+      var sess = sessionStorage.getItem('mn2_security_token') || sessionStorage.getItem('security_verification_token') || '';
+      if (sess) return sess;
+    } catch (e2) { /* ignore */ }
+    var input = document.getElementById('profile-mn2-withdraw-security-token')
+      || document.getElementById('profile-security-verify-token');
+    return (input && input.value) ? String(input.value).trim() : '';
+  }
+
+  function readTotpCode() {
+    var input = document.getElementById('profile-mn2-withdraw-totp')
+      || document.getElementById('mn2-withdraw-totp');
+    return (input && input.value) ? String(input.value).trim() : '';
+  }
+
+  function ensureSessionBound(user) {
+    if (!user) return Promise.resolve();
+    return fetchJson(base() + '/api/user/bind-session', {
+      method: 'POST',
+      body: { user_id: user },
+      timeout: 8000,
+    }).catch(function () {
+      return { ok: false, data: {} };
+    });
+  }
+
   function fetchJson(url, opts) {
     opts = opts || {};
     var ctrl = new AbortController();
@@ -136,8 +167,11 @@
         depositErrEl.textContent = '';
       }
       if (depositHintEl) {
-        if (addrData.mn2_coins != null) {
-          depositHintEl.style.display = '';
+        depositHintEl.style.display = '';
+        if (addrData.ledger_only || addrData.address_warning) {
+          depositHintEl.textContent = addrData.address_warning
+            || 'In-app ledger wallet — balance and peer transfers work; do not send on-chain MN2 here.';
+        } else if (addrData.mn2_coins != null) {
           depositHintEl.textContent = 'One wallet · ' + addrData.mn2_coins + ' MN2 coins';
         } else {
           depositHintEl.style.display = 'none';
@@ -148,14 +182,18 @@
       if (explorerLink && addrData.explorer_address_url) {
         explorerLink.href = addrData.explorer_address_url;
         explorerLink.style.display = '';
+      } else if (explorerLink) {
+        explorerLink.style.display = 'none';
       }
-      if (qrEl && typeof QRCode !== 'undefined') {
+      if (qrEl && typeof QRCode !== 'undefined' && !addrData.ledger_only) {
         qrEl.innerHTML = '';
         try {
           new QRCode(qrEl, { text: addrData.deposit_address, width: 96, height: 96 });
         } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profile-mn2-wallet.js', context: 'catch' }); }
           qrEl.innerHTML = '';
         }
+      } else if (qrEl && addrData.ledger_only) {
+        qrEl.innerHTML = '';
       }
     } else {
       if (addrEl) addrEl.textContent = '—';
@@ -323,10 +361,21 @@
         withdrawBtn.disabled = true;
         var origHtml = withdrawBtn.innerHTML;
         withdrawBtn.textContent = 'Sending…';
-        fetchJson(base() + '/api/mn2/withdraw', {
-          method: 'POST',
-          body: { user_id: uid(), address: address, amount: amount },
-          timeout: 20000,
+        var body = {
+          user_id: uid(),
+          address: address,
+          amount: amount,
+        };
+        var token = readSecurityToken();
+        if (token) body.verification_token = token;
+        var totp = readTotpCode();
+        if (totp) body.totp_code = totp;
+        ensureSessionBound(uid()).then(function () {
+          return fetchJson(base() + '/api/mn2/withdraw', {
+            method: 'POST',
+            body: body,
+            timeout: 20000,
+          });
         })
           .then(function (res) {
             var data = res.data || {};
@@ -335,7 +384,26 @@
               document.getElementById('profile-mn2-withdraw-address').value = '';
               document.getElementById('profile-mn2-withdraw-amount').value = '';
               load();
-            } else if (typeof toast !== 'undefined') toast.error(data.error || 'Withdrawal failed');
+              return;
+            }
+            var code = data.code || '';
+            var err = data.error || 'Withdrawal failed';
+            if (code === 'password_verification_required') {
+              err = 'Verify your password in Profile → Security, then withdraw again.';
+            } else if (code === 'whitelist_required') {
+              err = 'Add this address to your withdrawal whitelist first (security panel below).';
+              fetchJson(base() + '/api/mn2/withdraw/whitelist', {
+                method: 'POST',
+                body: { action: 'add', address: address, user_id: uid() },
+              }).then(function (wl) {
+                if (wl.data && wl.data.success && typeof toast !== 'undefined') {
+                  toast.success('Address added to whitelist. Retry after cooldown if prompted.');
+                }
+              });
+            } else if (code === 'rpc_unconfigured' || code === 'rpc_error') {
+              err = (data.error || err) + ' Tip: send to another user with Transfer (ledger mode).';
+            }
+            if (typeof toast !== 'undefined') toast.error(err);
           })
           .finally(function () {
             withdrawBtn.disabled = false;
@@ -435,20 +503,22 @@
     wireFiatToggle();
     initWalletSubTabs();
 
-    fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
-      renderBalance(res.data);
-    });
-    fetchJson(base() + '/api/mn2/wallet-frame?user_id=' + q, { timeout: 18000 }).then(function (res) {
-      renderDeposit(res.data);
-    });
-    fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
-      renderTransactions(res.data);
-    });
-    fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
-      renderActivity(res.data);
-    });
-    fetchJson(base() + '/api/nft/wallet?user_id=' + q).then(function (res) {
-      renderNftWallet(res.data);
+    ensureSessionBound(user).then(function () {
+      fetchJson(base() + '/api/mn2/balance?user_id=' + q).then(function (res) {
+        renderBalance(res.data);
+      });
+      fetchJson(base() + '/api/mn2/wallet-frame?user_id=' + q, { timeout: 18000 }).then(function (res) {
+        renderDeposit(res.data);
+      });
+      fetchJson(base() + '/api/mn2/transactions?user_id=' + q + '&limit=20').then(function (res) {
+        renderTransactions(res.data);
+      });
+      fetchJson(base() + '/api/mn2/wallet-activity?user_id=' + q + '&days=5').then(function (res) {
+        renderActivity(res.data);
+      });
+      fetchJson(base() + '/api/nft/wallet?user_id=' + q).then(function (res) {
+        renderNftWallet(res.data);
+      });
     });
   }
 
