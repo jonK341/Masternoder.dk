@@ -90,17 +90,17 @@ def test_interactive_movie_job_completes_and_serves_video(client):
     assert len(video.data) > 20
 
 
-def test_billing_status_exposes_mn2_and_paypal(client):
+def test_billing_status_is_free_program(client):
     response = client.get("/api/film-canvas/billing?user_id=film-tester")
     assert response.status_code == 200
     body = response.get_json()
     assert body["success"] is True
-    assert body["free_active"] is True
-    assert body["pay_options"]["mn2"]["endpoint"].endswith("pay-mn2")
-    assert body["pay_options"]["paypal"]["endpoint"].endswith("paypal-order")
+    assert body["always_free"] is True
+    assert body["can_play"] is True
+    assert body["pay_options"] == {}
 
 
-def test_interactive_movie_requires_payment_after_free_window(client, monkeypatch):
+def test_interactive_movie_stays_free_after_old_window(client, monkeypatch):
     from datetime import datetime, timedelta, timezone
 
     started = datetime.now(timezone.utc) - timedelta(hours=30)
@@ -108,6 +108,26 @@ def test_interactive_movie_requires_payment_after_free_window(client, monkeypatc
         "FILM_MONITOR_PROMO_STARTED_AT",
         started.isoformat().replace("+00:00", "Z"),
     )
+    monkeypatch.setenv("FILM_MONITOR_ALWAYS_FREE", "1")
+    response = client.post(
+        "/api/film-canvas/interactive-movie",
+        json={"prompt": "free scene", "user_id": "film-tester"},
+    )
+    assert response.status_code == 202
+    body = response.get_json()
+    assert body.get("job_id")
+    assert body.get("billing", {}).get("free_active") is True
+
+
+def test_interactive_movie_can_require_payment_when_paid_mode(client, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+
+    started = datetime.now(timezone.utc) - timedelta(hours=30)
+    monkeypatch.setenv(
+        "FILM_MONITOR_PROMO_STARTED_AT",
+        started.isoformat().replace("+00:00", "Z"),
+    )
+    monkeypatch.setenv("FILM_MONITOR_ALWAYS_FREE", "0")
     response = client.post(
         "/api/film-canvas/interactive-movie",
         json={"prompt": "paid scene", "user_id": "film-tester"},

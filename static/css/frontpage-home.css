@@ -704,6 +704,16 @@ body.mn-sound-active #fp-neural-kicker {
     box-shadow: 0 0 0 1px rgba(255, 183, 77, 0.12);
 }
 
+.fp-film-pay-free {
+    grid-template-columns: 1fr;
+    border-color: rgba(0, 255, 136, 0.35);
+}
+
+.fp-film-pay-options.is-hidden,
+.fp-film-pay-options[hidden] {
+    display: none !important;
+}
+
 .fp-film-pay-copy {
     min-width: 0;
 }

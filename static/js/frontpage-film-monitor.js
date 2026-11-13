@@ -65,15 +65,12 @@
         var mn2 = Number(pricing.price_mn2 || 0.5);
         var coins = Number(pricing.price_coins || Math.round(mn2 * 100));
         var usd = Number(pricing.price_usd || 1.99);
-        if (mn2Label) {
-            mn2Label.textContent = 'Pay ' + mn2 + ' MN2 (' + coins + ' coins)';
-        }
-        if (ppLabel) {
-            ppLabel.textContent = 'Pay $' + usd.toFixed(2) + ' with PayPal';
-        }
-
+        var options = $('fp-film-pay-options');
+        var freeProgram = !!(billing.always_free || billing.free_program);
         if (banner) {
-            if (billing.free_active) {
+            if (freeProgram) {
+                banner.textContent = 'Free to use';
+            } else if (billing.free_active) {
                 banner.textContent = 'Free for the first 24 hours — '
                     + formatRemaining(billing.free_remaining_sec)
                     + ' left. After that: MN2 coins or PayPal.';
@@ -87,10 +84,24 @@
         }
         if (hint) {
             hint.textContent = billing.message
-                || 'Both options unlock 1 film play after the free window.';
+                || (freeProgram
+                    ? 'Film Canvas and Mission Control movies are free — write a scene and press Play Movie.'
+                    : 'Both options unlock 1 film play after the free window.');
         }
         if (pay) {
-            pay.classList.toggle('is-locked', !billing.can_play && !billing.free_active);
+            pay.classList.toggle('fp-film-pay-free', freeProgram);
+            pay.classList.toggle('is-locked', !freeProgram && !billing.can_play && !billing.free_active);
+        }
+        if (options) {
+            if (freeProgram) {
+                options.hidden = true;
+                options.classList.add('is-hidden');
+            } else {
+                options.hidden = false;
+                options.classList.remove('is-hidden');
+                if (mn2Label) mn2Label.textContent = 'Pay ' + mn2 + ' MN2 (' + coins + ' coins)';
+                if (ppLabel) ppLabel.textContent = 'Pay $' + usd.toFixed(2) + ' with PayPal';
+            }
         }
     }
 
@@ -111,7 +122,7 @@
                     can_play: true,
                     free_remaining_sec: 24 * 3600,
                     pricing: { price_mn2: 0.5, price_coins: 50, price_usd: 1.99 },
-                    message: 'Free for your first 24 hours — then MN2 coins or PayPal.',
+                    message: 'Free for the first 24 hours — then MN2 coins or PayPal.',
                 };
                 renderBilling();
             }

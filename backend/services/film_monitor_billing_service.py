@@ -1,8 +1,8 @@
 """
-Frontpage film-monitor billing: free for the first 24 hours, then MN2 or PayPal.
+Frontpage film-monitor access: free-to-use by default.
 
-A global promo clock starts on first billing touch (or FILM_MONITOR_PROMO_STARTED_AT).
-After that window, each play consumes one prepaid credit bought with MN2 coins or PayPal.
+Optional paid credits (MN2 / PayPal) remain available if FILM_MONITOR_ALWAYS_FREE=0
+and the free window expires — otherwise every play is free.
 """
 from __future__ import annotations
 
@@ -24,6 +24,20 @@ FREE_HOURS = 24
 DEFAULT_PRICE_MN2 = 0.5
 DEFAULT_PRICE_USD = 1.99
 DEFAULT_COINS_PER_MN2 = 100.0
+
+
+def is_always_free() -> bool:
+    """Film monitors are a free program unless explicitly opted into paid mode."""
+    env = (os.environ.get("FILM_MONITOR_ALWAYS_FREE") or "").strip().lower()
+    if env in ("0", "false", "no", "off"):
+        return False
+    if env in ("1", "true", "yes", "on"):
+        return True
+    root = _read_json(_MN2_CFG)
+    film = root.get("film_monitor") if isinstance(root.get("film_monitor"), dict) else {}
+    if "always_free" in film:
+        return bool(film.get("always_free"))
+    return True
 
 
 def _iso(dt: Optional[datetime] = None) -> str:
@@ -159,40 +173,50 @@ def get_status(
     pricing = _pricing()
     identity = resolve_identity(user_id, trial_id)
     store = _load()
+    always_free = is_always_free()
     free_active, remaining, started_at, ends_at = _ensure_promo(store, pricing["free_hours"])
     if start_trial:
         _save(store)
 
     credits = int((store.get("credits") or {}).get(identity) or 0)
-    can_play = free_active or credits > 0
-    if free_active:
-        if remaining >= 3600:
-            left = "%sh %sm" % (remaining // 3600, (remaining % 3600) // 60)
-        elif remaining >= 60:
-            left = "%sm" % (remaining // 60)
-        else:
-            left = "%ss" % remaining
-        message = (
-            "Free for the first %s hours — %s left. After that pay with MN2 coins or PayPal."
-            % (pricing["free_hours"], left)
-        )
-    elif credits > 0:
-        message = "Free window ended — %s prepaid play credit(s) left." % credits
+    if always_free:
+        free_active = True
+        remaining = max(remaining, 365 * 24 * 3600)
+        ends_at = None
+        can_play = True
+        message = "Free to use — Film Canvas and Mission Control movies are free."
     else:
-        message = "Free window ended — pay with MN2 coins or PayPal to play."
+        can_play = free_active or credits > 0
+        if free_active:
+            if remaining >= 3600:
+                left = "%sh %sm" % (remaining // 3600, (remaining % 3600) // 60)
+            elif remaining >= 60:
+                left = "%sm" % (remaining // 60)
+            else:
+                left = "%ss" % remaining
+            message = (
+                "Free for the first %s hours — %s left. After that pay with MN2 coins or PayPal."
+                % (pricing["free_hours"], left)
+            )
+        elif credits > 0:
+            message = "Free window ended — %s prepaid play credit(s) left." % credits
+        else:
+            message = "Free window ended — pay with MN2 coins or PayPal to play."
 
     return {
         "success": True,
         "identity": identity,
+        "always_free": always_free,
+        "free_program": always_free,
         "free_active": free_active,
-        "free_remaining_sec": remaining,
+        "free_remaining_sec": remaining if not always_free else None,
         "free_ends_at": ends_at,
         "promo_started_at": started_at,
         "trial_started": True,
         "credits": credits,
         "can_play": can_play,
         "pricing": pricing,
-        "pay_options": _pay_options(pricing),
+        "pay_options": _pay_options(pricing) if not always_free else {},
         "message": message,
     }
 
@@ -204,6 +228,13 @@ def assert_can_play(
     consume_credit: bool = True,
 ) -> Dict[str, Any]:
     status = get_status(user_id, trial_id, start_trial=True)
+    if status.get("always_free") or status.get("free_program"):
+        status["charged"] = False
+        status["reason"] = "free_program"
+        status["can_play"] = True
+        status["success"] = True
+        return status
+
     if status.get("free_active"):
         status["charged"] = False
         status["reason"] = "free_window"

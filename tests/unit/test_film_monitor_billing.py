@@ -1,4 +1,4 @@
-"""Film monitor free-24h window + MN2/PayPal credit billing."""
+"""Film monitor free program + optional paid mode."""
 from __future__ import annotations
 
 import os
@@ -20,25 +20,28 @@ def billing(tmp_path, monkeypatch):
         str(path),
     )
     monkeypatch.delenv("FILM_MONITOR_PROMO_STARTED_AT", raising=False)
+    monkeypatch.delenv("FILM_MONITOR_ALWAYS_FREE", raising=False)
     from backend.services import film_monitor_billing_service as mod
 
     return mod
 
 
-def test_free_window_allows_play(billing):
+def test_free_program_allows_play(billing, monkeypatch):
+    monkeypatch.setenv("FILM_MONITOR_ALWAYS_FREE", "1")
     status = billing.get_status("alice", start_trial=True)
     assert status["success"] is True
-    assert status["free_active"] is True
+    assert status["always_free"] is True
+    assert status["free_program"] is True
     assert status["can_play"] is True
-    assert status["pay_options"]["mn2"]["price_mn2"] > 0
-    assert status["pay_options"]["paypal"]["price_usd"] > 0
+    assert status["pay_options"] == {}
 
     access = billing.assert_can_play("alice")
     assert access["can_play"] is True
-    assert access["reason"] == "free_window"
+    assert access["reason"] == "free_program"
 
 
-def test_after_free_window_requires_payment_or_credit(billing, monkeypatch):
+def test_paid_mode_after_free_window_requires_payment_or_credit(billing, monkeypatch):
+    monkeypatch.setenv("FILM_MONITOR_ALWAYS_FREE", "0")
     started = datetime.now(timezone.utc) - timedelta(hours=25)
     monkeypatch.setenv("FILM_MONITOR_PROMO_STARTED_AT", started.isoformat().replace("+00:00", "Z"))
 
@@ -60,6 +63,7 @@ def test_after_free_window_requires_payment_or_credit(billing, monkeypatch):
 
 
 def test_paypal_fulfillment_grants_credit(billing, monkeypatch):
+    monkeypatch.setenv("FILM_MONITOR_ALWAYS_FREE", "0")
     started = datetime.now(timezone.utc) - timedelta(hours=30)
     monkeypatch.setenv("FILM_MONITOR_PROMO_STARTED_AT", started.isoformat().replace("+00:00", "Z"))
     out = billing.fulfill_paypal_purchase("carol", "ORDER123", amount=1.99)
