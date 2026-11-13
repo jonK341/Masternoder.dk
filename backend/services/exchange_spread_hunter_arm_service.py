@@ -411,20 +411,27 @@ def _venue_free_quote(venue: str) -> Dict[str, Any]:
     return {"venue": venue, "quote": quote, "free": round(free, 4), "balances": bals}
 
 
+_FIAT_SKIP = frozenset({
+    "USDT", "USDC", "USD", "BUSD", "FDUSD", "DAI", "TUSD", "USDD",
+    "EUR", "DKK", "GBP", "JPY", "AUD", "CAD", "CHF", "SEK", "NOK",
+})
+
+
 def _raise_inventory_candidates(
     bals: Dict[str, Any],
     *,
     quote: str,
     preferred: Optional[Sequence[str]] = None,
 ) -> List[str]:
-    """Preferred symbols first, then any non-quote inventory with balance."""
+    """Preferred symbols first, then spot inventory (skip LD* earn wrappers / fiat)."""
     quote_u = str(quote or "").upper()
-    skip = {quote_u, "USDT", "USDC", "USD", "BUSD", "FDUSD", "DAI"}
+    skip = set(_FIAT_SKIP)
+    skip.add(quote_u)
     ordered: List[str] = []
     seen = set()
     for sym in list(preferred or []) + list(_SEED_SYMBOLS):
         s = str(sym or "").upper()
-        if not s or s in skip or s in seen:
+        if not s or s in skip or s in seen or s.startswith("LD"):
             continue
         if float(bals.get(s) or 0) > 0:
             ordered.append(s)
@@ -432,7 +439,7 @@ def _raise_inventory_candidates(
     extras: List[Tuple[str, float]] = []
     for k, val in (bals or {}).items():
         s = str(k or "").upper()
-        if not s or s in skip or s in seen:
+        if not s or s in skip or s in seen or s.startswith("LD"):
             continue
         try:
             qty = float(val or 0)
@@ -475,11 +482,38 @@ def _raise_quote_on_buy_venue(
             "need_usd": round(need_usd, 2),
         }
 
+    earn_unlock = None
+    if str(buy_venue).lower() == "binance":
+        try:
+            from backend.services.exchange_binance_earn_service import list_ld_balances, unlock_earn_to_spot
+
+            if list_ld_balances(bals):
+                earn_unlock = unlock_earn_to_spot(target_usd=max(target, float(min_sell_usd)))
+                if earn_unlock.get("success"):
+                    time.sleep(1.0)
+                    vapi.invalidate_venue_balance_cache(buy_venue)
+                    bals = vapi.parse_spot_balances(buy_venue, dry_run=False, force_refresh=True) or {}
+                    free_q = float(bals.get(quote) or 0)
+                    if free_q >= need_usd:
+                        return {
+                            "success": True,
+                            "skipped": True,
+                            "reason": "funded_after_earn_unlock",
+                            "free_quote": free_q,
+                            "earn_unlock": earn_unlock,
+                        }
+        except Exception as exc:
+            earn_unlock = {"success": False, "error": str(exc)[:160]}
+
     if scan_all_balances:
         candidates = _raise_inventory_candidates(bals, quote=str(quote or ""), preferred=raise_symbols)
     else:
-        candidates = raise_symbols or list(_SEED_SYMBOLS)
+        candidates = [
+            s for s in (raise_symbols or list(_SEED_SYMBOLS))
+            if not str(s).upper().startswith("LD")
+        ]
 
+    attempts: List[Dict[str, Any]] = []
     for sym in candidates:
         qty_coin = float(bals.get(sym) or 0)
         if qty_coin <= 0:
@@ -487,10 +521,12 @@ def _raise_quote_on_buy_venue(
         tick = conn.fetch_ticker(buy_venue, sym) or {}
         bid = float(tick.get("bid") or 0)
         if bid <= 0:
+            attempts.append({"symbol": sym, "skipped": True, "reason": "no_bid"})
             continue
         inv_usd = qty_coin * bid
         sell_usd = min(target, inv_usd * float(max_fraction))
         if sell_usd < float(min_sell_usd):
+            attempts.append({"symbol": sym, "skipped": True, "reason": "below_min_sell", "usd": round(inv_usd, 2)})
             continue
         sell_qty = round((sell_usd / bid) * 0.995, 6)
         if sell_qty <= 0:
@@ -500,23 +536,33 @@ def _raise_quote_on_buy_venue(
         )
         ok = bool(order.get("success"))
         vapi.invalidate_venue_balance_cache(buy_venue)
-        return {
-            "success": ok,
-            "action": "prefund_sell",
-            "venue": buy_venue,
+        attempts.append({
             "symbol": sym,
-            "sell_qty": sell_qty,
+            "success": ok,
             "sell_usd": round(sell_usd, 2),
-            "order_success": ok,
-            "free_quote_before": round(free_q, 4),
             "error": order.get("error") if not ok else None,
-        }
+        })
+        if ok:
+            return {
+                "success": True,
+                "action": "prefund_sell",
+                "venue": buy_venue,
+                "symbol": sym,
+                "sell_qty": sell_qty,
+                "sell_usd": round(sell_usd, 2),
+                "order_success": True,
+                "free_quote_before": round(free_q, 4),
+                "earn_unlock": earn_unlock,
+                "attempts": attempts[-5:],
+            }
     return {
         "success": False,
         "reason": "no_raise_inventory",
         "need_usd": round(need_usd, 2),
         "free_quote": round(free_q, 4),
         "candidates": len(candidates),
+        "earn_unlock": earn_unlock,
+        "attempts": attempts[-8:],
     }
 
 
@@ -847,7 +893,24 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         and float(o.get("est_profit_usd") or 0) >= min_profit
         and o.get("profitable")
     ]
+    # Keep Binance live: when BN quote is funded, prefer buy-on-binance routes.
+    bn_free = 0.0
+    try:
+        bn_free = float(_venue_free_quote("binance").get("free") or 0)
+    except Exception:
+        bn_free = 0.0
+    prefer_bn_buy = bn_free >= _cfg_float("SPREAD_HUNTER_BN_BUY_FLOOR_USD", 12.0)
+
+    def _rank_opp(o: Dict[str, Any]) -> float:
+        bps = float(o.get("net_bps") or 0)
+        if prefer_bn_buy and str(o.get("buy_venue") or "").lower() == "binance":
+            return bps + 8.0
+        return bps
+
+    qualifying.sort(key=_rank_opp, reverse=True)
+    annotated.sort(key=_rank_opp, reverse=True)
     out["qualifying"] = len(qualifying)
+    out["prefer_binance_buy"] = prefer_bn_buy
     _write_board(qualifying or annotated, scanned=len(symbols), qualifying=len(qualifying))
     out["board_top"] = [
         {
@@ -905,12 +968,34 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             out["recheck"] = {
                 "reason": recheck.get("reason"),
                 "opportunity": {
-                    "symbol": (recheck.get("opportunity") or {}).get("symbol"),
+                    "symbol": (recheck.get("opportunity") or {}).get("symbol") or opp.get("symbol"),
+                    "buy_venue": (recheck.get("opportunity") or {}).get("buy_venue") or opp.get("buy_venue"),
+                    "sell_venue": (recheck.get("opportunity") or {}).get("sell_venue") or opp.get("sell_venue"),
                     "net_bps": (recheck.get("opportunity") or {}).get("net_bps"),
+                    "est_profit_usd": (recheck.get("opportunity") or {}).get("est_profit_usd"),
+                    "notional_usd": (recheck.get("opportunity") or {}).get("notional_usd") or opp.get("notional_usd"),
                     "mid_skew_bps": (recheck.get("opportunity") or {}).get("mid_skew_bps"),
                     "regime_factor": (recheck.get("opportunity") or {}).get("regime_factor"),
                 },
             }
+            if out["skip_reason"] == "regime_skew_too_wide":
+                try:
+                    from backend.services.exchange_latch_sniper_service import arm_latch
+
+                    ro = out["recheck"]["opportunity"]
+                    arm_latch(
+                        symbol=str(ro.get("symbol") or ""),
+                        buy_venue=str(ro.get("buy_venue") or ""),
+                        sell_venue=str(ro.get("sell_venue") or ""),
+                        net_bps=float(ro.get("net_bps") or opp.get("net_bps") or 0),
+                        mid_skew_bps=float(ro.get("mid_skew_bps") or 0),
+                        est_profit_usd=float(ro.get("est_profit_usd") or opp.get("est_profit_usd") or 0),
+                        notional_usd=float(ro.get("notional_usd") or notional),
+                        source="hunter_skew",
+                    )
+                    out["latch_armed"] = True
+                except Exception:
+                    pass
             continue
 
         trade_opp = recheck["opportunity"]
@@ -967,6 +1052,12 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             venues=venues,
         )
         exec_res = execute_spatial_arbitrage(ready, agent_id=agent_id)
+        try:
+            from backend.services.exchange_closer_claw_service import note_execution_legs
+
+            note_execution_legs(ready, exec_res, source="hunter")
+        except Exception:
+            pass
         record_execution(
             path_id=path_id,
             agent_id=agent_id,
@@ -1028,6 +1119,8 @@ def _persist_tick(out: Dict[str, Any]) -> None:
             "board_top": out.get("board_top"),
             "executed": out.get("executed"),
             "skip_reason": out.get("skip_reason"),
+            "recheck": out.get("recheck"),
+            "latch_armed": out.get("latch_armed"),
             "prefund": out.get("prefund"),
             "backfill": {
                 "success": (out.get("backfill") or {}).get("success"),

@@ -262,6 +262,12 @@ def run_dual_farm_arm_tick(*, force: bool = False) -> Dict[str, Any]:
             venues=venues,
         )
         exec_res = execute_spatial_arbitrage(trade_opp, agent_id=agent_id)
+        try:
+            from backend.services.exchange_closer_claw_service import note_execution_legs
+
+            note_execution_legs(trade_opp, exec_res, source="dual_farm")
+        except Exception:
+            pass
         record_execution(
             path_id=path_id,
             agent_id=agent_id,
