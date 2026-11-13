@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113b">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113c">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -44,18 +44,18 @@
             </div>
 
             <div class="fp-film-monitor" id="fp-film-monitor" aria-label="Interaktiv film monitor">
-                <div class="fp-film-orbit" aria-hidden="true">
-                    <button type="button" class="fp-core-node fp-film-node fp-film-node-ai" id="fp-film-node-ai" title="AI film canvas / generator">AI</button>
-                    <button type="button" class="fp-core-node fp-film-node fp-film-node-snd" id="fp-film-node-snd" title="Toggle neural sound">SND</button>
-                    <a class="fp-core-node fp-film-node fp-film-node-xp" id="fp-film-node-xp" href="/trophies" title="XP &amp; trophies">XP</a>
-                    <div class="fp-core-pulse fp-film-pulse" title="System v2.0">2.0</div>
-                </div>
                 <div class="fp-film-bezel">
                     <div class="fp-film-chrome">
                         <span class="fp-film-dot" aria-hidden="true"></span>
                         <span class="fp-film-dot" aria-hidden="true"></span>
                         <span class="fp-film-dot" aria-hidden="true"></span>
                         <span class="fp-film-version">v2.0</span>
+                        <div class="fp-film-node-row" role="group" aria-label="System nodes">
+                            <button type="button" class="fp-film-chip" id="fp-film-node-ai" title="AI film canvas — play movie">AI</button>
+                            <button type="button" class="fp-film-chip" id="fp-film-node-snd" title="Toggle neural sound" aria-pressed="false">SND</button>
+                            <a class="fp-film-chip" id="fp-film-node-xp" href="/trophies" title="XP &amp; trophies">XP</a>
+                            <span class="fp-film-chip fp-film-chip-pulse" title="System v2.0">2.0</span>
+                        </div>
                         <span class="fp-film-ready" id="fp-film-ready">Checking canvases…</span>
                     </div>
                     <div class="fp-film-screen">
@@ -374,7 +374,7 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/frontpage-film-monitor.js?v=20261113b" defer></script>
+    <script src="/static/js/frontpage-film-monitor.js?v=20261113c" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

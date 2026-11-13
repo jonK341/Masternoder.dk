@@ -161,8 +161,11 @@
     function syncSoundNode() {
         var snd = $('fp-film-node-snd');
         var kicker = $('fp-neural-kicker');
-        var power = $('themeSoundToggle');
-        var live = !!(power && power.getAttribute('aria-pressed') === 'true');
+        var live = document.body.classList.contains('mn-sound-active');
+        if (!live) {
+            var power = $('themeSoundToggle');
+            live = !!(power && power.getAttribute('aria-pressed') === 'true');
+        }
         if (snd) {
             snd.classList.toggle('is-live', live);
             snd.setAttribute('aria-pressed', live ? 'true' : 'false');
@@ -185,19 +188,17 @@
         }
         if (snd) {
             snd.addEventListener('click', function () {
-                var power = $('themeSoundToggle');
+                var power = $('themeSoundToggle') || $('themeSoundFloatToggle');
                 if (power) power.click();
-                setTimeout(syncSoundNode, 50);
+                setTimeout(syncSoundNode, 80);
             });
         }
-        var power = $('themeSoundToggle');
-        if (power) {
-            power.addEventListener('click', function () {
-                setTimeout(syncSoundNode, 60);
-            });
-        }
+        ['themeSoundToggle', 'themeSoundFloatToggle'].forEach(function (id) {
+            var el = $(id);
+            if (el) el.addEventListener('click', function () { setTimeout(syncSoundNode, 80); });
+        });
         syncSoundNode();
-        setInterval(syncSoundNode, 2000);
+        setInterval(syncSoundNode, 1500);
     }
 
     async function playMovie() {
