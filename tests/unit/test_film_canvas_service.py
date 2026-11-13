@@ -506,7 +506,7 @@ def test_acting_clip_morphs_multiple_poses(clean_env, tmp_path):
 
 def test_build_storyboard_beats_always_multi_shot():
     beats = canvas._build_storyboard_beats("neon harbour", 4)
-    assert len(beats) == 2
+    assert len(beats) == 4
     assert beats[0]["shot_type"] != beats[1]["shot_type"]
     assert abs(sum(b["duration_sec"] for b in beats) - 4) < 0.2
     long_beats = canvas._build_storyboard_beats(
@@ -516,6 +516,24 @@ def test_build_storyboard_beats_always_multi_shot():
     )
     assert len(long_beats) >= 4
     assert "rain" in long_beats[0]["description"].lower()
+
+
+def test_fx_pack_unique_and_balanced():
+    a = canvas._build_fx_pack("pipe_aaa", style="neon", mood="tense")
+    b = canvas._build_fx_pack("pipe_bbb", style="fog", mood="calm")
+    assert a["background"] in canvas._FX_BACKGROUNDS
+    assert a["sound"] in canvas._FX_SOUNDS
+    assert 7 <= len(a["effects"]) <= 10
+    assert 0.35 <= a["intensity"] <= 0.65
+    assert a["effects"] != b["effects"] or a["background"] != b["background"] or a["sound"] != b["sound"]
+    normalized = canvas._normalize_fx_pack(
+        {"background": "glitch", "sound": "storm", "effects": ["scan", "rain"], "intensity": 1.1},
+        "pipe_norm",
+    )
+    assert normalized["background"] == "glitch"
+    assert normalized["sound"] == "storm"
+    assert len(normalized["effects"]) >= 7
+    assert normalized["intensity"] <= 0.65
 
 
 def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, monkeypatch):
@@ -710,12 +728,15 @@ def test_ai_design_pipeline_parses_unique_beats(clean_env, monkeypatch):
         "_gemini_rest_complete",
         lambda *a, **k: {"success": True, "provider": "gemini_rest", "content": _Resp.content},
     )
-    out = canvas._ai_design_clip_pipeline("harbour", duration_sec=6, beat_count=2, timeout=10)
+    out = canvas._ai_design_clip_pipeline("harbour", duration_sec=6, beat_count=4, timeout=10)
     assert out["success"] is True
     assert out["style"] == "wet chrome"
-    assert len(out["beats"]) == 2
+    assert len(out["beats"]) >= 4
     assert out["beats"][0]["shot_type"] == "establishing"
     assert out["run_id"].startswith("pipe_")
+    assert isinstance(out.get("fx_pack"), dict)
+    assert out["fx_pack"]["background"]
+    assert len(out["fx_pack"]["effects"]) >= 7
 
 
 def test_extract_json_repairs_truncated_pipeline():
@@ -772,11 +793,13 @@ def test_gemini_rest_designs_pipeline(clean_env, monkeypatch):
         },
     )
     monkeypatch.setattr(canvas, "_video_ai_bridge", None)
-    out = canvas._ai_design_clip_pipeline("harbour", duration_sec=6, beat_count=2, timeout=10)
+    out = canvas._ai_design_clip_pipeline("harbour", duration_sec=6, beat_count=4, timeout=10)
     assert out["success"] is True
     assert out["provider"] == "gemini_rest"
     assert out["style"] == "rain chrome"
-    assert len(out["beats"]) == 2
+    assert len(out["beats"]) >= 4
+    assert isinstance(out.get("fx_pack"), dict)
+    assert 0.35 <= float(out["fx_pack"]["intensity"]) <= 0.65
 
 
 def test_auto_segment_clips_use_compose_pipeline(clean_env, tmp_path, monkeypatch):

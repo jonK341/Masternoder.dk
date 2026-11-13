@@ -13,10 +13,36 @@
     var billing = null;
     var billingTimer = null;
     var faceDataUrl = null;
+    var activeFx = null;
     var TRIAL_KEY = 'fp_film_trial_id';
     var MIN_DURATION = 2;
     var MAX_DURATION = 120;
     var DEFAULT_DURATION = 8;
+
+    var FX_BACKGROUNDS = [
+        'aurora', 'rain', 'grid', 'ember', 'plasma', 'fog',
+        'signal', 'hex', 'glitch', 'ocean', 'chrome', 'violet',
+    ];
+    var FX_SOUNDS = [
+        'harbour', 'storm', 'neon', 'drone', 'pulse', 'battle',
+        'stars', 'focus', 'market', 'fog', 'chrome', 'rain',
+        'ember', 'signal', 'ocean',
+    ];
+    var FX_EFFECTS = [
+        'scan', 'sparks', 'rain', 'glitch', 'chromatic', 'hex',
+        'embers', 'streaks', 'noise', 'bloom', 'ripple', 'shards',
+        'orbit', 'pulse_ring', 'static', 'flare',
+    ];
+    var FX_PALETTES = [
+        ['#00ff88', '#00b4ff', '#ff5078'],
+        ['#7cf5ff', '#3d7cff', '#c8ff6a'],
+        ['#ff9a3c', '#ff5e7a', '#ffe08a'],
+        ['#b388ff', '#5eead4', '#f0abfc'],
+        ['#94a3b8', '#38bdf8', '#e2e8f0'],
+        ['#f97316', '#22d3ee', '#fde68a'],
+        ['#34d399', '#818cf8', '#fda4af'],
+        ['#67e8f9', '#a78bfa', '#fb7185'],
+    ];
 
     function $(id) {
         return document.getElementById(id);
@@ -269,61 +295,273 @@
         return !!(power && power.getAttribute('aria-pressed') === 'true');
     }
 
+    function hexToRgba(hex, alpha) {
+        var h = String(hex || '#00ff88').replace('#', '');
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        var r = parseInt(h.slice(0, 2), 16) || 0;
+        var g = parseInt(h.slice(2, 4), 16) || 0;
+        var b = parseInt(h.slice(4, 6), 16) || 0;
+        return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    }
+
+    function pickLocalFxPack() {
+        var salt = Math.floor(Math.random() * 1e9);
+        var start = salt % FX_EFFECTS.length;
+        var rotated = FX_EFFECTS.slice(start).concat(FX_EFFECTS.slice(0, start));
+        var count = 7 + (salt % 4);
+        return {
+            background: FX_BACKGROUNDS[salt % FX_BACKGROUNDS.length],
+            sound: FX_SOUNDS[(salt >> 3) % FX_SOUNDS.length],
+            effects: rotated.slice(0, count),
+            palette: FX_PALETTES[(salt >> 5) % FX_PALETTES.length].slice(),
+            intensity: 0.7 + (salt % 30) / 100,
+        };
+    }
+
+    function applyFxPack(pack, opts) {
+        activeFx = pack && typeof pack === 'object' ? pack : pickLocalFxPack();
+        if (!Array.isArray(activeFx.effects) || activeFx.effects.length < 4) {
+            activeFx.effects = pickLocalFxPack().effects;
+        }
+        if (!Array.isArray(activeFx.palette) || activeFx.palette.length < 2) {
+            activeFx.palette = FX_PALETTES[0].slice();
+        }
+        // Cap intensity so ambient FX never overpower the scene picture.
+        var rawIntensity = Number(activeFx.intensity);
+        if (!isFinite(rawIntensity)) rawIntensity = 0.5;
+        activeFx.intensity = Math.max(0.35, Math.min(0.65, rawIntensity));
+        var monitor = $('fp-film-monitor');
+        if (monitor) {
+            monitor.setAttribute('data-fx-bg', activeFx.background || 'aurora');
+            monitor.classList.add('is-fx-hot');
+            if (opts && opts.playing) monitor.classList.add('is-playing');
+            else if (!(opts && opts.keepPlaying)) monitor.classList.remove('is-playing');
+            monitor.style.setProperty('--fx-a', activeFx.palette[0] || '#00ff88');
+            monitor.style.setProperty('--fx-b', activeFx.palette[1] || '#00b4ff');
+            monitor.style.setProperty('--fx-c', activeFx.palette[2] || '#ff5078');
+        }
+        var force = !!(opts && opts.forceSound);
+        var snd = activeFx.sound;
+        if (snd) {
+            try {
+                window.dispatchEvent(new CustomEvent('mn-film-fx-sound', {
+                    detail: { sound: snd, forceStart: force || soundLive() },
+                }));
+            } catch (_) {}
+            if (window.MnFrontpageSound && typeof window.MnFrontpageSound.applyFilmSound === 'function') {
+                window.MnFrontpageSound.applyFilmSound(snd, force || soundLive());
+            }
+        }
+        return activeFx;
+    }
+
+    function fxHas(name) {
+        return !!(activeFx && Array.isArray(activeFx.effects) && activeFx.effects.indexOf(name) !== -1);
+    }
+
+    function drawFxOverlays(ctx, w, h, t, intensity, videoMode) {
+        // Prompt/movie picture stays dominant. Overlays are accents only —
+        // especially restrained while a finished clip is on screen.
+        var pack = activeFx || pickLocalFxPack();
+        var a = (pack.palette && pack.palette[0]) || '#00ff88';
+        var b = (pack.palette && pack.palette[1]) || '#00b4ff';
+        var c = (pack.palette && pack.palette[2]) || '#ff5078';
+        var base = Math.max(0.35, Math.min(1.0, intensity || pack.intensity || 0.55));
+        var dens = videoMode ? base * 0.28 : base * 0.72;
+        var hot = soundLive();
+        var mult = (!videoMode && hot) ? 1.15 : 1;
+
+        if (fxHas('scan') || !activeFx) {
+            var scanY = ((t * (70 * dens * mult + 40)) % (h + 50)) - 25;
+            ctx.fillStyle = hexToRgba(a, (videoMode ? 0.035 : 0.07) * dens * mult);
+            ctx.fillRect(0, scanY, w, videoMode ? 8 : (10 + 10 * dens));
+            if (!videoMode) {
+                var scanY2 = ((t * (50 * dens) + h * 0.4) % (h + 40)) - 20;
+                ctx.fillStyle = hexToRgba(b, 0.04 * dens);
+                ctx.fillRect(0, scanY2, w, 6);
+            }
+        }
+
+        if (!videoMode && (fxHas('sparks') || fxHas('orbit'))) {
+            var n = Math.floor(16 * dens * mult);
+            for (var i = 0; i < n; i++) {
+                var px = (Math.sin(t * 1.6 + i * 1.17) * 0.5 + 0.5) * w;
+                var py = (Math.cos(t * 1.1 + i * 0.83) * 0.5 + 0.5) * h;
+                ctx.fillStyle = hexToRgba(i % 2 ? a : b, 0.1 + (i % 5) * 0.025);
+                ctx.beginPath();
+                ctx.arc(px, py, 1.1 + (i % 3) * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        if (!videoMode && fxHas('rain')) {
+            ctx.strokeStyle = hexToRgba(b, 0.1 * dens);
+            ctx.lineWidth = 1;
+            var drops = Math.floor(22 * dens * mult);
+            for (var d = 0; d < drops; d++) {
+                var rx = ((d * 97 + t * 120) % (w + 40)) - 20;
+                var ry = ((d * 53 + t * (180 + d % 40)) % (h + 60)) - 30;
+                ctx.beginPath();
+                ctx.moveTo(rx, ry);
+                ctx.lineTo(rx + 1.5, ry + 8 + (d % 6));
+                ctx.stroke();
+            }
+        }
+
+        if (!videoMode && fxHas('embers')) {
+            var em = Math.floor(14 * dens * mult);
+            for (var e = 0; e < em; e++) {
+                var ex = ((e * 61 + Math.sin(t + e) * 24) % w);
+                var ey = h - ((t * (24 + e % 16) + e * 37) % (h + 40));
+                ctx.fillStyle = hexToRgba(c, 0.1 + (e % 4) * 0.03);
+                ctx.beginPath();
+                ctx.arc(ex, ey, 1.2 + (e % 2), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        if (!videoMode && fxHas('streaks')) {
+            ctx.strokeStyle = hexToRgba(a, 0.07 * dens);
+            ctx.lineWidth = 1;
+            for (var s = 0; s < Math.floor(6 * dens * mult); s++) {
+                var sy = ((s * 73 + t * 70) % h);
+                ctx.beginPath();
+                ctx.moveTo(0, sy);
+                ctx.lineTo(w * (0.22 + (s % 4) * 0.08), sy + Math.sin(t + s) * 5);
+                ctx.stroke();
+            }
+        }
+
+        if (!videoMode && (fxHas('hex') || fxHas('grid'))) {
+            ctx.strokeStyle = hexToRgba(a, 0.055 * dens);
+            ctx.lineWidth = 1;
+            var step = 28;
+            for (var x = 0; x < w; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x + (t * 12) % step, 0);
+                ctx.lineTo(x + (t * 12) % step, h);
+                ctx.stroke();
+            }
+            for (var y = 0; y < h; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+        }
+
+        if (!videoMode && (fxHas('glitch') || fxHas('static'))) {
+            for (var g = 0; g < Math.floor(4 * dens * mult); g++) {
+                var gh = 1 + (g % 3);
+                var gy = ((Math.sin(t * 5 + g) * 0.5 + 0.5) * h) | 0;
+                ctx.fillStyle = hexToRgba(g % 2 ? c : a, 0.05 + (g % 3) * 0.02);
+                ctx.fillRect(((t * 140 + g * 40) % w) - 12, gy, 18 + g * 5, gh);
+            }
+        }
+
+        if (fxHas('chromatic') && videoMode) {
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = hexToRgba(c, 0.012 * dens);
+            ctx.fillRect(1, 0, w, h);
+            ctx.fillStyle = hexToRgba(b, 0.01 * dens);
+            ctx.fillRect(-1, 0, w, h);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        if (fxHas('bloom') || fxHas('flare')) {
+            var gx = w * (0.4 + 0.15 * Math.sin(t * 0.45));
+            var gy = h * (0.42 + 0.1 * Math.cos(t * 0.35));
+            var grd = ctx.createRadialGradient(gx, gy, 10, gx, gy, w * (videoMode ? 0.22 : 0.32) * dens);
+            grd.addColorStop(0, hexToRgba(a, (videoMode ? 0.04 : 0.1) * dens * mult));
+            grd.addColorStop(0.55, hexToRgba(b, (videoMode ? 0.015 : 0.04) * dens));
+            grd.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        if (!videoMode && (fxHas('ripple') || fxHas('pulse_ring'))) {
+            ctx.strokeStyle = hexToRgba(b, 0.08 * dens);
+            ctx.lineWidth = 1;
+            var rings = Math.floor(3 * dens * mult);
+            for (var r = 0; r < rings; r++) {
+                var rad = ((t * 28 + r * 32) % (Math.min(w, h) * 0.45));
+                ctx.beginPath();
+                ctx.arc(w * 0.5, h * 0.48, rad, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        if (!videoMode && fxHas('shards')) {
+            ctx.fillStyle = hexToRgba(c, 0.06 * dens);
+            for (var sh = 0; sh < Math.floor(7 * dens); sh++) {
+                var sx = (Math.sin(t * 1.1 + sh) * 0.5 + 0.5) * w;
+                var sy = (Math.cos(t * 0.8 + sh * 1.2) * 0.5 + 0.5) * h;
+                ctx.beginPath();
+                ctx.moveTo(sx, sy);
+                ctx.lineTo(sx + 6 + (sh % 4), sy + 1);
+                ctx.lineTo(sx + 2, sy + 7 + (sh % 3));
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        if (!videoMode && fxHas('noise')) {
+            for (var n2 = 0; n2 < Math.floor(28 * dens * mult); n2++) {
+                ctx.fillStyle = hexToRgba(n2 % 2 ? a : '#ffffff', 0.025);
+                ctx.fillRect(Math.random() * w, Math.random() * h, 1.2, 1.2);
+            }
+        }
+
+        // Soft edge vignette so the scene center (prompt picture) stays clearest.
+        if (videoMode) {
+            var vig = ctx.createRadialGradient(w * 0.5, h * 0.5, w * 0.28, w * 0.5, h * 0.5, w * 0.72);
+            vig.addColorStop(0, 'rgba(0,0,0,0)');
+            vig.addColorStop(1, 'rgba(0,0,0,0.18)');
+            ctx.fillStyle = vig;
+            ctx.fillRect(0, 0, w, h);
+        }
+    }
+
     function drawIdle(canvas, ctx, now) {
         var w = canvas.width;
         var h = canvas.height;
         var t = (now - t0) / 1000;
         var hot = soundLive();
+        var pack = activeFx || { palette: ['#00ff88', '#00b4ff', '#ff5078'], intensity: 0.75 };
+        var a = pack.palette[0] || '#00ff88';
+        var bCol = pack.palette[1] || '#00b4ff';
+
         ctx.fillStyle = '#020805';
         ctx.fillRect(0, 0, w, h);
 
         var g = ctx.createRadialGradient(w * 0.5, h * 0.45, 20, w * 0.5, h * 0.5, w * 0.62);
-        g.addColorStop(0, hot ? 'rgba(0,255,136,0.28)' : 'rgba(0,255,136,0.16)');
-        g.addColorStop(0.45, hot ? 'rgba(0,180,255,0.14)' : 'rgba(0,180,255,0.06)');
+        g.addColorStop(0, hexToRgba(a, hot ? 0.3 : 0.18));
+        g.addColorStop(0.45, hexToRgba(bCol, hot ? 0.16 : 0.07));
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, w, h);
 
-        ctx.strokeStyle = hot ? 'rgba(0,255,136,0.16)' : 'rgba(0,255,136,0.08)';
-        ctx.lineWidth = 1;
-        var step = hot ? 22 : 28;
-        var drift = hot ? 22 : 12;
-        for (var x = 0; x < w; x += step) {
-            ctx.beginPath();
-            ctx.moveTo(x + (t * drift) % step, 0);
-            ctx.lineTo(x + (t * drift) % step, h);
-            ctx.stroke();
-        }
-        for (var y = 0; y < h; y += step) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(w, y);
-            ctx.stroke();
-        }
+        drawFxOverlays(ctx, w, h, t, (pack.intensity || 0.55) * (hot ? 1.05 : 0.85), false);
 
-        var scanSpeed = hot ? 120 : 70;
-        var scanY = ((t * scanSpeed) % (h + 40)) - 20;
-        ctx.fillStyle = hot ? 'rgba(0,255,180,0.14)' : 'rgba(0,255,180,0.07)';
-        ctx.fillRect(0, scanY, w, hot ? 26 : 18);
-
-        if (hot) {
-            for (var i = 0; i < 18; i++) {
-                var px = (Math.sin(t * 1.7 + i * 1.3) * 0.5 + 0.5) * w;
-                var py = (Math.cos(t * 1.1 + i * 0.9) * 0.5 + 0.5) * h;
-                ctx.fillStyle = 'rgba(0,255,200,' + (0.18 + (i % 5) * 0.04) + ')';
-                ctx.beginPath();
-                ctx.arc(px, py, 1.5 + (i % 3), 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        ctx.fillStyle = 'rgba(180,255,220,0.55)';
+        ctx.fillStyle = hexToRgba(a, 0.7);
         ctx.font = '600 22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(hot ? 'FILM CANVAS · SOUND LIVE' : 'FILM CANVAS · STANDBY', w / 2, h / 2 - 8);
+        var label = hot ? 'FILM CANVAS · SOUND LIVE' : 'FILM CANVAS · STANDBY';
+        if (activeFx && activeFx.background) {
+            label = 'FILM · ' + String(activeFx.background).toUpperCase()
+                + (activeFx.sound ? (' · ' + String(activeFx.sound).toUpperCase()) : '');
+        }
+        ctx.fillText(label, w / 2, h / 2 - 8);
         ctx.font = '400 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-        ctx.fillStyle = 'rgba(140,220,180,0.45)';
-        ctx.fillText('type a scene · press Play Movie', w / 2, h / 2 + 18);
+        ctx.fillStyle = hexToRgba(bCol, 0.5);
+        var fxCount = activeFx && activeFx.effects ? activeFx.effects.length : 0;
+        ctx.fillText(
+            fxCount
+                ? (fxCount + ' effects live · play for a new pipeline')
+                : 'type a scene · press Play Movie',
+            w / 2,
+            h / 2 + 18
+        );
     }
 
     function drawVideoFrame(canvas, ctx, video) {
@@ -338,9 +576,10 @@
         var dx = (cw - dw) / 2;
         var dy = (ch - dh) / 2;
         ctx.drawImage(video, dx, dy, dw, dh);
-        ctx.fillStyle = 'rgba(0,255,136,0.05)';
-        var scan = ((performance.now() / 1000) * 90) % (ch + 30);
-        ctx.fillRect(0, scan - 15, cw, 12);
+        var t = performance.now() / 1000;
+        var intensity = (activeFx && activeFx.intensity) || 0.45;
+        // Keep overlays soft so the prompt-driven picture reads first.
+        drawFxOverlays(ctx, cw, ch, t, Math.min(0.55, intensity), true);
     }
 
     function loop() {
@@ -642,12 +881,19 @@
         setBusy(true);
         idle = true;
         setDownloadLink(null);
+        // Fresh background + sound + overlay pack on every play.
+        applyFxPack(pickLocalFxPack(), { forceSound: false });
+        var monitorStart = $('fp-film-monitor');
+        if (monitorStart) monitorStart.classList.remove('is-playing');
+        var canvasStart = $('fp-film-canvas');
+        if (canvasStart) canvasStart.style.opacity = '1';
         if (video) {
             try { video.pause(); } catch (_) {}
             video.removeAttribute('src');
             video.removeAttribute('controls');
             video.load();
             video.style.opacity = '0';
+            video.style.zIndex = '';
         }
         setOverlay(
             '<p class="fp-film-idle">Starting ' + durationSec + 's interactive movie…</p>',
@@ -656,6 +902,8 @@
         setStatus(
             'Starting ' + durationSec + 's movie'
             + (faceDataUrl ? ' with face reference' : '')
+            + (activeFx && activeFx.background ? (' · fx:' + activeFx.background) : '')
+            + (activeFx && activeFx.sound ? (' · snd:' + activeFx.sound) : '')
             + '…'
         );
 
@@ -727,7 +975,17 @@
                     if (d.status === 'completed' && d.video_url && video) {
                         idle = false;
                         setOverlay('', false);
+                        if (d.fx_pack) {
+                            applyFxPack(d.fx_pack, { playing: true, forceSound: soundLive() });
+                        } else {
+                            applyFxPack(activeFx || pickLocalFxPack(), { playing: true });
+                        }
+                        // Prefer the video element so the prompt picture stays sharp;
+                        // canvas keeps only soft accents underneath when opacity allows.
                         video.style.opacity = '1';
+                        video.style.zIndex = '2';
+                        var canvasEl = $('fp-film-canvas');
+                        if (canvasEl) canvasEl.style.opacity = '0.22';
                         video.setAttribute('controls', 'controls');
                         video.src = d.video_url + '?t=' + Date.now();
                         video.onloadeddata = function () {
@@ -740,6 +998,8 @@
                             + (d.beats ? (' · ' + d.beats + ' scenes') : '')
                             + (d.mode === 'acting_storyboard' ? ' · people acting' : '')
                             + (d.pipeline_style ? (' · ' + d.pipeline_style) : '')
+                            + (d.fx_pack && d.fx_pack.background ? (' · fx:' + d.fx_pack.background) : '')
+                            + (d.fx_pack && d.fx_pack.sound ? (' · snd:' + d.fx_pack.sound) : '')
                             + (d.pipeline_run_id ? (' · pipe:' + String(d.pipeline_run_id).slice(-6)) : '')
                             + (d.planner ? ' · plan:' + d.planner : '')
                             + (d.renderer ? ' · render:' + d.renderer : '')
@@ -804,6 +1064,7 @@
         }
         bindFaceAndDuration();
         bindLegacyNodes();
+        applyFxPack(pickLocalFxPack());
         refreshReady();
         refreshBilling();
         handlePaypalReturn();

@@ -116,6 +116,7 @@ def _public_interactive_job(job: dict) -> dict:
         "pipeline_run_id": job.get("pipeline_run_id"),
         "pipeline_style": job.get("pipeline_style"),
         "pipeline_mood": job.get("pipeline_mood"),
+        "fx_pack": job.get("fx_pack"),
         "video_url": job.get("video_url"),
         "download_url": (
             (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1")
@@ -269,6 +270,7 @@ def _run_interactive_movie_job(
                 pipeline_run_id=result.get("pipeline_run_id"),
                 pipeline_style=style,
                 pipeline_mood=result.get("pipeline_mood"),
+                fx_pack=result.get("fx_pack"),
                 error=None,
             )
         else:

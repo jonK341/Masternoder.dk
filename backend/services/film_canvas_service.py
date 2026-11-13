@@ -1198,19 +1198,115 @@ _SHOT_TYPES = (
 
 
 def _beat_count_for_duration(duration: float) -> int:
-    """Always multiple distinct beats — never a single still pan for a whole movie."""
+    """Always many distinct beats — denser storyboard for better motion/FX visuals."""
     seconds = max(2.0, float(duration or 8.0))
     if seconds <= 4:
-        return 2
-    if seconds <= 8:
-        return 3
-    if seconds <= 16:
         return 4
-    if seconds <= 30:
-        return 5
-    if seconds <= 60:
+    if seconds <= 8:
         return 6
-    return min(8, max(6, int(round(seconds / 12.0))))
+    if seconds <= 16:
+        return 8
+    if seconds <= 30:
+        return 10
+    if seconds <= 60:
+        return 12
+    return min(14, max(10, int(round(seconds / 8.0))))
+
+
+# Monitor background / neural-sound / overlay catalogs — pick a fresh pack every play.
+_FX_BACKGROUNDS = (
+    "aurora", "rain", "grid", "ember", "plasma", "fog",
+    "signal", "hex", "glitch", "ocean", "chrome", "violet",
+)
+_FX_SOUNDS = (
+    "harbour", "storm", "neon", "drone", "pulse", "battle",
+    "stars", "focus", "market", "fog", "chrome", "rain",
+    "ember", "signal", "ocean",
+)
+_FX_EFFECTS = (
+    "scan", "sparks", "rain", "glitch", "chromatic", "hex",
+    "embers", "streaks", "noise", "bloom", "ripple", "shards",
+    "orbit", "pulse_ring", "static", "flare",
+)
+_FX_PALETTES = (
+    ("#00ff88", "#00b4ff", "#ff5078"),
+    ("#7cf5ff", "#3d7cff", "#c8ff6a"),
+    ("#ff9a3c", "#ff5e7a", "#ffe08a"),
+    ("#b388ff", "#5eead4", "#f0abfc"),
+    ("#94a3b8", "#38bdf8", "#e2e8f0"),
+    ("#f97316", "#22d3ee", "#fde68a"),
+    ("#34d399", "#818cf8", "#fda4af"),
+    ("#67e8f9", "#a78bfa", "#fb7185"),
+)
+
+
+def _build_fx_pack(run_id: str, style: str = "", mood: str = "") -> Dict[str, Any]:
+    """Invent a unique visual/sound FX pack for one pipeline play."""
+    salt = int(
+        hashlib.sha1(
+            ("%s|%s|%s|%s" % (run_id, style, mood, secrets.token_hex(4))).encode("utf-8")
+        ).hexdigest()[:8],
+        16,
+    )
+    background = _FX_BACKGROUNDS[salt % len(_FX_BACKGROUNDS)]
+    sound = _FX_SOUNDS[(salt // 3) % len(_FX_SOUNDS)]
+    palette = list(_FX_PALETTES[(salt // 11) % len(_FX_PALETTES)])
+    # Rotate catalog and take 7–10 effects so overlays stay dense, not 3–4 repeats.
+    rotated = list(_FX_EFFECTS)
+    start = salt % len(rotated)
+    rotated = rotated[start:] + rotated[:start]
+    count = 7 + (salt % 4)  # 7..10
+    effects = rotated[:count]
+    return {
+        "background": background,
+        "sound": sound,
+        "effects": effects,
+        "palette": palette,
+        # Keep ambient FX supportive — scene/prompt picture stays strongest.
+        "intensity": round(0.42 + (salt % 18) / 100.0, 2),
+        "run_id": run_id,
+    }
+
+
+def _normalize_fx_pack(raw: Any, run_id: str, style: str = "", mood: str = "") -> Dict[str, Any]:
+    """Validate AI fx_pack or fall back to a fresh procedural pack."""
+    base = _build_fx_pack(run_id, style=style, mood=mood)
+    if not isinstance(raw, dict):
+        return base
+    bg = str(raw.get("background") or "").strip().lower()
+    if bg in _FX_BACKGROUNDS:
+        base["background"] = bg
+    snd = str(raw.get("sound") or "").strip().lower()
+    if snd in _FX_SOUNDS:
+        base["sound"] = snd
+    effects = raw.get("effects") if isinstance(raw.get("effects"), list) else []
+    cleaned = []
+    for item in effects:
+        name = str(item or "").strip().lower()
+        if name in _FX_EFFECTS and name not in cleaned:
+            cleaned.append(name)
+    if len(cleaned) >= 4:
+        # Pad toward dense overlays when AI returned a short list.
+        for name in _FX_EFFECTS:
+            if name not in cleaned:
+                cleaned.append(name)
+            if len(cleaned) >= 7:
+                break
+        base["effects"] = cleaned[:10]
+    palette = raw.get("palette") if isinstance(raw.get("palette"), list) else []
+    colors = [str(c).strip()[:9] for c in palette if str(c).strip().startswith("#")]
+    if len(colors) >= 2:
+        while len(colors) < 3:
+            colors.append(base["palette"][len(colors) % len(base["palette"])])
+        base["palette"] = colors[:3]
+    try:
+        intensity = float(raw.get("intensity"))
+        if 0.3 <= intensity <= 1.2:
+            # Clamp so overlays never wash out the prompt picture.
+            base["intensity"] = round(max(0.35, min(0.65, intensity)), 2)
+    except (TypeError, ValueError):
+        pass
+    return base
 
 
 def _parse_direction_beats(direction: str, want: int) -> List[Dict[str, str]]:
@@ -2006,6 +2102,7 @@ def _generate_free_still_movie(
         "pipeline_mood": (ai_pipeline or {}).get("mood") if isinstance(ai_pipeline, dict) else None,
         "pipeline_provider": (ai_pipeline or {}).get("provider") if isinstance(ai_pipeline, dict) else None,
         "pipeline_title": (ai_pipeline or {}).get("title") if isinstance(ai_pipeline, dict) else None,
+        "fx_pack": (ai_pipeline or {}).get("fx_pack") if isinstance(ai_pipeline, dict) else None,
     }
     if merged.get("success") and merged.get("local_path"):
         xvid = _ffmpeg_encode_xvid(merged["local_path"])
@@ -2250,18 +2347,21 @@ def _procedural_unique_pipeline(
     run_id: str,
 ) -> Dict[str, Any]:
     """Always-new local pipeline when remote LLMs throttle — still unique per clip."""
-    want = max(2, min(8, int(beat_count or 3)))
+    want = max(4, min(14, int(beat_count or 6)))
     seconds = max(2, min(120, int(duration_sec or 8)))
     salt = int(hashlib.sha1(("%s|%s|%s" % (run_id, brief, secrets.token_hex(4))).encode("utf-8")).hexdigest()[:8], 16)
     styles = (
         "neon noir", "wet chrome", "fog pastel", "amber documentary",
         "cyber rain", "steel dawn", "violet night", "salt-spray realism",
+        "ember dusk", "signal green", "harbour steel", "plasma bloom",
     )
     moods = (
         "urgent", "lonely", "hopeful", "tense", "dreamlike", "gritty", "serene", "chaotic",
+        "electric", "melancholy", "fierce", "quiet",
     )
     style = styles[salt % len(styles)]
     mood = moods[(salt // 7) % len(moods)]
+    fx_pack = _build_fx_pack(run_id, style=style, mood=mood)
     core = (brief or "cinematic scene").split("[face reference")[0].strip()[:160]
     words = [w for w in core.replace(",", " ").split() if len(w) > 2]
     beats: List[Dict[str, Any]] = []
@@ -2272,10 +2372,11 @@ def _procedural_unique_pipeline(
     for index in range(want):
         shot = order[index % len(order)]
         spice = words[(salt + index * 3) % len(words)] if words else "scene"
+        # Lead with the user brief so the prompt picture stays strongest.
         description = (
-            "%s shot of %s — focus on %s, style %s, mood %s, variation %s"
-            % (shot, core[:90], spice, style, mood, run_id[-6:])
-        )[:280]
+            "%s. %s shot — clearly show %s, focus on %s, style %s, mood %s (%s)"
+            % (core[:140], shot, core[:90], spice, style, mood, run_id[-6:])
+        )[:320]
         seed = (salt * 13 + index * 97 + secrets.randbelow(5000)) % 999999
         beats.append({
             "index": index,
@@ -2285,9 +2386,9 @@ def _procedural_unique_pipeline(
             "prompt": description,
             "image_prompt": description,
             "pose_prompts": [
-                ("%s — ready pose" % description)[:420],
-                ("%s — mid motion" % description)[:420],
-                ("%s — acting turn" % description)[:420],
+                ("%s — ready pose, keep the same scene subject" % description)[:420],
+                ("%s — mid motion, keep the same scene subject" % description)[:420],
+                ("%s — acting turn, keep the same scene subject" % description)[:420],
             ],
             "motion": motions[index % 4],
             "seed": seed,
@@ -2296,7 +2397,7 @@ def _procedural_unique_pipeline(
     remaining = float(seconds)
     for index, beat in enumerate(beats):
         left = len(beats) - index
-        beat_sec = remaining if left == 1 else max(1.2, round(remaining / left, 2))
+        beat_sec = remaining if left == 1 else max(0.9, round(remaining / left, 2))
         remaining = max(0.0, round(remaining - beat_sec, 2))
         beat["duration_sec"] = beat_sec
     return {
@@ -2309,6 +2410,7 @@ def _procedural_unique_pipeline(
         "color_grade": style,
         "camera_language": "invented handheld for %s" % run_id[-6:],
         "people_direction": "people act differently each beat (%s)" % mood,
+        "fx_pack": fx_pack,
         "beats": beats,
         "direction": "\n".join(
             "%s. [%s] %s" % (i + 1, b["shot_type"], b["description"])
@@ -2325,7 +2427,7 @@ def _ai_design_clip_pipeline(
 ) -> Dict[str, Any]:
     """Ask AI to invent a brand-new flexible render pipeline for this one clip only."""
     run_id = "pipe_%s" % uuid.uuid4().hex[:12]
-    want = max(2, min(8, int(beat_count or 3)))
+    want = max(4, min(14, int(beat_count or 6)))
     seconds = max(2, min(120, int(duration_sec or 8)))
 
     system = (
@@ -2335,12 +2437,19 @@ def _ai_design_clip_pipeline(
         "{"
         "\"title\":str,\"style\":str,\"mood\":str,\"color_grade\":str,"
         "\"camera_language\":str,\"people_direction\":str,"
+        "\"fx_pack\":{\"background\":str,\"sound\":str,\"effects\":[str],"
+        "\"palette\":[str,str,str],\"intensity\":float},"
         "\"beats\":[{\"title\":str,\"shot_type\":str,\"description\":str,"
         "\"image_prompt\":str,\"pose_prompts\":[str,str,str],"
         "\"motion\":\"zoom_in|zoom_out|pan_left|pan_right\",\"seed\":int}]"
         "}\n"
         "Keep strings short. shot_type must be one of "
         "establishing,character,action,detail,reaction,closing. "
+        "fx_pack.background one of aurora,rain,grid,ember,plasma,fog,signal,hex,glitch,ocean,chrome,violet. "
+        "fx_pack.sound one of harbour,storm,neon,drone,pulse,battle,stars,focus,market,fog,chrome,rain,ember,signal,ocean. "
+        "fx_pack.effects: pick 7-10 unique from scan,sparks,rain,glitch,chromatic,hex,embers,streaks,noise,bloom,ripple,shards,orbit,pulse_ring,static,flare. "
+        "Each image_prompt MUST start with the user scene brief, then add short shot detail. "
+        "The brief subject must dominate the frame — do not invent unrelated locations or props. "
         "Each image_prompt/pose_prompt must be photoreal and match the brief. "
         "People must act differently in each pose_prompt."
     )
@@ -2478,7 +2587,13 @@ def _ai_design_clip_pipeline(
         pose_prompts = item.get("pose_prompts") if isinstance(item.get("pose_prompts"), list) else []
         pose_prompts = [str(p).strip()[:420] for p in pose_prompts if str(p).strip()]
         image_prompt = str(item.get("image_prompt") or item.get("description") or "").strip()[:420]
-        description = str(item.get("description") or image_prompt).strip()[:280]
+        description = str(item.get("description") or image_prompt).strip()[:320]
+        brief_core = (brief or "").split("[face reference")[0].strip()[:140]
+        # Reinforce user brief at the front when the model drifted.
+        if brief_core and image_prompt and brief_core.lower()[:24] not in image_prompt.lower():
+            image_prompt = ("%s. %s" % (brief_core, image_prompt))[:420]
+        if brief_core and description and brief_core.lower()[:24] not in description.lower():
+            description = ("%s. %s" % (brief_core, description))[:320]
         title = str(item.get("title") or ("Beat %s" % (index + 1))).strip()[:48]
         try:
             seed = int(item.get("seed") or 0) % 999999
@@ -2492,9 +2607,9 @@ def _ai_design_clip_pipeline(
         if len(pose_prompts) < 3:
             base = image_prompt or description or brief
             pose_prompts = [
-                ("%s — person standing, ready pose" % base)[:420],
-                ("%s — same person mid-stride, gesturing" % base)[:420],
-                ("%s — same person turning and acting" % base)[:420],
+                ("%s — person standing, ready pose, same scene" % base)[:420],
+                ("%s — same person mid-stride, gesturing, same scene" % base)[:420],
+                ("%s — same person turning and acting, same scene" % base)[:420],
             ]
         beats.append({
             "index": index,
@@ -2543,9 +2658,16 @@ def _ai_design_clip_pipeline(
     remaining = float(seconds)
     for index, beat in enumerate(beats):
         left = len(beats) - index
-        beat_sec = remaining if left == 1 else max(1.2, round(remaining / left, 2))
+        beat_sec = remaining if left == 1 else max(0.9, round(remaining / left, 2))
         remaining = max(0.0, round(remaining - beat_sec, 2))
         beat["duration_sec"] = beat_sec
+
+    fx_pack = _normalize_fx_pack(
+        parsed.get("fx_pack"),
+        run_id,
+        style=style or "cinematic",
+        mood=mood or "dramatic",
+    )
 
     return {
         "success": True,
@@ -2557,6 +2679,7 @@ def _ai_design_clip_pipeline(
         "color_grade": str(parsed.get("color_grade") or "")[:80],
         "camera_language": str(parsed.get("camera_language") or "")[:120],
         "people_direction": str(parsed.get("people_direction") or "")[:160],
+        "fx_pack": fx_pack,
         "beats": beats,
         "direction": "\n".join(
             "%s. [%s] %s" % (i + 1, b["shot_type"], b["description"])
@@ -2673,6 +2796,17 @@ def compose_interactive_movie(
             xvid = _ffmpeg_encode_xvid(str(local_path))
             if xvid.get("success"):
                 xvid_path = xvid.get("local_path")
+        fx_pack = None
+        if ai_pipeline and isinstance(ai_pipeline.get("fx_pack"), dict):
+            fx_pack = ai_pipeline.get("fx_pack")
+        elif isinstance(clip.get("fx_pack"), dict):
+            fx_pack = clip.get("fx_pack")
+        else:
+            fx_pack = _build_fx_pack(
+                str((ai_pipeline or {}).get("run_id") or clip.get("pipeline_run_id") or ("pipe_%s" % uuid.uuid4().hex[:8])),
+                style=str((ai_pipeline or {}).get("style") or clip.get("pipeline_style") or ""),
+                mood=str((ai_pipeline or {}).get("mood") or clip.get("pipeline_mood") or ""),
+            )
         return {
             "success": True,
             "planner": planner,
@@ -2681,6 +2815,7 @@ def compose_interactive_movie(
             "pipeline_run_id": (ai_pipeline or {}).get("run_id") if ai_pipeline else clip.get("pipeline_run_id"),
             "pipeline_style": (ai_pipeline or {}).get("style") if ai_pipeline else clip.get("pipeline_style"),
             "pipeline_mood": (ai_pipeline or {}).get("mood") if ai_pipeline else clip.get("pipeline_mood"),
+            "fx_pack": fx_pack,
             "renderer": renderer,
             "planning": planning,
             "prompt_used": render_prompt[:500],
