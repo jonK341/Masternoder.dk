@@ -1503,12 +1503,33 @@ body.mn-sound-active .theme-sound-toggle {
         padding: 36px 28px 32px;
     }
 
+    /* Film hero keeps copy → monitor → actions (do not reuse old graphic/copy areas). */
+    .fp-hero.fp-hero-film {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "copy"
+            "monitor"
+            "actions";
+        justify-items: center;
+        text-align: center;
+    }
+
     .fp-hero-copy {
         text-align: left;
     }
 
+    .fp-hero.fp-hero-film .fp-hero-copy {
+        text-align: center;
+        max-width: 820px;
+    }
+
     .fp-hero-copy .fp-kicker {
         justify-content: flex-start;
+    }
+
+    .fp-hero.fp-hero-film .fp-hero-copy .fp-kicker,
+    .fp-hero.fp-hero-film .fp-hero-actions {
+        justify-content: center;
     }
 
     .fp-hero-actions {
