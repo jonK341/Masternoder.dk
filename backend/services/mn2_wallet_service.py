@@ -38,10 +38,16 @@ def _load_addresses() -> Dict[str, str]:
 
 def _save_addresses(addresses: Dict[str, str]) -> None:
     path = _addresses_path()
-    os.makedirs(_data_dir(), exist_ok=True)
-    with _ADDRESSES_LOCK:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(addresses, f, indent=2)
+    try:
+        os.makedirs(_data_dir(), exist_ok=True)
+        with _ADDRESSES_LOCK:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(addresses, f, indent=2)
+    except OSError as exc:
+        raise OSError(
+            f"Cannot write deposit address map at {path}: {exc}. "
+            "Fix ownership/permissions so the app user (e.g. www-data) can write data/."
+        ) from exc
 
 
 def _address_validity(addr: str) -> Optional[bool]:
@@ -434,39 +440,54 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
 
     # Use a pre-created pool address if available (reassign to this user),
     # skipping any pool entries the daemon rejects as invalid.
-    while True:
-        pool_key = _first_pool_key(addresses)
-        if not pool_key:
-            break
-        addr = addresses.pop(pool_key)
-        if _address_validity(addr) is False:
-            continue  # discard invalid pool address, try the next one
-        addresses[user_id] = addr
-        _save_addresses(addresses)
-        return {"success": True, "deposit_address": addr, "user_id": user_id}
+    try:
+        while True:
+            pool_key = _first_pool_key(addresses)
+            if not pool_key:
+                break
+            pool_entry = addresses.pop(pool_key)
+            addr = _entry_primary(pool_entry) if not isinstance(pool_entry, str) else pool_entry.strip()
+            if not addr or _address_validity(addr) is False:
+                continue  # discard invalid pool address, try the next one
+            addresses[user_id] = {
+                "primary": addr,
+                "wallet_type": "core",
+                "ledger_only": False,
+                "addresses": [{"label": "primary", "address": addr, "type": "core", "active": True}],
+            }
+            _save_addresses(addresses)
+            return {"success": True, "deposit_address": addr, "user_id": user_id, "ledger_only": False}
 
-    gen = _generate_valid_address()
-    if not gen.get("success"):
-        # Ledger mode (default shop/rewards path) must still give every user a
-        # stable receive identity when the daemon is down or unconfigured.
-        if _wallet_mode() == "ledger" and _is_rpc_unavailable_error(gen.get("error") or gen.get("code")):
-            return _assign_ledger_receive_address(user_id, addresses)
+        gen = _generate_valid_address()
+        if not gen.get("success"):
+            # Ledger mode (default shop/rewards path) must still give every user a
+            # stable receive identity when the daemon is down or unconfigured.
+            if _wallet_mode() == "ledger" and _is_rpc_unavailable_error(gen.get("error") or gen.get("code")):
+                return _assign_ledger_receive_address(user_id, addresses)
+            _save_addresses(addresses)
+            return {
+                "success": False,
+                "error": gen.get("error"),
+                "code": gen.get("code"),
+                "deposit_address": None,
+            }
+
+        new_addr = gen["deposit_address"]
+        addresses[user_id] = {
+            "primary": new_addr,
+            "wallet_type": "core",
+            "ledger_only": False,
+            "addresses": [{"label": "primary", "address": new_addr, "type": "core", "active": True}],
+        }
         _save_addresses(addresses)
+        return {"success": True, "deposit_address": new_addr, "user_id": user_id, "ledger_only": False}
+    except OSError as exc:
         return {
             "success": False,
-            "error": gen.get("error"),
-            "code": gen.get("code"),
+            "error": str(exc),
+            "code": "address_store_unwritable",
             "deposit_address": None,
         }
-
-    new_addr = gen["deposit_address"]
-    addresses[user_id] = {
-        "primary": new_addr,
-        "wallet_type": "core",
-        "addresses": [{"label": "primary", "address": new_addr, "type": "core", "active": True}],
-    }
-    _save_addresses(addresses)
-    return {"success": True, "deposit_address": new_addr, "user_id": user_id}
 
 
 def create_deposit_addresses(count: int) -> Dict[str, Any]:

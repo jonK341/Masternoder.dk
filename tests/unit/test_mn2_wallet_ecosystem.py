@@ -309,3 +309,51 @@ def test_first_withdraw_skips_cooldown(tmp_path, monkeypatch):
     blocked = guard.check_address(uid, "JSecondPayoutAddr0000000000002", 24)
     assert blocked.get("allowed") is False
     assert blocked.get("code") == "address_cooldown"
+
+
+def test_pool_address_assigned_to_user(tmp_path, monkeypatch):
+    from backend.services import mn2_wallet_service as ws
+
+    addr_path = tmp_path / "mn2_user_addresses.json"
+    addr_path.write_text(json.dumps({"pool_1": "JPoolAddressForUser000000000001"}), encoding="utf-8")
+    monkeypatch.setattr(ws, "_addresses_path", lambda: str(addr_path))
+    monkeypatch.setattr(ws, "_address_validity", lambda addr: True)
+    monkeypatch.setattr(
+        ws,
+        "generate_daemon_address",
+        lambda: {"success": False, "error": "should_not_call", "code": "unused", "deposit_address": None},
+    )
+
+    out = ws.get_or_create_deposit_address("eco_pool_user")
+    assert out.get("success") is True
+    assert out.get("deposit_address") == "JPoolAddressForUser000000000001"
+    assert out.get("ledger_only") is False
+    saved = json.loads(addr_path.read_text(encoding="utf-8"))
+    assert "pool_1" not in saved
+    assert saved["eco_pool_user"]["primary"] == "JPoolAddressForUser000000000001"
+
+
+def test_unwritable_address_store_returns_error(tmp_path, monkeypatch):
+    from backend.services import mn2_wallet_service as ws
+
+    monkeypatch.setattr(ws, "_addresses_path", lambda: str(tmp_path / "mn2_user_addresses.json"))
+    monkeypatch.setattr(ws, "_address_validity", lambda addr: True)
+    monkeypatch.setattr(
+        ws,
+        "generate_daemon_address",
+        lambda: {
+            "success": True,
+            "deposit_address": "JNewFromDaemon0000000000000001",
+            "address": "JNewFromDaemon0000000000000001",
+            "code": None,
+        },
+    )
+
+    def raise_os(_addresses):
+        raise OSError("Cannot write deposit address map: Permission denied")
+
+    monkeypatch.setattr(ws, "_save_addresses", raise_os)
+    out = ws.get_or_create_deposit_address("eco_perm_user")
+    assert out.get("success") is False
+    assert out.get("code") == "address_store_unwritable"
+    assert "Permission denied" in (out.get("error") or "")

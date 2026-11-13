@@ -154,12 +154,22 @@ def _user_facing_rpc_error(rpc_error: str) -> str:
 def mn2_deposit_address():
     """Return the deposit address for the current user (create via RPC if first time)."""
     user_id = resolve_user_id(from_body=False, from_query=True)
-    result = get_or_create_deposit_address(user_id)
+    try:
+        result = get_or_create_deposit_address(user_id)
+    except Exception as exc:
+        return jsonify({
+            "success": False,
+            "error": _user_facing_rpc_error(str(exc) or "deposit_address_failed"),
+            "code": "deposit_address_exception",
+            "user_id": user_id,
+            "deposit_address": None,
+        }), 200
     if not result.get("success"):
         err = result.get("error", "Unknown error")
         return jsonify({
             "success": False,
             "error": _user_facing_rpc_error(err),
+            "code": result.get("code"),
             "user_id": user_id,
             "deposit_address": None,
         }), 200
@@ -608,14 +618,15 @@ def mn2_ops_backfill_addresses():
 
 
 @mn2_bp.route("/api/mn2/ops/create-addresses", methods=["POST", "GET"])
+@mn2_bp.route("/api/mn2/create-deposit-addresses", methods=["POST", "GET"])
 def mn2_ops_create_addresses():
     """Ask the daemon to create N deposit addresses and store as pool_1, pool_2, ... (max 100). Requires MN2_OPS_SECRET or MN2_SCAN_SECRET if set."""
     if not _ops_authorized():
         return jsonify({"success": False, "error": "Unauthorized"}), 403
     try:
         count = 1
-        if request.method == "POST" and request.get_json():
-            count = int(request.get_json().get("count", 1))
+        if request.method == "POST" and request.get_json(silent=True):
+            count = int(request.get_json(silent=True).get("count", 1))
         else:
             count = int(request.args.get("count", 1))
     except (TypeError, ValueError):
