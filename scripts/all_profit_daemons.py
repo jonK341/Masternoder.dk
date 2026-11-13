@@ -543,7 +543,9 @@ def _dual_farm_loop(interval: int, stop: threading.Event) -> None:
 
 def _summarize_hunter(res: Dict[str, Any]) -> str:
     top = res.get("top") or {}
+    assigns = res.get("assignments") or []
     parts = [
+        f"assign={'+'.join(assigns) if assigns else 'hunt'}",
         f"exec={'yes' if res.get('executed') else 'no'}",
         f"univ={res.get('universe_size', 0)}",
         f"qual={res.get('qualifying', 0)}",
@@ -554,6 +556,12 @@ def _summarize_hunter(res: Dict[str, Any]) -> str:
             parts.append(f"${float(top['est_profit_usd']):.4f}")
         parts.append(f"sym={top.get('symbol') or '?'}")
         parts.append(f"route={top.get('buy_venue') or '?'}→{top.get('sell_venue') or '?'}")
+    bf = res.get("backfill")
+    if isinstance(bf, dict):
+        if bf.get("raised_usd"):
+            parts.append(f"backfill=${float(bf['raised_usd']):.2f}")
+        else:
+            parts.append(f"backfill={bf.get('reason') or ('ok' if bf.get('success') else 'no')}")
     if res.get("prefund"):
         pref = res["prefund"]
         if pref.get("success"):

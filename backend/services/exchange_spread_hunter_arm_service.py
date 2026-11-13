@@ -1,14 +1,21 @@
-"""Spread-hunter arm: wide catalog hunt → precalc net PnL → execute only if locked.
+"""Spread-hunter arm: multi-assignment BN↔NK hunter (hunt + backfill).
 
-No directional guessing. Every candidate is priced from live bid/ask, fee-compounded,
-rechecked immediately before fill, and sized only to fundable balances.
+No directional guessing on the hunt path. Every candidate is priced from live bid/ask,
+fee-compounded, rechecked immediately before fill, and sized only to fundable balances.
+
+Assignments per tick (hunter does more than one job):
+* ``backfill`` — when quote is thin / head posts a prefund hint / last skip was funding:
+  sell raise inventory (and optional rotation) to rebuild free USDC/USDT toward a floor.
+* ``hunt`` — wide catalog scan → regime recheck → opportunistic prefund wheel → execute.
 
 Flow per tick:
-1. Build a large BN↔NK universe (catalog ∩ hot list, up to ``SPREAD_HUNTER_SCAN_LIMIT``).
-2. Batch-scan spreads; recompute compounded ``est_profit_usd`` / ``net_bps``.
-3. Regime deweight: skip routes whose mid-skew collapses the edge or flipped on recheck.
-4. Prefund / rotate quote inventory when edge is real but a leg is short.
-5. Execute spatial arb (buy cheap venue + sell rich venue) only when prepare+recheck pass.
+1. Decide assignments (backfill and/or hunt).
+2. Run backfill first when needed (head prefund_hint is the priority brief).
+3. Build a large BN↔NK universe (catalog ∩ hot list, up to ``SPREAD_HUNTER_SCAN_LIMIT``).
+4. Batch-scan spreads; recompute compounded ``est_profit_usd`` / ``net_bps``.
+5. Regime deweight: skip routes whose mid-skew collapses the edge or flipped on recheck.
+6. Prefund / rotate quote inventory when edge is real but a leg is short.
+7. Execute spatial arb (buy cheap venue + sell rich venue) only when prepare+recheck pass.
 
 Enable with ``SPREAD_HUNTER_ENABLED=1`` (default on when live arb is on).
 """
@@ -25,12 +32,14 @@ from backend.services import external_exchange_connector_service as conn
 
 _STATE_PATH = os.path.join(ex._DATA_DIR, "spread_hunter_arm_state.json")
 _BOARD_PATH = os.path.join(ex._DATA_DIR, "spread_hunter_board.json")
+_LEDGER_PATH = os.path.join(ex._DATA_DIR, "spread_hunter_ledger.jsonl")
 _EXTERNAL = ("binance", "nonkyc")
 _SEED_SYMBOLS = [
     "ADA", "LINK", "BNB", "XRP", "SOL", "AVAX", "DOT", "ATOM", "NEAR", "TRX", "UNI", "LTC",
     "BTC", "ETH", "DOGE", "SHIB", "MATIC", "POL", "APT", "SUI", "ARB", "OP", "FIL", "AAVE",
     "MKR", "CRV", "PEPE", "WIF", "TON", "INJ", "RENDER", "FET", "TIA", "SEI", "HBAR", "ALGO",
 ]
+_HUNTER_AGENT_ID = "arb_spread_hunter"
 
 
 def _iso() -> str:
@@ -349,13 +358,103 @@ def _prefund_enabled() -> bool:
     )
 
 
+def _backfill_enabled() -> bool:
+    return os.environ.get("SPREAD_HUNTER_BACKFILL", "1").strip().lower() not in (
+        "0", "false", "no", "off",
+    )
+
+
+def _backfill_floor_usd() -> float:
+    # Above head thin gate (~$12) and default min live notional (~$10).
+    return _cfg_float("SPREAD_HUNTER_BACKFILL_FLOOR_USD", 18.0)
+
+
+def _backfill_cooldown_sec() -> float:
+    return _cfg_float("SPREAD_HUNTER_BACKFILL_COOLDOWN_SEC", 90.0)
+
+
+def _append_hunter_event(kind: str, **fields: Any) -> None:
+    row = {"ts": _iso(), "kind": kind, "limb": "hunter"}
+    row.update(fields)
+    try:
+        ex._append_jsonl(_LEDGER_PATH, row)
+    except Exception:
+        pass
+
+
+def _learn_hunter(note: str, *, profit_usd: float = 0.0) -> Dict[str, Any]:
+    try:
+        from backend.services.exchange_agent_learning_service import learn_from_profit
+
+        agent_id = (os.environ.get("SPREAD_HUNTER_AGENT_ID") or _HUNTER_AGENT_ID).strip()
+        acct = arb.read_account(agent_id)
+        if not acct.get("skills"):
+            acct["skills"] = [
+                "spread_hunt", "backfill", "prefund", "regime_filter", "kill_shot",
+            ]
+            acct.setdefault("skill_proficiency", {})
+        out = learn_from_profit(acct, max(0.0, float(profit_usd or 0)))
+        acct["ticks"] = int(acct.get("ticks") or 0) + 1
+        acct["last_action"] = {"note": note, "ts": _iso(), "profit_usd": profit_usd}
+        arb.write_account(acct)
+        return {"ok": True, **out}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:160]}
+
+
+def _venue_free_quote(venue: str) -> Dict[str, Any]:
+    from backend.services import exchange_venue_api_service as vapi
+
+    quote = str(vapi.venue_quote_asset(venue) or "").upper()
+    bals = vapi.parse_spot_balances(venue, dry_run=False, force_refresh=True) or {}
+    free = float(bals.get(quote) or 0) if quote else 0.0
+    return {"venue": venue, "quote": quote, "free": round(free, 4), "balances": bals}
+
+
+def _raise_inventory_candidates(
+    bals: Dict[str, Any],
+    *,
+    quote: str,
+    preferred: Optional[Sequence[str]] = None,
+) -> List[str]:
+    """Preferred symbols first, then any non-quote inventory with balance."""
+    quote_u = str(quote or "").upper()
+    skip = {quote_u, "USDT", "USDC", "USD", "BUSD", "FDUSD", "DAI"}
+    ordered: List[str] = []
+    seen = set()
+    for sym in list(preferred or []) + list(_SEED_SYMBOLS):
+        s = str(sym or "").upper()
+        if not s or s in skip or s in seen:
+            continue
+        if float(bals.get(s) or 0) > 0:
+            ordered.append(s)
+            seen.add(s)
+    extras: List[Tuple[str, float]] = []
+    for k, val in (bals or {}).items():
+        s = str(k or "").upper()
+        if not s or s in skip or s in seen:
+            continue
+        try:
+            qty = float(val or 0)
+        except (TypeError, ValueError):
+            continue
+        if qty > 0:
+            extras.append((s, qty))
+    extras.sort(key=lambda row: -row[1])
+    ordered.extend(sym for sym, _ in extras)
+    return ordered
+
+
 def _raise_quote_on_buy_venue(
     buy_venue: str,
     *,
     need_usd: float,
     raise_symbols: Optional[List[str]] = None,
+    min_sell_usd: float = 5.0,
+    max_fraction: float = 0.45,
+    scan_all_balances: bool = False,
 ) -> Dict[str, Any]:
-    """Sell raise inventory on buy venue to free quote for the arb buy leg."""
+    """Sell raise inventory on buy venue to free quote for the arb buy leg / backfill."""
     from backend.services import exchange_venue_api_service as vapi
 
     quote = vapi.venue_quote_asset(buy_venue)
@@ -367,10 +466,20 @@ def _raise_quote_on_buy_venue(
     gap = max(0.0, need_usd - free_q)
     max_raise = _cfg_float("SPREAD_HUNTER_PREFUND_MAX_USD", 40.0)
     target = min(gap * 1.05, max_raise)
-    if target < 5.0:
-        return {"success": False, "reason": "gap_too_small", "gap_usd": round(gap, 2)}
+    if target < float(min_sell_usd):
+        return {
+            "success": False,
+            "reason": "gap_too_small",
+            "gap_usd": round(gap, 2),
+            "free_quote": round(free_q, 4),
+            "need_usd": round(need_usd, 2),
+        }
 
-    candidates = raise_symbols or list(_SEED_SYMBOLS)
+    if scan_all_balances:
+        candidates = _raise_inventory_candidates(bals, quote=str(quote or ""), preferred=raise_symbols)
+    else:
+        candidates = raise_symbols or list(_SEED_SYMBOLS)
+
     for sym in candidates:
         qty_coin = float(bals.get(sym) or 0)
         if qty_coin <= 0:
@@ -380,8 +489,8 @@ def _raise_quote_on_buy_venue(
         if bid <= 0:
             continue
         inv_usd = qty_coin * bid
-        sell_usd = min(target, inv_usd * 0.45)
-        if sell_usd < 5.0:
+        sell_usd = min(target, inv_usd * float(max_fraction))
+        if sell_usd < float(min_sell_usd):
             continue
         sell_qty = round((sell_usd / bid) * 0.995, 6)
         if sell_qty <= 0:
@@ -399,9 +508,16 @@ def _raise_quote_on_buy_venue(
             "sell_qty": sell_qty,
             "sell_usd": round(sell_usd, 2),
             "order_success": ok,
+            "free_quote_before": round(free_q, 4),
             "error": order.get("error") if not ok else None,
         }
-    return {"success": False, "reason": "no_raise_inventory", "need_usd": round(need_usd, 2)}
+    return {
+        "success": False,
+        "reason": "no_raise_inventory",
+        "need_usd": round(need_usd, 2),
+        "free_quote": round(free_q, 4),
+        "candidates": len(candidates),
+    }
 
 
 def _try_fund_wheel(
@@ -438,6 +554,173 @@ def _try_fund_wheel(
     return {"success": ok, "steps": steps}
 
 
+def _backfill_needed(
+    *,
+    floor_usd: float,
+    hint: Optional[Dict[str, Any]],
+    last_skip: Optional[str],
+    snaps: Optional[Sequence[Dict[str, Any]]] = None,
+) -> Tuple[bool, str]:
+    if hint:
+        return True, "head_prefund_hint"
+    if str(last_skip or "") in ("insufficient_venue_balance", "gap_too_small"):
+        return True, "last_skip_funding"
+    rows = list(snaps) if snaps is not None else [_venue_free_quote(v) for v in _EXTERNAL]
+    total = sum(float(s.get("free") or 0) for s in rows)
+    thin_total = total < max(12.0, floor_usd * 0.7)
+    thin_venue = any(float(s.get("free") or 0) < floor_usd for s in rows)
+    if thin_total:
+        return True, "thin_total_quote"
+    if thin_venue:
+        return True, "venue_below_floor"
+    return False, "funded"
+
+
+def run_hunter_backfill_assignment(
+    *,
+    hint: Optional[Dict[str, Any]] = None,
+    raise_symbols: Optional[List[str]] = None,
+    force: bool = False,
+) -> Dict[str, Any]:
+    """Hunter assignment: rebuild free quote on thin venues (head prefund_hint first)."""
+    floor = _backfill_floor_usd()
+    agent_id = (os.environ.get("SPREAD_HUNTER_AGENT_ID") or "arb_live_dual_farm").strip()
+    preferred = list(raise_symbols or [])
+    if hint and hint.get("symbol"):
+        preferred = [str(hint["symbol"]).upper()] + [s for s in preferred if s != str(hint["symbol"]).upper()]
+
+    snaps = [_venue_free_quote(v) for v in _EXTERNAL]
+    # Thin venues first; keep order stable otherwise.
+    venues = sorted(snaps, key=lambda s: float(s.get("free") or 0))
+    actions: List[Dict[str, Any]] = []
+    raised_usd = 0.0
+
+    for snap in venues:
+        venue = str(snap.get("venue") or "")
+        free = float(snap.get("free") or 0)
+        if free >= floor and not force:
+            actions.append({
+                "venue": venue,
+                "skipped": True,
+                "reason": "above_floor",
+                "free_quote": free,
+                "floor_usd": floor,
+            })
+            continue
+        need = floor if free < floor else max(floor, free + 5.0)
+        pref = _raise_quote_on_buy_venue(
+            venue,
+            need_usd=need,
+            raise_symbols=preferred or None,
+            min_sell_usd=_cfg_float("SPREAD_HUNTER_BACKFILL_MIN_SELL_USD", 3.0),
+            max_fraction=_cfg_float("SPREAD_HUNTER_BACKFILL_MAX_FRACTION", 0.55),
+            scan_all_balances=True,
+        )
+        actions.append({"venue": venue, **pref})
+        if pref.get("success") and not pref.get("skipped"):
+            raised_usd += float(pref.get("sell_usd") or 0)
+
+    # Optional rotation toward the hinted symbol when local raise missed.
+    if hint and hint.get("symbol") and raised_usd <= 0:
+        try:
+            from backend.services.venue_funding_rotation_service import fund_venue_legs_for_symbol
+
+            fund = fund_venue_legs_for_symbol(
+                agent_id,
+                str(hint.get("symbol") or ""),
+                float(floor),
+                dry_run=False,
+                max_actions=2,
+            )
+            actions.append({"step": "fund_legs", "symbol": hint.get("symbol"), **fund})
+            if fund.get("success"):
+                raised_usd += float(fund.get("funded_usd") or fund.get("amount_usd") or 0)
+        except Exception as exc:
+            actions.append({"step": "fund_legs", "success": False, "error": str(exc)[:200]})
+
+    after = [_venue_free_quote(v) for v in _EXTERNAL]
+    total_after = sum(float(s.get("free") or 0) for s in after)
+    sold = any(bool(a.get("success")) and not a.get("skipped") and a.get("action") == "prefund_sell" for a in actions)
+    ok = sold or total_after >= floor or any(bool(a.get("success")) and a.get("step") == "fund_legs" for a in actions)
+
+    out = {
+        "success": bool(ok),
+        "assignment": "backfill",
+        "floor_usd": floor,
+        "hint": hint,
+        "raised_usd": round(raised_usd, 2),
+        "before": [{"venue": s["venue"], "free": s["free"], "quote": s.get("quote")} for s in snaps],
+        "after": [{"venue": s["venue"], "free": s["free"], "quote": s.get("quote")} for s in after],
+        "total_free_usd": round(total_after, 4),
+        "actions": actions,
+        "reason": "raised" if sold else ("funded" if total_after >= floor else "no_raise"),
+    }
+    _append_hunter_event("backfill", **{k: v for k, v in out.items() if k != "hint"}, hint_symbol=(hint or {}).get("symbol"))
+    _learn_hunter(
+        f"backfill:{out.get('reason')}:raised={out.get('raised_usd')}",
+        profit_usd=0.01 if sold else 0.0,
+    )
+    if sold or (hint and ok):
+        try:
+            from backend.services.exchange_profit_head_service import clear_prefund_hint
+
+            clear_prefund_hint()
+        except Exception:
+            pass
+    return out
+
+
+def decide_hunter_assignments(
+    *,
+    state: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Pick hunter jobs for this tick. Backfill is first class, not only opportunistic."""
+    state = state if isinstance(state, dict) else _load_state()
+    hint = None
+    try:
+        from backend.services.exchange_profit_head_service import get_prefund_hint
+
+        hint = get_prefund_hint()
+    except Exception:
+        hint = None
+
+    last_skip = None
+    last_tick = state.get("last_tick") if isinstance(state.get("last_tick"), dict) else {}
+    if isinstance(last_tick, dict):
+        last_skip = last_tick.get("skip_reason")
+
+    floor = _backfill_floor_usd()
+    need, why = (False, "backfill_disabled")
+    if _backfill_enabled():
+        need, why = _backfill_needed(floor_usd=floor, hint=hint, last_skip=str(last_skip) if last_skip else None)
+
+    cooldown = _backfill_cooldown_sec()
+    last_bf = state.get("last_backfill_at")
+    cooled = True
+    if last_bf and cooldown > 0 and need:
+        try:
+            prev = datetime.fromisoformat(str(last_bf).replace("Z", "+00:00"))
+            age = (datetime.now(timezone.utc) - prev).total_seconds()
+            cooled = age >= cooldown
+            if not cooled:
+                why = "backfill_cooldown"
+        except Exception:
+            cooled = True
+
+    assignments: List[str] = []
+    if need and cooled:
+        assignments.append("backfill")
+    assignments.append("hunt")
+    return {
+        "assignments": assignments,
+        "backfill_needed": bool(need),
+        "backfill_ready": bool(need and cooled),
+        "reason": why,
+        "hint": hint,
+        "floor_usd": floor,
+    }
+
+
 def _write_board(candidates: List[Dict[str, Any]], *, scanned: int, qualifying: int) -> None:
     board = {
         "updated_at": _iso(),
@@ -461,7 +744,7 @@ def _write_board(candidates: List[Dict[str, Any]], *, scanned: int, qualifying: 
 
 
 def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
-    """One hunter tick: wide hunt → rank → recheck → prefund → execute."""
+    """One hunter tick: assignments → optional backfill → hunt → prefund → execute."""
     if not spread_hunter_enabled() and not force:
         return {"success": False, "skipped": True, "reason": "arm_disabled"}
 
@@ -480,11 +763,28 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
     cfg = conn.load_connectors_config()
     xfer_bps = float(arb._effective_transfer_cost_bps(cfg))
 
+    plan = decide_hunter_assignments(state=_load_state())
+    assignments = list(plan.get("assignments") or ["hunt"])
+    backfill_res = None
+    if "backfill" in assignments:
+        backfill_res = run_hunter_backfill_assignment(
+            hint=plan.get("hint") if isinstance(plan.get("hint"), dict) else None,
+            raise_symbols=None,
+        )
+        if backfill_res.get("raised_usd"):
+            time.sleep(1.0)
+            try:
+                from backend.services import exchange_venue_api_service as vapi
+
+                vapi.refresh_venue_balances(venues, force=True)
+            except Exception:
+                pass
+
     universe = _build_universe(scan_limit=scan_limit)
     symbols = list(universe["symbols"])
     # Head kill-shot: prioritize the named symbol for this hunt cycle.
     try:
-        from backend.services.exchange_profit_head_service import get_kill_shot, clear_kill_shot
+        from backend.services.exchange_profit_head_service import get_kill_shot
 
         ks = get_kill_shot()
         if ks and str(ks.get("arm") or "hunter") == "hunter" and ks.get("symbol"):
@@ -492,9 +792,16 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             symbols = [sym] + [s for s in symbols if s != sym]
     except Exception:
         ks = None
+    # Prefer head prefund-hint symbol on the hunt pass too.
+    hint_sym = None
+    if isinstance(plan.get("hint"), dict) and plan["hint"].get("symbol"):
+        hint_sym = str(plan["hint"]["symbol"]).upper()
+        symbols = [hint_sym] + [s for s in symbols if s != hint_sym]
     out: Dict[str, Any] = {
         "success": True,
         "arm": "spread_hunter",
+        "assignments": assignments,
+        "assignment_reason": plan.get("reason"),
         "scanned_at": _iso(),
         "min_bps": min_bps,
         "min_profit_usd": min_profit,
@@ -505,14 +812,20 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         "hot_count": universe["hot_count"],
         "symbols_sample": symbols[:12],
         "kill_shot": ks,
+        "prefund_hint": plan.get("hint"),
         "opportunity_count": 0,
         "qualifying": 0,
         "top": None,
         "board_top": [],
         "executed": False,
         "prefund": None,
+        "backfill": backfill_res,
         "skip_reason": None,
     }
+    if "hunt" not in assignments:
+        out["skip_reason"] = "assignment_backfill_only"
+        _persist_tick(out)
+        return out
     if not symbols:
         out["skip_reason"] = "empty_universe"
         _persist_tick(out)
@@ -706,6 +1019,8 @@ def _persist_tick(out: Dict[str, Any]) -> None:
         "updated_at": _iso(),
         "last_tick": {
             "scanned_at": out.get("scanned_at"),
+            "assignments": out.get("assignments"),
+            "assignment_reason": out.get("assignment_reason"),
             "universe_size": out.get("universe_size"),
             "opportunity_count": out.get("opportunity_count"),
             "qualifying": out.get("qualifying"),
@@ -714,9 +1029,20 @@ def _persist_tick(out: Dict[str, Any]) -> None:
             "executed": out.get("executed"),
             "skip_reason": out.get("skip_reason"),
             "prefund": out.get("prefund"),
+            "backfill": {
+                "success": (out.get("backfill") or {}).get("success"),
+                "reason": (out.get("backfill") or {}).get("reason"),
+                "raised_usd": (out.get("backfill") or {}).get("raised_usd"),
+                "total_free_usd": (out.get("backfill") or {}).get("total_free_usd"),
+            } if out.get("backfill") else None,
             "trade": out.get("trade"),
         },
     })
+    if out.get("backfill"):
+        state["last_backfill_at"] = out.get("scanned_at")
+        state["last_backfill"] = out.get("backfill")
+        if (out.get("backfill") or {}).get("raised_usd"):
+            state["backfill_count"] = int(state.get("backfill_count") or 0) + 1
     if out.get("executed"):
         state["last_exec_at"] = out.get("scanned_at")
         state["last_exec"] = out.get("trade")
@@ -742,6 +1068,9 @@ def spread_hunter_status() -> Dict[str, Any]:
         "notional_usd": _cfg_float("SPREAD_HUNTER_NOTIONAL_USD", 15.0),
         "scan_limit": _cfg_int("SPREAD_HUNTER_SCAN_LIMIT", 100),
         "prefund": _prefund_enabled(),
+        "backfill": _backfill_enabled(),
+        "backfill_floor_usd": _backfill_floor_usd(),
+        "assignments": ["backfill", "hunt"],
         "state": state,
         "board": board if isinstance(board, dict) else {},
     }

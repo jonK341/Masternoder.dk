@@ -105,6 +105,18 @@ def clear_kill_shot() -> None:
     save_control(ctrl)
 
 
+def get_prefund_hint() -> Optional[Dict[str, Any]]:
+    """Head assignment for the hunter arm: raise quote toward an unfunded edge."""
+    hint = load_control().get("prefund_hint")
+    return hint if isinstance(hint, dict) else None
+
+
+def clear_prefund_hint() -> None:
+    ctrl = load_control()
+    ctrl["prefund_hint"] = None
+    save_control(ctrl)
+
+
 def _append_head_event(kind: str, **fields: Any) -> None:
     row = {"ts": _iso(), "kind": kind, "limb": "head"}
     row.update(fields)
