@@ -85,7 +85,7 @@
         if (hint) {
             hint.textContent = billing.message
                 || (freeProgram
-                    ? 'Film Canvas and Mission Control movies are free — write a scene and press Play Movie.'
+                    ? 'Free film monitor — write a scene and press Play Movie. SND turns neural sound on.'
                     : 'Both options unlock 1 film play after the free window.');
         }
         if (pay) {
@@ -258,27 +258,35 @@
         overlay.style.display = show === false ? 'none' : '';
     }
 
+    function soundLive() {
+        if (document.body.classList.contains('mn-sound-active')) return true;
+        var power = $('themeSoundToggle');
+        return !!(power && power.getAttribute('aria-pressed') === 'true');
+    }
+
     function drawIdle(canvas, ctx, now) {
         var w = canvas.width;
         var h = canvas.height;
         var t = (now - t0) / 1000;
+        var hot = soundLive();
         ctx.fillStyle = '#020805';
         ctx.fillRect(0, 0, w, h);
 
         var g = ctx.createRadialGradient(w * 0.5, h * 0.45, 20, w * 0.5, h * 0.5, w * 0.62);
-        g.addColorStop(0, 'rgba(0,255,136,0.16)');
-        g.addColorStop(0.55, 'rgba(0,180,255,0.06)');
+        g.addColorStop(0, hot ? 'rgba(0,255,136,0.28)' : 'rgba(0,255,136,0.16)');
+        g.addColorStop(0.45, hot ? 'rgba(0,180,255,0.14)' : 'rgba(0,180,255,0.06)');
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, w, h);
 
-        ctx.strokeStyle = 'rgba(0,255,136,0.08)';
+        ctx.strokeStyle = hot ? 'rgba(0,255,136,0.16)' : 'rgba(0,255,136,0.08)';
         ctx.lineWidth = 1;
-        var step = 28;
+        var step = hot ? 22 : 28;
+        var drift = hot ? 22 : 12;
         for (var x = 0; x < w; x += step) {
             ctx.beginPath();
-            ctx.moveTo(x + (t * 12) % step, 0);
-            ctx.lineTo(x + (t * 12) % step, h);
+            ctx.moveTo(x + (t * drift) % step, 0);
+            ctx.lineTo(x + (t * drift) % step, h);
             ctx.stroke();
         }
         for (var y = 0; y < h; y += step) {
@@ -288,17 +296,29 @@
             ctx.stroke();
         }
 
-        var scanY = ((t * 70) % (h + 40)) - 20;
-        ctx.fillStyle = 'rgba(0,255,180,0.07)';
-        ctx.fillRect(0, scanY, w, 18);
+        var scanSpeed = hot ? 120 : 70;
+        var scanY = ((t * scanSpeed) % (h + 40)) - 20;
+        ctx.fillStyle = hot ? 'rgba(0,255,180,0.14)' : 'rgba(0,255,180,0.07)';
+        ctx.fillRect(0, scanY, w, hot ? 26 : 18);
+
+        if (hot) {
+            for (var i = 0; i < 18; i++) {
+                var px = (Math.sin(t * 1.7 + i * 1.3) * 0.5 + 0.5) * w;
+                var py = (Math.cos(t * 1.1 + i * 0.9) * 0.5 + 0.5) * h;
+                ctx.fillStyle = 'rgba(0,255,200,' + (0.18 + (i % 5) * 0.04) + ')';
+                ctx.beginPath();
+                ctx.arc(px, py, 1.5 + (i % 3), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
 
         ctx.fillStyle = 'rgba(180,255,220,0.55)';
         ctx.font = '600 22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('FILM CANVAS · STANDBY', w / 2, h / 2 - 8);
+        ctx.fillText(hot ? 'FILM CANVAS · SOUND LIVE' : 'FILM CANVAS · STANDBY', w / 2, h / 2 - 8);
         ctx.font = '400 14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
         ctx.fillStyle = 'rgba(140,220,180,0.45)';
-        ctx.fillText('type a prompt under the monitor', w / 2, h / 2 + 18);
+        ctx.fillText('type a scene · press Play Movie', w / 2, h / 2 + 18);
     }
 
     function drawVideoFrame(canvas, ctx, video) {
@@ -376,16 +396,14 @@
     function syncSoundNode() {
         var snd = $('fp-film-node-snd');
         var kicker = $('fp-neural-kicker');
-        var live = document.body.classList.contains('mn-sound-active');
-        if (!live) {
-            var power = $('themeSoundToggle');
-            live = !!(power && power.getAttribute('aria-pressed') === 'true');
-        }
+        var monitor = $('fp-film-monitor');
+        var live = soundLive();
         if (snd) {
             snd.classList.toggle('is-live', live);
             snd.setAttribute('aria-pressed', live ? 'true' : 'false');
             snd.title = live ? 'Neural sound online — click to stop' : 'Neural sound offline — click to start';
         }
+        if (monitor) monitor.classList.toggle('is-sound-live', live);
         if (kicker) {
             kicker.textContent = live ? 'Neural sound online' : 'Neural sound offline';
         }
@@ -439,7 +457,13 @@
         setStatus('Starting interactive movie…');
 
         try {
-            if (billing && !billing.can_play && !billing.free_active) {
+            if (
+                billing
+                && !billing.always_free
+                && !billing.free_program
+                && !billing.can_play
+                && !billing.free_active
+            ) {
                 setStatus('Trial ended — pay with MN2 coins or PayPal first.');
                 setOverlay('<p class="fp-film-idle">Payment required</p>', true);
                 setBusy(false);

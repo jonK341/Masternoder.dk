@@ -47,20 +47,20 @@
 
 .fp-hero-film .fp-monitors-bay {
     grid-area: monitors;
-    width: min(100%, 1120px);
+    width: min(100%, 920px);
     position: relative;
     z-index: 2;
 }
 
 .fp-monitors-desk {
     position: absolute;
-    left: 4%;
-    right: 4%;
-    bottom: 18%;
-    height: 42%;
+    left: 6%;
+    right: 6%;
+    bottom: 14%;
+    height: 38%;
     border-radius: 40% 40% 12px 12px;
     background:
-        radial-gradient(ellipse at 50% 0%, rgba(0, 255, 136, 0.12), transparent 55%),
+        radial-gradient(ellipse at 50% 0%, rgba(0, 255, 136, 0.14), transparent 55%),
         linear-gradient(180deg, transparent, rgba(0, 12, 10, 0.55));
     pointer-events: none;
     z-index: 0;
@@ -70,9 +70,14 @@
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 14px;
     align-items: stretch;
+}
+
+.fp-monitors-grid-single {
+    max-width: 920px;
+    margin: 0 auto;
 }
 
 .fp-monitor-name {
@@ -84,14 +89,78 @@
     text-transform: uppercase;
 }
 
-.fp-hero-film .fp-film-monitor,
-.fp-hero-film .fp-mc-monitor {
+.fp-hero-film .fp-film-monitor {
     width: 100%;
     position: relative;
     z-index: 2;
 }
 
-/* Mission Control movie board (#2) — full status + interactive movie + FX/sound */
+.fp-film-fx {
+    position: absolute;
+    inset: -12%;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse at 28% 18%, rgba(0, 255, 136, 0.16), transparent 42%),
+        radial-gradient(ellipse at 78% 72%, rgba(0, 180, 255, 0.12), transparent 38%),
+        radial-gradient(ellipse at 50% 100%, rgba(255, 80, 120, 0.06), transparent 45%);
+    animation: fpFilmGlow 5.2s ease-in-out infinite alternate;
+    opacity: 0.9;
+}
+
+.fp-film-bezel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 140, 0.035) 3px
+    );
+    animation: fpFilmScan 6.5s linear infinite;
+    opacity: 0.85;
+}
+
+.fp-film-chrome,
+.fp-film-screen,
+.fp-film-ledge {
+    position: relative;
+    z-index: 2;
+}
+
+.fp-film-monitor.is-sound-live .fp-film-bezel {
+    border-color: rgba(0, 255, 136, 0.7);
+    box-shadow: 0 0 34px rgba(0, 255, 136, 0.26), inset 0 0 48px rgba(0, 255, 136, 0.08);
+}
+
+.fp-film-monitor.is-sound-live .fp-film-fx {
+    animation-duration: 2s;
+    opacity: 1;
+}
+
+.fp-film-monitor.is-busy .fp-film-bezel {
+    animation: fpFilmFlicker 1.05s steps(2, end) infinite;
+}
+
+@keyframes fpFilmGlow {
+    from { transform: scale(1) translate(0, 0); opacity: 0.75; }
+    to { transform: scale(1.08) translate(2%, -1%); opacity: 1; }
+}
+
+@keyframes fpFilmScan {
+    from { transform: translateY(-7%); }
+    to { transform: translateY(7%); }
+}
+
+@keyframes fpFilmFlicker {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.14) contrast(1.06); }
+}
+
+/* Legacy Mission Control styles kept for debugger embeds; unused on frontpage */
 .fp-mc-stage {
     position: relative;
     overflow: hidden;
@@ -508,6 +577,7 @@ body.mn-sound-active #fp-neural-kicker {
 
 .fp-film-bezel {
     position: relative;
+    overflow: hidden;
     padding: 12px 12px 18px;
     border-radius: 18px;
     border: 1px solid rgba(0, 255, 136, 0.28);
@@ -516,6 +586,7 @@ body.mn-sound-active #fp-neural-kicker {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.06),
         0 18px 50px rgba(0, 0, 0, 0.45);
+    transition: box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
 .fp-film-chrome {
