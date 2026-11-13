@@ -57,7 +57,7 @@ mn2_bp = Blueprint("mn2", __name__)
 @mn2_bp.route("/api/mn2/balance", methods=["GET"])
 def mn2_balance():
     """Return the current user's in-app MN2 balance (unified points) and shop rate (coins_per_mn2)."""
-    user_id = resolve_user_id(from_body=False, from_query=True)
+    user_id = resolve_user_id(from_body=False, from_query=True, prefer_query=True)
     result = get_balance(user_id)
     if not result.get("success"):
         return jsonify({"success": False, "error": result.get("error", "Unknown error")}), 500
@@ -341,9 +341,15 @@ def mn2_transfer():
 @mn2_bp.route("/api/mn2/transactions", methods=["GET"])
 def mn2_transactions():
     """Return ledger entries for the current user with explorer links."""
-    # Match balance/deposit identity resolution so profile wallet history lines up
-    # with the balance the UI already loaded via ?user_id= (session still wins).
-    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    # Prefer explicit ?user_id= so ops/curl/profile history match balance for that id
+    # (session/identification must not silently swap to another account).
+    user_id = resolve_user_id(
+        from_body=False,
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+        prefer_query=True,
+    )
     limit = min(100, max(1, int(request.args.get("limit", 50))))
     entries = get_entries_by_user(user_id, limit=limit)
     base = _explorer_base_url().rstrip("/")
@@ -372,7 +378,13 @@ def mn2_statement():
     ?format=csv returns a tax/accounting export.
     """
     # Same identity rules as balance/transactions so the statement matches the wallet UI.
-    user_id = resolve_user_id(from_body=False, from_query=True, use_session=True, use_identification=True)
+    user_id = resolve_user_id(
+        from_body=False,
+        from_query=True,
+        use_session=True,
+        use_identification=True,
+        prefer_query=True,
+    )
     if not user_id or user_id == "default_user":
         return jsonify({"success": False, "error": "Sign in to view your statement.", "code": "auth_required"}), 401
 
@@ -464,7 +476,7 @@ def mn2_statement():
 @mn2_bp.route("/api/mn2/wallet-activity", methods=["GET"])
 def mn2_wallet_activity():
     """Last N UTC days of MN2 ledger aggregates (deposits, outflows, net) for profile monitor."""
-    user_id = resolve_user_id(from_body=False, from_query=True)
+    user_id = resolve_user_id(from_body=False, from_query=True, prefer_query=True)
     try:
         days = int(request.args.get("days", 5))
     except (TypeError, ValueError):
