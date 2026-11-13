@@ -525,6 +525,11 @@ def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, mo
     monkeypatch.setattr(canvas, "_fal_dependencies_available", lambda: True)
     monkeypatch.setattr(
         canvas,
+        "_ai_design_clip_pipeline",
+        lambda *a, **k: {"success": False, "error": "skip"},
+    )
+    monkeypatch.setattr(
+        canvas,
         "_plan_with_all_llms",
         lambda brief, timeout=25: {"success": False, "providers": [], "direction": ""},
     )
@@ -541,7 +546,7 @@ def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, mo
             "canvas": "fal_krea",
         }
 
-    def fake_free(prompt, dest_dir=None, duration=6.0, face_path=None, direction=None):
+    def fake_free(prompt, dest_dir=None, duration=6.0, face_path=None, direction=None, ai_pipeline=None):
         path = os.path.join(dest_dir or str(tmp_path), "fallback.mp4")
         with open(path, "wb") as handle:
             handle.write(b"mp4" * 30)
@@ -551,7 +556,8 @@ def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, mo
             "canvas": "free_still",
             "fps": 12,
             "beats": 3,
-            "mode": "storyboard_movie",
+            "mode": "acting_storyboard",
+            "pipeline_run_id": (ai_pipeline or {}).get("run_id"),
         }
 
     monkeypatch.setattr(canvas, "_generate_fal_clip", fake_fal)
@@ -572,12 +578,52 @@ def test_compose_interactive_movie_plans_then_renders(clean_env, tmp_path, monke
     monkeypatch.setattr(canvas, "_fal_dependencies_available", lambda: True)
     monkeypatch.setattr(
         canvas,
-        "_plan_with_all_llms",
-        lambda brief, timeout=25: {
+        "_ai_design_clip_pipeline",
+        lambda brief, duration_sec=8, beat_count=3, timeout=25: {
             "success": True,
-            "providers": ["groq", "openai"],
-            "direction": "Neon rim light on the console",
-            "count": 2,
+            "run_id": "pipe_test123",
+            "provider": "gemini",
+            "title": "Harbour Pulse",
+            "style": "neon noir",
+            "mood": "tense",
+            "color_grade": "teal-orange",
+            "people_direction": "operators move between consoles",
+            "direction": "1. [establishing] Neon rim light on the console\n2. [character] Keep the camera low",
+            "beats": [
+                {
+                    "index": 0,
+                    "title": "Open",
+                    "shot_type": "establishing",
+                    "description": "Neon rim light on the console",
+                    "image_prompt": "Neon rim light on the console",
+                    "pose_prompts": ["stand", "walk", "turn"],
+                    "motion": "zoom_in",
+                    "seed": 111,
+                    "duration_sec": 2.5,
+                },
+                {
+                    "index": 1,
+                    "title": "Low",
+                    "shot_type": "character",
+                    "description": "Keep the camera low",
+                    "image_prompt": "Keep the camera low",
+                    "pose_prompts": ["look", "gesture", "react"],
+                    "motion": "pan_right",
+                    "seed": 222,
+                    "duration_sec": 2.5,
+                },
+                {
+                    "index": 2,
+                    "title": "Close",
+                    "shot_type": "closing",
+                    "description": "Pull back through rain",
+                    "image_prompt": "Pull back through rain",
+                    "pose_prompts": ["leave", "turn", "fade"],
+                    "motion": "zoom_out",
+                    "seed": 333,
+                    "duration_sec": 3.0,
+                },
+            ],
         },
     )
     monkeypatch.setattr(
@@ -624,14 +670,113 @@ def test_compose_interactive_movie_plans_then_renders(clean_env, tmp_path, monke
     )
 
     assert result["success"] is True
-    assert result["planner"] == "all_llms+dramacanva"
+    assert str(result["planner"]).startswith("ai_pipeline:")
+    assert "dramacanva" in str(result["planner"])
     assert result["renderer"] == "pipeline_storyboard"
     assert result["beats"] >= 2
+    assert result.get("pipeline_run_id") == "pipe_test123"
+    assert result.get("pipeline_style") == "neon noir"
     assert isinstance(result.get("beat_plan"), list)
     assert "Keep the camera low" in result["prompt_used"]
     assert "Neon rim light" in result["prompt_used"]
-    assert result["llm_plan"]["count"] == 2
     assert os.path.isfile(result["local_path"])
+
+
+def test_ai_design_pipeline_parses_unique_beats(clean_env, monkeypatch):
+    class _Resp:
+        success = True
+        content = (
+            '{"title":"Salt Spray","style":"wet chrome","mood":"urgent",'
+            '"color_grade":"cyan","camera_language":"handheld",'
+            '"people_direction":"crew rushes",'
+            '"beats":['
+            '{"title":"Wide","shot_type":"establishing","description":"Rain over docks",'
+            '"image_prompt":"Rain over docks","pose_prompts":["a","b","c"],'
+            '"motion":"zoom_in","seed":42},'
+            '{"title":"Face","shot_type":"character","description":"Captain turns",'
+            '"image_prompt":"Captain turns","pose_prompts":["d","e","f"],'
+            '"motion":"pan_left","seed":99}'
+            "]}"
+        )
+        provider = "gemini"
+
+    monkeypatch.setattr(
+        canvas,
+        "_video_ai_bridge",
+        type("B", (), {"complete_for_stage": staticmethod(lambda *a, **k: _Resp())})(),
+    )
+    monkeypatch.setattr(
+        canvas,
+        "_gemini_rest_complete",
+        lambda *a, **k: {"success": True, "provider": "gemini_rest", "content": _Resp.content},
+    )
+    out = canvas._ai_design_clip_pipeline("harbour", duration_sec=6, beat_count=2, timeout=10)
+    assert out["success"] is True
+    assert out["style"] == "wet chrome"
+    assert len(out["beats"]) == 2
+    assert out["beats"][0]["shot_type"] == "establishing"
+    assert out["run_id"].startswith("pipe_")
+
+
+def test_extract_json_repairs_truncated_pipeline():
+    truncated = (
+        '{"title":"Hydro-Kinetic Neon Rush","style":"Neo-Noir Hyper-Realism",'
+        '"mood":"Urgent","beats":[{"title":"Wide","shot_type":"establishing",'
+        '"description":"Rain docks","image_prompt":"Rain docks",'
+        '"pose_prompts":["a","b","c"],"motion":"zoom_in","seed":11},'
+        '{"title":"Face","shot_type":"character","description":"Captain turns"'
+    )
+    obj = canvas._extract_json_object(truncated)
+    assert isinstance(obj, dict)
+    assert obj.get("style") == "Neo-Noir Hyper-Realism"
+    assert isinstance(obj.get("beats"), list)
+    assert len(obj["beats"]) >= 1
+    assert obj["beats"][0]["title"] == "Wide"
+
+
+def test_gemini_rest_designs_pipeline(clean_env, monkeypatch):
+    monkeypatch.setattr(
+        canvas,
+        "_gemini_rest_complete",
+        lambda prompt, system="", timeout=25: {
+            "success": True,
+            "provider": "gemini_rest",
+            "content": json.dumps({
+                "title": "Dock Pulse",
+                "style": "rain chrome",
+                "mood": "urgent",
+                "color_grade": "cyan",
+                "camera_language": "handheld",
+                "people_direction": "crew rushes",
+                "beats": [
+                    {
+                        "title": "Wide",
+                        "shot_type": "establishing",
+                        "description": "Rain over docks",
+                        "image_prompt": "Rain over docks",
+                        "pose_prompts": ["a", "b", "c"],
+                        "motion": "zoom_in",
+                        "seed": 11,
+                    },
+                    {
+                        "title": "Face",
+                        "shot_type": "character",
+                        "description": "Captain turns",
+                        "image_prompt": "Captain turns",
+                        "pose_prompts": ["d", "e", "f"],
+                        "motion": "pan_left",
+                        "seed": 22,
+                    },
+                ],
+            }),
+        },
+    )
+    monkeypatch.setattr(canvas, "_video_ai_bridge", None)
+    out = canvas._ai_design_clip_pipeline("harbour", duration_sec=6, beat_count=2, timeout=10)
+    assert out["success"] is True
+    assert out["provider"] == "gemini_rest"
+    assert out["style"] == "rain chrome"
+    assert len(out["beats"]) == 2
 
 
 def test_auto_segment_clips_use_compose_pipeline(clean_env, tmp_path, monkeypatch):

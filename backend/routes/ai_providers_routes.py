@@ -113,6 +113,9 @@ def _public_interactive_job(job: dict) -> dict:
         "beats": job.get("beats"),
         "beat_plan": job.get("beat_plan"),
         "mode": job.get("mode"),
+        "pipeline_run_id": job.get("pipeline_run_id"),
+        "pipeline_style": job.get("pipeline_style"),
+        "pipeline_mood": job.get("pipeline_mood"),
         "video_url": job.get("video_url"),
         "download_url": (
             (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1")
@@ -199,30 +202,35 @@ def _run_interactive_movie_job(
 
         can_plan = film_ok("dramacanva", purpose="planning")
         renderers = list_render_canvases()
+        _touch_interactive_job(
+            job_id,
+            progress=12,
+            message="AI designing a brand-new pipeline for this clip...",
+        )
         if can_plan and renderers:
             _touch_interactive_job(
                 job_id,
                 progress=18,
-                message="All LLMs + DramaCanvas planning, then pipeline render (%s)..."
+                message="Fresh AI pipeline + DramaCanvas, then render (%s)..."
                 % (", ".join(renderers[:3]) or "auto"),
             )
         elif renderers:
             _touch_interactive_job(
                 job_id,
                 progress=20,
-                message="All-AI pipeline render (%s)..." % ", ".join(renderers[:3]),
+                message="Fresh AI pipeline render (%s)..." % ", ".join(renderers[:3]),
             )
         elif pipeline_render_available():
             _touch_interactive_job(
                 job_id,
                 progress=20,
-                message="Canvases offline — using all video AI fallbacks...",
+                message="Fresh AI pipeline — rendering with available backends...",
             )
         else:
             _touch_interactive_job(
                 job_id,
                 progress=15,
-                message="Preparing free still fallback movie...",
+                message="Fresh AI storyboard — assembling local acting movie...",
             )
 
         # Scale render timeout with requested length (cap for monitor UX).
@@ -238,6 +246,7 @@ def _run_interactive_movie_job(
         if result.get("success") and result.get("local_path"):
             beats = result.get("beats")
             mode = result.get("mode")
+            style = result.get("pipeline_style")
             _touch_interactive_job(
                 job_id,
                 status="completed",
@@ -246,6 +255,7 @@ def _run_interactive_movie_job(
                     "Interactive movie ready"
                     + ((" · %s scenes" % beats) if beats else "")
                     + (" · people acting" if mode == "acting_storyboard" else "")
+                    + ((" · %s" % style) if style else "")
                 ),
                 planner=result.get("planner"),
                 renderer=result.get("renderer") or result.get("canvas"),
@@ -256,6 +266,9 @@ def _run_interactive_movie_job(
                 beats=beats,
                 beat_plan=result.get("beat_plan"),
                 mode=mode,
+                pipeline_run_id=result.get("pipeline_run_id"),
+                pipeline_style=style,
+                pipeline_mood=result.get("pipeline_mood"),
                 error=None,
             )
         else:

@@ -35,7 +35,9 @@ _STAGE_ROUTING: Dict[str, Tuple[str, bool]] = {
     "strategy": ("reason", False),
     "video_concept": ("speed", False),
     "episode_storyline": ("reason", False),
-    "interactive_movie": ("context", True),
+    # Prefer free/speed providers so each clip can invent a fresh pipeline even when
+    # paid context models are out of credit.
+    "interactive_movie": ("free", False),
 }
 
 

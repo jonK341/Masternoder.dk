@@ -739,6 +739,8 @@
                             + (d.duration_sec ? (' · ' + d.duration_sec + 's') : '')
                             + (d.beats ? (' · ' + d.beats + ' scenes') : '')
                             + (d.mode === 'acting_storyboard' ? ' · people acting' : '')
+                            + (d.pipeline_style ? (' · ' + d.pipeline_style) : '')
+                            + (d.pipeline_run_id ? (' · pipe:' + String(d.pipeline_run_id).slice(-6)) : '')
                             + (d.planner ? ' · plan:' + d.planner : '')
                             + (d.renderer ? ' · render:' + d.renderer : '')
                         );

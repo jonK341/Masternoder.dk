@@ -1250,16 +1250,35 @@ def _build_storyboard_beats(
     prompt: str,
     duration: float,
     direction: Optional[str] = None,
+    ai_pipeline: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
-    """Full storyboard: N distinct shots covering the whole runtime."""
+    """Full storyboard: prefer a fresh AI pipeline; otherwise parse direction / templates."""
     want = _beat_count_for_duration(duration)
     seconds = max(2.0, float(duration or 8.0))
+    if ai_pipeline and ai_pipeline.get("success") and isinstance(ai_pipeline.get("beats"), list):
+        ai_beats = [dict(b) for b in ai_pipeline["beats"] if isinstance(b, dict)]
+        if len(ai_beats) >= 2:
+            # Re-fit durations to the requested runtime while keeping AI creative content.
+            remaining = seconds
+            for index, beat in enumerate(ai_beats):
+                left = len(ai_beats) - index
+                beat_sec = remaining if left == 1 else max(1.2, round(remaining / left, 2))
+                remaining = max(0.0, round(remaining - beat_sec, 2))
+                beat["index"] = index
+                beat["duration_sec"] = beat_sec
+                if not beat.get("seed"):
+                    beat["seed"] = (secrets.randbelow(900000) + 1000 + index * 97) % 999999
+                if not beat.get("motion"):
+                    beat["motion"] = (
+                        "zoom_in", "pan_right", "zoom_out", "pan_left",
+                    )[index % 4]
+            return ai_beats
+
     parsed = _parse_direction_beats(direction or "", want)
     brief = (prompt or "cinematic scene").strip()
-    # Drop meta "Storyboard direction" / face-reference lines from the brief.
     brief_core = brief.split("\n\nStoryboard direction:")[0].strip()
     brief_core = brief_core.split("[face reference")[0].strip() or brief_core
-
+    # Shuffle template order each clip so fallbacks are not identical.
     templates = [
         ("establishing", "Wide establishing shot of %s", "Open on the world"),
         ("character", "Hero / subject close-up inside %s", "Meet the subject"),
@@ -1270,6 +1289,9 @@ def _build_storyboard_beats(
         ("action", "Secondary action angle through %s", "Escalate"),
         ("detail", "Atmospheric texture pass over %s", "Atmosphere"),
     ]
+    start = secrets.randbelow(len(templates))
+    templates = templates[start:] + templates[:start]
+    run_salt = uuid.uuid4().hex[:6]
 
     beats: List[Dict[str, Any]] = []
     for index in range(want):
@@ -1280,25 +1302,26 @@ def _build_storyboard_beats(
         else:
             description = prompt_fmt % brief_core[:160]
             title = title_fallback
+        seed = (secrets.randbelow(900000) + 1000 + index * 97) % 999999
         beats.append({
             "index": index,
             "title": str(title)[:48],
             "description": str(description)[:280],
             "shot_type": shot_type,
+            "seed": seed,
             "prompt": (
-                "%s. Shot type: %s. Scene: %s. Cinematic film still, detailed, "
-                "16:9, dramatic lighting."
-            ) % (description[:180], shot_type, brief_core[:120]),
+                "%s. Shot type: %s. Scene: %s. Unique clip salt %s. "
+                "Cinematic film still, detailed, 16:9, dramatic lighting."
+            ) % (description[:160], shot_type, brief_core[:120], run_salt),
+            "image_prompt": (
+                "Photoreal cinematic still of %s, %s, unique variation %s"
+            ) % (description[:160], brief_core[:100], run_salt),
         })
 
-    # Distribute duration across beats (min ~1.2s each).
     remaining = seconds
     for index, beat in enumerate(beats):
         left = len(beats) - index
-        if left == 1:
-            beat_sec = remaining
-        else:
-            beat_sec = max(1.2, round(remaining / left, 2))
+        beat_sec = remaining if left == 1 else max(1.2, round(remaining / left, 2))
         remaining = max(0.0, round(remaining - beat_sec, 2))
         beat["duration_sec"] = beat_sec
         beat["motion"] = (
@@ -1453,7 +1476,13 @@ def _prompt_matched_still_prompt(beat: Dict[str, Any], base_prompt: str) -> str:
 
 def _acting_pose_prompts(beat: Dict[str, Any], base_prompt: str) -> List[str]:
     """Three pose prompts so people appear to move/act across the beat."""
-    base = _prompt_matched_still_prompt(beat, base_prompt)
+    custom = beat.get("pose_prompts") if isinstance(beat.get("pose_prompts"), list) else []
+    custom = [str(p).strip()[:420] for p in custom if str(p).strip()]
+    if len(custom) >= 2:
+        while len(custom) < 3:
+            custom.append(custom[-1])
+        return custom[:3]
+    base = beat.get("image_prompt") or _prompt_matched_still_prompt(beat, base_prompt)
     shot = str(beat.get("shot_type") or "action")
     if shot in ("establishing", "detail", "closing"):
         suffixes = (
@@ -1499,7 +1528,12 @@ def _collect_acting_pose_images(
 ) -> List[str]:
     """Fetch/paint several prompt-matched poses for one beat (people acting)."""
     poses: List[str] = []
-    seed0 = 2200 + int(beat.get("index") or 0) * 131
+    try:
+        seed0 = int(beat.get("seed") or 0)
+    except (TypeError, ValueError):
+        seed0 = 0
+    if seed0 <= 0:
+        seed0 = 2200 + int(beat.get("index") or 0) * 131 + secrets.randbelow(5000)
     for i, pose_prompt in enumerate(_acting_pose_prompts(beat, base_prompt)):
         path = _try_free_beat_image(pose_prompt, dest_dir, seed=seed0 + i * 17, timeout=10)
         if not path:
@@ -1835,10 +1869,18 @@ def _collect_movie_stills(
     duration: float,
     face_path: Optional[str] = None,
     direction: Optional[str] = None,
+    ai_pipeline: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """Gather prompt-matched acting poses per storyboard beat."""
-    beats = _build_storyboard_beats(prompt, duration, direction=direction)
+    beats = _build_storyboard_beats(
+        prompt, duration, direction=direction, ai_pipeline=ai_pipeline,
+    )
     stills: List[Dict[str, Any]] = []
+    style = ""
+    mood = ""
+    if isinstance(ai_pipeline, dict):
+        style = str(ai_pipeline.get("style") or "")
+        mood = str(ai_pipeline.get("mood") or "")
     for beat in beats:
         poses = _collect_acting_pose_images(
             beat, prompt, dest_dir, face_path=face_path,
@@ -1859,7 +1901,10 @@ def _collect_movie_stills(
             "motion": str(beat.get("motion") or "zoom_in"),
             "duration_sec": float(beat.get("duration_sec") or 2.0),
             "description": str(beat.get("description") or ""),
-            "prompt": _prompt_matched_still_prompt(beat, prompt),
+            "prompt": beat.get("image_prompt") or _prompt_matched_still_prompt(beat, prompt),
+            "seed": beat.get("seed"),
+            "style": style,
+            "mood": mood,
         })
     return stills
 
@@ -1870,6 +1915,7 @@ def _generate_free_still_movie(
     duration: float = 6.0,
     face_path: Optional[str] = None,
     direction: Optional[str] = None,
+    ai_pipeline: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build a prompt-matched multi-scene movie with people acting across poses."""
     if dest_dir is None:
@@ -1877,7 +1923,9 @@ def _generate_free_still_movie(
     os.makedirs(dest_dir, exist_ok=True)
     errors: List[str] = []
     duration = max(2.0, min(120.0, float(duration or 6.0)))
-    storyboard = _build_storyboard_beats(prompt, duration, direction=direction)
+    storyboard = _build_storyboard_beats(
+        prompt, duration, direction=direction, ai_pipeline=ai_pipeline,
+    )
 
     stills = _collect_movie_stills(
         prompt,
@@ -1885,6 +1933,7 @@ def _generate_free_still_movie(
         duration,
         face_path=face_path,
         direction=direction,
+        ai_pipeline=ai_pipeline,
     )
     if not stills:
         errors.append("no still frames available")
@@ -1929,6 +1978,7 @@ def _generate_free_still_movie(
                 "description": still.get("description"),
                 "poses": len(poses),
                 "mode": encoded.get("mode"),
+                "seed": still.get("seed"),
             })
         else:
             errors.append(str(encoded.get("error") or "beat encode failed"))
@@ -1948,11 +1998,18 @@ def _generate_free_still_movie(
     merged = _ffmpeg_concat_movies(beat_paths, dest)
     sources = sorted({str(s.get("source") or "") for s in stills if s.get("source")})
     xvid_path = None
+    pipeline_meta = {
+        "pipeline_run_id": (ai_pipeline or {}).get("run_id") if isinstance(ai_pipeline, dict) else None,
+        "pipeline_style": (ai_pipeline or {}).get("style") if isinstance(ai_pipeline, dict) else None,
+        "pipeline_mood": (ai_pipeline or {}).get("mood") if isinstance(ai_pipeline, dict) else None,
+        "pipeline_provider": (ai_pipeline or {}).get("provider") if isinstance(ai_pipeline, dict) else None,
+        "pipeline_title": (ai_pipeline or {}).get("title") if isinstance(ai_pipeline, dict) else None,
+    }
     if merged.get("success") and merged.get("local_path"):
         xvid = _ffmpeg_encode_xvid(merged["local_path"])
         if xvid.get("success"):
             xvid_path = xvid.get("local_path")
-        return {
+        out = {
             "success": True,
             "local_path": merged["local_path"],
             "xvid_path": xvid_path,
@@ -1963,11 +2020,14 @@ def _generate_free_still_movie(
             "beats": len(beat_paths),
             "beat_plan": beat_meta or storyboard,
             "mode": "acting_storyboard",
+            "ai_pipeline": ai_pipeline if isinstance(ai_pipeline, dict) else None,
         }
+        out.update(pipeline_meta)
+        return out
 
     if beat_paths:
         xvid = _ffmpeg_encode_xvid(beat_paths[0])
-        return {
+        out = {
             "success": True,
             "local_path": beat_paths[0],
             "xvid_path": xvid.get("local_path") if xvid.get("success") else None,
@@ -1979,7 +2039,10 @@ def _generate_free_still_movie(
             "beat_plan": beat_meta,
             "mode": "acting_storyboard",
             "concat_error": merged.get("error"),
+            "ai_pipeline": ai_pipeline if isinstance(ai_pipeline, dict) else None,
         }
+        out.update(pipeline_meta)
+        return out
     errors.append(str(merged.get("error") or "concat failed"))
     return {
         "success": False,
@@ -2006,27 +2069,29 @@ def _plan_with_all_llms(brief: str, timeout: int = 25) -> Dict[str, Any]:
     """Ask every configured LLM for interactive-movie direction and merge."""
     if _video_ai_bridge is None or not hasattr(_video_ai_bridge, "complete_multi_provider"):
         return {"success": False, "providers": [], "direction": ""}
+    run_token = uuid.uuid4().hex[:10]
     system = (
-        "You write a complete multi-shot storyboard for a short interactive monitor film. "
-        "Return 3-6 numbered beats. Each beat must be a DIFFERENT shot "
-        "(establishing / character / action / detail / reaction / closing) with concrete "
-        "visual detail, camera move, and mood. No preamble."
+        "You invent a brand-new multi-shot storyboard for a short interactive monitor film. "
+        "Never reuse a generic template. Return 3-6 numbered beats. Each beat must be a "
+        "DIFFERENT shot (establishing / character / action / detail / reaction / closing) "
+        "with concrete visual detail, camera move, people acting, and mood. No preamble."
     )
     user = (
+        "Unique run id: %s (make this storyboard original for this id only).\n"
         "Scene brief:\n%s\n\n"
-        "Write the full storyboard as numbered beats the renderer can follow. "
-        "Every beat must describe different material on screen — not the same picture."
-    ) % brief[:800]
+        "Write a fresh storyboard as numbered beats the renderer can follow. "
+        "Every beat must describe different material and different character action."
+    ) % (run_token, brief[:800])
     try:
         multi = _video_ai_bridge.complete_multi_provider(
             "interactive_movie",
             user,
             system_prompt=system,
             max_providers=None,
-            temperature=0.7,
-            max_tokens=420,
+            temperature=0.95,
+            max_tokens=520,
             timeout=min(25, max(8, timeout)),
-            extra_context={"use_all_ais": True, "quality_mode": "best"},
+            extra_context={"use_all_ais": True, "quality_mode": "best", "run_id": run_token},
         )
     except Exception as exc:
         return {"success": False, "providers": [], "direction": "", "error": str(exc)[:200]}
@@ -2045,6 +2110,460 @@ def _plan_with_all_llms(brief: str, timeout: int = 25) -> Dict[str, Any]:
         "providers": providers,
         "direction": direction,
         "count": len(providers),
+        "run_id": run_token,
+    }
+
+
+def _extract_json_object(text: str) -> Optional[Dict[str, Any]]:
+    import re
+
+    raw = (text or "").strip()
+    if not raw:
+        return None
+    if "```" in raw:
+        fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL | re.IGNORECASE)
+        if fence:
+            raw = fence.group(1)
+        else:
+            raw = raw.replace("```json", "").replace("```", "").strip()
+    start = raw.find("{")
+    if start < 0:
+        return None
+    chunk = raw[start:]
+    for candidate in (chunk, chunk[: chunk.rfind("}") + 1] if "}" in chunk else ""):
+        if not candidate:
+            continue
+        try:
+            obj = json.loads(candidate)
+            if isinstance(obj, dict):
+                return obj
+        except Exception:
+            pass
+    # Keep only complete beat objects if the array was cut off.
+    beats_match = re.search(r'"beats"\s*:\s*\[(.*)', chunk, re.DOTALL)
+    title = re.search(r'"title"\s*:\s*"([^"]*)"', chunk)
+    style = re.search(r'"style"\s*:\s*"([^"]*)"', chunk)
+    mood = re.search(r'"mood"\s*:\s*"([^"]*)"', chunk)
+    beats: List[Dict[str, Any]] = []
+    if beats_match:
+        for obj_text in re.findall(r'\{[^{}]*\}', beats_match.group(1)):
+            try:
+                item = json.loads(obj_text)
+            except Exception:
+                continue
+            if isinstance(item, dict) and (item.get("description") or item.get("image_prompt")):
+                beats.append(item)
+    if title or style or beats:
+        return {
+            "title": title.group(1) if title else "AI pipeline",
+            "style": style.group(1) if style else "ai-directed",
+            "mood": mood.group(1) if mood else "fresh",
+            "color_grade": "",
+            "camera_language": "",
+            "people_direction": "people act differently each beat",
+            "beats": beats,
+        }
+    repaired = chunk.rstrip()
+    if repaired.count('"') % 2 == 1:
+        repaired += '"'
+    repaired += "]" * max(0, repaired.count("[") - repaired.count("]"))
+    repaired += "}" * max(0, repaired.count("{") - repaired.count("}"))
+    try:
+        obj = json.loads(repaired)
+        return obj if isinstance(obj, dict) else None
+    except Exception:
+        return None
+
+
+def _gemini_rest_complete(prompt: str, system: str = "", timeout: int = 25) -> Dict[str, Any]:
+    """Direct Gemini REST call — bypasses broken openai-compatible client paths."""
+    api_key = (
+        os.environ.get("GOOGLE_AI_API_KEY")
+        or os.environ.get("GEMINI_API_KEY")
+        or os.environ.get("GOOGLE_API_KEY")
+        or ""
+    ).strip()
+    if not api_key:
+        for env_path in _ENV_FILES:
+            if not os.path.isfile(env_path):
+                continue
+            try:
+                with open(env_path, encoding="utf-8") as handle:
+                    for line in handle:
+                        if line.startswith("GOOGLE_AI_API_KEY=") or line.startswith("GEMINI_API_KEY="):
+                            api_key = line.split("=", 1)[1].strip().strip("'\"")
+                            if api_key:
+                                break
+            except Exception:
+                continue
+            if api_key:
+                break
+    if not api_key:
+        return {"success": False, "error": "GOOGLE_AI_API_KEY missing"}
+
+    text = (("System:\n%s\n\n" % system) if system else "") + prompt
+    body = json.dumps({
+        "contents": [{"parts": [{"text": text[:6000]}]}],
+        "generationConfig": {
+            "temperature": 1.05,
+            "maxOutputTokens": 1400,
+            "responseMimeType": "application/json",
+        },
+    }).encode("utf-8")
+    last_err = ""
+    for model in (
+        "gemini-2.5-flash",
+        "gemini-flash-latest",
+        "gemini-2.5-flash-lite",
+        "gemini-3.8-flash",
+    ):
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s"
+            % (model, urllib.parse.quote(api_key))
+        )
+        req = urllib.request.Request(
+            url,
+            data=body,
+            headers={"Content-Type": "application/json", "User-Agent": "MasterNoder/1.0"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=max(8, int(timeout))) as resp:
+                payload = json.loads(resp.read().decode("utf-8", errors="replace"))
+        except Exception as exc:
+            last_err = str(exc)[:180]
+            continue
+        try:
+            content = payload["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception:
+            last_err = "gemini response missing text"
+            continue
+        if content and str(content).strip():
+            return {"success": True, "content": str(content).strip(), "provider": "gemini_rest", "model": model}
+    return {"success": False, "error": last_err or "gemini rest failed"}
+
+
+def _procedural_unique_pipeline(
+    brief: str,
+    duration_sec: int,
+    beat_count: int,
+    run_id: str,
+) -> Dict[str, Any]:
+    """Always-new local pipeline when remote LLMs throttle — still unique per clip."""
+    import hashlib
+
+    want = max(2, min(8, int(beat_count or 3)))
+    seconds = max(2, min(120, int(duration_sec or 8)))
+    salt = int(hashlib.sha1(("%s|%s|%s" % (run_id, brief, secrets.token_hex(4))).encode("utf-8")).hexdigest()[:8], 16)
+    styles = (
+        "neon noir", "wet chrome", "fog pastel", "amber documentary",
+        "cyber rain", "steel dawn", "violet night", "salt-spray realism",
+    )
+    moods = (
+        "urgent", "lonely", "hopeful", "tense", "dreamlike", "gritty", "serene", "chaotic",
+    )
+    style = styles[salt % len(styles)]
+    mood = moods[(salt // 7) % len(moods)]
+    core = (brief or "cinematic scene").split("[face reference")[0].strip()[:160]
+    words = [w for w in core.replace(",", " ").split() if len(w) > 2]
+    beats: List[Dict[str, Any]] = []
+    order = list(_SHOT_TYPES)
+    start = salt % len(order)
+    order = order[start:] + order[:start]
+    motions = ("zoom_in", "pan_right", "zoom_out", "pan_left")
+    for index in range(want):
+        shot = order[index % len(order)]
+        spice = words[(salt + index * 3) % len(words)] if words else "scene"
+        description = (
+            "%s shot of %s — focus on %s, style %s, mood %s, variation %s"
+            % (shot, core[:90], spice, style, mood, run_id[-6:])
+        )[:280]
+        seed = (salt * 13 + index * 97 + secrets.randbelow(5000)) % 999999
+        beats.append({
+            "index": index,
+            "title": ("%s · %s" % (shot.title(), spice))[:48],
+            "description": description,
+            "shot_type": shot,
+            "prompt": description,
+            "image_prompt": description,
+            "pose_prompts": [
+                ("%s — ready pose" % description)[:420],
+                ("%s — mid motion" % description)[:420],
+                ("%s — acting turn" % description)[:420],
+            ],
+            "motion": motions[index % 4],
+            "seed": seed,
+            "duration_sec": 0,
+        })
+    remaining = float(seconds)
+    for index, beat in enumerate(beats):
+        left = len(beats) - index
+        beat_sec = remaining if left == 1 else max(1.2, round(remaining / left, 2))
+        remaining = max(0.0, round(remaining - beat_sec, 2))
+        beat["duration_sec"] = beat_sec
+    return {
+        "success": True,
+        "run_id": run_id,
+        "provider": "procedural_unique",
+        "title": ("%s · %s" % (style, mood))[:80],
+        "style": style,
+        "mood": mood,
+        "color_grade": style,
+        "camera_language": "invented handheld for %s" % run_id[-6:],
+        "people_direction": "people act differently each beat (%s)" % mood,
+        "beats": beats,
+        "direction": "\n".join(
+            "%s. [%s] %s" % (i + 1, b["shot_type"], b["description"])
+            for i, b in enumerate(beats)
+        ),
+    }
+
+
+def _ai_design_clip_pipeline(
+    brief: str,
+    duration_sec: int,
+    beat_count: int,
+    timeout: int = 25,
+) -> Dict[str, Any]:
+    """Ask AI to invent a brand-new flexible render pipeline for this one clip only."""
+    run_id = "pipe_%s" % uuid.uuid4().hex[:12]
+    want = max(2, min(8, int(beat_count or 3)))
+    seconds = max(2, min(120, int(duration_sec or 8)))
+
+    system = (
+        "You are the film pipeline architect. For EVERY request invent a NEW pipeline. "
+        "Never copy a previous layout. Reply with ONLY one compact JSON object on a single "
+        "logical response (no markdown fences, no commentary) matching:\n"
+        "{"
+        "\"title\":str,\"style\":str,\"mood\":str,\"color_grade\":str,"
+        "\"camera_language\":str,\"people_direction\":str,"
+        "\"beats\":[{\"title\":str,\"shot_type\":str,\"description\":str,"
+        "\"image_prompt\":str,\"pose_prompts\":[str,str,str],"
+        "\"motion\":\"zoom_in|zoom_out|pan_left|pan_right\",\"seed\":int}]"
+        "}\n"
+        "Keep strings short. shot_type must be one of "
+        "establishing,character,action,detail,reaction,closing. "
+        "Each image_prompt/pose_prompt must be photoreal and match the brief. "
+        "People must act differently in each pose_prompt."
+    )
+    user = (
+        "Fresh pipeline run_id=%s\n"
+        "Duration seconds=%s\n"
+        "Required beat count=%s\n"
+        "User scene brief:\n%s\n\n"
+        "Invent a unique pipeline and exactly %s original beats for this run only. "
+        "Return compact JSON only."
+    ) % (run_id, seconds, want, brief[:700], want)
+
+    content = ""
+    provider = None
+    # 1) Direct Gemini REST — reliable even when openai-compatible clients are broken.
+    gem = _gemini_rest_complete(user, system=system, timeout=min(28, max(10, timeout)))
+    if gem.get("success") and gem.get("content"):
+        content = str(gem["content"]).strip()
+        provider = gem.get("provider") or "gemini_rest"
+
+    # 2) Bridge / multi-provider fallback.
+    if not content:
+        try:
+            if _video_ai_bridge is not None and hasattr(_video_ai_bridge, "complete_for_stage"):
+                response = _video_ai_bridge.complete_for_stage(
+                    "interactive_movie",
+                    user,
+                    system_prompt=system,
+                    temperature=1.05,
+                    max_tokens=1400,
+                    timeout=min(28, max(10, timeout)),
+                    use_best=True,
+                    extra_context={"run_id": run_id, "quality_mode": "best"},
+                )
+                if response is not None and getattr(response, "success", False):
+                    content = (getattr(response, "content", None) or "").strip()
+                    provider = getattr(response, "provider", None) or "llm"
+        except Exception:
+            content = ""
+
+    if not content and _video_ai_bridge is not None and hasattr(_video_ai_bridge, "complete_multi_provider"):
+        try:
+            multi = _video_ai_bridge.complete_multi_provider(
+                "interactive_movie",
+                user,
+                system_prompt=system,
+                max_providers=2,
+                temperature=1.0,
+                max_tokens=1400,
+                timeout=min(28, max(10, timeout)),
+                extra_context={"run_id": run_id, "use_all_ais": True},
+            )
+            for pname, response in multi or []:
+                text = (getattr(response, "content", None) or "").strip()
+                if text:
+                    content = text
+                    provider = pname
+                    break
+        except Exception as exc:
+            return {"success": False, "run_id": run_id, "error": str(exc)[:200]}
+
+    # 3) Retry with a simpler JSON shape if the first creative reply was empty/truncated.
+    if not content or not _extract_json_object(content):
+        time.sleep(1.2)
+        simple = (
+            "run_id=%s brief=%s beats=%s. "
+            "Return JSON:"
+            "{\"title\":str,\"style\":str,\"mood\":str,\"beats\":[str,str,str]}"
+        ) % (run_id, brief[:240], want)
+        gem2 = _gemini_rest_complete(
+            simple,
+            system="Return compact JSON only. Invent a NEW style and NEW beat strings every time.",
+            timeout=min(28, max(10, timeout)),
+        )
+        if gem2.get("success") and gem2.get("content"):
+            content = str(gem2["content"]).strip()
+            provider = gem2.get("provider") or "gemini_rest"
+
+    parsed = _extract_json_object(content)
+    if not parsed:
+        # Last resort: turn freeform AI direction into beats so every clip still gets AI novelty.
+        parsed_beats = _parse_direction_beats(content or "", want)
+        if len(parsed_beats) >= 2:
+            parsed = {
+                "title": "AI freeform pipeline",
+                "style": "ai-directed",
+                "mood": "fresh",
+                "color_grade": "",
+                "camera_language": "",
+                "people_direction": "people act differently each beat",
+                "beats": [
+                    {
+                        "title": b.get("title") or ("Beat %s" % (i + 1)),
+                        "shot_type": _SHOT_TYPES[i % len(_SHOT_TYPES)],
+                        "description": b.get("description"),
+                        "image_prompt": b.get("description"),
+                        "pose_prompts": [
+                            "%s — ready pose" % b.get("description"),
+                            "%s — mid motion" % b.get("description"),
+                            "%s — acting turn" % b.get("description"),
+                        ],
+                        "motion": ("zoom_in", "pan_right", "zoom_out", "pan_left")[i % 4],
+                        "seed": secrets.randbelow(900000) + 1000,
+                    }
+                    for i, b in enumerate(parsed_beats[:want])
+                ],
+            }
+        else:
+            fallback = _procedural_unique_pipeline(brief, seconds, want, run_id)
+            fallback["error"] = "AI pipeline JSON missing — used unique procedural fallback"
+            fallback["raw"] = (content or "")[:400]
+            fallback["provider"] = "procedural_unique"
+            return fallback
+
+    raw_beats = parsed.get("beats") if isinstance(parsed.get("beats"), list) else []
+    # Gemini sometimes returns beats as plain strings — normalize to objects.
+    normalized_raw: List[Dict[str, Any]] = []
+    for item in raw_beats:
+        if isinstance(item, dict):
+            normalized_raw.append(item)
+        elif isinstance(item, str) and item.strip():
+            normalized_raw.append({
+                "title": item.strip().split(".")[0][:48],
+                "description": item.strip()[:280],
+                "image_prompt": item.strip()[:420],
+            })
+    beats: List[Dict[str, Any]] = []
+    motions = ("zoom_in", "pan_right", "zoom_out", "pan_left")
+    style = str(parsed.get("style") or "cinematic").strip()[:80]
+    mood = str(parsed.get("mood") or "dramatic").strip()[:80]
+    for index, item in enumerate(normalized_raw[:want]):
+        shot = str(item.get("shot_type") or _SHOT_TYPES[index % len(_SHOT_TYPES)]).strip().lower()
+        if shot not in _SHOT_TYPES:
+            shot = _SHOT_TYPES[index % len(_SHOT_TYPES)]
+        pose_prompts = item.get("pose_prompts") if isinstance(item.get("pose_prompts"), list) else []
+        pose_prompts = [str(p).strip()[:420] for p in pose_prompts if str(p).strip()]
+        image_prompt = str(item.get("image_prompt") or item.get("description") or "").strip()[:420]
+        description = str(item.get("description") or image_prompt).strip()[:280]
+        title = str(item.get("title") or ("Beat %s" % (index + 1))).strip()[:48]
+        try:
+            seed = int(item.get("seed") or 0) % 999999
+        except (TypeError, ValueError):
+            seed = 0
+        if seed <= 0:
+            seed = (secrets.randbelow(900000) + 1000 + index * 97) % 999999
+        motion = str(item.get("motion") or motions[index % 4]).strip().lower()
+        if motion not in motions:
+            motion = motions[index % 4]
+        if len(pose_prompts) < 3:
+            base = image_prompt or description or brief
+            pose_prompts = [
+                ("%s — person standing, ready pose" % base)[:420],
+                ("%s — same person mid-stride, gesturing" % base)[:420],
+                ("%s — same person turning and acting" % base)[:420],
+            ]
+        beats.append({
+            "index": index,
+            "title": title,
+            "description": description or image_prompt,
+            "shot_type": shot,
+            "prompt": image_prompt or description,
+            "image_prompt": image_prompt or description,
+            "pose_prompts": pose_prompts[:3],
+            "motion": motion,
+            "seed": seed,
+        })
+
+    # Expand a short/truncated AI reply into a full unique beat list for this run.
+    while len(beats) < want:
+        index = len(beats)
+        basis = beats[index % max(1, len(beats))]["description"] if beats else brief[:160]
+        shot = _SHOT_TYPES[index % len(_SHOT_TYPES)]
+        description = (
+            "%s — fresh %s angle, style %s, mood %s, run %s"
+            % (basis[:140], shot, style or "cinematic", mood or "dramatic", run_id[-6:])
+        )[:280]
+        beats.append({
+            "index": index,
+            "title": ("%s %s" % (shot.title(), index + 1))[:48],
+            "description": description,
+            "shot_type": shot,
+            "prompt": description,
+            "image_prompt": description,
+            "pose_prompts": [
+                ("%s — ready pose" % description)[:420],
+                ("%s — mid motion" % description)[:420],
+                ("%s — acting turn" % description)[:420],
+            ],
+            "motion": motions[index % 4],
+            "seed": (secrets.randbelow(900000) + 1000 + index * 97) % 999999,
+        })
+
+    if len(beats) < 2:
+        fallback = _procedural_unique_pipeline(brief, seconds, want, run_id)
+        fallback["error"] = "AI returned too few beats — used unique procedural fallback"
+        fallback["raw"] = (content or "")[:400]
+        return fallback
+
+    # Fill duration across AI beats.
+    remaining = float(seconds)
+    for index, beat in enumerate(beats):
+        left = len(beats) - index
+        beat_sec = remaining if left == 1 else max(1.2, round(remaining / left, 2))
+        remaining = max(0.0, round(remaining - beat_sec, 2))
+        beat["duration_sec"] = beat_sec
+
+    return {
+        "success": True,
+        "run_id": run_id,
+        "provider": provider,
+        "title": str(parsed.get("title") or "Interactive film")[:80],
+        "style": style or "cinematic",
+        "mood": mood or "dramatic",
+        "color_grade": str(parsed.get("color_grade") or "")[:80],
+        "camera_language": str(parsed.get("camera_language") or "")[:120],
+        "people_direction": str(parsed.get("people_direction") or "")[:160],
+        "beats": beats,
+        "direction": "\n".join(
+            "%s. [%s] %s" % (i + 1, b["shot_type"], b["description"])
+            for i, b in enumerate(beats)
+        ),
     }
 
 
@@ -2076,6 +2595,7 @@ def compose_interactive_movie(
     planning: Optional[Dict[str, Any]] = None
     planner: Optional[str] = None
     llm_plan: Optional[Dict[str, Any]] = None
+    ai_pipeline: Optional[Dict[str, Any]] = None
     extras: List[str] = ["Target length: %s seconds." % duration_sec]
     if face_path:
         extras.append(
@@ -2087,19 +2607,45 @@ def compose_interactive_movie(
         render_prompt = (brief + "\n\n" + " ".join(extras)).strip()
     direction_blocks: List[str] = []
 
+    # Always invent a brand-new AI pipeline for this clip before rendering.
     if plan:
-        llm_plan = _plan_with_all_llms(render_prompt, timeout=min(30, max(10, timeout // 6)))
-        if llm_plan.get("success") and llm_plan.get("direction"):
-            direction_blocks.append(str(llm_plan["direction"]))
-            planner = "all_llms"
+        ai_pipeline = _ai_design_clip_pipeline(
+            render_prompt,
+            duration_sec=duration_sec,
+            beat_count=_beat_count_for_duration(float(duration_sec)),
+            timeout=min(28, max(10, timeout // 5)),
+        )
+        if ai_pipeline.get("success"):
+            planner = "ai_pipeline:%s" % (ai_pipeline.get("provider") or "llm")
+            if ai_pipeline.get("direction"):
+                direction_blocks.append(str(ai_pipeline["direction"]))
+            style_line = " | ".join(
+                part for part in (
+                    ai_pipeline.get("title"),
+                    ai_pipeline.get("style"),
+                    ai_pipeline.get("mood"),
+                    ai_pipeline.get("color_grade"),
+                ) if part
+            )
+            if style_line:
+                direction_blocks.append("Pipeline look: %s" % style_line)
+            if ai_pipeline.get("people_direction"):
+                direction_blocks.append("People: %s" % ai_pipeline["people_direction"])
+        else:
+            llm_plan = _plan_with_all_llms(render_prompt, timeout=min(30, max(10, timeout // 6)))
+            if llm_plan.get("success") and llm_plan.get("direction"):
+                direction_blocks.append(str(llm_plan["direction"]))
+                planner = "all_llms"
         if is_available("dramacanva", purpose="planning"):
-            # Keep DramaCanvas short so the monitor can still render on time.
             planning = prepare_film_project(render_prompt, timeout=min(45, max(15, timeout // 4)))
             if planning.get("success"):
                 planned = _planning_text(planning.get("result"))
                 if planned:
                     direction_blocks.append(planned)
-                planner = "all_llms+dramacanva" if planner == "all_llms" else "dramacanva"
+                if planner and "dramacanva" not in str(planner):
+                    planner = "%s+dramacanva" % planner
+                elif not planner:
+                    planner = "dramacanva"
         if direction_blocks:
             render_prompt = (
                 render_prompt + "\n\nStoryboard direction:\n" + "\n\n".join(direction_blocks)
@@ -2112,6 +2658,7 @@ def compose_interactive_movie(
         brief,
         float(duration_sec),
         direction=direction_text or None,
+        ai_pipeline=ai_pipeline,
     )
 
     if render_provider:
@@ -2132,6 +2679,10 @@ def compose_interactive_movie(
             "success": True,
             "planner": planner,
             "llm_plan": llm_plan,
+            "ai_pipeline": ai_pipeline,
+            "pipeline_run_id": (ai_pipeline or {}).get("run_id") if ai_pipeline else clip.get("pipeline_run_id"),
+            "pipeline_style": (ai_pipeline or {}).get("style") if ai_pipeline else clip.get("pipeline_style"),
+            "pipeline_mood": (ai_pipeline or {}).get("mood") if ai_pipeline else clip.get("pipeline_mood"),
             "renderer": renderer,
             "planning": planning,
             "prompt_used": render_prompt[:500],
@@ -2256,13 +2807,14 @@ def compose_interactive_movie(
                         "pipeline_storyboard",
                     )
 
-        # Guaranteed full-detail local storyboard movie (distinct material every beat).
+        # Guaranteed full-detail local storyboard movie from this clip's AI pipeline.
         clip = _generate_free_still_movie(
             brief[:400],
             dest_dir=dest_dir,
             duration=float(duration_sec),
             face_path=face_path,
             direction=direction_text or None,
+            ai_pipeline=ai_pipeline,
         )
         if clip.get("success") and clip.get("local_path"):
             return _finish(clip, "free_still")
