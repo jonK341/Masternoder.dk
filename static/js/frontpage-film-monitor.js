@@ -21,22 +21,19 @@
     var MIN_DURATION = 2;
     var MAX_DURATION = 120;
     var DEFAULT_DURATION = 8;
-    var LIVE_FX_COUNT = 107;
+    // Story-first ambient pack — soft FX only (was 107 loud overlays).
+    var LIVE_FX_COUNT = 12;
 
     var FX_BACKGROUNDS = [
-        'aurora', 'rain', 'grid', 'ember', 'plasma', 'fog',
-        'signal', 'hex', 'glitch', 'ocean', 'chrome', 'violet',
+        'fog', 'ocean', 'rain', 'ember', 'chrome', 'aurora',
     ];
     var FX_SOUNDS = [
-        'harbour', 'storm', 'neon', 'drone', 'pulse', 'battle',
-        'stars', 'focus', 'market', 'fog', 'chrome', 'rain',
-        'ember', 'signal', 'ocean', 'voice_soft', 'voice_bright', 'voice_deep',
+        'harbour', 'storm', 'rain', 'ocean', 'fog', 'focus',
+        'voice_soft', 'voice_bright', 'voice_deep', 'drone', 'stars', 'market',
     ];
     var FX_EFFECT_FAMILIES = [
-        'scan', 'sparks', 'rain', 'glitch', 'chromatic', 'hex', 'embers', 'streaks',
-        'noise', 'bloom', 'ripple', 'shards', 'orbit', 'pulse', 'static', 'flare',
-        'mist', 'beam', 'dust', 'wave', 'crack', 'veil', 'sparkle', 'trail',
-        'echo', 'frost', 'heat', 'signal', 'pixel', 'drift',
+        'mist', 'dust', 'bloom', 'ripple', 'wave', 'drift',
+        'beam', 'veil', 'frost', 'heat', 'echo', 'trail',
     ];
     var FX_EFFECTS = (function buildFxCatalog() {
         var names = [];
@@ -50,13 +47,11 @@
         return names;
     })();
     var FX_PALETTES = [
-        ['#00ff88', '#00b4ff', '#ff5078'],
-        ['#7cf5ff', '#3d7cff', '#c8ff6a'],
-        ['#ff9a3c', '#ff5e7a', '#ffe08a'],
-        ['#b388ff', '#5eead4', '#f0abfc'],
         ['#94a3b8', '#38bdf8', '#e2e8f0'],
         ['#f97316', '#22d3ee', '#fde68a'],
         ['#34d399', '#818cf8', '#fda4af'],
+        ['#7cf5ff', '#3d7cff', '#c8ff6a'],
+        ['#ff9a3c', '#ff5e7a', '#ffe08a'],
         ['#67e8f9', '#a78bfa', '#fb7185'],
     ];
     var SHOP_SFX = [
@@ -345,7 +340,8 @@
             effects: rotated.slice(0, LIVE_FX_COUNT),
             live_count: LIVE_FX_COUNT,
             palette: FX_PALETTES[(salt >> 5) % FX_PALETTES.length].slice(),
-            intensity: 0.45 + (salt % 18) / 100,
+            intensity: 0.22 + (salt % 12) / 100,
+            story_first: true,
             sfx_bank: 'shop',
             voice_profile: [
                 'performer_nova', 'performer_luna', 'performer_ember', 'performer_storm',
@@ -443,20 +439,21 @@
         if (!Array.isArray(activeFx.palette) || activeFx.palette.length < 2) {
             activeFx.palette = FX_PALETTES[0].slice();
         }
-        // Cap intensity so ambient FX never overpower the scene picture.
+        // Soft ambient only — story picture stays dominant.
         var rawIntensity = Number(activeFx.intensity);
-        if (!isFinite(rawIntensity)) rawIntensity = 0.5;
-        activeFx.intensity = Math.max(0.35, Math.min(0.65, rawIntensity));
+        if (!isFinite(rawIntensity)) rawIntensity = 0.28;
+        activeFx.intensity = Math.max(0.18, Math.min(0.38, rawIntensity));
+        activeFx.story_first = true;
         var monitor = $('fp-film-monitor');
         if (monitor) {
-            monitor.setAttribute('data-fx-bg', activeFx.background || 'aurora');
+            monitor.setAttribute('data-fx-bg', activeFx.background || 'fog');
             monitor.setAttribute('data-fx-live', String(activeFx.live_count || LIVE_FX_COUNT));
             monitor.classList.add('is-fx-hot');
             if (opts && opts.playing) monitor.classList.add('is-playing');
             else if (!(opts && opts.keepPlaying)) monitor.classList.remove('is-playing');
-            monitor.style.setProperty('--fx-a', activeFx.palette[0] || '#00ff88');
-            monitor.style.setProperty('--fx-b', activeFx.palette[1] || '#00b4ff');
-            monitor.style.setProperty('--fx-c', activeFx.palette[2] || '#ff5078');
+            monitor.style.setProperty('--fx-a', activeFx.palette[0] || '#94a3b8');
+            monitor.style.setProperty('--fx-b', activeFx.palette[1] || '#38bdf8');
+            monitor.style.setProperty('--fx-c', activeFx.palette[2] || '#e2e8f0');
         }
         var force = !!(opts && opts.forceSound);
         var snd = activeFx.sound;
@@ -494,11 +491,11 @@
         // Prompt/movie picture stays dominant. Overlays are accents only —
         // especially restrained while a finished clip is on screen.
         var pack = activeFx || pickLocalFxPack();
-        var a = (pack.palette && pack.palette[0]) || '#00ff88';
-        var b = (pack.palette && pack.palette[1]) || '#00b4ff';
-        var c = (pack.palette && pack.palette[2]) || '#ff5078';
-        var base = Math.max(0.35, Math.min(1.0, intensity || pack.intensity || 0.55));
-        var dens = videoMode ? base * 0.28 : base * 0.72;
+        var a = (pack.palette && pack.palette[0]) || '#94a3b8';
+        var b = (pack.palette && pack.palette[1]) || '#38bdf8';
+        var c = (pack.palette && pack.palette[2]) || '#e2e8f0';
+        var base = Math.max(0.18, Math.min(0.45, intensity || pack.intensity || 0.28));
+        var dens = videoMode ? base * 0.18 : base * 0.45;
         var hot = soundLive();
         var mult = (!videoMode && hot) ? 1.15 : 1;
 
@@ -708,9 +705,9 @@
         var dy = (ch - dh) / 2;
         ctx.drawImage(video, dx, dy, dw, dh);
         var t = performance.now() / 1000;
-        var intensity = (activeFx && activeFx.intensity) || 0.45;
-        // Keep overlays soft so the prompt-driven picture reads first.
-        drawFxOverlays(ctx, cw, ch, t, Math.min(0.55, intensity), true);
+        var intensity = (activeFx && activeFx.intensity) || 0.28;
+        // Keep overlays soft so the story picture reads first.
+        drawFxOverlays(ctx, cw, ch, t, Math.min(0.35, intensity), true);
     }
 
     function loop() {

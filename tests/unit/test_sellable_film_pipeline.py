@@ -5,6 +5,7 @@ import os
 
 import pytest
 
+from backend.services import ai_provider_gate as gate
 from backend.services import sellable_film_pipeline as sell
 
 
@@ -16,8 +17,10 @@ def test_design_sellable_story_is_prompt_locked():
     assert "red harbour" in out["story"].lower()
     assert "Photoreal" in out["beats"][0]["image_prompt"]
     assert "red harbour" in out["beats"][0]["image_prompt"].lower()
-    assert abs(sum(b["duration_sec"] for b in out["beats"]) - 12) < 0.3
+    assert abs(sum(b["duration_sec"] for b in out["beats"]) - 12) < 0.6
+    assert all(4.0 <= b["duration_sec"] <= 5.5 for b in out["beats"])
     assert len(out["narration"]) == len(out["beats"])
+    assert "narrative" in out["beats"][0]["image_prompt"].lower() or "story beat" in out["beats"][0]["image_prompt"].lower()
 
 
 def test_quality_gate_requires_audio_and_real_motion(tmp_path):
@@ -50,6 +53,26 @@ def test_quality_gate_requires_audio_and_real_motion(tmp_path):
     assert local["sellable"] is True
     assert local["quality"] == "sellable_local"
 
+    gif_line = sell.evaluate_quality_gate(
+        local_path=str(path),
+        has_audio=True,
+        motion_backends=["story_gif_line"],
+        duration_sec=5,
+    )
+    assert gif_line["sellable"] is True
+    assert gif_line["quality"] == "sellable_local"
+
+
+def test_provider_gate_blocks_credit_wallets():
+    status = gate.ensure_defaults()
+    assert gate.is_blocked("runway")
+    assert gate.is_blocked("modelslab")
+    assert gate.is_blocked("replicate")
+    assert gate.is_blocked("heygen")
+    assert gate.is_blocked("fal")
+    assert "pollinations_flux" in status["active_image"]
+    assert "story_gif_line" in status["active_motion"]
+
 
 def test_compose_sellable_movie_uses_motion_and_audio(tmp_path, monkeypatch):
     story = sell.design_sellable_story("harbour night", 6)
@@ -65,7 +88,7 @@ def test_compose_sellable_movie_uses_motion_and_audio(tmp_path, monkeypatch):
         path = os.path.join(dest, "motion_%s.mp4" % uuid_hex())
         with open(path, "wb") as handle:
             handle.write(b"mp4" * 80_000)
-        return {"success": True, "local_path": path, "motion_backend": "runway"}
+        return {"success": True, "local_path": path, "motion_backend": "story_gif_line"}
 
     def fake_narr(story_obj, dest_dir):
         path = os.path.join(dest_dir, "narr.mp3")
@@ -123,7 +146,8 @@ def test_compose_sellable_movie_uses_motion_and_audio(tmp_path, monkeypatch):
     assert out["pipeline"] == "sellable_v1"
     assert out["sellable"] is True
     assert out["has_audio"] is True
-    assert out["motion_backends"] == ["runway"]
+    assert out["motion_backends"] == ["story_gif_line"]
+    assert out["quality"] == "sellable_local"
     assert os.path.isfile(out["local_path"])
 
 

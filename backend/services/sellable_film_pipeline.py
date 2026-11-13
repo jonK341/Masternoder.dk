@@ -1,15 +1,15 @@
 """
-Sellable film pipeline — delivery-grade interactive movies.
+Sellable film pipeline — story-first GIF-line movies with sound every time.
 
 Components
-  1. StoryArchitect   — short coherent beat script locked to the user prompt
-  2. HeroFrameLab     — Stability (preferred) / Flux stills with continuity bible
-  3. MotionStudio     — real I2V/T2V cascade (Runway → Pika → ModelsLab → Replicate → fal)
-  4. SoundtrackDesk   — ElevenLabs/gTTS narration + soft music bed, muxed into MP4
+  1. StoryArchitect   — coherent beat script locked to the user prompt (more story)
+  2. HeroFrameLab     — Pollinations free models (flux / z-image-turbo / gptimage)
+                        Credit-blocked Stability / OpenAI / Gemini imagen are skipped
+  3. MotionStudio     — story_gif_line (4–5s story GIFs mixed in one horizontal strip)
+                        + premium_local fallback. Blocked paid I2V is deactivated.
+  4. SoundtrackDesk   — narration + music bed, ALWAYS muxed into the MP4
   5. DeliveryMaster   — concat, 1280x720 grade, Xvid package
-  6. QualityGate      — sellable=true only when real motion + audio + size pass
-
-The old GIF-strip / pose-morph path remains as draft fallback only.
+  6. QualityGate      — sellable when story motion + audio + size pass
 """
 from __future__ import annotations
 
@@ -20,7 +20,13 @@ import subprocess
 import uuid
 from typing import Any, Callable, Dict, List, Optional
 
+from backend.services import ai_provider_gate as gate
+
 ProgressCb = Optional[Callable[[int, str], None]]
+
+# Each story panel lives 4–5 seconds (user product requirement).
+_BEAT_SEC_MIN = 4.0
+_BEAT_SEC_MAX = 5.0
 
 
 def _progress(cb: ProgressCb, pct: int, message: str) -> None:
@@ -42,22 +48,14 @@ def _bible(prompt: str) -> str:
     return (
         "Photoreal cinematic plate of: %s. Same people, wardrobe,location and lighting "
         "in every shot. Natural skin, real clothing, shallow depth of field, 16:9, "
-        "no text, no watermark, no cartoon."
+        "no text, no watermark, no cartoon, no psychedelic color FX."
     ) % core
 
 
 def _beat_budget(duration_sec: int) -> int:
-    """Fewer high-quality paid clips beat many cheap morphs."""
-    seconds = max(2, min(120, int(duration_sec or 8)))
-    if seconds <= 6:
-        return 1
-    if seconds <= 12:
-        return 2
-    if seconds <= 24:
-        return 3
-    if seconds <= 48:
-        return 4
-    return min(6, max(4, seconds // 12))
+    """One beat ≈ 4–5s GIF panel. Keep enough panels to fill the run."""
+    seconds = max(4, min(120, int(duration_sec or 8)))
+    return max(1, min(8, int(round(seconds / 4.5))))
 
 
 def design_sellable_story(
@@ -65,17 +63,19 @@ def design_sellable_story(
     duration_sec: int,
     run_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """StoryArchitect — invent a tight sellable beat script every run."""
+    """StoryArchitect — invent a tight story beat script every run (4–5s panels)."""
     run_id = run_id or ("sell_%s" % uuid.uuid4().hex[:12])
     want = _beat_budget(duration_sec)
-    seconds = max(2, min(120, int(duration_sec or 8)))
+    seconds = max(4, min(120, int(duration_sec or 8)))
     core = _scene_core(prompt)
     salt = int(hashlib.sha1(("%s|%s" % (run_id, core)).encode("utf-8")).hexdigest()[:8], 16)
+
+    # Story-heavy arcs — cause → action → consequence, not random FX moods.
     arcs = (
-        ("arrival", "conflict", "resolve"),
-        ("setup", "push", "payoff"),
-        ("open", "turn", "close"),
-        ("establish", "act", "land"),
+        ("hook", "rising_action", "turn", "payoff", "settle"),
+        ("arrival", "discovery", "conflict", "choice", "resolve"),
+        ("setup", "push", "complication", "climax", "close"),
+        ("establish", "motive", "obstacle", "breakthrough", "land"),
     )
     arc = arcs[salt % len(arcs)]
     moods = ("urgent", "hopeful", "tense", "warm", "gritty", "serene")
@@ -86,27 +86,40 @@ def design_sellable_story(
     mood = moods[salt % len(moods)]
     style = styles[(salt // 5) % len(styles)]
     shot_cycle = ("establishing", "character", "action", "detail", "reaction", "closing")
+    verbs = (
+        "steps into", "notices", "pushes through", "holds onto", "turns toward",
+        "reveals", "faces", "claims", "returns to", "settles into",
+    )
+
     beats: List[Dict[str, Any]] = []
     remaining = float(seconds)
     for index in range(want):
         left = want - index
-        beat_sec = remaining if left == 1 else max(2.0, round(remaining / left, 2))
+        # Prefer 4–5s; last beat absorbs remainder within the same band.
+        if left == 1:
+            beat_sec = max(_BEAT_SEC_MIN, min(_BEAT_SEC_MAX + 1.5, remaining))
+        else:
+            target = remaining / float(left)
+            beat_sec = max(_BEAT_SEC_MIN, min(_BEAT_SEC_MAX, round(target, 2)))
         remaining = max(0.0, round(remaining - beat_sec, 2))
         role = arc[min(index, len(arc) - 1)]
         shot = shot_cycle[index % len(shot_cycle)]
-        title = ("%s · %s" % (role.title(), shot))[:48]
+        verb = verbs[(salt + index) % len(verbs)]
+        title = ("%s · %s" % (role.replace("_", " ").title(), shot))[:48]
         description = (
-            "%s during the %s of the story about %s — %s, mood %s."
-            % (shot, role, core[:100], style, mood)
-        )[:280]
+            "Beat %s (%s): someone %s the story of %s — %s shot, %s, mood %s. "
+            "Keep continuity with the same characters and place; show what happens next."
+            % (index + 1, role, verb, core[:90], shot, style, mood)
+        )[:320]
         image_prompt = (
-            "%s %s shot for story beat '%s': %s"
-            % (_bible(prompt), shot, role, description)
-        )[:420]
+            "%s Continuity bible locked. Story beat '%s' (%s): %s. "
+            "Clear narrative moment, readable faces, real environment, no abstract FX."
+            % (_bible(prompt), role, shot, description)
+        )[:480]
         narration = (
-            "Scene %s. %s. Keep watching %s."
-            % (index + 1, description[:120], core[:70])
-        )[:200]
+            "%s. %s"
+            % (title, description[:160])
+        )[:220]
         beats.append({
             "index": index,
             "title": title,
@@ -118,6 +131,7 @@ def design_sellable_story(
             "duration_sec": beat_sec,
             "seed": (salt * 17 + index * 91 + secrets.randbelow(4000)) % 999999,
         })
+
     story = (
         "A %s %s story about %s: we open on %s, press through %s, and land on %s."
         % (
@@ -140,31 +154,39 @@ def design_sellable_story(
         "narration": [b["narration"] for b in beats],
         "beats": beats,
         "bible": _bible(prompt),
+        "panel_sec": [_BEAT_SEC_MIN, _BEAT_SEC_MAX],
     }
 
 
 def _make_hero_still(prompt: str, dest_dir: str, seed: int) -> Dict[str, Any]:
-    """HeroFrameLab — Stability first, Flux Pollinations second."""
+    """HeroFrameLab — Pollinations free models only (blocked paid image AIs skipped)."""
     os.makedirs(dest_dir, exist_ok=True)
-    try:
-        from backend.services import stability_image_service as stability
-        if stability.is_available():
-            out = stability.generate_image(
-                prompt=prompt[:900],
-                negative_prompt=(
-                    "cartoon, anime, illustration, watermark, text, blurry, low quality, "
-                    "deformed hands, plastic skin"
-                ),
-                width=1280,
-                height=720,
-                dest_dir=dest_dir,
-            )
-            if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
-                out["source"] = "stability"
-                return out
-    except Exception as exc:
-        pass
+    gate.ensure_defaults()
 
+    # Deactivated: Stability / OpenAI image / Gemini imagen (credit locks).
+    for blocked in ("stability", "openai_image", "google_imagen"):
+        if not gate.is_blocked(blocked):
+            gate.block(blocked, "credit_or_quota_probe")
+
+    try:
+        from backend.services import free_image_service as free_img
+        models = list(gate.POLLINATIONS_IMAGE_MODELS)
+        model = models[int(seed) % len(models)]
+        out = free_img.generate_image(
+            prompt=prompt[:420],
+            width=1280,
+            height=720,
+            dest_dir=dest_dir,
+            seed=int(seed) % 999999,
+            model=model,
+        )
+        if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
+            out["source"] = out.get("source") or ("pollinations_%s" % model)
+            return out
+    except Exception as exc:
+        return {"success": False, "error": "hero still failed: %s" % exc}
+
+    # Last resort: canvas helper (also Pollinations flux).
     try:
         from backend.services import film_canvas_service as canvas
         path = canvas._try_free_beat_image(prompt, dest_dir, seed=seed, timeout=18)
@@ -180,16 +202,12 @@ def _render_premium_local_clip(
     dest_path: str,
     duration_sec: float,
 ) -> Dict[str, Any]:
-    """
-    Credit-free motion: smooth cinematic crossfade + gentle zoom across hero stills.
-    Used when paid I2V wallets are empty so the product still ships with audio-ready picture.
-    """
+    """Credit-free motion: smooth cinematic crossfade + gentle zoom across hero stills."""
     paths = [p for p in image_paths if p and os.path.isfile(p)]
     if not paths:
         return {"success": False, "error": "no premium local stills"}
-    seconds = max(2.0, min(20.0, float(duration_sec or 4.0)))
+    seconds = max(_BEAT_SEC_MIN, min(20.0, float(duration_sec or 4.5)))
     if len(paths) == 1:
-        # Single-plate push-in.
         frames = max(48, int(round(seconds * 24)))
         cmd = [
             "ffmpeg", "-y",
@@ -197,7 +215,7 @@ def _render_premium_local_clip(
             "-vf",
             "scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,"
             "zoompan=z='min(1.0+0.0015*on,1.10)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
-            ":d=%d:s=1280x720:fps=24,eq=contrast=1.05:saturation=1.08,format=yuv420p" % frames,
+            ":d=%d:s=1280x720:fps=24,eq=contrast=1.05:saturation=1.04,format=yuv420p" % frames,
             "-t", ("%.3f" % seconds),
             "-c:v", "libx264", "-crf", "19", "-preset", "medium",
             "-pix_fmt", "yuv420p", "-movflags", "+faststart",
@@ -228,7 +246,7 @@ def _render_premium_local_clip(
             current = label
             offset += hold - fade
         parts.append(
-            "%seq=contrast=1.05:saturation=1.08,format=yuv420p[vout]" % current
+            "%seq=contrast=1.05:saturation=1.04,format=yuv420p[vout]" % current
         )
         cmd.extend([
             "-filter_complex", ";".join(parts),
@@ -256,6 +274,38 @@ def _render_premium_local_clip(
     }
 
 
+def _render_story_gif_line(
+    *,
+    still_paths: List[str],
+    dest_path: str,
+    duration_sec: float,
+    motion: str = "zoom_in",
+) -> Dict[str, Any]:
+    """
+    MotionStudio primary — mix 3 story-locked stills as moving GIFs in one line.
+    Each panel animates for 4–5 seconds and stays on the same story.
+    """
+    from backend.services import film_canvas_service as canvas
+
+    paths = [p for p in still_paths if p and os.path.isfile(p)]
+    if not paths:
+        return {"success": False, "error": "no story stills for gif line"}
+    seconds = max(_BEAT_SEC_MIN, min(_BEAT_SEC_MAX + 0.5, float(duration_sec or 4.5)))
+    out = canvas._ffmpeg_gif_strip_clip(
+        paths,
+        dest_path,
+        duration=seconds,
+        motion=motion or "zoom_in",
+    )
+    if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
+        out = dict(out)
+        out["motion_backend"] = "story_gif_line"
+        out["mode"] = "story_gif_line"
+        out["duration_sec"] = seconds
+        return out
+    return {"success": False, "error": out.get("error") or "story gif line failed"}
+
+
 def _render_motion_clip(
     *,
     prompt: str,
@@ -265,92 +315,98 @@ def _render_motion_clip(
     timeout: int = 120,
     alt_stills: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    """MotionStudio — paid I2V/T2V cascade, then premium local cine from hero stills."""
+    """
+    MotionStudio — story GIF line first; skip deactivated paid I2V wallets.
+    Paid backends stay in code but are gated off until credits return.
+    """
     errors: List[str] = []
-    clip_sec = max(2, min(10, int(round(duration_sec or 5))))
-
-    # 1) Runway Gen-4 Turbo (I2V)
-    try:
-        from backend.services import runwayml_service as runway
-        if runway.is_available():
-            out = runway.generate_clip(
-                prompt=prompt[:900],
-                duration=clip_sec,
-                dest_dir=dest_dir,
-                timeout=min(timeout, 150),
-                start_image_path=start_image,
-            )
-            if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
-                out["motion_backend"] = "runway"
-                return out
-            errors.append("runway: %s" % (out.get("error") or "fail"))
-    except Exception as exc:
-        errors.append("runway: %s" % exc)
-
-    # 2) Pika T2V
-    try:
-        from backend.services import pika_service as pika
-        if pika.is_available():
-            out = pika.generate_clip(
-                prompt=prompt[:500],
-                duration=min(clip_sec, 5),
-                dest_dir=dest_dir,
-                timeout=min(timeout, 150),
-            )
-            if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
-                out["motion_backend"] = "pika"
-                return out
-            errors.append("pika: %s" % (out.get("error") or "fail"))
-    except Exception as exc:
-        errors.append("pika: %s" % exc)
-
-    # 3) ModelsLab T2V
-    try:
-        from backend.services import modelslab_video_service as modelslab
-        if modelslab.is_available():
-            out = modelslab.generate_clip(prompt=prompt[:500], timeout=min(timeout, 120))
-            if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
-                out["motion_backend"] = "modelslab"
-                return out
-            errors.append("modelslab: %s" % (out.get("error") or "fail"))
-    except Exception as exc:
-        errors.append("modelslab: %s" % exc)
-
-    # 4) Replicate SVD I2V
-    try:
-        from backend.services import replicate_video_service as replicate
-        if replicate.is_available():
-            out = replicate.generate_clip(
-                prompt=prompt[:500],
-                dest_dir=dest_dir,
-                timeout=min(timeout, 150),
-            )
-            if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
-                out["motion_backend"] = "replicate"
-                return out
-            errors.append("replicate: %s" % (out.get("error") or "fail"))
-    except Exception as exc:
-        errors.append("replicate: %s" % exc)
-
-    # 5) fal queue (if not balance-locked)
-    try:
-        from backend.services import film_canvas_service as canvas
-        if hasattr(canvas, "_generate_fal_queue_clip") and not canvas._fal_is_skipped():
-            out = canvas._generate_fal_queue_clip(prompt[:500], dest_dir=dest_dir, timeout=min(timeout, 120))
-            if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
-                out["motion_backend"] = "fal"
-                return out
-            errors.append("fal: %s" % (out.get("error") or "fail"))
-    except Exception as exc:
-        errors.append("fal: %s" % exc)
-
-    # 6) Premium local cine from hero stills (credit-free but audio-ready)
-    stills = []
+    gate.ensure_defaults()
+    stills: List[str] = []
     if start_image:
         stills.append(start_image)
     for path in alt_stills or []:
         if path and path not in stills:
             stills.append(path)
+
+    clip_sec = max(_BEAT_SEC_MIN, min(_BEAT_SEC_MAX, float(duration_sec or 4.5)))
+
+    # 1) Primary product path: story GIFs in one line (4–5s).
+    if stills:
+        dest = os.path.join(dest_dir, "gif_line_%s.mp4" % uuid.uuid4().hex[:8])
+        line = _render_story_gif_line(
+            still_paths=stills[:3],
+            dest_path=dest,
+            duration_sec=clip_sec,
+            motion="zoom_in",
+        )
+        if line.get("success"):
+            return line
+        errors.append("story_gif_line: %s" % (line.get("error") or "fail"))
+
+    # 2) Optional paid I2V — only if not deactivated (normally all blocked).
+    paid_backends = (
+        ("runway", "backend.services.runwayml_service"),
+        ("pika", "backend.services.pika_service"),
+        ("modelslab", "backend.services.modelslab_video_service"),
+        ("replicate", "backend.services.replicate_video_service"),
+    )
+    for backend, module_path in paid_backends:
+        if gate.is_blocked(backend):
+            errors.append("%s: deactivated (%s)" % (backend, (gate.status()["blocked"].get(backend) or "blocked")[:60]))
+            continue
+        try:
+            import importlib
+            mod = importlib.import_module(module_path)
+            if not getattr(mod, "is_available", lambda: False)():
+                errors.append("%s: not configured" % backend)
+                continue
+            kwargs: Dict[str, Any] = {
+                "prompt": prompt[:500],
+                "dest_dir": dest_dir,
+                "timeout": min(timeout, 120),
+            }
+            if backend == "runway":
+                kwargs["duration"] = int(round(clip_sec))
+                kwargs["start_image_path"] = start_image
+                kwargs["prompt"] = prompt[:900]
+            elif backend == "pika":
+                kwargs["duration"] = min(int(round(clip_sec)), 5)
+            elif backend == "modelslab":
+                kwargs = {"prompt": prompt[:500], "timeout": min(timeout, 120)}
+            out = mod.generate_clip(**kwargs)
+            if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
+                out = dict(out)
+                out["motion_backend"] = backend
+                return out
+            err = out.get("error") or "fail"
+            errors.append("%s: %s" % (backend, err))
+            gate.note_error(backend, err)
+        except Exception as exc:
+            errors.append("%s: %s" % (backend, exc))
+            gate.note_error(backend, str(exc))
+
+    # fal — only if not skipped/blocked
+    if not gate.is_blocked("fal"):
+        try:
+            from backend.services import film_canvas_service as canvas
+            if hasattr(canvas, "_generate_fal_queue_clip") and not canvas._fal_is_skipped():
+                out = canvas._generate_fal_queue_clip(
+                    prompt[:500], dest_dir=dest_dir, timeout=min(timeout, 120),
+                )
+                if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
+                    out = dict(out)
+                    out["motion_backend"] = "fal"
+                    return out
+                err = out.get("error") or "fail"
+                errors.append("fal: %s" % err)
+                gate.note_error("fal", err)
+        except Exception as exc:
+            errors.append("fal: %s" % exc)
+            gate.note_error("fal", str(exc))
+    else:
+        errors.append("fal: deactivated")
+
+    # 3) Premium local cine from hero stills
     if stills:
         dest = os.path.join(dest_dir, "premium_local_%s.mp4" % uuid.uuid4().hex[:8])
         local = _render_premium_local_clip(stills, dest, float(duration_sec or clip_sec))
@@ -363,7 +419,7 @@ def _render_motion_clip(
 
 
 def _build_music_bed(dest_path: str, duration_sec: float) -> Optional[str]:
-    """Soft pink-noise + low sine bed for commercial polish."""
+    """Soft pink-noise + low sine bed — guarantees an audio track every time."""
     seconds = max(2.0, float(duration_sec or 8.0))
     cmd = [
         "ffmpeg", "-y",
@@ -478,7 +534,7 @@ def _normalize_delivery(video_path: str, dest_path: str) -> Dict[str, Any]:
     cmd = [
         "ffmpeg", "-y", "-i", video_path,
         "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,"
-               "pad=1280:720:(ow-iw)/2:(oh-ih)/2,eq=contrast=1.04:saturation=1.06,fps=24",
+               "pad=1280:720:(ow-iw)/2:(oh-ih)/2,eq=contrast=1.04:saturation=1.04,fps=24",
         "-c:v", "libx264",
         "-preset", "medium",
         "-crf", "20",
@@ -504,11 +560,14 @@ def evaluate_quality_gate(
     motion_backends: List[str],
     duration_sec: float,
 ) -> Dict[str, Any]:
-    """QualityGate — sellable with paid I2V or premium_local cine + audio + size."""
+    """QualityGate — sellable with story_gif_line / premium_local / paid I2V + audio."""
     size = os.path.getsize(local_path) if local_path and os.path.isfile(local_path) else 0
-    rejected = {"draft", "gif_strip", "acting_morph", "free_still", "gif_storyboard"}
+    # Draft-only leftovers — NOT the story GIF line product path.
+    rejected = {"draft", "acting_morph", "free_still"}
+    accepted_local = {"story_gif_line", "gif_storyboard", "gif_strip", "premium_local"}
     real_motion = [b for b in motion_backends if b and b not in rejected]
-    paid = [b for b in real_motion if b != "premium_local"]
+    paid = [b for b in real_motion if b not in accepted_local]
+    local_ok = [b for b in real_motion if b in accepted_local]
     sellable = bool(
         local_path
         and os.path.isfile(local_path)
@@ -527,8 +586,10 @@ def evaluate_quality_gate(
     quality = "draft"
     if sellable and paid:
         quality = "sellable"
+    elif sellable and local_ok:
+        quality = "sellable_local"
     elif sellable:
-        quality = "sellable_local"  # credit-free cine with voice — still productizable
+        quality = "sellable_local"
     return {
         "sellable": sellable,
         "quality": quality,
@@ -536,6 +597,7 @@ def evaluate_quality_gate(
         "bytes": size,
         "motion_backends": real_motion,
         "paid_motion": paid,
+        "local_motion": local_ok,
     }
 
 
@@ -557,7 +619,7 @@ def compose_sellable_movie(
     if not brief:
         return {"success": False, "error": "prompt is required", "sellable": False}
     try:
-        duration_sec = max(2, min(120, int(round(float(duration_sec)))))
+        duration_sec = max(4, min(120, int(round(float(duration_sec)))))
     except (TypeError, ValueError):
         duration_sec = 8
     if dest_dir is None:
@@ -566,6 +628,7 @@ def compose_sellable_movie(
     work = os.path.join(dest_dir, "sellable_%s" % uuid.uuid4().hex[:10])
     os.makedirs(work, exist_ok=True)
     attempts: List[str] = []
+    gate.ensure_defaults()
 
     _progress(on_progress, 8, "Sellable pipeline — designing story…")
     story = design_sellable_story(brief, duration_sec)
@@ -573,15 +636,16 @@ def compose_sellable_movie(
     if not beats:
         return {"success": False, "error": "story architect produced no beats", "sellable": False}
 
-    _progress(on_progress, 18, "Sellable pipeline — hero frames…")
+    _progress(on_progress, 18, "Sellable pipeline — hero frames (Pollinations)…")
     hero_paths: List[str] = []
     for beat in beats:
         beat_stills: List[str] = []
-        # 2–3 plates per beat so premium_local can crossfade instead of a single freeze.
+        # Three story plates per beat → left / mid / right GIF panels.
         for plate in range(3):
             still = _make_hero_still(
-                ("%s. Variation %s, same locked scene, photoreal."
-                 % (beat.get("image_prompt") or brief, plate + 1))[:420],
+                ("%s. Story panel %s of 3, same locked scene and characters, photoreal, "
+                 "clear narrative moment, no abstract color FX."
+                 % (beat.get("image_prompt") or brief, plate + 1))[:480],
                 work,
                 int(beat.get("seed") or 1000) + plate * 17,
             )
@@ -603,9 +667,9 @@ def compose_sellable_movie(
         if beat_stills:
             beat["still_path"] = beat_stills[0]
             beat["still_paths"] = beat_stills
-            beat["still_source"] = "hero_lab"
+            beat["still_source"] = "hero_lab_pollinations"
 
-    _progress(on_progress, 35, "Sellable pipeline — real motion render…")
+    _progress(on_progress, 35, "Sellable pipeline — story GIF line (4–5s)…")
     clip_paths: List[str] = []
     motion_backends: List[str] = []
     per_timeout = max(45, min(120, int(timeout // max(1, len(beats)))))
@@ -613,19 +677,27 @@ def compose_sellable_movie(
         _progress(
             on_progress,
             35 + int(40 * (int(beat.get("index") or 0) / max(1, len(beats)))),
-            "Motion studio · beat %s/%s…" % ((beat.get("index") or 0) + 1, len(beats)),
+            "Story GIF line · beat %s/%s…" % ((beat.get("index") or 0) + 1, len(beats)),
         )
+        panel_stills = list(beat.get("still_paths") or [])
+        if len(panel_stills) < 3:
+            # Borrow continuity stills from the shared hero set so the strip stays full.
+            for path in hero_paths:
+                if path not in panel_stills:
+                    panel_stills.append(path)
+                if len(panel_stills) >= 3:
+                    break
         motion = _render_motion_clip(
             prompt=str(beat.get("image_prompt") or brief),
-            duration_sec=float(beat.get("duration_sec") or 4),
+            duration_sec=float(beat.get("duration_sec") or 4.5),
             dest_dir=work,
             start_image=beat.get("still_path"),
             timeout=per_timeout,
-            alt_stills=list(beat.get("still_paths") or hero_paths[:3]),
+            alt_stills=panel_stills[:3] or hero_paths[:3],
         )
         if motion.get("success") and motion.get("local_path"):
             clip_paths.append(str(motion["local_path"]))
-            motion_backends.append(str(motion.get("motion_backend") or "motion"))
+            motion_backends.append(str(motion.get("motion_backend") or "story_gif_line"))
             beat["motion_backend"] = motion.get("motion_backend")
             beat["clip_path"] = motion.get("local_path")
             if motion.get("prior_errors"):
@@ -658,7 +730,9 @@ def compose_sellable_movie(
             )
             if draft.get("success") and draft.get("local_path"):
                 clip_paths = [str(draft["local_path"])]
-                motion_backends = ["draft"]
+                # Prefer story_gif_line label when draft used gif_storyboard mode.
+                mode = str(draft.get("mode") or "draft")
+                motion_backends = ["story_gif_line" if "gif" in mode else "draft"]
                 used_draft = True
                 attempts.append("draft_fallback_used")
         except Exception as exc:
@@ -672,6 +746,7 @@ def compose_sellable_movie(
             "attempts": attempts,
             "story": story.get("story"),
             "pipeline": "sellable_v1",
+            "provider_gate": gate.status(),
         }
 
     _progress(on_progress, 78, "Delivery master — stitching…")
@@ -692,13 +767,24 @@ def compose_sellable_movie(
             }
         merged_path = str(merged["local_path"])
 
-    _progress(on_progress, 86, "Soundtrack desk — voice + bed…")
+    _progress(on_progress, 86, "Soundtrack desk — voice + bed (always)…")
     narr = _synthesize_narration(story, work)
     bed = _build_music_bed(os.path.join(work, "bed_%s.aac" % uuid.uuid4().hex[:6]), float(duration_sec))
+    # Guarantee sound every time: if TTS fails, bed alone still counts.
+    if not bed:
+        bed = _build_music_bed(os.path.join(work, "bed_retry_%s.aac" % uuid.uuid4().hex[:6]), float(duration_sec))
     mixed = os.path.join(work, "mixed_%s.mp4" % uuid.uuid4().hex[:8])
     mux = _mux_soundtrack(merged_path, mixed, narr, bed)
     has_audio = bool(mux.get("has_audio"))
     pictured = str(mux.get("local_path") or merged_path)
+    if not has_audio and bed and os.path.isfile(bed):
+        # Last-chance remux with bed only.
+        retry_path = os.path.join(work, "mixed_retry_%s.mp4" % uuid.uuid4().hex[:8])
+        mux2 = _mux_soundtrack(merged_path, retry_path, None, bed)
+        if mux2.get("has_audio") and mux2.get("local_path"):
+            has_audio = True
+            pictured = str(mux2["local_path"])
+            attempts.append("audio_retry_bed_only")
 
     _progress(on_progress, 93, "Delivery master — grade + package…")
     final_path = os.path.join(dest_dir, "sellable_%s.mp4" % uuid.uuid4().hex[:8])
@@ -706,7 +792,6 @@ def compose_sellable_movie(
     if graded.get("success") and graded.get("local_path"):
         final_path = str(graded["local_path"])
     else:
-        # Keep mixed/stitched if grade fails.
         final_path = pictured
         attempts.append("grade: %s" % (graded.get("error") or "skipped"))
 
@@ -715,14 +800,18 @@ def compose_sellable_movie(
     if xvid.get("success"):
         xvid_path = xvid.get("local_path")
 
-    gate = evaluate_quality_gate(
+    gate_result = evaluate_quality_gate(
         local_path=final_path,
         has_audio=has_audio,
         motion_backends=motion_backends,
         duration_sec=float(duration_sec),
     )
 
-    _progress(on_progress, 100, "Sellable pipeline complete" if gate["sellable"] else "Draft pipeline complete")
+    _progress(
+        on_progress,
+        100,
+        "Sellable pipeline complete" if gate_result["sellable"] else "Draft pipeline complete",
+    )
     return {
         "success": True,
         "local_path": final_path,
@@ -731,13 +820,13 @@ def compose_sellable_movie(
         "renderer": "sellable_v1",
         "pipeline": "sellable_v1",
         "mode": (
-            "sellable_i2v" if gate.get("quality") == "sellable"
-            else "sellable_local" if gate.get("quality") == "sellable_local"
+            "sellable_i2v" if gate_result.get("quality") == "sellable"
+            else "sellable_local" if gate_result.get("quality") == "sellable_local"
             else "sellable_draft"
         ),
-        "sellable": gate["sellable"],
-        "quality": gate["quality"],
-        "quality_gate": gate,
+        "sellable": gate_result["sellable"],
+        "quality": gate_result["quality"],
+        "quality_gate": gate_result,
         "has_audio": has_audio,
         "fps": 24,
         "duration_sec": duration_sec,
@@ -755,4 +844,7 @@ def compose_sellable_movie(
         "attempts": attempts[:12],
         "prompt_used": brief[:500],
         "has_face": bool(face_path and os.path.isfile(face_path)),
+        "provider_gate": gate.status(),
+        "image_providers": list(gate.ACTIVE_IMAGE_PROVIDERS),
+        "motion_providers": list(gate.ACTIVE_MOTION_PROVIDERS),
     }

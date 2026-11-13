@@ -526,19 +526,21 @@ def test_fx_pack_unique_and_balanced():
     b = canvas._build_fx_pack("pipe_bbb", style="fog", mood="calm")
     assert a["background"] in canvas._FX_BACKGROUNDS
     assert a["sound"] in canvas._FX_SOUNDS
-    assert len(a["effects"]) == 107
-    assert a["live_count"] == 107
-    assert 0.35 <= a["intensity"] <= 0.65
+    assert len(a["effects"]) == canvas._LIVE_FX_COUNT == 12
+    assert a["live_count"] == 12
+    assert 0.18 <= a["intensity"] <= 0.38
+    assert a.get("story_first") is True
     assert a["effects"] != b["effects"] or a["background"] != b["background"] or a["sound"] != b["sound"]
     normalized = canvas._normalize_fx_pack(
-        {"background": "glitch", "sound": "storm", "effects": ["scan_01", "rain_01"], "intensity": 1.1},
+        {"background": "ocean", "sound": "storm", "effects": ["mist_01", "dust_01"], "intensity": 1.1},
         "pipe_norm",
     )
-    assert normalized["background"] == "glitch"
+    assert normalized["background"] == "ocean"
     assert normalized["sound"] == "storm"
-    assert len(normalized["effects"]) == 107
-    assert normalized["intensity"] <= 0.65
+    assert len(normalized["effects"]) == 12
+    assert normalized["intensity"] <= 0.38
     assert normalized.get("voice_profile", "").startswith("performer_")
+    assert normalized.get("story_first") is True
 
 
 def test_scene_bible_and_story_bundle():
@@ -770,7 +772,7 @@ def test_ai_design_pipeline_parses_unique_beats(clean_env, monkeypatch):
     assert out["run_id"].startswith("pipe_")
     assert isinstance(out.get("fx_pack"), dict)
     assert out["fx_pack"]["background"]
-    assert len(out["fx_pack"]["effects"]) == 107
+    assert len(out["fx_pack"]["effects"]) == 12
     assert out.get("story")
     assert isinstance(out.get("narration"), list)
 
@@ -835,8 +837,8 @@ def test_gemini_rest_designs_pipeline(clean_env, monkeypatch):
     assert out["style"] == "rain chrome"
     assert len(out["beats"]) >= 4
     assert isinstance(out.get("fx_pack"), dict)
-    assert len(out["fx_pack"]["effects"]) == 107
-    assert 0.35 <= float(out["fx_pack"]["intensity"]) <= 0.65
+    assert len(out["fx_pack"]["effects"]) == 12
+    assert 0.18 <= float(out["fx_pack"]["intensity"]) <= 0.38
     assert out.get("story")
 
 

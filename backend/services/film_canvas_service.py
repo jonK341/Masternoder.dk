@@ -118,7 +118,8 @@ _fal_skip_until = 0.0
 _FAL_SKIP_SECONDS = 6 * 3600
 _FAL_SKIP_FILE = os.path.join(_REPO_ROOT, "instance", "film_canvas_fal_skip.json")
 
-# External clip backends used when film canvases cannot render (e.g. fal balance gone).
+# External clip backends — credit-blocked ones are deactivated via ai_provider_gate.
+# Prefer story_gif_line / Pollinations stills over these wallets.
 _EXTERNAL_CLIP_BACKENDS = (
     "runway",
     "modelslab",
@@ -1096,6 +1097,13 @@ def _external_backend_module(backend: str):
 
 
 def _external_backend_available(backend: str) -> bool:
+    try:
+        from backend.services import ai_provider_gate as gate
+        gate.ensure_defaults()
+        if gate.is_blocked(backend):
+            return False
+    except Exception:
+        pass
     mod = _external_backend_module(backend)
     if mod is None or not hasattr(mod, "is_available"):
         return False
@@ -1138,6 +1146,12 @@ def _generate_external_clip(
         return {"success": False, "error": "%s returned no result" % backend, "canvas": backend}
     out = dict(out)
     out["canvas"] = backend
+    if not out.get("success"):
+        try:
+            from backend.services import ai_provider_gate as gate
+            gate.note_error(backend, out.get("error"))
+        except Exception:
+            pass
     if out.get("success") and out.get("local_path"):
         return out
     # Some backends return only a remote URL — download when possible.
@@ -1213,27 +1227,24 @@ def _beat_count_for_duration(duration: float) -> int:
     return min(14, max(10, int(round(seconds / 8.0))))
 
 
-# Monitor background / neural-sound / overlay catalogs — pick a fresh pack every play.
+# Story-supportive ambient pack — fewer meaningful FX, less color noise.
+# (Previously 107 glitch/plasma overlays drowned the prompt picture.)
 _FX_BACKGROUNDS = (
-    "aurora", "rain", "grid", "ember", "plasma", "fog",
-    "signal", "hex", "glitch", "ocean", "chrome", "violet",
+    "fog", "ocean", "rain", "ember", "chrome", "aurora",
 )
 _FX_SOUNDS = (
-    "harbour", "storm", "neon", "drone", "pulse", "battle",
-    "stars", "focus", "market", "fog", "chrome", "rain",
-    "ember", "signal", "ocean", "voice_soft", "voice_bright", "voice_deep",
+    "harbour", "storm", "rain", "ocean", "fog", "focus",
+    "voice_soft", "voice_bright", "voice_deep", "drone", "stars", "market",
 )
 _FX_EFFECT_FAMILIES = (
-    "scan", "sparks", "rain", "glitch", "chromatic", "hex", "embers", "streaks",
-    "noise", "bloom", "ripple", "shards", "orbit", "pulse", "static", "flare",
-    "mist", "beam", "dust", "wave", "crack", "veil", "sparkle", "trail",
-    "echo", "frost", "heat", "signal", "pixel", "drift",
+    "mist", "dust", "bloom", "ripple", "wave", "drift",
+    "beam", "veil", "frost", "heat", "echo", "trail",
 )
-_LIVE_FX_COUNT = 107
+_LIVE_FX_COUNT = 12
 
 
 def _build_fx_effect_catalog(count: int = _LIVE_FX_COUNT) -> tuple:
-    """Build a fixed catalog of named live effects (exactly 107 by default)."""
+    """Build a small catalog of story-supportive live effects."""
     names: List[str] = []
     index = 0
     while len(names) < max(1, int(count)):
@@ -1246,19 +1257,17 @@ def _build_fx_effect_catalog(count: int = _LIVE_FX_COUNT) -> tuple:
 
 _FX_EFFECTS = _build_fx_effect_catalog(_LIVE_FX_COUNT)
 _FX_PALETTES = (
-    ("#00ff88", "#00b4ff", "#ff5078"),
-    ("#7cf5ff", "#3d7cff", "#c8ff6a"),
-    ("#ff9a3c", "#ff5e7a", "#ffe08a"),
-    ("#b388ff", "#5eead4", "#f0abfc"),
     ("#94a3b8", "#38bdf8", "#e2e8f0"),
     ("#f97316", "#22d3ee", "#fde68a"),
     ("#34d399", "#818cf8", "#fda4af"),
+    ("#7cf5ff", "#3d7cff", "#c8ff6a"),
+    ("#ff9a3c", "#ff5e7a", "#ffe08a"),
     ("#67e8f9", "#a78bfa", "#fb7185"),
 )
 
 
 def _build_fx_pack(run_id: str, style: str = "", mood: str = "") -> Dict[str, Any]:
-    """Invent a unique visual/sound FX pack — always 107 live effects, rotated order."""
+    """Invent a light story-supportive FX pack — picture and story stay dominant."""
     salt = int(
         hashlib.sha1(
             ("%s|%s|%s|%s" % (run_id, style, mood, secrets.token_hex(4))).encode("utf-8")
@@ -1274,22 +1283,23 @@ def _build_fx_pack(run_id: str, style: str = "", mood: str = "") -> Dict[str, An
     return {
         "background": background,
         "sound": sound,
-        "effects": effects,
-        "live_count": len(effects),
+        "effects": effects[:_LIVE_FX_COUNT],
+        "live_count": min(len(effects), _LIVE_FX_COUNT),
         "palette": palette,
-        # Keep ambient FX supportive — scene/prompt picture stays strongest.
-        "intensity": round(0.42 + (salt % 18) / 100.0, 2),
+        # Soft ambient only — never overpower story picture.
+        "intensity": round(0.22 + (salt % 12) / 100.0, 2),
         "run_id": run_id,
         "sfx_bank": "shop",
         "voice_profile": (
             "performer_nova", "performer_luna", "performer_ember", "performer_storm",
             "performer_velvet", "performer_jade", "performer_rio", "performer_mist",
         )[salt % 8],
+        "story_first": True,
     }
 
 
 def _normalize_fx_pack(raw: Any, run_id: str, style: str = "", mood: str = "") -> Dict[str, Any]:
-    """Validate AI fx_pack or fall back to a fresh procedural pack with 107 live FX."""
+    """Validate AI fx_pack or fall back to a light story-supportive pack."""
     base = _build_fx_pack(run_id, style=style, mood=mood)
     if not isinstance(raw, dict):
         return base
@@ -1302,7 +1312,6 @@ def _normalize_fx_pack(raw: Any, run_id: str, style: str = "", mood: str = "") -
     voice = str(raw.get("voice_profile") or "").strip()
     if voice.startswith("performer_"):
         base["voice_profile"] = voice
-    # Always keep the full 107 live catalog; AI may only reorder emphasis.
     effects = raw.get("effects") if isinstance(raw.get("effects"), list) else []
     cleaned = []
     for item in effects:
@@ -1314,6 +1323,7 @@ def _normalize_fx_pack(raw: Any, run_id: str, style: str = "", mood: str = "") -
             cleaned.append(name)
     base["effects"] = cleaned[:_LIVE_FX_COUNT]
     base["live_count"] = len(base["effects"])
+    base["story_first"] = True
     palette = raw.get("palette") if isinstance(raw.get("palette"), list) else []
     colors = [str(c).strip()[:9] for c in palette if str(c).strip().startswith("#")]
     if len(colors) >= 2:
@@ -1322,9 +1332,9 @@ def _normalize_fx_pack(raw: Any, run_id: str, style: str = "", mood: str = "") -
         base["palette"] = colors[:3]
     try:
         intensity = float(raw.get("intensity"))
-        if 0.3 <= intensity <= 1.2:
-            # Clamp so overlays never wash out the prompt picture.
-            base["intensity"] = round(max(0.35, min(0.65, intensity)), 2)
+        if 0.1 <= intensity <= 1.2:
+            # Clamp soft — overlays must not wash out the story picture.
+            base["intensity"] = round(max(0.18, min(0.38, intensity)), 2)
     except (TypeError, ValueError):
         pass
     return base
@@ -1605,15 +1615,22 @@ def _write_beat_scene_image(
 
 
 def _try_free_beat_image(prompt: str, dest_dir: str, seed: int, timeout: int = 12) -> Optional[str]:
-    """Best-effort prompt-matched AI still (never block the movie for long)."""
+    """Best-effort prompt-matched AI still via Pollinations free models."""
     os.makedirs(dest_dir, exist_ok=True)
     path = os.path.join(dest_dir, "ai_beat_%s_%s.jpg" % (seed, uuid.uuid4().hex[:6]))
+    models = ("flux", "z-image-turbo", "gptimage")
+    try:
+        from backend.services import ai_provider_gate as gate
+        models = tuple(gate.POLLINATIONS_IMAGE_MODELS) or models
+    except Exception:
+        pass
+    model = models[int(seed) % len(models)]
     try:
         encoded = urllib.parse.quote((prompt or "photoreal film still")[:420], safe="")
         url = (
             "https://image.pollinations.ai/prompt/%s"
-            "?width=1280&height=720&nologo=true&enhance=true&model=flux&seed=%d"
-        ) % (encoded, int(seed) % 999999)
+            "?width=1280&height=720&nologo=true&enhance=true&model=%s&seed=%d"
+        ) % (encoded, urllib.parse.quote(str(model)), int(seed) % 999999)
         req = urllib.request.Request(url, headers={"User-Agent": "MasterNoder/1.0"})
         with urllib.request.urlopen(req, timeout=max(8, int(timeout))) as resp:
             img_bytes = resp.read()
@@ -1821,11 +1838,11 @@ def _ffmpeg_acting_clip(
 def _ffmpeg_gif_strip_clip(
     image_paths: List[str],
     dest_path: str,
-    duration: float = 3.0,
+    duration: float = 4.5,
     motion: str = "zoom_in",
 ) -> Dict[str, Any]:
-    """Side-by-side GIF-like moving panels — adjacent stills pulse next to each other."""
-    seconds = max(1.2, min(60.0, float(duration or 3.0)))
+    """Side-by-side story GIF panels — sellable path feeds 4–5s per strip."""
+    seconds = max(1.2, min(60.0, float(duration or 4.5)))
     paths = [p for p in image_paths if p and os.path.isfile(p)]
     if not paths:
         return {"success": False, "error": "no gif-strip poses"}
@@ -2654,9 +2671,10 @@ def _ai_design_clip_pipeline(
         "Invent a NEW short coherent story every time that stays inside the user brief. "
         "Keep strings short. shot_type must be one of "
         "establishing,character,action,detail,reaction,closing. "
-        "fx_pack.background one of aurora,rain,grid,ember,plasma,fog,signal,hex,glitch,ocean,chrome,violet. "
-        "fx_pack.sound one of harbour,storm,neon,drone,pulse,battle,stars,focus,market,fog,chrome,rain,ember,signal,ocean,voice_soft,voice_bright,voice_deep. "
+        "fx_pack.background one of fog,ocean,rain,ember,chrome,aurora. "
+        "fx_pack.sound one of harbour,storm,rain,ocean,fog,focus,voice_soft,voice_bright,voice_deep,drone,stars,market. "
         "fx_pack.voice_profile one of performer_nova,performer_luna,performer_ember,performer_storm,performer_velvet. "
+        "Keep fx_pack light and story-supportive (max 12 soft effects, low intensity); never invent loud color/glitch FX. "
         "Each image_prompt MUST start with the user scene brief, then add short shot detail. "
         "The brief subject must dominate the frame — photoreal, real people, same place every beat. "
         "Each narration line is spoken aloud and must advance the story. "
