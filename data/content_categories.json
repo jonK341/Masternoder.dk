@@ -1,5 +1,5 @@
 {
-  "description": "Content categories for video and clip generation: 25 conspiracy methods in separate sections. All award unified points. Used for both full documentary and quick clip.",
+  "description": "Content categories for video and clip generation: 25 conspiracy methods plus a top 25 everyday topics, in separate sections. All award unified points. Used for both full documentary and quick clip.",
   "unified_point_system": {
     "base_generation_points": 25,
     "short_clip_points": 10,
@@ -7,7 +7,8 @@
       "generation_points",
       "conspiracy_points",
       "religious_conspiracy_points",
-      "alternative_theory_points"
+      "alternative_theory_points",
+      "topic_points"
     ]
   },
   "sections": [
@@ -64,6 +65,36 @@
       "name": "Alternative / unnormal theories",
       "description": "Non-mainstream and alternative explanations; contrast to conspiracy.",
       "order": 8
+    },
+    {
+      "id": "science_nature",
+      "name": "Science and nature",
+      "description": "Science, space, wildlife, the environment, and technology.",
+      "order": 9
+    },
+    {
+      "id": "history_society",
+      "name": "History and society",
+      "description": "History, biography, culture, true crime, and news explainers.",
+      "order": 10
+    },
+    {
+      "id": "daily_life",
+      "name": "Daily life",
+      "description": "Education, health, food, travel, and sports.",
+      "order": 11
+    },
+    {
+      "id": "creative",
+      "name": "Creative",
+      "description": "Entertainment, music, gaming, art, and storytelling.",
+      "order": 12
+    },
+    {
+      "id": "work_place",
+      "name": "Work and place",
+      "description": "Business, finance, AI, Nordic life, and rights in society.",
+      "order": 13
     }
   ],
   "categories": [
@@ -404,6 +435,331 @@
       "bonus_unified_points": 5,
       "unified_point_type": "alternative_theory_points",
       "order": 25
+    },
+    {
+      "id": "science",
+      "name": "Science",
+      "description": "How a scientific idea, experiment, or discovery works.",
+      "section_id": "science_nature",
+      "context": "Science documentary about a real idea, experiment, or discovery: how the science works, what the evidence shows, and why it matters.",
+      "tags": ["science", "explainer", "discovery"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 26
+    },
+    {
+      "id": "space_astronomy",
+      "name": "Space and astronomy",
+      "description": "Planets, stars, missions, and what we know about the universe.",
+      "section_id": "science_nature",
+      "context": "Space and astronomy documentary: planets, stars, missions, and what observation and missions have shown about the universe.",
+      "tags": ["space", "astronomy", "science"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 27
+    },
+    {
+      "id": "nature_wildlife",
+      "name": "Nature and wildlife",
+      "description": "Animals, habitats, and how ecosystems work.",
+      "section_id": "science_nature",
+      "context": "Nature and wildlife documentary about animals, habitats, and how an ecosystem works in the real world.",
+      "tags": ["nature", "wildlife", "ecosystem"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 28
+    },
+    {
+      "id": "environment",
+      "name": "Environment",
+      "description": "Climate, conservation, and how people affect the natural world.",
+      "section_id": "science_nature",
+      "context": "Environment documentary about climate, conservation, or how people change the natural world, told from observed causes and effects.",
+      "tags": ["environment", "climate", "conservation"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 29
+    },
+    {
+      "id": "technology",
+      "name": "Technology",
+      "description": "Tools, engineering, and how a technology changes daily life.",
+      "section_id": "science_nature",
+      "context": "Technology documentary about a tool, a piece of engineering, or how a technology changes daily life.",
+      "tags": ["technology", "engineering", "tools"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 30
+    },
+    {
+      "id": "history",
+      "name": "History",
+      "description": "A past event, era, or turning point and the people who lived it.",
+      "section_id": "history_society",
+      "context": "History documentary about a past event, era, or turning point, and the people who lived through it.",
+      "tags": ["history", "past", "documentary"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 31
+    },
+    {
+      "id": "biography",
+      "name": "Biography",
+      "description": "A real person's life, work, and defining choices.",
+      "section_id": "history_society",
+      "context": "Biography of a real person: their life, their work, and the choices that defined them.",
+      "tags": ["biography", "people", "life"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 32
+    },
+    {
+      "id": "culture",
+      "name": "Culture",
+      "description": "Customs, art, language, or everyday life in a community.",
+      "section_id": "history_society",
+      "context": "Culture documentary about customs, art, language, or everyday life in a community.",
+      "tags": ["culture", "society", "community"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 33
+    },
+    {
+      "id": "true_crime",
+      "name": "True crime",
+      "description": "A real case, the investigation, and what the record shows.",
+      "section_id": "history_society",
+      "context": "True-crime documentary about a real case: the investigation, the people involved, and what the public record shows.",
+      "tags": ["true crime", "case", "investigation"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 34
+    },
+    {
+      "id": "news_explainer",
+      "name": "News explainer",
+      "description": "A current event, the facts, and the context around it.",
+      "section_id": "history_society",
+      "context": "News explainer that walks through a current event, the known facts, and the context around it.",
+      "tags": ["news", "explainer", "current events"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 35
+    },
+    {
+      "id": "education",
+      "name": "Education",
+      "description": "One subject taught clearly, step by step.",
+      "section_id": "daily_life",
+      "context": "Educational explainer that teaches one subject clearly, step by step, for a general audience.",
+      "tags": ["education", "explainer", "learning"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 36
+    },
+    {
+      "id": "health",
+      "name": "Health",
+      "description": "How the body works, habits, or a medical topic in plain language.",
+      "section_id": "daily_life",
+      "context": "Health documentary about how the body works, everyday habits, or a medical topic, explained in plain language.",
+      "tags": ["health", "wellness", "body"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 37
+    },
+    {
+      "id": "food",
+      "name": "Food",
+      "description": "A dish, ingredient, or cooking tradition and how it is made.",
+      "section_id": "daily_life",
+      "context": "Food documentary about a dish, an ingredient, or a cooking tradition, and how it is made.",
+      "tags": ["food", "cooking", "tradition"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 38
+    },
+    {
+      "id": "travel",
+      "name": "Travel",
+      "description": "A place: what to see, how people live there, and what a visit feels like.",
+      "section_id": "daily_life",
+      "context": "Travel documentary about a place: what to see, how people live there, and what a visit feels like.",
+      "tags": ["travel", "place", "visit"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 39
+    },
+    {
+      "id": "sports",
+      "name": "Sports",
+      "description": "A game, athlete, or competition and why the performance matters.",
+      "section_id": "daily_life",
+      "context": "Sports documentary about a game, an athlete, or a competition, and what makes the performance matter.",
+      "tags": ["sports", "athlete", "competition"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 40
+    },
+    {
+      "id": "entertainment",
+      "name": "Entertainment",
+      "description": "A light look at movies, shows, or pop culture.",
+      "section_id": "creative",
+      "context": "Entertainment piece: a light, engaging look at movies, shows, or pop culture.",
+      "tags": ["entertainment", "pop culture", "shows"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 41
+    },
+    {
+      "id": "music",
+      "name": "Music",
+      "description": "A song, artist, genre, or how a piece of music is made.",
+      "section_id": "creative",
+      "context": "Music documentary about a song, an artist, a genre, or how a piece of music is made.",
+      "tags": ["music", "artist", "song"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 42
+    },
+    {
+      "id": "gaming",
+      "name": "Gaming",
+      "description": "A game, its design, its players, or how play culture works.",
+      "section_id": "creative",
+      "context": "Gaming documentary about a game, its design, its players, or how play culture works.",
+      "tags": ["gaming", "games", "players"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 43
+    },
+    {
+      "id": "art_design",
+      "name": "Art and design",
+      "description": "A work, a maker, or how visual ideas are built.",
+      "section_id": "creative",
+      "context": "Art and design documentary about a work, a maker, or how a visual idea is built.",
+      "tags": ["art", "design", "visual"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 44
+    },
+    {
+      "id": "storytelling",
+      "name": "Storytelling",
+      "description": "A short with a clear narrative arc, characters, and a payoff.",
+      "section_id": "creative",
+      "context": "Story-driven short that follows a clear narrative arc, with characters and a payoff.",
+      "tags": ["story", "narrative", "characters"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 45
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "description": "A company, startup, or how a product gets built and sold.",
+      "section_id": "work_place",
+      "context": "Business documentary about a company, a startup, or how a product gets built and sold.",
+      "tags": ["business", "startup", "product"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 46
+    },
+    {
+      "id": "finance",
+      "name": "Finance",
+      "description": "Money, markets, or a personal-finance idea in plain language.",
+      "section_id": "work_place",
+      "context": "Finance explainer about money, markets, or a personal-finance idea, in plain language.",
+      "tags": ["finance", "money", "markets"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 47
+    },
+    {
+      "id": "ai_future",
+      "name": "AI and the future",
+      "description": "What artificial intelligence does today and how it may change work.",
+      "section_id": "work_place",
+      "context": "Documentary about artificial intelligence: what it does today and how it may change work and daily life.",
+      "tags": ["ai", "future", "work"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 48
+    },
+    {
+      "id": "nordic_local",
+      "name": "Nordic and local",
+      "description": "Nordic or Danish places, people, language, or daily life.",
+      "section_id": "work_place",
+      "context": "Documentary with a Nordic or Danish angle: local places, people, language, or daily life in the region.",
+      "tags": ["nordic", "danish", "local"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 49
+    },
+    {
+      "id": "rights_society",
+      "name": "Rights and society",
+      "description": "Rights, law, or social questions and how they affect people's lives.",
+      "section_id": "work_place",
+      "context": "Documentary about rights, law, or a social question, and how it affects people's lives.",
+      "tags": ["rights", "society", "law"],
+      "is_conspiracy": false,
+      "is_religious": false,
+      "bonus_unified_points": 3,
+      "unified_point_type": "topic_points",
+      "order": 50
     }
   ]
 }

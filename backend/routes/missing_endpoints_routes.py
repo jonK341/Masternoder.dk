@@ -3756,11 +3756,10 @@ def themes_user():
 
 
 def content_categories_list():
-    """Get list of content categories: sections + 25 conspiracy methods for video and clip generation."""
+    """Get list of content categories: sections, conspiracy methods, and everyday topics."""
     try:
         import json
-        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        path = os.path.join(base, 'data', 'content_categories.json')
+        path = os.path.join(_BASE_DIR, 'data', 'content_categories.json')
         if os.path.isfile(path):
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)

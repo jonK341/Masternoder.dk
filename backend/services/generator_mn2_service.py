@@ -17,6 +17,44 @@ _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 _CHARGES_FILE = os.path.join(_BASE, "data", "generator_mn2_charges.json")
 _MN2_CFG = os.path.join(_BASE, "data", "mn2_config.json")
 
+# Ordered addon chain. A later link applies only when every earlier link is selected.
+ADDON_CHAIN = (
+    {"id": "vision_monitor", "name": "Vision monitor", "fee_mn2": 0.02, "reward_mn2": 0.004},
+    {"id": "narration", "name": "Voiceover", "fee_mn2": 0.015, "reward_mn2": 0.003},
+    {"id": "multi_ai", "name": "Multi-AI", "fee_mn2": 0.025, "reward_mn2": 0.005},
+    {"id": "category_boost", "name": "Category boost", "fee_mn2": 0.01, "reward_mn2": 0.003},
+    {"id": "express_lane", "name": "Express lane", "fee_mn2": 0.04, "reward_mn2": 0.002},
+)
+
+
+def normalize_addon_chain(raw: Any) -> list:
+    """Return the longest prefix of ADDON_CHAIN present in raw."""
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        items = [part.strip() for part in raw.split(",") if part.strip()]
+    elif isinstance(raw, (list, tuple)):
+        items = list(raw)
+    else:
+        return []
+    wanted = set()
+    for item in items:
+        if isinstance(item, dict):
+            item = item.get("id")
+        if item:
+            wanted.add(str(item).strip().lower())
+    chosen = []
+    for addon in ADDON_CHAIN:
+        if addon["id"] not in wanted:
+            break
+        chosen.append(addon["id"])
+    return chosen
+
+
+def addon_catalog() -> list:
+    return [dict(addon) for addon in ADDON_CHAIN]
+
+
 _DEFAULTS = {
     "enabled": True,
     "earn_on_finish_mn2": 0.005,
@@ -89,8 +127,9 @@ def quote_generation(
     short_clip: bool = False,
     tier: str = "standard",
     config: Optional[Dict[str, Any]] = None,
+    addons: Any = None,
 ) -> Dict[str, Any]:
-    """Return MN2 price quote for a generation job."""
+    """Return MN2 price quote for a generation job, including addon-chain fees and rewards."""
     cfg = get_generator_config()
     tier = (tier or "standard").strip().lower()
     duration = max(10, min(300, int(duration or 60)))
@@ -107,18 +146,47 @@ def quote_generation(
 
     minutes = duration / 60.0
     surcharge = minutes * float(cfg.get("duration_surcharge_per_min_mn2") or 0.002)
-    price_mn2 = round(base + (surcharge if tier != "standard" else 0.0), 8)
+    tier_price = round(base + (surcharge if tier != "standard" else 0.0), 8)
+
+    if addons is None and isinstance(config, dict):
+        addons = config.get("mn2_addons")
+    selected = normalize_addon_chain(addons)
+    by_id = {addon["id"]: addon for addon in ADDON_CHAIN}
+    chain = []
+    addon_fee = 0.0
+    addon_reward = 0.0
+    for addon_id in selected:
+        addon = by_id[addon_id]
+        fee = float(addon["fee_mn2"])
+        reward = float(addon["reward_mn2"])
+        addon_fee += fee
+        addon_reward += reward
+        chain.append({
+            "id": addon_id,
+            "name": addon["name"],
+            "fee_mn2": fee,
+            "reward_mn2": reward,
+        })
+    addon_fee = round(addon_fee, 8)
+    addon_reward = round(addon_reward, 8)
+
+    price_mn2 = round(tier_price + addon_fee, 8)
     earn = float(cfg.get("earn_on_finish_mn2") or 0.005) if cfg.get("enabled", True) else 0.0
+    earn = round(earn + addon_reward, 8)
 
     return {
         "success": True,
         "tier": tier,
         "price_mn2": price_mn2,
+        "tier_price_mn2": tier_price,
+        "addon_fee_mn2": addon_fee,
+        "addon_reward_mn2": addon_reward,
+        "addon_chain": chain,
         "earn_on_finish_mn2": earn,
         "duration_sec": duration,
         "short_clip": bool(short_clip),
         "coins_per_mn2": cfg.get("coins_per_mn2"),
-        "charged": tier != "standard" and price_mn2 > 0,
+        "charged": price_mn2 > 0 and (tier != "standard" or addon_fee > 0),
     }
 
 
@@ -137,6 +205,7 @@ def get_public_pricing() -> Dict[str, Any]:
             "ultra": quote_generation(tier="ultra", duration=180),
         },
         "express_pack_mn2": cfg.get("express_pack_mn2"),
+        "addon_chain": addon_catalog(),
     }
 
 
@@ -215,15 +284,26 @@ def charge_if_requested(
     if not cfg.get("enabled", True):
         return {"success": True, "charged": False, "skipped": "disabled"}
 
+    body = body or {}
     tier = _tier_from_config(config, body)
+    addons = config.get("mn2_addons")
+    if addons is None:
+        addons = body.get("mn2_addons")
+    selected = normalize_addon_chain(addons)
+    config["mn2_addons"] = selected
     quote = quote_generation(
         duration=int(config.get("duration") or 180),
         short_clip=bool(config.get("short_clip")),
         tier=tier,
         config=config,
+        addons=selected,
     )
     price = float(quote.get("price_mn2") or 0)
-    if tier == "standard" or price <= 0:
+    pay_with_mn2 = bool(body.get("pay_with_mn2") or config.get("pay_with_mn2"))
+    addon_fee = float(quote.get("addon_fee_mn2") or 0)
+    if price <= 0 or (tier == "standard" and not pay_with_mn2):
+        return {"success": True, "charged": False, "tier": tier, "price_mn2": 0, "addon_fee_mn2": addon_fee}
+    if tier == "standard" and addon_fee <= 0:
         return {"success": True, "charged": False, "tier": tier, "price_mn2": 0}
 
     try:
@@ -242,6 +322,9 @@ def charge_if_requested(
                 "tier": tier,
                 "price_mn2": price,
                 "doc_id": doc_id,
+                "addon_fee_mn2": addon_fee,
+                "addon_reward_mn2": float(quote.get("addon_reward_mn2") or 0),
+                "mn2_addons": selected,
                 "encoder_order_id": (order_res.get("order") or {}).get("order_id"),
             }
             return {
@@ -272,9 +355,19 @@ def charge_if_requested(
         "charged_at": _iso(),
         "refunded": False,
         "earned": False,
+        "addon_fee_mn2": addon_fee,
+        "addon_reward_mn2": float(quote.get("addon_reward_mn2") or 0),
+        "mn2_addons": selected,
     }
     _save_charges(charges)
-    config["mn2_charge"] = {"tier": tier, "price_mn2": price, "doc_id": doc_id}
+    config["mn2_charge"] = {
+        "tier": tier,
+        "price_mn2": price,
+        "doc_id": doc_id,
+        "addon_fee_mn2": addon_fee,
+        "addon_reward_mn2": float(quote.get("addon_reward_mn2") or 0),
+        "mn2_addons": selected,
+    }
     return {
         "success": True,
         "charged": True,
@@ -322,7 +415,10 @@ def award_finish_bonus(user_id: str, doc_id: str, config: Optional[Dict[str, Any
     base_earn = float(cfg.get("earn_on_finish_mn2") or 0.005)
     tier = rec.get("tier") or _tier_from_config(config or {})
     tier_bonus = {"express": 0.002, "premium": 0.005, "ultra": 0.01}.get(tier, 0.0)
-    amount = round(min(float(cfg.get("max_earn_per_video_mn2") or 0.05), base_earn + tier_bonus), 8)
+    capped = min(float(cfg.get("max_earn_per_video_mn2") or 0.05), base_earn + tier_bonus)
+    charge_meta = (config or {}).get("mn2_charge") if isinstance((config or {}).get("mn2_charge"), dict) else {}
+    addon_reward = float(rec.get("addon_reward_mn2") or charge_meta.get("addon_reward_mn2") or 0)
+    amount = round(capped + addon_reward, 8)
     if amount <= 0:
         return {"success": True, "awarded": 0.0}
 
