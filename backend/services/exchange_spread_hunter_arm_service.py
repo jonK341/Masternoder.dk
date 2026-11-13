@@ -887,10 +887,13 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         cfg=cfg,
     )
     out["opportunity_count"] = len(annotated)
-    from backend.services.exchange_technique_executor_service import residual_edge_ok
+    from backend.services.exchange_technique_executor_service import (
+        cutting_edge,
+        narrow_cutting_edge,
+    )
 
-    residual_floor = _cfg_float("TECH_RESIDUAL_EDGE_BPS", 15.0)
-    qualifying = []
+    residual_floor = _cfg_float("TECH_RESIDUAL_EDGE_BPS", 12.0)
+    board_pool = []
     for o in annotated:
         if not _is_external_opp(o):
             continue
@@ -900,17 +903,41 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             continue
         if not o.get("profitable"):
             continue
-        # Soft residual filter on board: keep skewed phantoms off the hunt list.
-        edge = residual_edge_ok(
+        edge = cutting_edge(
             net_bps=float(o.get("net_bps") or 0),
             mid_skew_bps=float(o.get("mid_skew_bps") or 0),
-            floor_bps=residual_floor,
+            buy_ask=float(o.get("buy_ask") or 0),
+            buy_bid=float(o.get("buy_bid") or 0),
+            sell_ask=float(o.get("sell_ask") or 0),
+            sell_bid=float(o.get("sell_bid") or 0),
+            est_profit_usd=float(o.get("est_profit_usd") or 0),
+            fire_floor_bps=residual_floor,
+            min_profit_usd=min_profit,
         )
         o = dict(o)
-        o["residual_bps"] = edge["residual_bps"]
-        if not edge["ok"] and float(o.get("mid_skew_bps") or 0) > 0:
+        o["residual_bps"] = edge["cut_bps"]
+        o["cut_bps"] = edge["cut_bps"]
+        o["edge_band"] = edge["band"]
+        o["cutting_edge"] = edge
+        # Board keeps fire + latch; pure skip phantoms drop out.
+        if edge["band"] == "skip" and float(o.get("mid_skew_bps") or 0) > 0:
             continue
-        qualifying.append(o)
+        board_pool.append(o)
+    # Narrow to the sharpest few cutting-edge deals for execution.
+    qualifying = narrow_cutting_edge(
+        board_pool,
+        top_n=_cfg_int("CUTTING_EDGE_TOP_N", 3),
+        bands=("fire", "latch"),
+    )
+    # Prefer fire over latch inside the shortlist.
+    qualifying.sort(
+        key=lambda o: (
+            1 if o.get("edge_band") == "fire" else 0,
+            float(o.get("cut_bps") or -999),
+            float(o.get("net_bps") or 0),
+        ),
+        reverse=True,
+    )
     # Keep Binance live: when BN quote is funded, prefer buy-on-binance routes.
     bn_free = 0.0
     try:
@@ -1025,36 +1052,48 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             continue
 
         from backend.services.exchange_technique_executor_service import (
+            cutting_edge,
             execute_techniques_for_opportunity,
-            residual_edge_ok,
         )
 
-        edge = residual_edge_ok(
+        edge = cutting_edge(
             net_bps=float(trade_opp.get("net_bps") or 0),
             mid_skew_bps=float(trade_opp.get("mid_skew_bps") or 0),
-            floor_bps=residual_floor,
+            buy_ask=float(trade_opp.get("buy_ask") or 0),
+            buy_bid=float(trade_opp.get("buy_bid") or 0),
+            sell_ask=float(trade_opp.get("sell_ask") or 0),
+            sell_bid=float(trade_opp.get("sell_bid") or 0),
+            est_profit_usd=float(trade_opp.get("est_profit_usd") or 0),
+            fire_floor_bps=residual_floor,
+            min_profit_usd=min_profit,
         )
         trade_opp = dict(trade_opp)
-        trade_opp["residual_bps"] = edge["residual_bps"]
-        if not edge["ok"]:
-            out["skip_reason"] = "phantom_skew_no_residual"
+        trade_opp["residual_bps"] = edge["cut_bps"]
+        trade_opp["cut_bps"] = edge["cut_bps"]
+        trade_opp["edge_band"] = edge["band"]
+        out["cutting_edge"] = edge
+        if edge["band"] != "fire":
+            out["skip_reason"] = (
+                "thin_cut_wait_skew" if edge["band"] == "latch" else "phantom_skew_no_residual"
+            )
             out["residual_edge"] = edge
-            try:
-                from backend.services.exchange_latch_sniper_service import arm_latch
+            if edge["band"] == "latch":
+                try:
+                    from backend.services.exchange_latch_sniper_service import arm_latch
 
-                arm_latch(
-                    symbol=str(trade_opp.get("symbol") or ""),
-                    buy_venue=str(trade_opp.get("buy_venue") or ""),
-                    sell_venue=str(trade_opp.get("sell_venue") or ""),
-                    net_bps=float(trade_opp.get("net_bps") or 0),
-                    mid_skew_bps=float(trade_opp.get("mid_skew_bps") or 0),
-                    est_profit_usd=float(trade_opp.get("est_profit_usd") or 0),
-                    notional_usd=float(trade_opp.get("notional_usd") or notional),
-                    source="hunter_residual",
-                )
-                out["latch_armed"] = True
-            except Exception:
-                pass
+                    arm_latch(
+                        symbol=str(trade_opp.get("symbol") or ""),
+                        buy_venue=str(trade_opp.get("buy_venue") or ""),
+                        sell_venue=str(trade_opp.get("sell_venue") or ""),
+                        net_bps=float(trade_opp.get("net_bps") or 0),
+                        mid_skew_bps=float(trade_opp.get("mid_skew_bps") or 0),
+                        est_profit_usd=float(trade_opp.get("est_profit_usd") or 0),
+                        notional_usd=float(trade_opp.get("notional_usd") or notional),
+                        source="hunter_cutting_edge",
+                    )
+                    out["latch_armed"] = True
+                except Exception:
+                    pass
             continue
 
         tech_res = execute_techniques_for_opportunity(
@@ -1118,13 +1157,21 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         if float(ready.get("est_profit_usd") or 0) < min_profit or float(ready.get("net_bps") or 0) < min_bps:
             out["skip_reason"] = "sized_below_profit_gate"
             continue
-        edge2 = residual_edge_ok(
+        edge2 = cutting_edge(
             net_bps=float(ready.get("net_bps") or 0),
             mid_skew_bps=float(ready.get("mid_skew_bps") or trade_opp.get("mid_skew_bps") or 0),
-            floor_bps=residual_floor,
+            buy_ask=float(ready.get("buy_ask") or trade_opp.get("buy_ask") or 0),
+            buy_bid=float(ready.get("buy_bid") or trade_opp.get("buy_bid") or 0),
+            sell_ask=float(ready.get("sell_ask") or trade_opp.get("sell_ask") or 0),
+            sell_bid=float(ready.get("sell_bid") or trade_opp.get("sell_bid") or 0),
+            est_profit_usd=float(ready.get("est_profit_usd") or 0),
+            fire_floor_bps=residual_floor,
+            min_profit_usd=min_profit,
         )
-        if not edge2["ok"]:
-            out["skip_reason"] = "phantom_skew_no_residual"
+        if edge2["band"] != "fire":
+            out["skip_reason"] = (
+                "thin_cut_wait_skew" if edge2["band"] == "latch" else "phantom_skew_no_residual"
+            )
             out["residual_edge"] = edge2
             continue
 

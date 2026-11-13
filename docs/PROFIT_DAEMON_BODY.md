@@ -28,7 +28,8 @@ Arms/legs call `limb_allowed(name)` at tick start.
 - Hunter owns backfill when quote is thin / head posts `prefund_hint` / last skip was funding — ledger `spread_hunter_ledger.jsonl`, clears hint after a raise
 - Courier ledger: `courier_arm_ledger.jsonl` · Latch: `latch_sniper_ledger.jsonl` · Closer: `closer_claw_ledger.jsonl` + `closer_open_legs.json`
 - Technique executor ledger: `technique_executor_ledger.jsonl`
-- Residual edge = `net_bps − |mid_skew_bps|` (floor `TECH_RESIDUAL_EDGE_BPS`, default 15) — filters phantom OP-like edges
+- Cutting edge = `cut_bps = net − max(0, |mid_skew| − local_noise)` → bands **fire / latch / skip** (`TECH_RESIDUAL_EDGE_BPS` default 12; top `CUTTING_EDGE_TOP_N` default 3)
+- Profile look-through: `backend/config/profit_trading_profiles.py` · `docs/PROFIT_TRADING_PROFILES.md`
 - Cron fallback (when daemon is down): `cron/exchange_technique_executor.sh`
 
 ## Ops

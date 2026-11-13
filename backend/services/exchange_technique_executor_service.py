@@ -55,8 +55,97 @@ def executor_enabled() -> bool:
 
 
 def residual_edge_bps(net_bps: float, mid_skew_bps: float) -> float:
-    """True spatial residue after subtracting mid-skew phantoms."""
+    """Legacy raw residue (net − |mid_skew|). Prefer ``cutting_edge`` for decisions."""
     return float(net_bps or 0) - abs(float(mid_skew_bps or 0))
+
+
+def _micro_spread_bps(ask: float, bid: float) -> float:
+    a = float(ask or 0)
+    b = float(bid or 0)
+    if a <= 0 or b <= 0 or a < b:
+        return 0.0
+    mid = (a + b) / 2.0
+    if mid <= 0:
+        return 0.0
+    return (a - b) / mid * 10000.0
+
+
+def cutting_edge(
+    *,
+    net_bps: float,
+    mid_skew_bps: float = 0.0,
+    buy_ask: float = 0.0,
+    buy_bid: float = 0.0,
+    sell_ask: float = 0.0,
+    sell_bid: float = 0.0,
+    est_profit_usd: float = 0.0,
+    fire_floor_bps: Optional[float] = None,
+    latch_min_bps: Optional[float] = None,
+    min_profit_usd: Optional[float] = None,
+) -> Dict[str, Any]:
+    """One score, three bands — simpler cutting edge for fire / latch / skip.
+
+    ``cut_bps = net − max(0, |skew| − local_noise)`` where local_noise is the
+    average half micro-spread on both venues. We only penalize mid-skew *beyond*
+    each book's own spread, so tight books keep more edge and phantoms still die.
+
+    Bands:
+    * ``fire``  — cut clears floor and profit clears dust → taker path
+    * ``latch`` — net still fat but cut thin → wait / maker
+    * ``skip``  — neither
+    """
+    net = float(net_bps or 0)
+    skew = abs(float(mid_skew_bps or 0))
+    buy_micro = _micro_spread_bps(buy_ask, buy_bid)
+    sell_micro = _micro_spread_bps(sell_ask, sell_bid)
+    # Average half-spread across venues = noise already inside mid_skew.
+    local_noise = 0.5 * (0.5 * buy_micro + 0.5 * sell_micro)
+    penalized_skew = max(0.0, skew - local_noise)
+    cut = net - penalized_skew
+    fire_floor = float(
+        fire_floor_bps if fire_floor_bps is not None else _cfg_float("TECH_RESIDUAL_EDGE_BPS", 12.0)
+    )
+    latch_min = float(
+        latch_min_bps if latch_min_bps is not None else _cfg_float("CUTTING_LATCH_MIN_BPS", 25.0)
+    )
+    min_profit = float(
+        min_profit_usd if min_profit_usd is not None else _cfg_float("TECH_EXEC_MIN_PROFIT_USD", 0.02)
+    )
+    profit = float(est_profit_usd or 0)
+    tight = buy_micro <= _cfg_float("CUTTING_TIGHT_MICRO_BPS", 40.0) and sell_micro <= _cfg_float(
+        "CUTTING_TIGHT_MICRO_BPS", 40.0
+    )
+    # Slightly softer floor when both books are tight (less phantom risk).
+    effective_floor = fire_floor * (0.75 if tight else 1.0)
+
+    # Profit gate only when a real estimate is present (unknown → don't block band).
+    profit_ok = True if profit <= 0 else profit >= min_profit
+    if cut >= effective_floor and profit_ok and net > 0:
+        band = "fire"
+        reason = None
+    elif net >= latch_min and cut < effective_floor:
+        band = "latch"
+        reason = "thin_cut_wait_skew"
+    else:
+        band = "skip"
+        reason = "phantom_skew_no_residual" if cut < effective_floor else "below_profit_floor"
+
+    return {
+        "ok": band == "fire",
+        "band": band,
+        "cut_bps": round(cut, 2),
+        "residual_bps": round(cut, 2),  # alias for older callers
+        "floor_bps": round(effective_floor, 2),
+        "fire_floor_bps": fire_floor,
+        "net_bps": round(net, 2),
+        "mid_skew_bps": round(skew, 2),
+        "local_noise_bps": round(local_noise, 2),
+        "buy_micro_bps": round(buy_micro, 2),
+        "sell_micro_bps": round(sell_micro, 2),
+        "tight_books": tight,
+        "est_profit_usd": round(profit, 6),
+        "reason": reason,
+    }
 
 
 def residual_edge_ok(
@@ -64,18 +153,64 @@ def residual_edge_ok(
     net_bps: float,
     mid_skew_bps: float,
     floor_bps: Optional[float] = None,
+    buy_ask: float = 0.0,
+    buy_bid: float = 0.0,
+    sell_ask: float = 0.0,
+    sell_bid: float = 0.0,
+    est_profit_usd: float = 0.0,
 ) -> Dict[str, Any]:
-    floor = float(floor_bps if floor_bps is not None else _cfg_float("TECH_RESIDUAL_EDGE_BPS", 15.0))
-    residual = residual_edge_bps(net_bps, mid_skew_bps)
-    ok = residual >= floor
-    return {
-        "ok": ok,
-        "residual_bps": round(residual, 2),
-        "floor_bps": floor,
-        "net_bps": round(float(net_bps or 0), 2),
-        "mid_skew_bps": round(float(mid_skew_bps or 0), 2),
-        "reason": None if ok else "phantom_skew_no_residual",
-    }
+    """Compat wrapper — fire band of ``cutting_edge``."""
+    return cutting_edge(
+        net_bps=net_bps,
+        mid_skew_bps=mid_skew_bps,
+        buy_ask=buy_ask,
+        buy_bid=buy_bid,
+        sell_ask=sell_ask,
+        sell_bid=sell_bid,
+        est_profit_usd=est_profit_usd,
+        fire_floor_bps=floor_bps,
+    )
+
+
+def narrow_cutting_edge(
+    opps: Sequence[Dict[str, Any]],
+    *,
+    top_n: Optional[int] = None,
+    bands: Sequence[str] = ("fire", "latch"),
+) -> List[Dict[str, Any]]:
+    """Score + keep only the sharpest few deals (default top 3 fire/latch)."""
+    n = int(top_n if top_n is not None else _cfg_float("CUTTING_EDGE_TOP_N", 3.0))
+    n = max(1, n)
+    want = {str(b) for b in bands}
+    scored: List[Dict[str, Any]] = []
+    for opp in opps:
+        if not isinstance(opp, dict):
+            continue
+        edge = cutting_edge(
+            net_bps=float(opp.get("net_bps") or 0),
+            mid_skew_bps=float(opp.get("mid_skew_bps") or 0),
+            buy_ask=float(opp.get("buy_ask") or 0),
+            buy_bid=float(opp.get("buy_bid") or 0),
+            sell_ask=float(opp.get("sell_ask") or 0),
+            sell_bid=float(opp.get("sell_bid") or 0),
+            est_profit_usd=float(opp.get("est_profit_usd") or 0),
+        )
+        row = dict(opp)
+        row["cutting_edge"] = edge
+        row["cut_bps"] = edge["cut_bps"]
+        row["residual_bps"] = edge["cut_bps"]
+        row["edge_band"] = edge["band"]
+        if edge["band"] in want:
+            scored.append(row)
+    scored.sort(
+        key=lambda o: (
+            1 if o.get("edge_band") == "fire" else 0,
+            float(o.get("cut_bps") or -999),
+            float(o.get("est_profit_usd") or 0),
+        ),
+        reverse=True,
+    )
+    return scored[:n]
 
 
 def _append(kind: str, **fields: Any) -> None:
@@ -134,9 +269,16 @@ def execute_techniques_for_opportunity(
     if opp.get("symbol"):
         symbols = [str(opp["symbol"]).upper()] + [s for s in symbols if s != str(opp["symbol"]).upper()]
 
-    edge = residual_edge_ok(
+    edge = cutting_edge(
         net_bps=float(opp.get("net_bps") or 0),
         mid_skew_bps=float(mid_skew_bps or opp.get("mid_skew_bps") or 0),
+        buy_ask=float(opp.get("buy_ask") or 0),
+        buy_bid=float(opp.get("buy_bid") or 0),
+        sell_ask=float(opp.get("sell_ask") or 0),
+        sell_bid=float(opp.get("sell_bid") or 0),
+        est_profit_usd=float(opp.get("est_profit_usd") or min_profit_v),
+        fire_floor_bps=_cfg_float("TECH_RESIDUAL_EDGE_BPS", 12.0),
+        min_profit_usd=min_profit_v,
     )
     funding = _funding_snapshot(opp, min_live_usd=min_live)
     scored = score_techniques_for_deal(
@@ -154,6 +296,7 @@ def execute_techniques_for_opportunity(
         "scanned_at": _iso(),
         "symbol": opp.get("symbol"),
         "route": f"{opp.get('buy_venue')}→{opp.get('sell_venue')}",
+        "cutting_edge": edge,
         "residual_edge": edge,
         "funding_before": {
             "ok": funding.get("ok"),
@@ -170,15 +313,18 @@ def execute_techniques_for_opportunity(
         "skip_reason": None,
     }
 
-    # Hard gates
-    if not edge["ok"]:
-        out["skip_reason"] = "phantom_skew_no_residual"
+    # Hard gates — fire only; latch/skip hand off without applying funding stack.
+    if edge.get("band") != "fire":
+        out["skip_reason"] = str(edge.get("reason") or edge.get("band") or "not_fire")
+        out["edge_band"] = edge.get("band")
         _append(
             "skip",
+            cut_bps=edge.get("cut_bps"),
             residual_bps=edge.get("residual_bps"),
             floor_bps=edge.get("floor_bps"),
             net_bps=edge.get("net_bps"),
             mid_skew_bps=edge.get("mid_skew_bps"),
+            band=edge.get("band"),
             reason=out["skip_reason"],
         )
         return out

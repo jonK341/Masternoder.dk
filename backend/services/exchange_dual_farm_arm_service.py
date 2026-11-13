@@ -230,15 +230,21 @@ def run_dual_farm_arm_tick(*, force: bool = False) -> Dict[str, Any]:
 
     for opp in opps[: max(1, max_exec)]:
         try:
-            from backend.services.exchange_technique_executor_service import residual_edge_ok
+            from backend.services.exchange_technique_executor_service import cutting_edge
 
-            edge = residual_edge_ok(
+            edge = cutting_edge(
                 net_bps=float(opp.get("net_bps") or 0),
                 mid_skew_bps=float(opp.get("mid_skew_bps") or 0),
+                buy_ask=float(opp.get("buy_ask") or 0),
+                buy_bid=float(opp.get("buy_bid") or 0),
+                sell_ask=float(opp.get("sell_ask") or 0),
+                sell_bid=float(opp.get("sell_bid") or 0),
+                est_profit_usd=float(opp.get("est_profit_usd") or 0),
             )
-            if not edge["ok"]:
-                out["skip_reason"] = "phantom_skew_no_residual"
+            if edge.get("band") != "fire":
+                out["skip_reason"] = edge.get("reason") or "phantom_skew_no_residual"
                 out["residual_edge"] = edge
+                out["cutting_edge"] = edge
                 continue
         except Exception:
             pass

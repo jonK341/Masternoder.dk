@@ -459,14 +459,26 @@ def build_order_book(
             opp, funding=funding, state=state, min_bps=min_bps, min_profit=min_profit, mid_skew_bps=skew,
         )
         best_tech = next((t for t in techniques if t.get("recommend")), techniques[0] if techniques else None)
-        residual = float(opp.get("net_bps") or 0) - abs(float(skew or 0))
-        residual_floor = _cfg_float("TECH_RESIDUAL_EDGE_BPS", 15.0)
+        from backend.services.exchange_technique_executor_service import cutting_edge
+
+        edge = cutting_edge(
+            net_bps=float(opp.get("net_bps") or 0),
+            mid_skew_bps=float(skew or 0),
+            buy_ask=float(opp.get("buy_ask") or 0),
+            buy_bid=float(opp.get("buy_bid") or opp.get("buy_ask") or 0),
+            sell_ask=float(opp.get("sell_ask") or opp.get("sell_bid") or 0),
+            sell_bid=float(opp.get("sell_bid") or 0),
+            est_profit_usd=float(opp.get("est_profit_usd") or 0),
+            fire_floor_bps=_cfg_float("TECH_RESIDUAL_EDGE_BPS", 12.0),
+            min_profit_usd=min_profit,
+        )
+        residual = float(edge.get("cut_bps") or 0)
         qualifies = (
             float(opp.get("net_bps") or 0) >= min_bps
             and float(opp.get("est_profit_usd") or 0) >= min_profit
             and bool(opp.get("profitable"))
             and not _cooldown_active(route, state)
-            and residual >= residual_floor
+            and edge.get("band") == "fire"
         )
         row = {
             "rank": rank,
@@ -486,6 +498,8 @@ def build_order_book(
             "max_funded_usd": funding.get("max_funded_usd"),
             "mid_skew_bps": round(skew, 2),
             "residual_bps": round(residual, 2),
+            "cut_bps": round(residual, 2),
+            "edge_band": edge.get("band"),
             "action": (
                 f"BUY {opp.get('symbol')} @{opp.get('buy_venue')} / "
                 f"SELL @{opp.get('sell_venue')}"

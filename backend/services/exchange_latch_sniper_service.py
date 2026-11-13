@@ -232,23 +232,31 @@ def _recheck_latch(row: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": False, "reason": reason or "still_skewed", "opportunity": opp, "mid_skew_bps": skew}
     if float(opp.get("net_bps") or 0) < min_bps:
         return {"ok": False, "reason": "edge_faded", "opportunity": opp, "mid_skew_bps": skew}
-    from backend.services.exchange_technique_executor_service import residual_edge_ok
+    from backend.services.exchange_technique_executor_service import cutting_edge
 
-    edge = residual_edge_ok(
+    edge = cutting_edge(
         net_bps=float(opp.get("net_bps") or 0),
         mid_skew_bps=float(skew or 0),
-        floor_bps=_cfg_float("TECH_RESIDUAL_EDGE_BPS", 15.0),
+        buy_ask=buy_ask,
+        buy_bid=buy_bid,
+        sell_ask=sell_ask,
+        sell_bid=sell_bid,
+        est_profit_usd=float(opp.get("est_profit_usd") or 0),
+        fire_floor_bps=_cfg_float("TECH_RESIDUAL_EDGE_BPS", 12.0),
     )
-    opp["residual_bps"] = edge["residual_bps"]
-    if not edge["ok"]:
+    opp["residual_bps"] = edge["cut_bps"]
+    opp["cut_bps"] = edge["cut_bps"]
+    opp["edge_band"] = edge["band"]
+    if edge["band"] != "fire":
         return {
             "ok": False,
-            "reason": "phantom_skew_no_residual",
+            "reason": edge.get("reason") or "thin_cut_wait_skew",
             "opportunity": opp,
             "mid_skew_bps": skew,
             "residual_edge": edge,
+            "cutting_edge": edge,
         }
-    return {"ok": True, "opportunity": opp, "mid_skew_bps": skew}
+    return {"ok": True, "opportunity": opp, "mid_skew_bps": skew, "cutting_edge": edge}
 
 
 def _maker_enabled() -> bool:
@@ -389,7 +397,10 @@ def run_latch_tick(*, force: bool = False) -> Dict[str, Any]:
                 "residual_bps": (check.get("opportunity") or {}).get("residual_bps"),
             }
             # While skewed / residual-blocked, try a maker rest on the rich venue.
-            if check.get("reason") in ("still_skewed", "regime_skew_too_wide", "phantom_skew_no_residual", "regime_deweight"):
+            if check.get("reason") in (
+                "still_skewed", "regime_skew_too_wide", "phantom_skew_no_residual",
+                "regime_deweight", "thin_cut_wait_skew",
+            ):
                 maker = _place_maker_latch(row, check)
                 row["maker"] = {
                     "ts": _iso(),

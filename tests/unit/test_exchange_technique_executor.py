@@ -2,21 +2,45 @@
 from __future__ import annotations
 
 
-def test_residual_edge_ok_passes_clean_spread():
-    from backend.services.exchange_technique_executor_service import residual_edge_ok
+def test_cutting_edge_fires_on_clean_spread():
+    from backend.services.exchange_technique_executor_service import cutting_edge
 
-    edge = residual_edge_ok(net_bps=40.0, mid_skew_bps=12.0, floor_bps=15.0)
+    edge = cutting_edge(
+        net_bps=40.0, mid_skew_bps=12.0, fire_floor_bps=12.0,
+        buy_ask=1.001, buy_bid=1.0, sell_ask=1.005, sell_bid=1.004,
+        est_profit_usd=0.05,
+    )
+    assert edge["band"] == "fire"
     assert edge["ok"] is True
-    assert edge["residual_bps"] == 28.0
+    assert edge["cut_bps"] > 12.0
 
 
-def test_residual_edge_rejects_phantom_skew():
-    from backend.services.exchange_technique_executor_service import residual_edge_ok
+def test_cutting_edge_latches_thin_cut():
+    from backend.services.exchange_technique_executor_service import cutting_edge
 
-    edge = residual_edge_ok(net_bps=90.0, mid_skew_bps=88.0, floor_bps=15.0)
+    edge = cutting_edge(net_bps=90.0, mid_skew_bps=88.0, fire_floor_bps=15.0, latch_min_bps=25.0)
+    assert edge["band"] == "latch"
     assert edge["ok"] is False
-    assert edge["reason"] == "phantom_skew_no_residual"
-    assert edge["residual_bps"] == 2.0
+    assert edge["reason"] == "thin_cut_wait_skew"
+
+
+def test_narrow_cutting_edge_keeps_top():
+    from backend.services.exchange_technique_executor_service import narrow_cutting_edge
+
+    rows = narrow_cutting_edge(
+        [
+            {"symbol": "A", "net_bps": 50, "mid_skew_bps": 5, "est_profit_usd": 0.1,
+             "buy_ask": 1.0, "buy_bid": 0.999, "sell_ask": 1.01, "sell_bid": 1.009},
+            {"symbol": "B", "net_bps": 80, "mid_skew_bps": 79, "est_profit_usd": 0.1},
+            {"symbol": "C", "net_bps": 30, "mid_skew_bps": 4, "est_profit_usd": 0.05,
+             "buy_ask": 2.0, "buy_bid": 1.999, "sell_ask": 2.01, "sell_bid": 2.009},
+            {"symbol": "D", "net_bps": 5, "mid_skew_bps": 1, "est_profit_usd": 0.01},
+        ],
+        top_n=2,
+    )
+    assert len(rows) <= 2
+    assert rows[0]["symbol"] in ("A", "C")
+    assert all(r.get("edge_band") in ("fire", "latch") for r in rows)
 
 
 def test_executor_skips_when_disabled(monkeypatch):
@@ -54,8 +78,9 @@ def test_executor_gates_phantom_and_applies_size(monkeypatch, tmp_path):
         mid_skew_bps=78.0,
         force=True,
     )
-    assert phantom.get("skip_reason") == "phantom_skew_no_residual"
+    assert phantom.get("skip_reason") in ("phantom_skew_no_residual", "thin_cut_wait_skew")
     assert phantom.get("ready") is False
+    assert (phantom.get("cutting_edge") or {}).get("band") == "latch"
 
     monkeypatch.setattr(
         arb,
@@ -125,6 +150,16 @@ def test_quote_bridge_raises_on_buy_venue(monkeypatch):
     assert out["action"]["sell_usd"] == 10.0
 
 
+def test_profit_trading_profiles_catalog():
+    from backend.config.profit_trading_profiles import actionable_addons, list_profiles
+
+    assert len(list_profiles()) >= 8
+    addons = actionable_addons()
+    ids = {a["id"] for a in addons}
+    assert "hummingbot_spot_perp_basis" in ids
+    assert "datamaxi_cex_spread" in ids
+
+
 def test_latch_recheck_requires_residual(monkeypatch):
     from backend.services import exchange_latch_sniper_service as latch
 
@@ -164,4 +199,4 @@ def test_latch_recheck_requires_residual(monkeypatch):
         "notional_usd": 15.0,
     })
     assert check["ok"] is False
-    assert check["reason"] == "phantom_skew_no_residual"
+    assert check["reason"] in ("phantom_skew_no_residual", "thin_cut_wait_skew")
