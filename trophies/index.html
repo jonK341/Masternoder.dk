@@ -1053,24 +1053,45 @@
             return 0;
         }
 
-        // Derive progress metrics from /api/points/all + achievements. Best-effort: only
-        // metrics we can reliably know are set; the rest stay unknown (no progress bar).
+        // Derive progress metrics from /api/points/all + achievements (best-effort proxies).
         function computeUserMetrics(points, achievementsRes, trophyCount) {
             const num = (v) => Number(v) || 0;
             const genPoints = num(points.generation_points);
+            const battlePts = num(points.battle_points);
+            const socialPts = num(points.social_points);
             const buckets = ['generation_points', 'activity_points', 'battle_points', 'quest_points',
                 'game_points', 'social_points', 'knowledge_points', 'crypto_points'];
             const totalPoints = buckets.reduce((s, k) => s + num(points[k]), 0);
             const achievements = num(points.achievements_earned) ||
                 ((achievementsRes && Array.isArray(achievementsRes.achievements))
                     ? achievementsRes.achievements.filter(a => a.unlocked || a.earned).length : 0);
+            const victories = Math.max(num(points.battle_wins), Math.floor(battlePts / 50));
             userMetrics = {
                 generation_points: genPoints,
                 total_points: totalPoints,
-                videos: Math.floor(genPoints / 25),
+                videos: Math.max(Math.floor(genPoints / 25), num(points.videos)),
+                clips: Math.max(Math.floor(genPoints / 10), num(points.clips)),
+                ai_clips: Math.max(Math.floor(genPoints / 20), num(points.ai_clips)),
+                long_videos: Math.max(Math.floor(genPoints / 100), num(points.long_videos)),
+                magic_generate: Math.max(Math.floor(genPoints / 50), num(points.magic_generate)),
+                categories: Math.max(genPoints > 0 ? Math.min(5, Math.floor(genPoints / 200) || 1) : 0, num(points.categories)),
+                images: Math.max(Math.floor(genPoints / 15), num(points.images)),
+                audio: Math.max(Math.floor(genPoints / 30), num(points.audio)),
+                templates: Math.max(Math.floor(genPoints / 40), num(points.templates)),
                 level: num(points.level),
                 trophies: num(trophyCount) || num(points.trophies_collected),
-                achievements: achievements
+                achievements: achievements,
+                battles: Math.max(num(points.battles), victories, Math.floor(battlePts / 25)),
+                victories: victories,
+                win_streak: num(points.win_streak) || num(points.battle_streak),
+                friends: Math.max(num(points.friends_count) || num(points.friends), Math.floor(socialPts / 25)),
+                followers: Math.max(num(points.followers), Math.floor(socialPts / 40)),
+                messages: Math.max(num(points.messages), Math.floor(socialPts / 5)),
+                groups: num(points.groups),
+                logins: Math.max(num(points.logins), totalPoints > 0 ? 1 : 0),
+                login_streak: num(points.login_streak) || num(points.daily_streak),
+                suggestions: num(points.suggestions),
+                helped_users: num(points.helped_users)
             };
         }
 

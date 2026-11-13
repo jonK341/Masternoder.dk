@@ -83,3 +83,36 @@ def test_trophy_level_and_quest_claim_routes_registered():
     blob = " ".join(recorded)
     assert "/api/trophies/level" in blob or callable(tr.trophy_level_api)
     assert "/api/trophies/quests/claim" in blob or callable(tr.trophy_quests_claim_api)
+
+
+def test_compute_user_metrics_covers_common_progress_keys(monkeypatch):
+    from backend.routes import trophies_routes as tr
+
+    class _FakeDB:
+        def get_all_points(self, user_id):
+            return {
+                "success": True,
+                "points": {
+                    "generation_points": 2500,
+                    "battle_points": 200,
+                    "social_points": 100,
+                    "battle_wins": 4,
+                    "level": 6,
+                    "achievements_earned": 2,
+                    "trophies_collected": 1,
+                    "systems": {},
+                },
+            }
+
+    monkeypatch.setattr(
+        "backend.services.unified_points_database.unified_points_db",
+        _FakeDB(),
+        raising=False,
+    )
+    metrics = tr.compute_user_metrics("metrics-user")
+    assert metrics["videos"] >= 1
+    assert metrics["victories"] >= 4
+    assert metrics["battles"] >= 4
+    assert metrics["friends"] >= 1
+    assert metrics["level"] == 6
+    assert "clips" in metrics and "messages" in metrics

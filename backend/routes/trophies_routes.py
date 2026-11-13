@@ -127,25 +127,91 @@ def _admin_authorized() -> bool:
 def compute_user_metrics(user_id: str) -> dict:
     """Server-side progress metrics from the unified points DB (mirrors the frontend).
 
-    Best-effort: only metrics we can reliably derive are populated.
+    Best-effort: populate as many trophy ``progress_metric`` keys as we can derive so
+    sync can auto-award easier milestone trophies without waiting on sparse event hooks.
     """
-    metrics = {'generation_points': 0, 'total_points': 0, 'videos': 0,
-               'level': 0, 'trophies': 0, 'achievements': 0}
+    metrics = {
+        'generation_points': 0, 'total_points': 0, 'videos': 0, 'clips': 0,
+        'ai_clips': 0, 'long_videos': 0, 'magic_generate': 0, 'categories': 0,
+        'images': 0, 'audio': 0, 'templates': 0,
+        'level': 0, 'trophies': 0, 'achievements': 0,
+        'battles': 0, 'victories': 0, 'win_streak': 0,
+        'friends': 0, 'followers': 0, 'messages': 0, 'groups': 0,
+        'logins': 0, 'login_streak': 0, 'suggestions': 0, 'helped_users': 0,
+    }
     try:
         from backend.services.unified_points_database import unified_points_db
         if unified_points_db and hasattr(unified_points_db, 'get_all_points'):
             res = unified_points_db.get_all_points(user_id) or {}
             points = res.get('points', res) if isinstance(res, dict) else {}
-            num = lambda k: float(points.get(k, 0) or 0)
+            systems = points.get('systems') if isinstance(points.get('systems'), dict) else {}
+
+            def num(*keys):
+                best = 0.0
+                for k in keys:
+                    try:
+                        best = max(best, float(points.get(k, 0) or 0))
+                        best = max(best, float(systems.get(k, 0) or 0))
+                    except (TypeError, ValueError):
+                        continue
+                return best
+
             gen = num('generation_points')
-            buckets = ['generation_points', 'activity_points', 'battle_points', 'quest_points',
-                       'game_points', 'social_points', 'knowledge_points', 'crypto_points']
+            buckets = [
+                'generation_points', 'activity_points', 'battle_points', 'quest_points',
+                'game_points', 'social_points', 'knowledge_points', 'crypto_points',
+            ]
+            battle_pts = num('battle_points')
+            social_pts = num('social_points')
             metrics['generation_points'] = gen
             metrics['total_points'] = sum(num(b) for b in buckets)
-            metrics['videos'] = int(gen / 25)
+            # Generation proxies (same ratios the page historically used)
+            metrics['videos'] = max(int(gen / 25), int(num('videos', 'video_count')))
+            metrics['clips'] = max(int(gen / 10), int(num('clips', 'clip_count')))
+            metrics['ai_clips'] = max(int(gen / 20), int(num('ai_clips')))
+            metrics['long_videos'] = max(int(gen / 100), int(num('long_videos')))
+            metrics['magic_generate'] = max(int(gen / 50), int(num('magic_generate')))
+            metrics['categories'] = max(min(5, int(gen / 200) or (1 if gen > 0 else 0)), int(num('categories')))
+            metrics['images'] = max(int(gen / 15), int(num('images', 'image_count')))
+            metrics['audio'] = max(int(gen / 30), int(num('audio', 'audio_count')))
+            metrics['templates'] = max(int(gen / 40), int(num('templates', 'template_uses')))
             metrics['level'] = num('level')
-            metrics['achievements'] = num('achievements_earned')
-            metrics['trophies'] = num('trophies_collected')
+            metrics['achievements'] = num('achievements_earned', 'achievements')
+            metrics['trophies'] = num('trophies_collected', 'trophies')
+            # Battle / social proxies from point buckets + explicit counters when present
+            victories = max(int(num('battle_wins', 'victories')), int(battle_pts / 50))
+            metrics['victories'] = victories
+            metrics['battles'] = max(int(num('battles', 'battle_count')), victories, int(battle_pts / 25))
+            metrics['win_streak'] = int(num('win_streak', 'battle_streak'))
+            metrics['friends'] = max(int(num('friends', 'friends_count')), int(social_pts / 25))
+            metrics['followers'] = max(int(num('followers', 'follower_count')), int(social_pts / 40))
+            metrics['messages'] = max(int(num('messages', 'message_count')), int(social_pts / 5))
+            metrics['groups'] = int(num('groups', 'group_count'))
+            metrics['logins'] = max(int(num('logins', 'login_count')), 1 if metrics['total_points'] > 0 else 0)
+            metrics['login_streak'] = int(num('login_streak', 'daily_streak'))
+            metrics['suggestions'] = int(num('suggestions'))
+            metrics['helped_users'] = int(num('helped_users'))
+    except Exception:
+        pass
+    # Live social counts when the social service is available
+    try:
+        from backend.services.social_system import social_system
+        if social_system and hasattr(social_system, 'get_social_stats'):
+            stats = social_system.get_social_stats(user_id) or {}
+            metrics['friends'] = max(int(metrics.get('friends', 0) or 0), int(stats.get('friends_count') or 0))
+            metrics['followers'] = max(int(metrics.get('followers', 0) or 0), int(stats.get('followers_count') or 0))
+            metrics['messages'] = max(int(metrics.get('messages', 0) or 0), int(stats.get('messages_count') or 0))
+            metrics['groups'] = max(int(metrics.get('groups', 0) or 0), int(stats.get('groups_count') or 0))
+    except Exception:
+        pass
+    # Live battle wins when quick-battle stats exist
+    try:
+        from backend.services.quick_battle_system import quick_battle_system
+        if quick_battle_system and hasattr(quick_battle_system, 'get_user_battle_stats'):
+            bstats = quick_battle_system.get_user_battle_stats(user_id) or {}
+            metrics['victories'] = max(int(metrics.get('victories', 0) or 0), int(bstats.get('wins') or bstats.get('victories') or 0))
+            metrics['battles'] = max(int(metrics.get('battles', 0) or 0), int(bstats.get('battles') or bstats.get('total') or 0))
+            metrics['win_streak'] = max(int(metrics.get('win_streak', 0) or 0), int(bstats.get('win_streak') or bstats.get('streak') or 0))
     except Exception:
         pass
     # Trophy count from DB unlocks (authoritative when available)
