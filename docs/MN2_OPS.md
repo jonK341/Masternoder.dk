@@ -2,6 +2,8 @@
 
 Quick reference for running and maintaining the MN2 integration on the server.
 
+**Masternode hosting (fleet / lease / renter rewards):** see [MN2_HOSTING_FLEET_DEPLOYMENT_CHECKLIST.md](MN2_HOSTING_FLEET_DEPLOYMENT_CHECKLIST.md) and run `python scripts/mn2_hosting_post_merge_gate_remote.py` for a live gate report after deploy.
+
 ---
 
 ## 1. Daemon

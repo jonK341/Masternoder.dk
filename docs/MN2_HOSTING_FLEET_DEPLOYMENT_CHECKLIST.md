@@ -2,6 +2,16 @@
 
 Use after merging the treasury / fleet / rental PR and before opening **$5/month** leases to the public.
 
+## Status (merged to `main`)
+
+| Milestone | When (CET) | Notes |
+|-----------|------------|--------|
+| PR **#147** hosting hub | 7 Nov 2026 ~22:25 | Merged to `main` |
+| PR **#148** treasury + rental + renter rewards | 7 Nov 2026 ~22:25 | Merged to `main`; deployed + uwsgi restart |
+| Public lease gate | **pending** | Live PayPal plan + fleet inventory (`inventory_available` > 0) |
+
+**Ops gate script:** `python scripts/mn2_hosting_post_merge_gate_remote.py` (JSON report: catalog, accrue dry-run, bootstrap progress).
+
 ## 1. Wallet & treasury
 
 - [ ] Confirm ops `wallet.dat` under `/var/www/html/config` holds enough MN2 for collateral (500 × 5,000 = **2.5M** plus fees).
@@ -23,8 +33,8 @@ Use after merging the treasury / fleet / rental PR and before opening **$5/month
 
 ## 3. App deploy
 
-- [ ] Deploy branch with rental API, hosting hub UI, and `mn2_masternode_hosting_rewards_service`.
-- [ ] Health: `GET /api/health` → healthy.
+- [x] Deploy `main` with rental API, hosting hub UI, and `mn2_masternode_hosting_rewards_service` (PRs #147–#148).
+- [x] Health: `GET /api/health` → healthy.
 - [ ] Hosting: `GET /api/mn2/masternode/service` → sensible `slots_available` / fleet counts.
 - [ ] Rental catalog: `GET /api/mn2/masternode/rentals/catalog` → `inventory_available` > 0 when fleet is ready.
 
@@ -36,10 +46,10 @@ Use after merging the treasury / fleet / rental PR and before opening **$5/month
 
 ## 5. Crons (renter rewards + provisioning)
 
-- [ ] `/etc/cron.d/masternoder-mn2-accrue` installed (hourly `cron/mn2_accrue_rewards.sh`) — includes  
+- [x] `/etc/cron.d/masternoder-mn2-accrue` installed (hourly `cron/mn2_accrue_rewards.sh`) — includes  
   `POST /api/mn2/masternode/accrue-renter-rewards`.
-- [ ] `/etc/cron.d/masternoder-mn2-masternode-provision` — also calls accrue after `provision-pending`.
-- [ ] `MN2_OPS_SECRET` (or `MN2_SCAN_SECRET`) set in `/var/www/html/.env`.
+- [x] `/etc/cron.d/masternoder-mn2-masternode-provision` — also calls accrue after `provision-pending`.
+- [x] `MN2_OPS_SECRET` (or `MN2_SCAN_SECRET`) set in `/var/www/html/.env`.
 
 **Manual ops test (on server):**
 
