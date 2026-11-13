@@ -38,6 +38,156 @@
             beatMs: 560,
             beatFreq: 320,
         },
+        harbour: {
+            label: 'Harbour wash',
+            status: 'Harbour wash: salt-spray drone and low dock pulse.',
+            wave: 'sine',
+            tones: [64, 128, 192, 256],
+            filter: 540,
+            noise: 0.09,
+            beatMs: 1700,
+            beatFreq: 420,
+        },
+        storm: {
+            label: 'Storm bed',
+            status: 'Storm bed: darker roar with fast lightning ticks.',
+            wave: 'sawtooth',
+            tones: [48, 96, 144],
+            filter: 480,
+            noise: 0.12,
+            beatMs: 420,
+            beatFreq: 280,
+        },
+        neon: {
+            label: 'Neon grid',
+            status: 'Neon grid: bright square-edge hum and city ticks.',
+            wave: 'square',
+            tones: [110, 220, 330],
+            filter: 1600,
+            noise: 0.05,
+            beatMs: 720,
+            beatFreq: 1320,
+        },
+        drone: {
+            label: 'Deep drone',
+            status: 'Deep drone: slow sub-bed for long takes.',
+            wave: 'sine',
+            tones: [40, 80, 120],
+            filter: 360,
+            noise: 0.035,
+            beatMs: 2600,
+            beatFreq: 180,
+        },
+        pulse: {
+            label: 'Signal pulse',
+            status: 'Signal pulse: mid-tempo radar pings.',
+            wave: 'triangle',
+            tones: [98, 196, 294],
+            filter: 980,
+            noise: 0.06,
+            beatMs: 640,
+            beatFreq: 880,
+        },
+        market: {
+            label: 'Market chatter',
+            status: 'Market chatter: brighter noise bed and quick ticks.',
+            wave: 'triangle',
+            tones: [150, 225, 300],
+            filter: 1700,
+            noise: 0.08,
+            beatMs: 380,
+            beatFreq: 1240,
+        },
+        fog: {
+            label: 'Fog pad',
+            status: 'Fog pad: soft filtered air and distant tone.',
+            wave: 'sine',
+            tones: [72, 108, 144],
+            filter: 420,
+            noise: 0.07,
+            beatMs: 2100,
+            beatFreq: 360,
+        },
+        chrome: {
+            label: 'Chrome ring',
+            status: 'Chrome ring: metallic mid tones and tight beat.',
+            wave: 'sawtooth',
+            tones: [82, 164, 246],
+            filter: 1100,
+            noise: 0.045,
+            beatMs: 880,
+            beatFreq: 990,
+        },
+        rain: {
+            label: 'Rain sheet',
+            status: 'Rain sheet: dense noise veil with soft drip tones.',
+            wave: 'sine',
+            tones: [58, 116, 174],
+            filter: 700,
+            noise: 0.14,
+            beatMs: 520,
+            beatFreq: 510,
+        },
+        ember: {
+            label: 'Ember glow',
+            status: 'Ember glow: warm low crackle and slow pulse.',
+            wave: 'sawtooth',
+            tones: [52, 78, 104],
+            filter: 500,
+            noise: 0.085,
+            beatMs: 1400,
+            beatFreq: 240,
+        },
+        signal: {
+            label: 'Green signal',
+            status: 'Green signal: control-room tones and system ticks.',
+            wave: 'square',
+            tones: [88, 176, 264],
+            filter: 1250,
+            noise: 0.05,
+            beatMs: 760,
+            beatFreq: 760,
+        },
+        ocean: {
+            label: 'Ocean swell',
+            status: 'Ocean swell: wide pad and slow swell beats.',
+            wave: 'sine',
+            tones: [44, 66, 88, 132],
+            filter: 390,
+            noise: 0.1,
+            beatMs: 1900,
+            beatFreq: 220,
+        },
+        voice_soft: {
+            label: 'Soft voice bed',
+            status: 'Soft voice bed: camgirl-soft pad under narration.',
+            wave: 'sine',
+            tones: [98, 147, 196],
+            filter: 900,
+            noise: 0.03,
+            beatMs: 1600,
+            beatFreq: 520,
+        },
+        voice_bright: {
+            label: 'Bright voice bed',
+            status: 'Bright voice bed: lighter bed for bright narration.',
+            wave: 'triangle',
+            tones: [130, 196, 262],
+            filter: 1500,
+            noise: 0.035,
+            beatMs: 900,
+            beatFreq: 980,
+        },
+        voice_deep: {
+            label: 'Deep voice bed',
+            status: 'Deep voice bed: darker pad under deep narration.',
+            wave: 'sawtooth',
+            tones: [55, 82, 110],
+            filter: 480,
+            noise: 0.05,
+            beatMs: 1400,
+            beatFreq: 260,
+        },
     };
 
     function createNoiseBuffer(ctx) {
@@ -113,6 +263,29 @@
                 this.rebuild();
                 this.playPing(900, 0.025);
             }
+        }
+
+        /** Apply a film-pipeline sound id; starts bed if already live or forceStart. */
+        applyFilmSound(mode, forceStart) {
+            if (!SOUND_MODES[mode]) return false;
+            this.mode = mode;
+            if (this.isActive) {
+                this.rebuild();
+                this.playPing(SOUND_MODES[mode].beatFreq || 900, 0.03);
+                return true;
+            }
+            if (forceStart) {
+                return this.start().then(() => {
+                    this.rebuild();
+                    this.playPing(SOUND_MODES[mode].beatFreq || 900, 0.03);
+                    return true;
+                }).catch(() => false);
+            }
+            return false;
+        }
+
+        listModes() {
+            return Object.keys(SOUND_MODES);
         }
 
         setVolume(value) {
@@ -248,6 +421,8 @@
         if (!primaryToggle && !floatToggle) return;
 
         const sound = new FrontpageSoundSystem();
+        window.MnFrontpageSound = sound;
+        window.MnSoundModes = SOUND_MODES;
         try {
             const saved = parseInt(localStorage.getItem(SOUND_VOL_KEY), 10);
             if (!Number.isNaN(saved) && saved >= 0 && saved <= 100 && volume) {
@@ -327,6 +502,13 @@
         document.querySelectorAll('.fp-smart-card, .fp-agent-card, .fp-primary-action, .fp-secondary-action').forEach((el) => {
             el.addEventListener('mouseenter', () => sound.playPing(880, 0.012));
             el.addEventListener('focus', () => sound.playPing(880, 0.012));
+        });
+        window.addEventListener('mn-film-fx-sound', (ev) => {
+            const detail = (ev && ev.detail) || {};
+            const mode = detail.sound || detail.mode;
+            if (!mode) return;
+            sound.applyFilmSound(mode, !!detail.forceStart);
+            render();
         });
         render();
     }

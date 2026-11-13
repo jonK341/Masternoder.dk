@@ -94,6 +94,8 @@ pytest-mock>=3.12.0
 flask-socketio>=5.3.6  # WebSocket support for real-time updates
 python-socketio>=5.10.0  # Socket.IO server
 eventlet>=0.33.3  # Async networking library for Socket.IO
+msgpack>=1.2.4,<2.0  # fal Krea realtime parameter encoding
+websocket-client>=1.9.2,<2.0  # Comfy and fal film canvas clients
 
 # Caching & Performance
 redis>=5.0.1  # Redis for caching and real-time data

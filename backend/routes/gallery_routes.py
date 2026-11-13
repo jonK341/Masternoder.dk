@@ -43,7 +43,7 @@ def _check_gallery_admin_token():
 
 
 def _read_video_metadata(video_dir: str, base: str) -> dict:
-    """Read title/description from pipeline.json or status.json when available."""
+    """Read title/description/quality from pipeline.json or status.json when available."""
     meta = {}
     for ext in (".pipeline.json", ".status.json"):
         p = os.path.join(video_dir, base + ext)
@@ -55,9 +55,32 @@ def _read_video_metadata(video_dir: str, base: str) -> dict:
                     meta["title"] = meta.get("title") or data.get("title")
                     meta["description"] = meta.get("description") or data.get("description") or data.get("prompt")
                     meta["prompt"] = meta.get("prompt") or data.get("prompt")
+                    if data.get("quality_score") is not None and meta.get("quality_score") is None:
+                        try:
+                            meta["quality_score"] = float(data.get("quality_score"))
+                        except (TypeError, ValueError):
+                            pass
+                    if data.get("quality_pct") is not None and meta.get("quality_pct") is None:
+                        try:
+                            meta["quality_pct"] = int(data.get("quality_pct"))
+                        except (TypeError, ValueError):
+                            pass
+                    if data.get("quality_level") and not meta.get("quality_level"):
+                        meta["quality_level"] = str(data.get("quality_level"))
+                    if data.get("category_name") and not meta.get("category_name"):
+                        meta["category_name"] = str(data.get("category_name"))
+                    if data.get("auto_gallery"):
+                        meta["auto_gallery"] = True
             except Exception:
                 pass
     return meta
+
+
+def invalidate_gallery_cache() -> None:
+    """Drop the in-memory gallery list cache (call after auto-store / cleanup)."""
+    global _gallery_list_cache, _gallery_list_cache_ts
+    _gallery_list_cache = None
+    _gallery_list_cache_ts = 0
 
 
 def _list_videos_cached():
@@ -89,9 +112,23 @@ def _list_videos():
             meta = _read_video_metadata(VIDEOS_DIR, base)
             title = (meta.get("title") or "").strip() or base.replace("-", " ").replace("_", " ").title()
             desc = (meta.get("description") or meta.get("prompt") or "").strip()
-            # Size-based score so sort-by-quality and filters behave sensibly
-            qscore = min(1.0, max(0.0, float(size) / float(max_size))) if max_size else 0.5
-            qlevel = "high" if qscore >= 0.85 else "medium" if qscore >= 0.45 else "low"
+            # Prefer pipeline quality_score (0–1) when present; else size-relative fallback.
+            if meta.get("quality_score") is not None:
+                try:
+                    qscore = min(1.0, max(0.0, float(meta.get("quality_score"))))
+                except (TypeError, ValueError):
+                    qscore = min(1.0, max(0.0, float(size) / float(max_size))) if max_size else 0.5
+            elif meta.get("quality_pct") is not None:
+                try:
+                    qscore = min(1.0, max(0.0, float(meta.get("quality_pct")) / 100.0))
+                except (TypeError, ValueError):
+                    qscore = min(1.0, max(0.0, float(size) / float(max_size))) if max_size else 0.5
+            else:
+                qscore = min(1.0, max(0.0, float(size) / float(max_size))) if max_size else 0.5
+            qlevel = (
+                str(meta.get("quality_level") or "").strip()
+                or ("high" if qscore >= 0.85 else "medium" if qscore >= 0.45 else "low")
+            )
             out.append({
                 "id": base,
                 "title": title[:120],
@@ -101,10 +138,12 @@ def _list_videos():
                 "created_at": _mtime(path),
                 "quality_level": qlevel,
                 "quality_score": round(qscore, 4),
-                "category_name": "Documentary",
+                "quality_pct": int(round(qscore * 100)),
+                "category_name": meta.get("category_name") or ("Film" if meta.get("auto_gallery") else "Documentary"),
                 "description": desc[:500],
-                "prompt": desc[:500],
+                "prompt": (meta.get("prompt") or desc)[:500],
                 "video_url": f"/api/documentary/video/{base}",
+                "auto_gallery": bool(meta.get("auto_gallery")),
             })
     # Sample entries when no files found (extra test data for context)
     if not out:

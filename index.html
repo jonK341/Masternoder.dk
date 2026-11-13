@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113s">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -30,26 +30,91 @@
     <div class="frontpage-bg" aria-hidden="true"></div>
 
     <main id="mainContent" class="fp-main">
-        <section class="fp-hero fp-hero-v20" aria-labelledby="fp-hero-title">
-            <div class="fp-hero-core" aria-hidden="true">
-                <div class="fp-core-ring fp-core-ring-a"></div>
-                <div class="fp-core-ring fp-core-ring-b"></div>
-                <div class="fp-core-pulse">2.0</div>
-                <div class="fp-core-node fp-core-node-a">AI</div>
-                <div class="fp-core-node fp-core-node-b">SND</div>
-                <div class="fp-core-node fp-core-node-c">XP</div>
-            </div>
+        <section class="fp-hero fp-hero-v20 fp-hero-film" aria-labelledby="fp-hero-title">
             <div class="fp-hero-copy">
-                <p class="fp-kicker"><span>System v2.0</span><span>Neural sound online</span></p>
+                <p class="fp-kicker">
+                    <span>System v2.0</span>
+                    <span id="fp-neural-kicker">Neural sound offline</span>
+                    <span>Live film canvas</span>
+                    <span>DramaCanvas · fal</span>
+                </p>
                 <h1 id="fp-hero-title">MasterNoder.dk</h1>
                 <p class="fp-tagline">AI · video · battle · agenter · sonic control</p>
-                <p class="fp-hero-text">Et hurtigere kontrolrum til at skabe video, spille, battle, styre agenter og mærke systemet reagere med opt-in lyd.</p>
-                <div class="fp-hero-actions" aria-label="Primære handlinger">
-                    <a class="fp-primary-action" href="/generator">Start generator</a>
-                    <a class="fp-secondary-action" href="/create-app/">Create App</a>
-                    <a class="fp-secondary-action" href="/game">Åbn game hub</a>
-                    <a class="fp-download-hero" href="#fp-download" title="Download apps — Play Store, Podcast, PWA">⬇ Download</a>
-                    <a class="fp-mn2-badge" href="/shop" title="MN2 wallet, deposit, withdraw, pay in shop">Pay with MN2</a>
+                <p class="fp-hero-text">One live film monitor — effects, sound, and Play Movie.</p>
+            </div>
+
+            <div class="fp-monitors-bay" id="fp-monitors-bay" aria-label="Film monitor">
+                <div class="fp-monitors-desk" aria-hidden="true"></div>
+                <div class="fp-monitors-grid fp-monitors-grid-single">
+                    <article class="fp-film-monitor" id="fp-film-monitor" aria-label="Film Canvas movie monitor">
+                        <div class="fp-film-bezel">
+                            <div class="fp-film-fx" aria-hidden="true"></div>
+                            <div class="fp-film-fx fp-film-fx-b" aria-hidden="true"></div>
+                            <div class="fp-film-chrome">
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-monitor-name">Film Canvas</span>
+                                <span class="fp-film-version">v2.0</span>
+                                <div class="fp-film-node-row" role="group" aria-label="System nodes">
+                                    <button type="button" class="fp-film-chip" id="fp-film-node-ai" title="AI film canvas — play movie">AI</button>
+                                    <button type="button" class="fp-film-chip" id="fp-film-node-snd" title="Toggle neural sound" aria-pressed="false">SND</button>
+                                    <a class="fp-film-chip" id="fp-film-node-xp" href="/trophies" title="XP &amp; trophies">XP</a>
+                                    <span class="fp-film-chip fp-film-chip-pulse" title="System v2.0">2.0</span>
+                                    <a class="fp-film-chip" href="/debugger#mission-control" title="Full Mission Control">OPS</a>
+                                </div>
+                                <span class="fp-film-ready" id="fp-film-ready">Checking…</span>
+                            </div>
+                            <div class="fp-film-screen">
+                                <canvas id="fp-film-canvas" width="960" height="540" aria-label="Film canvas"></canvas>
+                                <video id="fp-film-video" playsinline loop muted aria-hidden="true"></video>
+                                <div class="fp-film-overlay" id="fp-film-overlay">
+                                    <p class="fp-film-idle">Type a scene · hit Play Movie · flip SND for sound</p>
+                                </div>
+                                <button type="button" class="fp-film-play" id="fp-film-play" aria-label="Play movie">▶</button>
+                            </div>
+                            <div class="fp-film-ledge" aria-hidden="true"></div>
+                        </div>
+                        <label class="fp-film-prompt-label" for="fp-film-prompt">Scene prompt</label>
+                        <div class="fp-film-prompt-row">
+                            <button type="button" class="fp-film-face-add" id="fp-film-face-add" title="Add a person's face to the prompt" aria-label="Add face">+</button>
+                            <input id="fp-film-face-input" type="file" accept="image/*" hidden />
+                            <div class="fp-film-face-chip is-hidden" id="fp-film-face-chip" hidden>
+                                <img id="fp-film-face-preview" alt="Face reference" />
+                                <span id="fp-film-face-label">Face added</span>
+                                <button type="button" class="fp-film-face-clear" id="fp-film-face-clear" aria-label="Remove face">×</button>
+                            </div>
+                            <input id="fp-film-prompt" type="text" maxlength="500"
+                                placeholder="Neon rain over a Danish harbour control room, cinematic interactive film"
+                                autocomplete="off" />
+                            <label class="fp-film-duration" for="fp-film-duration">
+                                <span class="fp-film-duration-kicker">Length</span>
+                                <input id="fp-film-duration" type="range" min="2" max="120" step="1" value="8" />
+                                <span class="fp-film-duration-value" id="fp-film-duration-value">8s</span>
+                            </label>
+                            <button type="button" class="fp-film-go" id="fp-film-go">Play Movie</button>
+                            <a class="fp-film-download is-hidden" id="fp-film-download" hidden download>Download Movie</a>
+                            <a class="fp-film-download fp-film-download-xvid is-hidden" id="fp-film-download-xvid" hidden download>Download Xvid</a>
+                        </div>
+                        <p class="fp-film-status" id="fp-film-status" role="status" aria-live="polite"></p>
+                    </article>
+                </div>
+
+                <div class="fp-film-pay fp-film-pay-free" id="fp-film-pay" aria-label="Film monitor access">
+                    <div class="fp-film-pay-copy">
+                        <p class="fp-film-pay-banner" id="fp-film-pay-banner">Free to use</p>
+                        <p class="fp-film-pay-hint" id="fp-film-pay-hint">Free film monitor — write a scene and press Play Movie. SND turns neural sound on.</p>
+                    </div>
+                    <div class="fp-film-pay-options is-hidden" id="fp-film-pay-options" hidden role="group" aria-label="Optional pay options">
+                        <button type="button" class="fp-film-pay-mn2" id="fp-film-pay-mn2">
+                            <span class="fp-film-pay-kicker">MN2 coins</span>
+                            <span class="fp-film-pay-title" id="fp-film-pay-mn2-label">Pay with MN2</span>
+                        </button>
+                        <button type="button" class="fp-film-pay-paypal" id="fp-film-pay-paypal">
+                            <span class="fp-film-pay-kicker">PayPal</span>
+                            <span class="fp-film-pay-title" id="fp-film-pay-paypal-label">Pay with PayPal</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -340,7 +405,9 @@
     <script src="/static/js/error-manager.js?v=20261010a" defer></script>
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
-    <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
+    <script src="/static/js/camgirls-stream-voice.js?v=20261113a" defer></script>
+    <script src="/static/js/frontpage-home.js?v=20261113s" defer></script>
+    <script src="/static/js/frontpage-film-monitor.js?v=20261113x" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

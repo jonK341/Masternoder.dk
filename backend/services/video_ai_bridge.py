@@ -35,6 +35,9 @@ _STAGE_ROUTING: Dict[str, Tuple[str, bool]] = {
     "strategy": ("reason", False),
     "video_concept": ("speed", False),
     "episode_storyline": ("reason", False),
+    # Prefer free/speed providers so each clip can invent a fresh pipeline even when
+    # paid context models are out of credit.
+    "interactive_movie": ("free", False),
 }
 
 
@@ -138,15 +141,15 @@ def complete_multi_provider(
     prompt: str,
     system_prompt: Optional[str] = None,
     *,
-    max_providers: int = 3,
+    max_providers: Optional[int] = None,
     temperature: float = 0.6,
     max_tokens: int = 1024,
     timeout: Optional[int] = 30,
     extra_context: Optional[Dict[str, Any]] = None,
 ) -> List[Tuple[str, Any]]:
     """
-    Call up to max_providers configured providers for this stage. Returns
-    list of (provider_name, LLMResponse) for successful responses only.
+    Call configured providers for this stage (all of them when max_providers is None).
+    Returns list of (provider_name, LLMResponse) for successful responses only.
     Use this when use_all_ais=True to gather multiple AI outputs (e.g. pick best hook).
     """
     route = _STAGE_ROUTING.get(stage, ("default", False))
@@ -154,7 +157,10 @@ def complete_multi_provider(
     providers = _configured_providers_for_task(task_type)
     if not providers:
         return []
-    to_try = providers[: max(1, max_providers)]
+    if max_providers is None:
+        to_try = list(providers)
+    else:
+        to_try = providers[: max(1, int(max_providers))]
     results: List[Tuple[str, Any]] = []
     for pname in to_try:
         r = _llm_complete(

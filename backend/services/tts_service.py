@@ -11,27 +11,96 @@ from typing import List, Dict, Optional
 
 _DEFAULT_MODEL = "eleven_multilingual_v2"
 
+# Human-leaning defaults — lower stability + mild style avoids flat robot tone.
+_HUMAN_VOICE_SETTINGS = {
+    "stability": 0.35,
+    "similarity_boost": 0.82,
+    "style": 0.45,
+    "use_speaker_boost": True,
+}
+
 
 def _elevenlabs_key() -> Optional[str]:
     """Return ELEVENLABS_API_KEY if set."""
     return (os.environ.get("ELEVENLABS_API_KEY") or "").strip() or None
 
 
+def _humanize_script(text: str) -> str:
+    """Light copy edits so TTS breathes more like a person."""
+    script = (text or "").strip()
+    if not script:
+        return ""
+    # Prefer short spoken clauses over dense machine lines.
+    script = script.replace(" · ", ". ")
+    script = script.replace(" — ", "... ")
+    script = script.replace(" - ", "... ")
+    for stiff, warm in (
+        ("Scene 1.", "Okay — scene one."),
+        ("Scene 2.", "Next..."),
+        ("Scene 3.", "Then..."),
+        ("Keep watching", "Stay with"),
+        ("during the", "as we"),
+    ):
+        script = script.replace(stiff, warm)
+    # Soft pauses help ElevenLabs / gTTS sound less clipped.
+    if "..." not in script[:40]:
+        script = script[0].upper() + script[1:] if len(script) > 1 else script
+    return script[:5000]
+
+
+def _humanize_audio_file(src_path: str) -> Optional[str]:
+    """
+    Post-process TTS with gentle tempo + dynamics so it feels less robotic.
+    Returns a new path on success, else the original path.
+    """
+    if not src_path or not os.path.isfile(src_path):
+        return src_path
+    dest = os.path.join(
+        tempfile.gettempdir(),
+        "tts_human_%d_%d.mp3" % (int(time.time()), os.getpid()),
+    )
+    # Slightly slower + gentle dynamics; keeps pitch natural (no chipmunk).
+    cmd = [
+        "ffmpeg", "-y", "-i", src_path,
+        "-af",
+        "atempo=0.96,dynaudnorm=f=75:g=15:p=0.95,"
+        "highpass=f=80,lowpass=f=12000,volume=1.05",
+        "-c:a", "libmp3lame", "-q:a", "3",
+        dest,
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
+        if proc.returncode == 0 and os.path.isfile(dest) and os.path.getsize(dest) > 100:
+            return dest
+    except Exception:
+        pass
+    return src_path
+
+
 def _synthesize_elevenlabs(text: str, voice_id: str) -> Optional[str]:
-    """Synthesize with ElevenLabs API. Returns path to temp file or None."""
+    """Synthesize with ElevenLabs API using human voice settings."""
     key = _elevenlabs_key()
-    if not key or not text.strip():
+    spoken = _humanize_script(text)
+    if not key or not spoken:
         return None
     try:
         from elevenlabs.client import ElevenLabs
         client = ElevenLabs(api_key=key)
         out_path = os.path.join(tempfile.gettempdir(), f"tts_el_{int(time.time())}_{os.getpid()}.mp3")
-        # API: text_to_speech.convert returns bytes or stream
-        audio = client.text_to_speech.convert(
-            voice_id=voice_id,
-            text=text.strip()[:5000],
-            model_id=_DEFAULT_MODEL,
-        )
+        # Prefer convert kwargs that include voice_settings when the SDK supports them.
+        try:
+            audio = client.text_to_speech.convert(
+                voice_id=voice_id,
+                text=spoken,
+                model_id=_DEFAULT_MODEL,
+                voice_settings=_HUMAN_VOICE_SETTINGS,
+            )
+        except TypeError:
+            audio = client.text_to_speech.convert(
+                voice_id=voice_id,
+                text=spoken,
+                model_id=_DEFAULT_MODEL,
+            )
         with open(out_path, "wb") as f:
             if hasattr(audio, "__iter__") and not isinstance(audio, (bytes, bytearray)):
                 for chunk in audio:
@@ -40,7 +109,35 @@ def _synthesize_elevenlabs(text: str, voice_id: str) -> Optional[str]:
             else:
                 f.write(audio)
         if os.path.isfile(out_path) and os.path.getsize(out_path) > 100:
-            return out_path
+            return _humanize_audio_file(out_path)
+    except Exception:
+        pass
+    # Direct REST fallback with explicit human voice_settings.
+    try:
+        import json
+        import urllib.request
+        payload = json.dumps({
+            "text": spoken,
+            "model_id": _DEFAULT_MODEL,
+            "voice_settings": _HUMAN_VOICE_SETTINGS,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            "https://api.elevenlabs.io/v1/text-to-speech/%s" % voice_id,
+            data=payload,
+            headers={
+                "xi-api-key": key,
+                "Content-Type": "application/json",
+                "Accept": "audio/mpeg",
+            },
+            method="POST",
+        )
+        out_path = os.path.join(tempfile.gettempdir(), f"tts_el_rest_{int(time.time())}_{os.getpid()}.mp3")
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            data = resp.read()
+        if len(data) > 100:
+            with open(out_path, "wb") as handle:
+                handle.write(data)
+            return _humanize_audio_file(out_path)
     except Exception:
         pass
     return None
@@ -137,10 +234,14 @@ def is_available() -> bool:
 
 
 def _generate_gtts(text: str, dest_path: str, lang: str = "en", slow: bool = False) -> bool:
-    """Generate audio using Google TTS."""
+    """Generate audio using Google TTS (slightly slower = less robotic)."""
     try:
         from gtts import gTTS
-        tts = gTTS(text=text, lang=lang, slow=slow)
+        spoken = _humanize_script(text)
+        tts = gTTS(text=spoken, lang=lang, slow=True if slow else False)
+        # Prefer a mild slow pass for warmth when short enough.
+        if not slow and len(spoken) < 600:
+            tts = gTTS(text=spoken, lang=lang, slow=True)
         tts.save(dest_path)
         return os.path.isfile(dest_path) and os.path.getsize(dest_path) > 100
     except Exception:
@@ -152,9 +253,19 @@ def _generate_pyttsx3(text: str, dest_path: str) -> bool:
     try:
         import pyttsx3
         engine = pyttsx3.init()
-        engine.setProperty("rate", 145)
+        engine.setProperty("rate", 128)
         engine.setProperty("volume", 0.9)
-        engine.save_to_file(text, dest_path)
+        try:
+            voices = engine.getProperty("voices") or []
+            # Prefer a non-default voice when available (often less metallic).
+            for voice in voices:
+                name = ("%s %s" % (getattr(voice, "name", ""), getattr(voice, "id", ""))).lower()
+                if any(token in name for token in ("zira", "samantha", "female", "english")):
+                    engine.setProperty("voice", voice.id)
+                    break
+        except Exception:
+            pass
+        engine.save_to_file(_humanize_script(text), dest_path)
         engine.runAndWait()
         return os.path.isfile(dest_path) and os.path.getsize(dest_path) > 100
     except Exception:
@@ -165,7 +276,7 @@ def generate_speech(text: str, dest_path: Optional[str] = None, lang: str = "en"
     """
     Generate speech audio from text.
     Returns path to audio file (MP3 or WAV), or None on failure.
-    Order: Piper (free, local) -> gTTS -> pyttsx3.
+    Order: ElevenLabs (human settings) -> Piper -> gTTS -> pyttsx3.
     """
     if not text or not text.strip():
         return None
@@ -174,20 +285,37 @@ def generate_speech(text: str, dest_path: Optional[str] = None, lang: str = "en"
         videos_dir = os.environ.get("VIDEOS_DIR", tempfile.gettempdir())
         dest_path = os.path.join(videos_dir, f"tts_{int(time.time())}_{os.getpid()}.mp3")
 
-    text = text.strip()[:5000]
+    text = _humanize_script(text)
+
+    # 0) ElevenLabs with human voice settings when keyed
+    if _elevenlabs_key():
+        # George — warm storyteller (fallback Jessica)
+        voice_id = (
+            (os.environ.get("ELEVENLABS_VOICE_ID") or "").strip()
+            or "JBFqnCBsd6RMkjVDRZzb"
+        )
+        el_path = _synthesize_elevenlabs(text, voice_id=voice_id)
+        if el_path and os.path.isfile(el_path):
+            try:
+                import shutil
+                shutil.copyfile(el_path, dest_path)
+                return dest_path
+            except Exception:
+                return el_path
 
     # 1) Piper (free, local, no API key)
     if _generate_piper(text, dest_path, lang=lang):
-        return dest_path if os.path.isfile(dest_path) else dest_path.replace(".mp3", ".wav")
+        path = dest_path if os.path.isfile(dest_path) else dest_path.replace(".mp3", ".wav")
+        return _humanize_audio_file(path) or path
 
     # 2) gTTS
     if _generate_gtts(text, dest_path, lang=lang):
-        return dest_path
+        return _humanize_audio_file(dest_path) or dest_path
 
     # 3) pyttsx3 (offline)
     wav_path = dest_path.replace(".mp3", ".wav")
     if _generate_pyttsx3(text, wav_path):
-        return wav_path
+        return _humanize_audio_file(wav_path) or wav_path
 
     return None
 
@@ -319,14 +447,23 @@ def generate_timed_narration_for_segments(
 # Voice catalogue
 # ---------------------------------------------------------------------------
 
+# Current ElevenLabs premade IDs (Nov 2026) — storytelling / conversational first.
 VOICES = {
-    "rachel":   {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel",   "style": "neutral, clear"},
-    "domi":     {"id": "AZnzlk1XvdvUeBnXmlld", "name": "Domi",     "style": "confident, strong"},
-    "bella":    {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Bella",    "style": "warm, friendly"},
-    "adam":     {"id": "pNInz6obpgDQGcFmaJgB", "name": "Adam",     "style": "deep, authoritative"},
-    "antoni":   {"id": "ErXwobaYiN019PkySvjV", "name": "Antoni",   "style": "narrator, storytelling"},
-    "josh":     {"id": "TxGEqnHWrfWFTfGW9XjX", "name": "Josh",     "style": "young, energetic"},
-    "sam":      {"id": "yoZ06aMxZJJ28mfd3POQ", "name": "Sam",      "style": "sharp, professional"},
+    "george":   {"id": "JBFqnCBsd6RMkjVDRZzb", "name": "George",   "style": "warm storyteller"},
+    "jessica":  {"id": "cgSgspJ2msm6clMCkdW9", "name": "Jessica",  "style": "playful, bright, warm"},
+    "sarah":    {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Sarah",    "style": "mature, reassuring"},
+    "bella":    {"id": "hpp4J3VqNfWAUOO0d1Us", "name": "Bella",    "style": "professional, warm"},
+    "river":    {"id": "SAz9YHcvj6GT2YYXdXww", "name": "River",    "style": "relaxed, calm"},
+    "will":     {"id": "bIHbv24MWmeRgasZH58o", "name": "Will",     "style": "relaxed optimist"},
+    "alice":    {"id": "Xb7hH8MSUJpSbSDYk0k2", "name": "Alice",    "style": "clear educator"},
+    "matilda":  {"id": "XrExE9yKIg1WjnnlVkGX", "name": "Matilda",  "style": "knowledgeable, upbeat"},
+    # Legacy aliases map onto warm voices so old callers stay human.
+    "rachel":   {"id": "JBFqnCBsd6RMkjVDRZzb", "name": "George",   "style": "warm storyteller"},
+    "antoni":   {"id": "JBFqnCBsd6RMkjVDRZzb", "name": "George",   "style": "warm storyteller"},
+    "adam":     {"id": "cjVigY5qzO86Huf0OWal", "name": "Eric",     "style": "smooth, trustworthy"},
+    "josh":     {"id": "bIHbv24MWmeRgasZH58o", "name": "Will",     "style": "relaxed optimist"},
+    "domi":     {"id": "cgSgspJ2msm6clMCkdW9", "name": "Jessica",  "style": "playful, bright, warm"},
+    "sam":      {"id": "cjVigY5qzO86Huf0OWal", "name": "Eric",     "style": "smooth, trustworthy"},
 }
 
 
@@ -375,27 +512,29 @@ def get_status() -> dict:
     }
 
 
-def synthesize(text: str, voice_key: str = "rachel", lang: str = "en") -> Optional[str]:
+def synthesize(text: str, voice_key: str = "george", lang: str = "en") -> Optional[str]:
     """
     Synthesize speech with the best available provider.
-    voice_key: one of the keys in VOICES dict.
+    voice_key: one of the keys in VOICES dict (defaults to warm storyteller George).
     Returns path to audio file or None.
     """
-    voice_id = VOICES.get(voice_key, VOICES["rachel"])["id"]
+    key = (voice_key or "george").strip().lower()
+    voice_id = VOICES.get(key, VOICES["george"])["id"]
+    spoken = _humanize_script(text)
 
-    # 1. Try ElevenLabs
-    path = _synthesize_elevenlabs(text, voice_id=voice_id)
+    # 1. Try ElevenLabs with human settings
+    path = _synthesize_elevenlabs(spoken, voice_id=voice_id)
     if path:
         return path
 
-    # 2. Try gTTS
+    # 2. Try gTTS + humanize filter
     dest = os.path.join(tempfile.gettempdir(), f"tts_{int(time.time())}.mp3")
-    if _generate_gtts(text, dest, lang=lang):
-        return dest
+    if _generate_gtts(spoken, dest, lang=lang):
+        return _humanize_audio_file(dest) or dest
 
     # 3. Try pyttsx3
     wav = dest.replace(".mp3", ".wav")
-    if _generate_pyttsx3(text, wav):
-        return wav
+    if _generate_pyttsx3(spoken, wav):
+        return _humanize_audio_file(wav) or wav
 
     return None

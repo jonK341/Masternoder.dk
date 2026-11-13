@@ -392,6 +392,10 @@
                 <label class="gen-label" style="margin-top:12px;">Video AI mode</label>
                 <select id="clipVideoMode" class="gen-input" style="max-width:320px;margin-bottom:12px;">
                     <option value="auto">Auto (best available)</option>
+                    <option value="fal">fal.ai Krea (realtime film)</option>
+                    <option value="dramacanva">DramaCanvas (storyboard)</option>
+                    <option value="comfy">Comfy Cloud workflow</option>
+                    <option value="comfyui">ComfyUI local workflow</option>
                     <option value="avatar">Avatar (HeyGen)</option>
                     <option value="runway">Runway Gen-4</option>
                     <option value="replicate">Replicate SVD</option>
@@ -1378,7 +1382,7 @@
                     var list = d.providers;
                     var nOk = list.filter(function(p){ return p && p.available; }).length;
                     if (checkVideo) checkVideo.checked = nOk > 0;
-                    if (checkVideoStatus) checkVideoStatus.textContent = nOk + ' video-AI (Runway, Pika, HeyGen, Replicate...)';
+                    if (checkVideoStatus) checkVideoStatus.textContent = nOk + ' video-AI (fal, DramaCanvas, Runway, Comfy...)';
                 }).catch(function() {
                     if (checkVideoStatus) checkVideoStatus.textContent = 'Valgfri';
                 });
@@ -1433,7 +1437,8 @@
                 vid.forEach(function(p) {
                     if (!p || !p.name) return;
                     var ok = p.available;
-                    html += '<div class="gen-provider-chip' + (ok ? ' available' : '') + '" title="' + (p.name || '') + '">' + (p.name || '').slice(0,14) + '<div class="chip-type">Video</div></div>';
+                    var kind = (p.type === 'film_canvas') ? 'Film' : (p.type === 'image' ? 'Image' : 'Video');
+                    html += '<div class="gen-provider-chip' + (ok ? ' available' : '') + '" title="' + (p.name || '') + '">' + (p.name || '').slice(0,14) + '<div class="chip-type">' + kind + '</div></div>';
                 });
                 grid.innerHTML = html || '<span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">Ingen providers fundet</span>';
             }).catch(function() {

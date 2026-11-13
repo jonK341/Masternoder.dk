@@ -150,6 +150,22 @@ def _download_video(video_url: str, dest_dir: Optional[str]) -> Optional[str]:
 # Public API
 # ---------------------------------------------------------------------------
 
+def _image_path_to_data_uri(path: str) -> Optional[str]:
+    """Encode a local still as a data URI for Runway I2V."""
+    if not path or not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "rb") as handle:
+            raw = handle.read()
+        if len(raw) < 500:
+            return None
+        lower = path.lower()
+        mime = "image/png" if lower.endswith(".png") else "image/jpeg"
+        return "data:%s;base64,%s" % (mime, base64.b64encode(raw).decode("ascii"))
+    except Exception:
+        return None
+
+
 def generate_clip(
     prompt: str,
     duration: int = DEFAULT_DURATION,
@@ -157,6 +173,7 @@ def generate_clip(
     model: str = DEFAULT_MODEL,
     dest_dir: Optional[str] = None,
     timeout: int = MAX_POLL_SEC,
+    start_image_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Generate a video clip from a text prompt using RunwayML Gen-4 Turbo.
@@ -168,8 +185,10 @@ def generate_clip(
     if not api_key:
         return {"success": False, "error": "RUNWAYML_API_KEY not configured"}
 
-    # Step 1 — get a starting frame image
-    start_frame = _fetch_start_frame(prompt)
+    # Step 1 — prefer a continuity still from the sellable pipeline, else Pollinations.
+    start_frame = _image_path_to_data_uri(start_image_path) if start_image_path else None
+    if not start_frame:
+        start_frame = _fetch_start_frame(prompt)
     if not start_frame:
         return {"success": False, "error": "Could not generate starting frame image"}
 

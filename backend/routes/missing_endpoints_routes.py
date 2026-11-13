@@ -4808,6 +4808,33 @@ def system_overview():
             except Exception:
                 avail = False
             rows.append({"name": name, "key_env": key_env, "available": avail, "type": kind})
+        try:
+            from backend.services.film_canvas_service import (
+                is_available as film_canvas_available,
+                list_canvases,
+                select_canvas,
+            )
+            for row in list_canvases():
+                canvas_id = str(row.get("id") or "")
+                purpose = "planning" if canvas_id == "dramacanva" else "render"
+                rows.append({
+                    "name": row.get("label") or canvas_id,
+                    "id": canvas_id,
+                    "key_env": row.get("key_env"),
+                    "available": film_canvas_available(canvas_id, purpose=purpose),
+                    "type": "film_canvas",
+                    "configured": bool(row.get("key_configured")),
+                })
+            rows.append({
+                "name": "Film canvas auto-select",
+                "id": "film_canvas_auto",
+                "available": select_canvas("render") is not None,
+                "type": "film_canvas",
+                "selected_renderer": select_canvas("render"),
+                "selected_planner": select_canvas("planning"),
+            })
+        except Exception:
+            rows.append({"name": "Film canvases", "available": False, "type": "film_canvas"})
         rows.append({"name": "Pollinations.ai", "available": True, "type": "image", "note": "free"})
         return rows
 

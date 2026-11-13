@@ -12,6 +12,12 @@ from typing import Dict, Optional, Callable, Tuple, List, Any
 import textwrap
 import json
 
+from backend.services.film_canvas_service import (
+    generate_segment_clips as generate_canvas_segment_clips,
+    is_available as film_canvas_available,
+    provider_for_preference,
+)
+
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Production can override: VIDEOS_DIR=/var/www/html/vidgenerator/videos
 VIDEOS_DIR = os.environ.get('VIDEOS_DIR') or os.path.join(_BASE, 'vidgenerator', 'videos')
@@ -355,7 +361,7 @@ def _ai_enhance_segments(
                 "segment_enhance",
                 prompt_text,
                 system_prompt="Output strict JSON only. No markdown fences.",
-                max_providers=6,
+                max_providers=None,
                 temperature=0.5,
                 max_tokens=800,
                 timeout=90,
@@ -532,7 +538,7 @@ def _ai_generate_opening_hook(
                 "opening_hook",
                 prompt_text,
                 system_prompt=sys_prompt,
-                max_providers=5,
+                max_providers=None,
                 temperature=0.7,
                 max_tokens=80,
                 timeout=30,
@@ -593,7 +599,7 @@ def _ai_generate_agent_angles(
                 "agent_angles",
                 prompt_text,
                 system_prompt="You are a creative director. Output one sentence only.",
-                max_providers=4,
+                max_providers=None,
                 temperature=0.5,
                 max_tokens=100,
                 timeout=25,
@@ -1695,7 +1701,7 @@ def _plan_ai_segments(
                     "scene_plan",
                     base_prompt,
                     system_prompt="You are a video storyboard planner. Output strict JSON only.",
-                    max_providers=5,
+                    max_providers=None,
                     temperature=0.35,
                     max_tokens=1100,
                     timeout=90,
@@ -1922,7 +1928,7 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                     from backend.services.llm_service import configured_providers
                     provs = configured_providers()
                     gm = str(config.get("generation_method") or "").strip().lower()
-                    config["use_all_ais"] = len(provs) >= 2 or gm == "adaptive_ai_v2"
+                    config["use_all_ais"] = bool(provs) or gm == "adaptive_ai_v2"
                 except Exception:
                     config["use_all_ais"] = False
 
@@ -2022,7 +2028,22 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                 clip_mode = str(config.get("clip_video_mode") or "auto").strip().lower()
                 if clip_mode in ("avatar", "heygen"):
                     video_ai_pref = "heygen"
-                elif clip_mode in ("runway", "replicate", "auto", ""):
+                elif clip_mode in (
+                    "runway",
+                    "replicate",
+                    "auto",
+                    "",
+                    "canvas",
+                    "comfy",
+                    "comfyui",
+                    "comfy_local",
+                    "comfy_cloud",
+                    "fal",
+                    "fal_krea",
+                    "krea",
+                    "dramacanva",
+                    "drama",
+                ):
                     video_ai_pref = clip_mode or "auto"
                 else:
                     video_ai_pref = "auto"
@@ -2570,6 +2591,54 @@ def generate_rich_video_sync(
     if pref == "avatar":
         pref = "heygen"
     use_auto = not pref or pref == "auto"
+
+    # Film canvases: Comfy and fal render clips; DramaCanvas prepares the project.
+    canvas_preferences = (
+        "canvas",
+        "comfy",
+        "comfyui",
+        "comfy_local",
+        "comfy_cloud",
+        "fal",
+        "krea",
+        "fal_krea",
+        "dramacanva",
+        "drama",
+    )
+    if use_auto or pref in canvas_preferences:
+        try:
+            canvas_provider = provider_for_preference(pref)
+            # auto/canvas: DramaCanvas plans then fal/Comfy renders (compose).
+            # Explicit drama = planning only. Explicit fal/comfy = render only.
+            if canvas_provider is None:
+                can_run = (
+                    film_canvas_available(None, purpose="render")
+                    or film_canvas_available("dramacanva", purpose="planning")
+                )
+                canvas_purpose = "compose"
+            elif canvas_provider == "dramacanva":
+                can_run = film_canvas_available("dramacanva", purpose="planning")
+                canvas_purpose = "planning"
+            else:
+                can_run = film_canvas_available(canvas_provider, purpose="render")
+                canvas_purpose = "render"
+            if can_run:
+                if on_progress:
+                    if canvas_purpose == "compose":
+                        message = "Interactive movie: DramaCanvas plan → film canvas render..."
+                    elif canvas_purpose == "planning":
+                        message = "Preparing DramaCanvas storyboard project..."
+                    else:
+                        message = "Generating film canvas clip..."
+                    on_progress(3, message)
+                segments = generate_canvas_segment_clips(
+                    segments,
+                    max_clips=1,
+                    timeout_per_clip=180,
+                    provider=canvas_provider,
+                )
+        except Exception:
+            pass
 
     # Pre-generate AI video clips if ModelsLab is available
     if use_auto:
@@ -3447,13 +3516,13 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
         if "_llm_usage_totals" not in config:
             config["_llm_usage_totals"] = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
-        # Multi-AI: combine providers for scene plan / hooks when adaptive pipeline or 2+ providers.
+        # Multi-AI: use every configured LLM provider across planning / hooks / enhance.
         if "use_all_ais" not in config:
             try:
                 from backend.services.llm_service import configured_providers
                 provs = configured_providers()
                 gm = str(config.get("generation_method") or "").strip().lower()
-                config["use_all_ais"] = len(provs) >= 2 or gm == "adaptive_ai_v2"
+                config["use_all_ais"] = bool(provs) or gm == "adaptive_ai_v2"
             except Exception:
                 config["use_all_ais"] = False
 

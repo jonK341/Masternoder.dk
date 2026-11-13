@@ -106,6 +106,8 @@ def _video_providers():
         ("RunwayML Gen-4",  "backend.services.runwayml_service",         "RUNWAYML_API_KEY",   "video"),
         ("Pika 2.2",        "backend.services.pika_service",              "PIKA_LABS_API_KEY",  "video"),
         ("ModelsLab",       "backend.services.modelslab_video_service",   "MODELSLAB_API_KEY",  "video"),
+        ("HeyGen Avatar",   "backend.services.heygen_service",            "HEYGEN_API_KEY",     "video"),
+        ("Replicate SVD",   "backend.services.replicate_video_service",   "REPLICATE_API_TOKEN","video"),
         ("Stability AI",    "backend.services.stability_image_service",   "STABILITY_AI_API_KEY","image"),
     ]
     for name, mod_path, key_env, kind in _checks:
@@ -116,6 +118,40 @@ def _video_providers():
         except Exception:
             avail = False
         providers.append({"name": name, "key_env": key_env, "available": avail, "type": kind})
+    try:
+        from backend.services.film_canvas_service import (
+            is_available as film_canvas_available,
+            list_canvases,
+            select_canvas,
+        )
+        for row in list_canvases():
+            canvas_id = str(row.get("id") or "")
+            purpose = "planning" if canvas_id == "dramacanva" else "render"
+            providers.append({
+                "name": row.get("label") or canvas_id,
+                "id": canvas_id,
+                "key_env": row.get("key_env"),
+                "available": film_canvas_available(canvas_id, purpose=purpose),
+                "type": "film_canvas",
+                "configured": bool(row.get("key_configured")),
+                "generates_mp4": bool(row.get("generates_mp4")),
+            })
+        providers.append({
+            "name": "Film canvas auto-select",
+            "id": "film_canvas_auto",
+            "key_env": "FILM_CANVAS",
+            "available": select_canvas("render") is not None,
+            "type": "film_canvas",
+            "selected_renderer": select_canvas("render"),
+            "selected_planner": select_canvas("planning"),
+        })
+    except Exception:
+        providers.append({
+            "name": "Film canvases",
+            "key_env": "FAL_API_KEY",
+            "available": False,
+            "type": "film_canvas",
+        })
     providers.append({"name": "Pollinations.ai", "key_env": None, "available": True,
                       "type": "image", "note": "free/unlimited"})
     return providers
