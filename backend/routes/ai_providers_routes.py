@@ -129,28 +129,36 @@ def _run_interactive_movie_job(job_id: str, prompt: str) -> None:
         from backend.services.film_canvas_service import (
             compose_interactive_movie,
             is_available as film_ok,
-            select_canvas,
+            list_render_canvases,
+            pipeline_render_available,
         )
 
         can_plan = film_ok("dramacanva", purpose="planning")
-        can_render = select_canvas("render") is not None
-        if can_plan and can_render:
+        renderers = list_render_canvases()
+        if can_plan and renderers:
+            _touch_interactive_job(
+                job_id,
+                progress=18,
+                message="All LLMs + DramaCanvas planning, then pipeline render (%s)..."
+                % (", ".join(renderers[:3]) or "auto"),
+            )
+        elif renderers:
             _touch_interactive_job(
                 job_id,
                 progress=20,
-                message="DramaCanvas planning, then fal render...",
+                message="All-AI pipeline render (%s)..." % ", ".join(renderers[:3]),
             )
-        elif can_render:
+        elif pipeline_render_available():
             _touch_interactive_job(
                 job_id,
-                progress=25,
-                message="Rendering film canvas clip...",
+                progress=20,
+                message="Canvases offline — using all video AI fallbacks...",
             )
         else:
             _touch_interactive_job(
                 job_id,
                 progress=15,
-                message="Preparing DramaCanvas project...",
+                message="Preparing free still fallback movie...",
             )
 
         result = compose_interactive_movie(
@@ -556,13 +564,15 @@ def start_interactive_movie():
         return jsonify({"success": False, "error": str(exc)[:300]}), 200
 
     try:
-        from backend.services.film_canvas_service import is_available as film_ok, select_canvas
+        from backend.services.film_canvas_service import (
+            is_available as film_ok,
+            pipeline_render_available,
+        )
         can_plan = film_ok("dramacanva", purpose="planning")
-        can_render = select_canvas("render") is not None
-        if not can_plan and not can_render:
+        if not can_plan and not pipeline_render_available():
             return jsonify({
                 "success": False,
-                "error": "No film canvas is configured (need DramaCanvas and/or fal/Comfy)",
+                "error": "No film/video pipeline renderer is available",
             }), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)[:300]}), 200

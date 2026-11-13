@@ -361,7 +361,7 @@ def _ai_enhance_segments(
                 "segment_enhance",
                 prompt_text,
                 system_prompt="Output strict JSON only. No markdown fences.",
-                max_providers=6,
+                max_providers=None,
                 temperature=0.5,
                 max_tokens=800,
                 timeout=90,
@@ -538,7 +538,7 @@ def _ai_generate_opening_hook(
                 "opening_hook",
                 prompt_text,
                 system_prompt=sys_prompt,
-                max_providers=5,
+                max_providers=None,
                 temperature=0.7,
                 max_tokens=80,
                 timeout=30,
@@ -599,7 +599,7 @@ def _ai_generate_agent_angles(
                 "agent_angles",
                 prompt_text,
                 system_prompt="You are a creative director. Output one sentence only.",
-                max_providers=4,
+                max_providers=None,
                 temperature=0.5,
                 max_tokens=100,
                 timeout=25,
@@ -1701,7 +1701,7 @@ def _plan_ai_segments(
                     "scene_plan",
                     base_prompt,
                     system_prompt="You are a video storyboard planner. Output strict JSON only.",
-                    max_providers=5,
+                    max_providers=None,
                     temperature=0.35,
                     max_tokens=1100,
                     timeout=90,
@@ -1928,7 +1928,7 @@ def generate_ai_clips_background(job_id: str, config: Dict, job_store_get, job_s
                     from backend.services.llm_service import configured_providers
                     provs = configured_providers()
                     gm = str(config.get("generation_method") or "").strip().lower()
-                    config["use_all_ais"] = len(provs) >= 2 or gm == "adaptive_ai_v2"
+                    config["use_all_ais"] = bool(provs) or gm == "adaptive_ai_v2"
                 except Exception:
                     config["use_all_ais"] = False
 
@@ -3516,13 +3516,13 @@ def _run_video_generation_impl(doc_id: str, config: Dict, job_store_get, job_sto
         if "_llm_usage_totals" not in config:
             config["_llm_usage_totals"] = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
-        # Multi-AI: combine providers for scene plan / hooks when adaptive pipeline or 2+ providers.
+        # Multi-AI: use every configured LLM provider across planning / hooks / enhance.
         if "use_all_ais" not in config:
             try:
                 from backend.services.llm_service import configured_providers
                 provs = configured_providers()
                 gm = str(config.get("generation_method") or "").strip().lower()
-                config["use_all_ais"] = len(provs) >= 2 or gm == "adaptive_ai_v2"
+                config["use_all_ais"] = bool(provs) or gm == "adaptive_ai_v2"
             except Exception:
                 config["use_all_ais"] = False
 

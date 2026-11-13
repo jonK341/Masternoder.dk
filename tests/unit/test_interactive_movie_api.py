@@ -38,11 +38,12 @@ def client(monkeypatch, tmp_path):
             handle.write(b"\x00\x00\x00\x18ftypmp42" + b"0" * 64)
         return {
             "success": True,
-            "planner": "dramacanva",
+            "planner": "all_llms+dramacanva",
             "renderer": "fal_krea",
             "prompt_used": prompt,
             "local_path": path,
             "canvas": "fal_krea",
+            "llm_plan": {"success": True, "providers": ["groq"], "count": 1},
         }
 
     monkeypatch.setattr(
@@ -80,7 +81,7 @@ def test_interactive_movie_job_completes_and_serves_video(client):
 
     assert status is not None
     assert status["status"] == "completed"
-    assert status["planner"] == "dramacanva"
+    assert status["planner"] == "all_llms+dramacanva"
     assert status["renderer"] == "fal_krea"
     assert status["video_url"].endswith("/video")
 

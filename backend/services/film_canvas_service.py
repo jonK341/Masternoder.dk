@@ -50,6 +50,49 @@ try:
 except ImportError:
     websocket = None
 
+try:
+    from backend.services import heygen_service as _heygen_service
+except Exception:  # pragma: no cover - optional provider package
+    _heygen_service = None
+
+try:
+    from backend.services import modelslab_video_service as _modelslab_service
+except Exception:  # pragma: no cover
+    _modelslab_service = None
+
+try:
+    from backend.services import pika_service as _pika_service
+except Exception:  # pragma: no cover
+    _pika_service = None
+
+try:
+    from backend.services import replicate_video_service as _replicate_service
+except Exception:  # pragma: no cover
+    _replicate_service = None
+
+try:
+    from backend.services import runwayml_service as _runway_service
+except Exception:  # pragma: no cover
+    _runway_service = None
+
+try:
+    from backend.services import free_image_service as _free_image_service
+except Exception:  # pragma: no cover
+    _free_image_service = None
+
+try:
+    from backend.services import video_ai_bridge as _video_ai_bridge
+except Exception:  # pragma: no cover
+    _video_ai_bridge = None
+
+try:
+    from moviepy import ImageClip as _MoviePyImageClip
+except ImportError:
+    try:
+        from moviepy.editor import ImageClip as _MoviePyImageClip
+    except ImportError:
+        _MoviePyImageClip = None
+
 COMFY_CLOUD_HTTP = "https://cloud.comfy.org"
 COMFY_CLOUD_WS = "wss://cloud.comfy.org/ws"
 FAL_KREA_WS = "wss://fal.run/fal-ai/krea-wan-14b/ws"
@@ -65,6 +108,19 @@ _ENV_FILES = (
     os.path.join(_REPO_ROOT, ".env"),
     "/var/www/html/.env",
     "/var/www/html/vidgenerator/.env",
+)
+
+# Skip fal after exhausted-balance / locked account errors for this process.
+_fal_skip_until = 0.0
+_FAL_SKIP_SECONDS = 3600
+
+# External clip backends used when film canvases cannot render (e.g. fal balance gone).
+_EXTERNAL_CLIP_BACKENDS = (
+    "runway",
+    "modelslab",
+    "pika",
+    "replicate",
+    "heygen",
 )
 
 # id -> how to reach it. key_env None means the canvas has no secret.
@@ -243,6 +299,36 @@ def list_canvases() -> List[Dict[str, Any]]:
     return rows
 
 
+def _fal_is_skipped() -> bool:
+    return time.time() < float(_fal_skip_until or 0)
+
+
+def _note_fal_error(error: Any) -> None:
+    """Skip fal for a while when the account is locked / balance exhausted."""
+    global _fal_skip_until
+    text = str(error or "").lower()
+    markers = (
+        "exhausted balance",
+        "user is locked",
+        "top up your balance",
+        "insufficient balance",
+        "payment required",
+    )
+    if any(marker in text for marker in markers):
+        _fal_skip_until = time.time() + _FAL_SKIP_SECONDS
+
+
+def list_render_canvases() -> List[str]:
+    """Configured render canvases in preference order (skips locked fal)."""
+    forced = _env("FILM_CANVAS").strip().lower()
+    forced = PREFERENCE_ALIASES.get(forced, forced)
+    if forced in CANVASES and CANVASES[forced].get("generates_mp4"):
+        return [forced] if is_available(forced, purpose="render") else []
+
+    order = ("comfy_local", "comfy_cloud", "fal_krea")
+    return [canvas_id for canvas_id in order if is_available(canvas_id, purpose="render")]
+
+
 def select_canvas(purpose: str = "render") -> Optional[str]:
     """Select a configured canvas for rendering or planning."""
     forced = _env("FILM_CANVAS").strip().lower()
@@ -250,14 +336,9 @@ def select_canvas(purpose: str = "render") -> Optional[str]:
     if forced in CANVASES:
         return forced if is_available(forced, purpose=purpose) else None
     if purpose == "planning":
-        return "dramacanva" if _env("DRAMACANVA_API_KEY") else None
-    if _env("COMFYUI_BASE_URL") and _comfy_workflow_available():
-        return "comfy_local"
-    if _env("COMFY_CLOUD_API_KEY") and _comfy_workflow_available():
-        return "comfy_cloud"
-    if _env("FAL_API_KEY"):
-        return "fal_krea"
-    return None
+        return "dramacanva" if is_available("dramacanva", purpose="planning") else None
+    candidates = list_render_canvases()
+    return candidates[0] if candidates else None
 
 
 def _comfy_workflow_available() -> bool:
@@ -272,7 +353,9 @@ def _fal_dependencies_available() -> bool:
 def is_available(canvas_id: Optional[str] = None, *, purpose: str = "render") -> bool:
     """Whether a canvas has the credentials, files, and local clients it needs."""
     if canvas_id is None:
-        return select_canvas(purpose) is not None
+        if purpose == "planning":
+            return is_available("dramacanva", purpose="planning")
+        return bool(list_render_canvases())
     if canvas_id in ("comfy_local", "comfy_cloud"):
         if not _comfy_workflow_available():
             return False
@@ -280,8 +363,8 @@ def is_available(canvas_id: Optional[str] = None, *, purpose: str = "render") ->
             return bool(_env("COMFY_CLOUD_API_KEY"))
         return bool(_env("COMFYUI_BASE_URL"))
     if canvas_id == "fal_krea":
-        # Queue HTTP works with only the key; realtime websocket needs extra deps.
-        return bool(_env("FAL_API_KEY"))
+        # Queue HTTP works with only the key; skip when balance is exhausted.
+        return bool(_env("FAL_API_KEY")) and not _fal_is_skipped()
     if canvas_id == "dramacanva":
         return bool(_env("DRAMACANVA_API_KEY"))
     return False
@@ -915,19 +998,251 @@ def _planning_text(result: Any) -> str:
     return str(result)[:2000]
 
 
+def _generate_one_canvas_clip(
+    prompt: str,
+    canvas_id: str,
+    dest_dir: Optional[str] = None,
+    timeout: int = 180,
+) -> Dict[str, Any]:
+    if canvas_id in ("comfy_local", "comfy_cloud"):
+        return _generate_comfy_clip(prompt, dest_dir, timeout, canvas_id=canvas_id)
+    if canvas_id == "fal_krea":
+        clip = _generate_fal_clip(prompt, dest_dir, timeout)
+        if not clip.get("success"):
+            _note_fal_error(clip.get("error"))
+        return clip
+    return {"success": False, "error": "Unknown film canvas %s" % canvas_id, "canvas": canvas_id}
+
+
 def generate_clip(
     prompt: str,
     dest_dir: Optional[str] = None,
     timeout: int = 180,
     provider: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Generate a local clip with the selected renderer canvas."""
-    canvas_id = provider or select_canvas("render")
-    if canvas_id in ("comfy_local", "comfy_cloud"):
-        return _generate_comfy_clip(prompt, dest_dir, timeout, canvas_id=canvas_id)
-    if canvas_id == "fal_krea":
-        return _generate_fal_clip(prompt, dest_dir, timeout)
-    return {"success": False, "error": "No render-capable film canvas is configured"}
+    """Generate a local clip; auto mode walks every available renderer."""
+    if provider:
+        if not is_available(provider, purpose="render"):
+            return {
+                "success": False,
+                "error": "Film canvas %s is not available" % provider,
+                "canvas": provider,
+            }
+        return _generate_one_canvas_clip(prompt, provider, dest_dir, timeout)
+
+    candidates = list_render_canvases()
+    if not candidates:
+        return {"success": False, "error": "No render-capable film canvas is configured"}
+
+    errors: List[str] = []
+    for canvas_id in candidates:
+        clip = _generate_one_canvas_clip(prompt, canvas_id, dest_dir, timeout)
+        if clip.get("success") and clip.get("local_path"):
+            if errors:
+                clip["fallbacks_tried"] = list(errors)
+            return clip
+        err = clip.get("error") or ("%s failed" % canvas_id)
+        errors.append("%s: %s" % (canvas_id, err))
+    return {
+        "success": False,
+        "error": "All film canvases failed: " + " | ".join(errors)[:500],
+        "attempts": errors,
+    }
+
+
+def _external_backend_module(backend: str):
+    return {
+        "runway": _runway_service,
+        "modelslab": _modelslab_service,
+        "pika": _pika_service,
+        "replicate": _replicate_service,
+        "heygen": _heygen_service,
+    }.get(backend)
+
+
+def _external_backend_available(backend: str) -> bool:
+    mod = _external_backend_module(backend)
+    if mod is None or not hasattr(mod, "is_available"):
+        return False
+    try:
+        return bool(mod.is_available())
+    except Exception:
+        return False
+
+
+def _generate_external_clip(
+    backend: str,
+    prompt: str,
+    dest_dir: Optional[str] = None,
+    timeout: int = 120,
+) -> Dict[str, Any]:
+    """Try a non-canvas video backend (Runway / ModelsLab / Pika / …)."""
+    mod = _external_backend_module(backend)
+    if mod is None or not hasattr(mod, "generate_clip"):
+        return {"success": False, "error": "%s unavailable" % backend, "canvas": backend}
+    if not _external_backend_available(backend):
+        return {"success": False, "error": "%s not configured" % backend, "canvas": backend}
+
+    try:
+        if backend == "modelslab":
+            out = mod.generate_clip(prompt, timeout=min(timeout, 120))
+        elif backend == "runway":
+            out = mod.generate_clip(prompt, dest_dir=dest_dir, timeout=min(timeout, 120))
+        elif backend == "pika":
+            out = mod.generate_clip(prompt, dest_dir=dest_dir, timeout=min(timeout, 120))
+        elif backend == "replicate":
+            out = mod.generate_clip(prompt, dest_dir=dest_dir, timeout=min(timeout, 180))
+        elif backend == "heygen":
+            out = mod.generate_clip(prompt, dest_dir=dest_dir, timeout=min(timeout, 180))
+        else:
+            return {"success": False, "error": "Unknown backend %s" % backend, "canvas": backend}
+    except Exception as exc:
+        return {"success": False, "error": "%s: %s" % (backend, _safe_error(exc)), "canvas": backend}
+
+    if not isinstance(out, dict):
+        return {"success": False, "error": "%s returned no result" % backend, "canvas": backend}
+    out = dict(out)
+    out["canvas"] = backend
+    if out.get("success") and out.get("local_path"):
+        return out
+    # Some backends return only a remote URL — download when possible.
+    url = out.get("video_url") or out.get("url")
+    if out.get("success") and isinstance(url, str) and url.startswith("http") and not out.get("local_path"):
+        if dest_dir is None:
+            dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
+        os.makedirs(dest_dir, exist_ok=True)
+        path = os.path.join(dest_dir, "%s_%s.mp4" % (backend, uuid.uuid4().hex[:8]))
+        try:
+            _download_url_to_path(url, path, timeout=120)
+            out["local_path"] = path
+            return out
+        except Exception as exc:
+            return {
+                "success": False,
+                "error": "%s download failed: %s" % (backend, _safe_error(exc)),
+                "canvas": backend,
+            }
+    return {
+        "success": False,
+        "error": out.get("error") or ("%s failed" % backend),
+        "canvas": backend,
+    }
+
+
+def _generate_free_still_movie(
+    prompt: str,
+    dest_dir: Optional[str] = None,
+    duration: float = 6.0,
+) -> Dict[str, Any]:
+    """Last-resort MP4 from a free still so Play Movie never hard-fails on fal alone."""
+    if _free_image_service is None or not hasattr(_free_image_service, "generate_image"):
+        return {"success": False, "error": "free image unavailable", "canvas": "free_still"}
+    if _MoviePyImageClip is None:
+        return {"success": False, "error": "moviepy unavailable for free still", "canvas": "free_still"}
+
+    image = _free_image_service.generate_image(prompt[:400], dest_dir=dest_dir)
+    if not image.get("success") or not image.get("local_path"):
+        return {
+            "success": False,
+            "error": image.get("error") or "free still failed",
+            "canvas": "free_still",
+        }
+
+    if dest_dir is None:
+        dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
+    os.makedirs(dest_dir, exist_ok=True)
+    path = os.path.join(dest_dir, "free_still_%s.mp4" % uuid.uuid4().hex[:8])
+    clip = None
+    try:
+        clip = _MoviePyImageClip(image["local_path"], duration=max(3.0, float(duration)))
+        if hasattr(clip, "resized"):
+            clip = clip.resized(height=480)
+        elif hasattr(clip, "resize"):
+            clip = clip.resize(height=480)
+        write_kwargs = {"codec": "libx264", "audio": False, "fps": 12}
+        try:
+            clip.write_videofile(path, logger=None, **write_kwargs)
+        except TypeError:
+            clip.write_videofile(path, verbose=False, logger=None, **write_kwargs)
+    except Exception as exc:
+        return {
+            "success": False,
+            "error": "free still encode failed: %s" % _safe_error(exc),
+            "canvas": "free_still",
+        }
+    finally:
+        try:
+            if clip is not None:
+                clip.close()
+        except Exception:
+            pass
+
+    if not os.path.isfile(path):
+        return {"success": False, "error": "free still mp4 missing", "canvas": "free_still"}
+    return {
+        "success": True,
+        "local_path": path,
+        "canvas": "free_still",
+        "source_image": image.get("source") or "free",
+        "fps": 12,
+    }
+
+
+def pipeline_render_available() -> bool:
+    """True when interactive movie can produce an MP4 via any backend."""
+    if list_render_canvases():
+        return True
+    if any(_external_backend_available(backend) for backend in _EXTERNAL_CLIP_BACKENDS):
+        return True
+    if _free_image_service is not None and hasattr(_free_image_service, "is_available"):
+        try:
+            return bool(_free_image_service.is_available())
+        except Exception:
+            return _MoviePyImageClip is not None
+    return _MoviePyImageClip is not None
+
+
+def _plan_with_all_llms(brief: str, timeout: int = 25) -> Dict[str, Any]:
+    """Ask every configured LLM for interactive-movie direction and merge."""
+    if _video_ai_bridge is None or not hasattr(_video_ai_bridge, "complete_multi_provider"):
+        return {"success": False, "providers": [], "direction": ""}
+    system = (
+        "You write compact cinematic direction for a short interactive monitor film. "
+        "Return 2-4 concrete visual beats, camera notes, and mood. No preamble."
+    )
+    user = (
+        "Scene brief:\n%s\n\n"
+        "Write storyboard direction the renderer can follow."
+    ) % brief[:800]
+    try:
+        multi = _video_ai_bridge.complete_multi_provider(
+            "interactive_movie",
+            user,
+            system_prompt=system,
+            max_providers=None,
+            temperature=0.7,
+            max_tokens=420,
+            timeout=min(25, max(8, timeout)),
+            extra_context={"use_all_ais": True, "quality_mode": "best"},
+        )
+    except Exception as exc:
+        return {"success": False, "providers": [], "direction": "", "error": str(exc)[:200]}
+
+    parts: List[str] = []
+    providers: List[str] = []
+    for pname, response in multi or []:
+        content = (getattr(response, "content", None) or "").strip()
+        if not content:
+            continue
+        providers.append(pname)
+        parts.append("[%s]\n%s" % (pname, content[:700]))
+    direction = "\n\n".join(parts).strip()[:1800]
+    return {
+        "success": bool(direction),
+        "providers": providers,
+        "direction": direction,
+        "count": len(providers),
+    }
 
 
 def compose_interactive_movie(
@@ -938,10 +1253,10 @@ def compose_interactive_movie(
     plan: bool = True,
     render_provider: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Plan with DramaCanvas (when configured), then render with fal/Comfy.
+    """Plan with all configured LLMs + DramaCanvas, then render across the full pipeline.
 
-    This is the monitor interactive-movie path: storyboard first, realtime
-    canvas second, one local MP4 out.
+    Order: multi-LLM direction → DramaCanvas → film canvases → Runway/ModelsLab/Pika/
+    Replicate/HeyGen → free still. fal exhausted-balance errors skip fal and continue.
     """
     brief = (prompt or "").strip()
     if not brief:
@@ -949,45 +1264,110 @@ def compose_interactive_movie(
 
     planning: Optional[Dict[str, Any]] = None
     planner: Optional[str] = None
+    llm_plan: Optional[Dict[str, Any]] = None
     render_prompt = brief
-    if plan and is_available("dramacanva", purpose="planning"):
-        planner = "dramacanva"
-        # Keep planning short so the monitor can still render on time.
-        planning = prepare_film_project(brief, timeout=min(45, max(15, timeout // 4)))
-        if planning.get("success"):
-            planned = _planning_text(planning.get("result"))
-            if planned:
-                render_prompt = (brief + "\n\nStoryboard direction:\n" + planned)[:2000]
+    direction_blocks: List[str] = []
 
-    renderer = render_provider or select_canvas("render")
-    if not renderer or not is_available(renderer, purpose="render"):
-        return {
-            "success": False,
-            "error": "No render-capable film canvas is configured",
-            "planner": planner,
-            "renderer": None,
-            "planning": planning,
-            "prompt_used": render_prompt[:500],
-        }
+    if plan:
+        llm_plan = _plan_with_all_llms(brief, timeout=min(30, max(10, timeout // 6)))
+        if llm_plan.get("success") and llm_plan.get("direction"):
+            direction_blocks.append(str(llm_plan["direction"]))
+            planner = "all_llms"
+        if is_available("dramacanva", purpose="planning"):
+            # Keep DramaCanvas short so the monitor can still render on time.
+            planning = prepare_film_project(brief, timeout=min(45, max(15, timeout // 4)))
+            if planning.get("success"):
+                planned = _planning_text(planning.get("result"))
+                if planned:
+                    direction_blocks.append(planned)
+                planner = "all_llms+dramacanva" if planner == "all_llms" else "dramacanva"
+        if direction_blocks:
+            render_prompt = (
+                brief + "\n\nStoryboard direction:\n" + "\n\n".join(direction_blocks)
+            )[:2000]
 
-    render_timeout = max(90, timeout - 45) if planner else max(90, timeout)
-    clip = generate_clip(
-        render_prompt[:500],
-        dest_dir=dest_dir,
-        timeout=render_timeout,
-        provider=renderer,
-    )
+    render_timeout = max(60, timeout - 45) if planner else max(60, timeout)
+    attempts: List[str] = []
+
+    if render_provider:
+        candidates = [render_provider] if is_available(render_provider, purpose="render") else []
+    else:
+        candidates = list_render_canvases()
+
+    for canvas_id in candidates:
+        clip = _generate_one_canvas_clip(
+            render_prompt[:500],
+            canvas_id,
+            dest_dir=dest_dir,
+            timeout=render_timeout,
+        )
+        if clip.get("success") and clip.get("local_path"):
+            return {
+                "success": True,
+                "planner": planner,
+                "llm_plan": llm_plan,
+                "renderer": canvas_id,
+                "planning": planning,
+                "prompt_used": render_prompt[:500],
+                "local_path": clip.get("local_path"),
+                "canvas": clip.get("canvas") or canvas_id,
+                "frame_count": clip.get("frame_count"),
+                "fps": clip.get("fps"),
+                "attempts": attempts,
+                "error": None,
+            }
+        err = clip.get("error") or ("%s failed" % canvas_id)
+        attempts.append("%s: %s" % (canvas_id, err))
+
+    if not render_provider:
+        for backend in _EXTERNAL_CLIP_BACKENDS:
+            clip = _generate_external_clip(
+                backend,
+                render_prompt[:500],
+                dest_dir=dest_dir,
+                timeout=min(render_timeout, 150),
+            )
+            if clip.get("success") and clip.get("local_path"):
+                return {
+                    "success": True,
+                    "planner": planner,
+                    "llm_plan": llm_plan,
+                    "renderer": backend,
+                    "planning": planning,
+                    "prompt_used": render_prompt[:500],
+                    "local_path": clip.get("local_path"),
+                    "canvas": backend,
+                    "attempts": attempts,
+                    "error": None,
+                }
+            attempts.append("%s: %s" % (backend, clip.get("error") or "failed"))
+
+        free_clip = _generate_free_still_movie(render_prompt[:400], dest_dir=dest_dir)
+        if free_clip.get("success") and free_clip.get("local_path"):
+            return {
+                "success": True,
+                "planner": planner,
+                "llm_plan": llm_plan,
+                "renderer": "free_still",
+                "planning": planning,
+                "prompt_used": render_prompt[:500],
+                "local_path": free_clip.get("local_path"),
+                "canvas": "free_still",
+                "fps": free_clip.get("fps"),
+                "attempts": attempts,
+                "error": None,
+            }
+        attempts.append("free_still: %s" % (free_clip.get("error") or "failed"))
+
     return {
-        "success": bool(clip.get("success")),
+        "success": False,
+        "error": "All pipeline renderers failed: " + (" | ".join(attempts)[:500] or "none available"),
         "planner": planner,
-        "renderer": renderer,
+        "llm_plan": llm_plan,
+        "renderer": None,
         "planning": planning,
         "prompt_used": render_prompt[:500],
-        "local_path": clip.get("local_path"),
-        "canvas": clip.get("canvas") or renderer,
-        "frame_count": clip.get("frame_count"),
-        "fps": clip.get("fps"),
-        "error": None if clip.get("success") else clip.get("error"),
+        "attempts": attempts,
     }
 
 

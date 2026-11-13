@@ -20,6 +20,7 @@ SECRET = "cloud-key-should-not-leak"
 @pytest.fixture
 def clean_env(monkeypatch):
     monkeypatch.setattr(canvas, "_ENV_FILES", ())
+    canvas._fal_skip_until = 0.0
     for name in (
         "COMFY_CLOUD_API_KEY",
         "COMFYUI_BASE_URL",
@@ -405,10 +406,61 @@ def test_planning_text_reads_mcp_content_blocks():
     assert text == "Shot 1: harbour lights"
 
 
+def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, monkeypatch):
+    clean_env.setenv("FAL_API_KEY", SECRET)
+    clean_env.setenv("DRAMACANVA_API_KEY", SECRET)
+    canvas._fal_skip_until = 0.0
+    monkeypatch.setattr(canvas, "_fal_dependencies_available", lambda: True)
+    monkeypatch.setattr(
+        canvas,
+        "_plan_with_all_llms",
+        lambda brief, timeout=25: {"success": False, "providers": [], "direction": ""},
+    )
+    monkeypatch.setattr(
+        canvas,
+        "prepare_film_project",
+        lambda prompt, timeout: {"success": True, "result": {"text": "Wide shot"}},
+    )
+
+    def fake_fal(prompt, dest_dir=None, timeout=90):
+        return {
+            "success": False,
+            "error": 'fal HTTP 403: {"detail":"User is locked. Reason: Exhausted balance."}',
+            "canvas": "fal_krea",
+        }
+
+    def fake_free(prompt, dest_dir=None, duration=6.0):
+        path = os.path.join(dest_dir or str(tmp_path), "fallback.mp4")
+        with open(path, "wb") as handle:
+            handle.write(b"mp4" * 30)
+        return {"success": True, "local_path": path, "canvas": "free_still", "fps": 12}
+
+    monkeypatch.setattr(canvas, "_generate_fal_clip", fake_fal)
+    monkeypatch.setattr(canvas, "_generate_external_clip", lambda *a, **k: {"success": False, "error": "skip"})
+    monkeypatch.setattr(canvas, "_generate_free_still_movie", fake_free)
+
+    result = canvas.compose_interactive_movie("harbour", dest_dir=str(tmp_path), timeout=30)
+    assert result["success"] is True
+    assert result["renderer"] == "free_still"
+    assert canvas._fal_is_skipped() is True
+    assert canvas.is_available("fal_krea") is False
+    assert "fal_krea" not in canvas.list_render_canvases()
+
+
 def test_compose_interactive_movie_plans_then_renders(clean_env, tmp_path, monkeypatch):
     clean_env.setenv("DRAMACANVA_API_KEY", SECRET)
     clean_env.setenv("FAL_API_KEY", SECRET)
     monkeypatch.setattr(canvas, "_fal_dependencies_available", lambda: True)
+    monkeypatch.setattr(
+        canvas,
+        "_plan_with_all_llms",
+        lambda brief, timeout=25: {
+            "success": True,
+            "providers": ["groq", "openai"],
+            "direction": "Neon rim light on the console",
+            "count": 2,
+        },
+    )
     monkeypatch.setattr(
         canvas,
         "prepare_film_project",
@@ -419,20 +471,25 @@ def test_compose_interactive_movie_plans_then_renders(clean_env, tmp_path, monke
         },
     )
 
-    def fake_generate(prompt, dest_dir=None, timeout=180, provider=None):
+    def fake_one(prompt, canvas_id, dest_dir=None, timeout=180):
         path = os.path.join(dest_dir or str(tmp_path), "compose.mp4")
         with open(path, "wb") as handle:
             handle.write(b"mp4" * 40)
         return {
             "success": True,
             "local_path": path,
-            "canvas": provider,
+            "canvas": canvas_id,
             "frame_count": 4,
             "fps": 12,
             "prompt": prompt,
         }
 
-    monkeypatch.setattr(canvas, "generate_clip", fake_generate)
+    monkeypatch.setattr(canvas, "_generate_one_canvas_clip", fake_one)
+    monkeypatch.setattr(
+        canvas,
+        "_generate_external_clip",
+        lambda *a, **k: {"success": False, "error": "unused"},
+    )
     result = canvas.compose_interactive_movie(
         "harbour night",
         dest_dir=str(tmp_path),
@@ -440,9 +497,11 @@ def test_compose_interactive_movie_plans_then_renders(clean_env, tmp_path, monke
     )
 
     assert result["success"] is True
-    assert result["planner"] == "dramacanva"
+    assert result["planner"] == "all_llms+dramacanva"
     assert result["renderer"] == "fal_krea"
     assert "Keep the camera low" in result["prompt_used"]
+    assert "Neon rim light" in result["prompt_used"]
+    assert result["llm_plan"]["count"] == 2
     assert os.path.isfile(result["local_path"])
 
 
