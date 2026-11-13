@@ -491,6 +491,50 @@
         link.classList.remove('is-hidden');
     }
 
+    function compressFaceDataUrl(dataUrl, maxEdge, quality) {
+        return new Promise(function (resolve, reject) {
+            var img = new Image();
+            img.onload = function () {
+                try {
+                    var w = img.naturalWidth || img.width || 1;
+                    var h = img.naturalHeight || img.height || 1;
+                    var edge = Math.max(w, h);
+                    var scale = edge > maxEdge ? (maxEdge / edge) : 1;
+                    var cw = Math.max(1, Math.round(w * scale));
+                    var ch = Math.max(1, Math.round(h * scale));
+                    var canvas = document.createElement('canvas');
+                    canvas.width = cw;
+                    canvas.height = ch;
+                    var ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        resolve(dataUrl);
+                        return;
+                    }
+                    ctx.drawImage(img, 0, 0, cw, ch);
+                    var out = canvas.toDataURL('image/jpeg', quality);
+                    // Keep shrinking until payload fits under nginx's common 1MB body limit.
+                    var q = quality;
+                    while (out.length > 700000 && q > 0.45) {
+                        q -= 0.1;
+                        out = canvas.toDataURL('image/jpeg', q);
+                    }
+                    if (out.length > 900000 && scale > 0.4) {
+                        canvas.width = Math.max(1, Math.round(cw * 0.75));
+                        canvas.height = Math.max(1, Math.round(ch * 0.75));
+                        ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        out = canvas.toDataURL('image/jpeg', 0.65);
+                    }
+                    resolve(out);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            img.onerror = function () { reject(new Error('Could not decode face image')); };
+            img.src = dataUrl;
+        });
+    }
+
     function readFaceFile(file) {
         return new Promise(function (resolve, reject) {
             if (!file) {
@@ -501,15 +545,41 @@
                 reject(new Error('Choose an image file for the face'));
                 return;
             }
-            if (file.size > 4 * 1024 * 1024) {
-                reject(new Error('Face image must be under 4 MB'));
+            if (file.size > 8 * 1024 * 1024) {
+                reject(new Error('Face image must be under 8 MB'));
                 return;
             }
             var reader = new FileReader();
-            reader.onload = function () { resolve(String(reader.result || '')); };
+            reader.onload = function () {
+                compressFaceDataUrl(String(reader.result || ''), 768, 0.72)
+                    .then(resolve)
+                    .catch(reject);
+            };
             reader.onerror = function () { reject(new Error('Could not read face image')); };
             reader.readAsDataURL(file);
         });
+    }
+
+    async function readJsonResponse(response) {
+        var text = await response.text();
+        var trimmed = (text || '').trim();
+        if (!trimmed) {
+            throw new Error('Empty response from server (' + response.status + ')');
+        }
+        if (trimmed.charAt(0) === '<') {
+            if (response.status === 413) {
+                throw new Error('Face image is too large for the server — try a smaller photo');
+            }
+            throw new Error(
+                'Server returned a page instead of JSON (' + response.status + '). '
+                + 'Hard-refresh and try again without a huge face photo.'
+            );
+        }
+        try {
+            return JSON.parse(trimmed);
+        } catch (err) {
+            throw new Error('Invalid JSON from server (' + response.status + ')');
+        }
     }
 
     function bindFaceAndDuration() {
@@ -602,7 +672,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            var job = await start.json();
+            var job = await readJsonResponse(start);
             if (start.status === 402 || (job && job.code === 'PAYMENT_REQUIRED')) {
                 billing = job;
                 renderBilling();
@@ -623,7 +693,7 @@
             var poll = async function () {
                 try {
                     var r = await fetch('/api/film-canvas/interactive-movie/' + job.job_id);
-                    var d = await r.json();
+                    var d = await readJsonResponse(r);
                     if (!d || d.success === false) {
                         setStatus((d && d.error) || 'Job missing');
                         setBusy(false);
