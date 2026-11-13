@@ -443,7 +443,7 @@ def _build_music_bed(dest_path: str, duration_sec: float) -> Optional[str]:
 
 
 def _synthesize_narration(story: Dict[str, Any], dest_dir: str) -> Optional[str]:
-    """SoundtrackDesk voice — ElevenLabs first via synthesize()."""
+    """SoundtrackDesk voice — humanized ElevenLabs (George) first."""
     lines = []
     if story.get("story"):
         lines.append(str(story["story"])[:280])
@@ -457,12 +457,102 @@ def _synthesize_narration(story: Dict[str, Any], dest_dir: str) -> Optional[str]
     os.makedirs(dest_dir, exist_ok=True)
     try:
         from backend.services import tts_service as tts
-        path = tts.synthesize(script, voice_key="rachel")
+        # Warm storyteller — less robotic than legacy Rachel defaults.
+        path = tts.synthesize(script, voice_key="george")
         if path and os.path.isfile(path):
             return path
-        path = tts.generate_speech(script, dest_path=os.path.join(dest_dir, "narr_%s.mp3" % uuid.uuid4().hex[:8]))
+        path = tts.generate_speech(
+            script,
+            dest_path=os.path.join(dest_dir, "narr_%s.mp3" % uuid.uuid4().hex[:8]),
+        )
         if path and os.path.isfile(path):
             return path
+    except Exception:
+        return None
+    return None
+
+
+def _shop_sfx_paths() -> List[str]:
+    """Resolve shop WAV sound effects shipped with the app."""
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sound_dir = os.path.join(root, "static", "shop", "sounds")
+    names = (
+        "shop-1.wav", "shop-4.wav", "shop-10.wav", "shop-15.wav", "shop-20.wav",
+        "shop-25.wav", "shop-26.wav", "shop-27.wav", "shop-32.wav", "shop-33.wav",
+        "shop-34.wav", "shop-35.wav", "shop-36.wav",
+    )
+    paths = [os.path.join(sound_dir, name) for name in names]
+    return [p for p in paths if os.path.isfile(p)]
+
+
+def _build_sfx_bed(
+    dest_path: str,
+    duration_sec: float,
+    sfx_count: int,
+) -> Optional[str]:
+    """
+    Build one SFX bed with exactly `sfx_count` hits (same count as live FX).
+    Uses shop WAVs when present; fills remaining slots with short procedural hits.
+    """
+    seconds = max(2.0, float(duration_sec or 8.0))
+    want = max(1, int(sfx_count or 1))
+    shop = _shop_sfx_paths()
+    os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
+
+    # Build a filter that places `want` hits evenly across the timeline.
+    cmd: List[str] = ["ffmpeg", "-y"]
+    # Silent base so amix always has a full-length canvas.
+    cmd.extend([
+        "-f", "lavfi",
+        "-i", "anullsrc=r=44100:cl=stereo:d=%.3f" % seconds,
+    ])
+    parts: List[str] = ["[0:a]volume=0.0[base]"]
+    labels = ["[base]"]
+    for index in range(want):
+        delay_ms = int(round((seconds * 1000.0) * ((index + 0.5) / float(want))))
+        delay_ms = max(40, min(int(seconds * 1000) - 200, delay_ms))
+        if shop:
+            src = shop[index % len(shop)]
+            cmd.extend(["-i", src])
+            inp = index + 1
+            parts.append(
+                "[%d:a]aformat=fltp:44100:stereo,volume=0.55,"
+                "adelay=%d|%d,apad=whole_dur=%.3f[s%d]"
+                % (inp, delay_ms, delay_ms, seconds, index)
+            )
+        else:
+            # Procedural click/whoosh when shop bank is missing.
+            freq = 220 + (index % 6) * 55
+            cmd.extend([
+                "-f", "lavfi",
+                "-i",
+                "sine=frequency=%d:sample_rate=44100:duration=0.18" % freq,
+            ])
+            inp = index + 1
+            parts.append(
+                "[%d:a]aformat=fltp:44100:stereo,volume=0.35,"
+                "adelay=%d|%d,apad=whole_dur=%.3f[s%d]"
+                % (inp, delay_ms, delay_ms, seconds, index)
+            )
+        labels.append("[s%d]" % index)
+
+    parts.append(
+        "%samix=inputs=%d:duration=first:dropout_transition=0,"
+        "aformat=fltp:44100:stereo,volume=1.0[aout]"
+        % ("".join(labels), len(labels))
+    )
+    cmd.extend([
+        "-filter_complex", ";".join(parts),
+        "-map", "[aout]",
+        "-t", ("%.3f" % seconds),
+        "-c:a", "aac",
+        "-b:a", "160k",
+        dest_path,
+    ])
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=90, check=False)
+        if proc.returncode == 0 and os.path.isfile(dest_path) and os.path.getsize(dest_path) > 500:
+            return dest_path
     except Exception:
         return None
     return None
@@ -473,8 +563,9 @@ def _mux_soundtrack(
     dest_path: str,
     narration_path: Optional[str],
     bed_path: Optional[str],
+    sfx_path: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Mux narration + music under picture (creates a real audio track)."""
+    """Mux narration + music + FX-matched SFX under picture."""
     if not video_path or not os.path.isfile(video_path):
         return {"success": False, "error": "video missing for mux"}
     inputs = ["ffmpeg", "-y", "-i", video_path]
@@ -483,13 +574,18 @@ def _mux_soundtrack(
     idx = 1
     if narration_path and os.path.isfile(narration_path):
         inputs.extend(["-i", narration_path])
-        filter_parts.append("[%d:a]volume=0.95,aformat=fltp:44100:stereo[narr]" % idx)
+        filter_parts.append("[%d:a]volume=0.92,aformat=fltp:44100:stereo[narr]" % idx)
         audio_labels.append("[narr]")
         idx += 1
     if bed_path and os.path.isfile(bed_path):
         inputs.extend(["-i", bed_path])
-        filter_parts.append("[%d:a]volume=0.22,aformat=fltp:44100:stereo[bed]" % idx)
+        filter_parts.append("[%d:a]volume=0.18,aformat=fltp:44100:stereo[bed]" % idx)
         audio_labels.append("[bed]")
+        idx += 1
+    if sfx_path and os.path.isfile(sfx_path):
+        inputs.extend(["-i", sfx_path])
+        filter_parts.append("[%d:a]volume=0.70,aformat=fltp:44100:stereo[sfx]" % idx)
+        audio_labels.append("[sfx]")
         idx += 1
     if not audio_labels:
         return {"success": True, "local_path": video_path, "has_audio": False}
@@ -559,8 +655,13 @@ def evaluate_quality_gate(
     has_audio: bool,
     motion_backends: List[str],
     duration_sec: float,
+    has_narration: bool = False,
+    sfx_count: int = 0,
+    fx_count: int = 0,
+    hero_frames: int = 0,
+    beats: int = 0,
 ) -> Dict[str, Any]:
-    """QualityGate — sellable with story_gif_line / premium_local / paid I2V + audio."""
+    """QualityGate — sellable + 0–100 quality_pct (gallery auto-store when > 90)."""
     size = os.path.getsize(local_path) if local_path and os.path.isfile(local_path) else 0
     # Draft-only leftovers — NOT the story GIF line product path.
     rejected = {"draft", "acting_morph", "free_still"}
@@ -590,14 +691,162 @@ def evaluate_quality_gate(
         quality = "sellable_local"
     elif sellable:
         quality = "sellable_local"
+
+    # Percent score used for gallery auto-store (kval > 90).
+    score = 0
+    if has_audio:
+        score += 22
+    if has_narration:
+        score += 10
+    if real_motion:
+        score += 22
+    if paid:
+        score += 18
+    elif local_ok:
+        score += 16
+    if size >= 500_000:
+        score += 12
+    elif size >= 300_000:
+        score += 9
+    elif size >= 180_000:
+        score += 5
+    if float(duration_sec or 0) >= 8:
+        score += 8
+    elif float(duration_sec or 0) >= 4:
+        score += 5
+    if hero_frames >= 3:
+        score += 4
+    if beats >= 2:
+        score += 3
+    # Matching SFX to FX count is part of product quality.
+    if fx_count > 0 and sfx_count >= fx_count:
+        score += 8
+    elif sfx_count > 0:
+        score += 3
+    quality_pct = int(max(0, min(100, score)))
+
     return {
         "sellable": sellable,
         "quality": quality,
+        "quality_pct": quality_pct,
+        "quality_score": round(quality_pct / 100.0, 4),
         "reasons": reasons,
         "bytes": size,
         "motion_backends": real_motion,
         "paid_motion": paid,
         "local_motion": local_ok,
+        "sfx_count": int(sfx_count or 0),
+        "fx_count": int(fx_count or 0),
+    }
+
+
+def _auto_store_gallery(
+    *,
+    local_path: str,
+    prompt: str,
+    story: Dict[str, Any],
+    gate_result: Dict[str, Any],
+    duration_sec: float,
+    motion_backends: List[str],
+) -> Dict[str, Any]:
+    """
+    Automatically store important videos in the gallery when quality_pct > 90.
+    Copies into VIDEOS_DIR with status sidecar so /vidgenerator/gallery lists them.
+    """
+    quality_pct = int(gate_result.get("quality_pct") or 0)
+    if quality_pct <= 90:
+        return {
+            "stored": False,
+            "reason": "quality_pct_below_threshold",
+            "quality_pct": quality_pct,
+        }
+    if not local_path or not os.path.isfile(local_path):
+        return {"stored": False, "reason": "missing_video", "quality_pct": quality_pct}
+
+    try:
+        from backend.services.video_generator_service import VIDEOS_DIR as _VIDEOS_DIR
+        videos_dir = _VIDEOS_DIR or os.environ.get("VIDEOS_DIR")
+    except Exception:
+        videos_dir = os.environ.get("VIDEOS_DIR")
+    if not videos_dir:
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        videos_dir = os.path.join(root, "vidgenerator", "videos")
+    os.makedirs(videos_dir, exist_ok=True)
+
+    doc_id = "film_%s" % uuid.uuid4().hex[:12]
+    dest_mp4 = os.path.join(videos_dir, "%s.mp4" % doc_id)
+    try:
+        import shutil
+        shutil.copy2(local_path, dest_mp4)
+    except Exception as exc:
+        return {"stored": False, "reason": "copy_failed: %s" % exc, "quality_pct": quality_pct}
+
+    title = (
+        str(story.get("title") or "").strip()
+        or ("Film · %s" % (_scene_core(prompt)[:48]))
+    )[:120]
+    description = (
+        str(story.get("story") or "").strip()
+        or str(prompt or "").strip()
+    )[:500]
+    meta = {
+        "id": doc_id,
+        "title": title,
+        "description": description,
+        "prompt": (prompt or "")[:500],
+        "status": "completed",
+        "duration": int(round(float(duration_sec or 0))),
+        "quality_level": "high",
+        "quality_score": gate_result.get("quality_score"),
+        "quality_pct": quality_pct,
+        "category_name": "Film",
+        "pipeline": "sellable_v1",
+        "motion_backends": list(motion_backends or []),
+        "sellable": bool(gate_result.get("sellable")),
+        "quality": gate_result.get("quality"),
+        "auto_gallery": True,
+        "gallery_threshold": 90,
+    }
+    status_path = os.path.join(videos_dir, "%s.status.json" % doc_id)
+    try:
+        import json
+        with open(status_path, "w", encoding="utf-8") as handle:
+            json.dump(meta, handle, indent=2)
+    except Exception:
+        pass
+
+    db_ok = False
+    try:
+        from backend.services.gallery_db_service import upsert_gallery_item
+        db_ok = bool(upsert_gallery_item(
+            item_id=doc_id,
+            title=title,
+            file_path=dest_mp4,
+            status="completed",
+            duration=int(round(float(duration_sec or 0))),
+            category_name="Film",
+            description=description,
+            prompt=(prompt or "")[:500],
+            quality_level="high",
+            quality_score=float(gate_result.get("quality_score") or (quality_pct / 100.0)),
+        ))
+    except Exception:
+        db_ok = False
+
+    try:
+        from backend.routes.gallery_routes import invalidate_gallery_cache
+        invalidate_gallery_cache()
+    except Exception:
+        pass
+
+    return {
+        "stored": True,
+        "gallery_id": doc_id,
+        "gallery_path": dest_mp4,
+        "status_path": status_path,
+        "quality_pct": quality_pct,
+        "db_upsert": db_ok,
+        "title": title,
     }
 
 
@@ -767,24 +1016,49 @@ def compose_sellable_movie(
             }
         merged_path = str(merged["local_path"])
 
-    _progress(on_progress, 86, "Soundtrack desk — voice + bed (always)…")
+    _progress(on_progress, 84, "Soundtrack desk — human voice + FX-matched SFX…")
+    # FX pack drives both visual accents and the matching SFX count.
+    try:
+        from backend.services.film_canvas_service import _build_fx_pack
+        fx_pack = _build_fx_pack(
+            str(story.get("run_id") or uuid.uuid4().hex[:10]),
+            style=str(story.get("style") or ""),
+            mood=str(story.get("mood") or ""),
+        )
+    except Exception:
+        fx_pack = {
+            "effects": ["mist_01"] * 12,
+            "live_count": 12,
+            "background": "fog",
+            "sound": "harbour",
+            "intensity": 0.28,
+            "story_first": True,
+        }
+    fx_count = int(fx_pack.get("live_count") or len(fx_pack.get("effects") or []) or 12)
+    fx_pack["sfx_count"] = fx_count
+    fx_pack["sfx_bank"] = "shop"
+
     narr = _synthesize_narration(story, work)
     bed = _build_music_bed(os.path.join(work, "bed_%s.aac" % uuid.uuid4().hex[:6]), float(duration_sec))
-    # Guarantee sound every time: if TTS fails, bed alone still counts.
     if not bed:
         bed = _build_music_bed(os.path.join(work, "bed_retry_%s.aac" % uuid.uuid4().hex[:6]), float(duration_sec))
+    sfx = _build_sfx_bed(
+        os.path.join(work, "sfx_%s.aac" % uuid.uuid4().hex[:6]),
+        float(duration_sec),
+        fx_count,
+    )
+    sfx_count = fx_count if sfx else 0
     mixed = os.path.join(work, "mixed_%s.mp4" % uuid.uuid4().hex[:8])
-    mux = _mux_soundtrack(merged_path, mixed, narr, bed)
+    mux = _mux_soundtrack(merged_path, mixed, narr, bed, sfx_path=sfx)
     has_audio = bool(mux.get("has_audio"))
     pictured = str(mux.get("local_path") or merged_path)
     if not has_audio and bed and os.path.isfile(bed):
-        # Last-chance remux with bed only.
         retry_path = os.path.join(work, "mixed_retry_%s.mp4" % uuid.uuid4().hex[:8])
-        mux2 = _mux_soundtrack(merged_path, retry_path, None, bed)
+        mux2 = _mux_soundtrack(merged_path, retry_path, None, bed, sfx_path=sfx)
         if mux2.get("has_audio") and mux2.get("local_path"):
             has_audio = True
             pictured = str(mux2["local_path"])
-            attempts.append("audio_retry_bed_only")
+            attempts.append("audio_retry_bed_sfx")
 
     _progress(on_progress, 93, "Delivery master — grade + package…")
     final_path = os.path.join(dest_dir, "sellable_%s.mp4" % uuid.uuid4().hex[:8])
@@ -805,12 +1079,38 @@ def compose_sellable_movie(
         has_audio=has_audio,
         motion_backends=motion_backends,
         duration_sec=float(duration_sec),
+        has_narration=bool(narr and os.path.isfile(narr)),
+        sfx_count=sfx_count,
+        fx_count=fx_count,
+        hero_frames=len(hero_paths),
+        beats=len(beats),
     )
+
+    _progress(on_progress, 97, "Gallery check — auto-store if quality > 90%…")
+    gallery = _auto_store_gallery(
+        local_path=final_path,
+        prompt=brief,
+        story=story,
+        gate_result=gate_result,
+        duration_sec=float(duration_sec),
+        motion_backends=motion_backends,
+    )
+    if gallery.get("stored"):
+        attempts.append("gallery_auto_store:%s" % gallery.get("gallery_id"))
 
     _progress(
         on_progress,
         100,
-        "Sellable pipeline complete" if gate_result["sellable"] else "Draft pipeline complete",
+        (
+            "Sellable pipeline complete"
+            if gate_result["sellable"]
+            else "Draft pipeline complete"
+        )
+        + (
+            (" · gallery %s%%" % gate_result.get("quality_pct"))
+            if gallery.get("stored")
+            else (" · kval %s%%" % gate_result.get("quality_pct"))
+        ),
     )
     return {
         "success": True,
@@ -826,8 +1126,16 @@ def compose_sellable_movie(
         ),
         "sellable": gate_result["sellable"],
         "quality": gate_result["quality"],
+        "quality_pct": gate_result.get("quality_pct"),
+        "quality_score": gate_result.get("quality_score"),
         "quality_gate": gate_result,
         "has_audio": has_audio,
+        "has_narration": bool(narr),
+        "sfx_count": sfx_count,
+        "fx_count": fx_count,
+        "fx_pack": fx_pack,
+        "gallery": gallery,
+        "gallery_id": gallery.get("gallery_id") if gallery.get("stored") else None,
         "fps": 24,
         "duration_sec": duration_sec,
         "beats": len(beats),
@@ -847,4 +1155,5 @@ def compose_sellable_movie(
         "provider_gate": gate.status(),
         "image_providers": list(gate.ACTIVE_IMAGE_PROVIDERS),
         "motion_providers": list(gate.ACTIVE_MOTION_PROVIDERS),
+        "voice_profile": "george",
     }

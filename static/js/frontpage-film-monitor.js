@@ -375,6 +375,35 @@
         } catch (_) {}
     }
 
+    function playShopSfxBurst(count) {
+        // Fire as many one-shots as live FX (equal SFX ↔ FX).
+        ensureShopSfx();
+        var want = Math.max(1, Math.min(LIVE_FX_COUNT, Number(count) || LIVE_FX_COUNT));
+        if (activeFx && activeFx.live_count) {
+            want = Math.max(want, Math.min(LIVE_FX_COUNT, Number(activeFx.live_count) || want));
+        }
+        if (activeFx && activeFx.sfx_count) {
+            want = Math.max(want, Math.min(48, Number(activeFx.sfx_count) || want));
+        }
+        for (var i = 0; i < want; i++) {
+            (function (delay, idx) {
+                setTimeout(function () {
+                    if (!shopSfx.length) return;
+                    var clip = shopSfx[(shopSfxIndex + idx) % shopSfx.length];
+                    try {
+                        var node = clip.cloneNode(true);
+                        node.volume = 0.16 + (idx % 5) * 0.03;
+                        var p = node.play();
+                        if (p && typeof p.catch === 'function') p.catch(function () {});
+                    } catch (_) {
+                        playShopSfx();
+                    }
+                }, delay);
+            })(i * 180, i);
+        }
+        shopSfxIndex += want;
+    }
+
     function ensureFilmVoice(profileId) {
         var voice = window.MNCamgirlsStreamVoice;
         if (!voice) return null;
@@ -1114,9 +1143,16 @@
                         } else {
                             applyFxPack(activeFx || pickLocalFxPack(), { playing: true, forceSound: true });
                         }
-                        playShopSfx();
-                        var voiceId = (d.fx_pack && d.fx_pack.voice_profile)
-                            || (activeFx && activeFx.voice_profile);
+                        var liveN = (d.fx_count)
+                            || (d.fx_pack && d.fx_pack.live_count)
+                            || (d.fx_pack && d.fx_pack.effects && d.fx_pack.effects.length)
+                            || LIVE_FX_COUNT;
+                        var sfxN = (d.sfx_count) || (d.fx_pack && d.fx_pack.sfx_count) || liveN;
+                        playShopSfxBurst(sfxN);
+                        var voiceId = (d.voice_profile)
+                            || (d.fx_pack && d.fx_pack.voice_profile)
+                            || (activeFx && activeFx.voice_profile)
+                            || 'george';
                         var narrate = [];
                         if (d.story) narrate.push(String(d.story).slice(0, 280));
                         if (Array.isArray(d.narration) && d.narration.length) {
@@ -1124,7 +1160,10 @@
                                 narrate.push(String(line).slice(0, 180));
                             });
                         }
-                        speakFilmLines(narrate, voiceId);
+                        // Video already carries humanized narration; keep browser voice soft backup.
+                        if (!d.has_narration) {
+                            speakFilmLines(narrate, voiceId);
+                        }
                         // Prefer the video element so the prompt picture stays sharp;
                         // canvas keeps only soft accents underneath when opacity allows.
                         video.style.opacity = '1';
@@ -1135,23 +1174,22 @@
                         video.src = d.video_url + '?t=' + Date.now();
                         video.onloadeddata = function () {
                             video.play().catch(function () {});
-                            playShopSfx();
+                            playShopSfxBurst(Math.min(4, sfxN));
                         };
                         video.ontimeupdate = function () {
-                            // Occasional shop/cam-style one-shots while the strip plays.
+                            // Keep SFX cadence aligned with FX count across the clip.
                             if (!video._mnLastSfx) video._mnLastSfx = 0;
-                            if (video.currentTime - video._mnLastSfx > 2.4) {
+                            var step = Math.max(1.1, (Number(d.duration_sec) || 8) / Math.max(1, sfxN));
+                            if (video.currentTime - video._mnLastSfx > step) {
                                 video._mnLastSfx = video.currentTime;
                                 playShopSfx();
                             }
                         };
                         setDownloadLink(d.download_url || d.video_url, d.xvid_url);
-                        var liveN = (d.fx_pack && d.fx_pack.live_count)
-                            || (d.fx_pack && d.fx_pack.effects && d.fx_pack.effects.length)
-                            || LIVE_FX_COUNT;
                         setStatus(
                             (d.sellable ? 'Sellable movie ready' : 'Draft movie ready')
                             + (d.quality ? (' · ' + d.quality) : '')
+                            + (d.quality_pct != null ? (' · kval ' + d.quality_pct + '%') : '')
                             + (d.has_audio ? ' · audio' : '')
                             + (d.duration_sec ? (' · ' + d.duration_sec + 's') : '')
                             + (d.beats ? (' · ' + d.beats + ' scenes') : '')
@@ -1160,6 +1198,8 @@
                                 : '')
                             + (d.pipeline_style ? (' · ' + d.pipeline_style) : '')
                             + (liveN ? (' · ' + liveN + ' fx') : '')
+                            + (sfxN ? (' · ' + sfxN + ' sfx') : '')
+                            + (d.gallery_id ? (' · gallery:' + String(d.gallery_id).slice(-6)) : '')
                             + (d.story ? ' · story on' : '')
                             + (d.pipeline_run_id ? (' · pipe:' + String(d.pipeline_run_id).slice(-6)) : '')
                             + (d.pipeline ? (' · ' + d.pipeline) : '')

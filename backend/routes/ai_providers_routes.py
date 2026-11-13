@@ -259,9 +259,17 @@ def _run_interactive_movie_job(
                 narration=result.get("narration"),
                 sellable=sellable,
                 quality=result.get("quality"),
+                quality_pct=result.get("quality_pct"),
+                quality_score=result.get("quality_score"),
                 pipeline=result.get("pipeline") or "sellable_v1",
                 has_audio=bool(result.get("has_audio")),
+                has_narration=bool(result.get("has_narration")),
+                sfx_count=result.get("sfx_count"),
+                fx_count=result.get("fx_count"),
                 motion_backends=result.get("motion_backends"),
+                gallery=result.get("gallery"),
+                gallery_id=result.get("gallery_id"),
+                voice_profile=result.get("voice_profile") or "george",
                 error=None,
             )
         else:

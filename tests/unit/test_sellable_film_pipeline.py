@@ -58,9 +58,61 @@ def test_quality_gate_requires_audio_and_real_motion(tmp_path):
         has_audio=True,
         motion_backends=["story_gif_line"],
         duration_sec=5,
+        has_narration=True,
+        sfx_count=12,
+        fx_count=12,
+        hero_frames=6,
+        beats=2,
     )
     assert gif_line["sellable"] is True
     assert gif_line["quality"] == "sellable_local"
+    assert gif_line["quality_pct"] > 90
+    assert gif_line["sfx_count"] == 12
+    assert gif_line["fx_count"] == 12
+
+
+def test_auto_store_gallery_requires_quality_over_90(tmp_path, monkeypatch):
+    src = tmp_path / "clip.mp4"
+    src.write_bytes(b"0" * 250_000)
+    videos = tmp_path / "videos"
+    videos.mkdir()
+    monkeypatch.setenv("VIDEOS_DIR", str(videos))
+
+    class _VG:
+        VIDEOS_DIR = str(videos)
+
+    import sys
+    monkeypatch.setitem(sys.modules, "backend.services.video_generator_service", _VG)
+
+    gate_low = {
+        "sellable": True,
+        "quality": "sellable_local",
+        "quality_pct": 88,
+        "quality_score": 0.88,
+    }
+    low = sell._auto_store_gallery(
+        local_path=str(src),
+        prompt="harbour",
+        story={"title": "Harbour", "story": "A short harbour tale"},
+        gate_result=gate_low,
+        duration_sec=8,
+        motion_backends=["story_gif_line"],
+    )
+    assert low["stored"] is False
+
+    gate_hi = dict(gate_low, quality_pct=93, quality_score=0.93)
+    hi = sell._auto_store_gallery(
+        local_path=str(src),
+        prompt="harbour",
+        story={"title": "Harbour Dawn", "story": "Sailors push off at sunrise"},
+        gate_result=gate_hi,
+        duration_sec=8,
+        motion_backends=["story_gif_line"],
+    )
+    assert hi["stored"] is True
+    assert hi["gallery_id"]
+    assert os.path.isfile(hi["gallery_path"])
+    assert os.path.isfile(hi["status_path"])
 
 
 def test_provider_gate_blocks_credit_wallets():
@@ -101,10 +153,22 @@ def test_compose_sellable_movie_uses_motion_and_audio(tmp_path, monkeypatch):
             handle.write(b"aac" + b"b" * 4000)
         return dest_path
 
-    def fake_mux(video_path, dest_path, narration_path, bed_path):
+    def fake_mux(video_path, dest_path, narration_path, bed_path, sfx_path=None):
         with open(dest_path, "wb") as handle:
             handle.write(b"mp4" * 100_000)
         return {"success": True, "local_path": dest_path, "has_audio": True}
+
+    def fake_sfx(dest_path, duration_sec, sfx_count):
+        with open(dest_path, "wb") as handle:
+            handle.write(b"aac" + b"s" * 4000)
+        return dest_path
+
+    def fake_gallery(**kwargs):
+        return {
+            "stored": True,
+            "gallery_id": "film_test123",
+            "quality_pct": 93,
+        }
 
     def fake_grade(video_path, dest_path):
         with open(dest_path, "wb") as handle:
@@ -128,8 +192,10 @@ def test_compose_sellable_movie_uses_motion_and_audio(tmp_path, monkeypatch):
     monkeypatch.setattr(sell, "_render_motion_clip", fake_motion)
     monkeypatch.setattr(sell, "_synthesize_narration", fake_narr)
     monkeypatch.setattr(sell, "_build_music_bed", fake_bed)
+    monkeypatch.setattr(sell, "_build_sfx_bed", fake_sfx)
     monkeypatch.setattr(sell, "_mux_soundtrack", fake_mux)
     monkeypatch.setattr(sell, "_normalize_delivery", fake_grade)
+    monkeypatch.setattr(sell, "_auto_store_gallery", fake_gallery)
 
     import backend.services.film_canvas_service as canvas
     monkeypatch.setattr(canvas, "_ffmpeg_concat_movies", fake_concat)
@@ -148,6 +214,10 @@ def test_compose_sellable_movie_uses_motion_and_audio(tmp_path, monkeypatch):
     assert out["has_audio"] is True
     assert out["motion_backends"] == ["story_gif_line"]
     assert out["quality"] == "sellable_local"
+    assert out["sfx_count"] == out["fx_count"]
+    assert out["fx_count"] >= 1
+    assert out.get("gallery_id") == "film_test123"
+    assert out.get("voice_profile") == "george"
     assert os.path.isfile(out["local_path"])
 
 
