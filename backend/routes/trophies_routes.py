@@ -457,10 +457,28 @@ def sync_trophies_api():
     trophies that have met their target (and are currently available), and returns the
     newly unlocked trophies plus the current metrics. Idempotent: re-running awards nothing
     new. Replaces client-side guessing about what should be unlocked.
+
+    Optional JSON body ``client_metrics`` merges soft theme/page counters (whitelisted)
+    so easy theme trophies can unlock from simple UI actions.
     """
     try:
         user_id = _resolve_uid()
         metrics = compute_user_metrics(user_id)
+        data = request.get_json(silent=True) or {}
+        client_metrics = data.get('client_metrics') if isinstance(data, dict) else None
+        if isinstance(client_metrics, dict):
+            allowed = {
+                'trophy_page_visits', 'theme_gold', 'theme_ww2',
+                'theme_switches', 'theme_trophies', 'theme_pages',
+            }
+            for key, raw in client_metrics.items():
+                if key not in allowed:
+                    continue
+                try:
+                    val = float(raw or 0)
+                except (TypeError, ValueError):
+                    continue
+                metrics[key] = max(float(metrics.get(key, 0) or 0), val)
         # Currently unlocked ids (DB)
         already = set()
         try:
@@ -470,18 +488,41 @@ def sync_trophies_api():
             pass
         defs = _definitions_by_id()
         newly = []
-        for tid in eligible_trophy_ids(metrics, already):
-            reward = defs.get(tid, {}).get('reward')
-            recorded = False
-            try:
-                from backend.services.trophies_db_service import award_trophy
-                recorded = award_trophy(user_id, tid, reward=reward)
-            except Exception:
-                pass
-            if recorded:
-                newly.append({'id': tid, 'name': defs.get(tid, {}).get('name', tid), 'reward': reward,
-                              'rarity': defs.get(tid, {}).get('rarity', 'common'),
-                              'icon': defs.get(tid, {}).get('icon', '🏆')})
+
+        def _award_eligible(owned):
+            added = []
+            for tid in eligible_trophy_ids(metrics, owned):
+                defn = defs.get(tid, {}) or {}
+                reward = defn.get('reward')
+                recorded = False
+                try:
+                    from backend.services.trophies_db_service import award_trophy
+                    recorded = award_trophy(user_id, tid, reward=reward)
+                except Exception:
+                    pass
+                if recorded:
+                    owned.add(tid)
+                    entry = {
+                        'id': tid,
+                        'name': defn.get('name', tid),
+                        'reward': reward,
+                        'rarity': defn.get('rarity', 'common'),
+                        'icon': defn.get('icon', '🏆'),
+                        'category': defn.get('category'),
+                    }
+                    try:
+                        from backend.services.trophy_level_service import trophy_unlock_mn2_amount
+                        entry['mn2_reward'] = trophy_unlock_mn2_amount(user_id, defn)
+                    except Exception:
+                        entry['mn2_reward'] = float(defn.get('mn2_reward') or 0)
+                    added.append(entry)
+            return added
+
+        newly.extend(_award_eligible(already))
+        # Theme curator depends on other theme unlocks — refresh count and pass again.
+        theme_owned = sum(1 for tid in already if (defs.get(tid) or {}).get('category') == 'theme')
+        metrics['theme_trophies'] = max(float(metrics.get('theme_trophies', 0) or 0), float(theme_owned))
+        newly.extend(_award_eligible(already))
         return jsonify({
             'success': True,
             'user_id': user_id,
@@ -528,6 +569,14 @@ def claim_trophy_api():
             recorded = award_trophy(user_id, trophy_id, reward=reward)
         except Exception:
             pass
+        mn2_info = {'mn2_reward': 0, 'credited_mn2': False, 'crypto_currency': 'MN2'}
+        try:
+            from backend.services.trophy_level_service import trophy_unlock_mn2_amount
+            # MN2 is credited inside award_trophy on first unlock; report the amount for UI.
+            mn2_info['mn2_reward'] = trophy_unlock_mn2_amount(user_id, defn)
+            mn2_info['credited_mn2'] = bool(recorded and not already_owned and mn2_info['mn2_reward'] > 0)
+        except Exception:
+            mn2_info['mn2_reward'] = float(defn.get('mn2_reward') or 0)
         return jsonify({
             'success': True,
             'user_id': user_id,
@@ -535,6 +584,7 @@ def claim_trophy_api():
             'reward': reward,
             'recorded': recorded,
             'already_owned': already_owned,
+            **mn2_info,
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
