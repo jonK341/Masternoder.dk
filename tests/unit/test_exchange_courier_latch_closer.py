@@ -21,15 +21,15 @@ def test_courier_tick_raises_on_poor(monkeypatch, tmp_path):
     from backend.services import exchange_courier_arm_service as courier
 
     monkeypatch.setenv("COURIER_ARM_ENABLED", "1")
+    monkeypatch.setenv("COURIER_BN_GRID_RESEED", "0")
+    monkeypatch.setenv("BINANCE_EARN_UNLOCK", "0")
     monkeypatch.setattr(courier, "_STATE_PATH", str(tmp_path / "state.json"))
     monkeypatch.setattr(courier, "_LEDGER_PATH", str(tmp_path / "ledger.jsonl"))
+    monkeypatch.setattr(courier, "_hot_sell_on_binance", lambda: None)
     monkeypatch.setattr(
         courier,
-        "_quote_snaps",
-        lambda: [
-            {"venue": "binance", "quote": "USDC", "free": 1.0},
-            {"venue": "nonkyc", "quote": "USDT", "free": 20.0},
-        ],
+        "sync_binance",
+        lambda **kw: {"did_work": False, "free_after": 1.0, "earn_unlock": None, "seed": None, "grid_reseed": None},
     )
     monkeypatch.setattr(
         "backend.services.exchange_spread_hunter_arm_service._raise_quote_on_buy_venue",
@@ -49,7 +49,6 @@ def test_courier_tick_raises_on_poor(monkeypatch, tmp_path):
         "backend.services.exchange_profit_head_service.get_prefund_hint",
         lambda: {"symbol": "ADA"},
     )
-    # After raise, pretend still slightly skewed so hint path is exercised once.
     calls = {"n": 0}
 
     def snaps():
@@ -68,6 +67,43 @@ def test_courier_tick_raises_on_poor(monkeypatch, tmp_path):
     out = courier.run_courier_tick(force=True)
     assert out["moved"] is True
     assert out["action"]["sell_usd"] == 8.0
+
+
+def test_courier_syncs_binance_even_when_balanced(monkeypatch, tmp_path):
+    from backend.services import exchange_courier_arm_service as courier
+
+    monkeypatch.setenv("COURIER_ARM_ENABLED", "1")
+    monkeypatch.setattr(courier, "_STATE_PATH", str(tmp_path / "state.json"))
+    monkeypatch.setattr(courier, "_LEDGER_PATH", str(tmp_path / "ledger.jsonl"))
+    monkeypatch.setattr(courier, "_hot_sell_on_binance", lambda: "OP")
+    monkeypatch.setattr(
+        courier,
+        "sync_binance",
+        lambda **kw: {
+            "did_work": True,
+            "free_after": 40.0,
+            "earn_unlock": {"success": True, "freed_usd_est": 15.0},
+            "seed": {"success": True, "symbol": "OP", "buy_usd": 12.0},
+            "grid_reseed": {"success": True},
+        },
+    )
+    monkeypatch.setattr(
+        courier,
+        "_quote_snaps",
+        lambda: [
+            {"venue": "binance", "quote": "USDC", "free": 40.0},
+            {"venue": "nonkyc", "quote": "USDT", "free": 35.0},
+        ],
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_profit_head_service.set_courier_hint",
+        lambda hint: None,
+    )
+    out = courier.run_courier_tick(force=True)
+    assert out["moved"] is False
+    assert out["skip_reason"] == "bn_synced"
+    assert "earn=" in out["summary"] or "seed=OP" in out["summary"]
+    assert out["binance_sync"]["did_work"] is True
 
 
 def test_latch_arms_and_fires_when_skew_clears(monkeypatch, tmp_path):

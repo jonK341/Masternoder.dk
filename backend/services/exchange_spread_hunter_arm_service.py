@@ -893,7 +893,24 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         and float(o.get("est_profit_usd") or 0) >= min_profit
         and o.get("profitable")
     ]
+    # Keep Binance live: when BN quote is funded, prefer buy-on-binance routes.
+    bn_free = 0.0
+    try:
+        bn_free = float(_venue_free_quote("binance").get("free") or 0)
+    except Exception:
+        bn_free = 0.0
+    prefer_bn_buy = bn_free >= _cfg_float("SPREAD_HUNTER_BN_BUY_FLOOR_USD", 12.0)
+
+    def _rank_opp(o: Dict[str, Any]) -> float:
+        bps = float(o.get("net_bps") or 0)
+        if prefer_bn_buy and str(o.get("buy_venue") or "").lower() == "binance":
+            return bps + 8.0
+        return bps
+
+    qualifying.sort(key=_rank_opp, reverse=True)
+    annotated.sort(key=_rank_opp, reverse=True)
     out["qualifying"] = len(qualifying)
+    out["prefer_binance_buy"] = prefer_bn_buy
     _write_board(qualifying or annotated, scanned=len(symbols), qualifying=len(qualifying))
     out["board_top"] = [
         {

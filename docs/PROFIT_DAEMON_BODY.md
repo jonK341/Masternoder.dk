@@ -7,7 +7,7 @@
 | **Head** | `head` | Steer arms/legs/tools — quote gate, budget, enable, quarantine awareness, kill-shot, prefund/courier hints, heartbeat, learn/log, kill switch |
 | **Arm 1** | `hunter` | Multi-assignment: **backfill** thin quote (head `prefund_hint`) + wide BN↔NK **hunt** + execute |
 | **Arm 2** | `dual_farm` | Dual-venue farm + prefund |
-| **Arm 3** | `courier` | Equalize BN↔NK free quote (raise on starved venue) |
+| **Arm 3** | `courier` | Keep **Binance** current (unlock LD earn → spot, seed sell inventory, reseed BN grid) + equalize floors |
 | **Tool** | `latch` | Arm on `regime_skew_too_wide`, wait for mid-skew compress, then strike |
 | **Tool** | `closer` | Finish half-filled spatial legs + harvest dust into quote |
 | **Leg 1** | `pbook` | Top5 profit order book / techniques map |

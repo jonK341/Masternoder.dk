@@ -108,12 +108,182 @@ def _imbalance(snaps: List[Dict[str, Any]], *, floor: float) -> Dict[str, Any]:
     }
 
 
+def _hot_sell_on_binance() -> Optional[str]:
+    """Symbol the body wants to sell on Binance (seed inventory there)."""
+    try:
+        from backend.services.exchange_profit_head_service import get_prefund_hint, get_kill_shot
+
+        for blob in (get_kill_shot(), get_prefund_hint()):
+            if not isinstance(blob, dict):
+                continue
+            sym = str(blob.get("symbol") or "").upper()
+            route = str(blob.get("route") or "").lower()
+            if sym and ("→binance" in route or "->binance" in route or route.endswith("binance")):
+                return sym
+            if sym and not route:
+                return sym
+    except Exception:
+        pass
+    board = ex._read_json(os.path.join(ex._DATA_DIR, "spread_hunter_board.json"), {})
+    for gap in (board.get("gaps") if isinstance(board, dict) else None) or []:
+        if not isinstance(gap, dict):
+            continue
+        if str(gap.get("sell_venue") or "").lower() == "binance" and gap.get("symbol"):
+            return str(gap["symbol"]).upper()
+    state = ex._read_json(os.path.join(ex._DATA_DIR, "spread_hunter_arm_state.json"), {})
+    top = (state.get("last_tick") or {}).get("top") if isinstance(state, dict) else None
+    if isinstance(top, dict) and str(top.get("sell_venue") or "").lower() == "binance":
+        return str(top.get("symbol") or "").upper() or None
+    return None
+
+
+def sync_binance(
+    *,
+    floor_usd: float = 12.0,
+    unlock_usd: float = 25.0,
+    seed_symbol: Optional[str] = None,
+    seed_usd: float = 15.0,
+) -> Dict[str, Any]:
+    """Keep Binance current: unlock LD earn → spot, top up sell inventory, refresh grid."""
+    from backend.services import exchange_venue_api_service as vapi
+    from backend.services import external_exchange_connector_service as conn
+
+    out: Dict[str, Any] = {
+        "venue": "binance",
+        "earn_unlock": None,
+        "seed": None,
+        "grid_reseed": None,
+        "free_before": None,
+        "free_after": None,
+        "did_work": False,
+    }
+    quote = str(vapi.venue_quote_asset("binance") or "USDC").upper()
+    bals = vapi.parse_spot_balances("binance", dry_run=False, force_refresh=True) or {}
+    free = float(bals.get(quote) or 0)
+    out["free_before"] = round(free, 4)
+
+    # 1) Unlock Flexible Earn LD* wrappers into spot so Binance can trade.
+    try:
+        from backend.services.exchange_binance_earn_service import list_ld_balances, unlock_earn_to_spot
+
+        ld = list_ld_balances(bals)
+        if ld and os.environ.get("BINANCE_EARN_UNLOCK", "1").strip().lower() not in ("0", "false", "no", "off"):
+            need = max(float(unlock_usd), max(0.0, float(floor_usd) - free) + 5.0)
+            earn = unlock_earn_to_spot(target_usd=need, max_redeems=_cfg_int_safe(3))
+            out["earn_unlock"] = {
+                "success": earn.get("success"),
+                "freed_usd_est": earn.get("freed_usd_est"),
+                "reason": earn.get("reason"),
+                "ld_n": len(ld),
+            }
+            if earn.get("success"):
+                out["did_work"] = True
+                vapi.invalidate_venue_balance_cache("binance")
+                bals = vapi.parse_spot_balances("binance", dry_run=False, force_refresh=True) or {}
+                free = float(bals.get(quote) or 0)
+    except Exception as exc:
+        out["earn_unlock"] = {"success": False, "error": str(exc)[:160]}
+
+    # 2) If Binance quote still thin, sell unlocked spot (not LD*) into USDC.
+    if free < float(floor_usd):
+        from backend.services.exchange_spread_hunter_arm_service import _raise_quote_on_buy_venue
+
+        raise_res = _raise_quote_on_buy_venue(
+            "binance",
+            need_usd=float(floor_usd),
+            raise_symbols=None,
+            min_sell_usd=_cfg_float("COURIER_MIN_MOVE_USD", 3.0),
+            max_fraction=_cfg_float("COURIER_MAX_FRACTION", 0.55),
+            scan_all_balances=True,
+        )
+        out["raise_quote"] = {
+            "success": raise_res.get("success"),
+            "skipped": raise_res.get("skipped"),
+            "symbol": raise_res.get("symbol"),
+            "sell_usd": raise_res.get("sell_usd"),
+            "reason": raise_res.get("reason"),
+        }
+        if raise_res.get("success") and not raise_res.get("skipped"):
+            out["did_work"] = True
+            bals = vapi.parse_spot_balances("binance", dry_run=False, force_refresh=True) or {}
+            free = float(bals.get(quote) or 0)
+
+    # 3) Seed sell inventory on Binance for the hot nonkyc→binance route.
+    sym = str(seed_symbol or "").upper()
+    if sym and free >= max(float(floor_usd), float(seed_usd)):
+        qty = float(bals.get(sym) or 0)
+        tick = conn.fetch_ticker("binance", sym) or {}
+        ask = float(tick.get("ask") or 0)
+        bid = float(tick.get("bid") or 0)
+        px = ask or bid
+        have_usd = qty * (bid or px) if (bid or px) > 0 else 0.0
+        need_seed = float(seed_usd) - have_usd
+        if px > 0 and need_seed >= _cfg_float("COURIER_MIN_MOVE_USD", 3.0):
+            buy_usd = min(need_seed, free - float(floor_usd), _cfg_float("COURIER_SEED_MAX_USD", 20.0))
+            if buy_usd >= _cfg_float("COURIER_MIN_MOVE_USD", 3.0):
+                buy_qty = round((buy_usd / px) * 0.995, 6)
+                order = vapi.place_market_order("binance", sym, "buy", buy_qty, dry_run=False, quote=quote)
+                ok = bool(order.get("success"))
+                vapi.invalidate_venue_balance_cache("binance")
+                out["seed"] = {
+                    "success": ok,
+                    "symbol": sym,
+                    "buy_usd": round(buy_usd, 2),
+                    "buy_qty": buy_qty,
+                    "error": order.get("error") if not ok else None,
+                }
+                if ok:
+                    out["did_work"] = True
+                    bals = vapi.parse_spot_balances("binance", dry_run=False, force_refresh=True) or {}
+                    free = float(bals.get(quote) or 0)
+        else:
+            out["seed"] = {"success": True, "skipped": True, "reason": "already_seeded", "symbol": sym, "have_usd": round(have_usd, 2)}
+
+    # 4) Periodically reseed Binance grid ladders so BN stays live with the daemon.
+    state = _load_state()
+    reseed_every = _cfg_float("COURIER_BN_GRID_RESEED_SEC", 300.0)
+    last = state.get("last_bn_grid_reseed_at")
+    due = True
+    if last:
+        try:
+            age = (datetime.now(timezone.utc) - datetime.fromisoformat(str(last).replace("Z", "+00:00"))).total_seconds()
+            due = age >= reseed_every
+        except Exception:
+            due = True
+    if due and os.environ.get("COURIER_BN_GRID_RESEED", "1").strip().lower() not in ("0", "false", "no", "off"):
+        try:
+            from backend.services.exchange_grid_bot_service import reset_open_orders
+
+            cleared = reset_open_orders("binance")
+            out["grid_reseed"] = {"success": True, "cleared": cleared.get("cleared") if isinstance(cleared, dict) else cleared}
+            state["last_bn_grid_reseed_at"] = _iso()
+            _save_state(state)
+            out["did_work"] = True
+        except Exception as exc:
+            out["grid_reseed"] = {"success": False, "error": str(exc)[:160]}
+
+    out["free_after"] = round(float((vapi.parse_spot_balances("binance", dry_run=False, force_refresh=True) or {}).get(quote) or free), 4)
+    return out
+
+
+def _cfg_int_safe(default: int) -> int:
+    return int(_cfg_float("COURIER_EARN_MAX_REDEEMS", float(default)))
+
+
 def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
-    """One courier tick: measure imbalance → raise quote on starved venue."""
+    """Keep Binance current, then equalize quote if a venue is still starved."""
     if not courier_enabled() and not force:
         return {"success": False, "skipped": True, "reason": "arm_disabled", "limb": "courier"}
 
     floor = _cfg_float("COURIER_FLOOR_USD", 12.0)
+    seed_sym = _hot_sell_on_binance()
+    bn_sync = sync_binance(
+        floor_usd=floor,
+        unlock_usd=_cfg_float("COURIER_BN_UNLOCK_USD", 25.0),
+        seed_symbol=seed_sym,
+        seed_usd=_cfg_float("COURIER_SEED_USD", 15.0),
+    )
+
     snaps = _quote_snaps()
     imb = _imbalance(snaps, floor=floor)
     out: Dict[str, Any] = {
@@ -123,69 +293,72 @@ def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
         "scanned_at": _iso(),
         "quotes": snaps,
         "imbalance": imb,
+        "binance_sync": bn_sync,
         "moved": False,
         "action": None,
         "skip_reason": None,
     }
 
-    if not imb.get("skewed"):
-        out["skip_reason"] = "balanced"
-        _persist(out)
-        return out
-
+    # Prefer raising on Binance when it is the priority starved venue.
+    do_raise = bool(imb.get("skewed"))
     poor = imb.get("poor") or {}
     venue = str(poor.get("venue") or "")
-    move = float(imb.get("move_usd") or 0)
-    if not venue or move < _cfg_float("COURIER_MIN_MOVE_USD", 3.0):
-        out["skip_reason"] = "gap_too_small"
-        _persist(out)
-        return out
+    # If Binance is already funded, do not keep draining NonKYC just to chase 45/55 —
+    # only raise NonKYC when it is under the hard floor.
+    if venue == "nonkyc" and float(poor.get("free") or 0) >= floor:
+        do_raise = False
 
-    # Prefer head prefund symbol as raise inventory.
-    preferred: List[str] = []
-    try:
-        from backend.services.exchange_profit_head_service import get_prefund_hint
+    if do_raise:
+        move = float(imb.get("move_usd") or 0)
+        if venue and move >= _cfg_float("COURIER_MIN_MOVE_USD", 3.0):
+            preferred: List[str] = []
+            try:
+                from backend.services.exchange_profit_head_service import get_prefund_hint
 
-        hint = get_prefund_hint()
-        if hint and hint.get("symbol"):
-            preferred.append(str(hint["symbol"]).upper())
-    except Exception:
-        pass
+                hint = get_prefund_hint()
+                if hint and hint.get("symbol"):
+                    preferred.append(str(hint["symbol"]).upper())
+            except Exception:
+                pass
+            from backend.services.exchange_spread_hunter_arm_service import _raise_quote_on_buy_venue
 
-    from backend.services.exchange_spread_hunter_arm_service import _raise_quote_on_buy_venue
+            need = float(poor.get("free") or 0) + move
+            action = _raise_quote_on_buy_venue(
+                venue,
+                need_usd=need,
+                raise_symbols=preferred or None,
+                min_sell_usd=_cfg_float("COURIER_MIN_MOVE_USD", 3.0),
+                max_fraction=_cfg_float("COURIER_MAX_FRACTION", 0.5),
+                scan_all_balances=True,
+            )
+            out["action"] = action
+            out["moved"] = bool(action.get("success")) and not action.get("skipped")
+            if not out["moved"]:
+                out["skip_reason"] = str(action.get("reason") or "raise_failed")
+        else:
+            out["skip_reason"] = "gap_too_small"
+    else:
+        out["skip_reason"] = "bn_synced" if bn_sync.get("did_work") else "balanced"
 
-    need = float(poor.get("free") or 0) + move
-    action = _raise_quote_on_buy_venue(
-        venue,
-        need_usd=need,
-        raise_symbols=preferred or None,
-        min_sell_usd=_cfg_float("COURIER_MIN_MOVE_USD", 3.0),
-        max_fraction=_cfg_float("COURIER_MAX_FRACTION", 0.5),
-        scan_all_balances=True,
-    )
-    out["action"] = action
-    out["moved"] = bool(action.get("success")) and not action.get("skipped")
-    if not out["moved"]:
-        out["skip_reason"] = str(action.get("reason") or "raise_failed")
-
-    # Publish courier hint for the head when still skewed after attempt.
     after = _quote_snaps()
     imb_after = _imbalance(after, floor=floor)
     out["quotes_after"] = after
     out["imbalance_after"] = imb_after
     hint = {
         "from_venue": (imb.get("rich") or {}).get("venue"),
-        "to_venue": venue,
-        "amount_usd": move,
-        "reason": "quote_imbalance",
+        "to_venue": venue or "binance",
+        "amount_usd": float(imb.get("move_usd") or 0),
+        "reason": "keep_binance_current" if (bn_sync.get("did_work") or imb.get("keep_binance")) else "quote_imbalance",
         "poor_free": (imb.get("poor") or {}).get("free"),
         "rich_free": (imb.get("rich") or {}).get("free"),
+        "binance_free": next((s.get("free") for s in after if s.get("venue") == "binance"), None),
+        "seed_symbol": seed_sym,
     }
     out["courier_hint"] = hint
     try:
         from backend.services.exchange_profit_head_service import set_courier_hint
 
-        set_courier_hint(hint if imb_after.get("skewed") else None)
+        set_courier_hint(hint if (imb_after.get("skewed") or bn_sync.get("did_work")) else None)
     except Exception:
         pass
 
@@ -193,18 +366,29 @@ def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
         "courier_tick",
         moved=out["moved"],
         venue=venue,
-        move_usd=move,
-        sell_usd=(action or {}).get("sell_usd"),
-        symbol=(action or {}).get("symbol"),
+        bn_sync=bool(bn_sync.get("did_work")),
+        seed=seed_sym,
+        earn=(bn_sync.get("earn_unlock") or {}).get("success"),
         skip=out.get("skip_reason"),
     )
     _persist(out)
+    bn_bits = []
+    if (bn_sync.get("earn_unlock") or {}).get("success"):
+        bn_bits.append(f"earn=${float((bn_sync.get('earn_unlock') or {}).get('freed_usd_est') or 0):.0f}")
+    if (bn_sync.get("seed") or {}).get("success") and not (bn_sync.get("seed") or {}).get("skipped"):
+        bn_bits.append(f"seed={seed_sym}")
+    if (bn_sync.get("grid_reseed") or {}).get("success"):
+        bn_bits.append("grid_reseed")
     summary = (
         f"moved={'yes' if out['moved'] else 'no'} "
-        f"poor={venue}:${float((imb.get('poor') or {}).get('free') or 0):.2f} "
-        f"rich={(imb.get('rich') or {}).get('venue')}:${float((imb.get('rich') or {}).get('free') or 0):.2f} "
-        f"need=${move:.2f}"
+        f"bn={'|'.join(bn_bits) if bn_bits else ('ok' if not bn_sync.get('did_work') else 'sync')} "
+        f"bn_free=${float(bn_sync.get('free_after') or 0):.2f}"
     )
+    if venue and do_raise:
+        summary += (
+            f" poor={venue}:${float((imb.get('poor') or {}).get('free') or 0):.2f} "
+            f"need=${float(imb.get('move_usd') or 0):.2f}"
+        )
     if out.get("skip_reason"):
         summary += f" skip={out['skip_reason']}"
     out["summary"] = summary
@@ -213,12 +397,20 @@ def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
 
 def _persist(out: Dict[str, Any]) -> None:
     state = _load_state()
+    bn = out.get("binance_sync") if isinstance(out.get("binance_sync"), dict) else {}
     state.update({
         "updated_at": _iso(),
         "last_tick": {
             "moved": out.get("moved"),
             "skip_reason": out.get("skip_reason"),
             "imbalance": out.get("imbalance"),
+            "binance_sync": {
+                "did_work": bn.get("did_work"),
+                "free_after": bn.get("free_after"),
+                "earn": (bn.get("earn_unlock") or {}).get("success"),
+                "seed": bn.get("seed"),
+                "grid_reseed": bool((bn.get("grid_reseed") or {}).get("success")),
+            },
             "action": {
                 "success": (out.get("action") or {}).get("success"),
                 "symbol": (out.get("action") or {}).get("symbol"),

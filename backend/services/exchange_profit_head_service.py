@@ -268,12 +268,12 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
             decisions.append("tool:latch_armed")
         if "no_qualifying_external_edge" in dual_sum:
             decisions.append("arm:dual_no_edge")
-        # Courier on when venues are lopsided OR Binance free quote is behind floor
+        # Courier always on: keep Binance current (earn unlock / seed / grid) + equalize floors
+        limbs["courier"]["enabled"] = True
+        decisions.append("arm:courier_on")
+        decisions.append("keep:binance_current")
         if bn_free < 12.0 or (total_free >= 12.0 and min(bn_free, nk_free) < max(4.0, total_free * 0.35)):
-            limbs["courier"]["enabled"] = True
             decisions.append("arm:courier_imbalance")
-            if bn_free < 12.0:
-                decisions.append("keep:binance_current")
         limbs["closer"]["enabled"] = True
         limbs["pbook"]["enabled"] = True  # map always on
         decisions.append("leg:pbook_map_on")
