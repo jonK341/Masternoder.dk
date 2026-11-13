@@ -44,25 +44,25 @@ PROFILE_INTERVALS = {
         "exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120,
         "dual_farm": 45, "hunter": 20, "pbook": 25, "head": 45,
         "courier": 60, "latch": 20, "closer": 45, "executor": 30,
-        "datamaxi": 45, "basis": 120, "swing": 300,
+        "datamaxi": 45, "basis": 120, "swing": 300, "momentum": 60, "vwap": 90,
     },
     "standard": {
         "exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180,
         "dual_farm": 60, "hunter": 30, "pbook": 45, "head": 60,
         "courier": 90, "latch": 30, "closer": 60, "executor": 45,
-        "datamaxi": 60, "basis": 180, "swing": 600,
+        "datamaxi": 60, "basis": 180, "swing": 600, "momentum": 90, "vwap": 120,
     },
     "fast": {
         "exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90,
         "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
         "courier": 45, "latch": 15, "closer": 30, "executor": 20,
-        "datamaxi": 30, "basis": 90, "swing": 180,
+        "datamaxi": 30, "basis": 90, "swing": 180, "momentum": 45, "vwap": 60,
     },
     "live-only": {
         "exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120,
         "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 45,
         "courier": 45, "latch": 15, "closer": 30, "executor": 25,
-        "datamaxi": 40, "basis": 120, "swing": 300,
+        "datamaxi": 40, "basis": 120, "swing": 300, "momentum": 60, "vwap": 90,
     },
 }
 
@@ -71,7 +71,7 @@ _LIVE_PROFIT_MAX_INTERVALS = {
     "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90,
     "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
     "courier": 45, "latch": 15, "closer": 30, "executor": 20,
-    "datamaxi": 40, "basis": 90, "swing": 240,
+    "datamaxi": 40, "basis": 90, "swing": 240, "momentum": 45, "vwap": 60,
 }
 
 
@@ -676,6 +676,44 @@ def _swing_loop(interval: int, stop: threading.Event) -> None:
         stop.wait(max(60, interval))
 
 
+def _summarize_momentum(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or res.get("skip_reason") or "ok")
+
+
+def _momentum_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] momentum arm interval={interval}s (volume burst + tight stop)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_momentum_arm_service import run_momentum_tick
+
+            res = run_momentum_tick()
+            summary = _summarize_momentum(res)
+            print(f"[all-profit] momentum {summary}", flush=True)
+            _write_heartbeat("momentum", summary)
+        except Exception as exc:
+            print(f"[all-profit] momentum error: {exc}", flush=True)
+        stop.wait(max(20, interval))
+
+
+def _summarize_vwap(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or res.get("skip_reason") or "ok")
+
+
+def _vwap_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] VWAP levels interval={interval}s (intraday S/R vs day volume)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_vwap_arm_service import run_vwap_tick
+
+            res = run_vwap_tick()
+            summary = _summarize_vwap(res)
+            print(f"[all-profit] vwap {summary}", flush=True)
+            _write_heartbeat("vwap", summary)
+        except Exception as exc:
+            print(f"[all-profit] vwap error: {exc}", flush=True)
+        stop.wait(max(30, interval))
+
+
 def _hunter_loop(interval: int, stop: threading.Event) -> None:
     print(f"[all-profit] spread-hunter arm interval={interval}s (wide BN↔NK catalog)", flush=True)
     while not stop.is_set():
@@ -1081,6 +1119,16 @@ def main() -> int:
         help="Do not run precision level swing TA limb",
     )
     parser.add_argument(
+        "--skip-momentum",
+        action="store_true",
+        help="Do not run momentum volume-burst arm",
+    )
+    parser.add_argument(
+        "--skip-vwap",
+        action="store_true",
+        help="Do not run VWAP intraday levels limb",
+    )
+    parser.add_argument(
         "--skip-feed",
         action="store_true",
         help="No-op (compat with ops wrappers that pass --skip-feed)",
@@ -1114,6 +1162,8 @@ def main() -> int:
     datamaxi_iv = int(os.environ.get("DATAMAXI_INTERVAL_SEC") or 0) or iv.get("datamaxi") or 45
     basis_iv = int(os.environ.get("FUNDING_BASIS_INTERVAL_SEC") or 0) or iv.get("basis") or 120
     swing_iv = int(os.environ.get("PRECISION_SWING_INTERVAL_SEC") or 0) or iv.get("swing") or 300
+    momentum_iv = int(os.environ.get("MOMENTUM_INTERVAL_SEC") or 0) or iv.get("momentum") or 60
+    vwap_iv = int(os.environ.get("VWAP_INTERVAL_SEC") or 0) or iv.get("vwap") or 90
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -1174,6 +1224,14 @@ def main() -> int:
                 from backend.services.exchange_precision_swing_service import run_precision_swing_tick
 
                 out["swing"] = run_precision_swing_tick(force=True)
+            if not args.skip_momentum:
+                from backend.services.exchange_momentum_arm_service import run_momentum_tick
+
+                out["momentum"] = run_momentum_tick(force=True)
+            if not args.skip_vwap:
+                from backend.services.exchange_vwap_arm_service import run_vwap_tick
+
+                out["vwap"] = run_vwap_tick(force=True)
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -1215,6 +1273,10 @@ def main() -> int:
                 print(f"[all-profit] basis {_summarize_basis(out['basis'])}", flush=True)
             if "swing" in out:
                 print(f"[all-profit] swing {_summarize_swing(out['swing'])}", flush=True)
+            if "momentum" in out:
+                print(f"[all-profit] momentum {_summarize_momentum(out['momentum'])}", flush=True)
+            if "vwap" in out:
+                print(f"[all-profit] vwap {_summarize_vwap(out['vwap'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -1258,6 +1320,10 @@ def main() -> int:
             print(f"  funding-basis arm interval={basis_iv}s")
         if swing_iv and not args.skip_swing:
             print(f"  precision-swing interval={swing_iv}s")
+        if momentum_iv and not args.skip_momentum:
+            print(f"  momentum arm interval={momentum_iv}s")
+        if vwap_iv and not args.skip_vwap:
+            print(f"  VWAP levels interval={vwap_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -1326,6 +1392,14 @@ def main() -> int:
         if swing_iv and not args.skip_swing:
             threads.append(threading.Thread(
                 target=_swing_loop, args=(swing_iv, stop), name="swing", daemon=True,
+            ))
+        if momentum_iv and not args.skip_momentum:
+            threads.append(threading.Thread(
+                target=_momentum_loop, args=(momentum_iv, stop), name="momentum", daemon=True,
+            ))
+        if vwap_iv and not args.skip_vwap:
+            threads.append(threading.Thread(
+                target=_vwap_loop, args=(vwap_iv, stop), name="vwap", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(

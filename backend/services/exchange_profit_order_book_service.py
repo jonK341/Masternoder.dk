@@ -507,7 +507,13 @@ def build_order_book(
             "best_technique": (best_tech or {}).get("id"),
             "techniques": techniques[:5],
             "all_technique_ids": [t["id"] for t in techniques if t.get("recommend")],
+            "strategy_category": "arbitrage",
         }
+        try:
+            from backend.services.exchange_strategy_enrichment_service import enrich_deal
+            row = enrich_deal(row)
+        except Exception:
+            pass
         hitlist.append(row)
 
     top5 = [r for r in hitlist if r.get("qualifies")][:n]
