@@ -212,12 +212,15 @@ def mn2_wallet_refresh():
             "deposit_address": None,
         }), 200
     addr = result.get("deposit_address") or ""
+    ledger_only = bool(result.get("ledger_only") or str(addr).startswith("LGR"))
     base = _explorer_base_url().rstrip("/")
     return jsonify({
         "success": True,
         "user_id": result.get("user_id") or user_id,
         "deposit_address": addr,
-        "explorer_address_url": f"{base}/address.dws?addr={addr}" if addr else "",
+        "explorer_address_url": "" if ledger_only else (f"{base}/address.dws?addr={addr}" if addr else ""),
+        "ledger_only": ledger_only,
+        "upgraded_from_ledger": bool(result.get("upgraded_from_ledger")),
     }), 200
 
 
@@ -1131,11 +1134,17 @@ def mn2_withdraw():
     # `withdrawal_new_address_cooldown_hours` before it can receive funds. Blunts the
     # "hijack session -> instantly drain to attacker address" path. Trusted (reused)
     # addresses pass immediately. Fail-open if the guard errors.
+    # First-ever payout address can skip cooldown when configured (ecosystem UX).
     cooldown_hours = float(config.get("withdrawal_new_address_cooldown_hours") or 0)
     if cooldown_hours > 0:
         try:
-            from backend.services.mn2_withdrawal_guard import check_address
-            gate = check_address(user_id, address, cooldown_hours)
+            from backend.services.mn2_withdrawal_guard import check_address, has_successful_withdrawal
+            effective_cooldown = cooldown_hours
+            # Let the first successful external withdraw (and retries before it) skip cooldown.
+            if config.get("withdrawal_first_address_skips_cooldown", True):
+                if not has_successful_withdrawal(user_id):
+                    effective_cooldown = 0.0
+            gate = check_address(user_id, address, effective_cooldown)
             if not gate.get("allowed"):
                 hrs = gate.get("seconds_remaining", 0) / 3600.0
                 return jsonify({

@@ -194,12 +194,18 @@ def get_entries_by_user(user_id: str, limit: int = 100) -> List[Dict[str, Any]]:
 
 
 def is_txid_processed(txid: str) -> bool:
-    """True if this txid was already credited via deposit or treasury_deposit."""
+    """True if this txid was already credited (deposit / order / treasury paths)."""
     if not (txid or "").strip():
         return False
     txid = str(txid).strip()
     entries = _load_entries()
-    credited_types = ("deposit", "treasury_deposit")
+    credited_types = (
+        "deposit",
+        "treasury_deposit",
+        "order_overpay_change",
+        "order_underpaid_credit",
+        "shop_payment",
+    )
     return any(
         (e.get("type") in credited_types and (e.get("txid") or "").strip() == txid)
         for e in entries

@@ -281,6 +281,95 @@ def _is_rpc_unavailable_error(err: Any) -> bool:
     return any(m in text for m in markers)
 
 
+def _is_ledger_only_entry(entry: Any, primary: Optional[str] = None) -> bool:
+    addr = primary if primary is not None else _entry_primary(entry)
+    if isinstance(entry, dict) and entry.get("ledger_only"):
+        return True
+    return str(addr or "").startswith("LGR")
+
+
+def _is_ledger_only_address(addr: str) -> bool:
+    text = str(addr or "").strip()
+    return text.startswith("LGR")
+
+
+def _promote_to_chain_address(
+    user_id: str,
+    addresses: Dict[str, Any],
+    *,
+    old_entry: Any = None,
+) -> Optional[Dict[str, Any]]:
+    """Try pool / getnewaddress and replace a ledger-only entry with a real chain address.
+
+    Returns the success payload when upgraded, else None (caller keeps ledger id).
+    """
+    uid = str(user_id).strip()
+    old_primary = _entry_primary(old_entry) if old_entry is not None else None
+
+    while True:
+        pool_key = _first_pool_key(addresses)
+        if not pool_key:
+            break
+        addr = addresses.pop(pool_key)
+        if _is_ledger_only_address(str(addr)):
+            continue
+        if _address_validity(addr) is False:
+            continue
+        new_addr = addr if isinstance(addr, str) else _entry_primary(addr)
+        if not new_addr or _is_ledger_only_address(new_addr):
+            continue
+        return _store_chain_primary(uid, addresses, new_addr, old_primary=old_primary)
+
+    gen = _generate_valid_address()
+    if not gen.get("success"):
+        return None
+    new_addr = gen.get("deposit_address")
+    if not new_addr or _is_ledger_only_address(str(new_addr)):
+        return None
+    return _store_chain_primary(uid, addresses, str(new_addr), old_primary=old_primary)
+
+
+def _store_chain_primary(
+    user_id: str,
+    addresses: Dict[str, Any],
+    new_addr: str,
+    *,
+    old_primary: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Persist a daemon deposit address and clear ledger_only flags."""
+    uid = str(user_id).strip()
+    rows: List[Dict[str, Any]] = []
+    if old_primary and old_primary != new_addr:
+        rows.append({
+            "label": "ledger_legacy",
+            "address": old_primary,
+            "type": "ledger",
+            "active": False,
+            "ledger_only": True,
+        })
+    rows.append({
+        "label": "primary",
+        "address": new_addr,
+        "type": "core",
+        "active": True,
+    })
+    addresses[uid] = {
+        "primary": new_addr,
+        "wallet_type": "core",
+        "ledger_only": False,
+        "framed": True,
+        "addresses": rows,
+    }
+    _save_addresses(addresses)
+    return {
+        "success": True,
+        "deposit_address": new_addr,
+        "user_id": uid,
+        "ledger_only": False,
+        "upgraded_from_ledger": bool(old_primary and str(old_primary).startswith("LGR")),
+    }
+
+
 def _first_pool_key(addresses: Dict[str, str]) -> Optional[str]:
     """Return the first pool_N key (smallest N) if any."""
     pool_keys = [k for k in addresses if isinstance(k, str) and k.startswith("pool_")]
@@ -312,11 +401,11 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
     if user_id in addresses:
         entry = addresses[user_id]
         existing = _entry_primary(entry)
-        ledger_only = (
-            (isinstance(entry, dict) and entry.get("ledger_only"))
-            or str(existing or "").startswith("LGR")
-        )
-        if existing and ledger_only:
+        if existing and _is_ledger_only_entry(entry, existing):
+            # Daemon may have come online — upgrade LGR → real deposit address.
+            upgraded = _promote_to_chain_address(user_id, addresses, old_entry=entry)
+            if upgraded and upgraded.get("success"):
+                return upgraded
             return {
                 "success": True,
                 "deposit_address": existing,
@@ -324,12 +413,18 @@ def get_or_create_deposit_address(user_id: str) -> Dict[str, Any]:
                 "ledger_only": True,
                 "code": "ledger_receive",
                 "address_warning": (
-                    "In-app ledger receive id. Do not send on-chain MN2 here."
+                    "In-app ledger receive id. Do not send on-chain MN2 here — "
+                    "request a new address when the wallet node is online."
                 ),
             }
         validity = _address_validity(existing) if existing else False
         if existing and validity is not False:
-            payload = {"success": True, "deposit_address": existing, "user_id": user_id}
+            payload = {
+                "success": True,
+                "deposit_address": existing,
+                "user_id": user_id,
+                "ledger_only": False,
+            }
             if validity is None and not _wallet_info_ready():
                 payload["address_warning"] = (
                     "Wallet is not ready to confirm ownership; kept the existing deposit address."
@@ -469,7 +564,11 @@ def list_user_addresses(user_id: str) -> Dict[str, Any]:
 
 
 def refresh_deposit_address(user_id: str) -> Dict[str, Any]:
-    """Rotate primary deposit address (Phase 2 multi-address)."""
+    """Rotate primary deposit address (Phase 2 multi-address).
+
+    Always clears ``ledger_only`` when a real chain address is minted so the
+    profile wallet stops warning users not to deposit on-chain.
+    """
     if not (user_id or "").strip():
         return {"success": False, "error": "user_id required"}
     uid = str(user_id).strip()
@@ -479,6 +578,8 @@ def refresh_deposit_address(user_id: str) -> Dict[str, Any]:
     new_addr = gen["deposit_address"]
     addresses = _load_addresses()
     entry = addresses.get(uid)
+    old_primary = _entry_primary(entry)
+    was_ledger = _is_ledger_only_entry(entry, old_primary)
     if isinstance(entry, dict):
         rows = entry.setdefault("addresses", [])
         if not isinstance(rows, list):
@@ -487,22 +588,38 @@ def refresh_deposit_address(user_id: str) -> Dict[str, Any]:
         for row in rows:
             if isinstance(row, dict):
                 row["active"] = False
-        rows.append({"label": f"rotated_{len(rows)+1}", "address": new_addr, "type": "core", "active": True, "created_at": __import__("datetime").datetime.utcnow().isoformat() + "Z"})
+        rows.append({
+            "label": f"rotated_{len(rows)+1}",
+            "address": new_addr,
+            "type": "core",
+            "active": True,
+            "created_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        })
         entry["primary"] = new_addr
+        entry["wallet_type"] = "core"
+        entry["ledger_only"] = False
+        entry["framed"] = True
+        addresses[uid] = entry
     else:
-        old = _entry_primary(entry)
         addresses[uid] = {
             "primary": new_addr,
             "wallet_type": "core",
+            "ledger_only": False,
+            "framed": True,
             "addresses": [
-                {"label": "legacy", "address": old, "type": "core", "active": False} if old else None,
+                {"label": "legacy", "address": old_primary, "type": "ledger" if was_ledger else "core", "active": False, "ledger_only": was_ledger} if old_primary else None,
                 {"label": "primary", "address": new_addr, "type": "core", "active": True},
             ],
         }
         addresses[uid]["addresses"] = [r for r in addresses[uid]["addresses"] if r]
-    addresses[uid] = addresses[uid] if isinstance(addresses[uid], dict) else {"primary": new_addr, "addresses": [{"label": "primary", "address": new_addr, "type": "core", "active": True}]}
     _save_addresses(addresses)
-    return {"success": True, "user_id": uid, "deposit_address": new_addr}
+    return {
+        "success": True,
+        "user_id": uid,
+        "deposit_address": new_addr,
+        "ledger_only": False,
+        "upgraded_from_ledger": was_ledger,
+    }
 
 
 def connect_external_wallet(user_id: str, address: str, wallet_type: str = "watch") -> Dict[str, Any]:
@@ -534,13 +651,18 @@ def connect_external_wallet(user_id: str, address: str, wallet_type: str = "watc
 
 
 def get_address_to_user_map() -> Dict[str, str]:
-    """Return dict address -> user_id for all assigned deposit addresses (for scanner)."""
+    """Return dict address -> user_id for all assigned deposit addresses (for scanner).
+
+    Ledger-only ``LGR…`` ids are excluded — they are not chain deposit targets.
+    """
     addresses = _load_addresses()
     out: Dict[str, str] = {}
     for uid, entry in addresses.items():
         if not uid or uid.startswith("pool_"):
             continue
         for addr in _all_addresses_for_entry(entry):
+            if _is_ledger_only_address(addr):
+                continue
             out[addr] = uid
     try:
         from backend.services.agent_wallet_service import get_treasury

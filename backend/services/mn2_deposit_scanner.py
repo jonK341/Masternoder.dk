@@ -270,6 +270,9 @@ def run_scanner() -> Dict[str, Any]:
 
             if confirmations < required_confirmations:
                 continue
+            # Ledger-only receive ids are never on-chain deposit targets.
+            if str(address).startswith("LGR"):
+                continue
             if address not in address_to_user:
                 continue
 
@@ -305,13 +308,34 @@ def run_scanner() -> Dict[str, Any]:
                 credits += 1
                 continue
 
-            unified_points_db.add_points(
+            # reference makes add_points idempotent if we crash before ledger write
+            credit_meta = {
+                "reference": f"deposit:{txid}",
+                "txid": txid,
+                "address": address,
+                "confirmations": confirmations,
+            }
+            credited = unified_points_db.add_points(
                 user_id,
                 "mn2_balance",
                 amount,
                 source="mn2_deposit",
-                metadata={"txid": txid, "address": address, "confirmations": confirmations},
+                metadata=credit_meta,
             )
+            if credited.get("duplicate"):
+                # Points already applied; ensure ledger row exists then skip recount.
+                if not is_txid_processed(txid):
+                    append_entry(
+                        user_id=user_id,
+                        entry_type="deposit",
+                        amount=amount,
+                        txid=txid,
+                        address=address,
+                        metadata={"confirmations": confirmations, "repaired": True},
+                    )
+                continue
+            if not credited.get("success"):
+                continue
             append_entry(
                 user_id=user_id,
                 entry_type="deposit",

@@ -140,3 +140,105 @@ def test_transfer_route_uses_ledger_mode(tmp_path, monkeypatch):
     assert body.get("success") is True
     assert body.get("mode") == "ledger"
     assert body.get("to_user") == recipient
+
+
+def test_ledger_address_upgrades_when_rpc_returns(tmp_path, monkeypatch):
+    from backend.services import mn2_wallet_service as ws
+
+    addr_path = tmp_path / "mn2_user_addresses.json"
+    uid = "eco_upgrade_user"
+    lgr = ws._ledger_receive_id(uid)
+    addr_path.write_text(json.dumps({
+        uid: {
+            "primary": lgr,
+            "wallet_type": "ledger",
+            "ledger_only": True,
+            "addresses": [{"label": "primary", "address": lgr, "type": "ledger", "active": True, "ledger_only": True}],
+        }
+    }), encoding="utf-8")
+    monkeypatch.setattr(ws, "_addresses_path", lambda: str(addr_path))
+    monkeypatch.setattr(ws, "_wallet_mode", lambda: "ledger")
+    monkeypatch.setattr(
+        ws,
+        "generate_daemon_address",
+        lambda: {"success": True, "deposit_address": "JChainUpgradeAddress111111111111", "address": "JChainUpgradeAddress111111111111", "code": None},
+    )
+    monkeypatch.setattr(ws, "_address_validity", lambda addr: True)
+
+    out = ws.get_or_create_deposit_address(uid)
+    assert out.get("success") is True
+    assert out.get("ledger_only") is False
+    assert out.get("deposit_address") == "JChainUpgradeAddress111111111111"
+    assert out.get("upgraded_from_ledger") is True
+    saved = json.loads(addr_path.read_text(encoding="utf-8"))
+    assert saved[uid]["ledger_only"] is False
+    assert saved[uid]["primary"] == "JChainUpgradeAddress111111111111"
+
+
+def test_scanner_credits_user_not_treasury(tmp_path, monkeypatch):
+    from backend.services import mn2_deposit_scanner as scanner
+    from backend.services import mn2_ledger as ledger
+    from backend.services.unified_points_database import unified_points_db
+
+    uid = "eco_deposit_user"
+    chain_addr = "JEcoDepositAddr000000000000001"
+    monkeypatch.setattr(scanner, "_load_config", lambda: {"confirmations": 1})
+    monkeypatch.setattr(
+        "backend.services.mn2_wallet_service.get_address_to_user_map",
+        lambda: {chain_addr: uid, "LGRshouldNotCredit": uid},
+    )
+    monkeypatch.setattr(
+        "backend.services.agent_wallet_service.get_treasury",
+        lambda: {"address": ""},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_order_payment_service.get_address_to_order_map",
+        lambda: {},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_rpc_client.listtransactions",
+        lambda count=1000, skip=0: {
+            "result": [
+                {"category": "receive", "txid": "txid_eco_1", "address": chain_addr, "amount": 2.5, "confirmations": 6},
+                {"category": "receive", "txid": "txid_eco_lgr", "address": "LGRshouldNotCredit", "amount": 9.0, "confirmations": 6},
+            ],
+            "error": None,
+        },
+    )
+    ledger_path = tmp_path / "mn2_ledger.json"
+    ledger_path.write_text(json.dumps({"entries": []}), encoding="utf-8")
+    monkeypatch.setattr(ledger, "_ledger_path", lambda: str(ledger_path))
+
+    before = float((unified_points_db.get_all_points(uid).get("points") or {}).get("mn2_balance") or 0)
+    result = scanner.run_scanner()
+    assert result.get("success") is True
+    assert result.get("credits_applied") == 1
+    after = float((unified_points_db.get_all_points(uid).get("points") or {}).get("mn2_balance") or 0)
+    assert round(after - before, 8) == 2.5
+
+    # Second scan must not double-credit
+    again = scanner.run_scanner()
+    assert again.get("credits_applied") == 0
+    after2 = float((unified_points_db.get_all_points(uid).get("points") or {}).get("mn2_balance") or 0)
+    assert round(after2, 8) == round(after, 8)
+
+
+def test_first_withdraw_skips_cooldown(tmp_path, monkeypatch):
+    from backend.services import mn2_withdrawal_guard as guard
+
+    monkeypatch.setattr(guard, "_PATH", str(tmp_path / "mn2_withdrawal_addresses.json"))
+    uid = "eco_withdraw_first"
+    assert guard.has_successful_withdrawal(uid) is False
+    # Route applies cooldown=0 while user has no successful withdraw yet.
+    gate = guard.check_address(uid, "JFirstPayoutAddr00000000000001", 0)
+    assert gate.get("allowed") is True
+    assert guard.has_successful_withdrawal(uid) is False
+    # Same address retry before success still allowed with grace cooldown 0.
+    again = guard.check_address(uid, "JFirstPayoutAddr00000000000001", 0)
+    assert again.get("allowed") is True
+    guard.record_success(uid, "JFirstPayoutAddr00000000000001")
+    assert guard.has_successful_withdrawal(uid) is True
+    # After a success, a brand-new address respects cooldown.
+    blocked = guard.check_address(uid, "JSecondPayoutAddr0000000000002", 24)
+    assert blocked.get("allowed") is False
+    assert blocked.get("code") == "address_cooldown"

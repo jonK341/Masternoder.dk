@@ -8,8 +8,9 @@
   "max_withdrawal_per_day": 10,
   "max_withdrawal_amount_per_day": 1000,
   "withdrawal_requires_verification": false,
-  "withdrawal_requires_whitelist": true,
-  "withdrawal_new_address_cooldown_hours": 24,
+  "withdrawal_requires_whitelist": false,
+  "withdrawal_new_address_cooldown_hours": 1,
+  "withdrawal_first_address_skips_cooldown": true,
   "withdrawal_risk": {
     "enabled": true,
     "step_up_score": 2,
