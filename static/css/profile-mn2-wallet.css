@@ -1,0 +1,272 @@
+/**
+ * Profile MN2 Wallet — single high-end wallet surface.
+ * Keeps MasterNoder cyan/green language; one composition, not a dashboard of cards.
+ */
+.mn2-pw {
+  --mn2-cyan: #00d4ff;
+  --mn2-mint: #00ff88;
+  --mn2-ink: #e8eefc;
+  --mn2-mute: rgba(232, 238, 252, 0.72);
+  --mn2-line: rgba(0, 212, 255, 0.28);
+  --mn2-glow: rgba(0, 255, 136, 0.16);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--mn2-line) !important;
+  background:
+    radial-gradient(120% 80% at 12% -10%, rgba(0, 212, 255, 0.18), transparent 55%),
+    radial-gradient(90% 70% at 100% 0%, rgba(0, 255, 136, 0.12), transparent 50%),
+    linear-gradient(160deg, rgba(8, 14, 24, 0.96), rgba(10, 18, 32, 0.92)) !important;
+  border-radius: 18px;
+  padding: 0 !important;
+}
+
+.mn2-pw-anchor {
+  position: absolute;
+  top: -72px;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.mn2-pw-hero {
+  padding: 28px 24px 18px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.16);
+}
+
+.mn2-pw-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mn2-cyan);
+  opacity: 0.9;
+}
+
+.mn2-pw-title {
+  margin: 8px 0 6px;
+  font-size: clamp(1.55rem, 3.2vw, 2.1rem);
+  font-weight: 800;
+  color: var(--mn2-ink);
+  letter-spacing: -0.02em;
+}
+
+.mn2-pw-lead {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--mn2-mute);
+}
+
+.mn2-pw-lead a {
+  color: var(--mn2-cyan);
+}
+
+.mn2-pw-balance-block {
+  margin-top: 18px;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.mn2-pw-balance-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mn2-mute);
+}
+
+.mn2-pw-balance-value {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--mn2-mint);
+  text-shadow: 0 0 28px var(--mn2-glow);
+}
+
+.mn2-pw-balance-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  font-size: 0.84rem;
+  color: var(--mn2-mute);
+}
+
+.mn2-pw-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.mn2-pw-body {
+  padding: 16px 24px 24px;
+}
+
+.mn2-pw .profile-wallet-subnav.page-tabs {
+  margin: 0 0 16px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  border-radius: 12px;
+  gap: 6px;
+}
+
+.mn2-pw .profile-wallet-subnav .tab-btn {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mn2-mute);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 8px 14px;
+}
+
+.mn2-pw .profile-wallet-subnav .tab-btn.active,
+.mn2-pw .profile-wallet-subnav .tab-btn[aria-selected="true"] {
+  color: #041018;
+  background: linear-gradient(135deg, var(--mn2-mint), var(--mn2-cyan));
+  border-color: transparent;
+}
+
+.mn2-pw-panel-title {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--mn2-cyan);
+  font-weight: 700;
+}
+
+.mn2-pw-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.mn2-pw-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.mn2-pw-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 212, 255, 0.45);
+  background: rgba(0, 212, 255, 0.12);
+  color: var(--mn2-cyan);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.mn2-pw-btn-primary {
+  border: none;
+  background: linear-gradient(135deg, var(--mn2-cyan), #0099cc);
+  color: #041018;
+}
+
+.mn2-pw-btn-mint {
+  border-color: rgba(0, 255, 136, 0.45);
+  background: rgba(0, 255, 136, 0.14);
+  color: var(--mn2-mint);
+}
+
+.mn2-pw-input {
+  min-width: 180px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.mn2-pw-code {
+  display: block;
+  word-break: break-all;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(0, 212, 255, 0.18);
+  font-size: 0.86rem;
+  color: #9be7ff;
+}
+
+.mn2-pw-qr {
+  flex-shrink: 0;
+  width: 112px;
+  height: 112px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 6px;
+}
+
+.mn2-pw-hint {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--mn2-mute);
+}
+
+.mn2-pw-chart {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.mn2-pw-foot {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 212, 255, 0.16);
+  font-size: 0.75rem;
+  color: var(--mn2-mute);
+}
+
+.mn2-pw-foot a {
+  color: var(--mn2-cyan);
+}
+
+.mn2-pw-split {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 760px) {
+  .mn2-pw-split {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.mn2-pw-gate {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 255, 136, 0.28);
+  background:
+    radial-gradient(80% 100% at 0% 0%, rgba(0, 255, 136, 0.12), transparent 60%),
+    rgba(0, 0, 0, 0.28);
+}
+
+.mn2-pw-gate h3 {
+  margin: 0;
+  color: var(--mn2-mint);
+  font-size: 1.15rem;
+}
+
+.mn2-pw-gate p {
+  margin: 0;
+  color: var(--mn2-mute);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}

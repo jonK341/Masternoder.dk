@@ -22,6 +22,10 @@ class _LazyUserOnboarding:
 
 user_onboarding = _LazyUserOnboarding()
 from backend.services.account_resolution_service import set_session_user
+from backend.services.mn2_onchain_wallet import (
+    provision_signup_deposit_address,
+    repair_missing_deposit_address,
+)
 from backend.services.user_agent_skills import user_agent_skills
 from backend.services.user_info_scraper import user_info_scraper
 from backend.services.user_profile import user_profile
@@ -107,11 +111,21 @@ def create_user():
                     result['db_account'] = db_result
                 except Exception:
                     pass
-                try:
-                    from backend.services.mn2_onchain_wallet import ensure_user_address
-                    result["mn2_deposit_address"] = ensure_user_address(uid)
-                except Exception:
-                    pass
+                mn2_wallet = provision_signup_deposit_address(uid, attempts=3)
+                result["mn2_wallet"] = mn2_wallet
+                # Back-compat field: address string or null (never a swallowed exception).
+                result["mn2_deposit_address"] = mn2_wallet.get("deposit_address")
+                if not mn2_wallet.get("assigned"):
+                    result["mn2_wallet_warning"] = (
+                        mn2_wallet.get("error")
+                        or "Deposit address was not assigned; open the MN2 wallet to retry."
+                    )
+                    logger.warning(
+                        "user create without deposit address user=%s code=%s err=%s",
+                        uid,
+                        mn2_wallet.get("code"),
+                        mn2_wallet.get("error"),
+                    )
                 try:
                     from backend.services.ai_user_controller import on_user_created
                     ai_result = on_user_created(uid, data.get('preferences', {}).get('username', ''))
@@ -216,6 +230,12 @@ def login_user():
         except Exception:
             pass
 
+        # New accounts: full provision. Returning users: repair if map entry missing.
+        if created or db_result.get('created'):
+            mn2_wallet = provision_signup_deposit_address(user_id, attempts=3)
+        else:
+            mn2_wallet = repair_missing_deposit_address(user_id)
+
         return jsonify({
             'success': True,
             'user_id': user_id,
@@ -223,6 +243,8 @@ def login_user():
             'profile': profile,
             'db_account': db_result.get('account'),
             'ai_onboarding': ai_data if (created or db_result.get('created')) else None,
+            'mn2_wallet': mn2_wallet,
+            'mn2_deposit_address': mn2_wallet.get('deposit_address'),
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

@@ -363,7 +363,7 @@
         { href: '/generator', label: 'Generator', icon: '🎬', tags: ['create', 'morning'] },
         { href: '/game', label: 'Game', icon: '🎮', tags: ['play', 'evening'] },
         { href: '/battle', label: 'Battle', icon: '⚔️', tags: ['compete'] },
-        { href: '/wallets', label: 'Wallets', icon: '💾', tags: ['economy', 'account'] },
+        { href: '/profile?tab=wallet', label: 'Wallets', icon: '💾', tags: ['economy', 'account'] },
         { href: '/staking-leaderboard', label: 'Staking Rank', icon: '🌱', tags: ['economy', 'progress'] },
         { href: '/staking-teams', label: 'Staking Teams', icon: '🤝', tags: ['economy', 'progress'] },
         { href: '/shop', label: 'Shop', icon: '🛒', tags: ['economy'] },

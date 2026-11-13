@@ -12,10 +12,10 @@
     var _dropdownEl = null;
 
     var QUICK_ACTIONS = [
-        { icon: '👛', label: 'Open wallet', href: '/wallets' },
+        { icon: '👛', label: 'Open wallet', href: '/profile?tab=wallet' },
         { icon: '📥', label: 'Deposit', href: '/profile?tab=wallet&wallet=deposit' },
         { icon: '📤', label: 'Withdraw', href: '/profile?tab=wallet&wallet=withdraw' },
-        { icon: '🛒', label: 'Shop', href: '/shop#shop-mn2' },
+        { icon: '🛒', label: 'Shop', href: '/shop?tab=mn2' },
         { icon: '💱', label: 'Exchange', href: '/exchange' },
         { icon: '🌱', label: 'Staking', href: '/profile?tab=wallet' },
     ];
@@ -137,7 +137,7 @@
 
     function goWallet(e) {
         if (e) e.preventDefault();
-        global.location.href = isAnonymous() ? '/profile?tab=wallet' : '/wallets';
+        global.location.href = '/profile?tab=wallet';
     }
 
     function bindChip() {
@@ -167,18 +167,12 @@
         var fab = global.document.createElement('a');
         fab.id = 'mn2WalletFab';
         fab.className = 'mn2-wallet-fab';
-        fab.href = '/wallets';
+        fab.href = '/profile?tab=wallet';
         fab.title = 'MN2 Wallet (W)';
-        fab.setAttribute('aria-label', 'Open MN2 wallet');
+        fab.setAttribute('aria-label', 'Open MN2 profile wallet');
         fab.innerHTML =
             '<span class="mn2-wallet-fab-icon">⚡</span>' +
             '<span class="mn2-wallet-fab-balance" id="mn2WalletFabBalance">—</span>';
-        fab.addEventListener('click', function (e) {
-            if (isAnonymous()) {
-                e.preventDefault();
-                global.location.href = '/profile?tab=wallet';
-            }
-        });
         global.document.body.appendChild(fab);
     }
 
@@ -203,7 +197,7 @@
             '</div>' +
             '<div class="mn2-wallet-sticky-actions">' +
                 '<a class="mn2-wallet-sticky-btn" href="/profile?tab=wallet&wallet=deposit">Deposit</a>' +
-                '<a class="mn2-wallet-sticky-btn mn2-wallet-sticky-btn--primary" href="/wallets">Wallet</a>' +
+                '<a class="mn2-wallet-sticky-btn mn2-wallet-sticky-btn--primary" href="/profile?tab=wallet">Wallet</a>' +
             '</div>';
         global.document.body.appendChild(bar);
     }

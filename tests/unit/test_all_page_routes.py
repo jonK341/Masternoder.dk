@@ -70,7 +70,7 @@ def test_wallet_and_staking_pages_are_first_class():
     client = _app().test_client()
 
     expected = {
-        "/wallets/": "Wallets",
+        "/wallets/": "profile MN2 wallet",
         "/staking-leaderboard/": "Staking leaderboard",
         "/staking-teams/": "Staking teams",
     }
@@ -78,3 +78,9 @@ def test_wallet_and_staking_pages_are_first_class():
         response = client.get(path)
         assert response.status_code == 200, path
         assert marker in response.get_data(as_text=True), path
+
+    profile = client.get("/profile/")
+    assert profile.status_code == 200
+    body = profile.get_data(as_text=True)
+    assert "profile-mn2-wallet-card" in body
+    assert "Your MN2 Wallet" in body

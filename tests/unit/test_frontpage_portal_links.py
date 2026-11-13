@@ -10,11 +10,11 @@ def test_frontpage_and_nav_include_wallet_staking_portal_links():
     frontpage = (ROOT / "static/js/frontpage-home.js").read_text(encoding="utf-8")
     nav = (ROOT / "static/js/navigation-toolbar.js").read_text(encoding="utf-8")
 
-    for href in ("/wallets", "/staking-leaderboard", "/staking-teams"):
+    for href in ("/profile?tab=wallet", "/staking-leaderboard", "/staking-teams"):
         assert href in nav
         assert href in frontpage or "MN_NAV_TOP_20_IDS" in nav
 
-    assert "/wallets" in index
+    assert "/profile?tab=wallet" in index
     assert "/staking-leaderboard" in index
     assert "/staking-teams" in index
 
@@ -47,7 +47,7 @@ def test_platform_news_announces_wallet_staking_pages():
     item = next((i for i in items if i.get("id") == "news-page-portal-wallet-staking-20260706"), None)
 
     assert item is not None
-    assert item["href"] == "/wallets"
+    assert item["href"] == "/profile?tab=wallet"
     assert "staking" in item["summary"].lower()
 
 
