@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113i">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113j">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -48,16 +48,26 @@
                 <div class="fp-monitors-grid">
                     <article class="fp-mc-monitor" id="fp-mc-monitor" aria-label="Mission Control interactive movie monitor">
                         <div class="fp-mc-stage" id="fp-mc-stage">
-                            <div class="fp-mc-top">
-                                <div>
-                                    <div class="fp-mc-title">Interactive Movie Monitor</div>
-                                    <div class="fp-mc-sub">DramaCanvas plans · fal/Comfy renders · plays here</div>
+                            <div class="fp-mc-chrome">
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-mc-title">Interactive Movie Monitor</span>
+                                <span class="fp-film-version">v2.0</span>
+                                <div class="fp-film-node-row" role="group" aria-label="Mission Control nodes">
+                                    <button type="button" class="fp-film-chip" id="fp-mc-node-ai" title="AI — play interactive movie">AI</button>
+                                    <button type="button" class="fp-film-chip" id="fp-mc-node-snd" title="Toggle neural sound" aria-pressed="false">SND</button>
+                                    <a class="fp-film-chip" id="fp-mc-node-xp" href="/trophies" title="XP &amp; trophies">XP</a>
+                                    <span class="fp-film-chip fp-film-chip-pulse" title="System v2.0">2.0</span>
+                                    <a class="fp-film-chip" href="/debugger#mission-control" title="Open full Mission Control">OPS</a>
                                 </div>
-                                <div class="fp-mc-ready" id="fp-mc-ready">Checking film canvases…</div>
+                                <span class="fp-mc-ready" id="fp-mc-ready">Checking film canvases…</span>
                             </div>
+                            <p class="fp-mc-sub">DramaCanvas plans · fal/Comfy renders · plays here</p>
                             <div class="fp-mc-frame">
                                 <div class="fp-mc-placeholder" id="fp-mc-placeholder">Type a scene and press Play Movie</div>
                                 <video id="fp-mc-video" controls playsinline loop muted></video>
+                                <button type="button" class="fp-film-play" id="fp-mc-play-overlay" aria-label="Play movie on Mission Control">▶</button>
                             </div>
                             <div class="fp-mc-controls">
                                 <input id="fp-mc-prompt" type="text" maxlength="500"
@@ -413,7 +423,7 @@
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
     <script src="/static/js/frontpage-film-monitor.js?v=20261113g" defer></script>
-    <script src="/static/js/frontpage-mission-monitor.js?v=20261113i" defer></script>
+    <script src="/static/js/frontpage-mission-monitor.js?v=20261113j" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

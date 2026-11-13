@@ -1,6 +1,6 @@
 /**
- * Frontpage Mission Control monitor — original interactive movie stage (no canvas).
- * Same DramaCanvas → fal pipeline as /debugger Mission Control.
+ * Frontpage Mission Control monitor — original video stage (no canvas)
+ * plus Film Canvas control chips: AI / SND / XP / v2.0 / on-screen play.
  */
 (function () {
     'use strict';
@@ -51,8 +51,10 @@
     }
 
     function setBusy(busy) {
-        var play = $('fp-mc-play');
-        if (play) play.disabled = !!busy;
+        ['fp-mc-play', 'fp-mc-play-overlay', 'fp-mc-node-ai'].forEach(function (id) {
+            var el = $(id);
+            if (el && 'disabled' in el) el.disabled = !!busy;
+        });
         var monitor = $('fp-mc-monitor');
         if (monitor) monitor.classList.toggle('is-busy', !!busy);
     }
@@ -73,9 +75,59 @@
             }
             var ok = (fal && fal.available) || (drama && drama.available);
             setReady(bits.join(' · '), ok);
+
+            var xp = $('fp-mc-node-xp');
+            var level = (((d.statistics || {}).level) || null);
+            if (xp && level) {
+                xp.textContent = 'Lv' + level;
+                xp.title = 'Level ' + level + ' · XP & trophies';
+            }
         } catch (_) {
             setReady('Canvas status unavailable', false);
         }
+    }
+
+    function syncSoundNode() {
+        var snd = $('fp-mc-node-snd');
+        var kicker = $('fp-neural-kicker');
+        var live = document.body.classList.contains('mn-sound-active');
+        if (!live) {
+            var power = $('themeSoundToggle');
+            live = !!(power && power.getAttribute('aria-pressed') === 'true');
+        }
+        if (snd) {
+            snd.classList.toggle('is-live', live);
+            snd.setAttribute('aria-pressed', live ? 'true' : 'false');
+            snd.title = live ? 'Neural sound online — click to stop' : 'Neural sound offline — click to start';
+        }
+        if (kicker) {
+            kicker.textContent = live ? 'Neural sound online' : 'Neural sound offline';
+        }
+    }
+
+    function bindControlNodes() {
+        var ai = $('fp-mc-node-ai');
+        var snd = $('fp-mc-node-snd');
+        if (ai) {
+            ai.addEventListener('click', function () {
+                var prompt = $('fp-mc-prompt');
+                if (prompt) prompt.focus();
+                playMovie();
+            });
+        }
+        if (snd) {
+            snd.addEventListener('click', function () {
+                var power = $('themeSoundToggle') || $('themeSoundFloatToggle');
+                if (power) power.click();
+                setTimeout(syncSoundNode, 80);
+            });
+        }
+        ['themeSoundToggle', 'themeSoundFloatToggle'].forEach(function (id) {
+            var el = $(id);
+            if (el) el.addEventListener('click', function () { setTimeout(syncSoundNode, 80); });
+        });
+        syncSoundNode();
+        setInterval(syncSoundNode, 1500);
     }
 
     async function playMovie() {
@@ -180,8 +232,11 @@
         var stage = $('fp-mc-stage');
         if (!stage) return;
         var play = $('fp-mc-play');
+        var overlay = $('fp-mc-play-overlay');
         var prompt = $('fp-mc-prompt');
+        var frame = stage.querySelector('.fp-mc-frame');
         if (play) play.addEventListener('click', playMovie);
+        if (overlay) overlay.addEventListener('click', playMovie);
         if (prompt) {
             prompt.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
@@ -190,6 +245,21 @@
                 }
             });
         }
+        if (frame) {
+            frame.addEventListener('click', function (e) {
+                if (e.target && (e.target.id === 'fp-mc-play-overlay' || e.target.closest('#fp-mc-play-overlay'))) {
+                    return;
+                }
+                var video = $('fp-mc-video');
+                if (video && video.getAttribute('src') && video.readyState >= 2) {
+                    if (video.paused) video.play().catch(function () {});
+                    else video.pause();
+                } else {
+                    playMovie();
+                }
+            });
+        }
+        bindControlNodes();
         refreshReady();
         setInterval(refreshReady, 45000);
     }

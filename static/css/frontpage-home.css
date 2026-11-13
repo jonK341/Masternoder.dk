@@ -120,32 +120,35 @@
     to { transform: translateY(8%); }
 }
 
-.fp-mc-top {
+.fp-mc-chrome {
     position: relative;
     z-index: 1;
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 10px;
+    align-items: center;
+    gap: 8px 10px;
+    margin-bottom: 8px;
 }
 
 .fp-mc-title {
     color: #00e676;
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 0.86rem;
+    letter-spacing: 0.02em;
 }
 
 .fp-mc-sub {
-    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+    margin: 0 0 10px;
     color: #8fbba0;
     font-size: 0.82rem;
 }
 
 .fp-mc-ready {
+    margin-left: auto;
     color: #888;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
 }
 
 .fp-mc-ready.is-ready { color: #00e676; }
@@ -164,6 +167,10 @@
     border-radius: 8px;
     border: 1px solid rgba(0, 230, 118, 0.25);
     background: #000;
+}
+
+.fp-mc-frame .fp-film-play {
+    z-index: 3;
 }
 
 .fp-mc-frame video {
@@ -228,7 +235,8 @@
     font-size: 0.85rem;
 }
 
-.fp-mc-monitor.is-busy .fp-mc-play {
+.fp-mc-monitor.is-busy .fp-mc-play,
+.fp-mc-monitor.is-busy .fp-film-play {
     animation: fpFilmPulse 1.2s ease-in-out infinite;
 }
 
