@@ -296,8 +296,95 @@ def _cfg_int_safe(default: int) -> int:
     return int(_cfg_float("COURIER_EARN_MAX_REDEEMS", float(default)))
 
 
+def quote_bridge_for_route(
+    opp: Dict[str, Any],
+    *,
+    need_usd: float = 15.0,
+    raise_symbols: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """Fund the buy-venue quote leg for a BN↔NK route (USDC↔USDT bridge via raise sells).
+
+    Venues settle in different stables; we cannot wire USDC→USDT directly, so the
+    bridge sells raise inventory on the buy venue until free quote clears ``need_usd``.
+    """
+    from backend.services import exchange_venue_api_service as vapi
+    from backend.services.exchange_spread_hunter_arm_service import _raise_quote_on_buy_venue
+
+    buy_v = str(opp.get("buy_venue") or "").lower()
+    sell_v = str(opp.get("sell_venue") or "").lower()
+    if buy_v not in _VENUES:
+        return {"success": False, "skipped": True, "reason": "bad_buy_venue", "technique": "quote_bridge_rotation"}
+
+    quote = str(vapi.venue_quote_asset(buy_v) or "").upper()
+    bals = vapi.parse_spot_balances(buy_v, dry_run=False, force_refresh=True) or {}
+    free = float(bals.get(quote) or 0) if quote else 0.0
+    target = max(float(need_usd), _cfg_float("COURIER_FLOOR_USD", 12.0))
+    if free >= target:
+        return {
+            "success": True,
+            "skipped": True,
+            "reason": "buy_quote_funded",
+            "technique": "quote_bridge_rotation",
+            "venue": buy_v,
+            "quote": quote,
+            "free": round(free, 4),
+            "sell_venue": sell_v,
+        }
+
+    preferred: List[str] = []
+    sym = str(opp.get("symbol") or "").upper()
+    if sym:
+        preferred.append(sym)
+    for s in raise_symbols or []:
+        u = str(s or "").upper()
+        if u and u not in preferred:
+            preferred.append(u)
+
+    action = _raise_quote_on_buy_venue(
+        buy_v,
+        need_usd=target,
+        raise_symbols=preferred or None,
+        min_sell_usd=_cfg_float("COURIER_MIN_MOVE_USD", 3.0),
+        max_fraction=_cfg_float("COURIER_MAX_FRACTION", 0.55),
+        scan_all_balances=True,
+    )
+    ok = bool(action.get("success")) and not action.get("skipped")
+    if ok:
+        vapi.invalidate_venue_balance_cache(buy_v)
+        _append(
+            "quote_bridge",
+            buy_venue=buy_v,
+            sell_venue=sell_v,
+            symbol=action.get("symbol"),
+            sell_usd=action.get("sell_usd"),
+        )
+    return {
+        "success": bool(action.get("success")),
+        "skipped": bool(action.get("skipped")),
+        "technique": "quote_bridge_rotation",
+        "venue": buy_v,
+        "quote": quote,
+        "free_before": round(free, 4),
+        "need_usd": round(target, 2),
+        "action": action,
+        "reason": action.get("reason"),
+    }
+
+
+def _top_unfunded_route() -> Optional[Dict[str, Any]]:
+    book = ex._read_json(os.path.join(ex._DATA_DIR, "profit_order_book.json"), {})
+    for row in (book.get("top5") if isinstance(book, dict) else None) or []:
+        if isinstance(row, dict) and row.get("qualifies") and not row.get("funded"):
+            return row
+    board = ex._read_json(os.path.join(ex._DATA_DIR, "spread_hunter_board.json"), {})
+    gaps = board.get("gaps") if isinstance(board, dict) else None
+    if isinstance(gaps, list) and gaps and isinstance(gaps[0], dict):
+        return gaps[0]
+    return None
+
+
 def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
-    """Keep Binance current, then equalize quote if a venue is still starved."""
+    """Keep Binance current, quote-bridge top route, then equalize if still starved."""
     if not courier_enabled() and not force:
         return {"success": False, "skipped": True, "reason": "arm_disabled", "limb": "courier"}
 
@@ -310,6 +397,17 @@ def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
         seed_usd=_cfg_float("COURIER_SEED_USD", 15.0),
     )
 
+    bridge = None
+    if os.environ.get("COURIER_QUOTE_BRIDGE", "1").strip().lower() not in ("0", "false", "no", "off"):
+        top = _top_unfunded_route()
+        if top:
+            bridge = quote_bridge_for_route(
+                top,
+                need_usd=float(top.get("notional_usd") or _cfg_float("COURIER_SEED_USD", 15.0)),
+            )
+            if bridge.get("success") and not bridge.get("skipped"):
+                bn_sync["did_work"] = True
+
     snaps = _quote_snaps()
     imb = _imbalance(snaps, floor=floor)
     out: Dict[str, Any] = {
@@ -320,13 +418,17 @@ def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
         "quotes": snaps,
         "imbalance": imb,
         "binance_sync": bn_sync,
+        "quote_bridge": bridge,
         "moved": False,
         "action": None,
         "skip_reason": None,
     }
+    if bridge and bridge.get("success") and not bridge.get("skipped"):
+        out["moved"] = True
+        out["action"] = bridge.get("action") or bridge
 
     # Prefer raising on Binance when it is the priority starved venue.
-    do_raise = bool(imb.get("skewed"))
+    do_raise = bool(imb.get("skewed")) and not out["moved"]
     poor = imb.get("poor") or {}
     venue = str(poor.get("venue") or "")
     # If Binance is already funded, do not keep draining NonKYC just to chase 45/55 —
@@ -363,6 +465,8 @@ def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
                 out["skip_reason"] = str(action.get("reason") or "raise_failed")
         else:
             out["skip_reason"] = "gap_too_small"
+    elif out["moved"]:
+        out["skip_reason"] = None
     else:
         out["skip_reason"] = "bn_synced" if bn_sync.get("did_work") else "balanced"
 
@@ -405,6 +509,8 @@ def run_courier_tick(*, force: bool = False) -> Dict[str, Any]:
         bn_bits.append(f"seed={seed_sym}")
     if (bn_sync.get("grid_reseed") or {}).get("success"):
         bn_bits.append("grid_reseed")
+    if bridge and bridge.get("success") and not bridge.get("skipped"):
+        bn_bits.append("quote_bridge")
     summary = (
         f"moved={'yes' if out['moved'] else 'no'} "
         f"bn={'|'.join(bn_bits) if bn_bits else ('ok' if not bn_sync.get('did_work') else 'sync')} "

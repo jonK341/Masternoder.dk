@@ -126,7 +126,13 @@ def _retry_open_leg(leg: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "reason": "missing_venue"}
 
     quote = vapi.venue_quote_asset(venue)
-    order = vapi.place_market_order(venue, sym, side, qty, dry_run=False, quote=quote)
+    # Microstructure: retry large half-legs as a clip first to clear venue mins / slip.
+    clip_frac = _cfg_float("CLOSER_MICRO_CLIP_FRAC", 0.45)
+    attempts = int(leg.get("attempts") or 0)
+    use_qty = qty
+    if attempts >= 1 and clip_frac > 0 and clip_frac < 1:
+        use_qty = max(qty * clip_frac, qty * 0.2)
+    order = vapi.place_market_order(venue, sym, side, use_qty, dry_run=False, quote=quote)
     ok = bool(order.get("success"))
     vapi.invalidate_venue_balance_cache(venue)
     return {
@@ -134,7 +140,9 @@ def _retry_open_leg(leg: Dict[str, Any]) -> Dict[str, Any]:
         "venue": venue,
         "side": side,
         "symbol": sym,
-        "quantity": qty,
+        "quantity": use_qty,
+        "full_quantity": qty,
+        "micro_clip": use_qty < qty * 0.99,
         "order_success": ok,
         "error": order.get("error") if not ok else None,
     }
@@ -145,8 +153,9 @@ def _dust_candidates(venue: str) -> List[Dict[str, Any]]:
 
     quote = str(vapi.venue_quote_asset(venue) or "").upper()
     bals = vapi.parse_spot_balances(venue, dry_run=False, force_refresh=True) or {}
-    min_usd = _cfg_float("CLOSER_DUST_MIN_USD", 3.0)
-    max_usd = _cfg_float("CLOSER_DUST_MAX_USD", 20.0)
+    # Microstructure: harvest smaller dust clips so quote rebuilds faster after partial fills.
+    min_usd = _cfg_float("CLOSER_DUST_MIN_USD", 1.5)
+    max_usd = _cfg_float("CLOSER_DUST_MAX_USD", 25.0)
     skip = {quote, "USDT", "USDC", "USD", "BUSD", "FDUSD", "DAI"}
     rows: List[Dict[str, Any]] = []
     for sym, raw in bals.items():

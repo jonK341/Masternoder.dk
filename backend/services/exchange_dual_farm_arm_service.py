@@ -229,6 +229,25 @@ def run_dual_farm_arm_tick(*, force: bool = False) -> Dict[str, Any]:
     from backend.services.exchange_profit_path_service import record_execution, record_scan
 
     for opp in opps[: max(1, max_exec)]:
+        try:
+            from backend.services.exchange_technique_executor_service import cutting_edge
+
+            edge = cutting_edge(
+                net_bps=float(opp.get("net_bps") or 0),
+                mid_skew_bps=float(opp.get("mid_skew_bps") or 0),
+                buy_ask=float(opp.get("buy_ask") or 0),
+                buy_bid=float(opp.get("buy_bid") or 0),
+                sell_ask=float(opp.get("sell_ask") or 0),
+                sell_bid=float(opp.get("sell_bid") or 0),
+                est_profit_usd=float(opp.get("est_profit_usd") or 0),
+            )
+            if edge.get("band") != "fire":
+                out["skip_reason"] = edge.get("reason") or "phantom_skew_no_residual"
+                out["residual_edge"] = edge
+                out["cutting_edge"] = edge
+                continue
+        except Exception:
+            pass
         prepared = arb.prepare_live_opportunity(
             opp, configured_usd=notional, buffer_pct=0.03, min_live_usd=min_live,
         )

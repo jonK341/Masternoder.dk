@@ -43,22 +43,26 @@ PROFILE_INTERVALS = {
     "max": {
         "exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120,
         "dual_farm": 45, "hunter": 20, "pbook": 25, "head": 45,
-        "courier": 60, "latch": 20, "closer": 45,
+        "courier": 60, "latch": 20, "closer": 45, "executor": 30,
+        "datamaxi": 45, "basis": 120, "swing": 300,
     },
     "standard": {
         "exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180,
         "dual_farm": 60, "hunter": 30, "pbook": 45, "head": 60,
-        "courier": 90, "latch": 30, "closer": 60,
+        "courier": 90, "latch": 30, "closer": 60, "executor": 45,
+        "datamaxi": 60, "basis": 180, "swing": 600,
     },
     "fast": {
         "exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90,
         "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
-        "courier": 45, "latch": 15, "closer": 30,
+        "courier": 45, "latch": 15, "closer": 30, "executor": 20,
+        "datamaxi": 30, "basis": 90, "swing": 180,
     },
     "live-only": {
         "exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120,
         "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 45,
-        "courier": 45, "latch": 15, "closer": 30,
+        "courier": 45, "latch": 15, "closer": 30, "executor": 25,
+        "datamaxi": 40, "basis": 120, "swing": 300,
     },
 }
 
@@ -66,7 +70,8 @@ PROFILE_INTERVALS = {
 _LIVE_PROFIT_MAX_INTERVALS = {
     "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90,
     "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
-    "courier": 45, "latch": 15, "closer": 30,
+    "courier": 45, "latch": 15, "closer": 30, "executor": 20,
+    "datamaxi": 40, "basis": 90, "swing": 240,
 }
 
 
@@ -579,6 +584,9 @@ def _summarize_hunter(res: Dict[str, Any]) -> str:
             parts.append(f"backfill=${float(bf['raised_usd']):.2f}")
         else:
             parts.append(f"backfill={bf.get('reason') or ('ok' if bf.get('success') else 'no')}")
+    tech = res.get("technique_executor")
+    if isinstance(tech, dict) and tech.get("applied"):
+        parts.append(f"tech={'+'.join(str(t) for t in tech['applied'][:3])}")
     if res.get("prefund"):
         pref = res["prefund"]
         if pref.get("success"):
@@ -590,6 +598,82 @@ def _summarize_hunter(res: Dict[str, Any]) -> str:
     if res.get("skipped"):
         parts.append(f"disabled={res.get('reason')}")
     return " ".join(parts)
+
+
+def _summarize_executor(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"ready={'yes' if res.get('ready') else 'no'} skip={res.get('skip_reason') or '-'}")
+
+
+def _executor_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] technique-executor interval={interval}s (pbook tech → live apply)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_technique_executor_service import run_technique_executor_tick
+
+            res = run_technique_executor_tick()
+            summary = _summarize_executor(res)
+            print(f"[all-profit] executor {summary}", flush=True)
+            _write_heartbeat("executor", summary)
+        except Exception as exc:
+            print(f"[all-profit] executor error: {exc}", flush=True)
+        stop.wait(max(15, interval))
+
+
+def _summarize_datamaxi(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"qual={res.get('qualifying_count', 0)} hand={res.get('handed_to_hunter')}")
+
+
+def _datamaxi_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] datamaxi CEX-CEX playbook interval={interval}s", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_datamaxi_cex_spread_service import run_datamaxi_cex_spread_tick
+
+            res = run_datamaxi_cex_spread_tick()
+            summary = _summarize_datamaxi(res)
+            print(f"[all-profit] datamaxi {summary}", flush=True)
+            _write_heartbeat("datamaxi", summary)
+        except Exception as exc:
+            print(f"[all-profit] datamaxi error: {exc}", flush=True)
+        stop.wait(max(20, interval))
+
+
+def _summarize_basis(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"act={res.get('actionable_count', 0)} skip={res.get('skip_reason') or '-'}")
+
+
+def _basis_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] funding-basis arm interval={interval}s (spot-perp / funding)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_funding_basis_arm_service import run_funding_basis_tick
+
+            res = run_funding_basis_tick()
+            summary = _summarize_basis(res)
+            print(f"[all-profit] basis {summary}", flush=True)
+            _write_heartbeat("basis", summary)
+        except Exception as exc:
+            print(f"[all-profit] basis error: {exc}", flush=True)
+        stop.wait(max(30, interval))
+
+
+def _summarize_swing(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"levels={res.get('count', 0)}")
+
+
+def _swing_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] precision-swing interval={interval}s (pivot S/R discipline)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_precision_swing_service import run_precision_swing_tick
+
+            res = run_precision_swing_tick()
+            summary = _summarize_swing(res)
+            print(f"[all-profit] swing {summary}", flush=True)
+            _write_heartbeat("swing", summary)
+        except Exception as exc:
+            print(f"[all-profit] swing error: {exc}", flush=True)
+        stop.wait(max(60, interval))
 
 
 def _hunter_loop(interval: int, stop: threading.Event) -> None:
@@ -977,6 +1061,26 @@ def main() -> int:
         help="Do not run closer claw (half-legs + dust harvest)",
     )
     parser.add_argument(
+        "--skip-executor",
+        action="store_true",
+        help="Do not run technique executor loop (pbook tech → live apply)",
+    )
+    parser.add_argument(
+        "--skip-datamaxi",
+        action="store_true",
+        help="Do not run DataMaxi CEX-CEX spread playbook limb",
+    )
+    parser.add_argument(
+        "--skip-basis",
+        action="store_true",
+        help="Do not run Hummingbot-style funding/basis arm",
+    )
+    parser.add_argument(
+        "--skip-swing",
+        action="store_true",
+        help="Do not run precision level swing TA limb",
+    )
+    parser.add_argument(
         "--skip-feed",
         action="store_true",
         help="No-op (compat with ops wrappers that pass --skip-feed)",
@@ -1006,6 +1110,10 @@ def main() -> int:
     courier_iv = int(os.environ.get("COURIER_INTERVAL_SEC") or 0) or iv.get("courier") or 60
     latch_iv = int(os.environ.get("LATCH_INTERVAL_SEC") or 0) or iv.get("latch") or 20
     closer_iv = int(os.environ.get("CLOSER_INTERVAL_SEC") or 0) or iv.get("closer") or 45
+    executor_iv = int(os.environ.get("TECH_EXECUTOR_INTERVAL_SEC") or 0) or iv.get("executor") or 30
+    datamaxi_iv = int(os.environ.get("DATAMAXI_INTERVAL_SEC") or 0) or iv.get("datamaxi") or 45
+    basis_iv = int(os.environ.get("FUNDING_BASIS_INTERVAL_SEC") or 0) or iv.get("basis") or 120
+    swing_iv = int(os.environ.get("PRECISION_SWING_INTERVAL_SEC") or 0) or iv.get("swing") or 300
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -1050,6 +1158,22 @@ def main() -> int:
                 from backend.services.exchange_closer_claw_service import run_closer_tick
 
                 out["closer"] = run_closer_tick(force=True)
+            if not args.skip_executor:
+                from backend.services.exchange_technique_executor_service import run_technique_executor_tick
+
+                out["executor"] = run_technique_executor_tick(force=True)
+            if not args.skip_datamaxi:
+                from backend.services.exchange_datamaxi_cex_spread_service import run_datamaxi_cex_spread_tick
+
+                out["datamaxi"] = run_datamaxi_cex_spread_tick(force=True)
+            if not args.skip_basis:
+                from backend.services.exchange_funding_basis_arm_service import run_funding_basis_tick
+
+                out["basis"] = run_funding_basis_tick(force=True)
+            if not args.skip_swing:
+                from backend.services.exchange_precision_swing_service import run_precision_swing_tick
+
+                out["swing"] = run_precision_swing_tick(force=True)
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -1083,6 +1207,14 @@ def main() -> int:
                 print(f"[all-profit] latch {_summarize_latch(out['latch'])}", flush=True)
             if "closer" in out:
                 print(f"[all-profit] closer {_summarize_closer(out['closer'])}", flush=True)
+            if "executor" in out:
+                print(f"[all-profit] executor {_summarize_executor(out['executor'])}", flush=True)
+            if "datamaxi" in out:
+                print(f"[all-profit] datamaxi {_summarize_datamaxi(out['datamaxi'])}", flush=True)
+            if "basis" in out:
+                print(f"[all-profit] basis {_summarize_basis(out['basis'])}", flush=True)
+            if "swing" in out:
+                print(f"[all-profit] swing {_summarize_swing(out['swing'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -1118,6 +1250,14 @@ def main() -> int:
             print(f"  latch sniper interval={latch_iv}s")
         if closer_iv and not args.skip_closer:
             print(f"  closer claw interval={closer_iv}s")
+        if executor_iv and not args.skip_executor:
+            print(f"  technique-executor interval={executor_iv}s")
+        if datamaxi_iv and not args.skip_datamaxi:
+            print(f"  datamaxi CEX-CEX playbook interval={datamaxi_iv}s")
+        if basis_iv and not args.skip_basis:
+            print(f"  funding-basis arm interval={basis_iv}s")
+        if swing_iv and not args.skip_swing:
+            print(f"  precision-swing interval={swing_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -1170,6 +1310,22 @@ def main() -> int:
         if closer_iv and not args.skip_closer:
             threads.append(threading.Thread(
                 target=_closer_loop, args=(closer_iv, stop), name="closer", daemon=True,
+            ))
+        if executor_iv and not args.skip_executor:
+            threads.append(threading.Thread(
+                target=_executor_loop, args=(executor_iv, stop), name="executor", daemon=True,
+            ))
+        if datamaxi_iv and not args.skip_datamaxi:
+            threads.append(threading.Thread(
+                target=_datamaxi_loop, args=(datamaxi_iv, stop), name="datamaxi", daemon=True,
+            ))
+        if basis_iv and not args.skip_basis:
+            threads.append(threading.Thread(
+                target=_basis_loop, args=(basis_iv, stop), name="basis", daemon=True,
+            ))
+        if swing_iv and not args.skip_swing:
+            threads.append(threading.Thread(
+                target=_swing_loop, args=(swing_iv, stop), name="swing", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(

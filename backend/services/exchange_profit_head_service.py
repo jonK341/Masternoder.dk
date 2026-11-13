@@ -33,10 +33,13 @@ _HEARTBEAT_CANDIDATES = [
     os.path.join(ex._DATA_DIR, "daemon_all_profit_heartbeat.json"),
 ]
 
-_LIMBS = ("hunter", "dual_farm", "courier", "latch", "closer", "pbook", "grid")
-_ARMS = ("hunter", "dual_farm", "courier")
-_TOOLS = ("latch", "closer")
-_LEGS = ("pbook", "grid")
+_LIMBS = (
+    "hunter", "dual_farm", "courier", "latch", "closer", "pbook", "grid",
+    "executor", "datamaxi", "basis", "swing",
+)
+_ARMS = ("hunter", "dual_farm", "courier", "basis")
+_TOOLS = ("latch", "closer", "executor", "swing")
+_LEGS = ("pbook", "grid", "datamaxi")
 _HEAD_AGENT_ID = "arb_profit_head"
 
 
@@ -55,6 +58,10 @@ def _default_control() -> Dict[str, Any]:
             "closer": {"enabled": True},
             "pbook": {"enabled": True},
             "grid": {"enabled": True},
+            "executor": {"enabled": True},
+            "datamaxi": {"enabled": True},
+            "basis": {"enabled": True},
+            "swing": {"enabled": True},
         },
         "quote_budget": {
             "arm_reserve_usd": 0.0,
@@ -122,6 +129,18 @@ def get_prefund_hint() -> Optional[Dict[str, Any]]:
 def clear_prefund_hint() -> None:
     ctrl = load_control()
     ctrl["prefund_hint"] = None
+    save_control(ctrl)
+
+
+def set_kill_shot(shot: Optional[Dict[str, Any]]) -> None:
+    ctrl = load_control()
+    ctrl["kill_shot"] = shot if isinstance(shot, dict) else None
+    save_control(ctrl)
+
+
+def set_prefund_hint(hint: Optional[Dict[str, Any]]) -> None:
+    ctrl = load_control()
+    ctrl["prefund_hint"] = hint if isinstance(hint, dict) else None
     save_control(ctrl)
 
 
