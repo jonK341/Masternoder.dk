@@ -118,6 +118,10 @@ def _public_interactive_job(job: dict) -> dict:
             (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1")
             if job.get("video_url") else None
         ),
+        "xvid_url": (
+            (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1&format=xvid")
+            if job.get("video_url") and job.get("xvid_path") else None
+        ),
         "updated_at": job.get("updated_at"),
     }
 
@@ -233,6 +237,7 @@ def _run_interactive_movie_job(
         )
         if result.get("success") and result.get("local_path"):
             beats = result.get("beats")
+            mode = result.get("mode")
             _touch_interactive_job(
                 job_id,
                 status="completed",
@@ -240,15 +245,17 @@ def _run_interactive_movie_job(
                 message=(
                     "Interactive movie ready"
                     + ((" · %s scenes" % beats) if beats else "")
+                    + (" · people acting" if mode == "acting_storyboard" else "")
                 ),
                 planner=result.get("planner"),
                 renderer=result.get("renderer") or result.get("canvas"),
                 prompt_used=result.get("prompt_used"),
                 local_path=result.get("local_path"),
+                xvid_path=result.get("xvid_path"),
                 video_url="/api/film-canvas/interactive-movie/%s/video" % job_id,
                 beats=beats,
                 beat_plan=result.get("beat_plan"),
-                mode=result.get("mode"),
+                mode=mode,
                 error=None,
             )
         else:
@@ -708,19 +715,36 @@ def interactive_movie_status(job_id):
 @ai_providers_bp.route("/api/film-canvas/interactive-movie/<job_id>/video", methods=["GET"])
 def interactive_movie_video(job_id):
     job = _load_interactive_job(job_id) or {}
+    fmt = str(request.args.get("format") or "").strip().lower()
     path = job.get("local_path")
+    mimetype = "video/mp4"
+    download_name = "masternoder-movie-%s.mp4" % (
+        "".join(ch for ch in str(job_id) if ch.isalnum() or ch in ("_", "-"))[:24]
+        or "clip"
+    )
+    if fmt in ("xvid", "avi", "mpeg4"):
+        xvid_path = job.get("xvid_path")
+        if (not xvid_path or not os.path.isfile(xvid_path)) and path and os.path.isfile(path):
+            try:
+                from backend.services.film_canvas_service import _ffmpeg_encode_xvid
+                encoded = _ffmpeg_encode_xvid(path)
+                if encoded.get("success") and encoded.get("local_path"):
+                    xvid_path = encoded["local_path"]
+                    _touch_interactive_job(job_id, xvid_path=xvid_path)
+            except Exception:
+                xvid_path = None
+        if xvid_path and os.path.isfile(xvid_path):
+            path = xvid_path
+            mimetype = "video/x-msvideo"
+            download_name = download_name.replace(".mp4", ".avi")
     if not path or not os.path.isfile(path):
         return jsonify({"success": False, "error": "Video not ready"}), 404
     as_download = str(request.args.get("download") or "").strip().lower() in (
         "1", "true", "yes", "download",
     )
-    download_name = "masternoder-movie-%s.mp4" % (
-        "".join(ch for ch in str(job_id) if ch.isalnum() or ch in ("_", "-"))[:24]
-        or "clip"
-    )
     return send_file(
         path,
-        mimetype="video/mp4",
+        mimetype=mimetype,
         conditional=True,
         as_attachment=as_download,
         download_name=download_name if as_download else None,

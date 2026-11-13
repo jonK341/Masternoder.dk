@@ -1408,18 +1408,18 @@ def _write_beat_scene_image(
         return None
 
 
-def _try_free_beat_image(prompt: str, dest_dir: str, seed: int) -> Optional[str]:
-    """Best-effort unique AI still per beat with a short timeout (never block the movie)."""
+def _try_free_beat_image(prompt: str, dest_dir: str, seed: int, timeout: int = 12) -> Optional[str]:
+    """Best-effort prompt-matched AI still (never block the movie for long)."""
     os.makedirs(dest_dir, exist_ok=True)
     path = os.path.join(dest_dir, "ai_beat_%s_%s.jpg" % (seed, uuid.uuid4().hex[:6]))
     try:
-        encoded = urllib.parse.quote((prompt or "cinematic film still")[:320], safe="")
+        encoded = urllib.parse.quote((prompt or "cinematic film still")[:380], safe="")
         url = (
             "https://image.pollinations.ai/prompt/%s"
             "?width=1280&height=720&nologo=true&enhance=true&seed=%d"
         ) % (encoded, int(seed) % 999999)
         req = urllib.request.Request(url, headers={"User-Agent": "MasterNoder/1.0"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
+        with urllib.request.urlopen(req, timeout=max(6, int(timeout))) as resp:
             img_bytes = resp.read()
         if len(img_bytes) < 1000:
             return None
@@ -1428,6 +1428,206 @@ def _try_free_beat_image(prompt: str, dest_dir: str, seed: int) -> Optional[str]
         return path
     except Exception:
         return None
+
+
+def _prompt_matched_still_prompt(beat: Dict[str, Any], base_prompt: str) -> str:
+    """Build a still prompt that stays close to the user's scene and shows people acting."""
+    shot = str(beat.get("shot_type") or "establishing")
+    detail = str(beat.get("description") or beat.get("title") or "").strip()
+    scene = (base_prompt or "").split("\n\nStoryboard direction:")[0].strip()
+    scene = scene.split("[face reference")[0].strip() or scene
+    action = {
+        "establishing": "wide cinematic establishing shot, environment first, tiny figures moving in distance",
+        "character": "medium shot of a person acting in the scene, natural pose, expressive face, eye contact",
+        "action": "dynamic action shot, person mid-movement, walking or gesturing, motion implied",
+        "detail": "close insert of hands or props from the scene while a person acts nearby",
+        "reaction": "reaction close-up, person turns and reacts emotionally",
+        "closing": "closing wide, person walks away through the scene",
+    }.get(shot, "cinematic shot with people moving naturally")
+    return (
+        "Photorealistic cinematic film still, exactly matching this scene: %s. "
+        "%s. Beat: %s. Same location, coherent lighting, detailed faces, "
+        "natural clothing, 16:9, no text, no watermark."
+    ) % (scene[:180], action, detail[:140])
+
+
+def _acting_pose_prompts(beat: Dict[str, Any], base_prompt: str) -> List[str]:
+    """Three pose prompts so people appear to move/act across the beat."""
+    base = _prompt_matched_still_prompt(beat, base_prompt)
+    shot = str(beat.get("shot_type") or "action")
+    if shot in ("establishing", "detail", "closing"):
+        suffixes = (
+            "camera holds, ambient people shift slightly",
+            "stronger foreground motion, walkers crossing frame",
+            "final framing, figures farther into the scene",
+        )
+    else:
+        suffixes = (
+            "person standing, facing camera, calm ready pose",
+            "same person mid-stride, body turned, arm gesturing",
+            "same person acting: turning head, expressive hands, stepping forward",
+        )
+    return [("%s. %s." % (base, suffix))[:420] for suffix in suffixes]
+
+
+def _composite_face_onto_still(still_path: str, face_path: str, dest_path: str) -> Optional[str]:
+    """Paste the user face onto a prompt still so the actor stays recognizable."""
+    if not (still_path and face_path and os.path.isfile(still_path) and os.path.isfile(face_path)):
+        return None
+    try:
+        from PIL import Image, ImageDraw
+
+        scene = Image.open(still_path).convert("RGB").resize((1280, 720))
+        face = Image.open(face_path).convert("RGB")
+        face.thumbnail((260, 260))
+        fx, fy = 920, 180
+        mask = Image.new("L", face.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((2, 2, face.size[0] - 2, face.size[1] - 2), fill=255)
+        scene.paste(face, (fx, fy), mask)
+        scene.save(dest_path, format="JPEG", quality=90)
+        return dest_path
+    except Exception:
+        return None
+
+
+def _collect_acting_pose_images(
+    beat: Dict[str, Any],
+    base_prompt: str,
+    dest_dir: str,
+    face_path: Optional[str] = None,
+) -> List[str]:
+    """Fetch/paint several prompt-matched poses for one beat (people acting)."""
+    poses: List[str] = []
+    seed0 = 2200 + int(beat.get("index") or 0) * 131
+    for i, pose_prompt in enumerate(_acting_pose_prompts(beat, base_prompt)):
+        path = _try_free_beat_image(pose_prompt, dest_dir, seed=seed0 + i * 17, timeout=10)
+        if not path:
+            painted = _write_beat_scene_image(
+                dest_dir,
+                {
+                    **beat,
+                    "index": int(beat.get("index") or 0) * 10 + i,
+                    "title": "%s · pose %s" % (beat.get("title") or "Beat", i + 1),
+                    "description": pose_prompt[:180],
+                },
+                face_path=face_path if i == 0 else None,
+            )
+            path = painted
+        if path and face_path and os.path.isfile(face_path) and str(beat.get("shot_type")) in (
+            "character", "action", "reaction", "closing",
+        ):
+            composited = os.path.join(
+                dest_dir, "facepose_%s_%s.jpg" % (beat.get("index"), i)
+            )
+            path = _composite_face_onto_still(path, face_path, composited) or path
+        if path and os.path.isfile(path):
+            poses.append(path)
+    # Deduplicate identical paths; keep order.
+    unique: List[str] = []
+    for path in poses:
+        if path not in unique:
+            unique.append(path)
+    return unique
+
+
+def _ffmpeg_acting_clip(
+    image_paths: List[str],
+    dest_path: str,
+    duration: float = 3.0,
+    motion: str = "zoom_in",
+) -> Dict[str, Any]:
+    """Morph between pose stills so people appear to move and act."""
+    seconds = max(1.2, min(60.0, float(duration or 3.0)))
+    paths = [p for p in image_paths if p and os.path.isfile(p)]
+    if not paths:
+        return {"success": False, "error": "no acting poses"}
+    if len(paths) == 1:
+        return _ffmpeg_kenburns_movie(paths[0], dest_path, duration=seconds, motion=motion)
+
+    n = len(paths)
+    fade = min(0.4, max(0.2, seconds / (n * 4.0)))
+    hold = max(fade + 0.4, (seconds + fade * (n - 1)) / float(n))
+    cmd: List[str] = ["ffmpeg", "-y"]
+    for path in paths:
+        cmd.extend(["-loop", "1", "-t", ("%.3f" % hold), "-i", path])
+
+    # Normalize each input, then xfade through the pose chain.
+    parts: List[str] = []
+    for i in range(n):
+        parts.append(
+            "[%d:v]scale=1280:720:force_original_aspect_ratio=decrease,"
+            "pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=25[s%d]"
+            % (i, i)
+        )
+    current = "[s0]"
+    offset = hold - fade
+    for i in range(1, n):
+        label = "[x%d]" % i
+        parts.append(
+            "%s[s%d]xfade=transition=fade:duration=%.3f:offset=%.3f%s"
+            % (current, i, fade, max(0.05, offset), label)
+        )
+        current = label
+        offset += hold - fade
+    parts.append(
+        "%seq=contrast=1.06:saturation=1.1,format=yuv420p[vout]" % current
+    )
+    cmd.extend([
+        "-filter_complex", ";".join(parts),
+        "-map", "[vout]",
+        "-t", ("%.3f" % seconds),
+        "-r", "25",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
+        dest_path,
+    ])
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=max(60, int(seconds) + 45),
+            check=False,
+        )
+    except Exception as exc:
+        return {"success": False, "error": "acting ffmpeg failed: %s" % exc}
+    if proc.returncode != 0 or not os.path.isfile(dest_path):
+        return _ffmpeg_kenburns_movie(paths[0], dest_path, duration=seconds, motion=motion)
+    return {
+        "success": True,
+        "local_path": dest_path,
+        "fps": 25,
+        "duration_sec": seconds,
+        "mode": "acting_morph",
+        "poses": len(paths),
+    }
+
+
+def _ffmpeg_encode_xvid(mp4_path: str, dest_path: Optional[str] = None) -> Dict[str, Any]:
+    """Re-encode an MP4 into an Xvid AVI clip for download/playback compatibility."""
+    if not mp4_path or not os.path.isfile(mp4_path):
+        return {"success": False, "error": "mp4 missing for xvid encode"}
+    if dest_path is None:
+        base, _ = os.path.splitext(mp4_path)
+        dest_path = base + "_xvid.avi"
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", mp4_path,
+        "-c:v", "libxvid",
+        "-qscale:v", "4",
+        "-an",
+        dest_path,
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180, check=False)
+    except Exception as exc:
+        return {"success": False, "error": "xvid encode failed: %s" % exc}
+    if proc.returncode != 0 or not os.path.isfile(dest_path):
+        err = (proc.stderr or proc.stdout or "xvid failed")[-300:]
+        return {"success": False, "error": "xvid encode failed: %s" % err}
+    return {"success": True, "local_path": dest_path, "format": "xvid"}
 
 
 def _ffmpeg_color_movie(dest_dir: str, duration: float = 5.0) -> Dict[str, Any]:
@@ -1635,31 +1835,31 @@ def _collect_movie_stills(
     duration: float,
     face_path: Optional[str] = None,
     direction: Optional[str] = None,
-) -> List[Dict[str, str]]:
-    """Gather one unique still per storyboard beat (AI image or painted scene)."""
+) -> List[Dict[str, Any]]:
+    """Gather prompt-matched acting poses per storyboard beat."""
     beats = _build_storyboard_beats(prompt, duration, direction=direction)
-    stills: List[Dict[str, str]] = []
+    stills: List[Dict[str, Any]] = []
     for beat in beats:
-        source = "beat_scene"
-        path = _try_free_beat_image(
-            beat.get("prompt") or beat.get("description") or prompt,
-            dest_dir,
-            seed=1000 + int(beat.get("index") or 0) * 97,
+        poses = _collect_acting_pose_images(
+            beat, prompt, dest_dir, face_path=face_path,
         )
-        if path:
-            source = "free_ai"
-        else:
+        source = "acting_poses" if len(poses) > 1 else ("free_ai" if poses else "beat_scene")
+        if not poses:
             path = _write_beat_scene_image(dest_dir, beat, face_path=face_path)
-        if not path:
-            continue
+            if not path:
+                continue
+            poses = [path]
+            source = "beat_scene"
         stills.append({
-            "path": path,
+            "path": poses[0],
+            "poses": poses,
             "source": source,
             "title": str(beat.get("title") or ""),
             "shot_type": str(beat.get("shot_type") or ""),
             "motion": str(beat.get("motion") or "zoom_in"),
             "duration_sec": float(beat.get("duration_sec") or 2.0),
             "description": str(beat.get("description") or ""),
+            "prompt": _prompt_matched_still_prompt(beat, prompt),
         })
     return stills
 
@@ -1671,7 +1871,7 @@ def _generate_free_still_movie(
     face_path: Optional[str] = None,
     direction: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Build a multi-scene storyboard movie: distinct material per beat, full runtime."""
+    """Build a prompt-matched multi-scene movie with people acting across poses."""
     if dest_dir is None:
         dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
     os.makedirs(dest_dir, exist_ok=True)
@@ -1703,12 +1903,20 @@ def _generate_free_still_movie(
     for index, still in enumerate(stills):
         beat_sec = float(still.get("duration_sec") or (duration / max(1, len(stills))))
         part = os.path.join(dest_dir, "beat_%s_%s.mp4" % (uuid.uuid4().hex[:8], index))
-        encoded = _encode_image_to_mp4(
-            still["path"],
+        poses = list(still.get("poses") or [still.get("path")])
+        encoded = _ffmpeg_acting_clip(
+            poses,
             part,
             duration=beat_sec,
             motion=str(still.get("motion") or "zoom_in"),
         )
+        if not (encoded.get("success") and encoded.get("local_path")):
+            encoded = _encode_image_to_mp4(
+                still["path"],
+                part,
+                duration=beat_sec,
+                motion=str(still.get("motion") or "zoom_in"),
+            )
         if encoded.get("success") and encoded.get("local_path"):
             beat_paths.append(encoded["local_path"])
             beat_meta.append({
@@ -1719,6 +1927,8 @@ def _generate_free_still_movie(
                 "motion": still.get("motion"),
                 "duration_sec": beat_sec,
                 "description": still.get("description"),
+                "poses": len(poses),
+                "mode": encoded.get("mode"),
             })
         else:
             errors.append(str(encoded.get("error") or "beat encode failed"))
@@ -1737,30 +1947,37 @@ def _generate_free_still_movie(
     dest = os.path.join(dest_dir, "movie_%s.mp4" % uuid.uuid4().hex[:8])
     merged = _ffmpeg_concat_movies(beat_paths, dest)
     sources = sorted({str(s.get("source") or "") for s in stills if s.get("source")})
+    xvid_path = None
     if merged.get("success") and merged.get("local_path"):
+        xvid = _ffmpeg_encode_xvid(merged["local_path"])
+        if xvid.get("success"):
+            xvid_path = xvid.get("local_path")
         return {
             "success": True,
             "local_path": merged["local_path"],
+            "xvid_path": xvid_path,
             "canvas": "free_still",
             "source_image": ",".join(sources) or "storyboard",
             "fps": 25,
             "duration_sec": int(round(duration)),
             "beats": len(beat_paths),
             "beat_plan": beat_meta or storyboard,
-            "mode": "storyboard_movie",
+            "mode": "acting_storyboard",
         }
 
     if beat_paths:
+        xvid = _ffmpeg_encode_xvid(beat_paths[0])
         return {
             "success": True,
             "local_path": beat_paths[0],
+            "xvid_path": xvid.get("local_path") if xvid.get("success") else None,
             "canvas": "free_still",
             "source_image": ",".join(sources) or "storyboard",
             "fps": 25,
             "duration_sec": int(round(duration)),
             "beats": len(beat_paths),
             "beat_plan": beat_meta,
-            "mode": "storyboard_movie",
+            "mode": "acting_storyboard",
             "concat_error": merged.get("error"),
         }
     errors.append(str(merged.get("error") or "concat failed"))
@@ -1905,6 +2122,12 @@ def compose_interactive_movie(
     # Full pipeline: try a short canvas/external clip per storyboard beat, then stitch.
     # If paid canvases are exhausted we still assemble the detailed multi-beat movie locally.
     def _finish(clip: Dict[str, Any], renderer: str) -> Dict[str, Any]:
+        local_path = clip.get("local_path")
+        xvid_path = clip.get("xvid_path")
+        if local_path and not xvid_path:
+            xvid = _ffmpeg_encode_xvid(str(local_path))
+            if xvid.get("success"):
+                xvid_path = xvid.get("local_path")
         return {
             "success": True,
             "planner": planner,
@@ -1912,7 +2135,8 @@ def compose_interactive_movie(
             "renderer": renderer,
             "planning": planning,
             "prompt_used": render_prompt[:500],
-            "local_path": clip.get("local_path"),
+            "local_path": local_path,
+            "xvid_path": xvid_path,
             "canvas": clip.get("canvas") or renderer,
             "frame_count": clip.get("frame_count"),
             "fps": clip.get("fps"),

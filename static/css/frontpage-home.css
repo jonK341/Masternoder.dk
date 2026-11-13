@@ -860,6 +860,15 @@ body.mn-sound-active #fp-neural-kicker {
     color: #00ff88;
 }
 
+.fp-film-download-xvid {
+    border-color: rgba(255, 200, 80, 0.55);
+}
+
+.fp-film-download-xvid:hover {
+    border-color: rgba(255, 200, 80, 0.85);
+    color: #ffd27a;
+}
+
 .fp-film-download.is-hidden,
 .fp-film-download[hidden] {
     display: none !important;

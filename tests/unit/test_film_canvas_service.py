@@ -436,23 +436,32 @@ def test_free_still_uses_local_ffmpeg_when_network_images_fail(clean_env, tmp_pa
 def test_storyboard_movie_uses_multiple_distinct_beats(clean_env, tmp_path, monkeypatch):
     face = tmp_path / "face.jpg"
     face.write_bytes(b"\xff\xd8\xff" + b"0" * 120)
-    encoded_paths = []
+    acting_calls = []
 
-    def fake_encode(image_path, dest_path, duration=6.0, motion="zoom_in"):
-        encoded_paths.append((image_path, float(duration), motion))
+    def fake_acting(image_paths, dest_path, duration=3.0, motion="zoom_in"):
+        acting_calls.append(list(image_paths))
         with open(dest_path, "wb") as handle:
             handle.write(b"mp4" * 40)
         return {
             "success": True,
             "local_path": dest_path,
             "fps": 25,
-            "mode": "kenburns",
-            "duration_sec": int(duration),
-            "motion": motion,
+            "mode": "acting_morph",
+            "poses": len(image_paths),
+            "duration_sec": float(duration),
         }
 
-    monkeypatch.setattr(canvas, "_encode_image_to_mp4", fake_encode)
+    monkeypatch.setattr(canvas, "_ffmpeg_acting_clip", fake_acting)
     monkeypatch.setattr(canvas, "_try_free_beat_image", lambda *a, **k: None)
+    monkeypatch.setattr(
+        canvas,
+        "_ffmpeg_encode_xvid",
+        lambda mp4_path, dest_path=None: {
+            "success": True,
+            "local_path": str(tmp_path / "out.avi"),
+            "format": "xvid",
+        },
+    )
     monkeypatch.setattr(
         canvas,
         "_ffmpeg_concat_movies",
@@ -466,14 +475,33 @@ def test_storyboard_movie_uses_multiple_distinct_beats(clean_env, tmp_path, monk
         direction="1. Wide harbour lights\n2. Captain close-up\n3. Radar detail\n4. Closing pull-back",
     )
     assert out["success"] is True
-    assert out["mode"] == "storyboard_movie"
+    assert out["mode"] == "acting_storyboard"
     assert out["duration_sec"] == 12
     assert out["beats"] >= 3
-    assert len(encoded_paths) >= 3
-    assert len({p[0] for p in encoded_paths}) >= 3
-    assert len({p[2] for p in encoded_paths}) >= 2
+    assert len(acting_calls) >= 3
+    assert out.get("xvid_path")
     assert isinstance(out.get("beat_plan"), list)
     assert out["beat_plan"][0].get("shot_type")
+
+
+def test_acting_clip_morphs_multiple_poses(clean_env, tmp_path):
+    from PIL import Image
+
+    poses = []
+    for i, color in enumerate([(10, 40, 80), (80, 40, 10), (20, 80, 40)]):
+        path = tmp_path / ("pose_%s.jpg" % i)
+        Image.new("RGB", (640, 360), color).save(path)
+        poses.append(str(path))
+    dest = str(tmp_path / "act.mp4")
+    out = canvas._ffmpeg_acting_clip(poses, dest, duration=2.4)
+    assert out["success"] is True
+    assert out["mode"] == "acting_morph"
+    assert out["poses"] == 3
+    assert os.path.isfile(out["local_path"])
+    xvid = canvas._ffmpeg_encode_xvid(out["local_path"], str(tmp_path / "act.avi"))
+    assert xvid["success"] is True
+    assert xvid["local_path"].endswith(".avi")
+    assert os.path.isfile(xvid["local_path"])
 
 
 def test_build_storyboard_beats_always_multi_shot():

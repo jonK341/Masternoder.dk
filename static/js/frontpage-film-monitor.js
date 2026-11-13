@@ -472,23 +472,37 @@
         setFacePreview(null);
     }
 
-    function setDownloadLink(url) {
+    function setDownloadLink(url, xvidUrl) {
         var link = $('fp-film-download');
-        if (!link) return;
+        var xvid = $('fp-film-download-xvid');
+        function hide(el) {
+            if (!el) return;
+            el.removeAttribute('href');
+            el.hidden = true;
+            el.classList.add('is-hidden');
+        }
+        function show(el, href, filename) {
+            if (!el || !href) {
+                hide(el);
+                return;
+            }
+            el.href = href;
+            el.setAttribute('download', filename);
+            el.hidden = false;
+            el.classList.remove('is-hidden');
+        }
         if (!url) {
-            link.removeAttribute('href');
-            link.hidden = true;
-            link.classList.add('is-hidden');
+            hide(link);
+            hide(xvid);
             return;
         }
         var href = String(url);
         if (!/[?&]download=/.test(href)) {
             href = href.indexOf('?') >= 0 ? (href + '&download=1') : (href + '?download=1');
         }
-        link.href = href;
-        link.setAttribute('download', 'masternoder-movie.mp4');
-        link.hidden = false;
-        link.classList.remove('is-hidden');
+        show(link, href, 'masternoder-movie.mp4');
+        var xhref = xvidUrl ? String(xvidUrl) : (href + (href.indexOf('?') >= 0 ? '&' : '?') + 'format=xvid');
+        if (xvidUrl || url) show(xvid, xhref, 'masternoder-movie.avi');
     }
 
     function compressFaceDataUrl(dataUrl, maxEdge, quality) {
@@ -719,11 +733,12 @@
                         video.onloadeddata = function () {
                             video.play().catch(function () {});
                         };
-                        setDownloadLink(d.download_url || d.video_url);
+                        setDownloadLink(d.download_url || d.video_url, d.xvid_url);
                         setStatus(
                             'Movie ready — play or download'
                             + (d.duration_sec ? (' · ' + d.duration_sec + 's') : '')
                             + (d.beats ? (' · ' + d.beats + ' scenes') : '')
+                            + (d.mode === 'acting_storyboard' ? ' · people acting' : '')
                             + (d.planner ? ' · plan:' + d.planner : '')
                             + (d.renderer ? ' · render:' + d.renderer : '')
                         );
