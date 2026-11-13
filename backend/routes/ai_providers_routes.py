@@ -110,6 +110,9 @@ def _public_interactive_job(job: dict) -> dict:
         "prompt_used": job.get("prompt_used"),
         "duration_sec": job.get("duration_sec"),
         "has_face": bool(job.get("has_face")),
+        "beats": job.get("beats"),
+        "beat_plan": job.get("beat_plan"),
+        "mode": job.get("mode"),
         "video_url": job.get("video_url"),
         "download_url": (
             (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1")
@@ -229,16 +232,23 @@ def _run_interactive_movie_job(
             face_path=face_path,
         )
         if result.get("success") and result.get("local_path"):
+            beats = result.get("beats")
             _touch_interactive_job(
                 job_id,
                 status="completed",
                 progress=100,
-                message="Interactive movie ready",
+                message=(
+                    "Interactive movie ready"
+                    + ((" · %s scenes" % beats) if beats else "")
+                ),
                 planner=result.get("planner"),
                 renderer=result.get("renderer") or result.get("canvas"),
                 prompt_used=result.get("prompt_used"),
                 local_path=result.get("local_path"),
                 video_url="/api/film-canvas/interactive-movie/%s/video" % job_id,
+                beats=beats,
+                beat_plan=result.get("beat_plan"),
+                mode=result.get("mode"),
                 error=None,
             )
         else:

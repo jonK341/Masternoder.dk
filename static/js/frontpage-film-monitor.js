@@ -653,6 +653,7 @@
                         setStatus(
                             'Movie ready — play or download'
                             + (d.duration_sec ? (' · ' + d.duration_sec + 's') : '')
+                            + (d.beats ? (' · ' + d.beats + ' scenes') : '')
                             + (d.planner ? ' · plan:' + d.planner : '')
                             + (d.renderer ? ' · render:' + d.renderer : '')
                         );

@@ -1164,33 +1164,270 @@ def _generate_external_clip(
 
 def _write_local_standby_image(dest_dir: str, prompt: str) -> Optional[str]:
     """Network-free standby frame so Play Movie still works offline."""
+    beat = {
+        "index": 0,
+        "title": "STANDBY",
+        "description": (prompt or "FILM CANVAS").strip()[:120],
+        "shot_type": "establishing",
+        "prompt": prompt or "FILM CANVAS",
+    }
+    return _write_beat_scene_image(dest_dir, beat, face_path=None)
+
+
+_BEAT_PALETTES = (
+    ((2, 18, 28), (0, 210, 255), (180, 240, 255)),      # teal night
+    ((28, 8, 4), (255, 120, 40), (255, 220, 180)),      # amber fire
+    ((8, 4, 28), (160, 80, 255), (220, 200, 255)),      # violet noir
+    ((4, 24, 12), (0, 255, 140), (180, 255, 210)),      # emerald
+    ((24, 16, 4), (255, 200, 60), (255, 240, 180)),     # gold dawn
+    ((4, 12, 24), (80, 160, 255), (200, 230, 255)),     # steel blue
+    ((22, 4, 14), (255, 60, 120), (255, 190, 210)),     # crimson
+    ((12, 12, 12), (220, 220, 220), (255, 255, 255)),   # mono
+)
+
+_SHOT_TYPES = (
+    "establishing",
+    "character",
+    "action",
+    "detail",
+    "reaction",
+    "closing",
+)
+
+
+def _beat_count_for_duration(duration: float) -> int:
+    """Always multiple distinct beats — never a single still pan for a whole movie."""
+    seconds = max(2.0, float(duration or 8.0))
+    if seconds <= 4:
+        return 2
+    if seconds <= 8:
+        return 3
+    if seconds <= 16:
+        return 4
+    if seconds <= 30:
+        return 5
+    if seconds <= 60:
+        return 6
+    return min(8, max(6, int(round(seconds / 12.0))))
+
+
+def _parse_direction_beats(direction: str, want: int) -> List[Dict[str, str]]:
+    """Pull numbered / bulleted visual beats from LLM / DramaCanvas direction."""
+    text = (direction or "").strip()
+    if not text:
+        return []
+    lines = []
+    for raw in text.replace("\r", "\n").split("\n"):
+        line = raw.strip().lstrip("-*•").strip()
+        if not line:
+            continue
+        # Strip leading "1." / "Beat 2:" / "[groq]" noise when useful.
+        if line.startswith("[") and "]" in line[:24]:
+            continue
+        cleaned = line
+        for prefix in ("Beat ", "Shot ", "Scene ", "BEAT ", "SHOT "):
+            if cleaned.upper().startswith(prefix.upper()):
+                cleaned = cleaned[len(prefix):].lstrip("0123456789.:)- ").strip()
+                break
+        else:
+            if len(cleaned) > 2 and cleaned[0].isdigit():
+                cleaned = cleaned.lstrip("0123456789.:)- ").strip()
+        if len(cleaned) < 8:
+            continue
+        lines.append(cleaned[:220])
+    # Also split on semicolons / " | " if we still have too few lines.
+    if len(lines) < want:
+        for chunk in text.replace("|", "\n").split("\n"):
+            piece = chunk.strip()
+            if len(piece) >= 12 and piece not in lines:
+                lines.append(piece[:220])
+            if len(lines) >= want * 2:
+                break
+    return [{"description": line, "title": line.split(".")[0][:42]} for line in lines[:want]]
+
+
+def _build_storyboard_beats(
+    prompt: str,
+    duration: float,
+    direction: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Full storyboard: N distinct shots covering the whole runtime."""
+    want = _beat_count_for_duration(duration)
+    seconds = max(2.0, float(duration or 8.0))
+    parsed = _parse_direction_beats(direction or "", want)
+    brief = (prompt or "cinematic scene").strip()
+    # Drop meta "Storyboard direction" / face-reference lines from the brief.
+    brief_core = brief.split("\n\nStoryboard direction:")[0].strip()
+    brief_core = brief_core.split("[face reference")[0].strip() or brief_core
+
+    templates = [
+        ("establishing", "Wide establishing shot of %s", "Open on the world"),
+        ("character", "Hero / subject close-up inside %s", "Meet the subject"),
+        ("action", "Dynamic mid shot — motion and tension in %s", "Conflict rises"),
+        ("detail", "Insert detail / prop / screen readout from %s", "Key detail"),
+        ("reaction", "Reaction shot — stakes land in %s", "Emotional beat"),
+        ("closing", "Closing wide / pull-back finale of %s", "Resolution"),
+        ("action", "Secondary action angle through %s", "Escalate"),
+        ("detail", "Atmospheric texture pass over %s", "Atmosphere"),
+    ]
+
+    beats: List[Dict[str, Any]] = []
+    for index in range(want):
+        shot_type, prompt_fmt, title_fallback = templates[index % len(templates)]
+        if index < len(parsed):
+            description = parsed[index]["description"]
+            title = parsed[index].get("title") or title_fallback
+        else:
+            description = prompt_fmt % brief_core[:160]
+            title = title_fallback
+        beats.append({
+            "index": index,
+            "title": str(title)[:48],
+            "description": str(description)[:280],
+            "shot_type": shot_type,
+            "prompt": (
+                "%s. Shot type: %s. Scene: %s. Cinematic film still, detailed, "
+                "16:9, dramatic lighting."
+            ) % (description[:180], shot_type, brief_core[:120]),
+        })
+
+    # Distribute duration across beats (min ~1.2s each).
+    remaining = seconds
+    for index, beat in enumerate(beats):
+        left = len(beats) - index
+        if left == 1:
+            beat_sec = remaining
+        else:
+            beat_sec = max(1.2, round(remaining / left, 2))
+        remaining = max(0.0, round(remaining - beat_sec, 2))
+        beat["duration_sec"] = beat_sec
+        beat["motion"] = (
+            "zoom_in", "pan_right", "zoom_out", "pan_left",
+            "zoom_in", "pan_right", "zoom_out", "pan_left",
+        )[index % 8]
+    return beats
+
+
+def _write_beat_scene_image(
+    dest_dir: str,
+    beat: Dict[str, Any],
+    face_path: Optional[str] = None,
+) -> Optional[str]:
+    """Paint a distinct storyboard frame per beat (different material each shot)."""
     os.makedirs(dest_dir, exist_ok=True)
-    path = os.path.join(dest_dir, "standby_%s.jpg" % uuid.uuid4().hex[:8])
-    label = (prompt or "FILM CANVAS").strip()[:48] or "FILM CANVAS"
+    index = int(beat.get("index") or 0)
+    palette = _BEAT_PALETTES[index % len(_BEAT_PALETTES)]
+    bg, accent, text_color = palette
+    shot = str(beat.get("shot_type") or _SHOT_TYPES[index % len(_SHOT_TYPES)])
+    path = os.path.join(
+        dest_dir,
+        "beat_scene_%s_%s.jpg" % (index, uuid.uuid4().hex[:8]),
+    )
     try:
-        from PIL import Image, ImageDraw
-        img = Image.new("RGB", (1280, 720), (2, 20, 12))
+        from PIL import Image, ImageDraw, ImageFont
+
+        img = Image.new("RGB", (1280, 720), bg)
         draw = ImageDraw.Draw(img)
-        for y in range(0, 720, 4):
-            shade = 12 + (y % 40) // 4
-            draw.line([(0, y), (1280, y)], fill=(0, shade, 8))
-        draw.rectangle([(40, 40), (1240, 680)], outline=(0, 220, 120), width=3)
-        draw.text((70, 300), "FILM CANVAS · STANDBY", fill=(180, 255, 220))
-        draw.text((70, 350), label, fill=(120, 200, 160))
-        img.save(path, format="JPEG", quality=85)
+
+        # Unique geometry per shot type so beats never look identical.
+        if shot == "establishing":
+            for y in range(0, 720, 6):
+                shade = tuple(min(255, c + (y % 50) // 3) for c in bg)
+                draw.line([(0, y), (1280, y)], fill=shade)
+            draw.polygon([(0, 520), (420, 360), (900, 560), (1280, 480), (1280, 720), (0, 720)], fill=accent)
+            draw.rectangle([(0, 0), (1280, 90)], fill=(0, 0, 0))
+        elif shot == "character":
+            draw.ellipse([(720, 80), (1180, 640)], outline=accent, width=8)
+            draw.rectangle([(40, 80), (640, 640)], outline=accent, width=4)
+            for y in range(100, 620, 18):
+                draw.line([(60, y), (620, y)], fill=tuple(min(255, c + 30) for c in bg))
+        elif shot == "action":
+            for i in range(0, 12):
+                y0 = 40 + i * 55
+                draw.polygon(
+                    [(80 + i * 30, y0), (380 + i * 40, y0 + 40), (60 + i * 20, y0 + 80)],
+                    outline=accent,
+                )
+            draw.rectangle([(900, 40), (1240, 680)], fill=tuple(min(255, c + 18) for c in bg), outline=accent, width=3)
+        elif shot == "detail":
+            draw.rectangle([(160, 120), (1120, 600)], outline=accent, width=6)
+            draw.rectangle([(220, 180), (1060, 540)], fill=tuple(min(255, c + 22) for c in bg))
+            for x in range(260, 1020, 40):
+                draw.line([(x, 200), (x, 520)], fill=accent)
+        elif shot == "reaction":
+            draw.ellipse([(340, 80), (940, 680)], outline=accent, width=10)
+            draw.ellipse([(440, 180), (840, 580)], fill=tuple(min(255, c + 14) for c in bg))
+        else:  # closing
+            for i in range(8):
+                inset = 30 + i * 40
+                draw.rectangle(
+                    [(inset, inset), (1280 - inset, 720 - inset)],
+                    outline=tuple(min(255, accent[j] - i * 8) for j in range(3)),
+                    width=2,
+                )
+
+        draw.rectangle([(36, 36), (1244, 684)], outline=accent, width=3)
+        badge = "SHOT %02d · %s" % (index + 1, shot.upper())
+        title = str(beat.get("title") or "Beat")[:48]
+        desc = str(beat.get("description") or beat.get("prompt") or "")[:90]
+        try:
+            font = ImageFont.load_default()
+        except Exception:
+            font = None
+        draw.text((70, 58), badge, fill=accent, font=font)
+        draw.text((70, 620), title, fill=text_color, font=font)
+        draw.text((70, 650), desc, fill=tuple(max(0, c - 40) for c in text_color), font=font)
+
+        if face_path and os.path.isfile(face_path) and shot in ("character", "reaction", "closing"):
+            try:
+                face = Image.open(face_path).convert("RGB")
+                face.thumbnail((280, 280))
+                fx, fy = (860, 220) if shot != "closing" else (500, 220)
+                img.paste(face, (fx, fy))
+                draw.rectangle(
+                    [(fx - 4, fy - 4), (fx + face.size[0] + 4, fy + face.size[1] + 4)],
+                    outline=accent,
+                    width=3,
+                )
+            except Exception:
+                pass
+
+        img.save(path, format="JPEG", quality=90)
         return path
     except Exception:
-        pass
-    if imageio is not None:
-        try:
-            import numpy as np
-            frame = np.zeros((720, 1280, 3), dtype="uint8")
-            frame[:, :, 1] = 24
-            imageio.imwrite(path, frame)
-            return path
-        except Exception:
-            pass
-    return None
+        if imageio is not None:
+            try:
+                import numpy as np
+                frame = np.zeros((720, 1280, 3), dtype="uint8")
+                frame[:, :] = bg
+                frame[40:80, :] = accent
+                imageio.imwrite(path, frame)
+                return path
+            except Exception:
+                return None
+        return None
+
+
+def _try_free_beat_image(prompt: str, dest_dir: str, seed: int) -> Optional[str]:
+    """Best-effort unique AI still per beat with a short timeout (never block the movie)."""
+    os.makedirs(dest_dir, exist_ok=True)
+    path = os.path.join(dest_dir, "ai_beat_%s_%s.jpg" % (seed, uuid.uuid4().hex[:6]))
+    try:
+        encoded = urllib.parse.quote((prompt or "cinematic film still")[:320], safe="")
+        url = (
+            "https://image.pollinations.ai/prompt/%s"
+            "?width=1280&height=720&nologo=true&enhance=true&seed=%d"
+        ) % (encoded, int(seed) % 999999)
+        req = urllib.request.Request(url, headers={"User-Agent": "MasterNoder/1.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            img_bytes = resp.read()
+        if len(img_bytes) < 1000:
+            return None
+        with open(path, "wb") as handle:
+            handle.write(img_bytes)
+        return path
+    except Exception:
+        return None
 
 
 def _ffmpeg_color_movie(dest_dir: str, duration: float = 5.0) -> Dict[str, Any]:
@@ -1234,20 +1471,34 @@ def _ffmpeg_kenburns_movie(
     dest_path: str,
     duration: float = 8.0,
     fps: int = 25,
+    motion: str = "zoom_in",
 ) -> Dict[str, Any]:
-    """Turn one still into a full-length cinematic MP4 with camera motion."""
-    seconds = max(2, min(120, int(round(float(duration) or 8))))
-    frames = max(seconds * fps, fps * 2)
-    # Slow zoom + slight pan so the clip reads as a movie, not a frozen picture.
+    """Animate one still with a chosen camera move (different per storyboard beat)."""
+    seconds = max(1, min(120, int(round(float(duration) or 8))))
+    frames = max(seconds * fps, fps)
+    motion = (motion or "zoom_in").strip().lower()
+    if motion == "zoom_out":
+        z = "if(eq(on,1),1.45,max(1.0,1.45-0.0012*on))"
+        x = "iw/2-(iw/zoom/2)"
+        y = "ih/2-(ih/zoom/2)"
+    elif motion == "pan_left":
+        z = "1.25"
+        x = "max(0,iw-iw/zoom)-on*2.2"
+        y = "ih/2-(ih/zoom/2)"
+    elif motion == "pan_right":
+        z = "1.25"
+        x = "min(iw-iw/zoom,on*2.2)"
+        y = "ih/2-(ih/zoom/2)"
+    else:  # zoom_in
+        z = "min(1.0+0.0014*on,1.55)"
+        x = "iw/2-(iw/zoom/2)+12*sin(on/70)"
+        y = "ih/2-(ih/zoom/2)+8*cos(on/90)"
     vf = (
         "scale=8000:-1,"
-        "zoompan=z='min(1.0+0.00115*on,1.5)':"
-        "x='iw/2-(iw/zoom/2)+20*sin(on/90)':"
-        "y='ih/2-(ih/zoom/2)+12*cos(on/110)':"
-        "d=%d:s=1280x720:fps=%d,"
-        "eq=contrast=1.05:saturation=1.08,"
+        "zoompan=z='%s':x='%s':y='%s':d=%d:s=1280x720:fps=%d,"
+        "eq=contrast=1.06:saturation=1.1,"
         "format=yuv420p"
-    ) % (frames, fps)
+    ) % (z, x, y, frames, fps)
     cmd = [
         "ffmpeg", "-y",
         "-loop", "1",
@@ -1279,6 +1530,7 @@ def _ffmpeg_kenburns_movie(
         "fps": fps,
         "duration_sec": seconds,
         "mode": "kenburns",
+        "motion": motion,
     }
 
 
@@ -1333,9 +1585,16 @@ def _ffmpeg_concat_movies(paths: List[str], dest_path: str) -> Dict[str, Any]:
             pass
 
 
-def _encode_image_to_mp4(image_path: str, dest_path: str, duration: float = 6.0) -> Dict[str, Any]:
-    """Encode a still into a full-length motion MP4 (ffmpeg Ken Burns, moviepy fallback)."""
-    kb = _ffmpeg_kenburns_movie(image_path, dest_path, duration=duration, fps=25)
+def _encode_image_to_mp4(
+    image_path: str,
+    dest_path: str,
+    duration: float = 6.0,
+    motion: str = "zoom_in",
+) -> Dict[str, Any]:
+    """Encode a still into a motion MP4 (ffmpeg camera move, moviepy fallback)."""
+    kb = _ffmpeg_kenburns_movie(
+        image_path, dest_path, duration=duration, fps=25, motion=motion,
+    )
     if kb.get("success"):
         return kb
 
@@ -1343,7 +1602,7 @@ def _encode_image_to_mp4(image_path: str, dest_path: str, duration: float = 6.0)
         return {"success": False, "error": kb.get("error") or "moviepy unavailable for free movie"}
     clip = None
     try:
-        seconds = max(2.0, min(120.0, float(duration or 6.0)))
+        seconds = max(1.0, min(120.0, float(duration or 6.0)))
         clip = _MoviePyImageClip(image_path, duration=seconds)
         if hasattr(clip, "resized"):
             clip = clip.resized(new_size=(1280, 720))
@@ -1367,7 +1626,7 @@ def _encode_image_to_mp4(image_path: str, dest_path: str, duration: float = 6.0)
             pass
     if not os.path.isfile(dest_path):
         return {"success": False, "error": "movie mp4 missing"}
-    return {"success": True, "local_path": dest_path, "fps": 24, "mode": "moviepy_still"}
+    return {"success": True, "local_path": dest_path, "fps": 24, "mode": "moviepy_still", "motion": motion}
 
 
 def _collect_movie_stills(
@@ -1375,37 +1634,34 @@ def _collect_movie_stills(
     dest_dir: str,
     duration: float,
     face_path: Optional[str] = None,
+    direction: Optional[str] = None,
 ) -> List[Dict[str, str]]:
-    """Gather face + scene stills so longer movies can have multiple beats."""
+    """Gather one unique still per storyboard beat (AI image or painted scene)."""
+    beats = _build_storyboard_beats(prompt, duration, direction=direction)
     stills: List[Dict[str, str]] = []
-    if face_path and os.path.isfile(face_path):
-        stills.append({"path": face_path, "source": "face_reference"})
-
-    variants = [
-        prompt[:400],
-        ("Cinematic wide establishing shot: %s" % prompt)[:400],
-        ("Close dramatic detail shot: %s" % prompt)[:400],
-    ]
-    want = 1 if duration < 12 else (2 if duration < 40 else 3)
-    if _free_image_service is not None and hasattr(_free_image_service, "generate_image"):
-        for variant in variants:
-            if len(stills) >= want:
-                break
-            try:
-                image = _free_image_service.generate_image(variant, dest_dir=dest_dir)
-            except Exception:
-                continue
-            if image.get("success") and image.get("local_path") and os.path.isfile(image["local_path"]):
-                stills.append({
-                    "path": image["local_path"],
-                    "source": image.get("source") or "free",
-                })
-
-    if not stills:
-        standby = _write_local_standby_image(dest_dir, prompt)
-        if standby:
-            stills.append({"path": standby, "source": "local_standby"})
-    return stills[: max(1, want)]
+    for beat in beats:
+        source = "beat_scene"
+        path = _try_free_beat_image(
+            beat.get("prompt") or beat.get("description") or prompt,
+            dest_dir,
+            seed=1000 + int(beat.get("index") or 0) * 97,
+        )
+        if path:
+            source = "free_ai"
+        else:
+            path = _write_beat_scene_image(dest_dir, beat, face_path=face_path)
+        if not path:
+            continue
+        stills.append({
+            "path": path,
+            "source": source,
+            "title": str(beat.get("title") or ""),
+            "shot_type": str(beat.get("shot_type") or ""),
+            "motion": str(beat.get("motion") or "zoom_in"),
+            "duration_sec": float(beat.get("duration_sec") or 2.0),
+            "description": str(beat.get("description") or ""),
+        })
+    return stills
 
 
 def _generate_free_still_movie(
@@ -1413,15 +1669,23 @@ def _generate_free_still_movie(
     dest_dir: Optional[str] = None,
     duration: float = 6.0,
     face_path: Optional[str] = None,
+    direction: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Build a full-length local movie (Ken Burns / multi-beat) without paid APIs."""
+    """Build a multi-scene storyboard movie: distinct material per beat, full runtime."""
     if dest_dir is None:
         dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
     os.makedirs(dest_dir, exist_ok=True)
     errors: List[str] = []
     duration = max(2.0, min(120.0, float(duration or 6.0)))
+    storyboard = _build_storyboard_beats(prompt, duration, direction=direction)
 
-    stills = _collect_movie_stills(prompt, dest_dir, duration, face_path=face_path)
+    stills = _collect_movie_stills(
+        prompt,
+        dest_dir,
+        duration,
+        face_path=face_path,
+        direction=direction,
+    )
     if not stills:
         errors.append("no still frames available")
         ffmpeg_clip = _ffmpeg_color_movie(dest_dir, duration=duration)
@@ -1434,17 +1698,28 @@ def _generate_free_still_movie(
             "canvas": "free_still",
         }
 
-    # Split duration across beats for a fuller movie arc.
     beat_paths: List[str] = []
-    remaining = duration
+    beat_meta: List[Dict[str, Any]] = []
     for index, still in enumerate(stills):
-        left = len(stills) - index
-        beat = remaining if left == 1 else max(2.0, round(remaining / left, 2))
-        remaining = max(0.0, remaining - beat)
+        beat_sec = float(still.get("duration_sec") or (duration / max(1, len(stills))))
         part = os.path.join(dest_dir, "beat_%s_%s.mp4" % (uuid.uuid4().hex[:8], index))
-        encoded = _encode_image_to_mp4(still["path"], part, duration=beat)
+        encoded = _encode_image_to_mp4(
+            still["path"],
+            part,
+            duration=beat_sec,
+            motion=str(still.get("motion") or "zoom_in"),
+        )
         if encoded.get("success") and encoded.get("local_path"):
             beat_paths.append(encoded["local_path"])
+            beat_meta.append({
+                "index": index,
+                "title": still.get("title"),
+                "shot_type": still.get("shot_type"),
+                "source": still.get("source"),
+                "motion": still.get("motion"),
+                "duration_sec": beat_sec,
+                "description": still.get("description"),
+            })
         else:
             errors.append(str(encoded.get("error") or "beat encode failed"))
 
@@ -1461,29 +1736,31 @@ def _generate_free_still_movie(
 
     dest = os.path.join(dest_dir, "movie_%s.mp4" % uuid.uuid4().hex[:8])
     merged = _ffmpeg_concat_movies(beat_paths, dest)
+    sources = sorted({str(s.get("source") or "") for s in stills if s.get("source")})
     if merged.get("success") and merged.get("local_path"):
         return {
             "success": True,
             "local_path": merged["local_path"],
             "canvas": "free_still",
-            "source_image": stills[0].get("source") or "free",
+            "source_image": ",".join(sources) or "storyboard",
             "fps": 25,
             "duration_sec": int(round(duration)),
             "beats": len(beat_paths),
-            "mode": "kenburns_movie",
+            "beat_plan": beat_meta or storyboard,
+            "mode": "storyboard_movie",
         }
 
-    # If concat failed but we have one beat, still return that clip.
     if beat_paths:
         return {
             "success": True,
             "local_path": beat_paths[0],
             "canvas": "free_still",
-            "source_image": stills[0].get("source") or "free",
+            "source_image": ",".join(sources) or "storyboard",
             "fps": 25,
             "duration_sec": int(round(duration)),
-            "beats": 1,
-            "mode": "kenburns_movie",
+            "beats": len(beat_paths),
+            "beat_plan": beat_meta,
+            "mode": "storyboard_movie",
             "concat_error": merged.get("error"),
         }
     errors.append(str(merged.get("error") or "concat failed"))
@@ -1513,12 +1790,15 @@ def _plan_with_all_llms(brief: str, timeout: int = 25) -> Dict[str, Any]:
     if _video_ai_bridge is None or not hasattr(_video_ai_bridge, "complete_multi_provider"):
         return {"success": False, "providers": [], "direction": ""}
     system = (
-        "You write compact cinematic direction for a short interactive monitor film. "
-        "Return 2-4 concrete visual beats, camera notes, and mood. No preamble."
+        "You write a complete multi-shot storyboard for a short interactive monitor film. "
+        "Return 3-6 numbered beats. Each beat must be a DIFFERENT shot "
+        "(establishing / character / action / detail / reaction / closing) with concrete "
+        "visual detail, camera move, and mood. No preamble."
     )
     user = (
         "Scene brief:\n%s\n\n"
-        "Write storyboard direction the renderer can follow."
+        "Write the full storyboard as numbered beats the renderer can follow. "
+        "Every beat must describe different material on screen — not the same picture."
     ) % brief[:800]
     try:
         multi = _video_ai_bridge.complete_multi_provider(
@@ -1610,13 +1890,85 @@ def compose_interactive_movie(
 
     render_timeout = max(60, timeout - 45) if planner else max(60, timeout)
     attempts: List[str] = []
+    direction_text = "\n\n".join(direction_blocks).strip()
+    storyboard = _build_storyboard_beats(
+        brief,
+        float(duration_sec),
+        direction=direction_text or None,
+    )
 
     if render_provider:
         candidates = [render_provider] if is_available(render_provider, purpose="render") else []
     else:
         candidates = list_render_canvases()
 
-    for canvas_id in candidates:
+    # Full pipeline: try a short canvas/external clip per storyboard beat, then stitch.
+    # If paid canvases are exhausted we still assemble the detailed multi-beat movie locally.
+    def _finish(clip: Dict[str, Any], renderer: str) -> Dict[str, Any]:
+        return {
+            "success": True,
+            "planner": planner,
+            "llm_plan": llm_plan,
+            "renderer": renderer,
+            "planning": planning,
+            "prompt_used": render_prompt[:500],
+            "local_path": clip.get("local_path"),
+            "canvas": clip.get("canvas") or renderer,
+            "frame_count": clip.get("frame_count"),
+            "fps": clip.get("fps"),
+            "duration_sec": duration_sec,
+            "has_face": bool(face_path),
+            "beats": clip.get("beats") or len(storyboard),
+            "beat_plan": clip.get("beat_plan") or storyboard,
+            "mode": clip.get("mode"),
+            "attempts": attempts,
+            "error": None,
+        }
+
+    # Explicit provider: still render multi-beat when possible, else one canvas clip.
+    if render_provider and candidates:
+        canvas_id = candidates[0]
+        if len(storyboard) >= 2 and dest_dir:
+            paths: List[str] = []
+            meta: List[Dict[str, Any]] = []
+            for beat in storyboard:
+                beat_clip = _generate_one_canvas_clip(
+                    str(beat.get("prompt") or render_prompt)[:500],
+                    canvas_id,
+                    dest_dir=dest_dir,
+                    timeout=min(90, render_timeout),
+                )
+                if not (beat_clip.get("success") and beat_clip.get("local_path")):
+                    attempts.append(
+                        "%s@beat%s: %s"
+                        % (canvas_id, beat.get("index"), beat_clip.get("error") or "failed")
+                    )
+                    paths = []
+                    break
+                paths.append(beat_clip["local_path"])
+                meta.append({
+                    "index": beat.get("index"),
+                    "title": beat.get("title"),
+                    "shot_type": beat.get("shot_type"),
+                    "source": canvas_id,
+                    "duration_sec": beat.get("duration_sec"),
+                    "description": beat.get("description"),
+                })
+            if len(paths) >= 2:
+                dest = os.path.join(dest_dir, "movie_%s.mp4" % uuid.uuid4().hex[:8])
+                merged = _ffmpeg_concat_movies(paths, dest)
+                if merged.get("success") and merged.get("local_path"):
+                    return _finish(
+                        {
+                            "local_path": merged["local_path"],
+                            "canvas": canvas_id,
+                            "fps": 24,
+                            "beats": len(paths),
+                            "beat_plan": meta,
+                            "mode": "pipeline_storyboard",
+                        },
+                        canvas_id,
+                    )
         clip = _generate_one_canvas_clip(
             render_prompt[:500],
             canvas_id,
@@ -1624,70 +1976,83 @@ def compose_interactive_movie(
             timeout=render_timeout,
         )
         if clip.get("success") and clip.get("local_path"):
-            return {
-                "success": True,
-                "planner": planner,
-                "llm_plan": llm_plan,
-                "renderer": canvas_id,
-                "planning": planning,
-                "prompt_used": render_prompt[:500],
-                "local_path": clip.get("local_path"),
-                "canvas": clip.get("canvas") or canvas_id,
-                "frame_count": clip.get("frame_count"),
-                "fps": clip.get("fps"),
-                "duration_sec": duration_sec,
-                "has_face": bool(face_path),
-                "attempts": attempts,
-                "error": None,
-            }
-        err = clip.get("error") or ("%s failed" % canvas_id)
-        attempts.append("%s: %s" % (canvas_id, err))
+            return _finish(clip, canvas_id)
+        attempts.append("%s: %s" % (canvas_id, clip.get("error") or "failed"))
 
     if not render_provider:
-        # When fal/paid balances are dead, prefer a guaranteed local movie first so
-        # the monitor does not sit on a chain of credit errors.
-        prefer_reliable = _fal_is_skipped() or any(
-            "exhausted" in (a or "").lower() or "403" in (a or "") for a in attempts
-        )
-        backend_order: List[str] = []
-        if prefer_reliable:
-            backend_order.append("free_still")
-            backend_order.extend(_EXTERNAL_CLIP_BACKENDS)
-        else:
-            backend_order.extend(_EXTERNAL_CLIP_BACKENDS)
-            backend_order.append("free_still")
+        # Try stitching distinct canvas/external clips per beat when providers still work.
+        per_beat_paths: List[str] = []
+        per_beat_meta: List[Dict[str, Any]] = []
+        paid_ok = bool(candidates) and not _fal_is_skipped()
+        if paid_ok and dest_dir and len(storyboard) >= 2:
+            for beat in storyboard[: min(4, len(storyboard))]:
+                beat_prompt = str(beat.get("prompt") or render_prompt)[:500]
+                beat_clip = None
+                for canvas_id in candidates[:2]:
+                    beat_clip = _generate_one_canvas_clip(
+                        beat_prompt,
+                        canvas_id,
+                        dest_dir=dest_dir,
+                        timeout=min(90, render_timeout),
+                    )
+                    if beat_clip.get("success") and beat_clip.get("local_path"):
+                        break
+                    attempts.append(
+                        "%s@beat%s: %s"
+                        % (canvas_id, beat.get("index"), beat_clip.get("error") or "failed")
+                    )
+                    beat_clip = None
+                if beat_clip and beat_clip.get("local_path"):
+                    per_beat_paths.append(beat_clip["local_path"])
+                    per_beat_meta.append({
+                        "index": beat.get("index"),
+                        "title": beat.get("title"),
+                        "shot_type": beat.get("shot_type"),
+                        "source": beat_clip.get("canvas") or "canvas",
+                        "duration_sec": beat.get("duration_sec"),
+                        "description": beat.get("description"),
+                    })
+                else:
+                    # Stop paid multi-beat early once credits fail; finish locally.
+                    if any("403" in (a or "") or "exhausted" in (a or "").lower() for a in attempts[-3:]):
+                        break
+            if len(per_beat_paths) >= 2:
+                dest = os.path.join(dest_dir, "movie_%s.mp4" % uuid.uuid4().hex[:8])
+                merged = _ffmpeg_concat_movies(per_beat_paths, dest)
+                if merged.get("success") and merged.get("local_path"):
+                    return _finish(
+                        {
+                            "local_path": merged["local_path"],
+                            "canvas": "pipeline_storyboard",
+                            "fps": 24,
+                            "beats": len(per_beat_paths),
+                            "beat_plan": per_beat_meta,
+                            "mode": "pipeline_storyboard",
+                        },
+                        "pipeline_storyboard",
+                    )
 
-        for backend in backend_order:
-            if backend == "free_still":
-                clip = _generate_free_still_movie(
-                    render_prompt[:400],
-                    dest_dir=dest_dir,
-                    duration=float(duration_sec),
-                    face_path=face_path,
-                )
-            else:
-                clip = _generate_external_clip(
-                    backend,
-                    render_prompt[:500],
-                    dest_dir=dest_dir,
-                    timeout=min(45, render_timeout),
-                )
+        # Guaranteed full-detail local storyboard movie (distinct material every beat).
+        clip = _generate_free_still_movie(
+            brief[:400],
+            dest_dir=dest_dir,
+            duration=float(duration_sec),
+            face_path=face_path,
+            direction=direction_text or None,
+        )
+        if clip.get("success") and clip.get("local_path"):
+            return _finish(clip, "free_still")
+        attempts.append("free_still: %s" % (clip.get("error") or "failed"))
+
+        for backend in _EXTERNAL_CLIP_BACKENDS:
+            clip = _generate_external_clip(
+                backend,
+                render_prompt[:500],
+                dest_dir=dest_dir,
+                timeout=min(45, render_timeout),
+            )
             if clip.get("success") and clip.get("local_path"):
-                return {
-                    "success": True,
-                    "planner": planner,
-                    "llm_plan": llm_plan,
-                    "renderer": backend,
-                    "planning": planning,
-                    "prompt_used": render_prompt[:500],
-                    "local_path": clip.get("local_path"),
-                    "canvas": clip.get("canvas") or backend,
-                    "fps": clip.get("fps"),
-                    "duration_sec": duration_sec,
-                    "has_face": bool(face_path),
-                    "attempts": attempts,
-                    "error": None,
-                }
+                return _finish(clip, backend)
             attempts.append("%s: %s" % (backend, clip.get("error") or "failed"))
 
     return {
@@ -1700,6 +2065,7 @@ def compose_interactive_movie(
         "prompt_used": render_prompt[:500],
         "duration_sec": duration_sec,
         "has_face": bool(face_path),
+        "beat_plan": storyboard,
         "attempts": attempts,
     }
 

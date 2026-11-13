@@ -433,11 +433,13 @@ def test_free_still_uses_local_ffmpeg_when_network_images_fail(clean_env, tmp_pa
     assert os.path.isfile(out["local_path"])
 
 
-def test_kenburns_movie_uses_face_still(clean_env, tmp_path, monkeypatch):
+def test_storyboard_movie_uses_multiple_distinct_beats(clean_env, tmp_path, monkeypatch):
     face = tmp_path / "face.jpg"
     face.write_bytes(b"\xff\xd8\xff" + b"0" * 120)
+    encoded_paths = []
 
-    def fake_encode(image_path, dest_path, duration=6.0):
+    def fake_encode(image_path, dest_path, duration=6.0, motion="zoom_in"):
+        encoded_paths.append((image_path, float(duration), motion))
         with open(dest_path, "wb") as handle:
             handle.write(b"mp4" * 40)
         return {
@@ -446,24 +448,46 @@ def test_kenburns_movie_uses_face_still(clean_env, tmp_path, monkeypatch):
             "fps": 25,
             "mode": "kenburns",
             "duration_sec": int(duration),
+            "motion": motion,
         }
 
     monkeypatch.setattr(canvas, "_encode_image_to_mp4", fake_encode)
+    monkeypatch.setattr(canvas, "_try_free_beat_image", lambda *a, **k: None)
     monkeypatch.setattr(
         canvas,
         "_ffmpeg_concat_movies",
-        lambda paths, dest_path: {"success": True, "local_path": paths[0]},
+        lambda paths, dest_path: {"success": True, "local_path": dest_path or paths[0]},
     )
     out = canvas._generate_free_still_movie(
         "harbour night",
         dest_dir=str(tmp_path),
         duration=12,
         face_path=str(face),
+        direction="1. Wide harbour lights\n2. Captain close-up\n3. Radar detail\n4. Closing pull-back",
     )
     assert out["success"] is True
-    assert out["mode"] == "kenburns_movie"
+    assert out["mode"] == "storyboard_movie"
     assert out["duration_sec"] == 12
-    assert out["source_image"] == "face_reference"
+    assert out["beats"] >= 3
+    assert len(encoded_paths) >= 3
+    assert len({p[0] for p in encoded_paths}) >= 3
+    assert len({p[2] for p in encoded_paths}) >= 2
+    assert isinstance(out.get("beat_plan"), list)
+    assert out["beat_plan"][0].get("shot_type")
+
+
+def test_build_storyboard_beats_always_multi_shot():
+    beats = canvas._build_storyboard_beats("neon harbour", 4)
+    assert len(beats) == 2
+    assert beats[0]["shot_type"] != beats[1]["shot_type"]
+    assert abs(sum(b["duration_sec"] for b in beats) - 4) < 0.2
+    long_beats = canvas._build_storyboard_beats(
+        "harbour",
+        20,
+        direction="1. Open on rain\n2. Face in monitor glow\n3. Alarm action\n4. Close on dials",
+    )
+    assert len(long_beats) >= 4
+    assert "rain" in long_beats[0]["description"].lower()
 
 
 def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, monkeypatch):
@@ -489,11 +513,18 @@ def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, mo
             "canvas": "fal_krea",
         }
 
-    def fake_free(prompt, dest_dir=None, duration=6.0, face_path=None):
+    def fake_free(prompt, dest_dir=None, duration=6.0, face_path=None, direction=None):
         path = os.path.join(dest_dir or str(tmp_path), "fallback.mp4")
         with open(path, "wb") as handle:
             handle.write(b"mp4" * 30)
-        return {"success": True, "local_path": path, "canvas": "free_still", "fps": 12}
+        return {
+            "success": True,
+            "local_path": path,
+            "canvas": "free_still",
+            "fps": 12,
+            "beats": 3,
+            "mode": "storyboard_movie",
+        }
 
     monkeypatch.setattr(canvas, "_generate_fal_clip", fake_fal)
     monkeypatch.setattr(canvas, "_generate_external_clip", lambda *a, **k: {"success": False, "error": "skip"})
@@ -550,15 +581,25 @@ def test_compose_interactive_movie_plans_then_renders(clean_env, tmp_path, monke
         "_generate_external_clip",
         lambda *a, **k: {"success": False, "error": "unused"},
     )
+
+    def fake_concat(paths, dest_path):
+        with open(dest_path, "wb") as handle:
+            handle.write(b"mp4" * 50)
+        return {"success": True, "local_path": dest_path}
+
+    monkeypatch.setattr(canvas, "_ffmpeg_concat_movies", fake_concat)
     result = canvas.compose_interactive_movie(
         "harbour night",
         dest_dir=str(tmp_path),
         timeout=30,
+        duration_sec=8,
     )
 
     assert result["success"] is True
     assert result["planner"] == "all_llms+dramacanva"
-    assert result["renderer"] == "fal_krea"
+    assert result["renderer"] == "pipeline_storyboard"
+    assert result["beats"] >= 2
+    assert isinstance(result.get("beat_plan"), list)
     assert "Keep the camera low" in result["prompt_used"]
     assert "Neon rim light" in result["prompt_used"]
     assert result["llm_plan"]["count"] == 2
