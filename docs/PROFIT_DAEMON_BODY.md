@@ -12,10 +12,14 @@
 | **Tool** | `closer` | Finish half-filled spatial legs (micro-clips) + harvest dust into quote |
 | **Tool** | `executor` | Apply pbook techniques (prefund / quote-bridge / size-to-funded) for top deal |
 | **Arm 4** | `basis` | Hummingbot-style spot–perp / funding basis (paper signals; live perp gated) |
+| **Arm 5** | `momentum` | **Momentum** — short-horizon return + volume burst + tight stop (paper; `MOMENTUM_LIVE`) |
 | **Tool** | `swing` | **Precision level swing** — pivot S/R discipline + trend bias |
+| **Tool** | `vwap` | **VWAP** — session VWAP ±σ as intraday S/R; enriches pbook/grid |
 | **Leg 1** | `pbook` | Top5 profit order book / techniques map — **APPLY on** in live (executor stack) |
 | **Leg 2** | `grid` | Maker ladders — thin-quote = fully quiet until auto-resume+reseed |
 | **Leg 3** | `datamaxi` | DataMaxi CEX–CEX Premium playbook → hunter kill-shot handoff |
+
+Strategy categories (arbitrage / momentum / VWAP / grid): `backend/config/profit_strategy_categories.py` — pbook rows get a `strategy` enrichment block.
 
 ## Head control file
 
@@ -32,7 +36,7 @@ Arms/legs call `limb_allowed(name)` at tick start.
 - Courier ledger: `courier_arm_ledger.jsonl` · Latch: `latch_sniper_ledger.jsonl` · Closer: `closer_claw_ledger.jsonl` + `closer_open_legs.json`
 - Technique executor ledger: `technique_executor_ledger.jsonl`
 - Cutting edge = `cut_bps = net − max(0, |mid_skew| − local_noise)` → bands **fire / latch / skip** (`TECH_RESIDUAL_EDGE_BPS` default 12; top `CUTTING_EDGE_TOP_N` default 3)
-- Profile look-through: `backend/config/profit_trading_profiles.py` · `docs/PROFIT_TRADING_PROFILES.md`
+- Profile look-through: `backend/config/profit_trading_profiles.py` · categories: `profit_strategy_categories.py` · `docs/PROFIT_TRADING_PROFILES.md`
 - Cron fallback (when daemon is down): `cron/exchange_technique_executor.sh`
 
 ## Ops

@@ -35,10 +35,10 @@ _HEARTBEAT_CANDIDATES = [
 
 _LIMBS = (
     "hunter", "dual_farm", "courier", "latch", "closer", "pbook", "grid",
-    "executor", "datamaxi", "basis", "swing",
+    "executor", "datamaxi", "basis", "swing", "momentum", "vwap",
 )
-_ARMS = ("hunter", "dual_farm", "courier", "basis")
-_TOOLS = ("latch", "closer", "executor", "swing")
+_ARMS = ("hunter", "dual_farm", "courier", "basis", "momentum")
+_TOOLS = ("latch", "closer", "executor", "swing", "vwap")
 _LEGS = ("pbook", "grid", "datamaxi")
 _HEAD_AGENT_ID = "arb_profit_head"
 
@@ -62,6 +62,8 @@ def _default_control() -> Dict[str, Any]:
             "datamaxi": {"enabled": True},
             "basis": {"enabled": True},
             "swing": {"enabled": True},
+            "momentum": {"enabled": True},
+            "vwap": {"enabled": True},
         },
         "quote_budget": {
             "arm_reserve_usd": 0.0,
@@ -405,6 +407,14 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         f"dec={len(decisions)}"
     )
 
+    strategies = None
+    try:
+        from backend.services.exchange_strategy_enrichment_service import limb_enrichment_snapshot
+        strategies = limb_enrichment_snapshot()
+        decisions.append("enrich:arb+momentum+vwap+grid")
+    except Exception:
+        strategies = None
+
     state = {
         "updated_at": _iso(),
         "summary": summary,
@@ -417,6 +427,7 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         "quote_budget": quote_budget,
         "learning": learn,
         "hot_symbols": hot[:8],
+        "strategies": strategies,
     }
     ex._write_json(_STATE_PATH, state)
 
@@ -433,5 +444,6 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         "quote_budget": quote_budget,
         "quotes": quotes,
         "learning": learn,
+        "strategies": strategies,
         "manual_body_pause": bool(ctrl.get("manual_body_pause")),
     }

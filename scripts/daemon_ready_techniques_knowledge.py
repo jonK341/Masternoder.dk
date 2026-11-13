@@ -15,11 +15,13 @@ from backend.services.exchange_datamaxi_cex_spread_service import run_datamaxi_c
 from backend.services.exchange_dual_farm_arm_service import run_dual_farm_arm_tick
 from backend.services.exchange_funding_basis_arm_service import run_funding_basis_tick
 from backend.services.exchange_latch_sniper_service import run_latch_tick
+from backend.services.exchange_momentum_arm_service import run_momentum_tick
 from backend.services.exchange_precision_swing_service import run_precision_swing_tick
 from backend.services.exchange_profit_head_service import load_control, run_head_tick
 from backend.services.exchange_profit_order_book_service import run_profit_order_book_tick
 from backend.services.exchange_spread_hunter_arm_service import run_spread_hunter_tick
 from backend.services.exchange_technique_executor_service import run_technique_executor_tick
+from backend.services.exchange_vwap_arm_service import run_vwap_tick
 
 
 def _iso() -> str:
@@ -50,6 +52,8 @@ def main() -> int:
         ("hunter", lambda: run_spread_hunter_tick(force=True)),
         ("basis", lambda: run_funding_basis_tick(force=True)),
         ("swing", lambda: run_precision_swing_tick(force=True)),
+        ("momentum", lambda: run_momentum_tick(force=True)),
+        ("vwap", lambda: run_vwap_tick(force=True)),
         ("courier", lambda: run_courier_tick(force=True)),
         ("latch", lambda: run_latch_tick(force=True)),
         ("closer", lambda: run_closer_tick(force=True)),
