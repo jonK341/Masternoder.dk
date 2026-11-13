@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113d">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113e">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -74,6 +74,20 @@
                         placeholder="Neon rain over a Danish harbour control room, cinematic interactive film"
                         autocomplete="off" />
                     <button type="button" class="fp-film-go" id="fp-film-go">Play Movie</button>
+                </div>
+                <div class="fp-film-pay" id="fp-film-pay" aria-label="Film monitor payment">
+                    <p class="fp-film-pay-banner" id="fp-film-pay-banner">Free for the first 24 hours — then MN2 coins or PayPal.</p>
+                    <div class="fp-film-pay-options" role="group" aria-label="Pay options">
+                        <button type="button" class="fp-film-pay-mn2" id="fp-film-pay-mn2">
+                            <span class="fp-film-pay-kicker">MN2 coins</span>
+                            <span class="fp-film-pay-title" id="fp-film-pay-mn2-label">Pay with MN2</span>
+                        </button>
+                        <button type="button" class="fp-film-pay-paypal" id="fp-film-pay-paypal">
+                            <span class="fp-film-pay-kicker">PayPal</span>
+                            <span class="fp-film-pay-title" id="fp-film-pay-paypal-label">Pay with PayPal</span>
+                        </button>
+                    </div>
+                    <p class="fp-film-pay-hint" id="fp-film-pay-hint">Both options unlock 1 film play after the free window.</p>
                 </div>
                 <p class="fp-film-status" id="fp-film-status" role="status" aria-live="polite"></p>
             </div>
@@ -374,7 +388,7 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/frontpage-film-monitor.js?v=20261113c" defer></script>
+    <script src="/static/js/frontpage-film-monitor.js?v=20261113e" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

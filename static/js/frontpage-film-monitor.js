@@ -9,9 +9,213 @@
     var animFrame = null;
     var idle = true;
     var t0 = performance.now();
+    var billing = null;
+    var billingTimer = null;
+    var TRIAL_KEY = 'fp_film_trial_id';
 
     function $(id) {
         return document.getElementById(id);
+    }
+
+    function getUserId() {
+        try {
+            if (window.MnUserId && typeof window.MnUserId.read === 'function') {
+                return window.MnUserId.read() || '';
+            }
+            return localStorage.getItem('game_user_id')
+                || localStorage.getItem('user_id')
+                || '';
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function getTrialId() {
+        try {
+            var existing = localStorage.getItem(TRIAL_KEY);
+            if (existing) return existing;
+            var id = 'ft_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+            localStorage.setItem(TRIAL_KEY, id);
+            return id;
+        } catch (_) {
+            return 'ft_guest';
+        }
+    }
+
+    function formatRemaining(sec) {
+        sec = Math.max(0, Number(sec) || 0);
+        if (sec >= 3600) {
+            var h = Math.floor(sec / 3600);
+            var m = Math.floor((sec % 3600) / 60);
+            return h + 'h ' + m + 'm';
+        }
+        if (sec >= 60) return Math.floor(sec / 60) + 'm';
+        return sec + 's';
+    }
+
+    function renderBilling() {
+        var banner = $('fp-film-pay-banner');
+        var hint = $('fp-film-pay-hint');
+        var pay = $('fp-film-pay');
+        var mn2Label = $('fp-film-pay-mn2-label');
+        var ppLabel = $('fp-film-pay-paypal-label');
+        if (!billing) return;
+
+        var pricing = billing.pricing || {};
+        var mn2 = Number(pricing.price_mn2 || 0.5);
+        var coins = Number(pricing.price_coins || Math.round(mn2 * 100));
+        var usd = Number(pricing.price_usd || 1.99);
+        if (mn2Label) {
+            mn2Label.textContent = 'Pay ' + mn2 + ' MN2 (' + coins + ' coins)';
+        }
+        if (ppLabel) {
+            ppLabel.textContent = 'Pay $' + usd.toFixed(2) + ' with PayPal';
+        }
+
+        if (banner) {
+            if (billing.free_active) {
+                banner.textContent = 'Free for the first 24 hours — '
+                    + formatRemaining(billing.free_remaining_sec)
+                    + ' left. After that: MN2 coins or PayPal.';
+            } else if ((billing.credits || 0) > 0) {
+                banner.textContent = 'Free window ended — '
+                    + billing.credits
+                    + ' play credit(s) left. Top up with MN2 coins or PayPal anytime.';
+            } else {
+                banner.textContent = 'Free window ended — choose MN2 coins or PayPal to play.';
+            }
+        }
+        if (hint) {
+            hint.textContent = billing.message
+                || 'Both options unlock 1 film play after the free window.';
+        }
+        if (pay) {
+            pay.classList.toggle('is-locked', !billing.can_play && !billing.free_active);
+        }
+    }
+
+    async function refreshBilling() {
+        try {
+            var qs = new URLSearchParams();
+            var uid = getUserId();
+            var tid = getTrialId();
+            if (uid) qs.set('user_id', uid);
+            if (tid) qs.set('trial_id', tid);
+            var r = await fetch('/api/film-canvas/billing?' + qs.toString());
+            billing = await r.json();
+            renderBilling();
+        } catch (_) {
+            if (!billing) {
+                billing = {
+                    free_active: true,
+                    can_play: true,
+                    free_remaining_sec: 24 * 3600,
+                    pricing: { price_mn2: 0.5, price_coins: 50, price_usd: 1.99 },
+                    message: 'Free for your first 24 hours — then MN2 coins or PayPal.',
+                };
+                renderBilling();
+            }
+        }
+    }
+
+    async function payWithMn2() {
+        var uid = getUserId();
+        if (!uid) {
+            setStatus('Log in (Profile) to pay with MN2 coins.');
+            window.location.href = '/profile';
+            return;
+        }
+        setStatus('Charging MN2 coins…');
+        try {
+            var r = await fetch('/api/film-canvas/billing/pay-mn2', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: uid, trial_id: getTrialId() }),
+            });
+            var d = await r.json();
+            if (!d || !d.success) {
+                setStatus((d && d.error) || 'MN2 payment failed');
+                if (d && d.code === 'ACCOUNT_REQUIRED') {
+                    window.location.href = '/profile';
+                }
+                return;
+            }
+            billing = d.status || billing;
+            renderBilling();
+            setStatus(d.message || 'MN2 payment OK — play credit added.');
+            await refreshBilling();
+        } catch (err) {
+            setStatus('MN2 pay error: ' + err);
+        }
+    }
+
+    async function payWithPaypal() {
+        var uid = getUserId();
+        if (!uid) {
+            setStatus('Log in (Profile) to pay with PayPal.');
+            window.location.href = '/profile';
+            return;
+        }
+        setStatus('Opening PayPal…');
+        try {
+            var r = await fetch('/api/film-canvas/billing/paypal-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: uid, trial_id: getTrialId() }),
+            });
+            var d = await r.json();
+            if (d && d.success && d.approve_url) {
+                window.location.href = d.approve_url;
+                return;
+            }
+            setStatus((d && d.error) || 'Could not start PayPal checkout');
+            if (d && d.code === 'ACCOUNT_REQUIRED') {
+                window.location.href = '/profile';
+            }
+        } catch (err) {
+            setStatus('PayPal error: ' + err);
+        }
+    }
+
+    async function handlePaypalReturn() {
+        try {
+            var params = new URLSearchParams(window.location.search);
+            var flag = params.get('film_paypal');
+            if (!flag) return;
+            if (flag === 'cancel') {
+                setStatus('PayPal checkout cancelled.');
+                window.history.replaceState({}, '', window.location.pathname);
+                return;
+            }
+            if (flag !== 'success') return;
+            var token = params.get('token');
+            var uid = params.get('user_id') || getUserId();
+            if (!token) {
+                setStatus('PayPal return missing order token.');
+                return;
+            }
+            setStatus('Confirming PayPal payment…');
+            var r = await fetch('/api/paypal/capture', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: token,
+                    user_id: uid,
+                    item_id: 'film-monitor-play',
+                    item_name: 'Film monitor play credit',
+                }),
+            });
+            var d = await r.json().catch(function () { return {}; });
+            window.history.replaceState({}, '', window.location.pathname);
+            if (d && (d.success || d.already_captured || d.item_granted)) {
+                setStatus('PayPal unlocked 1 film play credit.');
+                await refreshBilling();
+            } else {
+                setStatus((d && d.error) || 'PayPal capture failed');
+            }
+        } catch (err) {
+            setStatus('PayPal return error: ' + err);
+        }
     }
 
     function setStatus(text) {
@@ -224,18 +428,39 @@
         setStatus('Starting interactive movie…');
 
         try {
+            if (billing && !billing.can_play && !billing.free_active) {
+                setStatus('Trial ended — pay with MN2 coins or PayPal first.');
+                setOverlay('<p class="fp-film-idle">Payment required</p>', true);
+                setBusy(false);
+                var payBox = $('fp-film-pay');
+                if (payBox) payBox.classList.add('is-locked');
+                return;
+            }
             var start = await fetch('/api/film-canvas/interactive-movie', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: prompt }),
+                body: JSON.stringify({
+                    prompt: prompt,
+                    user_id: getUserId(),
+                    trial_id: getTrialId(),
+                }),
             });
             var job = await start.json();
+            if (start.status === 402 || (job && job.code === 'PAYMENT_REQUIRED')) {
+                billing = job;
+                renderBilling();
+                setStatus((job && job.message) || 'Pay with MN2 coins or PayPal to continue.');
+                setOverlay('<p class="fp-film-idle">Payment required</p>', true);
+                setBusy(false);
+                return;
+            }
             if (!job || !job.job_id) {
                 setStatus((job && job.error) || 'Could not start movie job');
                 setOverlay('<p class="fp-film-idle">Start failed</p>', true);
                 setBusy(false);
                 return;
             }
+            refreshBilling();
             setStatus('Job ' + job.job_id + ' — ' + (job.message || 'queued'));
 
             var poll = async function () {
@@ -300,12 +525,16 @@
         var go = $('fp-film-go');
         var prompt = $('fp-film-prompt');
         var canvas = $('fp-film-canvas');
+        var mn2Btn = $('fp-film-pay-mn2');
+        var paypalBtn = $('fp-film-pay-paypal');
         if (!canvas) return;
 
         fitCanvas();
         window.addEventListener('resize', fitCanvas);
         if (play) play.addEventListener('click', playMovie);
         if (go) go.addEventListener('click', playMovie);
+        if (mn2Btn) mn2Btn.addEventListener('click', payWithMn2);
+        if (paypalBtn) paypalBtn.addEventListener('click', payWithPaypal);
         if (prompt) {
             prompt.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
@@ -327,6 +556,19 @@
         }
         bindLegacyNodes();
         refreshReady();
+        refreshBilling();
+        handlePaypalReturn();
+        if (billingTimer) clearInterval(billingTimer);
+        billingTimer = setInterval(function () {
+            if (billing && billing.free_active && billing.free_remaining_sec > 0) {
+                billing.free_remaining_sec = Math.max(0, billing.free_remaining_sec - 30);
+                if (billing.free_remaining_sec <= 0) {
+                    billing.free_active = false;
+                    billing.can_play = (billing.credits || 0) > 0;
+                }
+                renderBilling();
+            }
+        }, 30000);
         loop();
     }
 

@@ -297,6 +297,85 @@ body.mn-sound-active #fp-neural-kicker {
     font-size: 0.85rem;
 }
 
+.fp-film-pay {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 255, 136, 0.22);
+    background:
+        linear-gradient(135deg, rgba(0, 40, 28, 0.72), rgba(0, 18, 32, 0.78)),
+        radial-gradient(ellipse at 20% 0%, rgba(0, 255, 136, 0.12), transparent 55%);
+}
+
+.fp-film-pay.is-locked {
+    border-color: rgba(255, 183, 77, 0.45);
+    box-shadow: 0 0 0 1px rgba(255, 183, 77, 0.12);
+}
+
+.fp-film-pay-banner {
+    margin: 0 0 10px;
+    color: #d9ffe9;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.fp-film-pay-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.fp-film-pay-mn2,
+.fp-film-pay-paypal {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-height: 64px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.fp-film-pay-mn2 {
+    border: 1px solid rgba(0, 255, 136, 0.42);
+    color: #00160c;
+    background: linear-gradient(135deg, #00ff88, #7dffb8);
+}
+
+.fp-film-pay-paypal {
+    border: 1px solid rgba(0, 180, 255, 0.5);
+    color: #eaf7ff;
+    background: linear-gradient(135deg, rgba(0, 90, 160, 0.95), rgba(0, 40, 90, 0.95));
+}
+
+.fp-film-pay-kicker {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.fp-film-pay-title {
+    font-size: 0.92rem;
+    font-weight: 900;
+}
+
+.fp-film-pay-hint {
+    margin: 8px 0 0;
+    color: rgba(170, 220, 195, 0.82);
+    font-size: 0.78rem;
+}
+
+@media (max-width: 640px) {
+    .fp-film-pay-options {
+        grid-template-columns: 1fr;
+    }
+}
+
 .fp-film-monitor.is-busy .fp-film-play {
     animation: fpFilmPulse 1.2s ease-in-out infinite;
 }

@@ -17,6 +17,11 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setenv("FAL_API_KEY", "fal-test-key")
     monkeypatch.setenv("DRAMACANVA_API_KEY", "drama-test-key")
     monkeypatch.setenv("VIDEOS_DIR", str(tmp_path))
+    monkeypatch.delenv("FILM_MONITOR_PROMO_STARTED_AT", raising=False)
+    monkeypatch.setattr(
+        "backend.services.film_monitor_billing_service._DATA_FILE",
+        str(tmp_path / "film_monitor_billing.json"),
+    )
     monkeypatch.setattr(
         "backend.services.film_canvas_service._ENV_FILES",
         (),
@@ -83,3 +88,32 @@ def test_interactive_movie_job_completes_and_serves_video(client):
     assert video.status_code == 200
     assert video.mimetype == "video/mp4"
     assert len(video.data) > 20
+
+
+def test_billing_status_exposes_mn2_and_paypal(client):
+    response = client.get("/api/film-canvas/billing?user_id=film-tester")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["success"] is True
+    assert body["free_active"] is True
+    assert body["pay_options"]["mn2"]["endpoint"].endswith("pay-mn2")
+    assert body["pay_options"]["paypal"]["endpoint"].endswith("paypal-order")
+
+
+def test_interactive_movie_requires_payment_after_free_window(client, monkeypatch):
+    from datetime import datetime, timedelta, timezone
+
+    started = datetime.now(timezone.utc) - timedelta(hours=30)
+    monkeypatch.setenv(
+        "FILM_MONITOR_PROMO_STARTED_AT",
+        started.isoformat().replace("+00:00", "Z"),
+    )
+    response = client.post(
+        "/api/film-canvas/interactive-movie",
+        json={"prompt": "paid scene", "user_id": "film-tester"},
+    )
+    assert response.status_code == 402
+    body = response.get_json()
+    assert body["code"] == "PAYMENT_REQUIRED"
+    assert "mn2" in body["pay_options"]
+    assert "paypal" in body["pay_options"]

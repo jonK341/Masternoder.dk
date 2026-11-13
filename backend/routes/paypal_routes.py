@@ -196,6 +196,10 @@ def fulfill_captured_shop_payment(
             is_battle_pass_paypal_item,
         )
         from backend.services.nft_exchange_service import grant_paypal_mint, is_nft_sku
+        from backend.services.film_monitor_billing_service import (
+            fulfill_paypal_purchase as fulfill_film_monitor_paypal,
+            is_film_monitor_item,
+        )
 
         if is_nft_sku(item_id):
             minted = grant_paypal_mint(user_id, item_id, order_id, amount)
@@ -210,6 +214,17 @@ def fulfill_captured_shop_payment(
                 item_granted = item_id
             else:
                 fulfillment_error = bp_out.get("error") or "battle_pass_fulfillment_failed"
+        elif is_film_monitor_item(item_id):
+            film_out = fulfill_film_monitor_paypal(
+                user_id,
+                order_id,
+                trial_id=pending.get("trial_id"),
+                amount=amount,
+            )
+            if film_out.get("success"):
+                item_granted = item_id
+            else:
+                fulfillment_error = film_out.get("error") or "film_monitor_fulfillment_failed"
         elif mn2_pack and float(mn2_pack.get("mn2_granted") or 0) > 0:
             from backend.services.shop_mn2_fulfillment_service import fulfill_mn2_purchase
 

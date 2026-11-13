@@ -11,6 +11,9 @@ Endpoints:
   POST /api/film-canvas/interactive-movie — start monitor interactive movie (plan→render)
   GET  /api/film-canvas/interactive-movie/<job_id> — poll interactive movie job
   GET  /api/film-canvas/interactive-movie/<job_id>/video — stream finished MP4
+  GET  /api/film-canvas/billing — free-trial + MN2/PayPal pay status for film monitor
+  POST /api/film-canvas/billing/pay-mn2 — buy 1 play credit with MN2 coins
+  POST /api/film-canvas/billing/paypal-order — start PayPal checkout for 1 play credit
 """
 import json
 import os
@@ -472,6 +475,66 @@ def test_runway():
 
 
 # ---------------------------------------------------------------------------
+# Film monitor billing (free 24h → MN2 coins or PayPal)
+# ---------------------------------------------------------------------------
+def _film_billing_identity_from_request(data=None):
+    data = data if isinstance(data, dict) else {}
+    user_id = (
+        data.get("user_id")
+        or request.args.get("user_id")
+        or request.headers.get("X-User-Id")
+        or ""
+    )
+    trial_id = (
+        data.get("trial_id")
+        or request.args.get("trial_id")
+        or request.cookies.get("fp_film_trial")
+        or ""
+    )
+    return str(user_id).strip(), str(trial_id).strip()
+
+
+@ai_providers_bp.route("/api/film-canvas/billing", methods=["GET", "POST"])
+def film_canvas_billing_status():
+    """Return free-trial clock and clear MN2 / PayPal pay options."""
+    data = request.get_json(silent=True) or {}
+    user_id, trial_id = _film_billing_identity_from_request(data)
+    from backend.services.film_monitor_billing_service import get_status
+
+    status = get_status(user_id, trial_id, start_trial=True)
+    return jsonify(status), 200
+
+
+@ai_providers_bp.route("/api/film-canvas/billing/pay-mn2", methods=["POST"])
+def film_canvas_pay_mn2():
+    """Debit MN2 coins and grant one film-monitor play credit."""
+    data = request.get_json(silent=True) or {}
+    user_id, trial_id = _film_billing_identity_from_request(data)
+    from backend.services.film_monitor_billing_service import pay_with_mn2
+
+    result = pay_with_mn2(user_id, trial_id)
+    code = 200 if result.get("success") else 402
+    if result.get("code") == "ACCOUNT_REQUIRED":
+        code = 401
+    return jsonify(result), code
+
+
+@ai_providers_bp.route("/api/film-canvas/billing/paypal-order", methods=["POST"])
+def film_canvas_paypal_order():
+    """Create a PayPal order for one film-monitor play credit."""
+    data = request.get_json(silent=True) or {}
+    user_id, trial_id = _film_billing_identity_from_request(data)
+    base = request.url_root.rstrip("/") if request.url_root else None
+    from backend.services.film_monitor_billing_service import create_paypal_order
+
+    result = create_paypal_order(user_id, trial_id, return_base=base)
+    code = 200 if result.get("success") else 400
+    if result.get("code") == "ACCOUNT_REQUIRED":
+        code = 401
+    return jsonify(result), code
+
+
+# ---------------------------------------------------------------------------
 # Interactive movie (Mission Control monitor)
 # ---------------------------------------------------------------------------
 @ai_providers_bp.route("/api/film-canvas/interactive-movie", methods=["POST"])
@@ -481,6 +544,17 @@ def start_interactive_movie():
     prompt = str(data.get("prompt") or "").strip()
     if not prompt:
         prompt = "Cinematic control-room monitor: neon city rain, interactive film loop"
+
+    user_id, trial_id = _film_billing_identity_from_request(data)
+    try:
+        from backend.services.film_monitor_billing_service import assert_can_play
+
+        access = assert_can_play(user_id, trial_id, consume_credit=True)
+        if not access.get("can_play"):
+            return jsonify(access), 402
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)[:300]}), 200
+
     try:
         from backend.services.film_canvas_service import is_available as film_ok, select_canvas
         can_plan = film_ok("dramacanva", purpose="planning")
@@ -500,6 +574,11 @@ def start_interactive_movie():
         "progress": 0,
         "message": "Queued",
         "prompt": prompt[:500],
+        "billing": {
+            "free_active": bool(access.get("free_active")),
+            "reason": access.get("reason"),
+            "credits_left": access.get("credits"),
+        },
         "updated_at": datetime.utcnow().isoformat() + "Z",
     }
     _save_interactive_job(job)
@@ -509,7 +588,9 @@ def start_interactive_movie():
         daemon=True,
     )
     thread.start()
-    return jsonify(_public_interactive_job(job)), 202
+    payload = _public_interactive_job(job)
+    payload["billing"] = job.get("billing")
+    return jsonify(payload), 202
 
 
 @ai_providers_bp.route("/api/film-canvas/interactive-movie/<job_id>", methods=["GET"])
