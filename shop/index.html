@@ -411,73 +411,36 @@
             <div id="tier-b-onramp-steps" style="font-size:0.9rem;color:var(--text-secondary);">Loading bundle steps…</div>
             <p id="tier-b-auction-fee" style="margin-top:12px;font-size:0.82rem;color:var(--text-secondary);"></p>
         </div>
-        <div class="card" id="mn2-wallet-section" style="margin-bottom: var(--spacing-xl); border: 2px solid var(--secondary); background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.06));">
-            <div style="padding: var(--spacing-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="var b=document.getElementById('mn2-wallet-body'); if(b) b.style.display = b.style.display === 'none' ? 'block' : 'none';">
-                <h3 style="color: var(--secondary); margin: 0;">MN2 Wallet</h3>
-                <span id="mn2-wallet-balance-badge" style="color: var(--text-secondary);">-- MN2</span>
+        <div class="card mn2-pw-gate" id="mn2-wallet-section" style="margin-bottom: var(--spacing-xl);">
+            <h3 style="margin:0;color:var(--secondary);">MN2 Wallet lives on your profile</h3>
+            <p style="margin:8px 0 0;font-size:0.9rem;color:var(--text-secondary);line-height:1.5;">Deposit, withdraw, gifts, trusted addresses, and activity are in one place now — the profile wallet. Shop keeps catalog and MN2 services here.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;">
+                <a class="btn-purchase" href="/profile?tab=wallet" style="text-decoration:none;display:inline-flex;align-items:center;padding:10px 14px;border-radius:10px;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#000;font-weight:700;">Open profile wallet</a>
+                <a href="/profile?tab=wallet&wallet=deposit" style="color:var(--secondary);align-self:center;">Receive MN2 →</a>
+                <span id="mn2-wallet-balance-badge" style="margin-left:auto;color:var(--text-secondary);align-self:center;">-- MN2</span>
             </div>
-            <div id="mn2-wallet-body" style="display: block; padding: var(--spacing-lg); border-top: 1px solid var(--border-primary);">
-                <div style="margin-bottom: var(--spacing-lg);">
-                    <strong style="color: var(--secondary);">Balance:</strong>
-                    <span id="mn2-wallet-balance" style="font-size: 1.2rem; font-weight: 700;">--</span> MN2
-                    <div id="mn2-wallet-onchain" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;"></div>
+            <!-- Keep minimal ids so leftover shop scripts do not throw -->
+            <div style="display:none;" aria-hidden="true">
+                <span id="mn2-wallet-balance"></span>
+                <div id="mn2-wallet-onchain"></div>
+                <div id="mn2-deposit-qr"></div>
+                <code id="mn2-deposit-address"></code>
+                <button type="button" id="mn2-copy-address"></button>
+                <a id="mn2-explorer-address-link" href="#"></a>
+                <div id="mn2-withdraw-security">
+                    <p id="mn2-whitelist-required"></p>
+                    <input id="mn2-whitelist-address"><button type="button" id="mn2-whitelist-add"></button>
+                    <div id="mn2-whitelist-list"></div>
+                    <span id="mn2-2fa-status"></span>
+                    <button type="button" id="mn2-2fa-setup"></button>
+                    <input id="mn2-2fa-code"><button type="button" id="mn2-2fa-enable"></button>
+                    <code id="mn2-2fa-secret"></code>
                 </div>
-                <div style="margin-bottom: var(--spacing-lg);">
-                    <strong style="color: var(--secondary);">Deposit address:</strong>
-                    <div style="display: flex; align-items: flex-start; gap: 16px; margin-top: 6px; flex-wrap: wrap;">
-                        <div id="mn2-deposit-qr" style="flex-shrink: 0; width: 128px; height: 128px; background: #fff; border-radius: 8px; padding: 4px;"></div>
-                        <div style="flex: 1; min-width: 0;">
-                            <code id="mn2-deposit-address" style="word-break: break-all; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; font-size: 0.9rem;">--</code>
-                            <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" id="mn2-copy-address" class="btn-purchase" style="padding: 6px 12px; font-size: 0.9rem;"><i class="fas fa-copy"></i> Copy</button>
-                                <a id="mn2-explorer-address-link" href="#" target="_blank" rel="noopener" style="color: var(--secondary); font-size: 0.9rem;">View on explorer</a>
-                            </div>
-                        </div>
-                    </div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Send MN2 to this address. Credits appear after 6 confirmations.</p>
-                </div>
-                <div style="margin-bottom: var(--spacing-lg);">
-                    <strong style="color: var(--secondary);">Withdraw security:</strong>
-                    <div id="mn2-withdraw-security" style="margin-top:8px;padding:12px;border-radius:10px;border:1px solid var(--border-primary);background:rgba(0,0,0,0.2);">
-                        <p id="mn2-whitelist-required" style="font-size:0.85rem;margin:0 0 8px;color:var(--text-secondary);"></p>
-                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;">
-                            <input type="text" id="mn2-whitelist-address" placeholder="Whitelist address" style="min-width:240px;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
-                            <button type="button" id="mn2-whitelist-add" class="btn-purchase" style="padding:8px 12px;">Add to whitelist</button>
-                        </div>
-                        <div id="mn2-whitelist-list" style="font-size:0.85rem;margin-bottom:12px;"></div>
-                        <p style="margin:0 0 6px;font-size:0.85rem;">2FA: <span id="mn2-2fa-status">—</span></p>
-                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-                            <button type="button" id="mn2-2fa-setup" class="btn-purchase" style="padding:8px 12px;">Setup 2FA</button>
-                            <input type="text" id="mn2-2fa-code" placeholder="6-digit code" maxlength="6" style="width:100px;padding:8px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
-                            <button type="button" id="mn2-2fa-enable" class="btn-purchase" style="padding:8px 12px;">Enable 2FA</button>
-                            <code id="mn2-2fa-secret" style="font-size:0.75rem;word-break:break-all;opacity:0.7;"></code>
-                        </div>
-                    </div>
-                </div>
-                <div style="margin-bottom: var(--spacing-lg);">
-                    <strong style="color: var(--secondary);">Withdraw:</strong>
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px;">
-                        <p id="mn2-withdraw-verification-msg" style="display: none; margin-bottom: 8px; color: var(--warning, #ffaa00); font-size: 0.9rem;">Account verification required to withdraw. Contact support to verify.</p>
-                        <input type="text" id="mn2-withdraw-address" placeholder="MN2 address" style="min-width: 280px; padding: 10px; border-radius: 8px; border: 1px solid var(--border-primary); background: var(--bg-card); color: var(--text-primary);">
-                        <input type="number" id="mn2-withdraw-amount" placeholder="Amount" step="0.00000001" min="0" style="width: 120px; padding: 10px; border-radius: 8px; border: 1px solid var(--border-primary); background: var(--bg-card); color: var(--text-primary);">
-                        <input type="text" id="mn2-withdraw-totp" placeholder="2FA code" maxlength="6" style="width:90px;padding:10px;border-radius:8px;border:1px solid var(--border-primary);background:var(--bg-card);color:var(--text-primary);">
-                        <button type="button" id="mn2-withdraw-btn" class="btn-purchase" style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: #000;"><i class="fas fa-paper-plane"></i> Withdraw</button>
-                    </div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Network fee 0.001 MN2 is deducted from the amount. Whitelisted addresses only — add your address above before withdrawing. New addresses also have a 24h cooldown.</p>
-                </div>
-                <div id="mn2-shop-revenue-block" style="margin-bottom: var(--spacing-lg); display: none;">
-                    <strong style="color: var(--secondary);">Shop revenue address:</strong>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
-                        <code id="mn2-shop-revenue-address" style="word-break: break-all; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; font-size: 0.9rem;"></code>
-                        <button type="button" id="mn2-copy-revenue-address" class="btn-purchase" style="padding: 6px 12px; font-size: 0.9rem;"><i class="fas fa-copy"></i> Copy</button>
-                        <a id="mn2-revenue-explorer-link" href="#" target="_blank" rel="noopener" style="color: var(--secondary); font-size: 0.9rem;">View on explorer</a>
-                    </div>
-                </div>
-                <div>
-                    <strong style="color: var(--secondary);">Recent transactions:</strong>
-                    <div id="mn2-transactions-list" style="margin-top: 8px; max-height: 200px; overflow-y: auto; font-size: 0.9rem; color: var(--text-secondary);">Loading...</div>
-                </div>
-                <p class="mn2-disclaimer" style="margin-top: 14px; font-size: 0.75rem; opacity: 0.85; color: var(--text-secondary); border-top: 1px solid var(--border-primary); padding-top: 10px;">MN2 value can be volatile. Not financial advice. Transactions are final once confirmed. <a href="/terms" style="color: var(--secondary);">Terms</a>.</p>
+                <p id="mn2-withdraw-verification-msg"></p>
+                <input id="mn2-withdraw-address"><input id="mn2-withdraw-amount"><input id="mn2-withdraw-totp">
+                <button type="button" id="mn2-withdraw-btn"></button>
+                <div id="mn2-shop-revenue-block"><code id="mn2-shop-revenue-address"></code><button type="button" id="mn2-copy-revenue-address"></button><a id="mn2-revenue-explorer-link" href="#"></a></div>
+                <div id="mn2-transactions-list"></div>
             </div>
         </div>
         </div><!-- end shop-panel-mn2 -->

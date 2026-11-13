@@ -88,7 +88,7 @@
             { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
             { name: 'Gallery', icon: '🖼️', url: APP_BASE + '/gallery', id: 'gallery' },
             { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
-            { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'MN2 wallet portal: deposit, withdraw, trusted addresses, and downloads' },
+            { name: 'Wallets', icon: '💾', url: APP_BASE + '/profile?tab=wallet', id: 'wallets', title: 'MN2 profile wallet: deposit, withdraw, gifts, and activity' },
             { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
             { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'NFT editions + P2P MN2 marketplace' },
             { name: 'NFT Hub', icon: '💎', url: APP_BASE + '/nft', id: 'nft', title: 'Numbered NFT editions — primary, resale, profile avatar' },
