@@ -12,6 +12,17 @@ def test_nav_portal_manifest_loads():
     assert data["defaultTheme"] in data["themes"]
 
 
+def test_nav_portal_default_matches_start_page_void():
+    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    assert data["defaultTemplate"] == "home_portal_void_v1"
+    assert data["defaultTheme"] == "neon_masternoder"
+    assert data.get("pathTemplates") == []
+    tpl = data["templates"]["home_portal_void_v1"]
+    assert tpl["layout"] == "portal_void"
+    assert tpl["favorites"] == []
+    assert tpl["categories"], "portal void must expose categorized portal links"
+
+
 def test_nav_toolbar_icon_svgs_exist():
     nav_dir = ROOT / "static" / "img" / "nav"
     required = [

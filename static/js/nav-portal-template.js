@@ -1,12 +1,15 @@
 /**
  * Portal nav templates + themes — one manifest for all sites using navigation-toolbar.js
  *
- * Override per page (before toolbar loads):
- *   window.MN_NAV_TEMPLATE = 'exchange_focus_v1';
+ * Site default matches the start page: home_portal_void_v1 (single Portals button).
+ *
+ * Override only when intentional (before toolbar loads):
+ *   window.MN_NAV_TEMPLATE = 'categorized_portals_v1';
  *   window.MN_NAV_THEME = 'exchange_ice';
  *
- * User preference (localStorage): mn_nav_template, mn_nav_theme
  * URL: ?nav_template=...&nav_theme=...
+ * localStorage / path / server prefs no longer switch the live toolbar layout —
+ * that made inner pages look messy vs the start page.
  */
 (function (global) {
   'use strict';
@@ -15,7 +18,7 @@
   var STORAGE_TEMPLATE = 'mn_nav_template';
   var STORAGE_THEME = 'mn_nav_theme';
   var MANIFEST_URL = APP_BASE + '/static/data/nav_portal_manifest.json';
-  var THEMES_CSS = APP_BASE + '/static/css/nav-portal-themes.css?v=20261001';
+  var THEMES_CSS = APP_BASE + '/static/css/nav-portal-themes.css?v=20261113a';
 
   var manifest = null;
   var activeTemplate = null;
@@ -76,29 +79,16 @@
     if (global.MN_NAV_TEMPLATE) return global.MN_NAV_TEMPLATE;
     var q = readQuery('nav_template');
     if (q) return q;
-    if (serverPrefs.template) return serverPrefs.template;
-    var pathRule = matchPathRule();
-    if (pathRule && pathRule.template) return pathRule.template;
-    try {
-      var stored = global.localStorage.getItem(STORAGE_TEMPLATE);
-      if (stored) return stored;
-    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); } /* ignore */ }
-    return manifest && manifest.defaultTemplate;
+    // Keep the start-page Portals void bar on every route.
+    return (manifest && manifest.defaultTemplate) || 'home_portal_void_v1';
   }
 
   function resolveThemeId(template) {
     if (global.MN_NAV_THEME) return global.MN_NAV_THEME;
     var q = readQuery('nav_theme');
     if (q) return q;
-    if (serverPrefs.theme) return serverPrefs.theme;
-    var pathRule = matchPathRule();
-    if (pathRule && pathRule.theme) return pathRule.theme;
-    try {
-      var stored = global.localStorage.getItem(STORAGE_THEME);
-      if (stored) return stored;
-    } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'nav-portal-template.js', context: 'catch' }); } /* ignore */ }
     if (template && template.theme) return template.theme;
-    return manifest && manifest.defaultTheme;
+    return (manifest && manifest.defaultTheme) || 'neon_masternoder';
   }
 
   function loadServerPrefs() {
@@ -196,9 +186,7 @@
     activeTheme = themes[themeId] || themes[manifest.defaultTheme];
     if (activeTheme) activeTheme.id = themeId || manifest.defaultTheme;
 
-    if (activeTemplate && activeTemplate.layout === 'portal_void') {
-      global.MN_NAV_PORTAL_VOID = true;
-    }
+    global.MN_NAV_PORTAL_VOID = !!(activeTemplate && activeTemplate.layout === 'portal_void');
 
     applyTheme(activeTheme);
   }
@@ -234,7 +222,7 @@
   }
 
   function getFavorites() {
-    if (activeTemplate && activeTemplate.favorites && activeTemplate.favorites.length) {
+    if (activeTemplate && Array.isArray(activeTemplate.favorites)) {
       return activeTemplate.favorites.slice();
     }
     return ['generator', 'game', 'battle', 'trophies'];
