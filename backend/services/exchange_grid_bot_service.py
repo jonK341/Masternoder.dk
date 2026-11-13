@@ -1274,24 +1274,305 @@ def grid_targets(cfg: Optional[Dict[str, Any]] = None) -> List[tuple]:
     return targets
 
 
+def _append_grid_event(kind: str, **fields: Any) -> None:
+    row = {"ts": _iso(), "kind": kind, "leg": "grid"}
+    row.update(fields)
+    try:
+        ex._append_jsonl(_LEDGER_PATH, row)
+    except Exception:
+        pass
+
+
+def _learn_grid_signal(profit_usd: float, *, note: str = "") -> None:
+    """Feed guard/fill outcomes into the grid-leg learning agent."""
+    try:
+        from backend.services import exchange_arbitrage_service as arb
+        from backend.services.exchange_agent_learning_service import learn_from_profit
+
+        acct = arb.read_account("arb_grid_leg")
+        if "skills" not in acct or not acct.get("skills"):
+            acct["skills"] = ["grid_maker", "inventory_guard", "quote_gate"]
+            acct.setdefault("skill_proficiency", {})
+        # Losses teach via tiny negative reward floor at 0 in learn_from_profit —
+        # bounce a small positive on successful resume; quarantine still updates ticks.
+        learn_from_profit(acct, max(0.0, float(profit_usd or 0)))
+        acct["ticks"] = int(acct.get("ticks") or 0) + 1
+        acct["last_action"] = {"note": note, "ts": _iso(), "profit_usd": profit_usd}
+        arb.write_account(acct)
+    except Exception:
+        pass
+
+
+def quarantined_assets() -> Dict[str, Any]:
+    st = _read_state()
+    qa = st.get("quarantined_assets")
+    return qa if isinstance(qa, dict) else {}
+
+
+def quarantine_asset(venue: str, asset: str, *, reason: str = "hard_loss",
+                     realized_usd: Optional[float] = None,
+                     cooldown_hours: float = 12.0) -> Dict[str, Any]:
+    venue = str(venue or "").lower()
+    asset = str(asset or "").upper()
+    key = _key(venue, asset)
+    st = _read_state()
+    qa = st.get("quarantined_assets") if isinstance(st.get("quarantined_assets"), dict) else {}
+    qa[key] = {
+        "venue": venue, "asset": asset, "reason": reason,
+        "realized_usd": realized_usd, "quarantined_at": _iso(),
+        "cooldown_hours": float(cooldown_hours),
+    }
+    st["quarantined_assets"] = qa
+    # Halt that pair's open orders without pausing the whole venue.
+    ast = st.get(key) if isinstance(st.get(key), dict) else None
+    if ast is not None:
+        ast["halted"] = True
+        ast["halt_reason"] = f"quarantine:{reason}"
+        ast["open_orders"] = []
+        st[key] = ast
+    _write_state(st)
+    _append_grid_event("asset_quarantine", venue=venue, asset=asset, reason=reason,
+                       realized_usd=realized_usd)
+    _learn_grid_signal(0.0, note=f"quarantine:{key}:{reason}")
+    return {"success": True, "key": key, "quarantined": True}
+
+
+def clear_expired_quarantines(*, now: Optional[datetime] = None) -> List[str]:
+    now = now or datetime.now(timezone.utc)
+    st = _read_state()
+    qa = st.get("quarantined_assets") if isinstance(st.get("quarantined_assets"), dict) else {}
+    cleared: List[str] = []
+    for key, info in list(qa.items()):
+        pat = _parse_ts((info or {}).get("quarantined_at"))
+        cool = float((info or {}).get("cooldown_hours") or 12.0)
+        if pat is not None and (now - pat) >= timedelta(hours=cool):
+            qa.pop(key, None)
+            cleared.append(key)
+            _append_grid_event("asset_quarantine_clear", key=key, reason="cooldown")
+    if cleared:
+        st["quarantined_assets"] = qa
+        _write_state(st)
+    return cleared
+
+
+def apply_quote_and_loss_guards(cfg: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Grid-leg guards: thin-quote full quiet, auto-resume+reseed, per-asset quarantine.
+
+    Thin quote keeps the venue fully quiet (no buys/sells). When free quote recovers,
+    non-manual thin_quote pauses auto-clear and ladders reseed. Hard losses quarantine
+    the losing (venue, asset) only — they do not silence the whole venue.
+    """
+    cfg = cfg or load_config()
+    events: List[Dict[str, Any]] = []
+    order_sz = float(cfg.get("order_size_usd") or 6.0)
+    thin_threshold = order_sz * 2.0
+    hard_cap = float(cfg.get("hard_loss_cap_usd") or 5.0)
+    targets = grid_targets(cfg)
+    venues = sorted({v for v, _a in targets})
+    profit = grid_profit()
+    by_asset = profit.get("assets") or {}
+    clear_expired_quarantines()
+    try:
+        from backend.services import exchange_venue_api_service as vapi
+    except Exception as exc:
+        return {"success": False, "error": str(exc), "events": events, "reseed_venues": []}
+
+    pv = paused_venues()
+    reseed_venues: List[str] = []
+    venue_free: Dict[str, float] = {}
+
+    for venue in venues:
+        try:
+            quote = str(vapi.venue_quote_asset(venue) or "").upper()
+            bals = vapi.parse_spot_balances(venue, dry_run=False, force_refresh=True) or {}
+            free = float(bals.get(quote) or 0) if quote else 0.0
+        except Exception as exc:
+            events.append({"venue": venue, "ok": False, "error": str(exc)})
+            continue
+        venue_free[venue] = free
+        info = pv.get(venue) if isinstance(pv.get(venue), dict) else None
+        existing_reason = str((info or {}).get("reason") or "")
+        is_manual = bool((info or {}).get("manual"))
+
+        # Auto-resume thin_quote when quote recovers (never clear manual pauses).
+        if info and existing_reason == "thin_quote" and not is_manual and free >= thin_threshold:
+            resume_venue(venue)
+            reset_open_orders(venue)
+            reseed_venues.append(venue)
+            ev = {
+                "venue": venue, "paused": False, "resumed": True, "reason": "thin_quote_resume",
+                "free_quote": free, "quote": quote,
+            }
+            events.append(ev)
+            _append_grid_event("thin_quote_resume", **ev)
+            _learn_grid_signal(0.05, note=f"thin_quote_resume:{venue}")
+            pv = paused_venues()
+            continue
+
+        if free < thin_threshold:
+            if existing_reason == "thin_quote" and not is_manual:
+                continue  # already quiet
+            if is_manual:
+                continue
+            pause_venue(venue, reason="thin_quote", manual=False, realized_usd=None)
+            cleared = reset_open_orders(venue)
+            ev = {
+                "venue": venue, "paused": True, "reason": "thin_quote",
+                "free_quote": free, "quote": quote,
+                "cleared_orders": cleared.get("cleared_orders"),
+            }
+            events.append(ev)
+            _append_grid_event("thin_quote_pause", **ev)
+            _learn_grid_signal(0.0, note=f"thin_quote_pause:{venue}")
+            continue
+
+        # Per-asset quarantine for hard losers (not venue-wide aggregate pause).
+        if hard_cap > 0:
+            for key, pnl in by_asset.items():
+                if not str(key).upper().startswith(str(venue).upper() + ":"):
+                    continue
+                try:
+                    realized = float(pnl or 0)
+                except (TypeError, ValueError):
+                    continue
+                if realized > -hard_cap:
+                    continue
+                parts = str(key).split(":", 1)
+                asset = parts[1] if len(parts) == 2 else ""
+                if not asset:
+                    continue
+                if key.upper() in {k.upper() for k in quarantined_assets().keys()}:
+                    continue
+                quarantine_asset(venue, asset, reason="hard_loss", realized_usd=realized)
+                events.append({
+                    "venue": venue, "asset": asset, "quarantined": True,
+                    "reason": "hard_loss", "realized_usd": realized,
+                })
+
+    return {
+        "success": True, "events": events, "reseed_venues": reseed_venues,
+        "venue_free_quote": venue_free, "thin_threshold": thin_threshold,
+    }
+
+
+def _universe_targets(
+    cfg: Dict[str, Any],
+    *,
+    paused: set,
+    quarantined: Dict[str, Any],
+    venue_free: Dict[str, float],
+) -> tuple:
+    """Shrink to fundable symbols when quote is tight or quarantines exist."""
+    order_sz = float(cfg.get("order_size_usd") or 6.0)
+    min_notional = float(cfg.get("min_notional_usd") or 5.0)
+    all_targets = grid_targets(cfg)
+    qa_keys = {str(k).upper() for k in (quarantined or {}).keys()}
+    constrained = any(float(venue_free.get(v) or 0) < order_sz * 4.0 for v, _ in all_targets)
+    shrink = constrained or bool(qa_keys)
+    if not shrink:
+        return all_targets, False, []
+
+    try:
+        from backend.services import exchange_venue_api_service as vapi
+    except Exception:
+        return all_targets, False, []
+
+    bals_cache: Dict[str, Dict[str, float]] = {}
+    kept: List[tuple] = []
+    skipped: List[Dict[str, Any]] = []
+    for venue, asset in all_targets:
+        if venue in paused:
+            continue
+        key = _key(venue, asset)
+        if key.upper() in qa_keys:
+            skipped.append({"venue": venue, "asset": asset, "reason": "quarantined"})
+            continue
+        if venue not in bals_cache:
+            try:
+                bals_cache[venue] = vapi.parse_spot_balances(venue, dry_run=False) or {}
+            except Exception:
+                bals_cache[venue] = {}
+        bals = bals_cache[venue]
+        free_base = float(bals.get(str(asset).upper()) or 0)
+        free_quote = float(venue_free.get(venue) or 0)
+        # Keep if we can sell existing inventory or fund at least one buy.
+        if free_base * 1.0 >= 1e-9 or free_quote >= max(min_notional, order_sz):
+            # Prefer inventory-backed when quote is constrained.
+            if constrained and free_quote < order_sz and free_base <= 0:
+                skipped.append({"venue": venue, "asset": asset, "reason": "no_inventory_thin_quote"})
+                continue
+            kept.append((venue, asset))
+        else:
+            skipped.append({"venue": venue, "asset": asset, "reason": "unfunded"})
+    if skipped:
+        _append_grid_event(
+            "universe_shrink",
+            kept=len(kept), skipped=len(skipped), constrained=constrained,
+            sample=skipped[:8],
+        )
+    return kept, shrink, skipped
+
+
 def run_all(*, dry_run: Optional[bool] = None) -> Dict[str, Any]:
-    """Daemon entry: tick every configured (venue, asset) when enabled. Venues tripped by the
-    circuit breaker (persistent realized loss) are skipped until they auto-resume."""
+    """Grid leg entry: quote quiet/resume, per-asset quarantine, universe shrink, then tick."""
     cfg = load_config()
     if not cfg.get("enabled"):
-        return {"success": True, "skipped": True, "reason": "disabled"}
+        return {"success": True, "skipped": True, "reason": "disabled", "limb": "leg", "name": "grid"}
+    try:
+        from backend.services.exchange_profit_head_service import limb_allowed
+        if not limb_allowed("grid"):
+            return {"success": True, "skipped": True, "reason": "head_disabled", "limb": "leg", "name": "grid"}
+    except Exception:
+        pass
+
+    guards = apply_quote_and_loss_guards(cfg)
     cb = check_circuit_breakers()
     paused = set((cb.get("paused") or {}).keys())
+    for ev in guards.get("events") or []:
+        if ev.get("paused") and ev.get("venue"):
+            paused.add(str(ev["venue"]).lower())
+        if ev.get("resumed") and ev.get("venue"):
+            paused.discard(str(ev["venue"]).lower())
+
+    qa = quarantined_assets()
+    venue_free = guards.get("venue_free_quote") or {}
+    targets, shrunk, skipped = _universe_targets(
+        cfg, paused=paused, quarantined=qa, venue_free=venue_free,
+    )
+
     results = []
-    for venue, asset in grid_targets(cfg):
+    for venue, asset in targets:
         if venue in paused:
             results.append({"success": True, "skipped": True, "venue": venue, "asset": asset,
                             "reason": "venue_paused"})
+            continue
+        key = _key(venue, asset)
+        if key.upper() in {k.upper() for k in qa.keys()}:
+            results.append({"success": True, "skipped": True, "venue": venue, "asset": asset,
+                            "reason": "quarantined"})
             continue
         try:
             results.append(run_grid_tick(venue, asset, dry_run=dry_run))
         except Exception as exc:
             results.append({"success": False, "venue": venue, "asset": asset, "error": str(exc)})
-    return {"success": True, "ticks": results,
-            "paused_venues": sorted(paused), "circuit_breaker_events": cb.get("events") or [],
-            "realized_pnl_usd": grid_profit()["realized_pnl_usd"]}
+
+    # Honest quiet summary fields for the daemon heartbeat.
+    thin = [v for v, info in (paused_venues() or {}).items()
+            if isinstance(info, dict) and info.get("reason") == "thin_quote"]
+    return {
+        "success": True,
+        "limb": "leg",
+        "name": "grid",
+        "ticks": results,
+        "paused_venues": sorted(paused),
+        "thin_quote_venues": thin,
+        "quarantined_assets": sorted(qa.keys()),
+        "universe_shrunk": shrunk,
+        "universe_skipped": len(skipped),
+        "targets_ticked": len(targets),
+        "circuit_breaker_events": cb.get("events") or [],
+        "quote_loss_guards": guards.get("events") or [],
+        "reseed_venues": guards.get("reseed_venues") or [],
+        "venue_free_quote": venue_free,
+        "realized_pnl_usd": grid_profit()["realized_pnl_usd"],
+    }
