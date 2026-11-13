@@ -4,22 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>API Lab — MasterNoder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
   <style>
     :root {
-      --bg: #070b12;
-      --panel: #101826;
-      --line: #243044;
-      --text: #e8eef8;
-      --muted: #8ea0b8;
-      --accent: #3ee0a2;
-      --accent-2: #7aa2ff;
-      --warn: #f0b429;
-      --danger: #ff6b7a;
-      --get: #1f8a5b;
-      --post: #2f6fed;
-      --put: #b8860b;
-      --delete: #b34040;
+      --bg: #061018;
+      --panel: rgba(10, 22, 34, 0.88);
+      --line: #1e3348;
+      --text: #e8f1f8;
+      --muted: #8aa0b6;
+      --accent: #2ad4a2;
+      --accent-dim: rgba(42, 212, 162, 0.14);
+      --warn: #e6b84d;
+      --danger: #ef6b78;
+      --get: #1a8f5c;
+      --post: #2b6de8;
+      --put: #c08a12;
+      --delete: #b53d45;
+      --ink: #041018;
     }
     * { box-sizing: border-box; }
     body {
@@ -27,133 +31,304 @@
       min-height: 100vh;
       color: var(--text);
       background:
-        radial-gradient(1200px 500px at 10% -10%, rgba(62, 224, 162, 0.16), transparent 55%),
-        radial-gradient(900px 400px at 100% 0%, rgba(122, 162, 255, 0.14), transparent 50%),
-        var(--bg);
-      font-family: "Segoe UI", system-ui, sans-serif;
+        radial-gradient(900px 420px at 8% -8%, rgba(42, 212, 162, 0.18), transparent 55%),
+        radial-gradient(700px 380px at 92% 0%, rgba(56, 140, 210, 0.16), transparent 50%),
+        linear-gradient(180deg, #07131c 0%, #061018 40%, #050d14 100%);
+      font-family: "Outfit", "Segoe UI", sans-serif;
     }
-    header.hero {
-      padding: 28px 28px 8px;
-      max-width: 1280px;
+    .top {
+      max-width: 1320px;
       margin: 0 auto;
+      padding: 28px 22px 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
     }
-    header.hero h1 { margin: 0 0 6px; font-size: 2rem; letter-spacing: -0.03em; }
-    header.hero p { margin: 0; color: var(--muted); max-width: 720px; }
+    .brand {
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin: 0 0 8px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      letter-spacing: -0.03em;
+      font-weight: 700;
+    }
+    .lede {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 46rem;
+      line-height: 1.45;
+    }
+    .stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      min-width: 88px;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      text-align: center;
+    }
+    .stat b {
+      display: block;
+      font-size: 1.25rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat span {
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
     .shell {
       display: grid;
-      grid-template-columns: 240px 1fr 380px;
-      gap: 16px;
-      max-width: 1280px;
+      grid-template-columns: 250px minmax(0, 1fr) minmax(300px, 380px);
+      gap: 14px;
+      max-width: 1320px;
       margin: 0 auto;
-      padding: 18px 20px 40px;
+      padding: 14px 20px 48px;
     }
-    @media (max-width: 980px) {
+    @media (max-width: 1020px) {
       .shell { grid-template-columns: 1fr; }
     }
     .panel {
-      background: rgba(16, 24, 38, 0.92);
+      background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 16px;
       padding: 12px;
+      backdrop-filter: blur(8px);
     }
-    .cats { display: flex; flex-direction: column; gap: 8px; max-height: 72vh; overflow: auto; }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .panel-head h2 {
+      margin: 0;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .cats {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 70vh;
+      overflow: auto;
+      padding-right: 2px;
+    }
+    button.cat, button.ep, button.chip, button.run, button.ghost {
+      font: inherit;
+      cursor: pointer;
+    }
     button.cat, button.ep {
       width: 100%;
       text-align: left;
       border: 1px solid var(--line);
-      background: #0c1420;
+      background: #081522;
       color: var(--text);
       border-radius: 12px;
       padding: 10px 12px;
-      cursor: pointer;
-      font: inherit;
     }
+    button.cat:hover, button.ep:hover { border-color: #2d4d68; }
     button.cat.active, button.ep.active {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(62, 224, 162, 0.35);
+      background: var(--accent-dim);
+      box-shadow: inset 0 0 0 1px rgba(42, 212, 162, 0.25);
     }
-    button.cat .count { float: right; color: var(--muted); font-size: 0.85rem; }
-    .toolbar { display: flex; gap: 8px; margin-bottom: 10px; }
+    button.cat .count {
+      float: right;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    button.chip {
+      border: 1px solid var(--line);
+      background: #081522;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+    }
+    button.chip.active {
+      color: var(--ink);
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
     input[type="search"], input[type="text"], textarea {
       width: 100%;
-      background: #0c1420;
+      background: #081522;
       color: var(--text);
       border: 1px solid var(--line);
       border-radius: 10px;
       padding: 10px 12px;
       font: inherit;
     }
-    .list { display: flex; flex-direction: column; gap: 8px; max-height: 72vh; overflow: auto; }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 68vh;
+      overflow: auto;
+    }
     .method {
       display: inline-block;
       min-width: 58px;
       text-align: center;
-      font-size: 0.72rem;
-      font-weight: 700;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
       letter-spacing: 0.04em;
-      border-radius: 999px;
-      padding: 2px 8px;
+      border-radius: 6px;
+      padding: 3px 7px;
       margin-right: 8px;
     }
     .m-GET { background: var(--get); }
     .m-POST { background: var(--post); }
     .m-PUT, .m-PATCH { background: var(--put); color: #1a1200; }
     .m-DELETE { background: var(--delete); }
-    .path { font-family: ui-monospace, Consolas, monospace; font-size: 0.86rem; word-break: break-all; }
-    .try h2 { margin: 4px 0 8px; font-size: 1.05rem; }
-    .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 10px; }
+    .path {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.8rem;
+      word-break: break-all;
+    }
+    .try h2.title {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      word-break: break-all;
+    }
+    .meta { color: var(--muted); font-size: 0.85rem; margin: 0 0 10px; }
+    .field { margin-bottom: 8px; }
+    .field label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 4px;
+    }
     button.run {
       background: var(--accent);
-      color: #042016;
+      color: var(--ink);
       border: 0;
       border-radius: 12px;
       padding: 12px 14px;
       font-weight: 700;
-      cursor: pointer;
       width: 100%;
       margin: 8px 0;
     }
     button.run:disabled { opacity: 0.5; cursor: wait; }
+    button.ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.82rem;
+    }
+    button.ghost:hover { color: var(--text); border-color: #2d4d68; }
     pre.out {
-      background: #070d16;
+      background: #040b12;
+      border: 1px solid var(--line);
       border-radius: 12px;
       padding: 12px;
-      max-height: 42vh;
+      max-height: 38vh;
       overflow: auto;
-      font-size: 0.78rem;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.75rem;
       white-space: pre-wrap;
       word-break: break-word;
+      margin: 0;
     }
     .status-ok { color: var(--accent); }
     .status-bad { color: var(--danger); }
-    .pill { color: var(--warn); font-size: 0.8rem; }
+    .empty {
+      color: var(--muted);
+      padding: 18px 8px;
+      text-align: center;
+    }
+    .links { display: flex; gap: 8px; flex-wrap: wrap; }
+    a.inline {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    a.inline:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <header class="hero">
-    <h1>API Lab</h1>
-    <p>Pick a category, push an endpoint, and try it. Safe GET calls run immediately. Writes ask you to confirm and send a JSON body.</p>
+  <header class="top">
+    <div>
+      <p class="brand">MasterNoder</p>
+      <h1>API Lab</h1>
+      <p class="lede">Browse live <code>/api</code> routes by product area. Safe GETs run on click; writes ask before send. Pages, redirects, and tooling noise are filtered out.</p>
+      <p class="links" style="margin-top:10px">
+        <a class="inline" href="/api">API Monitor</a>
+        <a class="inline" href="/lab">Research Lab</a>
+        <a class="inline" href="/debugger">Debugger</a>
+        <a class="inline" href="/api-lab/?path=/api/health&amp;method=GET">Try /api/health</a>
+      </p>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="stat"><b id="stat-total">—</b><span>Shown</span></div>
+      <div class="stat"><b id="stat-safe">—</b><span>Try-safe</span></div>
+      <div class="stat"><b id="stat-cats">—</b><span>Categories</span></div>
+    </div>
   </header>
   <div class="shell">
     <aside class="panel">
+      <div class="panel-head">
+        <h2>Categories</h2>
+        <button type="button" class="ghost" id="toggle-other" title="Show Other / tooling">Other</button>
+      </div>
       <div class="cats" id="cats"></div>
     </aside>
     <section class="panel">
-      <div class="toolbar">
+      <div class="panel-head"><h2>Endpoints</h2></div>
+      <div class="filters">
+        <button type="button" class="chip active" data-filter="all">All</button>
+        <button type="button" class="chip" data-filter="safe">Try-safe</button>
+        <button type="button" class="chip" data-filter="GET">GET</button>
+        <button type="button" class="chip" data-filter="POST">POST</button>
+      </div>
+      <div class="toolbar" style="margin-bottom:10px">
         <input id="q" type="search" placeholder="Search path, method, category" autocomplete="off">
       </div>
       <div class="list" id="list"></div>
     </section>
     <section class="panel try" id="try">
-      <h2>Try an endpoint</h2>
-      <p class="meta">Choose a link on the left. Results stay in this panel.</p>
+      <div class="panel-head"><h2>Try it</h2></div>
+      <p class="meta" id="try-hint">Pick an endpoint. Results stay in this panel.</p>
       <div id="form"></div>
-      <pre class="out" id="out">Waiting for a push.</pre>
+      <pre class="out" id="out">Waiting.</pre>
     </section>
   </div>
   <script>
     (function () {
-      var p = window.location.pathname || "";
       window.APP_BASE = "";
     })();
   </script>

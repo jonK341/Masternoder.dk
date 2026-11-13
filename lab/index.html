@@ -427,6 +427,7 @@
                 <div id="lab-ai-recommendations" class="lab-muted">Loading copilot recommendations…</div>
                 <p style="margin-top:12px;font-size:0.82rem;opacity:0.85;">Named agent owners on research grid, projects, co-tech, roundtable, systems, and crypto bridge. Use the Agents tab for projects and the Co-tech tab for LLM refine.</p>
                 <div class="lab-actions">
+                    <a href="/api-lab/?category=lab" class="lab-btn lab-btn-success">API Lab</a>
                     <a href="/dashboard/agents_control" class="lab-btn lab-btn-info">Agent control</a>
                     <a href="/debugger" class="lab-btn lab-btn-primary">Debugger</a>
                 </div>
@@ -450,14 +451,15 @@
                 <p style="margin:0 0 10px;opacity:0.9;">Contributor handbook (APIs, profile keys, catalog, deploy, troubleshooting) lives in the repo at <code>docs/LAB.md</code> — also listed in <code>deploy.py</code> so it ships with production mirrors.</p>
                 <details style="margin-top:12px;">
                     <summary>Quick API reference</summary>
+                    <p style="margin:8px 0;"><a href="/api-lab/?category=lab" class="lab-btn lab-btn-info" style="text-decoration:none;display:inline-block;">Open these in API Lab →</a></p>
                     <table>
                         <thead><tr><th>Method</th><th>Path</th><th>Role</th></tr></thead>
                         <tbody>
-                            <tr><td>GET</td><td><code>/api/lab/progression</code></td><td>Catalog + unlocks + cooldown remainders + explore summary.</td></tr>
-                            <tr><td>POST</td><td><code>/api/lab/explore</code></td><td>Exploration pulse (3h cooldown).</td></tr>
-                            <tr><td>GET/POST</td><td><code>/api/lab/chapter2-research</code></td><td>Research set; POST validates unlocks + re-research gates.</td></tr>
-                            <tr><td>GET/POST</td><td><code>/api/lab/technologies</code></td><td>Co-tech drafts (POST 1h spacing).</td></tr>
-                            <tr><td>POST</td><td><code>/api/lab/technologies/&lt;id&gt;/agent-refine</code></td><td>Agent notes (10h per draft).</td></tr>
+                            <tr><td>GET</td><td><a href="/api-lab/?path=/api/lab/progression&amp;method=GET"><code>/api/lab/progression</code></a></td><td>Catalog + unlocks + cooldown remainders + explore summary.</td></tr>
+                            <tr><td>POST</td><td><a href="/api-lab/?path=/api/lab/explore&amp;method=POST"><code>/api/lab/explore</code></a></td><td>Exploration pulse (3h cooldown).</td></tr>
+                            <tr><td>GET/POST</td><td><a href="/api-lab/?path=/api/lab/chapter2-research&amp;method=GET"><code>/api/lab/chapter2-research</code></a></td><td>Research set; POST validates unlocks + re-research gates.</td></tr>
+                            <tr><td>GET/POST</td><td><a href="/api-lab/?path=/api/lab/technologies&amp;method=GET"><code>/api/lab/technologies</code></a></td><td>Co-tech drafts (POST 1h spacing).</td></tr>
+                            <tr><td>POST</td><td><a href="/api-lab/?q=technologies/&amp;category=lab&amp;filter=POST"><code>/api/lab/technologies/&lt;id&gt;/agent-refine</code></a></td><td>Agent notes (10h per draft).</td></tr>
                         </tbody>
                     </table>
                 </details>
@@ -689,6 +691,7 @@
                 <p style="opacity: 0.9;">Runs assign → complete for a standard systems task. Awards unified points to your <code>game_user_id</code> (same as Profile).</p>
                 <div class="lab-actions">
                     <button type="button" id="btn-lab-agent-run" class="lab-btn lab-btn-primary">Run test cycle</button>
+                    <a href="/api-lab/?category=debugger&amp;other=1" class="lab-btn lab-btn-success">API Lab</a>
                     <a href="/debugger" class="lab-btn lab-btn-info">Open Debugger</a>
                 </div>
                 <pre id="lab-agent-test-log" style="display:none;margin-top:12px;padding:10px;background:rgba(0,0,0,0.4);border-radius:8px;white-space:pre-wrap;font-size:0.8rem;max-height:280px;overflow:auto;"></pre>
