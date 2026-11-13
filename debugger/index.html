@@ -1101,7 +1101,7 @@
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
                 <div>
                     <h2 style="margin:0;">🚀 Mission Control</h2>
-                    <p style="color:#aaa;margin-top:4px;font-size:0.9em;">Full platform status — and an interactive film monitor</p>
+                    <p style="color:#aaa;margin-top:4px;font-size:0.9em;">Full platform status — interactive film monitor (also on the <a href="/#fp-monitors-bay" style="color:#7dffb8;">frontpage dual-monitor bay</a> next to Film Canvas)</p>
                 </div>
                 <div style="display:flex;gap:10px;">
                     <button class="button" onclick="window.loadMissionControl()" style="background:rgba(0,230,118,0.3);border-color:#00e676;">&#128260; Refresh</button>
@@ -1327,12 +1327,30 @@
             if (placeholder) placeholder.style.display = 'block';
             if (videoEl) { videoEl.style.display = 'none'; videoEl.removeAttribute('src'); }
             try {
+                const uid = (window.MnUserId && window.MnUserId.read)
+                    ? (window.MnUserId.read() || '')
+                    : (localStorage.getItem('game_user_id') || localStorage.getItem('user_id') || '');
+                let trialId = '';
+                try {
+                    trialId = localStorage.getItem('fp_film_trial_id') || '';
+                    if (!trialId) {
+                        trialId = 'ft_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+                        localStorage.setItem('fp_film_trial_id', trialId);
+                    }
+                } catch (_) { trialId = 'ft_guest'; }
                 const start = await fetch('/api/film-canvas/interactive-movie', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt })
+                    body: JSON.stringify({ prompt: prompt, user_id: uid, trial_id: trialId })
                 });
                 const job = await start.json();
+                if (start.status === 402 || (job && job.code === 'PAYMENT_REQUIRED')) {
+                    statusEl.textContent = (job && job.message)
+                        ? job.message
+                        : 'Free window ended — pay with MN2 or PayPal on the frontpage monitors.';
+                    if (playBtn) playBtn.disabled = false;
+                    return;
+                }
                 if (!job || !job.job_id) {
                     statusEl.textContent = (job && job.error) ? job.error : 'Could not start movie job';
                     if (playBtn) playBtn.disabled = false;

@@ -35,7 +35,7 @@
 .fp-hero-film {
     grid-template-areas:
         "copy"
-        "monitor"
+        "monitors"
         "actions";
     gap: 18px;
     padding: 28px 18px 24px;
@@ -46,11 +46,210 @@
     grid-area: copy;
 }
 
-.fp-hero-film .fp-film-monitor {
-    grid-area: monitor;
-    width: min(100%, 920px);
+.fp-hero-film .fp-monitors-bay {
+    grid-area: monitors;
+    width: min(100%, 1120px);
     position: relative;
     z-index: 2;
+}
+
+.fp-monitors-bay-head {
+    margin: 0 0 14px;
+    text-align: center;
+}
+
+.fp-monitors-bay-kicker {
+    margin: 0 0 6px;
+    color: rgba(157, 255, 212, 0.78);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.fp-monitors-bay-title {
+    margin: 0 0 6px;
+    color: #eafff4;
+    font-size: clamp(1.15rem, 2.4vw, 1.55rem);
+    font-weight: 850;
+    letter-spacing: 0.02em;
+}
+
+.fp-monitors-bay-note {
+    margin: 0;
+    color: rgba(170, 220, 195, 0.82);
+    font-size: 0.88rem;
+}
+
+.fp-monitors-bay-note a {
+    color: #7dffb8;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.fp-monitors-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+
+.fp-monitor-label {
+    margin: 0 0 8px 2px;
+    color: rgba(157, 255, 212, 0.9);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.fp-hero-film .fp-film-monitor,
+.fp-hero-film .fp-mc-monitor {
+    width: 100%;
+    position: relative;
+    z-index: 2;
+}
+
+.fp-mc-stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 230, 118, 0.35);
+    padding: 14px;
+    background: radial-gradient(ellipse at center, #0b1a14 0%, #020605 70%);
+}
+
+.fp-mc-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 140, 0.03) 3px
+    );
+    animation: fpMcScan 7s linear infinite;
+}
+
+@keyframes fpMcScan {
+    from { transform: translateY(-8%); }
+    to { transform: translateY(8%); }
+}
+
+.fp-mc-top {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.fp-mc-title {
+    color: #00e676;
+    font-weight: 800;
+    font-size: 0.95rem;
+}
+
+.fp-mc-sub {
+    color: #8fbba0;
+    font-size: 0.78rem;
+    margin-top: 2px;
+}
+
+.fp-mc-ready {
+    color: #888;
+    font-size: 0.78rem;
+}
+
+.fp-mc-ready.is-ready { color: #00e676; }
+.fp-mc-ready.is-wait { color: #ffb74d; }
+
+.fp-mc-frame {
+    position: relative;
+    z-index: 1;
+    aspect-ratio: 16 / 9;
+    margin: 0 auto 12px;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 230, 118, 0.25);
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fp-mc-frame video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+}
+
+.fp-mc-placeholder {
+    color: #7dffb3;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 20px;
+    opacity: 0.85;
+}
+
+.fp-mc-controls {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.fp-mc-controls input {
+    flex: 1 1 180px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 230, 118, 0.35);
+    color: #e8ffe8;
+    background: rgba(0, 0, 0, 0.55);
+    font-size: 0.9rem;
+}
+
+.fp-mc-play {
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 230, 118, 0.45);
+    color: #00160c;
+    background: linear-gradient(135deg, rgba(0, 230, 118, 0.95), rgba(0, 180, 255, 0.85));
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.fp-mc-play:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.fp-mc-status {
+    position: relative;
+    z-index: 1;
+    min-height: 1.25em;
+    margin: 10px 2px 0;
+    color: #9ad7b0;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 900px) {
+    .fp-monitors-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .fp-film-chrome {
@@ -1582,12 +1781,12 @@ body.mn-sound-active .theme-sound-toggle {
         padding: 36px 28px 32px;
     }
 
-    /* Film hero keeps copy → monitor → actions (do not reuse old graphic/copy areas). */
+    /* Film hero keeps copy → dual monitors → actions (do not reuse old graphic/copy areas). */
     .fp-hero.fp-hero-film {
         grid-template-columns: minmax(0, 1fr);
         grid-template-areas:
             "copy"
-            "monitor"
+            "monitors"
             "actions";
         justify-items: center;
         text-align: center;
