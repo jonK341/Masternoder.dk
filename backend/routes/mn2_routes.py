@@ -19,25 +19,24 @@ from backend.services.mn2_wallet_service import (
     refresh_deposit_address,
 )
 from backend.services.mn2_ledger import get_entries_by_user, append_entry, count_withdrawals_since, sum_withdrawals_since
+from backend.services.mn2_explorer_urls import (
+    explorer_address_url as _explorer_address_url_svc,
+    explorer_base_url as _explorer_base_url_svc,
+    explorer_tx_url as _explorer_tx_url_svc,
+)
 
 
 def _explorer_base_url() -> str:
-    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    path = os.path.join(base, "data", "mn2_config.json")
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return (json.load(f).get("explorer_base_url") or "").strip() or "https://chainz.cryptoid.info/mn2/"
-        except Exception:
-            pass
-    return "https://chainz.cryptoid.info/mn2/"
+    return _explorer_base_url_svc()
 
 
 def _explorer_tx_url(txid: str) -> str:
-    if not (txid or "").strip():
-        return ""
-    base = _explorer_base_url().rstrip("/")
-    return f"{base}/tx.dws?txid={txid.strip()}"
+    return _explorer_tx_url_svc(txid)
+
+
+def explorer_address_url(address: str) -> str:
+    """Public helper for hosting/shop callers; Chainz-safe .htm URLs."""
+    return _explorer_address_url_svc(address)
 
 
 def _load_mn2_config() -> dict:
@@ -66,7 +65,7 @@ def mn2_balance():
     coins_per_mn2 = float(config.get("coins_per_mn2") or 100)
     shop_revenue_address = (config.get("shop_revenue_address") or "").strip()
     base = _explorer_base_url().rstrip("/")
-    shop_revenue_explorer_url = f"{base}/address.dws?addr={shop_revenue_address}" if shop_revenue_address else ""
+    shop_revenue_explorer_url = _explorer_address_url_svc(shop_revenue_address) if shop_revenue_address else ""
     payload = {
         "success": True,
         "user_id": result.get("user_id"),
@@ -176,7 +175,7 @@ def mn2_deposit_address():
     addr = result.get("deposit_address") or ""
     ledger_only = bool(result.get("ledger_only") or str(addr).startswith("LGR"))
     base = _explorer_base_url().rstrip("/")
-    explorer_address_url = "" if ledger_only else (f"{base}/address.dws?addr={addr}" if addr else "")
+    explorer_address_url = "" if ledger_only else (_explorer_address_url_svc(addr) if addr else "")
     return jsonify({
         "success": True,
         "user_id": result.get("user_id"),
@@ -203,7 +202,7 @@ def mn2_wallet_frame():
     addr = result.get("deposit_address") or ""
     ledger_only = bool(result.get("ledger_only") or str(addr).startswith("LGR"))
     base = _explorer_base_url().rstrip("/")
-    result["explorer_address_url"] = "" if ledger_only else (f"{base}/address.dws?addr={addr}" if addr else "")
+    result["explorer_address_url"] = "" if ledger_only else (_explorer_address_url_svc(addr) if addr else "")
     result["ledger_only"] = ledger_only
     return jsonify(result), 200
 
@@ -228,7 +227,7 @@ def mn2_wallet_refresh():
         "success": True,
         "user_id": result.get("user_id") or user_id,
         "deposit_address": addr,
-        "explorer_address_url": "" if ledger_only else (f"{base}/address.dws?addr={addr}" if addr else ""),
+        "explorer_address_url": "" if ledger_only else (_explorer_address_url_svc(addr) if addr else ""),
         "ledger_only": ledger_only,
         "upgraded_from_ledger": bool(result.get("upgraded_from_ledger")),
     }), 200
@@ -357,7 +356,7 @@ def mn2_transactions():
             item["explorer_tx_url"] = None
         addr = (e.get("address") or "").strip()
         if addr:
-            item["explorer_address_url"] = f"{base}/address.dws?addr={addr}"
+            item["explorer_address_url"] = _explorer_address_url_svc(addr)
         else:
             item["explorer_address_url"] = None
         out.append(item)
@@ -531,7 +530,7 @@ def mn2_create_order_payment():
         address=address,
     )
     base = _explorer_base_url().rstrip("/")
-    explorer_address_url = f"{base}/address.dws?addr={address}" if address else ""
+    explorer_address_url = _explorer_address_url_svc(address) if address else ""
     return jsonify({
         "success": True,
         "payment_ref": order["payment_ref"],

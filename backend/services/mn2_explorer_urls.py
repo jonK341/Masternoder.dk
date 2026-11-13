@@ -84,7 +84,8 @@ def explorer_tx_url(txid: str, cfg: Optional[Dict[str, Any]] = None) -> str:
     base = explorer_base_url(cfg).rstrip("/")
     txid = txid.strip()
     if explorer_kind(cfg) == "chainz":
-        return f"{base}/tx.dws?txid={txid}"
+        # Chainz Cryptoid expects ``tx.dws?<txid>.htm`` (``?txid=`` often returns UNKNOWN).
+        return f"{base}/tx.dws?{txid}.htm"
     return f"{base}/tx/{txid}"
 
 
@@ -94,7 +95,9 @@ def explorer_address_url(address: str, cfg: Optional[Dict[str, Any]] = None) -> 
     base = explorer_base_url(cfg).rstrip("/")
     address = address.strip()
     if explorer_kind(cfg) == "chainz":
-        return f"{base}/address.dws?addr={address}"
+        # Chainz Cryptoid expects ``address.dws?<addr>.htm``.
+        # ``?addr=`` is treated as the literal address string "addr" → "Invalid address".
+        return f"{base}/address.dws?{address}.htm"
     return f"{base}/address/{address}"
 
 
@@ -104,5 +107,5 @@ def explorer_block_url(block_hash_or_height: str, cfg: Optional[Dict[str, Any]] 
     base = explorer_base_url(cfg).rstrip("/")
     ref = str(block_hash_or_height).strip()
     if explorer_kind(cfg) == "chainz":
-        return f"{base}/block.dws?id={ref}"
+        return f"{base}/block.dws?{ref}.htm"
     return f"{base}/block/{ref}"
