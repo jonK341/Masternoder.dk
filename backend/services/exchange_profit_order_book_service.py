@@ -81,6 +81,12 @@ def _iso() -> str:
 
 
 def profit_book_enabled() -> bool:
+    try:
+        from backend.services.exchange_profit_head_service import limb_allowed
+        if not limb_allowed("pbook"):
+            return False
+    except Exception:
+        pass
     raw = os.environ.get("PROFIT_BOOK_ENABLED", "").strip().lower()
     if raw in ("0", "false", "no", "off"):
         return False

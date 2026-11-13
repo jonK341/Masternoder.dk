@@ -38,6 +38,12 @@ def _iso() -> str:
 
 
 def spread_hunter_enabled() -> bool:
+    try:
+        from backend.services.exchange_profit_head_service import limb_allowed
+        if not limb_allowed("hunter"):
+            return False
+    except Exception:
+        pass
     raw = os.environ.get("SPREAD_HUNTER_ENABLED", "").strip().lower()
     if raw in ("0", "false", "no", "off"):
         return False
@@ -475,7 +481,17 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
     xfer_bps = float(arb._effective_transfer_cost_bps(cfg))
 
     universe = _build_universe(scan_limit=scan_limit)
-    symbols = universe["symbols"]
+    symbols = list(universe["symbols"])
+    # Head kill-shot: prioritize the named symbol for this hunt cycle.
+    try:
+        from backend.services.exchange_profit_head_service import get_kill_shot, clear_kill_shot
+
+        ks = get_kill_shot()
+        if ks and str(ks.get("arm") or "hunter") == "hunter" and ks.get("symbol"):
+            sym = str(ks["symbol"]).upper()
+            symbols = [sym] + [s for s in symbols if s != sym]
+    except Exception:
+        ks = None
     out: Dict[str, Any] = {
         "success": True,
         "arm": "spread_hunter",
@@ -488,6 +504,7 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
         "catalog_count": universe["catalog_count"],
         "hot_count": universe["hot_count"],
         "symbols_sample": symbols[:12],
+        "kill_shot": ks,
         "opportunity_count": 0,
         "qualifying": 0,
         "top": None,
@@ -704,6 +721,12 @@ def _persist_tick(out: Dict[str, Any]) -> None:
         state["last_exec_at"] = out.get("scanned_at")
         state["last_exec"] = out.get("trade")
         state["exec_count"] = int(state.get("exec_count") or 0) + 1
+        try:
+            from backend.services.exchange_profit_head_service import clear_kill_shot
+
+            clear_kill_shot()
+        except Exception:
+            pass
     _save_state(state)
 
 

@@ -40,15 +40,16 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 45, "hunter": 20, "pbook": 25},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "dual_farm": 60, "hunter": 30, "pbook": 45},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15, "pbook": 20},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 30, "hunter": 15, "pbook": 20},
+    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 45, "hunter": 20, "pbook": 25, "head": 45},
+    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "dual_farm": 60, "hunter": 30, "pbook": 45, "head": 60},
+    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30},
+    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 45},
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
 _LIVE_PROFIT_MAX_INTERVALS = {
-    "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15, "pbook": 20,
+    "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90,
+    "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
 }
 
 
@@ -113,11 +114,52 @@ def _micro_chain_once() -> Dict[str, Any]:
 
 def _summarize_grid(res: Dict[str, Any]) -> str:
     ticks = res.get("ticks") or []
-    oo = sum(int(t.get("open_orders") or 0) for t in ticks)
-    return (
-        f"live={not res.get('skipped')} ticks={len(ticks)} open_orders={oo} "
-        f"realized=${float(res.get('realized_pnl_usd') or 0):.2f}"
-    )
+    oo = sum(int(t.get("open_orders") or 0) for t in ticks if isinstance(t, dict))
+    parts = [
+        "leg=grid",
+        f"live={not res.get('skipped')}",
+        f"ticks={len(ticks)}",
+        f"open_orders={oo}",
+        f"realized=${float(res.get('realized_pnl_usd') or 0):.2f}",
+    ]
+    thin = res.get("thin_quote_venues") or []
+    if thin:
+        parts.append(f"thin_quote={','.join(thin)}")
+    paused = res.get("paused_venues") or []
+    if paused and not thin:
+        parts.append(f"paused={','.join(paused)}")
+    qa = res.get("quarantined_assets") or []
+    if qa:
+        parts.append(f"quarantine={len(qa)}")
+    if res.get("universe_shrunk"):
+        parts.append(f"universe={res.get('targets_ticked', 0)}/-{res.get('universe_skipped', 0)}")
+    if res.get("reseed_venues"):
+        parts.append(f"reseed={','.join(res.get('reseed_venues') or [])}")
+    if res.get("reason"):
+        parts.append(f"reason={res.get('reason')}")
+    return " ".join(parts)
+
+
+def _summarize_head(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"dec={len(res.get('decisions') or [])}")
+
+
+def _head_once() -> Dict[str, Any]:
+    from backend.services.exchange_profit_head_service import run_head_tick
+    return run_head_tick(force=True)
+
+
+def _head_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] head interval={interval}s (steer arms+legs)", flush=True)
+    while not stop.is_set():
+        try:
+            res = _head_once()
+            summary = _summarize_head(res)
+            print(f"[all-profit] head {summary}", flush=True)
+            _write_heartbeat("head", summary, extra={"head": res.get("limbs")})
+        except Exception as exc:
+            print(f"[all-profit] head error: {exc}", flush=True)
+        stop.wait(max(15, interval))
 
 
 def _summarize_stuck(res: Dict[str, Any]) -> str:
@@ -724,7 +766,7 @@ def _casino_loop(interval: int, dry_run: bool, stop: threading.Event) -> None:
 
 
 def _grid_loop(interval: int, stop: threading.Event) -> None:
-    print(f"[all-profit] grid loop interval={interval}s", flush=True)
+    print(f"[all-profit] grid leg interval={interval}s (maker stance)", flush=True)
     while not stop.is_set():
         try:
             res = _grid_once()
@@ -833,6 +875,11 @@ def main() -> int:
         help="Do not run dedicated dual-farm arm (Binance↔NonKYC + prefund)",
     )
     parser.add_argument(
+        "--skip-head",
+        action="store_true",
+        help="Do not run profit head (steer arms+legs, kill-shots, learning)",
+    )
+    parser.add_argument(
         "--skip-feed",
         action="store_true",
         help="No-op (compat with ops wrappers that pass --skip-feed)",
@@ -858,6 +905,7 @@ def main() -> int:
     hunter_iv = int(os.environ.get("SPREAD_HUNTER_INTERVAL_SEC") or 0) or iv.get("hunter") or 20
     pbook_iv = int(os.environ.get("PROFIT_BOOK_INTERVAL_SEC") or 0) or iv.get("pbook") or 25
     dual_iv = int(os.environ.get("DUAL_FARM_INTERVAL_SEC") or 0) or iv.get("dual_farm") or 0
+    head_iv = int(os.environ.get("PROFIT_HEAD_INTERVAL_SEC") or 0) or iv.get("head") or 45
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -888,6 +936,8 @@ def main() -> int:
                 from backend.services.exchange_profit_order_book_service import run_profit_order_book_tick
 
                 out["pbook"] = run_profit_order_book_tick(force=True)
+            if not args.skip_head:
+                out["head"] = _head_once()
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -913,6 +963,8 @@ def main() -> int:
                 print(f"[all-profit] hunter {_summarize_hunter(out['hunter'])}", flush=True)
             if "pbook" in out:
                 print(f"[all-profit] pbook {_summarize_pbook(out['pbook'])}", flush=True)
+            if "head" in out:
+                print(f"[all-profit] head {_summarize_head(out['head'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -929,7 +981,7 @@ def main() -> int:
         if fast_iv:
             print(f"    fast rescan interval={fast_iv}s")
         if not args.skip_grid:
-            print(f"  grid market-maker interval={grid_iv}s")
+            print(f"  grid leg (maker stance) interval={grid_iv}s")
         if not args.skip_stuck:
             print(f"  stuck inventory → grid strategy interval={stuck_iv}s")
         if not args.skip_micro_chain:
@@ -940,6 +992,8 @@ def main() -> int:
             print(f"  spread-hunter arm interval={hunter_iv}s")
         if pbook_iv and not args.skip_pbook:
             print(f"  profit-order-book leg interval={pbook_iv}s")
+        if head_iv and not args.skip_head:
+            print(f"  profit head (steer body) interval={head_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -976,6 +1030,10 @@ def main() -> int:
         if pbook_iv and not args.skip_pbook:
             threads.append(threading.Thread(
                 target=_pbook_loop, args=(pbook_iv, stop), name="pbook", daemon=True,
+            ))
+        if head_iv and not args.skip_head:
+            threads.append(threading.Thread(
+                target=_head_loop, args=(head_iv, stop), name="head", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(
