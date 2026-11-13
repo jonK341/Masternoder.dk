@@ -223,6 +223,45 @@ def test_scanner_credits_user_not_treasury(tmp_path, monkeypatch):
     assert round(after2, 8) == round(after, 8)
 
 
+def test_credit_txids_connects_known_deposit(tmp_path, monkeypatch):
+    from backend.services import mn2_deposit_scanner as scanner
+    from backend.services import mn2_ledger as ledger
+    from backend.services.unified_points_database import unified_points_db
+
+    uid = "eco_txid_user"
+    chain_addr = "JEcoTxidAddr00000000000000001"
+    monkeypatch.setattr(scanner, "_load_config", lambda: {"confirmations": 1})
+    monkeypatch.setattr(
+        "backend.services.mn2_wallet_service.get_address_to_user_map",
+        lambda: {chain_addr: uid},
+    )
+    monkeypatch.setattr(
+        "backend.services.mn2_rpc_client.gettransaction",
+        lambda txid: {
+            "result": {
+                "txid": txid,
+                "confirmations": 8,
+                "details": [
+                    {"category": "receive", "address": chain_addr, "amount": 0.5},
+                ],
+            },
+            "error": None,
+        },
+    )
+    ledger_path = tmp_path / "mn2_ledger.json"
+    ledger_path.write_text(json.dumps({"entries": []}), encoding="utf-8")
+    monkeypatch.setattr(ledger, "_ledger_path", lambda: str(ledger_path))
+
+    before = float((unified_points_db.get_all_points(uid).get("points") or {}).get("mn2_balance") or 0)
+    out = scanner.credit_txids(["txid_connect_1"])
+    assert out.get("success") is True
+    assert out.get("credits_applied") == 1
+    after = float((unified_points_db.get_all_points(uid).get("points") or {}).get("mn2_balance") or 0)
+    assert round(after - before, 8) == 0.5
+    again = scanner.credit_txids(["txid_connect_1"])
+    assert again.get("credits_applied") == 0
+
+
 def test_gift_resolves_ledger_receive_id(tmp_path, monkeypatch):
     from backend.services import mn2_gift_service as gift
     from backend.services import mn2_wallet_service as ws

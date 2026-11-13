@@ -1014,11 +1014,36 @@ def mn2_ops_stats():
 
 @mn2_bp.route("/api/mn2/scan-deposits", methods=["POST"])
 def mn2_scan_deposits():
-    """Run the deposit scanner once (e.g. from cron). If MN2_SCAN_SECRET is set, require X-Scanner-Token or ?token=."""
+    """Run the deposit scanner once (e.g. from cron). If MN2_SCAN_SECRET is set, require X-Scanner-Token or ?token=.
+
+    Optional JSON body:
+      - ``txids``: list of known deposit txids to credit via gettransaction (connect-the-dots /
+        self-send recovery when listtransactions is incomplete).
+      - ``min_confirmations``: override config confirmations for that credit path only.
+    When ``txids`` is present, both the normal scan and the txid credit path run.
+    """
     if not _scan_deposits_authorized():
         return jsonify({"success": False, "error": "Unauthorized"}), 403
-    from backend.services.mn2_deposit_scanner import run_scanner
+    from backend.services.mn2_deposit_scanner import credit_txids, run_scanner
+
+    data = request.get_json(silent=True) or {}
+    txids = data.get("txids") if isinstance(data, dict) else None
+    min_conf = data.get("min_confirmations") if isinstance(data, dict) else None
+    try:
+        min_conf_i = int(min_conf) if min_conf is not None else None
+    except (TypeError, ValueError):
+        min_conf_i = None
+
     result = run_scanner()
+    if isinstance(txids, list) and txids:
+        credited = credit_txids(txids, min_confirmations=min_conf_i)
+        result["txid_credit"] = credited
+        result["credits_applied"] = int(result.get("credits_applied") or 0) + int(
+            credited.get("credits_applied") or 0
+        )
+        if credited.get("success") is False and not result.get("error"):
+            result["error"] = credited.get("error")
+            result["success"] = False
     status = 200 if result.get("success") else 500
     return jsonify(result), status
 
