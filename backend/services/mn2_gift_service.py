@@ -44,11 +44,14 @@ def _resolve_recipient(to: str) -> Optional[str]:
         return None
     try:
         from backend.services.mn2_wallet_service import get_address_to_user_map
-        mapped = (get_address_to_user_map().get(target) or "").strip()
+        # Include LGR ledger ids so peer gifts resolve when the daemon is offline.
+        mapped = (get_address_to_user_map(include_ledger=True).get(target) or "").strip()
         if mapped:
             return mapped
     except Exception:
         mapped = ""
+    if target.startswith("LGR"):
+        return None
     if looks_like_chain_address(target):
         return None
     return target

@@ -8,8 +8,9 @@
   "max_withdrawal_per_day": 10,
   "max_withdrawal_amount_per_day": 1000,
   "withdrawal_requires_verification": false,
-  "withdrawal_requires_whitelist": true,
-  "withdrawal_new_address_cooldown_hours": 24,
+  "withdrawal_requires_whitelist": false,
+  "withdrawal_new_address_cooldown_hours": 1,
+  "withdrawal_first_address_skips_cooldown": true,
   "withdrawal_risk": {
     "enabled": true,
     "step_up_score": 2,
@@ -130,6 +131,16 @@
   "shop_revenue_address": "JNKzUoRpc7nhnPKZkzxJe4Vkmaz82o8jiX",
   "monetization_catalog_ref": "data/monetization_config.json (payment_rails_catalog + digital_goods)",
   "wallet_mode": "ledger",
+  "gift": {
+    "enabled": true,
+    "max_per_transfer_mn2": 1000,
+    "max_per_day_mn2": 5000,
+    "min_balance_after_mn2": 0
+  },
+  "chain_reward_payouts": {
+    "enabled": false,
+    "comment": "Keep false while wallet_mode=ledger. Micro rewards credit in-app balance; enable only when hot wallet + fee payer are funded."
+  },
   "onchain_fee_payer": {
     "address": "",
     "account": "",

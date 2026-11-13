@@ -61,11 +61,27 @@ def resolve_user_id(
     param_name: str = "user_id",
     use_session: bool = True,
     use_identification: bool = True,
+    prefer_query: bool = False,
 ) -> str:
     """
     Resolve user_id with priority: session > request body/query > user_identification.
+    When prefer_query=True and ?user_id= is present, query wins (read/debug endpoints).
     Returns 'default_user' only if all sources fail.
     """
+    def _query_uid() -> str:
+        if not from_query:
+            return ""
+        raw = request.args.get(param_name) or request.args.get("user_id")
+        if raw and str(raw).strip() and str(raw).strip().lower() != "default_user":
+            return str(raw).strip()
+        return ""
+
+    # Optional: explicit query identity for read-only wallet history / balance tools.
+    if prefer_query:
+        q = _query_uid()
+        if q:
+            return q
+
     # 1. Server-side session (set on login/create)
     if use_session and session.get("user_id"):
         session_uid = str(session["user_id"]).strip()
@@ -87,7 +103,7 @@ def resolve_user_id(
         except Exception:
             pass
     if not uid and from_query:
-        uid = request.args.get(param_name) or request.args.get("user_id")
+        uid = _query_uid() or None
 
     if uid and str(uid).strip() and str(uid).strip().lower() != "default_user":
         return str(uid).strip()

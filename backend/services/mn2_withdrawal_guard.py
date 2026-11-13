@@ -102,6 +102,31 @@ def check_address(user_id: str, address: str, cooldown_hours: float) -> Dict[str
         }
 
 
+def count_known_addresses(user_id: str) -> int:
+    """How many payout addresses this user has already registered with the guard."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return 0
+    with _LOCK:
+        user = _load().get(uid) or {}
+        return len(user) if isinstance(user, dict) else 0
+
+
+def has_successful_withdrawal(user_id: str) -> bool:
+    """True once the user has completed at least one external withdrawal."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return False
+    with _LOCK:
+        user = _load().get(uid) or {}
+        if not isinstance(user, dict):
+            return False
+        for rec in user.values():
+            if isinstance(rec, dict) and int(rec.get("withdrawals") or 0) > 0:
+                return True
+        return False
+
+
 def record_success(user_id: str, address: str) -> None:
     """Increment the withdrawal counter for a (user, address) after a successful send."""
     uid = (user_id or "").strip()

@@ -6,7 +6,7 @@ See docs/MASTERNODER2_CRYPTO_INTEGRATION_EXPANDED.md Phase 3.
 import os
 import json
 import threading
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 _SCANNER_LOCK = threading.Lock()
 
@@ -53,6 +53,231 @@ def _mn2_balance(points_db, user_id: str) -> float:
         return float((data.get("points") or {}).get("mn2_balance") or 0)
     except Exception:
         return 0.0
+
+
+def _credit_user_deposit(
+    *,
+    user_id: str,
+    address: str,
+    amount: float,
+    txid: str,
+    confirmations: int,
+    points_db,
+    append_entry,
+    is_txid_processed,
+) -> str:
+    """Apply one confirmed user deposit. Returns action: credited|duplicate|failed|skipped_treasury."""
+    if user_id == "@agent_treasury":
+        try:
+            from backend.services.activity_events_service import emit
+            emit("agent_treasury_deposit", channel="agents", payload={"amount": amount, "txid": txid, "address": address})
+            from backend.services.admin_audit_service import log_action
+            log_action("treasury_onchain_deposit", actor="scanner", payload={"amount": amount, "txid": txid})
+        except Exception:
+            pass
+        points_db.add_points(
+            "agent_treasury",
+            "mn2_balance",
+            amount,
+            source="mn2_treasury_deposit",
+            metadata={
+                "reference": f"treasury-deposit:{txid}",
+                "txid": txid,
+                "address": address,
+                "confirmations": confirmations,
+            },
+        )
+        append_entry(
+            user_id="agent_treasury",
+            entry_type="treasury_deposit",
+            amount=amount,
+            txid=txid,
+            address=address,
+            metadata={"confirmations": confirmations},
+        )
+        return "credited"
+
+    credit_meta = {
+        "reference": f"deposit:{txid}",
+        "txid": txid,
+        "address": address,
+        "confirmations": confirmations,
+    }
+    credited = points_db.add_points(
+        user_id,
+        "mn2_balance",
+        amount,
+        source="mn2_deposit",
+        metadata=credit_meta,
+    )
+    if credited.get("duplicate"):
+        if not is_txid_processed(txid):
+            append_entry(
+                user_id=user_id,
+                entry_type="deposit",
+                amount=amount,
+                txid=txid,
+                address=address,
+                metadata={"confirmations": confirmations, "repaired": True},
+            )
+        return "duplicate"
+    if not credited.get("success"):
+        return "failed"
+    append_entry(
+        user_id=user_id,
+        entry_type="deposit",
+        amount=amount,
+        txid=txid,
+        address=address,
+        metadata={"confirmations": confirmations},
+    )
+    return "credited"
+
+
+def _receives_from_gettransaction(tx: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Normalize gettransaction payload into scanner-style receive rows."""
+    txid = (tx.get("txid") or "").strip()
+    confirmations = int(tx.get("confirmations") or 0)
+    details = tx.get("details")
+    out: List[Dict[str, Any]] = []
+    if isinstance(details, list):
+        for row in details:
+            if not isinstance(row, dict):
+                continue
+            category = (row.get("category") or row.get("type") or "").strip().lower()
+            if category not in ("receive", "recv"):
+                continue
+            address = (row.get("address") or "").strip()
+            try:
+                amount = float(row.get("amount") or 0)
+            except (TypeError, ValueError):
+                continue
+            if not address or amount <= 0:
+                continue
+            out.append({
+                "category": "receive",
+                "txid": txid or (row.get("txid") or ""),
+                "address": address,
+                "amount": amount,
+                "confirmations": confirmations,
+            })
+    return out
+
+
+def credit_txids(txids: List[str], *, min_confirmations: Optional[int] = None) -> Dict[str, Any]:
+    """Connect known on-chain txids to user balances (ops / self-send recovery)."""
+    import time
+    start = time.time()
+    result: Dict[str, Any] = {
+        "success": True,
+        "txs_checked": 0,
+        "credits_applied": 0,
+        "pending": [],
+        "results": [],
+        "error": None,
+    }
+    cleaned = [str(t).strip() for t in (txids or []) if str(t).strip()]
+    if not cleaned:
+        result["success"] = False
+        result["error"] = "txids required"
+        return result
+
+    if not _SCANNER_LOCK.acquire(blocking=False):
+        result["success"] = False
+        result["error"] = "Scanner already running"
+        return result
+
+    try:
+        config = _load_config()
+        required = int(min_confirmations if min_confirmations is not None else (config.get("confirmations") or 6))
+        from backend.services.mn2_wallet_service import get_address_to_user_map
+        from backend.services.mn2_rpc_client import gettransaction
+        from backend.services.mn2_ledger import append_entry, is_txid_processed
+        from backend.services.unified_points_database import unified_points_db
+
+        address_to_user = get_address_to_user_map()
+        credits = 0
+        for txid in cleaned:
+            result["txs_checked"] += 1
+            row_out: Dict[str, Any] = {"txid": txid, "action": "skip"}
+            if is_txid_processed(txid):
+                row_out["action"] = "already_processed"
+                result["results"].append(row_out)
+                continue
+            r = gettransaction(txid)
+            if r.get("error"):
+                row_out["action"] = "rpc_error"
+                row_out["error"] = r.get("error")
+                result["results"].append(row_out)
+                continue
+            tx = r.get("result")
+            if not isinstance(tx, dict):
+                row_out["action"] = "not_found"
+                result["results"].append(row_out)
+                continue
+            receives = _receives_from_gettransaction(tx)
+            if not receives:
+                # Self-send / incomplete detail: fall back to top-level amount+address if present
+                addr = (tx.get("address") or "").strip()
+                try:
+                    amt = float(tx.get("amount") or 0)
+                except (TypeError, ValueError):
+                    amt = 0.0
+                conf = int(tx.get("confirmations") or 0)
+                if addr and amt > 0:
+                    receives = [{
+                        "category": "receive",
+                        "txid": txid,
+                        "address": addr,
+                        "amount": amt,
+                        "confirmations": conf,
+                    }]
+            matched = False
+            for recv in receives:
+                address = recv["address"]
+                if str(address).startswith("LGR") or address not in address_to_user:
+                    continue
+                matched = True
+                conf = int(recv.get("confirmations") or 0)
+                if conf < required:
+                    row_out["action"] = "pending_confirmations"
+                    row_out["confirmations"] = conf
+                    row_out["required_confirmations"] = required
+                    row_out["address"] = address
+                    row_out["user_id"] = address_to_user[address]
+                    result["pending"].append(row_out.copy())
+                    break
+                action = _credit_user_deposit(
+                    user_id=address_to_user[address],
+                    address=address,
+                    amount=float(recv["amount"]),
+                    txid=txid,
+                    confirmations=conf,
+                    points_db=unified_points_db,
+                    append_entry=append_entry,
+                    is_txid_processed=is_txid_processed,
+                )
+                row_out["action"] = action
+                row_out["address"] = address
+                row_out["user_id"] = address_to_user[address]
+                row_out["amount"] = float(recv["amount"])
+                if action == "credited":
+                    credits += 1
+                break
+            if not matched and row_out["action"] == "skip":
+                row_out["action"] = "unmapped_address"
+            result["results"].append(row_out)
+
+        result["credits_applied"] = credits
+        _log_run(start, time.time(), result["txs_checked"], credits, 0, None)
+        return result
+    except Exception as e:
+        result["success"] = False
+        result["error"] = str(e)
+        _log_run(start, time.time(), result.get("txs_checked", 0), result.get("credits_applied", 0), 0, str(e))
+        return result
+    finally:
+        _SCANNER_LOCK.release()
 
 
 def apply_order_payment(
@@ -156,6 +381,81 @@ def apply_order_payment(
         except Exception:
             pass
     return {"action": "underpaid_credited"}
+
+
+def last_scanner_run() -> Optional[Dict[str, Any]]:
+    """Most recent deposit-scanner log line (for wallet status badges)."""
+    try:
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        log_file = os.path.join(base, "logs", "mn2_deposit_scanner.jsonl")
+        if not os.path.exists(log_file):
+            return None
+        with open(log_file, "r", encoding="utf-8") as handle:
+            lines = [ln.strip() for ln in handle.readlines() if ln.strip()]
+        if not lines:
+            return None
+        return json.loads(lines[-1])
+    except Exception:
+        return None
+
+
+def pending_deposits_for_user(user_id: str, *, limit: int = 10) -> List[Dict[str, Any]]:
+    """Unconfirmed receives to this user's chain deposit addresses (best-effort).
+
+    Returns [] when RPC is down or the user only has a ledger-only LGR id.
+    """
+    uid = str(user_id or "").strip()
+    if not uid:
+        return []
+    try:
+        from backend.services.mn2_wallet_service import get_address_to_user_map
+        from backend.services.mn2_rpc_client import listtransactions
+        from backend.services.mn2_ledger import is_txid_processed
+    except Exception:
+        return []
+
+    config = _load_config()
+    required = int(config.get("confirmations") or 6)
+    addr_map = get_address_to_user_map(include_ledger=False)
+    mine = {addr for addr, owner in addr_map.items() if owner == uid}
+    if not mine:
+        return []
+
+    r = listtransactions(count=200, skip=0)
+    if r.get("error") or not isinstance(r.get("result"), list):
+        return []
+
+    pending: List[Dict[str, Any]] = []
+    for tx in r["result"]:
+        category = (tx.get("category") or tx.get("type") or "").strip().lower()
+        if category not in ("receive", "recv"):
+            continue
+        address = (tx.get("address") or "").strip()
+        if address not in mine:
+            continue
+        txid = (tx.get("txid") or "").strip()
+        if not txid or is_txid_processed(txid):
+            continue
+        try:
+            amount = float(tx.get("amount") or 0)
+        except (TypeError, ValueError):
+            continue
+        if amount <= 0:
+            continue
+        confs = int(tx.get("confirmations") or 0)
+        if confs >= required:
+            continue
+        pending.append({
+            "txid": txid,
+            "address": address,
+            "amount_mn2": round(amount, 8),
+            "confirmations": confs,
+            "required_confirmations": required,
+            "progress": f"{confs}/{required}",
+        })
+        if len(pending) >= max(1, min(int(limit), 25)):
+            break
+    return pending
 
 
 def run_scanner() -> Dict[str, Any]:
@@ -270,57 +570,24 @@ def run_scanner() -> Dict[str, Any]:
 
             if confirmations < required_confirmations:
                 continue
+            # Ledger-only receive ids are never on-chain deposit targets.
+            if str(address).startswith("LGR"):
+                continue
             if address not in address_to_user:
                 continue
 
-            user_id = address_to_user[address]
-            if user_id == "@agent_treasury":
-                try:
-                    from backend.services.activity_events_service import emit
-                    emit("agent_treasury_deposit", channel="agents", payload={"amount": amount, "txid": txid, "address": address})
-                    from backend.services.admin_audit_service import log_action
-                    log_action("treasury_onchain_deposit", actor="scanner", payload={"amount": amount, "txid": txid})
-                except Exception:
-                    pass
-                unified_points_db.add_points(
-                    "agent_treasury",
-                    "mn2_balance",
-                    amount,
-                    source="mn2_treasury_deposit",
-                    metadata={
-                        "reference": f"treasury-deposit:{txid}",
-                        "txid": txid,
-                        "address": address,
-                        "confirmations": confirmations,
-                    },
-                )
-                append_entry(
-                    user_id="agent_treasury",
-                    entry_type="treasury_deposit",
-                    amount=amount,
-                    txid=txid,
-                    address=address,
-                    metadata={"confirmations": confirmations},
-                )
-                credits += 1
-                continue
-
-            unified_points_db.add_points(
-                user_id,
-                "mn2_balance",
-                amount,
-                source="mn2_deposit",
-                metadata={"txid": txid, "address": address, "confirmations": confirmations},
-            )
-            append_entry(
-                user_id=user_id,
-                entry_type="deposit",
+            action = _credit_user_deposit(
+                user_id=address_to_user[address],
+                address=address,
                 amount=amount,
                 txid=txid,
-                address=address,
-                metadata={"confirmations": confirmations},
+                confirmations=confirmations,
+                points_db=unified_points_db,
+                append_entry=append_entry,
+                is_txid_processed=is_txid_processed,
             )
-            credits += 1
+            if action == "credited":
+                credits += 1
 
         result["credits_applied"] = credits
         result["orders_fulfilled"] = orders_fulfilled

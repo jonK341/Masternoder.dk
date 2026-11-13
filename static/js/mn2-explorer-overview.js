@@ -49,7 +49,7 @@
     var base = (explorerBase || 'https://chainz.cryptoid.info/mn2/').replace(/\/+$/, '');
     var isChainz = /chainz\.cryptoid/.test(base);
     var isTx = /^[0-9a-fA-F]{64}$/.test(term);
-    if (isChainz) return base + (isTx ? '/tx.dws?txid=' : '/address.dws?addr=') + encodeURIComponent(term);
+    if (isChainz) return base + (isTx ? '/tx.dws?' : '/address.dws?') + encodeURIComponent(term) + '.htm';
     return base + (isTx ? '/tx/' : '/address/') + encodeURIComponent(term);
   }
 
@@ -224,7 +224,7 @@
   function blockLink(height, hash) {
     var base = (explorerBase || 'https://chainz.cryptoid.info/mn2/').replace(/\/+$/, '');
     var isChainz = /chainz\.cryptoid/.test(base);
-    if (isChainz) return base + '/block.dws?id=' + encodeURIComponent(hash || height);
+    if (isChainz) return base + '/block.dws?' + encodeURIComponent(hash || height) + '.htm';
     return base + '/block/' + encodeURIComponent(hash || height);
   }
 

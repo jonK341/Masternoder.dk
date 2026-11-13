@@ -77,7 +77,8 @@ def get_config() -> Dict[str, Any]:
 
 
 def _primary_credentials() -> Tuple[str, str, str]:
-    url = (os.environ.get("MN2_RPC_URL") or "").strip() or "http://127.0.0.1:9332"
+    # Do not invent a wallet URL — empty means unconfigured (matches mn2_rpc_client).
+    url = (os.environ.get("MN2_RPC_URL") or "").strip()
     user = (os.environ.get("MN2_RPC_USER") or "").strip()
     password = (os.environ.get("MN2_RPC_PASSWORD") or "").strip()
     return url, user, password

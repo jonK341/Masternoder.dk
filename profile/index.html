@@ -1102,6 +1102,7 @@
                         <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
                             <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
                             <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
+                            <div id="profile-mn2-status-badges" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px;font-size:0.72rem;"></div>
                         </div>
                         <nav id="profile-wallet-subnav" class="profile-wallet-subnav page-tabs" role="tablist" aria-label="Wallet sections">
                             <button type="button" class="tab-btn active" data-wallet-tab="overview" role="tab" aria-selected="true">Overview</button>
@@ -1144,7 +1145,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear after 6 confirmations.</p>
+                            <p style="font-size: 0.8rem; opacity: 0.8; margin-top: 6px;">Credits appear after confirmations (see pending below).</p>
+                            <div id="profile-mn2-pending-deposits" style="margin-top:10px;font-size:0.82rem;opacity:0.9;"></div>
                         </div>
                         </div>
                         <div data-wallet-panel="withdraw" style="margin-bottom: 14px; display:none;">
@@ -1321,11 +1323,18 @@
                         var to = (document.getElementById('mn2-gift-to') || {}).value || '';
                         var amt = (document.getElementById('mn2-gift-amount') || {}).value || 0;
                         var msg = document.getElementById('mn2-gift-msg');
+                        var token = '';
+                        try { token = localStorage.getItem('casino_security_token') || sessionStorage.getItem('mn2_security_token') || ''; } catch (e) {}
+                        var body = { to: to, amount: amt };
+                        if (token) body.verification_token = token;
                         fetch('/api/mn2/transfer', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ to: to, amount: amt }) })
+                          body: JSON.stringify(body) })
                           .then(function(r) { return r.json(); }).then(function(d) {
-                            if (msg) { msg.textContent = d.success ? ('Sent ' + d.amount_mn2 + ' MN2 to ' + d.to_user) : (d.error || 'Failed'); msg.style.color = d.success ? '#00ff88' : '#ffaa44'; }
-                            if (d.success && window.profileManager) window.profileManager.loadProfileMn2Wallet();
+                            var err = d.error || 'Failed';
+                            if (d.code === 'password_verification_required') err = 'Verify password in Profile → Security, then send again.';
+                            if (msg) { msg.textContent = d.success ? ('Sent ' + d.amount_mn2 + ' MN2 to ' + d.to_user + (d.mode ? ' (' + d.mode + ')' : '')) : err; msg.style.color = d.success ? '#00ff88' : '#ffaa44'; }
+                            if (d.success && window.ProfileMn2Wallet) window.ProfileMn2Wallet.load();
+                            else if (d.success && window.profileManager) window.profileManager.loadProfileMn2Wallet();
                           });
                       });
                       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadAddrBook); else loadAddrBook();

@@ -10,14 +10,13 @@ from backend.services.mn2_explorer_urls import (
 
 def test_chainz_tx_and_address_urls():
     cfg = {
-        "explorer_base_url": "https://chainz.cryptoid.info/mn2/",
+        "explorer_base_url": "https://example-explorer.test/mn2/",
         "explorer_kind": "chainz",
     }
     assert explorer_kind(cfg) == "chainz"
-    assert explorer_tx_url("abc123", cfg) == "https://chainz.cryptoid.info/mn2/tx.dws?txid=abc123"
-    assert explorer_address_url("MxAddr", cfg) == "https://chainz.cryptoid.info/mn2/address.dws?addr=MxAddr"
-    assert explorer_block_url("900000", cfg) == "https://chainz.cryptoid.info/mn2/block.dws?id=900000"
-
+    assert explorer_tx_url("abc123", cfg) == "https://example-explorer.test/mn2/tx.dws?abc123.htm"
+    assert explorer_address_url("MxAddr", cfg) == "https://example-explorer.test/mn2/address.dws?MxAddr.htm"
+    assert explorer_block_url("900000", cfg) == "https://example-explorer.test/mn2/block.dws?900000.htm"
 
 def test_iquidus_tx_and_address_urls():
     cfg = {

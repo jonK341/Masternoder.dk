@@ -69,8 +69,9 @@ def micro_config() -> Dict[str, Any]:
 
 
 def micro_transactions_enabled() -> bool:
+    """True when micro credits should run (in-app and/or on-chain)."""
     cfg = micro_config()
-    return cfg["enabled"] and cfg["chain_enabled"]
+    return bool(cfg["enabled"])
 
 
 def _load_state() -> dict:
@@ -171,21 +172,32 @@ def run_micro_transaction_burst(
     if not cfg["enabled"]:
         out["skipped_reason"] = "micro_transactions_disabled"
         return out
+    # Chain payouts optional: when disabled, still credit in-app ledger balances
+    # (wallet_mode=ledger ecosystem). Never invent default_user recipients.
     if not cfg["chain_enabled"] and not dry_run:
-        out["skipped_reason"] = "chain_reward_payouts_disabled"
-        out["success"] = False
-        return out
+        out["mode"] = "in_app_only"
+        out["note"] = "chain_reward_payouts_disabled — crediting in-app mn2_balance only"
 
     cap = max_txs if max_txs is not None else cfg["max_per_run"]
     cap = max(1, min(cap, 200))
-    amount = max(cfg["amount_mn2"], cfg["min_chain_mn2"])
+    if cfg["chain_enabled"]:
+        amount = max(cfg["amount_mn2"], cfg["min_chain_mn2"])
+    else:
+        amount = max(float(cfg["amount_mn2"] or 0), 0.00000001)
     actions = [a for a in cfg["actions"] if a in _MICRO_ACTIONS] or list(_MICRO_ACTIONS)
     split_parts = max(1, cfg["split_parts"])
     amounts = _split_amount(amount, split_parts)
 
-    users = [str(u).strip() for u in (user_ids or _discover_users(limit=cap * 2)) if str(u).strip()]
+    from backend.services.mn2_earn_auth import is_earn_eligible_user
+    users = [
+        str(u).strip()
+        for u in (user_ids or _discover_users(limit=cap * 2))
+        if is_earn_eligible_user(str(u).strip())
+    ]
     if not users:
-        users = ["default_user"]
+        out["skipped_reason"] = "no_eligible_users"
+        out["skipped"] = 1
+        return out
 
     state = _load_state()
     slot = 0

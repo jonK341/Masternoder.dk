@@ -49,17 +49,29 @@ def _ensure_dotenv_loaded() -> None:
 
 
 def _rpc_url() -> str:
+    """Resolve the wallet RPC URL.
+
+    Returns an empty string when unset so callers fail fast with
+    ``rpc_unconfigured`` instead of hanging on a guessed mainnet endpoint.
+    Explicit ``MN2_RPC_URL`` / failover / ``MN2_ALLOW_DEFAULT_RPC_URL=1`` still
+    enable a concrete URL (defaults are opt-in only).
+    """
     _ensure_dotenv_loaded()
     try:
         from backend.services.mn2_rpc_failover import resolve_active_endpoint
         ep = resolve_active_endpoint()
         if ep and ep.get("url"):
-            return ep["url"]
+            return str(ep["url"]).strip()
     except Exception:
         pass
     url = (os.environ.get("MN2_RPC_URL") or "").strip()
     if url:
         return url
+    allow_default = (os.environ.get("MN2_ALLOW_DEFAULT_RPC_URL") or "").strip().lower() in (
+        "1", "true", "yes", "on",
+    )
+    if not allow_default:
+        return ""
     network = (os.environ.get("MN2_NETWORK") or "").strip().lower()
     return _DEFAULT_URL_TESTNET if network == "testnet" else _DEFAULT_URL_MAINNET
 
@@ -276,6 +288,12 @@ def _call(
     Send a single JSON-RPC request. Returns {"result": ...} on success or {"error": "...", "result": None}.
     """
     url = _rpc_url()
+    if not url:
+        return {
+            "error": "rpc_unconfigured: set MN2_RPC_URL to your MasterNoder2 wallet node",
+            "result": None,
+            "code": "rpc_unconfigured",
+        }
     user, password = _rpc_auth()
     params = params if params is not None else []
     timeout = _resolve_timeout(timeout_sec)
