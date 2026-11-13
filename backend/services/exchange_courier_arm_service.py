@@ -209,35 +209,61 @@ def sync_binance(
             free = float(bals.get(quote) or 0)
 
     # 3) Seed sell inventory on Binance for the hot nonkyc→binance route.
-    sym = str(seed_symbol or "").upper()
-    if sym and free >= max(float(floor_usd), float(seed_usd)):
-        qty = float(bals.get(sym) or 0)
-        tick = conn.fetch_ticker("binance", sym) or {}
-        ask = float(tick.get("ask") or 0)
-        bid = float(tick.get("bid") or 0)
-        px = ask or bid
-        have_usd = qty * (bid or px) if (bid or px) > 0 else 0.0
-        need_seed = float(seed_usd) - have_usd
-        if px > 0 and need_seed >= _cfg_float("COURIER_MIN_MOVE_USD", 3.0):
-            buy_usd = min(need_seed, free - float(floor_usd), _cfg_float("COURIER_SEED_MAX_USD", 20.0))
-            if buy_usd >= _cfg_float("COURIER_MIN_MOVE_USD", 3.0):
-                buy_qty = round((buy_usd / px) * 0.995, 6)
-                order = vapi.place_market_order("binance", sym, "buy", buy_qty, dry_run=False, quote=quote)
-                ok = bool(order.get("success"))
-                vapi.invalidate_venue_balance_cache("binance")
+    # Fall back through API-key-whitelisted majors if the hot symbol is blocked.
+    seed_candidates: List[str] = []
+    if seed_symbol:
+        seed_candidates.append(str(seed_symbol).upper())
+    for s in ("ADA", "LINK", "XRP", "DOGE", "SOL", "BNB", "ALGO", "TRX"):
+        if s not in seed_candidates:
+            seed_candidates.append(s)
+    if free >= max(float(floor_usd), float(seed_usd) * 0.5):
+        seed_attempts: List[Dict[str, Any]] = []
+        for sym in seed_candidates:
+            qty = float(bals.get(sym) or 0)
+            tick = conn.fetch_ticker("binance", sym) or {}
+            ask = float(tick.get("ask") or 0)
+            bid = float(tick.get("bid") or 0)
+            px = ask or bid
+            have_usd = qty * (bid or px) if (bid or px) > 0 else 0.0
+            need_seed = float(seed_usd) - have_usd
+            if px <= 0:
+                seed_attempts.append({"symbol": sym, "skipped": True, "reason": "no_price"})
+                continue
+            if need_seed < _cfg_float("COURIER_MIN_MOVE_USD", 3.0):
                 out["seed"] = {
-                    "success": ok,
-                    "symbol": sym,
-                    "buy_usd": round(buy_usd, 2),
-                    "buy_qty": buy_qty,
-                    "error": order.get("error") if not ok else None,
+                    "success": True, "skipped": True, "reason": "already_seeded",
+                    "symbol": sym, "have_usd": round(have_usd, 2),
                 }
-                if ok:
-                    out["did_work"] = True
-                    bals = vapi.parse_spot_balances("binance", dry_run=False, force_refresh=True) or {}
-                    free = float(bals.get(quote) or 0)
-        else:
-            out["seed"] = {"success": True, "skipped": True, "reason": "already_seeded", "symbol": sym, "have_usd": round(have_usd, 2)}
+                break
+            buy_usd = min(need_seed, free - float(floor_usd), _cfg_float("COURIER_SEED_MAX_USD", 20.0))
+            if buy_usd < _cfg_float("COURIER_MIN_MOVE_USD", 3.0):
+                seed_attempts.append({"symbol": sym, "skipped": True, "reason": "insufficient_free"})
+                continue
+            buy_qty = round((buy_usd / px) * 0.995, 6)
+            order = vapi.place_market_order("binance", sym, "buy", buy_qty, dry_run=False, quote=quote)
+            ok = bool(order.get("success"))
+            vapi.invalidate_venue_balance_cache("binance")
+            row = {
+                "success": ok,
+                "symbol": sym,
+                "buy_usd": round(buy_usd, 2),
+                "buy_qty": buy_qty,
+                "error": order.get("error") if not ok else None,
+            }
+            seed_attempts.append(row)
+            if ok:
+                out["seed"] = row
+                out["did_work"] = True
+                bals = vapi.parse_spot_balances("binance", dry_run=False, force_refresh=True) or {}
+                free = float(bals.get(quote) or 0)
+                break
+            # Whitelist / permission errors → try next major.
+            err = str(order.get("error") or "").lower()
+            if "whitelist" not in err and "not allowed" not in err and "permission" not in err:
+                out["seed"] = row
+                break
+        if "seed" not in out and seed_attempts:
+            out["seed"] = {**seed_attempts[-1], "attempts": seed_attempts[:4]}
 
     # 4) Periodically reseed Binance grid ladders so BN stays live with the daemon.
     state = _load_state()
