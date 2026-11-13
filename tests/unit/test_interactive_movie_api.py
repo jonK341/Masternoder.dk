@@ -32,33 +32,45 @@ def client(monkeypatch, tmp_path):
         lambda: True,
     )
 
-    def fake_compose(
+    def fake_sellable(
         prompt,
         dest_dir=None,
-        timeout=180,
-        plan=True,
-        render_provider=None,
         duration_sec=8,
         face_path=None,
+        timeout=240,
+        on_progress=None,
+        allow_draft_fallback=True,
     ):
         path = os.path.join(dest_dir or str(tmp_path), "interactive.mp4")
         with open(path, "wb") as handle:
             handle.write(b"\x00\x00\x00\x18ftypmp42" + b"0" * 64)
+        if on_progress:
+            on_progress(50, "Sellable pipeline test render…")
         return {
             "success": True,
-            "planner": "all_llms+dramacanva",
-            "renderer": "fal_krea",
+            "planner": "sellable_architect",
+            "renderer": "sellable_v1",
+            "canvas": "sellable_v1",
+            "pipeline": "sellable_v1",
             "prompt_used": prompt,
             "local_path": path,
-            "canvas": "fal_krea",
             "duration_sec": duration_sec,
             "has_face": bool(face_path),
-            "llm_plan": {"success": True, "providers": ["groq"], "count": 1},
+            "sellable": True,
+            "quality": "sellable",
+            "has_audio": True,
+            "motion_backends": ["runway"],
+            "mode": "sellable_i2v",
+            "beats": 2,
+            "story": "A sellable harbour story",
+            "narration": ["Scene 1", "Scene 2"],
+            "pipeline_style": "documentary realism",
+            "pipeline_run_id": "sell_test123",
         }
 
     monkeypatch.setattr(
-        "backend.services.film_canvas_service.compose_interactive_movie",
-        fake_compose,
+        "backend.services.sellable_film_pipeline.compose_sellable_movie",
+        fake_sellable,
     )
 
     from src.app import create_app
@@ -91,8 +103,10 @@ def test_interactive_movie_job_completes_and_serves_video(client):
 
     assert status is not None
     assert status["status"] == "completed"
-    assert status["planner"] == "all_llms+dramacanva"
-    assert status["renderer"] == "fal_krea"
+    assert status["planner"] == "sellable_architect"
+    assert status["renderer"] == "sellable_v1"
+    assert status["sellable"] is True
+    assert status["pipeline"] == "sellable_v1"
     assert status["video_url"].endswith("/video")
     assert status["download_url"] == status["video_url"] + "?download=1"
 

@@ -119,6 +119,11 @@ def _public_interactive_job(job: dict) -> dict:
         "fx_pack": job.get("fx_pack"),
         "story": job.get("story"),
         "narration": job.get("narration"),
+        "sellable": job.get("sellable"),
+        "quality": job.get("quality"),
+        "pipeline": job.get("pipeline"),
+        "has_audio": job.get("has_audio"),
+        "motion_backends": job.get("motion_backends"),
         "video_url": job.get("video_url"),
         "download_url": (
             (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1")
@@ -196,72 +201,49 @@ def _run_interactive_movie_job(
         has_face=bool(face_path),
     )
     try:
-        from backend.services.film_canvas_service import (
-            compose_interactive_movie,
-            is_available as film_ok,
-            list_render_canvases,
-            pipeline_render_available,
-        )
+        from backend.services.sellable_film_pipeline import compose_sellable_movie
 
-        can_plan = film_ok("dramacanva", purpose="planning")
-        renderers = list_render_canvases()
+        def _on_progress(pct, message):
+            _touch_interactive_job(job_id, progress=max(8, min(99, int(pct))), message=message)
+
         _touch_interactive_job(
             job_id,
-            progress=12,
-            message="AI designing a brand-new pipeline for this clip...",
+            progress=10,
+            message="Sellable pipeline v1 — story, hero frames, real motion, soundtrack…",
         )
-        if can_plan and renderers:
-            _touch_interactive_job(
-                job_id,
-                progress=18,
-                message="Fresh AI pipeline + DramaCanvas, then render (%s)..."
-                % (", ".join(renderers[:3]) or "auto"),
-            )
-        elif renderers:
-            _touch_interactive_job(
-                job_id,
-                progress=20,
-                message="Fresh AI pipeline render (%s)..." % ", ".join(renderers[:3]),
-            )
-        elif pipeline_render_available():
-            _touch_interactive_job(
-                job_id,
-                progress=20,
-                message="Fresh AI pipeline — rendering with available backends...",
-            )
-        else:
-            _touch_interactive_job(
-                job_id,
-                progress=15,
-                message="Fresh AI storyboard — assembling local acting movie...",
-            )
 
-        # Scale render timeout with requested length (cap for monitor UX).
-        timeout = max(120, min(480, 60 + int(duration_sec) * 3))
-        result = compose_interactive_movie(
+        # Paid I2V needs headroom; scale with length but keep monitor UX bounded.
+        timeout = max(180, min(600, 90 + int(duration_sec) * 8))
+        result = compose_sellable_movie(
             prompt,
             dest_dir=_interactive_videos_dir(),
-            timeout=timeout,
-            plan=can_plan,
             duration_sec=duration_sec,
             face_path=face_path,
+            timeout=timeout,
+            on_progress=_on_progress,
+            allow_draft_fallback=True,
         )
         if result.get("success") and result.get("local_path"):
             beats = result.get("beats")
             mode = result.get("mode")
             style = result.get("pipeline_style")
+            sellable = bool(result.get("sellable"))
             _touch_interactive_job(
                 job_id,
                 status="completed",
                 progress=100,
                 message=(
-                    "Interactive movie ready"
+                    ("Sellable movie ready" if sellable else "Draft movie ready")
                     + ((" · %s scenes" % beats) if beats else "")
-                    + (" · people acting" if mode == "acting_storyboard" else "")
+                    + (" · audio" if result.get("has_audio") else "")
                     + ((" · %s" % style) if style else "")
+                    + (
+                        (" · " + ",".join(result.get("motion_backends") or [])[:40])
+                        if result.get("motion_backends") else ""
+                    )
                 ),
-                planner=result.get("planner"),
-                renderer=result.get("renderer") or result.get("canvas"),
+                planner="sellable_architect",
+                renderer=result.get("renderer") or result.get("canvas") or "sellable_v1",
                 prompt_used=result.get("prompt_used"),
                 local_path=result.get("local_path"),
                 xvid_path=result.get("xvid_path"),
@@ -275,6 +257,11 @@ def _run_interactive_movie_job(
                 fx_pack=result.get("fx_pack"),
                 story=result.get("story"),
                 narration=result.get("narration"),
+                sellable=sellable,
+                quality=result.get("quality"),
+                pipeline=result.get("pipeline") or "sellable_v1",
+                has_audio=bool(result.get("has_audio")),
+                motion_backends=result.get("motion_backends"),
                 error=None,
             )
         else:
@@ -282,18 +269,24 @@ def _run_interactive_movie_job(
                 job_id,
                 status="failed",
                 progress=100,
-                message="Interactive movie failed",
-                planner=result.get("planner"),
-                renderer=result.get("renderer") or result.get("canvas"),
+                message="Sellable pipeline failed",
+                planner="sellable_architect",
+                renderer=result.get("renderer") or result.get("canvas") or "sellable_v1",
                 prompt_used=result.get("prompt_used"),
-                error=result.get("error") or "Film canvas compose failed",
+                pipeline="sellable_v1",
+                sellable=False,
+                quality="failed",
+                error=result.get("error") or "Sellable film compose failed",
             )
     except Exception as exc:
         _touch_interactive_job(
             job_id,
             status="failed",
             progress=100,
-            message="Interactive movie failed",
+            message="Sellable pipeline failed",
+            pipeline="sellable_v1",
+            sellable=False,
+            quality="failed",
             error=str(exc)[:300],
         )
 

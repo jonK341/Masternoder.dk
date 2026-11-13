@@ -1153,19 +1153,19 @@
                             || (d.fx_pack && d.fx_pack.effects && d.fx_pack.effects.length)
                             || LIVE_FX_COUNT;
                         setStatus(
-                            'Movie ready — ' + liveN + ' effects live'
+                            (d.sellable ? 'Sellable movie ready' : 'Draft movie ready')
+                            + (d.quality ? (' · ' + d.quality) : '')
+                            + (d.has_audio ? ' · audio' : '')
                             + (d.duration_sec ? (' · ' + d.duration_sec + 's') : '')
                             + (d.beats ? (' · ' + d.beats + ' scenes') : '')
-                            + (d.mode === 'gif_storyboard' || d.mode === 'acting_storyboard'
-                                ? ' · gif story panels'
+                            + (Array.isArray(d.motion_backends) && d.motion_backends.length
+                                ? (' · ' + d.motion_backends.join('+'))
                                 : '')
                             + (d.pipeline_style ? (' · ' + d.pipeline_style) : '')
-                            + (d.fx_pack && d.fx_pack.background ? (' · fx:' + d.fx_pack.background) : '')
-                            + (d.fx_pack && d.fx_pack.sound ? (' · snd:' + d.fx_pack.sound) : '')
+                            + (liveN ? (' · ' + liveN + ' fx') : '')
                             + (d.story ? ' · story on' : '')
                             + (d.pipeline_run_id ? (' · pipe:' + String(d.pipeline_run_id).slice(-6)) : '')
-                            + (d.planner ? ' · plan:' + d.planner : '')
-                            + (d.renderer ? ' · render:' + d.renderer : '')
+                            + (d.pipeline ? (' · ' + d.pipeline) : '')
                         );
                         setBusy(false);
                         return;
