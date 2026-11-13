@@ -41,6 +41,15 @@ def test_quality_gate_requires_audio_and_real_motion(tmp_path):
     assert good["sellable"] is True
     assert good["quality"] == "sellable"
 
+    local = sell.evaluate_quality_gate(
+        local_path=str(path),
+        has_audio=True,
+        motion_backends=["premium_local"],
+        duration_sec=5,
+    )
+    assert local["sellable"] is True
+    assert local["quality"] == "sellable_local"
+
 
 def test_compose_sellable_movie_uses_motion_and_audio(tmp_path, monkeypatch):
     story = sell.design_sellable_story("harbour night", 6)

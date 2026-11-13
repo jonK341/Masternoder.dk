@@ -175,6 +175,87 @@ def _make_hero_still(prompt: str, dest_dir: str, seed: int) -> Dict[str, Any]:
     return {"success": False, "error": "hero still failed"}
 
 
+def _render_premium_local_clip(
+    image_paths: List[str],
+    dest_path: str,
+    duration_sec: float,
+) -> Dict[str, Any]:
+    """
+    Credit-free motion: smooth cinematic crossfade + gentle zoom across hero stills.
+    Used when paid I2V wallets are empty so the product still ships with audio-ready picture.
+    """
+    paths = [p for p in image_paths if p and os.path.isfile(p)]
+    if not paths:
+        return {"success": False, "error": "no premium local stills"}
+    seconds = max(2.0, min(20.0, float(duration_sec or 4.0)))
+    if len(paths) == 1:
+        # Single-plate push-in.
+        frames = max(48, int(round(seconds * 24)))
+        cmd = [
+            "ffmpeg", "-y",
+            "-loop", "1", "-t", ("%.3f" % seconds), "-i", paths[0],
+            "-vf",
+            "scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,"
+            "zoompan=z='min(1.0+0.0015*on,1.10)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
+            ":d=%d:s=1280x720:fps=24,eq=contrast=1.05:saturation=1.08,format=yuv420p" % frames,
+            "-t", ("%.3f" % seconds),
+            "-c:v", "libx264", "-crf", "19", "-preset", "medium",
+            "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+            dest_path,
+        ]
+    else:
+        n = min(4, len(paths))
+        paths = paths[:n]
+        fade = min(0.55, max(0.25, seconds / (n * 3.5)))
+        hold = max(fade + 0.8, (seconds + fade * (n - 1)) / float(n))
+        cmd = ["ffmpeg", "-y"]
+        for path in paths:
+            cmd.extend(["-loop", "1", "-t", ("%.3f" % hold), "-i", path])
+        parts = []
+        for i in range(n):
+            parts.append(
+                "[%d:v]scale=1280:720:force_original_aspect_ratio=increase,"
+                "crop=1280:720,setsar=1,fps=24[s%d]" % (i, i)
+            )
+        current = "[s0]"
+        offset = hold - fade
+        for i in range(1, n):
+            label = "[x%d]" % i
+            parts.append(
+                "%s[s%d]xfade=transition=fade:duration=%.3f:offset=%.3f%s"
+                % (current, i, fade, max(0.05, offset), label)
+            )
+            current = label
+            offset += hold - fade
+        parts.append(
+            "%seq=contrast=1.05:saturation=1.08,format=yuv420p[vout]" % current
+        )
+        cmd.extend([
+            "-filter_complex", ";".join(parts),
+            "-map", "[vout]",
+            "-t", ("%.3f" % seconds),
+            "-r", "24",
+            "-c:v", "libx264", "-crf", "19", "-preset", "medium",
+            "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+            dest_path,
+        ])
+    try:
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=max(60, int(seconds) + 45), check=False,
+        )
+    except Exception as exc:
+        return {"success": False, "error": "premium local ffmpeg failed: %s" % exc}
+    if proc.returncode != 0 or not os.path.isfile(dest_path):
+        return {"success": False, "error": (proc.stderr or "premium local encode failed")[:280]}
+    return {
+        "success": True,
+        "local_path": dest_path,
+        "motion_backend": "premium_local",
+        "fps": 24,
+        "duration_sec": seconds,
+    }
+
+
 def _render_motion_clip(
     *,
     prompt: str,
@@ -182,8 +263,9 @@ def _render_motion_clip(
     dest_dir: str,
     start_image: Optional[str] = None,
     timeout: int = 120,
+    alt_stills: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    """MotionStudio — paid I2V/T2V cascade for real moving pictures."""
+    """MotionStudio — paid I2V/T2V cascade, then premium local cine from hero stills."""
     errors: List[str] = []
     clip_sec = max(2, min(10, int(round(duration_sec or 5))))
 
@@ -228,7 +310,6 @@ def _render_motion_clip(
         if modelslab.is_available():
             out = modelslab.generate_clip(prompt=prompt[:500], timeout=min(timeout, 120))
             if out.get("success") and out.get("local_path") and os.path.isfile(out["local_path"]):
-                # Download may land outside dest_dir — copy path through.
                 out["motion_backend"] = "modelslab"
                 return out
             errors.append("modelslab: %s" % (out.get("error") or "fail"))
@@ -262,6 +343,21 @@ def _render_motion_clip(
             errors.append("fal: %s" % (out.get("error") or "fail"))
     except Exception as exc:
         errors.append("fal: %s" % exc)
+
+    # 6) Premium local cine from hero stills (credit-free but audio-ready)
+    stills = []
+    if start_image:
+        stills.append(start_image)
+    for path in alt_stills or []:
+        if path and path not in stills:
+            stills.append(path)
+    if stills:
+        dest = os.path.join(dest_dir, "premium_local_%s.mp4" % uuid.uuid4().hex[:8])
+        local = _render_premium_local_clip(stills, dest, float(duration_sec or clip_sec))
+        if local.get("success"):
+            local["prior_errors"] = errors[:6]
+            return local
+        errors.append("premium_local: %s" % (local.get("error") or "fail"))
 
     return {"success": False, "error": " | ".join(errors)[:400] or "no motion backend"}
 
@@ -408,9 +504,11 @@ def evaluate_quality_gate(
     motion_backends: List[str],
     duration_sec: float,
 ) -> Dict[str, Any]:
-    """QualityGate — sellable only with real motion + audio + sufficient bytes."""
+    """QualityGate — sellable with paid I2V or premium_local cine + audio + size."""
     size = os.path.getsize(local_path) if local_path and os.path.isfile(local_path) else 0
-    real_motion = [b for b in motion_backends if b and b not in ("draft", "gif_strip", "acting_morph", "free_still")]
+    rejected = {"draft", "gif_strip", "acting_morph", "free_still", "gif_storyboard"}
+    real_motion = [b for b in motion_backends if b and b not in rejected]
+    paid = [b for b in real_motion if b != "premium_local"]
     sellable = bool(
         local_path
         and os.path.isfile(local_path)
@@ -423,15 +521,21 @@ def evaluate_quality_gate(
     if not has_audio:
         reasons.append("missing_audio")
     if not real_motion:
-        reasons.append("no_real_motion_backend")
+        reasons.append("no_motion_backend")
     if size < 180_000:
         reasons.append("file_too_small")
+    quality = "draft"
+    if sellable and paid:
+        quality = "sellable"
+    elif sellable:
+        quality = "sellable_local"  # credit-free cine with voice — still productizable
     return {
         "sellable": sellable,
-        "quality": "sellable" if sellable else "draft",
+        "quality": quality,
         "reasons": reasons,
         "bytes": size,
         "motion_backends": real_motion,
+        "paid_motion": paid,
     }
 
 
@@ -472,30 +576,39 @@ def compose_sellable_movie(
     _progress(on_progress, 18, "Sellable pipeline — hero frames…")
     hero_paths: List[str] = []
     for beat in beats:
-        still = _make_hero_still(
-            str(beat.get("image_prompt") or brief),
-            work,
-            int(beat.get("seed") or 1000),
-        )
-        if still.get("success") and still.get("local_path"):
+        beat_stills: List[str] = []
+        # 2–3 plates per beat so premium_local can crossfade instead of a single freeze.
+        for plate in range(3):
+            still = _make_hero_still(
+                ("%s. Variation %s, same locked scene, photoreal."
+                 % (beat.get("image_prompt") or brief, plate + 1))[:420],
+                work,
+                int(beat.get("seed") or 1000) + plate * 17,
+            )
+            if not (still.get("success") and still.get("local_path")):
+                if plate == 0:
+                    attempts.append("still@%s: %s" % (beat.get("index"), still.get("error") or "fail"))
+                continue
             path = str(still["local_path"])
-            if face_path and os.path.isfile(face_path):
+            if face_path and os.path.isfile(face_path) and plate == 0:
                 try:
                     from backend.services.film_canvas_service import _composite_face_onto_still
                     composited = os.path.join(work, "face_%s.jpg" % beat.get("index"))
                     path = _composite_face_onto_still(path, face_path, composited) or path
                 except Exception:
                     pass
-            hero_paths.append(path)
-            beat["still_path"] = path
-            beat["still_source"] = still.get("source")
-        else:
-            attempts.append("still@%s: %s" % (beat.get("index"), still.get("error") or "fail"))
+            beat_stills.append(path)
+            if path not in hero_paths:
+                hero_paths.append(path)
+        if beat_stills:
+            beat["still_path"] = beat_stills[0]
+            beat["still_paths"] = beat_stills
+            beat["still_source"] = "hero_lab"
 
     _progress(on_progress, 35, "Sellable pipeline — real motion render…")
     clip_paths: List[str] = []
     motion_backends: List[str] = []
-    per_timeout = max(60, min(150, int(timeout // max(1, len(beats)))))
+    per_timeout = max(45, min(120, int(timeout // max(1, len(beats)))))
     for beat in beats:
         _progress(
             on_progress,
@@ -508,12 +621,15 @@ def compose_sellable_movie(
             dest_dir=work,
             start_image=beat.get("still_path"),
             timeout=per_timeout,
+            alt_stills=list(beat.get("still_paths") or hero_paths[:3]),
         )
         if motion.get("success") and motion.get("local_path"):
             clip_paths.append(str(motion["local_path"]))
             motion_backends.append(str(motion.get("motion_backend") or "motion"))
             beat["motion_backend"] = motion.get("motion_backend")
             beat["clip_path"] = motion.get("local_path")
+            if motion.get("prior_errors"):
+                attempts.extend(list(motion["prior_errors"])[:2])
         else:
             attempts.append(
                 "motion@%s: %s" % (beat.get("index"), motion.get("error") or "fail")
