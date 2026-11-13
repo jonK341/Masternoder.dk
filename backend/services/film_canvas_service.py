@@ -1221,13 +1221,30 @@ _FX_BACKGROUNDS = (
 _FX_SOUNDS = (
     "harbour", "storm", "neon", "drone", "pulse", "battle",
     "stars", "focus", "market", "fog", "chrome", "rain",
-    "ember", "signal", "ocean",
+    "ember", "signal", "ocean", "voice_soft", "voice_bright", "voice_deep",
 )
-_FX_EFFECTS = (
-    "scan", "sparks", "rain", "glitch", "chromatic", "hex",
-    "embers", "streaks", "noise", "bloom", "ripple", "shards",
-    "orbit", "pulse_ring", "static", "flare",
+_FX_EFFECT_FAMILIES = (
+    "scan", "sparks", "rain", "glitch", "chromatic", "hex", "embers", "streaks",
+    "noise", "bloom", "ripple", "shards", "orbit", "pulse", "static", "flare",
+    "mist", "beam", "dust", "wave", "crack", "veil", "sparkle", "trail",
+    "echo", "frost", "heat", "signal", "pixel", "drift",
 )
+_LIVE_FX_COUNT = 107
+
+
+def _build_fx_effect_catalog(count: int = _LIVE_FX_COUNT) -> tuple:
+    """Build a fixed catalog of named live effects (exactly 107 by default)."""
+    names: List[str] = []
+    index = 0
+    while len(names) < max(1, int(count)):
+        family = _FX_EFFECT_FAMILIES[index % len(_FX_EFFECT_FAMILIES)]
+        generation = (index // len(_FX_EFFECT_FAMILIES)) + 1
+        names.append("%s_%02d" % (family, generation))
+        index += 1
+    return tuple(names)
+
+
+_FX_EFFECTS = _build_fx_effect_catalog(_LIVE_FX_COUNT)
 _FX_PALETTES = (
     ("#00ff88", "#00b4ff", "#ff5078"),
     ("#7cf5ff", "#3d7cff", "#c8ff6a"),
@@ -1241,7 +1258,7 @@ _FX_PALETTES = (
 
 
 def _build_fx_pack(run_id: str, style: str = "", mood: str = "") -> Dict[str, Any]:
-    """Invent a unique visual/sound FX pack for one pipeline play."""
+    """Invent a unique visual/sound FX pack — always 107 live effects, rotated order."""
     salt = int(
         hashlib.sha1(
             ("%s|%s|%s|%s" % (run_id, style, mood, secrets.token_hex(4))).encode("utf-8")
@@ -1251,25 +1268,28 @@ def _build_fx_pack(run_id: str, style: str = "", mood: str = "") -> Dict[str, An
     background = _FX_BACKGROUNDS[salt % len(_FX_BACKGROUNDS)]
     sound = _FX_SOUNDS[(salt // 3) % len(_FX_SOUNDS)]
     palette = list(_FX_PALETTES[(salt // 11) % len(_FX_PALETTES)])
-    # Rotate catalog and take 7–10 effects so overlays stay dense, not 3–4 repeats.
     rotated = list(_FX_EFFECTS)
     start = salt % len(rotated)
-    rotated = rotated[start:] + rotated[:start]
-    count = 7 + (salt % 4)  # 7..10
-    effects = rotated[:count]
+    effects = rotated[start:] + rotated[:start]
     return {
         "background": background,
         "sound": sound,
         "effects": effects,
+        "live_count": len(effects),
         "palette": palette,
         # Keep ambient FX supportive — scene/prompt picture stays strongest.
         "intensity": round(0.42 + (salt % 18) / 100.0, 2),
         "run_id": run_id,
+        "sfx_bank": "shop",
+        "voice_profile": (
+            "performer_nova", "performer_luna", "performer_ember", "performer_storm",
+            "performer_velvet", "performer_jade", "performer_rio", "performer_mist",
+        )[salt % 8],
     }
 
 
 def _normalize_fx_pack(raw: Any, run_id: str, style: str = "", mood: str = "") -> Dict[str, Any]:
-    """Validate AI fx_pack or fall back to a fresh procedural pack."""
+    """Validate AI fx_pack or fall back to a fresh procedural pack with 107 live FX."""
     base = _build_fx_pack(run_id, style=style, mood=mood)
     if not isinstance(raw, dict):
         return base
@@ -1279,20 +1299,21 @@ def _normalize_fx_pack(raw: Any, run_id: str, style: str = "", mood: str = "") -
     snd = str(raw.get("sound") or "").strip().lower()
     if snd in _FX_SOUNDS:
         base["sound"] = snd
+    voice = str(raw.get("voice_profile") or "").strip()
+    if voice.startswith("performer_"):
+        base["voice_profile"] = voice
+    # Always keep the full 107 live catalog; AI may only reorder emphasis.
     effects = raw.get("effects") if isinstance(raw.get("effects"), list) else []
     cleaned = []
     for item in effects:
         name = str(item or "").strip().lower()
         if name in _FX_EFFECTS and name not in cleaned:
             cleaned.append(name)
-    if len(cleaned) >= 4:
-        # Pad toward dense overlays when AI returned a short list.
-        for name in _FX_EFFECTS:
-            if name not in cleaned:
-                cleaned.append(name)
-            if len(cleaned) >= 7:
-                break
-        base["effects"] = cleaned[:10]
+    for name in _FX_EFFECTS:
+        if name not in cleaned:
+            cleaned.append(name)
+    base["effects"] = cleaned[:_LIVE_FX_COUNT]
+    base["live_count"] = len(base["effects"])
     palette = raw.get("palette") if isinstance(raw.get("palette"), list) else []
     colors = [str(c).strip()[:9] for c in palette if str(c).strip().startswith("#")]
     if len(colors) >= 2:
@@ -1307,6 +1328,60 @@ def _normalize_fx_pack(raw: Any, run_id: str, style: str = "", mood: str = "") -
     except (TypeError, ValueError):
         pass
     return base
+
+
+def _scene_bible(brief: str) -> str:
+    """Locked continuity line so every still stays on the user prompt."""
+    core = (brief or "").split("[face reference")[0].strip()
+    core = core.split("\n\nStoryboard direction:")[0].strip()[:180]
+    if not core:
+        core = "cinematic real-world scene"
+    return (
+        "LOCKED REAL SCENE (must match exactly): %s. "
+        "Photoreal photograph, real people, real clothing, natural skin, "
+        "same location and lighting in every frame, documentary realism, "
+        "no cartoon, no text, no watermark."
+    ) % core
+
+
+def _build_story_bundle(
+    brief: str,
+    beats: List[Dict[str, Any]],
+    style: str,
+    mood: str,
+    run_id: str,
+) -> Dict[str, Any]:
+    """Mix a short coherent story + narration lines for voice playback."""
+    core = (brief or "").split("[face reference")[0].strip()[:160] or "the scene"
+    titles = [str(b.get("title") or ("Beat %s" % (i + 1))) for i, b in enumerate(beats)]
+    story = (
+        "In %s, a %s story unfolds in %s light: first %s, then %s, "
+        "and finally %s — people move and act inside the same real place."
+        % (
+            core,
+            mood or "vivid",
+            style or "cinematic",
+            titles[0] if titles else "the opening",
+            titles[len(titles) // 2] if len(titles) > 2 else (titles[-1] if titles else "the turn"),
+            titles[-1] if titles else "the close",
+        )
+    )[:420]
+    narration: List[str] = []
+    for index, beat in enumerate(beats):
+        line = str(
+            beat.get("narration")
+            or beat.get("description")
+            or beat.get("title")
+            or ("Moment %s of %s" % (index + 1, core))
+        ).strip()
+        narration.append(
+            ("Scene %s. %s. Stay with %s." % (index + 1, line[:140], core[:80]))[:220]
+        )
+    return {
+        "story": story,
+        "narration": narration,
+        "run_id": run_id,
+    }
 
 
 def _parse_direction_beats(direction: str, want: int) -> List[Dict[str, str]]:
@@ -1534,13 +1609,13 @@ def _try_free_beat_image(prompt: str, dest_dir: str, seed: int, timeout: int = 1
     os.makedirs(dest_dir, exist_ok=True)
     path = os.path.join(dest_dir, "ai_beat_%s_%s.jpg" % (seed, uuid.uuid4().hex[:6]))
     try:
-        encoded = urllib.parse.quote((prompt or "cinematic film still")[:380], safe="")
+        encoded = urllib.parse.quote((prompt or "photoreal film still")[:420], safe="")
         url = (
             "https://image.pollinations.ai/prompt/%s"
-            "?width=1280&height=720&nologo=true&enhance=true&seed=%d"
+            "?width=1280&height=720&nologo=true&enhance=true&model=flux&seed=%d"
         ) % (encoded, int(seed) % 999999)
         req = urllib.request.Request(url, headers={"User-Agent": "MasterNoder/1.0"})
-        with urllib.request.urlopen(req, timeout=max(6, int(timeout))) as resp:
+        with urllib.request.urlopen(req, timeout=max(8, int(timeout))) as resp:
             img_bytes = resp.read()
         if len(img_bytes) < 1000:
             return None
@@ -1555,44 +1630,50 @@ def _prompt_matched_still_prompt(beat: Dict[str, Any], base_prompt: str) -> str:
     """Build a still prompt that stays close to the user's scene and shows people acting."""
     shot = str(beat.get("shot_type") or "establishing")
     detail = str(beat.get("description") or beat.get("title") or "").strip()
-    scene = (base_prompt or "").split("\n\nStoryboard direction:")[0].strip()
-    scene = scene.split("[face reference")[0].strip() or scene
+    bible = _scene_bible(base_prompt)
     action = {
-        "establishing": "wide cinematic establishing shot, environment first, tiny figures moving in distance",
-        "character": "medium shot of a person acting in the scene, natural pose, expressive face, eye contact",
-        "action": "dynamic action shot, person mid-movement, walking or gesturing, motion implied",
-        "detail": "close insert of hands or props from the scene while a person acts nearby",
-        "reaction": "reaction close-up, person turns and reacts emotionally",
-        "closing": "closing wide, person walks away through the scene",
-    }.get(shot, "cinematic shot with people moving naturally")
+        "establishing": "wide photoreal establishing shot, real environment first, people walking naturally in distance",
+        "character": "medium photoreal shot of a real person acting in the locked scene, expressive face, eye contact",
+        "action": "dynamic photoreal action, person mid-stride walking or gesturing, clear body motion",
+        "detail": "close photoreal insert of hands or props from the locked scene while a person acts nearby",
+        "reaction": "reaction close-up, real person turns and reacts emotionally in the locked scene",
+        "closing": "closing wide photoreal shot, person walks away through the same locked place",
+    }.get(shot, "photoreal shot with people moving naturally in the locked scene")
     return (
-        "Photorealistic cinematic film still, exactly matching this scene: %s. "
-        "%s. Beat: %s. Same location, coherent lighting, detailed faces, "
-        "natural clothing, 16:9, no text, no watermark."
-    ) % (scene[:180], action, detail[:140])
+        "%s %s. Story beat: %s. Keep identity and place identical, 16:9."
+    ) % (bible, action, detail[:140])
 
 
 def _acting_pose_prompts(beat: Dict[str, Any], base_prompt: str) -> List[str]:
     """Three pose prompts so people appear to move/act across the beat."""
+    bible = _scene_bible(base_prompt)
     custom = beat.get("pose_prompts") if isinstance(beat.get("pose_prompts"), list) else []
     custom = [str(p).strip()[:420] for p in custom if str(p).strip()]
     if len(custom) >= 2:
-        while len(custom) < 3:
-            custom.append(custom[-1])
-        return custom[:3]
+        reinforced = []
+        for pose in custom[:3]:
+            if "LOCKED REAL SCENE" in pose:
+                reinforced.append(pose[:420])
+            else:
+                reinforced.append(("%s %s" % (bible, pose))[:420])
+        while len(reinforced) < 3:
+            reinforced.append(reinforced[-1])
+        return reinforced[:3]
     base = beat.get("image_prompt") or _prompt_matched_still_prompt(beat, base_prompt)
+    if "LOCKED REAL SCENE" not in str(base):
+        base = ("%s %s" % (bible, base))[:420]
     shot = str(beat.get("shot_type") or "action")
     if shot in ("establishing", "detail", "closing"):
         suffixes = (
-            "camera holds, ambient people shift slightly",
-            "stronger foreground motion, walkers crossing frame",
-            "final framing, figures farther into the scene",
+            "same place, ambient people shift slightly, photoreal",
+            "same place, stronger foreground walkers crossing, photoreal",
+            "same place, figures farther into the scene, photoreal",
         )
     else:
         suffixes = (
-            "person standing, facing camera, calm ready pose",
-            "same person mid-stride, body turned, arm gesturing",
-            "same person acting: turning head, expressive hands, stepping forward",
+            "same person standing ready, facing camera, photoreal skin",
+            "same person mid-stride, body turned, arm gesturing, photoreal",
+            "same person acting: turning head, expressive hands, stepping forward, photoreal",
         )
     return [("%s. %s." % (base, suffix))[:420] for suffix in suffixes]
 
@@ -1734,6 +1815,92 @@ def _ffmpeg_acting_clip(
         "duration_sec": seconds,
         "mode": "acting_morph",
         "poses": len(paths),
+    }
+
+
+def _ffmpeg_gif_strip_clip(
+    image_paths: List[str],
+    dest_path: str,
+    duration: float = 3.0,
+    motion: str = "zoom_in",
+) -> Dict[str, Any]:
+    """Side-by-side GIF-like moving panels — adjacent stills pulse next to each other."""
+    seconds = max(1.2, min(60.0, float(duration or 3.0)))
+    paths = [p for p in image_paths if p and os.path.isfile(p)]
+    if not paths:
+        return {"success": False, "error": "no gif-strip poses"}
+    while len(paths) < 3:
+        paths.append(paths[-1])
+    paths = paths[:3]
+    panel_w, panel_h = 426, 720
+    frames = max(30, int(round(seconds * 25)))
+    zoom_map = {
+        "zoom_in": "min(1.0+0.08*(on/%d),1.12)" % max(1, frames),
+        "zoom_out": "max(1.12-0.08*(on/%d),1.0)" % max(1, frames),
+        "pan_left": "1.08",
+        "pan_right": "1.08",
+    }
+    zoom = zoom_map.get(str(motion or "zoom_in"), zoom_map["zoom_in"])
+    x_exprs = {
+        "pan_left": "'iw/2-(iw/zoom/2)-(on*0.35)'",
+        "pan_right": "'iw/2-(iw/zoom/2)+(on*0.35)'",
+        "zoom_in": "'iw/2-(iw/zoom/2)'",
+        "zoom_out": "'iw/2-(iw/zoom/2)'",
+    }
+    y_expr = "'ih/2-(ih/zoom/2)'"
+    cmd: List[str] = ["ffmpeg", "-y"]
+    for path in paths:
+        cmd.extend(["-loop", "1", "-t", ("%.3f" % seconds), "-i", path])
+    parts: List[str] = []
+    for i in range(3):
+        # Slight phase offset per panel so the strip feels like three GIFs.
+        phase = i * 7
+        z = zoom if i == 1 else ("min(1.0+0.06*((on+%d)/%d),1.1)" % (phase, max(1, frames)))
+        x_expr = x_exprs.get(str(motion or "zoom_in"), x_exprs["zoom_in"])
+        if i == 0:
+            x_expr = "'iw/2-(iw/zoom/2)-(8*sin(2*PI*(on+%d)/60))'" % phase
+        elif i == 2:
+            x_expr = "'iw/2-(iw/zoom/2)+(8*sin(2*PI*(on+%d)/55))'" % phase
+        parts.append(
+            "[%d:v]scale=%d:%d:force_original_aspect_ratio=increase,"
+            "crop=%d:%d,zoompan=z=%s:x=%s:y=%s:d=%d:s=%dx%d:fps=25[p%d]"
+            % (i, panel_w, panel_h, panel_w, panel_h, z, x_expr, y_expr, frames, panel_w, panel_h, i)
+        )
+    parts.append(
+        "[p0][p1][p2]hstack=inputs=3,"
+        "scale=1280:720,setsar=1,eq=contrast=1.05:saturation=1.08,format=yuv420p[vout]"
+    )
+    cmd.extend([
+        "-filter_complex", ";".join(parts),
+        "-map", "[vout]",
+        "-t", ("%.3f" % seconds),
+        "-r", "25",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
+        dest_path,
+    ])
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=max(60, int(seconds) + 50),
+            check=False,
+        )
+    except Exception as exc:
+        return {"success": False, "error": "gif-strip ffmpeg failed: %s" % exc}
+    if proc.returncode != 0 or not os.path.isfile(dest_path):
+        # Fall back to pose morph if zoompan/hstack fails on this host.
+        return _ffmpeg_acting_clip(paths, dest_path, duration=seconds, motion=motion)
+    return {
+        "success": True,
+        "local_path": dest_path,
+        "fps": 25,
+        "duration_sec": seconds,
+        "mode": "gif_strip",
+        "poses": len(paths),
+        "panels": 3,
     }
 
 
@@ -2047,16 +2214,41 @@ def _generate_free_still_movie(
 
     beat_paths: List[str] = []
     beat_meta: List[Dict[str, Any]] = []
+    # Primary still path per beat for adjacent GIF-strip panels.
+    beat_faces: List[str] = []
+    for still in stills:
+        poses = [p for p in (still.get("poses") or []) if p and os.path.isfile(p)]
+        face = poses[0] if poses else still.get("path")
+        if face and os.path.isfile(str(face)):
+            beat_faces.append(str(face))
+        elif still.get("path") and os.path.isfile(str(still.get("path"))):
+            beat_faces.append(str(still["path"]))
     for index, still in enumerate(stills):
         beat_sec = float(still.get("duration_sec") or (duration / max(1, len(stills))))
         part = os.path.join(dest_dir, "beat_%s_%s.mp4" % (uuid.uuid4().hex[:8], index))
         poses = list(still.get("poses") or [still.get("path")])
-        encoded = _ffmpeg_acting_clip(
-            poses,
+        # Adjacent story panels: previous / current / next moving like GIFs side by side.
+        left = beat_faces[index - 1] if index > 0 else (poses[0] if poses else beat_faces[0])
+        mid = beat_faces[index] if index < len(beat_faces) else (poses[0] if poses else left)
+        right = (
+            beat_faces[index + 1]
+            if index + 1 < len(beat_faces)
+            else (poses[-1] if poses else mid)
+        )
+        strip_paths = [p for p in (left, mid, right) if p and os.path.isfile(str(p))]
+        encoded = _ffmpeg_gif_strip_clip(
+            strip_paths or poses,
             part,
             duration=beat_sec,
             motion=str(still.get("motion") or "zoom_in"),
         )
+        if not (encoded.get("success") and encoded.get("local_path")):
+            encoded = _ffmpeg_acting_clip(
+                poses,
+                part,
+                duration=beat_sec,
+                motion=str(still.get("motion") or "zoom_in"),
+            )
         if not (encoded.get("success") and encoded.get("local_path")):
             encoded = _encode_image_to_mp4(
                 still["path"],
@@ -2074,8 +2266,10 @@ def _generate_free_still_movie(
                 "motion": still.get("motion"),
                 "duration_sec": beat_sec,
                 "description": still.get("description"),
+                "narration": still.get("narration") or still.get("description"),
                 "poses": len(poses),
                 "mode": encoded.get("mode"),
+                "panels": encoded.get("panels") or 1,
                 "seed": still.get("seed"),
             })
         else:
@@ -2118,8 +2312,10 @@ def _generate_free_still_movie(
             "duration_sec": int(round(duration)),
             "beats": len(beat_paths),
             "beat_plan": beat_meta or storyboard,
-            "mode": "acting_storyboard",
+            "mode": "gif_storyboard",
             "ai_pipeline": ai_pipeline if isinstance(ai_pipeline, dict) else None,
+            "story": (ai_pipeline or {}).get("story") if isinstance(ai_pipeline, dict) else None,
+            "narration": (ai_pipeline or {}).get("narration") if isinstance(ai_pipeline, dict) else None,
         }
         out.update(pipeline_meta)
         return out
@@ -2136,9 +2332,11 @@ def _generate_free_still_movie(
             "duration_sec": int(round(duration)),
             "beats": len(beat_paths),
             "beat_plan": beat_meta,
-            "mode": "acting_storyboard",
+            "mode": "gif_storyboard",
             "concat_error": merged.get("error"),
             "ai_pipeline": ai_pipeline if isinstance(ai_pipeline, dict) else None,
+            "story": (ai_pipeline or {}).get("story") if isinstance(ai_pipeline, dict) else None,
+            "narration": (ai_pipeline or {}).get("narration") if isinstance(ai_pipeline, dict) else None,
         }
         out.update(pipeline_meta)
         return out
@@ -2373,15 +2571,21 @@ def _procedural_unique_pipeline(
         shot = order[index % len(order)]
         spice = words[(salt + index * 3) % len(words)] if words else "scene"
         # Lead with the user brief so the prompt picture stays strongest.
+        bible = _scene_bible(brief)
         description = (
-            "%s. %s shot — clearly show %s, focus on %s, style %s, mood %s (%s)"
-            % (core[:140], shot, core[:90], spice, style, mood, run_id[-6:])
-        )[:320]
+            "%s %s shot — clearly show %s, focus on %s, style %s, mood %s (%s)"
+            % (bible, shot, core[:90], spice, style, mood, run_id[-6:])
+        )[:420]
         seed = (salt * 13 + index * 97 + secrets.randbelow(5000)) % 999999
+        narration = (
+            "Scene %s: in %s, %s — people move and act."
+            % (index + 1, core[:70], shot)
+        )[:180]
         beats.append({
             "index": index,
             "title": ("%s · %s" % (shot.title(), spice))[:48],
             "description": description,
+            "narration": narration,
             "shot_type": shot,
             "prompt": description,
             "image_prompt": description,
@@ -2400,6 +2604,7 @@ def _procedural_unique_pipeline(
         beat_sec = remaining if left == 1 else max(0.9, round(remaining / left, 2))
         remaining = max(0.0, round(remaining - beat_sec, 2))
         beat["duration_sec"] = beat_sec
+    story_bundle = _build_story_bundle(brief, beats, style, mood, run_id)
     return {
         "success": True,
         "run_id": run_id,
@@ -2411,6 +2616,8 @@ def _procedural_unique_pipeline(
         "camera_language": "invented handheld for %s" % run_id[-6:],
         "people_direction": "people act differently each beat (%s)" % mood,
         "fx_pack": fx_pack,
+        "story": story_bundle["story"],
+        "narration": story_bundle["narration"],
         "beats": beats,
         "direction": "\n".join(
             "%s. [%s] %s" % (i + 1, b["shot_type"], b["description"])
@@ -2437,20 +2644,22 @@ def _ai_design_clip_pipeline(
         "{"
         "\"title\":str,\"style\":str,\"mood\":str,\"color_grade\":str,"
         "\"camera_language\":str,\"people_direction\":str,"
-        "\"fx_pack\":{\"background\":str,\"sound\":str,\"effects\":[str],"
+        "\"story\":str,"
+        "\"fx_pack\":{\"background\":str,\"sound\":str,\"voice_profile\":str,"
         "\"palette\":[str,str,str],\"intensity\":float},"
         "\"beats\":[{\"title\":str,\"shot_type\":str,\"description\":str,"
-        "\"image_prompt\":str,\"pose_prompts\":[str,str,str],"
+        "\"narration\":str,\"image_prompt\":str,\"pose_prompts\":[str,str,str],"
         "\"motion\":\"zoom_in|zoom_out|pan_left|pan_right\",\"seed\":int}]"
         "}\n"
+        "Invent a NEW short coherent story every time that stays inside the user brief. "
         "Keep strings short. shot_type must be one of "
         "establishing,character,action,detail,reaction,closing. "
         "fx_pack.background one of aurora,rain,grid,ember,plasma,fog,signal,hex,glitch,ocean,chrome,violet. "
-        "fx_pack.sound one of harbour,storm,neon,drone,pulse,battle,stars,focus,market,fog,chrome,rain,ember,signal,ocean. "
-        "fx_pack.effects: pick 7-10 unique from scan,sparks,rain,glitch,chromatic,hex,embers,streaks,noise,bloom,ripple,shards,orbit,pulse_ring,static,flare. "
+        "fx_pack.sound one of harbour,storm,neon,drone,pulse,battle,stars,focus,market,fog,chrome,rain,ember,signal,ocean,voice_soft,voice_bright,voice_deep. "
+        "fx_pack.voice_profile one of performer_nova,performer_luna,performer_ember,performer_storm,performer_velvet. "
         "Each image_prompt MUST start with the user scene brief, then add short shot detail. "
-        "The brief subject must dominate the frame — do not invent unrelated locations or props. "
-        "Each image_prompt/pose_prompt must be photoreal and match the brief. "
+        "The brief subject must dominate the frame — photoreal, real people, same place every beat. "
+        "Each narration line is spoken aloud and must advance the story. "
         "People must act differently in each pose_prompt."
     )
     user = (
@@ -2611,10 +2820,12 @@ def _ai_design_clip_pipeline(
                 ("%s — same person mid-stride, gesturing, same scene" % base)[:420],
                 ("%s — same person turning and acting, same scene" % base)[:420],
             ]
+        narration = str(item.get("narration") or description or title).strip()[:220]
         beats.append({
             "index": index,
             "title": title,
             "description": description or image_prompt,
+            "narration": narration,
             "shot_type": shot,
             "prompt": image_prompt or description,
             "image_prompt": image_prompt or description,
@@ -2636,6 +2847,7 @@ def _ai_design_clip_pipeline(
             "index": index,
             "title": ("%s %s" % (shot.title(), index + 1))[:48],
             "description": description,
+            "narration": ("Scene %s. %s" % (index + 1, description[:140]))[:220],
             "shot_type": shot,
             "prompt": description,
             "image_prompt": description,
@@ -2668,6 +2880,10 @@ def _ai_design_clip_pipeline(
         style=style or "cinematic",
         mood=mood or "dramatic",
     )
+    story_bundle = _build_story_bundle(brief, beats, style, mood, run_id)
+    ai_story = str(parsed.get("story") or "").strip()[:420]
+    if ai_story:
+        story_bundle["story"] = ai_story
 
     return {
         "success": True,
@@ -2680,6 +2896,8 @@ def _ai_design_clip_pipeline(
         "camera_language": str(parsed.get("camera_language") or "")[:120],
         "people_direction": str(parsed.get("people_direction") or "")[:160],
         "fx_pack": fx_pack,
+        "story": story_bundle["story"],
+        "narration": story_bundle["narration"],
         "beats": beats,
         "direction": "\n".join(
             "%s. [%s] %s" % (i + 1, b["shot_type"], b["description"])
@@ -2816,6 +3034,16 @@ def compose_interactive_movie(
             "pipeline_style": (ai_pipeline or {}).get("style") if ai_pipeline else clip.get("pipeline_style"),
             "pipeline_mood": (ai_pipeline or {}).get("mood") if ai_pipeline else clip.get("pipeline_mood"),
             "fx_pack": fx_pack,
+            "story": (
+                (ai_pipeline or {}).get("story")
+                if ai_pipeline and ai_pipeline.get("story")
+                else clip.get("story")
+            ),
+            "narration": (
+                (ai_pipeline or {}).get("narration")
+                if ai_pipeline and isinstance(ai_pipeline.get("narration"), list)
+                else clip.get("narration")
+            ),
             "renderer": renderer,
             "planning": planning,
             "prompt_used": render_prompt[:500],

@@ -158,6 +158,36 @@
             beatMs: 1900,
             beatFreq: 220,
         },
+        voice_soft: {
+            label: 'Soft voice bed',
+            status: 'Soft voice bed: camgirl-soft pad under narration.',
+            wave: 'sine',
+            tones: [98, 147, 196],
+            filter: 900,
+            noise: 0.03,
+            beatMs: 1600,
+            beatFreq: 520,
+        },
+        voice_bright: {
+            label: 'Bright voice bed',
+            status: 'Bright voice bed: lighter bed for bright narration.',
+            wave: 'triangle',
+            tones: [130, 196, 262],
+            filter: 1500,
+            noise: 0.035,
+            beatMs: 900,
+            beatFreq: 980,
+        },
+        voice_deep: {
+            label: 'Deep voice bed',
+            status: 'Deep voice bed: darker pad under deep narration.',
+            wave: 'sawtooth',
+            tones: [55, 82, 110],
+            filter: 480,
+            noise: 0.05,
+            beatMs: 1400,
+            beatFreq: 260,
+        },
     };
 
     function createNoiseBuffer(ctx) {

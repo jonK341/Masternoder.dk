@@ -14,10 +14,14 @@
     var billingTimer = null;
     var faceDataUrl = null;
     var activeFx = null;
+    var shopSfx = [];
+    var shopSfxIndex = 0;
+    var voiceReady = false;
     var TRIAL_KEY = 'fp_film_trial_id';
     var MIN_DURATION = 2;
     var MAX_DURATION = 120;
     var DEFAULT_DURATION = 8;
+    var LIVE_FX_COUNT = 107;
 
     var FX_BACKGROUNDS = [
         'aurora', 'rain', 'grid', 'ember', 'plasma', 'fog',
@@ -26,13 +30,25 @@
     var FX_SOUNDS = [
         'harbour', 'storm', 'neon', 'drone', 'pulse', 'battle',
         'stars', 'focus', 'market', 'fog', 'chrome', 'rain',
-        'ember', 'signal', 'ocean',
+        'ember', 'signal', 'ocean', 'voice_soft', 'voice_bright', 'voice_deep',
     ];
-    var FX_EFFECTS = [
-        'scan', 'sparks', 'rain', 'glitch', 'chromatic', 'hex',
-        'embers', 'streaks', 'noise', 'bloom', 'ripple', 'shards',
-        'orbit', 'pulse_ring', 'static', 'flare',
+    var FX_EFFECT_FAMILIES = [
+        'scan', 'sparks', 'rain', 'glitch', 'chromatic', 'hex', 'embers', 'streaks',
+        'noise', 'bloom', 'ripple', 'shards', 'orbit', 'pulse', 'static', 'flare',
+        'mist', 'beam', 'dust', 'wave', 'crack', 'veil', 'sparkle', 'trail',
+        'echo', 'frost', 'heat', 'signal', 'pixel', 'drift',
     ];
+    var FX_EFFECTS = (function buildFxCatalog() {
+        var names = [];
+        var i = 0;
+        while (names.length < LIVE_FX_COUNT) {
+            var family = FX_EFFECT_FAMILIES[i % FX_EFFECT_FAMILIES.length];
+            var gen = Math.floor(i / FX_EFFECT_FAMILIES.length) + 1;
+            names.push(family + '_' + (gen < 10 ? '0' : '') + gen);
+            i += 1;
+        }
+        return names;
+    })();
     var FX_PALETTES = [
         ['#00ff88', '#00b4ff', '#ff5078'],
         ['#7cf5ff', '#3d7cff', '#c8ff6a'],
@@ -42,6 +58,21 @@
         ['#f97316', '#22d3ee', '#fde68a'],
         ['#34d399', '#818cf8', '#fda4af'],
         ['#67e8f9', '#a78bfa', '#fb7185'],
+    ];
+    var SHOP_SFX = [
+        '/static/shop/sounds/shop-1.wav',
+        '/static/shop/sounds/shop-4.wav',
+        '/static/shop/sounds/shop-10.wav',
+        '/static/shop/sounds/shop-15.wav',
+        '/static/shop/sounds/shop-20.wav',
+        '/static/shop/sounds/shop-25.wav',
+        '/static/shop/sounds/shop-26.wav',
+        '/static/shop/sounds/shop-27.wav',
+        '/static/shop/sounds/shop-32.wav',
+        '/static/shop/sounds/shop-33.wav',
+        '/static/shop/sounds/shop-34.wav',
+        '/static/shop/sounds/shop-35.wav',
+        '/static/shop/sounds/shop-36.wav',
     ];
 
     function $(id) {
@@ -308,21 +339,107 @@
         var salt = Math.floor(Math.random() * 1e9);
         var start = salt % FX_EFFECTS.length;
         var rotated = FX_EFFECTS.slice(start).concat(FX_EFFECTS.slice(0, start));
-        var count = 7 + (salt % 4);
         return {
             background: FX_BACKGROUNDS[salt % FX_BACKGROUNDS.length],
             sound: FX_SOUNDS[(salt >> 3) % FX_SOUNDS.length],
-            effects: rotated.slice(0, count),
+            effects: rotated.slice(0, LIVE_FX_COUNT),
+            live_count: LIVE_FX_COUNT,
             palette: FX_PALETTES[(salt >> 5) % FX_PALETTES.length].slice(),
-            intensity: 0.7 + (salt % 30) / 100,
+            intensity: 0.45 + (salt % 18) / 100,
+            sfx_bank: 'shop',
+            voice_profile: [
+                'performer_nova', 'performer_luna', 'performer_ember', 'performer_storm',
+                'performer_velvet', 'performer_jade', 'performer_rio', 'performer_mist',
+            ][salt % 8],
         };
+    }
+
+    function ensureShopSfx() {
+        if (shopSfx.length) return;
+        SHOP_SFX.forEach(function (src) {
+            try {
+                var audio = new Audio(src);
+                audio.preload = 'auto';
+                audio.volume = 0.28;
+                shopSfx.push(audio);
+            } catch (_) {}
+        });
+    }
+
+    function playShopSfx() {
+        ensureShopSfx();
+        if (!shopSfx.length) return;
+        var clip = shopSfx[shopSfxIndex % shopSfx.length];
+        shopSfxIndex += 1;
+        try {
+            clip.currentTime = 0;
+            clip.volume = 0.22 + Math.random() * 0.18;
+            var p = clip.play();
+            if (p && typeof p.catch === 'function') p.catch(function () {});
+        } catch (_) {}
+    }
+
+    function ensureFilmVoice(profileId) {
+        var voice = window.MNCamgirlsStreamVoice;
+        if (!voice) return null;
+        if (!voiceReady) {
+            try {
+                voice.init({
+                    performersApi: '/api/camgirls/performers',
+                });
+                voice.setEnabled(true);
+                voiceReady = true;
+            } catch (_) {
+                return null;
+            }
+        }
+        if (profileId && typeof voice.setLeadSpeaker === 'function') {
+            voice.setLeadSpeaker(profileId);
+        }
+        return voice;
+    }
+
+    function speakFilmLines(lines, profileId) {
+        var voice = ensureFilmVoice(profileId);
+        var textLines = Array.isArray(lines) ? lines.filter(Boolean) : [];
+        if (!textLines.length) return;
+        if (voice && typeof voice.speak === 'function') {
+            textLines.forEach(function (line, idx) {
+                try {
+                    voice.speak(String(line).slice(0, 220), {
+                        force: idx === 0,
+                        queue: idx > 0,
+                        rotate: idx > 0,
+                    });
+                } catch (_) {}
+            });
+            return;
+        }
+        // Fallback: browser speech with camgirl-like pitch profile.
+        if (!window.speechSynthesis) return;
+        try {
+            window.speechSynthesis.cancel();
+            textLines.forEach(function (line, idx) {
+                var u = new SpeechSynthesisUtterance(String(line).slice(0, 220));
+                u.rate = 0.95 + (idx % 3) * 0.04;
+                u.pitch = 1.05 + (idx % 4) * 0.04;
+                u.volume = 0.85;
+                window.speechSynthesis.speak(u);
+            });
+        } catch (_) {}
     }
 
     function applyFxPack(pack, opts) {
         activeFx = pack && typeof pack === 'object' ? pack : pickLocalFxPack();
-        if (!Array.isArray(activeFx.effects) || activeFx.effects.length < 4) {
-            activeFx.effects = pickLocalFxPack().effects;
+        if (!Array.isArray(activeFx.effects) || activeFx.effects.length < LIVE_FX_COUNT) {
+            var local = pickLocalFxPack();
+            var merged = (activeFx.effects || []).slice();
+            local.effects.forEach(function (name) {
+                if (merged.indexOf(name) === -1) merged.push(name);
+            });
+            activeFx.effects = merged.slice(0, LIVE_FX_COUNT);
         }
+        activeFx.live_count = activeFx.effects.length;
         if (!Array.isArray(activeFx.palette) || activeFx.palette.length < 2) {
             activeFx.palette = FX_PALETTES[0].slice();
         }
@@ -333,6 +450,7 @@
         var monitor = $('fp-film-monitor');
         if (monitor) {
             monitor.setAttribute('data-fx-bg', activeFx.background || 'aurora');
+            monitor.setAttribute('data-fx-live', String(activeFx.live_count || LIVE_FX_COUNT));
             monitor.classList.add('is-fx-hot');
             if (opts && opts.playing) monitor.classList.add('is-playing');
             else if (!(opts && opts.keepPlaying)) monitor.classList.remove('is-playing');
@@ -355,8 +473,21 @@
         return activeFx;
     }
 
+    function fxFamily(name) {
+        var raw = String(name || '');
+        var cut = raw.indexOf('_');
+        return cut > 0 ? raw.slice(0, cut) : raw;
+    }
+
     function fxHas(name) {
-        return !!(activeFx && Array.isArray(activeFx.effects) && activeFx.effects.indexOf(name) !== -1);
+        if (!activeFx || !Array.isArray(activeFx.effects)) return false;
+        if (activeFx.effects.indexOf(name) !== -1) return true;
+        // Catalog uses family_01 style ids; match by family for drawing.
+        var family = fxFamily(name);
+        for (var i = 0; i < activeFx.effects.length; i++) {
+            if (fxFamily(activeFx.effects[i]) === family) return true;
+        }
+        return false;
     }
 
     function drawFxOverlays(ctx, w, h, t, intensity, videoMode) {
@@ -557,7 +688,7 @@
         var fxCount = activeFx && activeFx.effects ? activeFx.effects.length : 0;
         ctx.fillText(
             fxCount
-                ? (fxCount + ' effects live · play for a new pipeline')
+                ? (fxCount + ' effects live · story + voice on play')
                 : 'type a scene · press Play Movie',
             w / 2,
             h / 2 + 18
@@ -882,7 +1013,12 @@
         idle = true;
         setDownloadLink(null);
         // Fresh background + sound + overlay pack on every play.
-        applyFxPack(pickLocalFxPack(), { forceSound: false });
+        applyFxPack(pickLocalFxPack(), { forceSound: soundLive() });
+        playShopSfx();
+        ensureFilmVoice(activeFx && activeFx.voice_profile);
+        speakFilmLines([
+            'Starting a new story for ' + prompt.slice(0, 90),
+        ], activeFx && activeFx.voice_profile);
         var monitorStart = $('fp-film-monitor');
         if (monitorStart) monitorStart.classList.remove('is-playing');
         var canvasStart = $('fp-film-canvas');
@@ -896,12 +1032,13 @@
             video.style.zIndex = '';
         }
         setOverlay(
-            '<p class="fp-film-idle">Starting ' + durationSec + 's interactive movie…</p>',
+            '<p class="fp-film-idle">Starting ' + durationSec + 's story movie…</p>',
             true
         );
         setStatus(
             'Starting ' + durationSec + 's movie'
             + (faceDataUrl ? ' with face reference' : '')
+            + (activeFx && activeFx.live_count ? (' · ' + activeFx.live_count + ' fx live') : '')
             + (activeFx && activeFx.background ? (' · fx:' + activeFx.background) : '')
             + (activeFx && activeFx.sound ? (' · snd:' + activeFx.sound) : '')
             + '…'
@@ -976,10 +1113,21 @@
                         idle = false;
                         setOverlay('', false);
                         if (d.fx_pack) {
-                            applyFxPack(d.fx_pack, { playing: true, forceSound: soundLive() });
+                            applyFxPack(d.fx_pack, { playing: true, forceSound: true });
                         } else {
-                            applyFxPack(activeFx || pickLocalFxPack(), { playing: true });
+                            applyFxPack(activeFx || pickLocalFxPack(), { playing: true, forceSound: true });
                         }
+                        playShopSfx();
+                        var voiceId = (d.fx_pack && d.fx_pack.voice_profile)
+                            || (activeFx && activeFx.voice_profile);
+                        var narrate = [];
+                        if (d.story) narrate.push(String(d.story).slice(0, 280));
+                        if (Array.isArray(d.narration) && d.narration.length) {
+                            d.narration.slice(0, 8).forEach(function (line) {
+                                narrate.push(String(line).slice(0, 180));
+                            });
+                        }
+                        speakFilmLines(narrate, voiceId);
                         // Prefer the video element so the prompt picture stays sharp;
                         // canvas keeps only soft accents underneath when opacity allows.
                         video.style.opacity = '1';
@@ -990,16 +1138,31 @@
                         video.src = d.video_url + '?t=' + Date.now();
                         video.onloadeddata = function () {
                             video.play().catch(function () {});
+                            playShopSfx();
+                        };
+                        video.ontimeupdate = function () {
+                            // Occasional shop/cam-style one-shots while the strip plays.
+                            if (!video._mnLastSfx) video._mnLastSfx = 0;
+                            if (video.currentTime - video._mnLastSfx > 2.4) {
+                                video._mnLastSfx = video.currentTime;
+                                playShopSfx();
+                            }
                         };
                         setDownloadLink(d.download_url || d.video_url, d.xvid_url);
+                        var liveN = (d.fx_pack && d.fx_pack.live_count)
+                            || (d.fx_pack && d.fx_pack.effects && d.fx_pack.effects.length)
+                            || LIVE_FX_COUNT;
                         setStatus(
-                            'Movie ready — play or download'
+                            'Movie ready — ' + liveN + ' effects live'
                             + (d.duration_sec ? (' · ' + d.duration_sec + 's') : '')
                             + (d.beats ? (' · ' + d.beats + ' scenes') : '')
-                            + (d.mode === 'acting_storyboard' ? ' · people acting' : '')
+                            + (d.mode === 'gif_storyboard' || d.mode === 'acting_storyboard'
+                                ? ' · gif story panels'
+                                : '')
                             + (d.pipeline_style ? (' · ' + d.pipeline_style) : '')
                             + (d.fx_pack && d.fx_pack.background ? (' · fx:' + d.fx_pack.background) : '')
                             + (d.fx_pack && d.fx_pack.sound ? (' · snd:' + d.fx_pack.sound) : '')
+                            + (d.story ? ' · story on' : '')
                             + (d.pipeline_run_id ? (' · pipe:' + String(d.pipeline_run_id).slice(-6)) : '')
                             + (d.planner ? ' · plan:' + d.planner : '')
                             + (d.renderer ? ' · render:' + d.renderer : '')

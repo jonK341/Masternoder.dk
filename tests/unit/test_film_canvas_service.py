@@ -436,22 +436,23 @@ def test_free_still_uses_local_ffmpeg_when_network_images_fail(clean_env, tmp_pa
 def test_storyboard_movie_uses_multiple_distinct_beats(clean_env, tmp_path, monkeypatch):
     face = tmp_path / "face.jpg"
     face.write_bytes(b"\xff\xd8\xff" + b"0" * 120)
-    acting_calls = []
+    strip_calls = []
 
-    def fake_acting(image_paths, dest_path, duration=3.0, motion="zoom_in"):
-        acting_calls.append(list(image_paths))
+    def fake_strip(image_paths, dest_path, duration=3.0, motion="zoom_in"):
+        strip_calls.append(list(image_paths))
         with open(dest_path, "wb") as handle:
             handle.write(b"mp4" * 40)
         return {
             "success": True,
             "local_path": dest_path,
             "fps": 25,
-            "mode": "acting_morph",
+            "mode": "gif_strip",
             "poses": len(image_paths),
+            "panels": 3,
             "duration_sec": float(duration),
         }
 
-    monkeypatch.setattr(canvas, "_ffmpeg_acting_clip", fake_acting)
+    monkeypatch.setattr(canvas, "_ffmpeg_gif_strip_clip", fake_strip)
     monkeypatch.setattr(canvas, "_try_free_beat_image", lambda *a, **k: None)
     monkeypatch.setattr(
         canvas,
@@ -475,13 +476,15 @@ def test_storyboard_movie_uses_multiple_distinct_beats(clean_env, tmp_path, monk
         direction="1. Wide harbour lights\n2. Captain close-up\n3. Radar detail\n4. Closing pull-back",
     )
     assert out["success"] is True
-    assert out["mode"] == "acting_storyboard"
+    assert out["mode"] == "gif_storyboard"
     assert out["duration_sec"] == 12
     assert out["beats"] >= 3
-    assert len(acting_calls) >= 3
+    assert len(strip_calls) >= 3
+    assert all(len(call) >= 2 for call in strip_calls)
     assert out.get("xvid_path")
     assert isinstance(out.get("beat_plan"), list)
     assert out["beat_plan"][0].get("shot_type")
+    assert out["beat_plan"][0].get("panels") == 3
 
 
 def test_acting_clip_morphs_multiple_poses(clean_env, tmp_path):
@@ -523,17 +526,48 @@ def test_fx_pack_unique_and_balanced():
     b = canvas._build_fx_pack("pipe_bbb", style="fog", mood="calm")
     assert a["background"] in canvas._FX_BACKGROUNDS
     assert a["sound"] in canvas._FX_SOUNDS
-    assert 7 <= len(a["effects"]) <= 10
+    assert len(a["effects"]) == 107
+    assert a["live_count"] == 107
     assert 0.35 <= a["intensity"] <= 0.65
     assert a["effects"] != b["effects"] or a["background"] != b["background"] or a["sound"] != b["sound"]
     normalized = canvas._normalize_fx_pack(
-        {"background": "glitch", "sound": "storm", "effects": ["scan", "rain"], "intensity": 1.1},
+        {"background": "glitch", "sound": "storm", "effects": ["scan_01", "rain_01"], "intensity": 1.1},
         "pipe_norm",
     )
     assert normalized["background"] == "glitch"
     assert normalized["sound"] == "storm"
-    assert len(normalized["effects"]) >= 7
+    assert len(normalized["effects"]) == 107
     assert normalized["intensity"] <= 0.65
+    assert normalized.get("voice_profile", "").startswith("performer_")
+
+
+def test_scene_bible_and_story_bundle():
+    bible = canvas._scene_bible("a red harbour boat at dawn")
+    assert "LOCKED REAL SCENE" in bible
+    assert "red harbour boat" in bible.lower()
+    beats = [
+        {"title": "Open", "description": "boat waits"},
+        {"title": "Turn", "description": "sailors move"},
+        {"title": "Close", "description": "boat leaves"},
+    ]
+    story = canvas._build_story_bundle("a red harbour boat at dawn", beats, "wet chrome", "hopeful", "pipe_x")
+    assert "red harbour" in story["story"].lower()
+    assert len(story["narration"]) == 3
+
+
+def test_gif_strip_clip_builds_panels(tmp_path):
+    from PIL import Image
+
+    paths = []
+    for i, color in enumerate([(20, 40, 80), (80, 40, 20), (30, 90, 40)]):
+        path = tmp_path / ("panel_%s.jpg" % i)
+        Image.new("RGB", (640, 360), color).save(path)
+        paths.append(str(path))
+    dest = str(tmp_path / "strip.mp4")
+    out = canvas._ffmpeg_gif_strip_clip(paths, dest, duration=1.6, motion="zoom_in")
+    assert out["success"] is True
+    assert out.get("mode") in ("gif_strip", "acting_morph")
+    assert os.path.isfile(out["local_path"])
 
 
 def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, monkeypatch):
@@ -736,7 +770,9 @@ def test_ai_design_pipeline_parses_unique_beats(clean_env, monkeypatch):
     assert out["run_id"].startswith("pipe_")
     assert isinstance(out.get("fx_pack"), dict)
     assert out["fx_pack"]["background"]
-    assert len(out["fx_pack"]["effects"]) >= 7
+    assert len(out["fx_pack"]["effects"]) == 107
+    assert out.get("story")
+    assert isinstance(out.get("narration"), list)
 
 
 def test_extract_json_repairs_truncated_pipeline():
@@ -799,7 +835,9 @@ def test_gemini_rest_designs_pipeline(clean_env, monkeypatch):
     assert out["style"] == "rain chrome"
     assert len(out["beats"]) >= 4
     assert isinstance(out.get("fx_pack"), dict)
+    assert len(out["fx_pack"]["effects"]) == 107
     assert 0.35 <= float(out["fx_pack"]["intensity"]) <= 0.65
+    assert out.get("story")
 
 
 def test_auto_segment_clips_use_compose_pipeline(clean_env, tmp_path, monkeypatch):
