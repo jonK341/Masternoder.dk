@@ -730,7 +730,11 @@ def compose_sellable_movie(
         "canvas": "sellable_v1",
         "renderer": "sellable_v1",
         "pipeline": "sellable_v1",
-        "mode": "sellable_i2v" if gate["sellable"] else "sellable_draft",
+        "mode": (
+            "sellable_i2v" if gate.get("quality") == "sellable"
+            else "sellable_local" if gate.get("quality") == "sellable_local"
+            else "sellable_draft"
+        ),
         "sellable": gate["sellable"],
         "quality": gate["quality"],
         "quality_gate": gate,
