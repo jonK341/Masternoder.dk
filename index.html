@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113g">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113h">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -46,6 +46,33 @@
             <div class="fp-monitors-bay" id="fp-monitors-bay" aria-label="Film Canvas and Mission Control monitors">
                 <div class="fp-monitors-desk" aria-hidden="true"></div>
                 <div class="fp-monitors-grid">
+                    <article class="fp-mc-monitor" id="fp-mc-monitor" aria-label="Mission Control interactive movie monitor">
+                        <div class="fp-film-bezel fp-mc-bezel" id="fp-mc-stage">
+                            <div class="fp-film-chrome">
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-film-dot" aria-hidden="true"></span>
+                                <span class="fp-monitor-name">Mission Control</span>
+                                <a class="fp-film-chip" href="/debugger#mission-control" title="Open full Mission Control">OPS</a>
+                                <span class="fp-mc-ready" id="fp-mc-ready">Checking…</span>
+                            </div>
+                            <div class="fp-film-screen fp-mc-screen">
+                                <div class="fp-mc-placeholder" id="fp-mc-placeholder">Mission Control standby</div>
+                                <video id="fp-mc-video" playsinline loop muted controls></video>
+                                <button type="button" class="fp-film-play" id="fp-mc-play" aria-label="Play movie on Mission Control">▶</button>
+                            </div>
+                            <div class="fp-film-ledge" aria-hidden="true"></div>
+                        </div>
+                        <label class="fp-film-prompt-label" for="fp-mc-prompt">Scene prompt</label>
+                        <div class="fp-film-prompt-row">
+                            <input id="fp-mc-prompt" type="text" maxlength="500"
+                                placeholder="Neon rain over a Danish harbour control room, cinematic, interactive film"
+                                autocomplete="off" />
+                            <button type="button" class="fp-film-go" id="fp-mc-go">Play Movie</button>
+                        </div>
+                        <p class="fp-mc-status" id="fp-mc-status" role="status" aria-live="polite"></p>
+                    </article>
+
                     <article class="fp-film-monitor" id="fp-film-monitor" aria-label="Film Canvas monitor">
                         <div class="fp-film-bezel">
                             <div class="fp-film-chrome">
@@ -81,33 +108,6 @@
                         </div>
                         <p class="fp-film-status" id="fp-film-status" role="status" aria-live="polite"></p>
                     </article>
-
-                    <article class="fp-mc-monitor" id="fp-mc-monitor" aria-label="Mission Control interactive movie monitor">
-                        <div class="fp-film-bezel fp-mc-bezel" id="fp-mc-stage">
-                            <div class="fp-film-chrome">
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-film-dot" aria-hidden="true"></span>
-                                <span class="fp-monitor-name">Mission Control</span>
-                                <a class="fp-film-chip" href="/debugger#mission-control" title="Open full Mission Control">OPS</a>
-                                <span class="fp-mc-ready" id="fp-mc-ready">Checking…</span>
-                            </div>
-                            <div class="fp-film-screen fp-mc-screen">
-                                <div class="fp-mc-placeholder" id="fp-mc-placeholder">Mission Control standby</div>
-                                <video id="fp-mc-video" playsinline loop muted controls></video>
-                                <button type="button" class="fp-film-play" id="fp-mc-play" aria-label="Play movie on Mission Control">▶</button>
-                            </div>
-                            <div class="fp-film-ledge" aria-hidden="true"></div>
-                        </div>
-                        <label class="fp-film-prompt-label" for="fp-mc-prompt">Scene prompt</label>
-                        <div class="fp-film-prompt-row">
-                            <input id="fp-mc-prompt" type="text" maxlength="500"
-                                placeholder="Control-room rain, interactive film loop"
-                                autocomplete="off" />
-                            <button type="button" class="fp-film-go" id="fp-mc-go">Play</button>
-                        </div>
-                        <p class="fp-mc-status" id="fp-mc-status" role="status" aria-live="polite"></p>
-                    </article>
                 </div>
 
                 <div class="fp-film-pay" id="fp-film-pay" aria-label="Film monitor payment">
@@ -126,14 +126,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-
-            <div class="fp-hero-actions" aria-label="Primære handlinger">
-                <a class="fp-primary-action" href="/generator">Start generator</a>
-                <a class="fp-secondary-action" href="/create-app/">Create App</a>
-                <a class="fp-secondary-action" href="/game">Åbn game hub</a>
-                <a class="fp-download-hero" href="#fp-download" title="Download apps — Play Store, Podcast, PWA">⬇ Download</a>
-                <a class="fp-mn2-badge" href="/shop" title="MN2 wallet, deposit, withdraw, pay in shop">Pay with MN2</a>
             </div>
         </section>
 

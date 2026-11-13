@@ -35,8 +35,7 @@
 .fp-hero-film {
     grid-template-areas:
         "copy"
-        "monitors"
-        "actions";
+        "monitors";
     gap: 18px;
     padding: 28px 18px 24px;
     overflow: visible;
@@ -224,8 +223,7 @@ body.mn-sound-active #fp-neural-kicker {
 }
 
 .fp-hero-film .fp-hero-actions {
-    grid-area: actions;
-    margin-top: 4px;
+    display: none;
 }
 
 .fp-film-bezel {
@@ -1707,13 +1705,12 @@ body.mn-sound-active .theme-sound-toggle {
         padding: 36px 28px 32px;
     }
 
-    /* Film hero keeps copy → dual monitors → actions (do not reuse old graphic/copy areas). */
+    /* Film hero keeps copy → dual monitors (do not reuse old graphic/copy areas). */
     .fp-hero.fp-hero-film {
         grid-template-columns: minmax(0, 1fr);
         grid-template-areas:
             "copy"
-            "monitors"
-            "actions";
+            "monitors";
         justify-items: center;
         text-align: center;
     }
