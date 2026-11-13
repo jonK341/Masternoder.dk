@@ -1,0 +1,41 @@
+{
+  "updated_at": "2026-11-10T22:15:23.780626Z",
+  "levels": {
+    "actor_jon": {
+      "assignments": 2,
+      "level": 1,
+      "last_reason": "daily_appt:jonfilm_20261110_1809",
+      "updated_at": "2026-11-10T22:15:23.779683Z"
+    },
+    "actor_nova": {
+      "assignments": 2,
+      "level": 1,
+      "last_reason": "daily_appt:jonfilm_20261110_1809",
+      "updated_at": "2026-11-10T22:15:23.779952Z"
+    },
+    "actor_luna": {
+      "assignments": 2,
+      "level": 1,
+      "last_reason": "daily_appt:jonfilm_20261110_1809",
+      "updated_at": "2026-11-10T22:15:23.780091Z"
+    },
+    "actor_ember": {
+      "assignments": 2,
+      "level": 1,
+      "last_reason": "daily_appt:jonfilm_20261110_1809",
+      "updated_at": "2026-11-10T22:15:23.780624Z"
+    },
+    "actor_iris": {
+      "assignments": 1,
+      "level": 1,
+      "last_reason": "daily_appt:jonfilm_20261110_1809",
+      "updated_at": "2026-11-10T22:15:23.779337Z"
+    },
+    "actor_venus": {
+      "assignments": 1,
+      "level": 1,
+      "last_reason": "daily_appt:jonfilm_20261110_1809",
+      "updated_at": "2026-11-10T22:15:23.779469Z"
+    }
+  }
+}

@@ -968,8 +968,12 @@ body.mn-sound-active .fp-sound-wave span:nth-child(5) { animation-delay: 0.36s; 
     margin-bottom: 36px;
     padding: 20px;
     border-radius: 18px;
-    background: linear-gradient(160deg, rgba(14, 12, 28, 0.95), rgba(8, 10, 22, 0.92));
-    border: 1px solid rgba(196, 167, 255, 0.25);
+    background: linear-gradient(160deg, rgba(8, 18, 14, 0.96), rgba(6, 10, 12, 0.94));
+    border: 1px solid rgba(0, 255, 136, 0.28);
+}
+
+.fp-starmap--mn2 {
+    position: relative;
 }
 
 .fp-starmap-head {
@@ -980,10 +984,14 @@ body.mn-sound-active .fp-sound-wave span:nth-child(5) { animation-delay: 0.36s; 
     margin-bottom: 14px;
 }
 
+.fp-starmap-head .fp-kicker {
+    width: 100%;
+}
+
 .fp-starmap-head h2 {
     margin: 0;
     font-size: 1.25rem;
-    color: #c4a7ff;
+    color: #7dffb3;
     letter-spacing: 0.04em;
 }
 
@@ -995,11 +1003,16 @@ body.mn-sound-active .fp-sound-wave span:nth-child(5) { animation-delay: 0.36s; 
     min-width: 0;
 }
 
+.fp-starmap-head a {
+    color: #00ff88;
+}
+
 .fp-starmap-controls {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 12px 18px;
+    margin-bottom: 12px;
 }
 
 .fp-starmap-controls label {
@@ -1012,7 +1025,14 @@ body.mn-sound-active .fp-sound-wave span:nth-child(5) { animation-delay: 0.36s; 
 
 .fp-starmap-controls input[type="range"] {
     width: 160px;
-    accent-color: #c4a7ff;
+    accent-color: #00ff88;
+}
+
+.fp-starmap-mn2 {
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(125, 255, 179, 0.9);
+    letter-spacing: 0.02em;
 }
 
 .fp-starmap-open {
@@ -1032,12 +1052,33 @@ body.mn-sound-active .fp-sound-wave span:nth-child(5) { animation-delay: 0.36s; 
     background: rgba(0, 255, 136, 0.22);
 }
 
+.fp-starmap-frame {
+    border-radius: 16px;
+}
+
+.fp-starmap-frame--outer {
+    padding: 10px;
+    border: 2px solid rgba(0, 255, 136, 0.45);
+    background:
+        linear-gradient(135deg, rgba(0, 255, 136, 0.08), transparent 40%),
+        linear-gradient(315deg, rgba(0, 180, 255, 0.08), transparent 42%),
+        rgba(4, 10, 8, 0.9);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.fp-starmap-frame--inner {
+    padding: 8px;
+    border: 1px solid rgba(0, 180, 255, 0.35);
+    border-radius: 12px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(0, 40, 28, 0.55), rgba(2, 4, 8, 0.96) 70%);
+}
+
 #fp-starmap4d {
     width: 100%;
     height: auto;
     display: block;
-    border-radius: 12px;
-    background: radial-gradient(ellipse at center, rgba(30, 20, 60, 0.5) 0%, rgba(4, 6, 14, 0.95) 70%);
+    border-radius: 8px;
+    background: radial-gradient(ellipse at center, rgba(10, 40, 28, 0.45) 0%, rgba(2, 6, 8, 0.96) 72%);
     min-height: 280px;
 }
 

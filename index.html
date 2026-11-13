@@ -22,7 +22,9 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261110n">
+    <link rel="stylesheet" href="/static/css/landing-monitor.css?v=20261110n">
+    <link rel="stylesheet" href="/static/css/camgirls-stream-voice.css?v=20261110i">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -54,6 +56,119 @@
             </div>
         </section>
 
+        <section class="fp-landing-monitor" id="fp-landing-monitor" aria-labelledby="lm-title">
+            <div class="lm-head">
+                <div>
+                    <p class="fp-kicker"><span>Live stream</span><span>one stat at a time</span></p>
+                    <h2 id="lm-title">Lobby monitor</h2>
+                </div>
+                <div class="lm-meta">
+                    <span class="lm-pill" id="lm-bpm">180 BPM</span>
+                    <span class="lm-pill" id="lm-stream-pos">0/0</span>
+                    <span class="lm-pill" id="lm-updated">Loading…</span>
+                </div>
+            </div>
+            <div class="lm-stage">
+                <div class="lm-battlefield-banner" id="lm-battlefield-banner">
+                    <strong>War Battlefield · Year 3500</strong>
+                    <span id="lm-comm-lines">COMM uplink…</span>
+                </div>
+                <div class="lm-monitor-block">
+                    <div class="lm-monitor-row">
+                        <div class="lm-matrix-rail lm-matrix-left" id="lm-matrix-left" aria-hidden="true"></div>
+                        <div class="lm-bezel">
+                            <img id="lm-scene-art" class="lm-scene-art" alt="" decoding="async" />
+                            <canvas id="lm-canvas" class="lm-canvas" width="720" height="200" aria-hidden="true"></canvas>
+                            <div class="lm-hud" aria-live="polite">
+                                <p class="lm-hud-kicker" id="lm-hud-kicker">Waiting</p>
+                                <p class="lm-hud-value" id="lm-hud-value">—</p>
+                                <p class="lm-hud-label" id="lm-hud-label">50-scene · 12 min AI pipeline</p>
+                            </div>
+                        </div>
+                        <div class="lm-matrix-rail lm-matrix-right" id="lm-matrix-right" aria-hidden="true"></div>
+                    </div>
+                    <div class="lm-stream-bar" aria-hidden="true"><div class="lm-stream-bar-fill" id="lm-stream-bar"></div></div>
+                    <div class="lm-controls" id="lm-controls">
+                        <div class="lm-actions lm-actions-row">
+                            <button type="button" id="lm-stream-play" aria-pressed="false">Start pipeline</button>
+                            <button type="button" id="lm-stream-skip">Next scene</button>
+                            <button type="button" id="lm-pipeline-regen">New cut</button>
+                            <button type="button" id="lm-art-gen">AI picture</button>
+                            <button type="button" id="lm-art-gif">AI gif</button>
+                            <button type="button" id="lm-voice-toggle" aria-pressed="false">Voice off</button>
+                            <button type="button" id="lm-sfx-toggle" aria-pressed="false">SFX off</button>
+                            <button type="button" id="lm-light-toggle" aria-pressed="false">Lights off</button>
+                            <button type="button" id="lm-music-toggle" aria-pressed="false">Music off</button>
+                            <a id="lm-special-cta" href="/wallets">Open</a>
+                            <a href="/vidgenerator/generator">Movie AI</a>
+                        </div>
+                        <div class="lm-voice-strip">
+                            <img id="lm-voice-avatar" src="/static/camgirls/avatar-demo.svg" alt="" width="28" height="28" />
+                            <div class="lm-voice-copy">
+                                <strong id="lm-voice-name">AI host</strong>
+                                <span id="lm-voice-line">Start pipeline — human voice reads each clip with fresh AI art.</span>
+                            </div>
+                            <select id="lm-voice-lead" aria-label="Lead camgirl speaker"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="lm-online-rail" aria-label="Top 25 users leaderboard">
+                    <ol class="lm-online-board" id="lm-online-board"></ol>
+                </div>
+                <form class="lm-search" id="lm-yt-form" role="search">
+                    <label class="lm-sr-only" for="lm-yt-q">YouTube search</label>
+                    <input id="lm-yt-q" type="search" placeholder="Search YouTube under the monitor…" autocomplete="off" />
+                    <button type="submit" id="lm-yt-go">Search</button>
+                    <button type="button" id="lm-yt-random">Random</button>
+                    <a id="lm-share-fb" class="lm-share-fb" href="#" target="_blank" rel="noopener noreferrer">Share Facebook</a>
+                </form>
+                <div class="lm-yt-results" id="lm-yt-results" aria-live="polite"></div>
+                <div class="lm-vote" id="lm-vote">
+                    <strong id="lm-vote-q">Discord vote loading…</strong>
+                    <div class="lm-vote-opts" id="lm-vote-opts"></div>
+                </div>
+                <div class="lm-calendar" id="lm-calendar" aria-label="Jon Film appointments">
+                    <div class="lm-cal-head">
+                        <strong>Jon Film calendar</strong>
+                        <span id="lm-cal-meta">appointments + actor levels</span>
+                    </div>
+                    <ul id="lm-cal-list"></ul>
+                    <ol id="lm-actor-levels" class="lm-actor-levels"></ol>
+                </div>
+                <!-- Hidden sync targets kept for paint() without bloating the layout -->
+                <div class="lm-sr-only" aria-hidden="true">
+                    <span id="lm-special-title"></span>
+                    <span id="lm-special-body"></span>
+                    <span id="lm-effect-title"></span>
+                    <span id="lm-effect-body"></span>
+                    <span id="lm-effect-safety"></span>
+                    <span id="lm-stat-videos"></span>
+                    <span id="lm-stat-users"></span>
+                    <span id="lm-stat-battles"></span>
+                    <span id="lm-stat-mn2"></span>
+                    <span id="lm-stat-daemon"></span>
+                    <span id="lm-stat-height"></span>
+                    <span id="lm-stat-network-sats"></span>
+                    <span id="lm-stat-trade-sats"></span>
+                    <span id="lm-stat-combined-sats"></span>
+                    <span id="lm-pipeline-progress"></span>
+                    <span id="lm-pipeline-gen"></span>
+                    <span id="lm-pipeline-sats"></span>
+                    <span id="lm-pipeline-reason"></span>
+                    <span id="lm-pipeline-scene"></span>
+                    <span id="lm-reel-scene"></span>
+                    <span id="lm-reel-cat"></span>
+                    <span id="lm-learn-stats"></span>
+                    <span id="lm-sfx-hint"></span>
+                    <ol id="lm-reel-list"></ol>
+                    <div id="lm-voice-deck"></div>
+                    <button type="button" id="lm-pipeline-play"></button>
+                    <button type="button" id="lm-reel-play"></button>
+                    <button type="button" id="lm-reel-skip"></button>
+                </div>
+            </div>
+        </section>
+
         <div class="fp-section-row fp-section-row--economy">
             <section class="fp-mn2-band fp-section-compact" aria-labelledby="fp-mn2-title">
                 <div class="fp-mn2-band-copy">
@@ -68,6 +183,10 @@
                     <a class="fp-mn2-link" href="/staking-leaderboard">Staking</a>
                     <a class="fp-mn2-link" href="/staking-teams">Teams</a>
                     <a class="fp-mn2-link" href="/casino/">Casino</a>
+                    <a class="fp-mn2-link" href="/agents">Agents</a>
+                    <a class="fp-mn2-link" href="/lab">Lab</a>
+                    <a class="fp-mn2-link" href="/vidgenerator/">Vidgenerator</a>
+                    <a class="fp-mn2-link" href="/starmap25/">Star Map 25</a>
                 </div>
             </section>
 
@@ -107,108 +226,33 @@
                 </div>
             </section>
 
-            <section class="fp-sound-console fp-section-compact" aria-labelledby="fp-sound-title">
-                <div class="fp-sound-copy">
-                    <p class="fp-kicker"><span>Audio</span><span>opt-in</span></p>
-                    <h2 id="fp-sound-title">Sound System</h2>
-                    <p class="fp-sound-lede">Analog gain staging med dB-visning. Volumen gemmes lokalt.</p>
-                </div>
-                <div class="fp-sound-board" aria-label="Lydkontrol">
-                    <button id="themeSoundToggle" class="fp-sound-power" type="button" aria-pressed="false">
-                        <span class="fp-sound-led" aria-hidden="true"></span>
-                        Start sound
-                    </button>
-                    <div class="fp-sound-level" aria-label="Analog volumen">
-                        <span id="themeSoundDb" class="fp-soundbar-db">-12.1 dB</span>
-                        <span id="themeSoundPct" class="fp-soundbar-pct">35%</span>
-                    </div>
-                    <div class="fp-sound-modes" role="group" aria-label="Lydtilstand">
-                        <button class="fp-sound-mode is-active" type="button" data-sound-mode="focus" aria-pressed="true">Focus</button>
-                        <button class="fp-sound-mode" type="button" data-sound-mode="stars" aria-pressed="false">Stars</button>
-                        <button class="fp-sound-mode" type="button" data-sound-mode="battle" aria-pressed="false">Battle</button>
-                    </div>
-                    <label class="fp-sound-volume" for="themeSoundVolume">
-                        Volume
-                        <input id="themeSoundVolume" type="range" min="0" max="100" value="35" aria-valuetext="35 procent">
-                    </label>
-                    <p id="themeSoundStatus" class="fp-sound-status">Sound offline. Klik start for at aktivere.</p>
-                </div>
-            </section>
         </div>
 
-        <section class="fp-game-hub fp-section-compact" id="fp-game-hub" aria-labelledby="fp-gh-title">
-            <div class="fp-game-hub-head">
-                <p class="fp-kicker"><span>Game hub</span><span id="gh-status">Loading…</span></p>
-                <h2 id="fp-gh-title">Collector · Quests · Battle</h2>
-            </div>
-            <div class="gh-tabs gh-tabs--compact" role="tablist" aria-label="Game hub sections">
-                <button type="button" class="gh-tab is-active" data-gh-tab="trophies" role="tab" aria-selected="true" title="Trophies"><span class="gh-tab-icon" aria-hidden="true">🏆</span><span class="gh-tab-label">Trophies</span></button>
-                <button type="button" class="gh-tab" data-gh-tab="quests" role="tab" aria-selected="false" title="Quests"><span class="gh-tab-icon" aria-hidden="true">📋</span><span class="gh-tab-label">Quests</span></button>
-                <button type="button" class="gh-tab" data-gh-tab="game" role="tab" aria-selected="false" title="Game"><span class="gh-tab-icon" aria-hidden="true">🎮</span><span class="gh-tab-label">Game</span></button>
-                <button type="button" class="gh-tab" data-gh-tab="battle" role="tab" aria-selected="false" title="Battle"><span class="gh-tab-icon" aria-hidden="true">⚔️</span><span class="gh-tab-label">Battle</span></button>
-                <button type="button" class="gh-tab" data-gh-tab="story" role="tab" aria-selected="false" title="Story"><span class="gh-tab-icon" aria-hidden="true">📖</span><span class="gh-tab-label">Story</span></button>
-            </div>
-            <div class="gh-panel" id="gh-panel" role="tabpanel">
-                <p class="gh-empty">Loading game hub…</p>
-            </div>
-        </section>
-
-        <section class="fp-v20-upgrade fp-section-compact" aria-labelledby="fp-upgrade-title">
-            <div class="fp-upgrade-head">
-                <p class="fp-kicker"><span>v2.0</span><span>patch</span></p>
-                <h2 id="fp-upgrade-title">Live surface</h2>
-            </div>
-            <div class="fp-upgrade-grid fp-upgrade-grid--compact">
-                <article><strong>Sonic</strong><span>Ambient + battle drive fra forsiden.</span></article>
-                <article><strong>Control</strong><span>Generator, game hub og agenter samlet.</span></article>
-                <article><strong>Dashboard</strong><span>Stats, links og nyheder i ét flow.</span></article>
-            </div>
-        </section>
-
-        <section class="fp-smartlinks" aria-labelledby="fp-smart-title">
-            <h2 id="fp-smart-title" class="fp-section-title">Smart links</h2>
-            <div id="fp-smart-links"></div>
-            <div data-ptc-placement="home_smartlinks" data-ptc-limit="2"></div>
-        </section>
-
-        <section class="fp-starmap" aria-labelledby="fp-starmap-title">
+        <section class="fp-starmap fp-starmap--mn2" aria-labelledby="fp-starmap-title">
             <div class="fp-starmap-head">
-                <h2 id="fp-starmap-title">Star Map 4D</h2>
-                <p>Fjerde dimension er <strong>tid (w)</strong>: stereografisk projektion fra ℝ⁴ — samme data som Star Map 25.</p>
+                <p class="fp-kicker"><span>Star Map 25</span><span>MN2 sync</span></p>
+                <h2 id="fp-starmap-title">Star Map 25 · MasterNoder2</h2>
+                <p>Double-frame map locked to live MN2 network sats, height, and coin pulse — same cosmos as <a href="/starmap25/">Star Map 25</a>.</p>
             </div>
             <div class="fp-starmap-controls">
                 <label for="fp-starmap-w">Tidsled <em>w</em>
                     <input type="range" id="fp-starmap-w" min="0" max="100" value="42" aria-valuetext="tid">
                 </label>
-                <a class="fp-starmap-open" href="/starmap25/">Åbn Star Map 25 monitor →</a>
+                <span class="fp-starmap-mn2" id="fp-starmap-mn2">MN2 sync…</span>
+                <a class="fp-starmap-open" href="/starmap25/">Open Star Map 25 →</a>
             </div>
-            <canvas id="fp-starmap4d" width="900" height="380" aria-label="Stjernekort 4D projektion"></canvas>
+            <div class="fp-starmap-frame fp-starmap-frame--outer">
+                <div class="fp-starmap-frame fp-starmap-frame--inner">
+                    <canvas id="fp-starmap4d" width="900" height="380" aria-label="Star Map 25 synchronized with MasterNoder2"></canvas>
+                </div>
+            </div>
         </section>
 
-        <div class="fp-split">
-            <section class="fp-panel fp-news" aria-labelledby="fp-news-title">
-                <h2 id="fp-news-title">News updates</h2>
-                <ul id="fp-news-list" class="fp-news-list"></ul>
-            </section>
-            <section class="fp-panel fp-agents" aria-labelledby="fp-agent-title">
-                <h2 id="fp-agent-title">Agent void</h2>
-                <p class="fp-muted">Orkestrér AIs, tickets og værktøj ét sted.</p>
-                <div class="fp-agent-grid">
-                    <a class="fp-agent-card" href="/agents"><span>🤖</span>AI Agents</a>
-                    <a class="fp-agent-card" href="/agent_support"><span>🛠️</span>Agent support</a>
-                    <a class="fp-agent-card" href="/lab"><span>🔬</span>Lab</a>
-                    <a class="fp-agent-card" href="/debugger"><span>🔧</span>Debugger</a>
-                    <a class="fp-agent-card" href="/news"><span>📰</span>News</a>
-                    <a class="fp-agent-card" href="/wallets"><span>💾</span>Wallets</a>
-                    <a class="fp-agent-card" href="/podcast"><span>🎙️</span>Podcast</a>
-                    <a class="fp-agent-card" href="/create-app/"><span>📱</span>Create App</a>
-                    <a class="fp-agent-card" href="/staking-leaderboard"><span>🌱</span>Staking</a>
-                </div>
-            </section>
-        </div>
+        <section class="fp-panel fp-news" aria-labelledby="fp-news-title">
+            <h2 id="fp-news-title">News updates</h2>
+            <ul id="fp-news-list" class="fp-news-list"></ul>
+        </section>
     </main>
-
-    <button id="themeSoundFloatToggle" class="theme-sound-toggle" type="button" aria-label="Skift temalyd">Sound offline</button>
 
     <script>
         const BASE_URL = window.location.origin;
@@ -331,8 +375,8 @@
             runWhenIdle(() => {
                 loadMn2Surface();
                 loadAllStats();
-                setInterval(loadAllStats, 45000);
-                setInterval(loadMn2Surface, 120000);
+                setInterval(loadAllStats, 5000);
+                setInterval(loadMn2Surface, 15000);
             });
         });
     </script>
@@ -340,7 +384,9 @@
     <script src="/static/js/error-manager.js?v=20261010a" defer></script>
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
-    <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
+    <script src="/static/js/frontpage-home.js?v=20261110n" defer></script>
+    <script src="/static/js/camgirls-stream-voice.js?v=20261110i" defer></script>
+    <script src="/static/js/landing-monitor.js?v=20261110n" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
