@@ -450,28 +450,9 @@ def api_lab_page_fallback():
 @missing_endpoints_bp.route('/api/lab/catalog', methods=['GET'])
 def api_lab_catalog_fallback():
     """Catalog JSON when api_lab blueprint is not registered (e.g. before deploy restart)."""
-    from backend.routes.api_lab_routes import build_catalog
+    from backend.routes.api_lab_routes import catalog_response
 
-    catalog = build_catalog(current_app.url_map.iter_rules())
-    query = (request.args.get('q') or '').strip().lower()
-    category = (request.args.get('category') or '').strip().lower()
-    if query or category:
-        rows = catalog['endpoints']
-        if category and category != 'all':
-            rows = [row for row in rows if row['category'] == category]
-        if query:
-            rows = [
-                row
-                for row in rows
-                if query in row['path'].lower()
-                or query in row['method'].lower()
-                or query in row['category']
-            ]
-        catalog = dict(catalog)
-        catalog['endpoints'] = rows
-        catalog['total'] = len(rows)
-        catalog['filtered'] = True
-    return jsonify(catalog), 200
+    return jsonify(catalog_response()), 200
 
 
 # ========== POINTS ROUTES ==========

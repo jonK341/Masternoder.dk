@@ -55,8 +55,14 @@ def process_invoke_in_request():
                     print(f"Error processing INVOKE in query: {e}")
 
 # Paths that never need correction; skip path_corrector (avoids AI path correction / recursion on health checks)
-_SKIP_PATH_CORRECTION = {'/api/health', '/api/version'}
-_SKIP_PATH_CORRECTION_PREFIXES = ('/api/profit-daemon/',)
+_SKIP_PATH_CORRECTION = {
+    '/api/health',
+    '/api/version',
+    '/api/lab/catalog',
+    '/api/monitor/endpoints',
+    '/api/monitor/status',
+}
+_SKIP_PATH_CORRECTION_PREFIXES = ('/api/profit-daemon/', '/api/lab/', '/api/monitor/')
 
 
 def correct_paths_in_request():
