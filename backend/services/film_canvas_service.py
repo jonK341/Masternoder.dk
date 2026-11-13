@@ -1261,16 +1261,21 @@ def _generate_free_still_movie(
     prompt: str,
     dest_dir: Optional[str] = None,
     duration: float = 6.0,
+    face_path: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Last-resort MP4: free image → local standby frame → ffmpeg color (always works)."""
+    """Last-resort MP4: face ref → free image → local standby → ffmpeg color."""
     if dest_dir is None:
         dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
     os.makedirs(dest_dir, exist_ok=True)
     errors: List[str] = []
+    duration = max(2.0, min(120.0, float(duration or 6.0)))
 
     image_path = None
     source = None
-    if _free_image_service is not None and hasattr(_free_image_service, "generate_image"):
+    if face_path and os.path.isfile(face_path):
+        image_path = face_path
+        source = "face_reference"
+    if not image_path and _free_image_service is not None and hasattr(_free_image_service, "generate_image"):
         try:
             image = _free_image_service.generate_image(prompt[:400], dest_dir=dest_dir)
             if image.get("success") and image.get("local_path"):
@@ -1377,6 +1382,8 @@ def compose_interactive_movie(
     timeout: int = 180,
     plan: bool = True,
     render_provider: Optional[str] = None,
+    duration_sec: int = 8,
+    face_path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Plan with all configured LLMs + DramaCanvas, then render across the full pipeline.
 
@@ -1386,21 +1393,35 @@ def compose_interactive_movie(
     brief = (prompt or "").strip()
     if not brief:
         return {"success": False, "error": "prompt is required"}
+    try:
+        duration_sec = int(round(float(duration_sec)))
+    except (TypeError, ValueError):
+        duration_sec = 8
+    duration_sec = max(2, min(120, duration_sec))
+    face_path = face_path if face_path and os.path.isfile(face_path) else None
 
     planning: Optional[Dict[str, Any]] = None
     planner: Optional[str] = None
     llm_plan: Optional[Dict[str, Any]] = None
+    extras: List[str] = ["Target length: %s seconds." % duration_sec]
+    if face_path:
+        extras.append(
+            "Keep continuity with the attached face reference of a person; "
+            "the same face should remain recognizable."
+        )
     render_prompt = brief
+    if extras:
+        render_prompt = (brief + "\n\n" + " ".join(extras)).strip()
     direction_blocks: List[str] = []
 
     if plan:
-        llm_plan = _plan_with_all_llms(brief, timeout=min(30, max(10, timeout // 6)))
+        llm_plan = _plan_with_all_llms(render_prompt, timeout=min(30, max(10, timeout // 6)))
         if llm_plan.get("success") and llm_plan.get("direction"):
             direction_blocks.append(str(llm_plan["direction"]))
             planner = "all_llms"
         if is_available("dramacanva", purpose="planning"):
             # Keep DramaCanvas short so the monitor can still render on time.
-            planning = prepare_film_project(brief, timeout=min(45, max(15, timeout // 4)))
+            planning = prepare_film_project(render_prompt, timeout=min(45, max(15, timeout // 4)))
             if planning.get("success"):
                 planned = _planning_text(planning.get("result"))
                 if planned:
@@ -1408,7 +1429,7 @@ def compose_interactive_movie(
                 planner = "all_llms+dramacanva" if planner == "all_llms" else "dramacanva"
         if direction_blocks:
             render_prompt = (
-                brief + "\n\nStoryboard direction:\n" + "\n\n".join(direction_blocks)
+                render_prompt + "\n\nStoryboard direction:\n" + "\n\n".join(direction_blocks)
             )[:2000]
 
     render_timeout = max(60, timeout - 45) if planner else max(60, timeout)
@@ -1438,6 +1459,8 @@ def compose_interactive_movie(
                 "canvas": clip.get("canvas") or canvas_id,
                 "frame_count": clip.get("frame_count"),
                 "fps": clip.get("fps"),
+                "duration_sec": duration_sec,
+                "has_face": bool(face_path),
                 "attempts": attempts,
                 "error": None,
             }
@@ -1463,7 +1486,8 @@ def compose_interactive_movie(
                 clip = _generate_free_still_movie(
                     render_prompt[:400],
                     dest_dir=dest_dir,
-                    duration=6.0,
+                    duration=float(duration_sec),
+                    face_path=face_path,
                 )
             else:
                 clip = _generate_external_clip(
@@ -1483,6 +1507,8 @@ def compose_interactive_movie(
                     "local_path": clip.get("local_path"),
                     "canvas": clip.get("canvas") or backend,
                     "fps": clip.get("fps"),
+                    "duration_sec": duration_sec,
+                    "has_face": bool(face_path),
                     "attempts": attempts,
                     "error": None,
                 }
@@ -1496,6 +1522,8 @@ def compose_interactive_movie(
         "renderer": None,
         "planning": planning,
         "prompt_used": render_prompt[:500],
+        "duration_sec": duration_sec,
+        "has_face": bool(face_path),
         "attempts": attempts,
     }
 

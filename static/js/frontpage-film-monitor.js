@@ -1,6 +1,7 @@
 /**
  * Frontpage interactive film monitor — canvas stage + prompt + play.
- * Uses /api/film-canvas/interactive-movie (DramaCanvas plan → fal render).
+ * Uses /api/film-canvas/interactive-movie (plan → pipeline render).
+ * Prompt extras: + face reference and 2–120s duration.
  */
 (function () {
     'use strict';
@@ -11,7 +12,11 @@
     var t0 = performance.now();
     var billing = null;
     var billingTimer = null;
+    var faceDataUrl = null;
     var TRIAL_KEY = 'fp_film_trial_id';
+    var MIN_DURATION = 2;
+    var MAX_DURATION = 120;
+    var DEFAULT_DURATION = 8;
 
     function $(id) {
         return document.getElementById(id);
@@ -434,12 +439,98 @@
         setInterval(syncSoundNode, 1500);
     }
 
+    function readDurationSec() {
+        var el = $('fp-film-duration');
+        var raw = el ? Number(el.value) : DEFAULT_DURATION;
+        if (!isFinite(raw)) raw = DEFAULT_DURATION;
+        return Math.max(MIN_DURATION, Math.min(MAX_DURATION, Math.round(raw)));
+    }
+
+    function syncDurationLabel() {
+        var label = $('fp-film-duration-value');
+        if (label) label.textContent = readDurationSec() + 's';
+    }
+
+    function setFacePreview(dataUrl, name) {
+        faceDataUrl = dataUrl || null;
+        var chip = $('fp-film-face-chip');
+        var img = $('fp-film-face-preview');
+        var label = $('fp-film-face-label');
+        var addBtn = $('fp-film-face-add');
+        if (img) img.src = dataUrl || '';
+        if (label) label.textContent = name ? String(name).slice(0, 18) : 'Face added';
+        if (chip) {
+            chip.hidden = !dataUrl;
+            chip.classList.toggle('is-hidden', !dataUrl);
+        }
+        if (addBtn) addBtn.classList.toggle('is-active', !!dataUrl);
+    }
+
+    function clearFace() {
+        var input = $('fp-film-face-input');
+        if (input) input.value = '';
+        setFacePreview(null);
+    }
+
+    function readFaceFile(file) {
+        return new Promise(function (resolve, reject) {
+            if (!file) {
+                resolve(null);
+                return;
+            }
+            if (!String(file.type || '').startsWith('image/')) {
+                reject(new Error('Choose an image file for the face'));
+                return;
+            }
+            if (file.size > 4 * 1024 * 1024) {
+                reject(new Error('Face image must be under 4 MB'));
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function () { resolve(String(reader.result || '')); };
+            reader.onerror = function () { reject(new Error('Could not read face image')); };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function bindFaceAndDuration() {
+        var addBtn = $('fp-film-face-add');
+        var input = $('fp-film-face-input');
+        var clearBtn = $('fp-film-face-clear');
+        var duration = $('fp-film-duration');
+        if (addBtn && input) {
+            addBtn.addEventListener('click', function () { input.click(); });
+            input.addEventListener('change', function () {
+                var file = input.files && input.files[0];
+                if (!file) return;
+                readFaceFile(file).then(function (dataUrl) {
+                    setFacePreview(dataUrl, file.name);
+                    setStatus('Face added to prompt');
+                }).catch(function (err) {
+                    clearFace();
+                    setStatus(String(err.message || err));
+                });
+            });
+        }
+        if (clearBtn) clearBtn.addEventListener('click', clearFace);
+        if (duration) {
+            duration.addEventListener('input', syncDurationLabel);
+            duration.addEventListener('change', syncDurationLabel);
+            syncDurationLabel();
+        }
+    }
+
     async function playMovie() {
         var promptEl = $('fp-film-prompt');
         var video = $('fp-film-video');
+        var durationSec = readDurationSec();
         var prompt = ((promptEl && promptEl.value) || '').trim()
             || (promptEl && promptEl.placeholder)
             || 'Cinematic control-room monitor film';
+        if (faceDataUrl) {
+            prompt = prompt.replace(/\s*\[face reference attached\]\s*/ig, ' ').trim();
+            prompt = (prompt + ' [face reference attached]').trim();
+        }
 
         if (pollTimer) {
             clearTimeout(pollTimer);
@@ -453,8 +544,15 @@
             video.load();
             video.style.opacity = '0';
         }
-        setOverlay('<p class="fp-film-idle">Starting interactive movie…</p>', true);
-        setStatus('Starting interactive movie…');
+        setOverlay(
+            '<p class="fp-film-idle">Starting ' + durationSec + 's interactive movie…</p>',
+            true
+        );
+        setStatus(
+            'Starting ' + durationSec + 's movie'
+            + (faceDataUrl ? ' with face reference' : '')
+            + '…'
+        );
 
         try {
             if (
@@ -471,14 +569,17 @@
                 if (payBox) payBox.classList.add('is-locked');
                 return;
             }
+            var payload = {
+                prompt: prompt,
+                duration_sec: durationSec,
+                user_id: getUserId(),
+                trial_id: getTrialId(),
+            };
+            if (faceDataUrl) payload.face_image = faceDataUrl;
             var start = await fetch('/api/film-canvas/interactive-movie', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prompt: prompt,
-                    user_id: getUserId(),
-                    trial_id: getTrialId(),
-                }),
+                body: JSON.stringify(payload),
             });
             var job = await start.json();
             if (start.status === 402 || (job && job.code === 'PAYMENT_REQUIRED')) {
@@ -589,6 +690,7 @@
                 }
             });
         }
+        bindFaceAndDuration();
         bindLegacyNodes();
         refreshReady();
         refreshBilling();

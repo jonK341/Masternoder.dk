@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113p">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113q">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -76,9 +76,21 @@
                         </div>
                         <label class="fp-film-prompt-label" for="fp-film-prompt">Scene prompt</label>
                         <div class="fp-film-prompt-row">
+                            <button type="button" class="fp-film-face-add" id="fp-film-face-add" title="Add a person's face to the prompt" aria-label="Add face">+</button>
+                            <input id="fp-film-face-input" type="file" accept="image/*" hidden />
+                            <div class="fp-film-face-chip is-hidden" id="fp-film-face-chip" hidden>
+                                <img id="fp-film-face-preview" alt="Face reference" />
+                                <span id="fp-film-face-label">Face added</span>
+                                <button type="button" class="fp-film-face-clear" id="fp-film-face-clear" aria-label="Remove face">×</button>
+                            </div>
                             <input id="fp-film-prompt" type="text" maxlength="500"
                                 placeholder="Neon rain over a Danish harbour control room, cinematic interactive film"
                                 autocomplete="off" />
+                            <label class="fp-film-duration" for="fp-film-duration">
+                                <span class="fp-film-duration-kicker">Length</span>
+                                <input id="fp-film-duration" type="range" min="2" max="120" step="1" value="8" />
+                                <span class="fp-film-duration-value" id="fp-film-duration-value">8s</span>
+                            </label>
                             <button type="button" class="fp-film-go" id="fp-film-go">Play Movie</button>
                         </div>
                         <p class="fp-film-status" id="fp-film-status" role="status" aria-live="polite"></p>
@@ -391,7 +403,7 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/frontpage-film-monitor.js?v=20261113p" defer></script>
+    <script src="/static/js/frontpage-film-monitor.js?v=20261113q" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>

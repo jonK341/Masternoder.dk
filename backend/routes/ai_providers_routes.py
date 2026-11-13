@@ -15,8 +15,11 @@ Endpoints:
   POST /api/film-canvas/billing/pay-mn2 — buy 1 play credit with MN2 coins
   POST /api/film-canvas/billing/paypal-order — start PayPal checkout for 1 play credit
 """
+import base64
+import binascii
 import json
 import os
+import re
 import threading
 import uuid
 from datetime import datetime
@@ -105,6 +108,8 @@ def _public_interactive_job(job: dict) -> dict:
         "renderer": job.get("renderer"),
         "prompt": job.get("prompt"),
         "prompt_used": job.get("prompt_used"),
+        "duration_sec": job.get("duration_sec"),
+        "has_face": bool(job.get("has_face")),
         "video_url": job.get("video_url"),
         "updated_at": job.get("updated_at"),
     }
@@ -117,13 +122,61 @@ def _touch_interactive_job(job_id: str, **fields) -> dict:
     return _save_interactive_job(job)
 
 
-def _run_interactive_movie_job(job_id: str, prompt: str) -> None:
+def _clamp_duration_sec(raw) -> int:
+    try:
+        value = int(round(float(raw)))
+    except (TypeError, ValueError):
+        value = 8
+    return max(2, min(120, value))
+
+
+def _save_face_image_data_url(data_url: str, dest_dir: str, job_id: str) -> str:
+    """Persist a browser data-URL face image next to interactive movie outputs."""
+    raw = (data_url or "").strip()
+    match = re.match(r"^data:(image/[a-zA-Z0-9.+-]+);base64,(.+)$", raw, re.DOTALL)
+    if not match:
+        raise ValueError("face_image must be an image data URL")
+    mime = match.group(1).lower()
+    payload = match.group(2)
+    ext = {
+        "image/jpeg": ".jpg",
+        "image/jpg": ".jpg",
+        "image/pjpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
+    }.get(mime, ".jpg")
+    try:
+        binary = base64.b64decode(payload, validate=False)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("face_image base64 is invalid") from exc
+    if len(binary) < 64:
+        raise ValueError("face_image is too small")
+    if len(binary) > 4 * 1024 * 1024:
+        raise ValueError("face_image must be under 4 MB")
+    os.makedirs(dest_dir, exist_ok=True)
+    safe = "".join(ch for ch in str(job_id) if ch.isalnum() or ch in ("_", "-"))
+    path = os.path.join(dest_dir, "face_%s%s" % (safe, ext))
+    with open(path, "wb") as handle:
+        handle.write(binary)
+    return path
+
+
+def _run_interactive_movie_job(
+    job_id: str,
+    prompt: str,
+    duration_sec: int = 8,
+    face_path: str = None,
+) -> None:
+    duration_sec = _clamp_duration_sec(duration_sec)
     _touch_interactive_job(
         job_id,
         status="processing",
         progress=8,
-        message="Planning storyboard...",
+        message="Planning %ss storyboard..." % duration_sec,
         prompt=prompt,
+        duration_sec=duration_sec,
+        has_face=bool(face_path),
     )
     try:
         from backend.services.film_canvas_service import (
@@ -161,11 +214,15 @@ def _run_interactive_movie_job(job_id: str, prompt: str) -> None:
                 message="Preparing free still fallback movie...",
             )
 
+        # Scale render timeout with requested length (cap for monitor UX).
+        timeout = max(120, min(480, 60 + int(duration_sec) * 3))
         result = compose_interactive_movie(
             prompt,
             dest_dir=_interactive_videos_dir(),
-            timeout=300,
+            timeout=timeout,
             plan=can_plan,
+            duration_sec=duration_sec,
+            face_path=face_path,
         )
         if result.get("success") and result.get("local_path"):
             _touch_interactive_job(
@@ -547,11 +604,15 @@ def film_canvas_paypal_order():
 # ---------------------------------------------------------------------------
 @ai_providers_bp.route("/api/film-canvas/interactive-movie", methods=["POST"])
 def start_interactive_movie():
-    """Start DramaCanvas → fal/Comfy interactive movie for the monitor."""
+    """Start interactive movie for the monitor (prompt + optional face + duration)."""
     data = request.get_json(silent=True) or {}
     prompt = str(data.get("prompt") or "").strip()
     if not prompt:
         prompt = "Cinematic control-room monitor: neon city rain, interactive film loop"
+    duration_sec = _clamp_duration_sec(
+        data.get("duration_sec", data.get("duration", data.get("timer_sec", 8)))
+    )
+    face_image = data.get("face_image") or data.get("face") or ""
 
     user_id, trial_id = _film_billing_identity_from_request(data)
     try:
@@ -578,12 +639,31 @@ def start_interactive_movie():
         return jsonify({"success": False, "error": str(exc)[:300]}), 200
 
     job_id = "im_" + uuid.uuid4().hex[:12]
+    face_path = None
+    if isinstance(face_image, str) and face_image.strip():
+        try:
+            face_path = _save_face_image_data_url(
+                face_image,
+                _interactive_videos_dir(),
+                job_id,
+            )
+        except ValueError as exc:
+            return jsonify({"success": False, "error": str(exc)}), 200
+        except Exception as exc:
+            return jsonify({"success": False, "error": "Could not save face image: %s" % exc}), 200
+
+    if face_path and "[face reference" not in prompt.lower():
+        prompt = (prompt + " [face reference attached]").strip()
+
     job = {
         "job_id": job_id,
         "status": "pending",
         "progress": 0,
         "message": "Queued",
         "prompt": prompt[:500],
+        "duration_sec": duration_sec,
+        "has_face": bool(face_path),
+        "face_path": face_path,
         "billing": {
             "free_active": bool(access.get("free_active")),
             "reason": access.get("reason"),
@@ -594,7 +674,7 @@ def start_interactive_movie():
     _save_interactive_job(job)
     thread = threading.Thread(
         target=_run_interactive_movie_job,
-        args=(job_id, prompt[:500]),
+        args=(job_id, prompt[:500], duration_sec, face_path),
         daemon=True,
     )
     thread.start()

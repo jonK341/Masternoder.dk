@@ -455,7 +455,7 @@ def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, mo
             "canvas": "fal_krea",
         }
 
-    def fake_free(prompt, dest_dir=None, duration=6.0):
+    def fake_free(prompt, dest_dir=None, duration=6.0, face_path=None):
         path = os.path.join(dest_dir or str(tmp_path), "fallback.mp4")
         with open(path, "wb") as handle:
             handle.write(b"mp4" * 30)

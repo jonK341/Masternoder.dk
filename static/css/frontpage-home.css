@@ -716,7 +716,65 @@ body.mn-sound-active #fp-neural-kicker {
     align-items: stretch;
 }
 
-.fp-film-prompt-row input {
+.fp-film-face-add {
+    flex: 0 0 auto;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    color: #9dffd4;
+    background: rgba(0, 20, 12, 0.75);
+    font-size: 1.45rem;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.fp-film-face-add:hover,
+.fp-film-face-add.is-active {
+    border-color: rgba(0, 255, 136, 0.75);
+    color: #00ff88;
+    box-shadow: 0 0 16px rgba(0, 255, 136, 0.2);
+}
+
+.fp-film-face-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 180px;
+    min-height: 48px;
+    padding: 4px 8px 4px 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.35);
+    background: rgba(0, 10, 16, 0.8);
+    color: #d7fff0;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.fp-film-face-chip.is-hidden,
+.fp-film-face-chip[hidden] {
+    display: none !important;
+}
+
+.fp-film-face-chip img {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #04140e;
+}
+
+.fp-film-face-clear {
+    border: 0;
+    background: transparent;
+    color: #9dffd4;
+    font-size: 1.1rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.fp-film-prompt-row input[type="text"] {
     flex: 1 1 220px;
     min-height: 48px;
     padding: 12px 14px;
@@ -727,9 +785,41 @@ body.mn-sound-active #fp-neural-kicker {
     font-size: 0.95rem;
 }
 
-.fp-film-prompt-row input:focus {
+.fp-film-prompt-row input[type="text"]:focus {
     outline: 2px solid rgba(0, 212, 255, 0.7);
     outline-offset: 2px;
+}
+
+.fp-film-duration {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 255, 136, 0.22);
+    background: rgba(0, 12, 10, 0.72);
+    color: #b8ffe0;
+}
+
+.fp-film-duration-kicker {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.fp-film-duration input[type="range"] {
+    width: 110px;
+    accent-color: #00ff88;
+}
+
+.fp-film-duration-value {
+    min-width: 2.6em;
+    font-size: 0.85rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
 }
 
 .fp-film-go {

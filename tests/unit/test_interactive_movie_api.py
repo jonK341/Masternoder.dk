@@ -32,7 +32,15 @@ def client(monkeypatch, tmp_path):
         lambda: True,
     )
 
-    def fake_compose(prompt, dest_dir=None, timeout=180, plan=True, render_provider=None):
+    def fake_compose(
+        prompt,
+        dest_dir=None,
+        timeout=180,
+        plan=True,
+        render_provider=None,
+        duration_sec=8,
+        face_path=None,
+    ):
         path = os.path.join(dest_dir or str(tmp_path), "interactive.mp4")
         with open(path, "wb") as handle:
             handle.write(b"\x00\x00\x00\x18ftypmp42" + b"0" * 64)
@@ -43,6 +51,8 @@ def client(monkeypatch, tmp_path):
             "prompt_used": prompt,
             "local_path": path,
             "canvas": "fal_krea",
+            "duration_sec": duration_sec,
+            "has_face": bool(face_path),
             "llm_plan": {"success": True, "providers": ["groq"], "count": 1},
         }
 
@@ -89,6 +99,28 @@ def test_interactive_movie_job_completes_and_serves_video(client):
     assert video.status_code == 200
     assert video.mimetype == "video/mp4"
     assert len(video.data) > 20
+
+
+def test_interactive_movie_accepts_duration_and_face(client, tmp_path):
+    # 1x1 PNG
+    face = (
+        "data:image/png;base64,"
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    )
+    response = client.post(
+        "/api/film-canvas/interactive-movie",
+        json={
+            "prompt": "harbour with a person",
+            "duration_sec": 24,
+            "face_image": face,
+            "user_id": "face-tester",
+        },
+    )
+    assert response.status_code == 202
+    body = response.get_json()
+    assert body["job_id"]
+    assert body["duration_sec"] == 24
+    assert body["has_face"] is True
 
 
 def test_billing_status_is_free_program(client):
