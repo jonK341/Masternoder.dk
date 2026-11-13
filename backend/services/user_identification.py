@@ -6,11 +6,15 @@ import os
 import json
 import uuid
 import hashlib
+import logging
 from typing import Dict, Optional
 from datetime import datetime
 from flask import request
 
+from backend.services.mn2_onchain_wallet import provision_signup_deposit_address
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_log = logging.getLogger(__name__)
 
 class UserIdentification:
     """Service for identifying and creating users based on various identifiers"""
@@ -48,17 +52,30 @@ class UserIdentification:
         
         # Save identifier mapping
         self._save_identifier_mapping(new_user_id, identifiers)
-        try:
-            from backend.services.mn2_onchain_wallet import ensure_user_address
-            ensure_user_address(new_user_id)
-        except Exception:
-            pass
+        mn2_wallet = provision_signup_deposit_address(new_user_id, attempts=3)
+        if not mn2_wallet.get("assigned"):
+            _log.warning(
+                "identify_or_create without deposit address user=%s code=%s err=%s",
+                new_user_id,
+                mn2_wallet.get("code"),
+                mn2_wallet.get("error"),
+            )
 
         return {
             'success': True,
             'user_id': new_user_id,
             'new_user': True,
-            'identifiers': identifiers
+            'identifiers': identifiers,
+            'mn2_wallet': mn2_wallet,
+            'mn2_deposit_address': mn2_wallet.get('deposit_address'),
+            'mn2_wallet_warning': (
+                None
+                if mn2_wallet.get("assigned")
+                else (
+                    mn2_wallet.get("error")
+                    or "Deposit address was not assigned; open the MN2 wallet to retry."
+                )
+            ),
         }
     
     def _extract_identifiers(self, request_obj) -> Dict:
