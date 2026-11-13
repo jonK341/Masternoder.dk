@@ -205,20 +205,32 @@
     color: var(--text-muted, rgba(255, 255, 255, 0.7));
 }
 
-/* ── Text loading placeholder (not spinner) ────────────────────────────────── */
+/* ── Text loading placeholder (not spinner) ──────────────────────────────────
+ * MDS `.loading` is a 20×20 ring. When used with label text it wraps into a
+ * left-side “progress” circle. Keep empty `.loading` as the spinner; labeled
+ * ones become plain centered status text.
+ */
 
 .page-loading,
 .page-container .loading,
 .tab-content .loading,
-.page-shell .loading {
-    display: block;
-    width: auto;
-    height: auto;
-    border: none;
-    animation: none;
+.page-shell .loading,
+.loading:not(:empty) {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    animation: none !important;
     text-align: center;
     padding: 40px 20px;
-    opacity: 0.5;
+    opacity: 0.75;
+    color: var(--text-muted, rgba(255, 255, 255, 0.65));
+    font-size: 0.95rem;
+    line-height: 1.45;
 }
 
 /* ── Monitor / dashboard shell (social-monitor, similar pages) ─────────────── */

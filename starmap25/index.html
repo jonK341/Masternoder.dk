@@ -283,7 +283,27 @@
             background: rgba(0, 212, 255, 0.18);
             color: var(--secondary);
         }
-        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        /* Plain status text — do NOT use MDS .loading (20px spinner); it looked like a left-side progress ring. */
+        .starmap-status,
+        #content .loading,
+        .loading {
+            display: block !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: 0 !important;
+            margin: 24px auto !important;
+            padding: 28px 16px !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: none !important;
+            box-shadow: none !important;
+            animation: none !important;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.45;
+            opacity: 0.85;
+        }
         .error { color: #ff6b9d; padding: 12px; background: rgba(255, 107, 157, 0.1); border-radius: 8px; margin-bottom: 16px; }
         .walkthrough-panel {
             margin-top: 20px;
@@ -937,7 +957,7 @@
 
     <div id="error-box" class="error" style="display: none;"></div>
     <div id="content">
-        <div class="loading">Loading Star Map 25…</div>
+        <div class="starmap-status" role="status">Loading Star Map 25…</div>
     </div>
 
     <div id="planet-modal-backdrop" aria-hidden="true">
@@ -1336,7 +1356,7 @@
             var resultLine = document.getElementById('monitor-result-line');
             if (resultLine) resultLine.textContent = 'Showing ' + filtered.length + ' of ' + points.length + ' systems.';
             if (!filtered.length) {
-                content.innerHTML = '<div class="loading">No systems match the current filters.</div>';
+                content.innerHTML = '<div class="starmap-status" role="status">No systems match the current filters.</div>';
                 return;
             }
 
@@ -1725,7 +1745,7 @@
             var title = document.getElementById('planet-modal-title');
             if (!back || !body || !title) return;
             title.textContent = planetName + ' — archive';
-            body.innerHTML = '<p class="loading">Loading five-level intel…</p>';
+            body.innerHTML = '<p class="starmap-status" role="status">Loading five-level intel…</p>';
             back.classList.add('open');
             back.setAttribute('aria-hidden', 'false');
             try {
@@ -2061,7 +2081,7 @@
         async function loadStarMap25() {
             hideError();
             var content = document.getElementById('content');
-            content.innerHTML = '<div class="loading">Loading Star Map 25…</div>';
+            content.innerHTML = '<div class="starmap-status" role="status">Loading Star Map 25…</div>';
 
             var mapUrl = API_BASE + '/star-map/25';
             var statusUrl = API_BASE + '/star-map/25/status?user_id=' + encodeURIComponent(userId);
@@ -2151,7 +2171,7 @@
                 loadAiGuide();
             } catch (e) {
                 showError('Error: ' + (e.message || 'Unknown'));
-                content.innerHTML = '<div class="loading">Could not load Star Map 25. Check console.</div>';
+                content.innerHTML = '<div class="starmap-status" role="status">Could not load Star Map 25. Check console.</div>';
             }
         }
 
