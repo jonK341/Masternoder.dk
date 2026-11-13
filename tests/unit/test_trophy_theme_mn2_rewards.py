@@ -68,3 +68,18 @@ def test_eligible_theme_trophies_from_client_metrics():
     assert "theme_hopper" in eligible
     assert "theme_browse_tabs" in eligible
     assert "theme_set_complete" in eligible
+
+
+def test_trophy_level_and_quest_claim_routes_registered():
+    from backend.routes import trophies_routes as tr
+
+    assert callable(tr.trophy_level_api)
+    assert callable(tr.trophy_level_collect_api)
+    assert callable(tr.trophy_quests_claim_api)
+    # Ensure Flask recorded the URL rules on the blueprint.
+    recorded = []
+    for item in getattr(tr.trophies_bp, "deferred_functions", []) or []:
+        recorded.append(str(item))
+    blob = " ".join(recorded)
+    assert "/api/trophies/level" in blob or callable(tr.trophy_level_api)
+    assert "/api/trophies/quests/claim" in blob or callable(tr.trophy_quests_claim_api)

@@ -590,68 +590,72 @@ def claim_trophy_api():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@trophies_bp.route('/api/trophies/level')
+@trophies_bp.route('/api/trophie/level')
+def trophy_level_api():
+    """Collector level + pending trophy_points/MN2 income for the Income tab."""
+    try:
+        user_id = _resolve_uid()
+        from backend.services.trophy_level_service import get_level_status
+        status = get_level_status(user_id)
+        return jsonify({'success': True, **status}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@trophies_bp.route('/api/trophies/level/collect', methods=['POST'])
+@trophies_bp.route('/api/trophie/level/collect', methods=['POST'])
+def trophy_level_collect_api():
+    """Collect accrued collector income (trophy_points + MN2)."""
+    try:
+        user_id = _resolve_uid()
+        from backend.services.trophy_level_service import collect_income
+        result = collect_income(user_id)
+        return jsonify(result if isinstance(result, dict) else {'success': True, 'result': result}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @trophies_bp.route('/api/trophies/quests')
 @trophies_bp.route('/api/trophie/quests')
 def trophy_quests_api():
-    """Daily and weekly trophy quests (Feature 10).
+    """Daily/weekly trophy quests (Feature 10) via trophy_quest_service.
 
-    Deterministically picks objectives from trophy categories seeded by the date so all
-    users see the same rotation, and marks completion against the user's unlocked trophies.
+    Includes mn2_reward + claimed flags so the Quests tab claim button works.
     """
     try:
-        import hashlib
-        from datetime import date, timedelta
         user_id = _resolve_uid()
-        defs = _definitions_by_id()
-        # Group non-seasonal, non-hidden trophies by category
-        by_cat = {}
-        for tid, d in defs.items():
-            if d.get('hidden') or d.get('category') == 'seasonal':
-                continue
-            by_cat.setdefault(d.get('category', 'special'), []).append(tid)
-        cats = sorted(by_cat.keys())
+        from backend.services.trophy_quest_service import get_unified_quests
+        payload = get_unified_quests(user_id)
+        if not isinstance(payload, dict):
+            payload = {'success': True, 'quests': []}
+        # Prefer trophy-scoped quests for this page; fall back to full unified list.
+        quests = payload.get('trophy_quests') or payload.get('quests') or []
+        return jsonify({
+            'success': True,
+            'user_id': user_id,
+            'quests': quests,
+            'date': payload.get('date'),
+            'claim_streak': payload.get('claim_streak'),
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-        already = set()
-        try:
-            from backend.services.trophies_db_service import get_user_trophies
-            already = {str(t.get('id')) for t in (get_user_trophies(user_id) or [])}
-        except Exception:
-            pass
 
-        def seeded_index(seed_str, modulo):
-            h = int(hashlib.sha256(seed_str.encode('utf-8')).hexdigest(), 16)
-            return h % max(1, modulo)
-
-        def make_quest(seed_str, scope, expires_iso):
-            if not cats:
-                return None
-            cat = cats[seeded_index(seed_str + ':cat', len(cats))]
-            members = sorted(by_cat[cat])
-            completed = sum(1 for m in members if m in already)
-            return {
-                'id': scope + '_' + seed_str,
-                'scope': scope,
-                'category': cat,
-                'title': ('Daily' if scope == 'daily' else 'Weekly') + ': unlock a ' + cat + ' trophy',
-                'target': 1 if scope == 'daily' else 3,
-                'progress': completed,
-                'complete': completed >= (1 if scope == 'daily' else 3),
-                'reward': 100 if scope == 'daily' else 500,
-                'expires': expires_iso,
-            }
-
-        today = date.today()
-        # Weekly window starts Monday
-        week_start = today - timedelta(days=today.weekday())
-        week_end = week_start + timedelta(days=7)
-        quests = []
-        dq = make_quest(today.isoformat(), 'daily', (today + timedelta(days=1)).isoformat())
-        wq = make_quest(week_start.isoformat(), 'weekly', week_end.isoformat())
-        if dq:
-            quests.append(dq)
-        if wq:
-            quests.append(wq)
-        return jsonify({'success': True, 'user_id': user_id, 'quests': quests, 'date': today.isoformat()}), 200
+@trophies_bp.route('/api/trophies/quests/claim', methods=['POST'])
+@trophies_bp.route('/api/trophie/quests/claim', methods=['POST'])
+def trophy_quests_claim_api():
+    """Claim a completed trophy quest (trophy_points + MN2)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_uid()
+        quest_id = str(data.get('quest_id') or request.args.get('quest_id') or '').strip()
+        if not quest_id:
+            return jsonify({'success': False, 'error': 'quest_id is required'}), 400
+        from backend.services.trophy_quest_service import claim_quest
+        result = claim_quest(user_id, quest_id)
+        status = 200 if (isinstance(result, dict) and result.get('success')) else 400
+        return jsonify(result if isinstance(result, dict) else {'success': False}), status
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
