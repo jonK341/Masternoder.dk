@@ -40,16 +40,33 @@ os.environ.setdefault("PYTHONUNBUFFERED", "1")
 from scripts.daemon_env import daemon_mode_label, load_dotenv
 
 PROFILE_INTERVALS = {
-    "max": {"exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 45, "hunter": 20, "pbook": 25, "head": 45},
-    "standard": {"exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180, "dual_farm": 60, "hunter": 30, "pbook": 45, "head": 60},
-    "fast": {"exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90, "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30},
-    "live-only": {"exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120, "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 45},
+    "max": {
+        "exchange": 300, "casino": 300, "fast": 120, "grid": 30, "stuck": 600, "micro": 120,
+        "dual_farm": 45, "hunter": 20, "pbook": 25, "head": 45,
+        "courier": 60, "latch": 20, "closer": 45,
+    },
+    "standard": {
+        "exchange": 300, "casino": 300, "fast": 0, "grid": 45, "stuck": 900, "micro": 180,
+        "dual_farm": 60, "hunter": 30, "pbook": 45, "head": 60,
+        "courier": 90, "latch": 30, "closer": 60,
+    },
+    "fast": {
+        "exchange": 120, "casino": 180, "fast": 90, "grid": 25, "stuck": 480, "micro": 90,
+        "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
+        "courier": 45, "latch": 15, "closer": 30,
+    },
+    "live-only": {
+        "exchange": 180, "casino": 0, "fast": 120, "grid": 30, "stuck": 600, "micro": 120,
+        "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 45,
+        "courier": 45, "latch": 15, "closer": 30,
+    },
 }
 
 # Aggressive live-profit mode (set EXCHANGE_LIVE_PROFIT_MAX=1 in .env)
 _LIVE_PROFIT_MAX_INTERVALS = {
     "exchange": 120, "casino": 300, "fast": 60, "grid": 25, "stuck": 480, "micro": 90,
     "dual_farm": 30, "hunter": 15, "pbook": 20, "head": 30,
+    "courier": 45, "latch": 15, "closer": 30,
 }
 
 
@@ -590,6 +607,63 @@ def _hunter_loop(interval: int, stop: threading.Event) -> None:
         stop.wait(max(10, interval))
 
 
+def _summarize_courier(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"moved={'yes' if res.get('moved') else 'no'} skip={res.get('skip_reason') or '-'}")
+
+
+def _courier_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] courier arm interval={interval}s (BN↔NK quote balance)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_courier_arm_service import run_courier_tick
+
+            res = run_courier_tick()
+            summary = _summarize_courier(res)
+            print(f"[all-profit] courier {summary}", flush=True)
+            _write_heartbeat("courier", summary)
+        except Exception as exc:
+            print(f"[all-profit] courier error: {exc}", flush=True)
+        stop.wait(max(20, interval))
+
+
+def _summarize_latch(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"pending={res.get('pending', 0)} fired={'yes' if res.get('fired') else 'no'}")
+
+
+def _latch_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] latch sniper interval={interval}s (skew wait→strike)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_latch_sniper_service import run_latch_tick
+
+            res = run_latch_tick()
+            summary = _summarize_latch(res)
+            print(f"[all-profit] latch {summary}", flush=True)
+            _write_heartbeat("latch", summary)
+        except Exception as exc:
+            print(f"[all-profit] latch error: {exc}", flush=True)
+        stop.wait(max(10, interval))
+
+
+def _summarize_closer(res: Dict[str, Any]) -> str:
+    return str(res.get("summary") or f"open={res.get('open_after', 0)} closed={res.get('closed', 0)} dust={res.get('dust_sold', 0)}")
+
+
+def _closer_loop(interval: int, stop: threading.Event) -> None:
+    print(f"[all-profit] closer claw interval={interval}s (half-legs + dust)", flush=True)
+    while not stop.is_set():
+        try:
+            from backend.services.exchange_closer_claw_service import run_closer_tick
+
+            res = run_closer_tick()
+            summary = _summarize_closer(res)
+            print(f"[all-profit] closer {summary}", flush=True)
+            _write_heartbeat("closer", summary)
+        except Exception as exc:
+            print(f"[all-profit] closer error: {exc}", flush=True)
+        stop.wait(max(15, interval))
+
+
 def _summarize_pbook(res: Dict[str, Any]) -> str:
     best = res.get("best") or ((res.get("top5") or [{}])[0] if res.get("top5") else {})
     parts = [
@@ -888,6 +962,21 @@ def main() -> int:
         help="Do not run profit head (steer arms+legs, kill-shots, learning)",
     )
     parser.add_argument(
+        "--skip-courier",
+        action="store_true",
+        help="Do not run courier arm (BN↔NK quote balancer)",
+    )
+    parser.add_argument(
+        "--skip-latch",
+        action="store_true",
+        help="Do not run latch sniper (skew wait→strike)",
+    )
+    parser.add_argument(
+        "--skip-closer",
+        action="store_true",
+        help="Do not run closer claw (half-legs + dust harvest)",
+    )
+    parser.add_argument(
         "--skip-feed",
         action="store_true",
         help="No-op (compat with ops wrappers that pass --skip-feed)",
@@ -914,6 +1003,9 @@ def main() -> int:
     pbook_iv = int(os.environ.get("PROFIT_BOOK_INTERVAL_SEC") or 0) or iv.get("pbook") or 25
     dual_iv = int(os.environ.get("DUAL_FARM_INTERVAL_SEC") or 0) or iv.get("dual_farm") or 0
     head_iv = int(os.environ.get("PROFIT_HEAD_INTERVAL_SEC") or 0) or iv.get("head") or 45
+    courier_iv = int(os.environ.get("COURIER_INTERVAL_SEC") or 0) or iv.get("courier") or 60
+    latch_iv = int(os.environ.get("LATCH_INTERVAL_SEC") or 0) or iv.get("latch") or 20
+    closer_iv = int(os.environ.get("CLOSER_INTERVAL_SEC") or 0) or iv.get("closer") or 45
     casino_dry_run = _casino_dry_run(args.casino_dry_run)
 
     from scripts.exchange_master_daemon import _auto_sweep_default
@@ -946,6 +1038,18 @@ def main() -> int:
                 out["pbook"] = run_profit_order_book_tick(force=True)
             if not args.skip_head:
                 out["head"] = _head_once()
+            if not args.skip_courier:
+                from backend.services.exchange_courier_arm_service import run_courier_tick
+
+                out["courier"] = run_courier_tick(force=True)
+            if not args.skip_latch:
+                from backend.services.exchange_latch_sniper_service import run_latch_tick
+
+                out["latch"] = run_latch_tick(force=True)
+            if not args.skip_closer:
+                from backend.services.exchange_closer_claw_service import run_closer_tick
+
+                out["closer"] = run_closer_tick(force=True)
         if not skip_casino and not args.skip_exchange:
             out["casino"] = _casino_once(dry_run=casino_dry_run)
         if args.json:
@@ -973,6 +1077,12 @@ def main() -> int:
                 print(f"[all-profit] pbook {_summarize_pbook(out['pbook'])}", flush=True)
             if "head" in out:
                 print(f"[all-profit] head {_summarize_head(out['head'])}", flush=True)
+            if "courier" in out:
+                print(f"[all-profit] courier {_summarize_courier(out['courier'])}", flush=True)
+            if "latch" in out:
+                print(f"[all-profit] latch {_summarize_latch(out['latch'])}", flush=True)
+            if "closer" in out:
+                print(f"[all-profit] closer {_summarize_closer(out['closer'])}", flush=True)
         return 0 if out else 1
 
     stop = threading.Event()
@@ -1002,6 +1112,12 @@ def main() -> int:
             print(f"  profit-order-book leg interval={pbook_iv}s")
         if head_iv and not args.skip_head:
             print(f"  profit head (steer body) interval={head_iv}s")
+        if courier_iv and not args.skip_courier:
+            print(f"  courier arm interval={courier_iv}s")
+        if latch_iv and not args.skip_latch:
+            print(f"  latch sniper interval={latch_iv}s")
+        if closer_iv and not args.skip_closer:
+            print(f"  closer claw interval={closer_iv}s")
     if not skip_casino and not args.skip_exchange:
         dr = "dry_run" if casino_dry_run else "live"
         print(f"  casino agents ({cas_iv}s, {dr})")
@@ -1042,6 +1158,18 @@ def main() -> int:
         if head_iv and not args.skip_head:
             threads.append(threading.Thread(
                 target=_head_loop, args=(head_iv, stop), name="head", daemon=True,
+            ))
+        if courier_iv and not args.skip_courier:
+            threads.append(threading.Thread(
+                target=_courier_loop, args=(courier_iv, stop), name="courier", daemon=True,
+            ))
+        if latch_iv and not args.skip_latch:
+            threads.append(threading.Thread(
+                target=_latch_loop, args=(latch_iv, stop), name="latch", daemon=True,
+            ))
+        if closer_iv and not args.skip_closer:
+            threads.append(threading.Thread(
+                target=_closer_loop, args=(closer_iv, stop), name="closer", daemon=True,
             ))
     if not skip_casino and not args.skip_exchange:
         threads.append(threading.Thread(

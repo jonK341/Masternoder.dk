@@ -1,8 +1,11 @@
-"""Profit daemon HEAD — steers two arms + two legs.
+"""Profit daemon HEAD — steers arms, legs, and tools.
 
 Anatomy
-  Arm 1 ``hunter``     — wide BN↔NK spread hunt
+  Arm 1 ``hunter``     — wide BN↔NK spread hunt + backfill
   Arm 2 ``dual_farm``  — dual-venue farm + prefund
+  Arm 3 ``courier``    — cross-venue quote balancer
+  Tool ``latch``       — skew wait-then-strike
+  Tool ``closer``      — finish half-legs + dust harvest
   Leg 1 ``pbook``      — top5 map / techniques ledger
   Leg 2 ``grid``       — maker ladders (thin-quote = fully quiet)
 
@@ -30,8 +33,9 @@ _HEARTBEAT_CANDIDATES = [
     os.path.join(ex._DATA_DIR, "daemon_all_profit_heartbeat.json"),
 ]
 
-_LIMBS = ("hunter", "dual_farm", "pbook", "grid")
-_ARMS = ("hunter", "dual_farm")
+_LIMBS = ("hunter", "dual_farm", "courier", "latch", "closer", "pbook", "grid")
+_ARMS = ("hunter", "dual_farm", "courier")
+_TOOLS = ("latch", "closer")
 _LEGS = ("pbook", "grid")
 _HEAD_AGENT_ID = "arb_profit_head"
 
@@ -46,6 +50,9 @@ def _default_control() -> Dict[str, Any]:
         "limbs": {
             "hunter": {"enabled": True},
             "dual_farm": {"enabled": True},
+            "courier": {"enabled": True},
+            "latch": {"enabled": True},
+            "closer": {"enabled": True},
             "pbook": {"enabled": True},
             "grid": {"enabled": True},
         },
@@ -56,6 +63,7 @@ def _default_control() -> Dict[str, Any]:
         },
         "kill_shot": None,
         "prefund_hint": None,
+        "courier_hint": None,
         "updated_at": None,
         "last_decision": None,
     }
@@ -117,6 +125,17 @@ def clear_prefund_hint() -> None:
     save_control(ctrl)
 
 
+def get_courier_hint() -> Optional[Dict[str, Any]]:
+    hint = load_control().get("courier_hint")
+    return hint if isinstance(hint, dict) else None
+
+
+def set_courier_hint(hint: Optional[Dict[str, Any]]) -> None:
+    ctrl = load_control()
+    ctrl["courier_hint"] = hint if isinstance(hint, dict) else None
+    save_control(ctrl)
+
+
 def _append_head_event(kind: str, **fields: Any) -> None:
     row = {"ts": _iso(), "kind": kind, "limb": "head"}
     row.update(fields)
@@ -135,7 +154,8 @@ def _learn(profit_usd: float, *, note: str = "") -> Dict[str, Any]:
         if not acct.get("skills"):
             acct["skills"] = [
                 "quote_gate", "budget", "arm_control", "leg_control",
-                "quarantine", "kill_shot", "prefund", "heartbeat", "learning", "kill_switch",
+                "quarantine", "kill_shot", "prefund", "courier", "latch", "closer",
+                "heartbeat", "learning", "kill_switch",
             ]
             acct.setdefault("skill_proficiency", {})
         out = learn_from_profit(acct, max(0.0, float(profit_usd or 0)))
@@ -238,16 +258,24 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
             limbs["grid"]["enabled"] = True
             decisions.append("quote_gate:grid_ok")
 
-        # 3/4 — arm/leg enable from loop skip signals
+        # 3/4 — arm/leg/tool enable from loop skip signals
         hunter_sum = str(((loops.get("hunter") or {}).get("summary") or ""))
         dual_sum = str(((loops.get("dual_farm") or {}).get("summary") or ""))
-        if "regime_skew_too_wide" in hunter_sum and "qual=0" in hunter_sum:
-            limbs["hunter"]["enabled"] = True  # still search; head may withhold kill-shot
+        if "regime_skew_too_wide" in hunter_sum:
+            limbs["hunter"]["enabled"] = True
+            limbs["latch"]["enabled"] = True
             decisions.append("arm:hunter_skew_watch")
+            decisions.append("tool:latch_armed")
         if "no_qualifying_external_edge" in dual_sum:
             decisions.append("arm:dual_no_edge")
+        # Courier on when venues are lopsided (one side < 35% of total while funded)
+        if total_free >= 12.0 and min(bn_free, nk_free) < max(4.0, total_free * 0.35):
+            limbs["courier"]["enabled"] = True
+            decisions.append("arm:courier_imbalance")
+        limbs["closer"]["enabled"] = True
         limbs["pbook"]["enabled"] = True  # map always on
         decisions.append("leg:pbook_map_on")
+        decisions.append("tool:closer_on")
 
     # 2 — quote budget split
     arm_reserve = round(total_free * 0.6, 4) if not thin else round(total_free, 4)
@@ -257,6 +285,8 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         "leg_reserve_usd": leg_reserve,
         "total_free_usd": round(total_free, 4),
         "thin": thin,
+        "bn_free": round(bn_free, 4),
+        "nk_free": round(nk_free, 4),
         "notes": "60/40 arms/legs when funded; arms take all when thin",
     }
     decisions.append(f"budget:arms={arm_reserve}:legs={leg_reserve}")
@@ -295,11 +325,18 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         }
         decisions.append(f"prefund_hint:{prefund_hint.get('symbol')}")
 
+    courier_hint = ctrl.get("courier_hint") if isinstance(ctrl.get("courier_hint"), dict) else None
+    if courier_hint and not ctrl.get("manual_body_pause"):
+        decisions.append(
+            f"courier_hint:{(courier_hint.get('from_venue') or '?')}→{(courier_hint.get('to_venue') or '?')}"
+        )
+
     # Preserve operator limb overrides only if they set manual flags in control — we rewrite enables.
     ctrl["limbs"] = limbs
     ctrl["quote_budget"] = quote_budget
     ctrl["kill_shot"] = kill_shot
     ctrl["prefund_hint"] = prefund_hint
+    ctrl["courier_hint"] = courier_hint
     ctrl["last_decision"] = {
         "ts": _iso(),
         "decisions": decisions,
@@ -318,6 +355,7 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         total_free_usd=round(total_free, 4),
         kill_shot=kill_shot,
         prefund_hint=prefund_hint,
+        courier_hint=courier_hint,
         limbs=limbs,
     )
     learn = _learn(
@@ -328,7 +366,8 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
     # 8 — honest body rollup for callers
     summary = (
         f"thin={thin} free=${total_free:.2f} "
-        f"arms={int(limbs['hunter']['enabled'])}{int(limbs['dual_farm']['enabled'])} "
+        f"arms={int(limbs['hunter']['enabled'])}{int(limbs['dual_farm']['enabled'])}{int(limbs['courier']['enabled'])} "
+        f"tools={int(limbs['latch']['enabled'])}{int(limbs['closer']['enabled'])} "
         f"legs={int(limbs['pbook']['enabled'])}{int(limbs['grid']['enabled'])} "
         f"kill={kill_shot.get('symbol') if kill_shot else '-'} "
         f"dec={len(decisions)}"
@@ -341,6 +380,7 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         "quotes": quotes,
         "kill_shot": kill_shot,
         "prefund_hint": prefund_hint,
+        "courier_hint": courier_hint,
         "limbs": limbs,
         "quote_budget": quote_budget,
         "learning": learn,
@@ -357,6 +397,7 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         "limbs": limbs,
         "kill_shot": kill_shot,
         "prefund_hint": prefund_hint,
+        "courier_hint": courier_hint,
         "quote_budget": quote_budget,
         "quotes": quotes,
         "learning": learn,

@@ -905,12 +905,34 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             out["recheck"] = {
                 "reason": recheck.get("reason"),
                 "opportunity": {
-                    "symbol": (recheck.get("opportunity") or {}).get("symbol"),
+                    "symbol": (recheck.get("opportunity") or {}).get("symbol") or opp.get("symbol"),
+                    "buy_venue": (recheck.get("opportunity") or {}).get("buy_venue") or opp.get("buy_venue"),
+                    "sell_venue": (recheck.get("opportunity") or {}).get("sell_venue") or opp.get("sell_venue"),
                     "net_bps": (recheck.get("opportunity") or {}).get("net_bps"),
+                    "est_profit_usd": (recheck.get("opportunity") or {}).get("est_profit_usd"),
+                    "notional_usd": (recheck.get("opportunity") or {}).get("notional_usd") or opp.get("notional_usd"),
                     "mid_skew_bps": (recheck.get("opportunity") or {}).get("mid_skew_bps"),
                     "regime_factor": (recheck.get("opportunity") or {}).get("regime_factor"),
                 },
             }
+            if out["skip_reason"] == "regime_skew_too_wide":
+                try:
+                    from backend.services.exchange_latch_sniper_service import arm_latch
+
+                    ro = out["recheck"]["opportunity"]
+                    arm_latch(
+                        symbol=str(ro.get("symbol") or ""),
+                        buy_venue=str(ro.get("buy_venue") or ""),
+                        sell_venue=str(ro.get("sell_venue") or ""),
+                        net_bps=float(ro.get("net_bps") or opp.get("net_bps") or 0),
+                        mid_skew_bps=float(ro.get("mid_skew_bps") or 0),
+                        est_profit_usd=float(ro.get("est_profit_usd") or opp.get("est_profit_usd") or 0),
+                        notional_usd=float(ro.get("notional_usd") or notional),
+                        source="hunter_skew",
+                    )
+                    out["latch_armed"] = True
+                except Exception:
+                    pass
             continue
 
         trade_opp = recheck["opportunity"]
@@ -967,6 +989,12 @@ def run_spread_hunter_tick(*, force: bool = False) -> Dict[str, Any]:
             venues=venues,
         )
         exec_res = execute_spatial_arbitrage(ready, agent_id=agent_id)
+        try:
+            from backend.services.exchange_closer_claw_service import note_execution_legs
+
+            note_execution_legs(ready, exec_res, source="hunter")
+        except Exception:
+            pass
         record_execution(
             path_id=path_id,
             agent_id=agent_id,
@@ -1028,6 +1056,8 @@ def _persist_tick(out: Dict[str, Any]) -> None:
             "board_top": out.get("board_top"),
             "executed": out.get("executed"),
             "skip_reason": out.get("skip_reason"),
+            "recheck": out.get("recheck"),
+            "latch_armed": out.get("latch_armed"),
             "prefund": out.get("prefund"),
             "backfill": {
                 "success": (out.get("backfill") or {}).get("success"),
