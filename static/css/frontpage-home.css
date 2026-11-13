@@ -50,6 +50,84 @@
     width: min(100%, 920px);
     position: relative;
     z-index: 2;
+    padding: 18px 8px 0;
+}
+
+.fp-film-orbit {
+    position: absolute;
+    inset: -8px 0 auto;
+    height: 0;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.fp-film-node,
+.fp-film-pulse {
+    pointer-events: auto;
+    position: absolute;
+    z-index: 5;
+}
+
+.fp-film-node {
+    left: 50%;
+    top: 0;
+    width: clamp(42px, 8vw, 52px);
+    height: clamp(42px, 8vw, 52px);
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: none;
+    transform: translate(-50%, -50%);
+}
+
+.fp-film-node-ai {
+    left: 8%;
+    top: 36px;
+}
+
+.fp-film-node-snd {
+    left: 92%;
+    top: 36px;
+}
+
+.fp-film-node-xp {
+    left: 96%;
+    top: 118px;
+}
+
+.fp-film-pulse {
+    left: 4%;
+    top: 118px;
+    width: clamp(54px, 10vw, 68px);
+    height: clamp(54px, 10vw, 68px);
+    min-width: 0;
+    min-height: 0;
+    font-size: clamp(0.95rem, 2.4vw, 1.25rem);
+    transform: translate(-50%, -50%);
+}
+
+.fp-film-node-snd.is-live {
+    border-color: rgba(0, 255, 136, 0.7);
+    box-shadow: 0 0 28px rgba(0, 255, 136, 0.35);
+    color: #00ff88;
+}
+
+.fp-film-version {
+    margin-left: 6px;
+    color: rgba(196, 167, 255, 0.85);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+    .fp-film-node-xp,
+    .fp-film-pulse {
+        display: none;
+    }
+    .fp-film-node-ai { left: 12%; top: 28px; }
+    .fp-film-node-snd { left: 88%; top: 28px; }
 }
 
 .fp-hero-film .fp-hero-actions {

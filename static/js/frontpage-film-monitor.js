@@ -137,14 +137,67 @@
             var rows = d.video_providers || [];
             var fal = rows.find(function (p) { return p.id === 'fal_krea'; });
             var drama = rows.find(function (p) { return p.id === 'dramacanva'; });
+            var auto = rows.find(function (p) { return p.id === 'film_canvas_auto'; });
             var bits = [];
             bits.push(drama && drama.available ? 'DramaCanvas ready' : 'DramaCanvas offline');
             bits.push(fal && fal.available ? 'fal ready' : 'fal offline');
+            if (auto && auto.available) {
+                bits.push('auto ' + (auto.selected_renderer || '—') + '/' + (auto.selected_planner || '—'));
+            }
             var ok = (fal && fal.available) || (drama && drama.available);
             setReady(bits.join(' · '), ok);
+
+            var xp = $('fp-film-node-xp');
+            var level = (((d.statistics || {}).level) || null);
+            if (xp && level) {
+                xp.textContent = 'Lv' + level;
+                xp.title = 'Level ' + level + ' · XP & trophies';
+            }
         } catch (err) {
             setReady('Canvas status unavailable', false);
         }
+    }
+
+    function syncSoundNode() {
+        var snd = $('fp-film-node-snd');
+        var kicker = $('fp-neural-kicker');
+        var power = $('themeSoundToggle');
+        var live = !!(power && power.getAttribute('aria-pressed') === 'true');
+        if (snd) {
+            snd.classList.toggle('is-live', live);
+            snd.setAttribute('aria-pressed', live ? 'true' : 'false');
+            snd.title = live ? 'Neural sound online — click to stop' : 'Neural sound offline — click to start';
+        }
+        if (kicker) {
+            kicker.textContent = live ? 'Neural sound online' : 'Neural sound offline';
+        }
+    }
+
+    function bindLegacyNodes() {
+        var ai = $('fp-film-node-ai');
+        var snd = $('fp-film-node-snd');
+        if (ai) {
+            ai.addEventListener('click', function () {
+                var prompt = $('fp-film-prompt');
+                if (prompt) prompt.focus();
+                playMovie();
+            });
+        }
+        if (snd) {
+            snd.addEventListener('click', function () {
+                var power = $('themeSoundToggle');
+                if (power) power.click();
+                setTimeout(syncSoundNode, 50);
+            });
+        }
+        var power = $('themeSoundToggle');
+        if (power) {
+            power.addEventListener('click', function () {
+                setTimeout(syncSoundNode, 60);
+            });
+        }
+        syncSoundNode();
+        setInterval(syncSoundNode, 2000);
     }
 
     async function playMovie() {
@@ -271,6 +324,7 @@
                 }
             });
         }
+        bindLegacyNodes();
         refreshReady();
         loop();
     }

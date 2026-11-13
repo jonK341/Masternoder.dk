@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
-    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113a">
+    <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20261113b">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
@@ -32,18 +32,30 @@
     <main id="mainContent" class="fp-main">
         <section class="fp-hero fp-hero-v20 fp-hero-film" aria-labelledby="fp-hero-title">
             <div class="fp-hero-copy">
-                <p class="fp-kicker"><span>Live film canvas</span><span>DramaCanvas · fal</span></p>
+                <p class="fp-kicker">
+                    <span>System v2.0</span>
+                    <span id="fp-neural-kicker">Neural sound offline</span>
+                    <span>Live film canvas</span>
+                    <span>DramaCanvas · fal</span>
+                </p>
                 <h1 id="fp-hero-title">MasterNoder.dk</h1>
                 <p class="fp-tagline">AI · video · battle · agenter · sonic control</p>
-                <p class="fp-hero-text">Skriv en scene under monitoren og tryk play — kontrolrummet laver en interaktiv film på canvas.</p>
+                <p class="fp-hero-text">Et hurtigere kontrolrum til video, battle og agenter — skriv en scene under monitoren, tryk play, og mærk systemet med opt-in lyd.</p>
             </div>
 
             <div class="fp-film-monitor" id="fp-film-monitor" aria-label="Interaktiv film monitor">
+                <div class="fp-film-orbit" aria-hidden="true">
+                    <button type="button" class="fp-core-node fp-film-node fp-film-node-ai" id="fp-film-node-ai" title="AI film canvas / generator">AI</button>
+                    <button type="button" class="fp-core-node fp-film-node fp-film-node-snd" id="fp-film-node-snd" title="Toggle neural sound">SND</button>
+                    <a class="fp-core-node fp-film-node fp-film-node-xp" id="fp-film-node-xp" href="/trophies" title="XP &amp; trophies">XP</a>
+                    <div class="fp-core-pulse fp-film-pulse" title="System v2.0">2.0</div>
+                </div>
                 <div class="fp-film-bezel">
                     <div class="fp-film-chrome">
                         <span class="fp-film-dot" aria-hidden="true"></span>
                         <span class="fp-film-dot" aria-hidden="true"></span>
                         <span class="fp-film-dot" aria-hidden="true"></span>
+                        <span class="fp-film-version">v2.0</span>
                         <span class="fp-film-ready" id="fp-film-ready">Checking canvases…</span>
                     </div>
                     <div class="fp-film-screen">
@@ -68,7 +80,9 @@
 
             <div class="fp-hero-actions" aria-label="Primære handlinger">
                 <a class="fp-primary-action" href="/generator">Start generator</a>
+                <a class="fp-secondary-action" href="/create-app/">Create App</a>
                 <a class="fp-secondary-action" href="/game">Åbn game hub</a>
+                <a class="fp-download-hero" href="#fp-download" title="Download apps — Play Store, Podcast, PWA">⬇ Download</a>
                 <a class="fp-mn2-badge" href="/shop" title="MN2 wallet, deposit, withdraw, pay in shop">Pay with MN2</a>
             </div>
         </section>
@@ -360,7 +374,7 @@
     <script src="/static/js/nav-portal-template.js?v=20261002"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260617a" defer></script>
     <script src="/static/js/frontpage-home.js?v=20260909b" defer></script>
-    <script src="/static/js/frontpage-film-monitor.js?v=20261113a" defer></script>
+    <script src="/static/js/frontpage-film-monitor.js?v=20261113b" defer></script>
     <script src="/static/js/game-hub-panel.js?v=20261010a" defer></script>
     <script src="/static/js/mn2-site-bridge.js?v=20261010a" defer></script>
     <script src="/static/js/ptc-ad-rotator.js?v=20260429a" defer></script>
