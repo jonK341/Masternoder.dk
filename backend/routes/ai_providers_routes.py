@@ -77,22 +77,22 @@ def _save_interactive_job(job: dict) -> dict:
 
 
 def _load_interactive_job(job_id: str):
+    """Load job state. Prefer the on-disk sidecar so multi-worker uwsgi stays in sync."""
+    path = _interactive_job_path(job_id)
+    if os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as handle:
+                job = json.load(handle)
+        except (OSError, json.JSONDecodeError):
+            job = None
+        if isinstance(job, dict):
+            with _interactive_movie_lock:
+                _interactive_movie_jobs[job_id] = dict(job)
+            return job
     with _interactive_movie_lock:
         cached = _interactive_movie_jobs.get(job_id)
         if cached:
             return dict(cached)
-    path = _interactive_job_path(job_id)
-    if not os.path.isfile(path):
-        return None
-    try:
-        with open(path, encoding="utf-8") as handle:
-            job = json.load(handle)
-    except (OSError, json.JSONDecodeError):
-        return None
-    if isinstance(job, dict):
-        with _interactive_movie_lock:
-            _interactive_movie_jobs[job_id] = dict(job)
-        return job
     return None
 
 
@@ -111,6 +111,10 @@ def _public_interactive_job(job: dict) -> dict:
         "duration_sec": job.get("duration_sec"),
         "has_face": bool(job.get("has_face")),
         "video_url": job.get("video_url"),
+        "download_url": (
+            (job.get("video_url") + ("&" if "?" in str(job.get("video_url") or "") else "?") + "download=1")
+            if job.get("video_url") else None
+        ),
         "updated_at": job.get("updated_at"),
     }
 
@@ -697,4 +701,17 @@ def interactive_movie_video(job_id):
     path = job.get("local_path")
     if not path or not os.path.isfile(path):
         return jsonify({"success": False, "error": "Video not ready"}), 404
-    return send_file(path, mimetype="video/mp4", conditional=True)
+    as_download = str(request.args.get("download") or "").strip().lower() in (
+        "1", "true", "yes", "download",
+    )
+    download_name = "masternoder-movie-%s.mp4" % (
+        "".join(ch for ch in str(job_id) if ch.isalnum() or ch in ("_", "-"))[:24]
+        or "clip"
+    )
+    return send_file(
+        path,
+        mimetype="video/mp4",
+        conditional=True,
+        as_attachment=as_download,
+        download_name=download_name if as_download else None,
+    )

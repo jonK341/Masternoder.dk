@@ -418,6 +418,7 @@ def test_free_still_uses_local_ffmpeg_when_network_images_fail(clean_env, tmp_pa
         "_write_local_standby_image",
         lambda dest_dir, prompt: None,
     )
+    monkeypatch.setattr(canvas, "_collect_movie_stills", lambda *a, **k: [])
 
     def fake_ffmpeg(dest_dir, duration=5.0):
         path = os.path.join(dest_dir, "ffmpeg.mp4")
@@ -430,6 +431,39 @@ def test_free_still_uses_local_ffmpeg_when_network_images_fail(clean_env, tmp_pa
     assert out["success"] is True
     assert out["source_image"] == "ffmpeg_lavfi"
     assert os.path.isfile(out["local_path"])
+
+
+def test_kenburns_movie_uses_face_still(clean_env, tmp_path, monkeypatch):
+    face = tmp_path / "face.jpg"
+    face.write_bytes(b"\xff\xd8\xff" + b"0" * 120)
+
+    def fake_encode(image_path, dest_path, duration=6.0):
+        with open(dest_path, "wb") as handle:
+            handle.write(b"mp4" * 40)
+        return {
+            "success": True,
+            "local_path": dest_path,
+            "fps": 25,
+            "mode": "kenburns",
+            "duration_sec": int(duration),
+        }
+
+    monkeypatch.setattr(canvas, "_encode_image_to_mp4", fake_encode)
+    monkeypatch.setattr(
+        canvas,
+        "_ffmpeg_concat_movies",
+        lambda paths, dest_path: {"success": True, "local_path": paths[0]},
+    )
+    out = canvas._generate_free_still_movie(
+        "harbour night",
+        dest_dir=str(tmp_path),
+        duration=12,
+        face_path=str(face),
+    )
+    assert out["success"] is True
+    assert out["mode"] == "kenburns_movie"
+    assert out["duration_sec"] == 12
+    assert out["source_image"] == "face_reference"
 
 
 def test_fal_exhausted_is_skipped_and_compose_falls_back(clean_env, tmp_path, monkeypatch):

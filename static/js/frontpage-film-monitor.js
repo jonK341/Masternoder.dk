@@ -472,6 +472,25 @@
         setFacePreview(null);
     }
 
+    function setDownloadLink(url) {
+        var link = $('fp-film-download');
+        if (!link) return;
+        if (!url) {
+            link.removeAttribute('href');
+            link.hidden = true;
+            link.classList.add('is-hidden');
+            return;
+        }
+        var href = String(url);
+        if (!/[?&]download=/.test(href)) {
+            href = href.indexOf('?') >= 0 ? (href + '&download=1') : (href + '?download=1');
+        }
+        link.href = href;
+        link.setAttribute('download', 'masternoder-movie.mp4');
+        link.hidden = false;
+        link.classList.remove('is-hidden');
+    }
+
     function readFaceFile(file) {
         return new Promise(function (resolve, reject) {
             if (!file) {
@@ -538,9 +557,11 @@
         }
         setBusy(true);
         idle = true;
+        setDownloadLink(null);
         if (video) {
             try { video.pause(); } catch (_) {}
             video.removeAttribute('src');
+            video.removeAttribute('controls');
             video.load();
             video.style.opacity = '0';
         }
@@ -623,12 +644,15 @@
                         idle = false;
                         setOverlay('', false);
                         video.style.opacity = '1';
+                        video.setAttribute('controls', 'controls');
                         video.src = d.video_url + '?t=' + Date.now();
                         video.onloadeddata = function () {
                             video.play().catch(function () {});
                         };
+                        setDownloadLink(d.download_url || d.video_url);
                         setStatus(
-                            'Playing on canvas'
+                            'Movie ready — play or download'
+                            + (d.duration_sec ? (' · ' + d.duration_sec + 's') : '')
                             + (d.planner ? ' · plan:' + d.planner : '')
                             + (d.renderer ? ' · render:' + d.renderer : '')
                         );

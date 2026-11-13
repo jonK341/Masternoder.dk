@@ -837,6 +837,34 @@ body.mn-sound-active #fp-neural-kicker {
     box-shadow: 0 0 24px rgba(0, 255, 136, 0.22);
 }
 
+.fp-film-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.55);
+    color: #eafff4;
+    background: rgba(0, 40, 48, 0.85);
+    font-size: 0.82rem;
+    font-weight: 850;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.fp-film-download:hover {
+    border-color: rgba(0, 255, 136, 0.7);
+    color: #00ff88;
+}
+
+.fp-film-download.is-hidden,
+.fp-film-download[hidden] {
+    display: none !important;
+}
+
 .fp-film-status {
     min-height: 1.25em;
     margin: 10px 2px 0;

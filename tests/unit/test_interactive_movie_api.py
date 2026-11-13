@@ -94,11 +94,52 @@ def test_interactive_movie_job_completes_and_serves_video(client):
     assert status["planner"] == "all_llms+dramacanva"
     assert status["renderer"] == "fal_krea"
     assert status["video_url"].endswith("/video")
+    assert status["download_url"] == status["video_url"] + "?download=1"
 
     video = client.get(status["video_url"])
     assert video.status_code == 200
     assert video.mimetype == "video/mp4"
     assert len(video.data) > 20
+
+    download = client.get(status["download_url"])
+    assert download.status_code == 200
+    assert download.mimetype == "video/mp4"
+    disposition = download.headers.get("Content-Disposition") or ""
+    assert "attachment" in disposition.lower()
+    assert "masternoder-movie" in disposition.lower()
+
+
+def test_interactive_movie_status_reads_disk_over_stale_memory(client, tmp_path):
+    """uwsgi workers must not keep a stale in-memory pending status after disk completes."""
+    from backend.routes import ai_providers_routes as routes
+
+    job_id = "im_disk_refresh"
+    video_path = tmp_path / "ready.mp4"
+    video_path.write_bytes(b"\x00\x00\x00\x18ftypmp42" + b"1" * 64)
+    routes._interactive_movie_jobs[job_id] = {
+        "job_id": job_id,
+        "status": "processing",
+        "progress": 20,
+        "message": "stale memory",
+    }
+    routes._save_interactive_job(
+        {
+            "job_id": job_id,
+            "status": "completed",
+            "progress": 100,
+            "message": "Interactive movie ready",
+            "local_path": str(video_path),
+            "video_url": "/api/film-canvas/interactive-movie/%s/video" % job_id,
+        }
+    )
+    response = client.get("/api/film-canvas/interactive-movie/" + job_id)
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["status"] == "completed"
+    assert body["download_url"].endswith("?download=1")
+    video = client.get(body["download_url"])
+    assert video.status_code == 200
+    assert "attachment" in (video.headers.get("Content-Disposition") or "").lower()
 
 
 def test_interactive_movie_accepts_duration_and_face(client, tmp_path):

@@ -1229,23 +1229,136 @@ def _ffmpeg_color_movie(dest_dir: str, duration: float = 5.0) -> Dict[str, Any]:
     }
 
 
+def _ffmpeg_kenburns_movie(
+    image_path: str,
+    dest_path: str,
+    duration: float = 8.0,
+    fps: int = 25,
+) -> Dict[str, Any]:
+    """Turn one still into a full-length cinematic MP4 with camera motion."""
+    seconds = max(2, min(120, int(round(float(duration) or 8))))
+    frames = max(seconds * fps, fps * 2)
+    # Slow zoom + slight pan so the clip reads as a movie, not a frozen picture.
+    vf = (
+        "scale=8000:-1,"
+        "zoompan=z='min(1.0+0.00115*on,1.5)':"
+        "x='iw/2-(iw/zoom/2)+20*sin(on/90)':"
+        "y='ih/2-(ih/zoom/2)+12*cos(on/110)':"
+        "d=%d:s=1280x720:fps=%d,"
+        "eq=contrast=1.05:saturation=1.08,"
+        "format=yuv420p"
+    ) % (frames, fps)
+    cmd = [
+        "ffmpeg", "-y",
+        "-loop", "1",
+        "-i", image_path,
+        "-vf", vf,
+        "-t", str(seconds),
+        "-r", str(fps),
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
+        dest_path,
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=max(45, seconds + 30),
+            check=False,
+        )
+    except Exception as exc:
+        return {"success": False, "error": "kenburns ffmpeg failed: %s" % exc}
+    if proc.returncode != 0 or not os.path.isfile(dest_path):
+        err = (proc.stderr or proc.stdout or "ffmpeg failed")[-400:]
+        return {"success": False, "error": "kenburns ffmpeg failed: %s" % err}
+    return {
+        "success": True,
+        "local_path": dest_path,
+        "fps": fps,
+        "duration_sec": seconds,
+        "mode": "kenburns",
+    }
+
+
+def _ffmpeg_concat_movies(paths: List[str], dest_path: str) -> Dict[str, Any]:
+    if not paths:
+        return {"success": False, "error": "no clips to concat"}
+    if len(paths) == 1:
+        try:
+            os.replace(paths[0], dest_path)
+            return {"success": True, "local_path": dest_path}
+        except Exception:
+            return {"success": True, "local_path": paths[0]}
+    list_path = dest_path + ".txt"
+    try:
+        with open(list_path, "w", encoding="utf-8") as handle:
+            for path in paths:
+                handle.write("file '%s'\n" % path.replace("'", "'\\''"))
+        cmd = [
+            "ffmpeg", "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", list_path,
+            "-c", "copy",
+            "-movflags", "+faststart",
+            dest_path,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120, check=False)
+        if proc.returncode != 0 or not os.path.isfile(dest_path):
+            # Re-encode fallback when stream copy fails.
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "concat",
+                "-safe", "0",
+                "-i", list_path,
+                "-c:v", "libx264",
+                "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
+                dest_path,
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180, check=False)
+        if proc.returncode != 0 or not os.path.isfile(dest_path):
+            err = (proc.stderr or proc.stdout or "concat failed")[-300:]
+            return {"success": False, "error": "concat failed: %s" % err}
+        return {"success": True, "local_path": dest_path}
+    except Exception as exc:
+        return {"success": False, "error": "concat failed: %s" % exc}
+    finally:
+        try:
+            if os.path.isfile(list_path):
+                os.remove(list_path)
+        except Exception:
+            pass
+
+
 def _encode_image_to_mp4(image_path: str, dest_path: str, duration: float = 6.0) -> Dict[str, Any]:
+    """Encode a still into a full-length motion MP4 (ffmpeg Ken Burns, moviepy fallback)."""
+    kb = _ffmpeg_kenburns_movie(image_path, dest_path, duration=duration, fps=25)
+    if kb.get("success"):
+        return kb
+
     if _MoviePyImageClip is None:
-        return {"success": False, "error": "moviepy unavailable for free still"}
+        return {"success": False, "error": kb.get("error") or "moviepy unavailable for free movie"}
     clip = None
     try:
-        clip = _MoviePyImageClip(image_path, duration=max(3.0, float(duration)))
+        seconds = max(2.0, min(120.0, float(duration or 6.0)))
+        clip = _MoviePyImageClip(image_path, duration=seconds)
         if hasattr(clip, "resized"):
-            clip = clip.resized(height=480)
+            clip = clip.resized(new_size=(1280, 720))
         elif hasattr(clip, "resize"):
-            clip = clip.resize(height=480)
-        write_kwargs = {"codec": "libx264", "audio": False, "fps": 12}
+            clip = clip.resize(new_size=(1280, 720))
+        write_kwargs = {"codec": "libx264", "audio": False, "fps": 24}
         try:
             clip.write_videofile(dest_path, logger=None, **write_kwargs)
         except TypeError:
             clip.write_videofile(dest_path, verbose=False, logger=None, **write_kwargs)
     except Exception as exc:
-        return {"success": False, "error": "free still encode failed: %s" % _safe_error(exc)}
+        return {
+            "success": False,
+            "error": "movie encode failed: %s | %s" % (_safe_error(exc), kb.get("error") or ""),
+        }
     finally:
         try:
             if clip is not None:
@@ -1253,8 +1366,46 @@ def _encode_image_to_mp4(image_path: str, dest_path: str, duration: float = 6.0)
         except Exception:
             pass
     if not os.path.isfile(dest_path):
-        return {"success": False, "error": "free still mp4 missing"}
-    return {"success": True, "local_path": dest_path, "fps": 12}
+        return {"success": False, "error": "movie mp4 missing"}
+    return {"success": True, "local_path": dest_path, "fps": 24, "mode": "moviepy_still"}
+
+
+def _collect_movie_stills(
+    prompt: str,
+    dest_dir: str,
+    duration: float,
+    face_path: Optional[str] = None,
+) -> List[Dict[str, str]]:
+    """Gather face + scene stills so longer movies can have multiple beats."""
+    stills: List[Dict[str, str]] = []
+    if face_path and os.path.isfile(face_path):
+        stills.append({"path": face_path, "source": "face_reference"})
+
+    variants = [
+        prompt[:400],
+        ("Cinematic wide establishing shot: %s" % prompt)[:400],
+        ("Close dramatic detail shot: %s" % prompt)[:400],
+    ]
+    want = 1 if duration < 12 else (2 if duration < 40 else 3)
+    if _free_image_service is not None and hasattr(_free_image_service, "generate_image"):
+        for variant in variants:
+            if len(stills) >= want:
+                break
+            try:
+                image = _free_image_service.generate_image(variant, dest_dir=dest_dir)
+            except Exception:
+                continue
+            if image.get("success") and image.get("local_path") and os.path.isfile(image["local_path"]):
+                stills.append({
+                    "path": image["local_path"],
+                    "source": image.get("source") or "free",
+                })
+
+    if not stills:
+        standby = _write_local_standby_image(dest_dir, prompt)
+        if standby:
+            stills.append({"path": standby, "source": "local_standby"})
+    return stills[: max(1, want)]
 
 
 def _generate_free_still_movie(
@@ -1263,57 +1414,82 @@ def _generate_free_still_movie(
     duration: float = 6.0,
     face_path: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Last-resort MP4: face ref → free image → local standby → ffmpeg color."""
+    """Build a full-length local movie (Ken Burns / multi-beat) without paid APIs."""
     if dest_dir is None:
         dest_dir = os.environ.get("VIDEOS_DIR") or os.getcwd()
     os.makedirs(dest_dir, exist_ok=True)
     errors: List[str] = []
     duration = max(2.0, min(120.0, float(duration or 6.0)))
 
-    image_path = None
-    source = None
-    if face_path and os.path.isfile(face_path):
-        image_path = face_path
-        source = "face_reference"
-    if not image_path and _free_image_service is not None and hasattr(_free_image_service, "generate_image"):
-        try:
-            image = _free_image_service.generate_image(prompt[:400], dest_dir=dest_dir)
-            if image.get("success") and image.get("local_path"):
-                image_path = image["local_path"]
-                source = image.get("source") or "free"
-            else:
-                errors.append(str(image.get("error") or "free image failed"))
-        except Exception as exc:
-            errors.append("free image: %s" % exc)
+    stills = _collect_movie_stills(prompt, dest_dir, duration, face_path=face_path)
+    if not stills:
+        errors.append("no still frames available")
+        ffmpeg_clip = _ffmpeg_color_movie(dest_dir, duration=duration)
+        if ffmpeg_clip.get("success"):
+            ffmpeg_clip["prior_errors"] = errors
+            return ffmpeg_clip
+        return {
+            "success": False,
+            "error": "free movie failed: " + " | ".join(errors + [ffmpeg_clip.get("error") or ""])[:400],
+            "canvas": "free_still",
+        }
 
-    if not image_path:
-        image_path = _write_local_standby_image(dest_dir, prompt)
-        source = "local_standby" if image_path else None
-        if not image_path:
-            errors.append("local standby frame unavailable")
+    # Split duration across beats for a fuller movie arc.
+    beat_paths: List[str] = []
+    remaining = duration
+    for index, still in enumerate(stills):
+        left = len(stills) - index
+        beat = remaining if left == 1 else max(2.0, round(remaining / left, 2))
+        remaining = max(0.0, remaining - beat)
+        part = os.path.join(dest_dir, "beat_%s_%s.mp4" % (uuid.uuid4().hex[:8], index))
+        encoded = _encode_image_to_mp4(still["path"], part, duration=beat)
+        if encoded.get("success") and encoded.get("local_path"):
+            beat_paths.append(encoded["local_path"])
+        else:
+            errors.append(str(encoded.get("error") or "beat encode failed"))
 
-    if image_path and _MoviePyImageClip is not None:
-        dest = os.path.join(dest_dir, "free_still_%s.mp4" % uuid.uuid4().hex[:8])
-        encoded = _encode_image_to_mp4(image_path, dest, duration=duration)
-        if encoded.get("success"):
-            return {
-                "success": True,
-                "local_path": encoded["local_path"],
-                "canvas": "free_still",
-                "source_image": source or "free",
-                "fps": encoded.get("fps") or 12,
-            }
-        errors.append(str(encoded.get("error") or "encode failed"))
-
-    ffmpeg_clip = _ffmpeg_color_movie(dest_dir, duration=duration)
-    if ffmpeg_clip.get("success"):
-        if errors:
+    if not beat_paths:
+        ffmpeg_clip = _ffmpeg_color_movie(dest_dir, duration=duration)
+        if ffmpeg_clip.get("success"):
             ffmpeg_clip["prior_errors"] = errors[:5]
-        return ffmpeg_clip
-    errors.append(str(ffmpeg_clip.get("error") or "ffmpeg failed"))
+            return ffmpeg_clip
+        return {
+            "success": False,
+            "error": "free movie failed: " + " | ".join(errors)[:400],
+            "canvas": "free_still",
+        }
+
+    dest = os.path.join(dest_dir, "movie_%s.mp4" % uuid.uuid4().hex[:8])
+    merged = _ffmpeg_concat_movies(beat_paths, dest)
+    if merged.get("success") and merged.get("local_path"):
+        return {
+            "success": True,
+            "local_path": merged["local_path"],
+            "canvas": "free_still",
+            "source_image": stills[0].get("source") or "free",
+            "fps": 25,
+            "duration_sec": int(round(duration)),
+            "beats": len(beat_paths),
+            "mode": "kenburns_movie",
+        }
+
+    # If concat failed but we have one beat, still return that clip.
+    if beat_paths:
+        return {
+            "success": True,
+            "local_path": beat_paths[0],
+            "canvas": "free_still",
+            "source_image": stills[0].get("source") or "free",
+            "fps": 25,
+            "duration_sec": int(round(duration)),
+            "beats": 1,
+            "mode": "kenburns_movie",
+            "concat_error": merged.get("error"),
+        }
+    errors.append(str(merged.get("error") or "concat failed"))
     return {
         "success": False,
-        "error": "free still failed: " + " | ".join(errors)[:400],
+        "error": "free movie failed: " + " | ".join(errors)[:400],
         "canvas": "free_still",
     }
 
