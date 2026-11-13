@@ -24,9 +24,11 @@ ComfyUI's own websocket example).
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
+import re
 import secrets
 import subprocess
 import time
@@ -2115,8 +2117,6 @@ def _plan_with_all_llms(brief: str, timeout: int = 25) -> Dict[str, Any]:
 
 
 def _extract_json_object(text: str) -> Optional[Dict[str, Any]]:
-    import re
-
     raw = (text or "").strip()
     if not raw:
         return None
@@ -2250,8 +2250,6 @@ def _procedural_unique_pipeline(
     run_id: str,
 ) -> Dict[str, Any]:
     """Always-new local pipeline when remote LLMs throttle — still unique per clip."""
-    import hashlib
-
     want = max(2, min(8, int(beat_count or 3)))
     seconds = max(2, min(120, int(duration_sec or 8)))
     salt = int(hashlib.sha1(("%s|%s|%s" % (run_id, brief, secrets.token_hex(4))).encode("utf-8")).hexdigest()[:8], 16)
