@@ -74,9 +74,18 @@ def _quote_snaps() -> List[Dict[str, Any]]:
 
 def _imbalance(snaps: List[Dict[str, Any]], *, floor: float) -> Dict[str, Any]:
     total = sum(float(s.get("free") or 0) for s in snaps)
+    by_id = {str(s.get("venue") or ""): s for s in snaps}
+    # Keep Binance current: if BN is under floor, treat it as the starved venue even
+    # when another venue is slightly poorer in absolute free quote.
+    priority = (os.environ.get("COURIER_PRIORITY_VENUE") or "binance").strip().lower()
     rows = sorted(snaps, key=lambda s: float(s.get("free") or 0))
     poor = rows[0] if rows else {}
     rich = rows[-1] if rows else {}
+    pri = by_id.get(priority) or {}
+    if pri and float(pri.get("free") or 0) < floor:
+        poor = pri
+        others = [s for s in snaps if str(s.get("venue")) != priority]
+        rich = max(others, key=lambda s: float(s.get("free") or 0)) if others else rich
     poor_free = float(poor.get("free") or 0)
     rich_free = float(rich.get("free") or 0)
     share_poor = (poor_free / total) if total > 0 else 0.0
@@ -94,6 +103,8 @@ def _imbalance(snaps: List[Dict[str, Any]], *, floor: float) -> Dict[str, Any]:
         "share_poor": round(share_poor, 4),
         "move_usd": move,
         "floor_usd": floor,
+        "priority_venue": priority,
+        "keep_binance": priority == "binance" and float((by_id.get("binance") or {}).get("free") or 0) < floor,
     }
 
 

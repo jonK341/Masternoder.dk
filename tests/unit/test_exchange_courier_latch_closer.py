@@ -174,6 +174,86 @@ def test_closer_notes_and_retries_half_leg(monkeypatch, tmp_path):
     assert out["open_after"] == 0
 
 
+def test_raise_candidates_skip_ld_wrappers():
+    from backend.services import exchange_spread_hunter_arm_service as hunt
+
+    bals = {"USDC": 1.0, "LDADA": 100.0, "LDALGO": 50.0, "XRP": 3.0, "DKK": 1.0}
+    ordered = hunt._raise_inventory_candidates(bals, quote="USDC", preferred=["ADA"])
+    assert "LDADA" not in ordered
+    assert "LDALGO" not in ordered
+    assert "DKK" not in ordered
+    assert ordered[0] == "XRP" or "XRP" in ordered
+
+
+def test_raise_continues_after_failed_order(monkeypatch, tmp_path):
+    from backend.services import exchange_spread_hunter_arm_service as hunt
+
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.venue_quote_asset",
+        lambda v: "USDC",
+    )
+    bals = {"USDC": 1.0, "XRP": 10.0, "ADA": 100.0}
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.parse_spot_balances",
+        lambda *a, **k: dict(bals),
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.invalidate_venue_balance_cache",
+        lambda *a, **k: None,
+    )
+    monkeypatch.setattr(
+        hunt.conn,
+        "fetch_ticker",
+        lambda venue, sym: {"bid": 2.0, "ask": 2.01},
+    )
+    calls = {"n": 0}
+
+    def fake_order(venue, sym, side, qty, **kw):
+        calls["n"] += 1
+        if sym == "XRP":
+            return {"success": False, "error": "boom"}
+        return {"success": True, "order_id": "ok"}
+
+    monkeypatch.setattr(
+        "backend.services.exchange_venue_api_service.place_market_order",
+        fake_order,
+    )
+    monkeypatch.setattr(
+        "backend.services.exchange_binance_earn_service.list_ld_balances",
+        lambda *a, **k: [],
+    )
+    out = hunt._raise_quote_on_buy_venue(
+        "binance", need_usd=20.0, raise_symbols=["XRP", "ADA"], min_sell_usd=3.0, scan_all_balances=False,
+    )
+    assert out["success"] is True
+    assert out["symbol"] == "ADA"
+    assert calls["n"] == 2
+
+
+def test_courier_keeps_binance_as_poor_when_under_floor():
+    from backend.services import exchange_courier_arm_service as courier
+
+    imb = courier._imbalance(
+        [
+            {"venue": "binance", "quote": "USDC", "free": 0.45},
+            {"venue": "nonkyc", "quote": "USDT", "free": 0.40},
+        ],
+        floor=12.0,
+    )
+    assert imb["poor"]["venue"] == "binance"
+    assert imb["keep_binance"] is True
+
+
+def test_ld_underlying_map():
+    from backend.services.exchange_binance_earn_service import _ld_underlying, list_ld_balances
+
+    assert _ld_underlying("LDADA") == "ADA"
+    assert _ld_underlying("LDALGO") == "ALGO"
+    assert _ld_underlying("ADA") is None
+    rows = list_ld_balances({"LDADA": 10.0, "USDC": 1.0, "XRP": 2.0})
+    assert rows and rows[0]["asset"] == "ADA"
+
+
 def test_head_enables_new_limbs(monkeypatch, tmp_path):
     from backend.services import crypto_exchange_service as ex
     from backend.services import exchange_profit_head_service as head

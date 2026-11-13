@@ -268,10 +268,12 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
             decisions.append("tool:latch_armed")
         if "no_qualifying_external_edge" in dual_sum:
             decisions.append("arm:dual_no_edge")
-        # Courier on when venues are lopsided (one side < 35% of total while funded)
-        if total_free >= 12.0 and min(bn_free, nk_free) < max(4.0, total_free * 0.35):
+        # Courier on when venues are lopsided OR Binance free quote is behind floor
+        if bn_free < 12.0 or (total_free >= 12.0 and min(bn_free, nk_free) < max(4.0, total_free * 0.35)):
             limbs["courier"]["enabled"] = True
             decisions.append("arm:courier_imbalance")
+            if bn_free < 12.0:
+                decisions.append("keep:binance_current")
         limbs["closer"]["enabled"] = True
         limbs["pbook"]["enabled"] = True  # map always on
         decisions.append("leg:pbook_map_on")
@@ -326,7 +328,18 @@ def run_head_tick(*, force: bool = False) -> Dict[str, Any]:
         decisions.append(f"prefund_hint:{prefund_hint.get('symbol')}")
 
     courier_hint = ctrl.get("courier_hint") if isinstance(ctrl.get("courier_hint"), dict) else None
-    if courier_hint and not ctrl.get("manual_body_pause"):
+    if bn_free < 12.0 and not ctrl.get("manual_body_pause"):
+        # Keep Binance current: force courier destination even if hint is stale/missing.
+        courier_hint = {
+            "from_venue": "nonkyc" if nk_free >= bn_free else "binance",
+            "to_venue": "binance",
+            "amount_usd": round(max(0.0, 12.0 - bn_free), 2),
+            "reason": "keep_binance_current",
+            "poor_free": round(bn_free, 4),
+            "rich_free": round(nk_free, 4),
+        }
+        decisions.append("courier_hint:nonkyc→binance")
+    elif courier_hint and not ctrl.get("manual_body_pause"):
         decisions.append(
             f"courier_hint:{(courier_hint.get('from_venue') or '?')}→{(courier_hint.get('to_venue') or '?')}"
         )
