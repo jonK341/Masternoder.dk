@@ -135,3 +135,28 @@ def test_monitor_endpoints_use_cleaned_catalog(lite_app_client):
     assert page.status_code == 200
     assert b"API Monitor" in page.data
     assert b"API Lab" in page.data
+    assert b"/api-lab/?path=" in page.data
+    assert b"Open API Lab" in page.data
+
+
+def test_api_lab_page_links_out_and_supports_deep_link_markup(lite_app_client):
+    page = lite_app_client.get("/api-lab/")
+    assert page.status_code == 200
+    body = page.data
+    assert b'href="/api"' in body or b'href="/api/"' in body
+    assert b"/api-lab/?path=/api/health" in body
+    assert b"api-lab.js" in body
+
+
+def test_hub_pages_link_to_api_lab(lite_app_client):
+    home = lite_app_client.get("/")
+    assert home.status_code == 200
+    assert b'href="/api-lab/"' in home.data
+    lab = lite_app_client.get("/lab/")
+    assert lab.status_code in (200, 301, 302, 308)
+    if lab.status_code == 200:
+        assert b"/api-lab/" in lab.data
+    debugger = lite_app_client.get("/debugger/")
+    assert debugger.status_code in (200, 301, 302, 308)
+    if debugger.status_code == 200:
+        assert b"/api-lab/" in debugger.data

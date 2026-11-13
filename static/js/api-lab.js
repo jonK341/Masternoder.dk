@@ -11,12 +11,46 @@
     selected: null,
     filter: "all",
     showOther: false,
+    pendingPath: null,
+    pendingMethod: null,
+    syncingUrl: false,
   };
 
   function $(id) { return document.getElementById(id); }
 
   function methodClass(method) {
     return "method m-" + method;
+  }
+
+  function readQuery() {
+    var params = new URLSearchParams(window.location.search || "");
+    return {
+      q: (params.get("q") || "").trim(),
+      category: (params.get("category") || params.get("cat") || "").trim().toLowerCase(),
+      path: (params.get("path") || "").trim(),
+      method: (params.get("method") || "").trim().toUpperCase(),
+      other: (params.get("other") || params.get("internal") || "").trim().toLowerCase(),
+      filter: (params.get("filter") || "").trim().toLowerCase(),
+    };
+  }
+
+  function writeQuery() {
+    if (state.syncingUrl) return;
+    var params = new URLSearchParams();
+    var q = ($("q") && $("q").value) || "";
+    if (q.trim()) params.set("q", q.trim());
+    if (state.category && state.category !== "all") params.set("category", state.category);
+    if (state.filter && state.filter !== "all") params.set("filter", state.filter);
+    if (state.showOther) params.set("other", "1");
+    if (state.selected) {
+      params.set("path", state.selected.path);
+      params.set("method", state.selected.method);
+    }
+    var qs = params.toString();
+    var next = window.location.pathname + (qs ? "?" + qs : "") + (window.location.hash || "");
+    if (next !== window.location.pathname + window.location.search + (window.location.hash || "")) {
+      window.history.replaceState(null, "", next);
+    }
   }
 
   function visibleCategories() {
@@ -36,6 +70,7 @@
       state.category = "all";
       renderCategories();
       renderList();
+      writeQuery();
     });
     host.appendChild(all);
     visibleCategories().forEach(function (cat) {
@@ -47,6 +82,7 @@
         state.category = cat.id;
         renderCategories();
         renderList();
+        writeQuery();
       });
       host.appendChild(btn);
     });
@@ -91,7 +127,10 @@
     rows.forEach(function (row) {
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "ep" + (state.selected === row ? " active" : "");
+      var active = state.selected
+        && state.selected.path === row.path
+        && state.selected.method === row.method;
+      btn.className = "ep" + (active ? " active" : "");
       var badge = document.createElement("span");
       badge.className = methodClass(row.method);
       badge.textContent = row.method;
@@ -118,9 +157,11 @@
     });
   }
 
-  function openTry(row) {
+  function openTry(row, opts) {
+    opts = opts || {};
     state.selected = row;
     renderList();
+    writeQuery();
     var form = $("form");
     form.innerHTML = "";
     $("try-hint").textContent = "";
@@ -133,6 +174,28 @@
     meta.textContent = labelFor(row.category)
       + (row.try_safe ? " · safe to try" : " · confirm before sending");
     form.appendChild(meta);
+
+    var share = document.createElement("a");
+    share.className = "inline";
+    share.href = labHref(row.path, row.method, row.category);
+    share.textContent = "Copyable Lab link";
+    share.style.display = "inline-block";
+    share.style.marginBottom = "10px";
+    share.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var url = window.location.origin + labHref(row.path, row.method, row.category);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () {
+          share.textContent = "Link copied";
+          setTimeout(function () { share.textContent = "Copyable Lab link"; }, 1200);
+        }).catch(function () {
+          window.prompt("API Lab link", url);
+        });
+      } else {
+        window.prompt("API Lab link", url);
+      }
+    });
+    form.appendChild(share);
 
     var values = {};
     (row.params || []).forEach(function (name) {
@@ -184,13 +247,13 @@
       var path = fillPath(row.path, values);
       var qs = (query.value || "").replace(/^\?/, "");
       var url = path + (qs ? "?" + qs : "");
-      var opts = { method: row.method, headers: { Accept: "application/json" } };
+      var fetchOpts = { method: row.method, headers: { Accept: "application/json" } };
       if (body) {
-        opts.headers["Content-Type"] = "application/json";
-        opts.body = body.value || "{}";
+        fetchOpts.headers["Content-Type"] = "application/json";
+        fetchOpts.body = body.value || "{}";
       }
       var started = performance.now();
-      fetch(url, opts).then(function (res) {
+      fetch(url, fetchOpts).then(function (res) {
         return res.text().then(function (text) {
           return { status: res.status, text: text, ms: Math.round(performance.now() - started) };
         });
@@ -202,7 +265,16 @@
     });
     form.appendChild(run);
 
-    if (row.try_safe) run.click();
+    if (row.try_safe && opts.autoRun !== false) run.click();
+  }
+
+  function labHref(path, method, category) {
+    var params = new URLSearchParams();
+    if (path) params.set("path", path);
+    if (method) params.set("method", method);
+    if (category && category !== "all") params.set("category", category);
+    var qs = params.toString();
+    return APP_BASE + "/api-lab/" + (qs ? "?" + qs : "");
   }
 
   function labelFor(id) {
@@ -226,10 +298,57 @@
     out.appendChild(document.createTextNode("\n" + pretty));
   }
 
+  function applyPendingSelection() {
+    if (!state.pendingPath || !state.catalog) return;
+    var wantPath = state.pendingPath;
+    var wantMethod = state.pendingMethod;
+    var match = null;
+    var rows = state.catalog.endpoints || [];
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].path === wantPath && (!wantMethod || rows[i].method === wantMethod)) {
+        match = rows[i];
+        break;
+      }
+    }
+    if (!match) {
+      for (var j = 0; j < rows.length; j++) {
+        if (rows[j].path.indexOf(wantPath) >= 0 && (!wantMethod || rows[j].method === wantMethod)) {
+          match = rows[j];
+          break;
+        }
+      }
+    }
+    if (match) {
+      if (match.internal) state.showOther = true;
+      state.category = match.category || state.category;
+      state.pendingPath = null;
+      state.pendingMethod = null;
+      openTry(match, { autoRun: match.try_safe });
+      renderCategories();
+    }
+  }
+
   function boot() {
+    var query = readQuery();
+    state.syncingUrl = true;
+    if (query.other === "1" || query.other === "true" || query.other === "yes") {
+      state.showOther = true;
+    }
+    if (query.category) state.category = query.category;
+    if (query.filter === "safe" || query.filter === "get" || query.filter === "post") {
+      state.filter = query.filter === "get" ? "GET" : (query.filter === "post" ? "POST" : query.filter);
+    }
+    if (query.q && $("q")) $("q").value = query.q;
+    if (query.path) {
+      state.pendingPath = query.path;
+      state.pendingMethod = query.method || null;
+    }
+    state.syncingUrl = false;
+
     $("q").addEventListener("input", function () {
       renderCategories();
       renderList();
+      writeQuery();
     });
     document.querySelectorAll("[data-filter]").forEach(function (chip) {
       chip.addEventListener("click", function () {
@@ -239,7 +358,11 @@
         });
         renderCategories();
         renderList();
+        writeQuery();
       });
+    });
+    document.querySelectorAll("[data-filter]").forEach(function (chip) {
+      chip.classList.toggle("active", chip.getAttribute("data-filter") === state.filter);
     });
     $("toggle-other").addEventListener("click", function () {
       state.showOther = !state.showOther;
@@ -247,6 +370,7 @@
         var still = visibleCategories().some(function (c) { return c.id === state.category; });
         if (!still) state.category = "all";
       }
+      writeQuery();
       loadCatalog();
     });
     loadCatalog();
@@ -257,12 +381,28 @@
     var url = APP_BASE + "/api/lab/catalog?internal=" + (state.showOther ? "1" : "0");
     fetch(url).then(function (res) { return res.json(); }).then(function (data) {
       state.catalog = data;
+      if (state.pendingPath) {
+        var needInternal = (data.endpoints || []).some(function (row) {
+          return row.path === state.pendingPath && row.internal;
+        });
+        if (needInternal && !state.showOther) {
+          state.showOther = true;
+          loadCatalog();
+          return;
+        }
+      }
       renderCategories();
       renderList();
+      applyPendingSelection();
+      writeQuery();
     }).catch(function (err) {
       $("list").innerHTML = "<p class=\"empty\">Could not load catalog: " + err + "</p>";
     });
   }
+
+  window.ApiLabLink = {
+    href: labHref,
+  };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();

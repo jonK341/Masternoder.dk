@@ -129,6 +129,9 @@ MONITOR_HTML = """
     .time { font-variant-numeric: tabular-nums; color: var(--muted); }
     #loading { color: var(--muted); font-size: 0.875rem; padding: 0.85rem 0; max-width: 1200px; margin: 0.6rem auto 0; }
     .method { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; font-weight: 600; color: var(--muted); }
+    .try-link { color: var(--accent); font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+    .try-link:hover { text-decoration: underline; }
+    a.btn { display: inline-flex; align-items: center; text-decoration: none; }
   </style>
 </head>
 <body>
@@ -136,11 +139,12 @@ MONITOR_HTML = """
     <div>
       <p class="brand">MasterNoder</p>
       <h1>API Monitor</h1>
-      <p class="sub">Probe live <code>/api</code> routes. Pages, redirects, and tooling clutter are removed. Try endpoints in the <a href="/api-lab/">API Lab</a>.</p>
+      <p class="sub">Probe live <code>/api</code> routes. Use <strong>Try</strong> on any row to open that endpoint in API Lab.</p>
     </div>
     <div class="actions">
+      <a class="btn" href="/api-lab/">Open API Lab</a>
       <button class="btn ghost" id="btn-other" type="button">Show other</button>
-      <button class="btn" id="btn-run" onclick="runProbes()">Probe visible</button>
+      <button class="btn ghost" id="btn-run" onclick="runProbes()">Probe visible</button>
     </div>
   </div>
   <div class="cards">
@@ -156,7 +160,7 @@ MONITOR_HTML = """
   </div>
   <div class="wrap">
     <table>
-      <thead><tr><th>Method</th><th>Endpoint</th><th>Category</th><th>Status</th><th>Code</th><th>Time</th></tr></thead>
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Category</th><th>Lab</th><th>Status</th><th>Code</th><th>Time</th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -210,16 +214,25 @@ MONITOR_HTML = """
       el('total-count').textContent = visible;
       el('skip-count').textContent = skip;
     }
+    function labHref(path, methods) {
+      var method = 'GET';
+      var list = methods || [];
+      if (list.indexOf('GET') >= 0) method = 'GET';
+      else if (list.length) method = list[0];
+      return '/api-lab/?path=' + encodeURIComponent(path) + '&method=' + encodeURIComponent(method);
+    }
     function renderTable(endpoints, categories) {
       var tbody = el('tbody');
       tbody.innerHTML = '';
       allRows = endpoints.map(function(ep) {
         var tr = document.createElement('tr');
         var methods = (ep.methods || ['GET']).join(',');
+        var href = labHref(ep.path, ep.methods || ['GET']);
         tr.innerHTML =
           '<td class="method">' + methods + '</td>' +
-          '<td class="path">' + ep.path + '</td>' +
+          '<td class="path"><a class="try-link" href="' + href + '" title="Open in API Lab">' + ep.path + '</a></td>' +
           '<td class="cat">' + (ep.label || ep.category || '') + '</td>' +
+          '<td><a class="try-link" href="' + href + '">Try →</a></td>' +
           '<td><span class="badge ' + (ep.probe ? 'pending' : 'skip') + '" data-status>' + (ep.probe ? '—' : 'Skip') + '</span></td>' +
           '<td class="time" data-code>—</td>' +
           '<td class="time" data-time>—</td>';
