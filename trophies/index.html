@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trophies - MasterNoder</title>
-    <meta name="cache-version" content="20261010a">
+    <meta name="cache-version" content="20261113b">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/navigation-toolbar.css">
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
-    <link rel="stylesheet" href="/static/css/trophies-page-tema.css?v=20261002a">
+    <link rel="stylesheet" href="/static/css/trophies-page-tema.css?v=20261113a">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
     <link rel="stylesheet" href="/static/css/trophies-ww2-theme.css?v=20261002a">
     <style>
@@ -435,17 +435,7 @@
         .rarity-pill.epic { color: rgba(170, 90, 255, 0.95); border-color: rgba(150, 0, 255, 0.4); }
         .rarity-pill.legendary { color: rgba(255, 215, 0, 0.95); border-color: rgba(255, 215, 0, 0.5); }
 
-        /* Per-trophy progress bar (table requirement cell) */
-        .trophy-progress { margin-top: 6px; }
-        .trophy-progress-bar {
-            height: 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.12); overflow: hidden;
-        }
-        .trophy-progress-fill {
-            height: 100%; border-radius: 4px;
-            background: linear-gradient(90deg, var(--trophy-secondary), var(--trophy-success));
-            transition: width 0.6s ease;
-        }
-        .trophy-progress-text { font-size: 0.78em; color: rgba(255, 255, 255, 0.6); margin-top: 3px; }
+        /* Progress bars removed per product request */
         .trophies-container .table tbody tr { cursor: pointer; }
         .trophies-container .table tbody tr:hover { background: rgba(255, 215, 0, 0.06); }
 
@@ -492,7 +482,7 @@
         .trophy-toast.legendary .trophy-toast-title { color: var(--trophy-primary); }
         .trophy-toast-name { font-size: 0.9em; opacity: 0.9; }
         @media (prefers-reduced-motion: reduce) {
-            .trophy-toast, .trophy-progress-fill, .ring-fill { transition: none; }
+            .trophy-toast, .ring-fill { transition: none; }
             .trophy-card::before, .comm-psych-theory-card::before { animation: none; }
             .trophy-card.unlocked .trophy-icon { animation: none; }
             *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
@@ -638,9 +628,7 @@
         }
         .income-collect-btn:hover:not(:disabled) { transform: scale(1.02); }
         .income-collect-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-        .income-progress-wrap { margin: 16px 0; }
-        .income-progress-bar { height: 10px; border-radius: 5px; background: rgba(255,255,255,0.08); overflow: hidden; }
-        .income-progress-fill { height: 100%; background: linear-gradient(90deg, var(--trophy-primary), var(--trophy-success)); border-radius: 5px; transition: width 0.4s ease; }
+        /* income progress bars removed */
         .income-ladder { display: grid; gap: 10px; margin-top: 20px; }
         .income-tier {
             display: grid; grid-template-columns: 48px 1fr auto auto; gap: 12px; align-items: center;
@@ -659,11 +647,11 @@
             .income-tier-income, .income-tier-lvl { grid-column: 2; }
         }
         .trophies-hub-tabs-wrap {
-            margin: 0 0 20px;
-            padding: 12px 14px 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.28);
-            background: rgba(21, 21, 32, 0.72);
+            margin: 0 0 24px;
+            padding: 16px 16px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.34);
+            background: linear-gradient(165deg, rgba(8, 12, 24, 0.96), rgba(18, 14, 28, 0.9));
         }
         .trophies-hub-tabs-wrap .fp-kicker {
             margin: 0;
@@ -692,14 +680,16 @@
 <body class="layout-standard mn-no-hypnotic trophies-tema-match trophy-theme-gold">
     <div class="trophies-tema-bg" aria-hidden="true"></div>
 
+    <div class="trophies-page-frame" role="region" aria-label="MasterNoder Trophy Hall">
     <div class="trophies-container">
         <div class="trophies-header">
+            <p class="fp-kicker" style="justify-content:center;gap:10px;"><span>MasterNoder</span><span>Trophy Hall</span></p>
             <h1>🏆 Trophy Collection</h1>
             <div class="trophy-theme-switcher" role="group" aria-label="Trophy page theme">
                 <button type="button" id="trophy-theme-ww2">WW2 War Room</button>
                 <button type="button" id="trophy-theme-gold" class="active">Gold Classic</button>
             </div>
-            <p>Unlock trophies by completing achievements and milestones</p>
+            <p>Easy theme trophies as quick rewards. Tough epic &amp; legendary trophies pay MasterNoder2 (MN2) coins.</p>
         </div>
 
         <!-- Stats -->
@@ -742,16 +732,8 @@
             <button type="button" id="trophy-share-btn" class="trophy-sort" style="cursor:pointer;">📸 Share my trophy card</button>
         </div>
 
-        <!-- Completion ring + rarity breakdown -->
+        <!-- Rarity breakdown (completion progress ring removed) -->
         <div class="trophy-summary">
-            <div class="trophy-ring" id="trophy-ring" title="Overall completion">
-                <svg viewBox="0 0 100 100">
-                    <circle class="ring-bg" cx="50" cy="50" r="45" fill="none" stroke="rgba(255,215,0,0.2)" stroke-width="8"/>
-                    <circle class="ring-fill" id="trophy-ring-fill" cx="50" cy="50" r="45" fill="none" stroke="url(#trophy-ring-gradient)" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" transform="rotate(-90 50 50)"/>
-                    <defs><linearGradient id="trophy-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#00ff88"/></linearGradient></defs>
-                </svg>
-                <div class="trophy-ring-text"><span id="trophy-ring-pct">0</span>%</div>
-            </div>
             <div class="rarity-summary" id="rarity-summary">
                 <span class="rarity-pill common">Common <span class="rp-count" data-rarity="common">0/0</span></span>
                 <span class="rarity-pill rare">Rare <span class="rp-count" data-rarity="rare">0/0</span></span>
@@ -770,50 +752,67 @@
                 <option value="rarity">Rarity</option>
                 <option value="reward">Reward (high→low)</option>
                 <option value="status">Status (unlocked first)</option>
-                <option value="progress">Closest to unlock</option>
             </select>
         </div>
 
-        <!-- Tabs: Table view first, then categories, then extras -->
+        <!-- Grouped tab bars -->
         <section class="trophies-hub-tabs-wrap" aria-label="Trophy sections">
             <p class="fp-kicker"><span>Sections</span><span id="trophies-tab-status">Table</span></p>
-            <h2 class="trophies-hub-heading">Browse trophies &amp; income</h2>
-        <div class="tabs" id="trophies-tabs">
-            <button type="button" class="tab active" data-tab="table">Table</button>
-            <button type="button" class="tab" data-tab="unlocked">Unlocked</button>
-            <button type="button" class="tab" data-tab="locked">Locked</button>
-            <button type="button" class="tab" data-tab="sets">🎯 Sets</button>
-            <button type="button" class="tab" data-tab="quests">📋 Quests</button>
-            <button type="button" class="tab" data-tab="seasonal">🗓️ Seasonal</button>
-            <button type="button" class="tab" data-tab="leaderboard">🏅 Leaderboard</button>
-            <button type="button" class="tab" data-tab="compare">🆚 Compare</button>
-            <button type="button" class="tab" data-tab="activity">📰 Activity</button>
-            <button type="button" class="tab" data-tab="income">💰 Income</button>
-            <select class="tab-category-select" id="tab-category" title="Filter by category">
-                <option value="">All categories</option>
-                <option value="generation">Generation</option>
-                <option value="achievements">Achievements</option>
-                <option value="battle">Battle</option>
-                <option value="points">Points</option>
-                <option value="social">Social</option>
-                <option value="content">Content</option>
-                <option value="milestones">Milestones</option>
-                <option value="special">Special</option>
-            </select>
-            <button type="button" class="tab" data-tab="star-map">Star Map</button>
-            <button type="button" class="tab" data-tab="comm-psych">Comm. Psychology</button>
-            <button type="button" class="tab" data-tab="rulebook">Rulebook</button>
-            <button type="button" class="tab" data-tab="compendium">Compendium V2.1</button>
-            <button type="button" class="tab" data-tab="effect-clusters">Effect Clusters</button>
-            <button type="button" class="tab" data-tab="stories">📜 Stories</button>
-        </div>
-            <p class="trophies-hub-route-note" id="trophies-hub-route-note">Income &amp; MN2 collect live in the 💰 Income tab — shop unlocks stay in Shop.</p>
+            <h2 class="trophies-hub-heading">Browse trophies, themes &amp; MN2 income</h2>
+            <div id="trophies-tabs">
+                <div class="trophies-tabbar" data-tabbar="collection">
+                    <span class="trophies-tabbar-label">Collection</span>
+                    <div class="tabs">
+                        <button type="button" class="tab active" data-tab="table">Table</button>
+                        <button type="button" class="tab" data-tab="unlocked">Unlocked</button>
+                        <button type="button" class="tab" data-tab="locked">Locked</button>
+                        <button type="button" class="tab" data-tab="sets">🎯 Sets</button>
+                        <select class="tab-category-select" id="tab-category" title="Filter by category">
+                            <option value="">All categories</option>
+                            <option value="theme">Theme</option>
+                            <option value="generation">Generation</option>
+                            <option value="achievements">Achievements</option>
+                            <option value="battle">Battle</option>
+                            <option value="points">Points</option>
+                            <option value="social">Social</option>
+                            <option value="content">Content</option>
+                            <option value="milestones">Milestones</option>
+                            <option value="special">Special</option>
+                            <option value="seasonal">Seasonal</option>
+                            <option value="nft">NFT</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="trophies-tabbar" data-tabbar="play">
+                    <span class="trophies-tabbar-label">Play</span>
+                    <div class="tabs">
+                        <button type="button" class="tab" data-tab="quests">📋 Quests</button>
+                        <button type="button" class="tab" data-tab="seasonal">🗓️ Seasonal</button>
+                        <button type="button" class="tab" data-tab="income">💰 Income</button>
+                        <button type="button" class="tab" data-tab="leaderboard">🏅 Leaderboard</button>
+                        <button type="button" class="tab" data-tab="compare">🆚 Compare</button>
+                        <button type="button" class="tab" data-tab="activity">📰 Activity</button>
+                    </div>
+                </div>
+                <div class="trophies-tabbar" data-tabbar="lore">
+                    <span class="trophies-tabbar-label">Lore</span>
+                    <div class="tabs">
+                        <button type="button" class="tab" data-tab="star-map">Star Map</button>
+                        <button type="button" class="tab" data-tab="comm-psych">Comm. Psychology</button>
+                        <button type="button" class="tab" data-tab="rulebook">Rulebook</button>
+                        <button type="button" class="tab" data-tab="compendium">Compendium V2.1</button>
+                        <button type="button" class="tab" data-tab="effect-clusters">Effect Clusters</button>
+                        <button type="button" class="tab" data-tab="stories">📜 Stories</button>
+                    </div>
+                </div>
+            </div>
+            <p class="trophies-hub-route-note" id="trophies-hub-route-note">Theme trophies unlock from simple page actions. Tough epic/legendary trophies pay MN2 coins — collect passive income in 💰 Income.</p>
         </section>
 
         <!-- Main content: table view (same layout as Game / Points tables) -->
         <div class="tab-content active" id="content-table">
             <section class="next-up-section" id="next-up-section" style="display:none;">
-                <h3 class="next-up-title">⏳ Closest to unlocking</h3>
+                <h3 class="next-up-title">⏳ Suggested next trophies</h3>
                 <div class="next-up-grid" id="next-up-grid"></div>
             </section>
             <section class="stats-section">
@@ -869,18 +868,8 @@
             <div class="comm-psych-section">
                 <div class="comm-psych-bg-effects"></div>
                 <h3 class="comm-psych-title">🧠 Communication Psychology — 25 Theories</h3>
-                <div class="comm-psych-progress-wrap">
-                    <div class="comm-psych-ring" id="comm-psych-ring">
-                        <svg viewBox="0 0 100 100">
-                            <circle class="ring-bg" cx="50" cy="50" r="45" fill="none" stroke="rgba(255,215,0,0.2)" stroke-width="8"/>
-                            <circle class="ring-fill" id="comm-psych-ring-fill" cx="50" cy="50" r="45" fill="none" stroke="url(#comm-psych-gradient)" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" transform="rotate(-90 50 50)"/>
-                            <defs><linearGradient id="comm-psych-gradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFD700"/><stop offset="100%" stop-color="#00ff88"/></linearGradient></defs>
-                        </svg>
-                        <div class="comm-psych-ring-text"><span id="comm-psych-count">0</span>/25</div>
-                    </div>
-                    <div class="comm-psych-stats-inline">
-                        <span class="comm-psych-points"><span id="comm-psych-points-val">0</span> Comm-Psych Points</span>
-                    </div>
+                <div class="comm-psych-stats-inline" style="margin-bottom:16px;">
+                    <span class="comm-psych-points"><span id="comm-psych-count">0</span>/25 theories · <span id="comm-psych-points-val">0</span> Comm-Psych Points</span>
                 </div>
                 <div class="comm-psych-grid" id="comm-psych-grid">
                     <div class="loading">Loading theories...</div>
@@ -977,7 +966,6 @@
                 <h3 style="color: var(--trophy-primary); margin-bottom: 8px;">💰 Collector Income</h3>
                 <p style="margin-bottom: 20px; opacity: 0.9;">Your collector level rises with rarity-weighted trophy score. Higher levels generate passive <strong>trophy points</strong> and <strong>MN2</strong> crypto — collect up to 72 hours of income at a time. Unlocking trophies also pays MN2 by rarity.</p>
                 <div id="income-hero" class="income-hero loading">Loading collector level…</div>
-                <div id="income-progress" class="income-progress-wrap" style="display:none;"></div>
                 <button type="button" id="income-collect-btn" class="income-collect-btn" disabled>Collect income</button>
                 <p id="income-meta" style="text-align:center; margin-top:12px; font-size:0.88em; opacity:0.75;"></p>
                 <h4 style="color: var(--trophy-primary); margin: 28px 0 12px;">Level ladder</h4>
@@ -985,6 +973,7 @@
             </div>
         </div>
     </div>
+    </div><!-- /.trophies-page-frame -->
 
     <!-- Trophy detail modal -->
     <div class="trophy-modal-overlay" id="trophy-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="trophy-modal-name">
@@ -1051,24 +1040,58 @@
             return { ratio: Math.max(0, Math.min(1, current / target)), current: current, target: target };
         }
 
-        // Derive progress metrics from /api/points/all + achievements. Best-effort: only
-        // metrics we can reliably know are set; the rest stay unknown (no progress bar).
+        // Tough trophies pay MN2 coins (explicit field, else epic/legendary defaults)
+        function trophyMn2Amount(t) {
+            if (!t) return 0;
+            if (t.mn2_reward != null && t.mn2_reward !== '') {
+                const explicit = Number(t.mn2_reward);
+                if (!isNaN(explicit)) return Math.max(0, explicit);
+            }
+            const rarity = String(t.rarity || 'common').toLowerCase();
+            if (rarity === 'legendary') return 0.25;
+            if (rarity === 'epic') return 0.05;
+            return 0;
+        }
+
+        // Derive progress metrics from /api/points/all + achievements (best-effort proxies).
         function computeUserMetrics(points, achievementsRes, trophyCount) {
             const num = (v) => Number(v) || 0;
             const genPoints = num(points.generation_points);
+            const battlePts = num(points.battle_points);
+            const socialPts = num(points.social_points);
             const buckets = ['generation_points', 'activity_points', 'battle_points', 'quest_points',
                 'game_points', 'social_points', 'knowledge_points', 'crypto_points'];
             const totalPoints = buckets.reduce((s, k) => s + num(points[k]), 0);
             const achievements = num(points.achievements_earned) ||
                 ((achievementsRes && Array.isArray(achievementsRes.achievements))
                     ? achievementsRes.achievements.filter(a => a.unlocked || a.earned).length : 0);
+            const victories = Math.max(num(points.battle_wins), Math.floor(battlePts / 50));
             userMetrics = {
                 generation_points: genPoints,
                 total_points: totalPoints,
-                videos: Math.floor(genPoints / 25),
+                videos: Math.max(Math.floor(genPoints / 25), num(points.videos)),
+                clips: Math.max(Math.floor(genPoints / 10), num(points.clips)),
+                ai_clips: Math.max(Math.floor(genPoints / 20), num(points.ai_clips)),
+                long_videos: Math.max(Math.floor(genPoints / 100), num(points.long_videos)),
+                magic_generate: Math.max(Math.floor(genPoints / 50), num(points.magic_generate)),
+                categories: Math.max(genPoints > 0 ? Math.min(5, Math.floor(genPoints / 200) || 1) : 0, num(points.categories)),
+                images: Math.max(Math.floor(genPoints / 15), num(points.images)),
+                audio: Math.max(Math.floor(genPoints / 30), num(points.audio)),
+                templates: Math.max(Math.floor(genPoints / 40), num(points.templates)),
                 level: num(points.level),
                 trophies: num(trophyCount) || num(points.trophies_collected),
-                achievements: achievements
+                achievements: achievements,
+                battles: Math.max(num(points.battles), victories, Math.floor(battlePts / 25)),
+                victories: victories,
+                win_streak: num(points.win_streak) || num(points.battle_streak),
+                friends: Math.max(num(points.friends_count) || num(points.friends), Math.floor(socialPts / 25)),
+                followers: Math.max(num(points.followers), Math.floor(socialPts / 40)),
+                messages: Math.max(num(points.messages), Math.floor(socialPts / 5)),
+                groups: num(points.groups),
+                logins: Math.max(num(points.logins), totalPoints > 0 ? 1 : 0),
+                login_streak: num(points.login_streak) || num(points.daily_streak),
+                suggestions: num(points.suggestions),
+                helped_users: num(points.helped_users)
             };
         }
 
@@ -1082,7 +1105,8 @@
             el.innerHTML = '<div class="trophy-toast-icon">' + (t.icon || '🏆') + '</div>' +
                 '<div><div class="trophy-toast-title">Trophy unlocked!</div>' +
                 '<div class="trophy-toast-name">' + String(t.name || '').replace(/</g, '&lt;') +
-                (t.reward ? ' · +' + t.reward + ' pts' : '') + '</div></div>';
+                (t.reward ? ' · +' + t.reward + ' pts' : '') +
+                (t.mn2_reward ? ' · +' + t.mn2_reward + ' MN2' : '') + '</div></div>';
             stack.appendChild(el);
             requestAnimationFrame(() => el.classList.add('show'));
             if (legendary && typeof confettiBurst === 'function') { try { confettiBurst(); } catch (_) {} }
@@ -1099,20 +1123,16 @@
             document.getElementById('trophy-modal-icon').textContent = disp.icon;
             document.getElementById('trophy-modal-name').textContent = disp.name;
             document.getElementById('trophy-modal-desc').textContent = disp.description;
-            const prog = trophyProgress(t);
-            let progRow = '';
-            if (!t.unlocked && !t.hidden && prog.ratio != null) {
-                progRow = '<dt>Progress</dt><dd>' + prog.current.toLocaleString() + ' / ' + prog.target.toLocaleString() +
-                    ' (' + Math.round(prog.ratio * 100) + '%)</dd>';
-            }
             const metaEl = document.getElementById('trophy-modal-meta');
+            const mn2 = trophyMn2Amount(t);
+            const rewardLine = '+' + (t.reward || 0) + ' trophy points' +
+                (mn2 > 0 ? ' · +' + formatMn2(mn2) + ' MN2' : '');
             metaEl.innerHTML =
                 '<dt>Status</dt><dd>' + (t.unlocked ? '✅ Unlocked' : '🔒 Locked') + '</dd>' +
                 '<dt>Category</dt><dd>' + esc(t.category || '—') + '</dd>' +
                 '<dt>Rarity</dt><dd class="rarity-' + (t.rarity || 'common') + '">' + esc(t.rarity || 'common') + '</dd>' +
-                '<dt>Reward</dt><dd>+' + (t.reward || 0) + ' trophy points</dd>' +
+                '<dt>Reward</dt><dd>' + rewardLine + '</dd>' +
                 '<dt>Requirement</dt><dd>' + esc(disp.requirement) + '</dd>' +
-                progRow +
                 (t.unlocked_at ? '<dt>Unlocked</dt><dd>' + esc(new Date(t.unlocked_at).toLocaleString()) + '</dd>' : '');
             // Claim + pin buttons for unlocked trophies
             ['trophy-claim-btn', 'trophy-pin-btn'].forEach(function(bid) {
@@ -1186,11 +1206,34 @@
 
         // Server-side unlock wiring (Feature 16): let the backend award everything the user
         // has actually earned, then reflect it on the page. Genuine new unlocks toast immediately.
+        function getThemeClientMetrics() {
+            let m = {};
+            try { m = JSON.parse(localStorage.getItem('trophyThemeMetrics') || '{}') || {}; } catch (_) { m = {}; }
+            const themeUnlocked = (cachedAllTrophies || []).filter(function(t) {
+                return t.unlocked && t.category === 'theme';
+            }).length;
+            m.trophy_page_visits = Math.max(Number(m.trophy_page_visits) || 0, 1);
+            m.theme_trophies = Math.max(Number(m.theme_trophies) || 0, themeUnlocked);
+            m.theme_pages = Math.max(Number(m.theme_pages) || 0, 0);
+            try { localStorage.setItem('trophyThemeMetrics', JSON.stringify(m)); } catch (_) {}
+            return m;
+        }
+        function bumpThemeMetric(key, amount) {
+            let m = {};
+            try { m = JSON.parse(localStorage.getItem('trophyThemeMetrics') || '{}') || {}; } catch (_) { m = {}; }
+            const add = amount == null ? 1 : Number(amount) || 0;
+            m[key] = Math.max(Number(m[key]) || 0, 0) + add;
+            if (key === 'theme_gold' || key === 'theme_ww2' || key === 'trophy_page_visits') {
+                m[key] = Math.max(Number(m[key]) || 0, 1);
+            }
+            try { localStorage.setItem('trophyThemeMetrics', JSON.stringify(m)); } catch (_) {}
+            return m;
+        }
         async function syncTrophies() {
             try {
                 const r = await fetch(`${API_BASE}/trophies/sync`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId })
+                    body: JSON.stringify({ user_id: userId, client_metrics: getThemeClientMetrics() })
                 });
                 if (!r.ok) return null;
                 const d = await r.json();
@@ -1216,13 +1259,15 @@
             if (candidates.length === 0) { section.style.display = 'none'; return; }
             section.style.display = 'block';
             grid.innerHTML = candidates.map(function(x) {
-                const t = x.t, pct = Math.round(x.p.ratio * 100);
+                const t = x.t;
                 const d = displayTrophy(t);
+                const mn2 = trophyMn2Amount(t);
                 return '<div class="next-up-card" data-trophy-id="' + String(t.id) + '">' +
                     '<div class="nu-head"><span class="nu-icon">' + d.icon + '</span><span class="nu-name">' +
                     String(d.name).replace(/</g, '&lt;') + '</span></div>' +
-                    '<div class="trophy-progress-bar"><div class="trophy-progress-fill" style="width:' + pct + '%"></div></div>' +
-                    '<div class="trophy-progress-text">' + x.p.current.toLocaleString() + ' / ' + x.p.target.toLocaleString() + ' (' + pct + '%)</div></div>';
+                    '<div class="trophy-requirement">' + String(d.requirement || '').replace(/</g, '&lt;') + '</div>' +
+                    '<div class="trophy-reward">+' + (t.reward || 0) + ' pts' +
+                    (mn2 > 0 ? ' · +' + formatMn2(mn2) + ' MN2' : '') + '</div></div>';
             }).join('');
             grid.querySelectorAll('.next-up-card').forEach(function(card) {
                 card.addEventListener('click', function() { openTrophyModal(card.getAttribute('data-trophy-id')); });
@@ -1257,9 +1302,7 @@
                         '<span class="set-name">' + String(s.name || s.id).replace(/</g, '&lt;') + '</span>' +
                         '<span class="set-bonus">' + (complete ? '✅ +' : 'Bonus +') + (s.bonus || 0) + '</span></div>' +
                         '<div style="opacity:0.85;">' + String(s.description || '').replace(/</g, '&lt;') + '</div>' +
-                        '<div class="trophy-progress-bar" style="margin-top:12px;"><div class="trophy-progress-fill" style="width:' +
-                        (members.length ? Math.round(done / members.length * 100) : 0) + '%"></div></div>' +
-                        '<div class="trophy-progress-text">' + done + ' / ' + members.length + ' unlocked</div>' +
+                        '<div style="margin-top:10px;opacity:0.8;">' + done + ' / ' + members.length + ' unlocked</div>' +
                         '<div class="set-members">' + memberHtml + '</div></div>';
                 }).join('');
                 grid.querySelectorAll('.set-member[data-trophy-id]').forEach(function(el) {
@@ -1280,14 +1323,12 @@
                 const quests = (d && d.quests) || [];
                 if (!quests.length) { el.innerHTML = '<div class="info-message">No quests right now.</div>'; return; }
                 el.innerHTML = quests.map(function(q) {
-                    const pct = q.target ? Math.round(Math.min(1, (q.progress || 0) / q.target) * 100) : 0;
                     const canClaim = q.complete && !q.claimed;
                     const mn2 = q.mn2_reward ? ' · +' + q.mn2_reward + ' MN2' : '';
                     return '<div class="quest-card ' + (q.complete ? 'complete' : '') + '">' +
                         '<span class="quest-scope">' + (q.scope || q.source || '') + '</span>' +
                         '<div class="quest-body"><div class="quest-title">' + String(q.title || '').replace(/</g, '&lt;') +
                         (q.complete ? ' ✅' : '') + '</div>' +
-                        '<div class="trophy-progress-bar" style="margin-top:8px;"><div class="trophy-progress-fill" style="width:' + pct + '%"></div></div>' +
                         '<div class="quest-meta">' + (q.progress || 0) + ' / ' + q.target + mn2 +
                         (q.expires ? ' · resets ' + q.expires : '') + '</div></div>' +
                         '<span class="quest-reward">+' + (q.reward || 0) + '</span>' +
@@ -1334,20 +1375,14 @@
                 } else if (until) {
                     countdown = '⏳ ' + Math.ceil((until - now) / dayMs) + ' days left';
                 }
-                const prog = trophyProgress(t);
-                let progHtml = '';
-                if (!t.unlocked && prog.ratio != null) {
-                    progHtml = '<div class="trophy-progress-bar" style="margin-top:10px;"><div class="trophy-progress-fill" style="width:' +
-                        Math.round(prog.ratio * 100) + '%"></div></div><div class="trophy-progress-text">' +
-                        prog.current.toLocaleString() + ' / ' + prog.target.toLocaleString() + '</div>';
-                }
+                const mn2 = trophyMn2Amount(t);
                 return '<div class="seasonal-card ' + state + (t.unlocked ? ' active' : '') + '" data-trophy-id="' + String(t.id) + '">' +
                     '<span class="seasonal-badge ' + state + '">' + (t.unlocked ? 'Unlocked' : badge) + '</span>' +
                     '<div style="font-size:2.4em;">' + (t.icon || '🏆') + '</div>' +
                     '<div class="trophy-name" style="margin:6px 0;">' + String(t.name || t.id).replace(/</g, '&lt;') + '</div>' +
                     '<div style="opacity:0.85;">' + String(t.description || '').replace(/</g, '&lt;') + '</div>' +
-                    '<div class="trophy-reward" style="margin-top:8px;">+' + (t.reward || 0) + ' pts</div>' +
-                    progHtml +
+                    '<div class="trophy-reward" style="margin-top:8px;">+' + (t.reward || 0) + ' pts' +
+                    (mn2 > 0 ? ' · +' + formatMn2(mn2) + ' MN2' : '') + '</div>' +
                     (countdown ? '<div class="seasonal-countdown">' + countdown + '</div>' : '') + '</div>';
             }).join('');
             grid.querySelectorAll('.seasonal-card[data-trophy-id]').forEach(function(card) {
@@ -1508,7 +1543,6 @@
         async function loadIncome() {
             const hero = document.getElementById('income-hero');
             const ladder = document.getElementById('income-ladder');
-            const prog = document.getElementById('income-progress');
             const meta = document.getElementById('income-meta');
             const btn = document.getElementById('income-collect-btn');
             if (!hero || !ladder) return;
@@ -1535,16 +1569,10 @@
                 '<div class="income-pending-val" style="font-size:1.3em;margin-top:4px;">+' + formatMn2(d.pending_income_mn2) + ' MN2</div>' +
                 '<div class="income-pending-lbl">pending' + (d.cap_reached ? ' (cap reached)' : '') + '</div></div>';
 
-            if (prog && d.next_level) {
-                prog.style.display = 'block';
-                prog.innerHTML =
-                    '<div style="display:flex;justify-content:space-between;font-size:0.9em;margin-bottom:6px;">' +
-                    '<span>Progress to Level ' + d.next_level.level + ' (' + esc(d.next_level.name) + ')</span>' +
-                    '<span>' + (d.next_level.score_needed || 0).toLocaleString() + ' score needed</span></div>' +
-                    '<div class="income-progress-bar"><div class="income-progress-fill" style="width:' + (d.next_level.progress_pct || 0) + '%"></div></div>';
-            } else if (prog) {
-                prog.style.display = 'none';
-            }
+            const nextLevelNote = d.next_level
+                ? (' · Next Lv ' + d.next_level.level + ' ' + esc(d.next_level.name) + ' (' +
+                   (d.next_level.score_needed || 0).toLocaleString() + ' score needed)')
+                : '';
 
             if (btn) {
                 const pending = parseFloat(d.pending_income || 0);
@@ -1557,7 +1585,7 @@
             if (meta) {
                 meta.textContent = 'Lifetime: ' + (d.lifetime_collected || 0).toLocaleString() + ' pts · ' +
                     formatMn2(d.lifetime_collected_mn2) + ' MN2 · cap: ' + (d.max_accrual_hours || 72) + 'h · last: ' +
-                    (d.last_collect_at ? new Date(d.last_collect_at).toLocaleString() : '—');
+                    (d.last_collect_at ? new Date(d.last_collect_at).toLocaleString() : '—') + nextLevelNote;
             }
 
             const unlockMn2 = d.unlock_mn2_by_rarity || {};
@@ -2369,6 +2397,14 @@
                 {id: 'suggestion_master', name: 'Suggestion Master', description: 'Submit 10 suggestions', icon: '💡', reward: 400, requirement: '10 suggestions', rarity: 'common'},
                 {id: 'community_helper', name: 'Community Helper', description: 'Help 10 users', icon: '🤝', reward: 500, requirement: 'Help 10 users', rarity: 'rare'},
                 {id: 'content_moderator', name: 'Content Moderator', description: 'Moderate content', icon: '🛡️', reward: 1000, requirement: 'Moderation', rarity: 'epic'},
+            ],
+            theme: [
+                {id: 'theme_first_visit', name: 'Hall of Fame Visitor', description: 'Open the trophies hall once — easiest theme reward.', icon: '🏛️', reward: 25, requirement: 'Visit the trophies page', rarity: 'common', mn2_reward: 0},
+                {id: 'theme_gold_classic', name: 'Gold Classic', description: 'Apply the Gold Classic page theme.', icon: '✨', reward: 40, requirement: 'Select Gold Classic theme', rarity: 'common', mn2_reward: 0},
+                {id: 'theme_ww2_room', name: 'War Room Style', description: 'Apply the WW2 War Room page theme.', icon: '🎖️', reward: 40, requirement: 'Select WW2 War Room theme', rarity: 'common', mn2_reward: 0},
+                {id: 'theme_hopper', name: 'Theme Hopper', description: 'Switch the trophies page theme twice.', icon: '🔄', reward: 60, requirement: 'Switch themes 2 times', rarity: 'common', mn2_reward: 0},
+                {id: 'theme_set_complete', name: 'Theme Curator', description: 'Unlock three theme trophies.', icon: '🖼️', reward: 100, requirement: 'Earn 3 theme trophies', rarity: 'rare', mn2_reward: 0},
+                {id: 'theme_browse_tabs', name: 'Tab Tourist', description: 'Open three different trophy section tabs.', icon: '📑', reward: 35, requirement: 'Visit 3 trophy tabs', rarity: 'common', mn2_reward: 0},
             ]
         };
 
@@ -2429,18 +2465,8 @@
             try { renderNextUp(); } catch (_) {}
         }
 
-        // Completion ring + per-rarity breakdown
+        // Per-rarity breakdown (completion progress ring removed)
         function updateSummary(allTrophies, unlockedCount) {
-            const total = allTrophies.length || 0;
-            const unlocked = unlockedCount != null ? unlockedCount : allTrophies.filter(t => t.unlocked).length;
-            const pct = total ? Math.round((unlocked / total) * 100) : 0;
-            const fill = document.getElementById('trophy-ring-fill');
-            const pctEl = document.getElementById('trophy-ring-pct');
-            if (fill) {
-                const circ = 2 * Math.PI * 45;
-                fill.setAttribute('stroke-dashoffset', String(Math.max(0, circ - (pct / 100) * circ)));
-            }
-            if (pctEl) pctEl.textContent = String(pct);
             const scoreEl = document.getElementById('trophy-score');
             if (scoreEl) scoreEl.textContent = computeTrophyScore(allTrophies).toLocaleString();
             ['common', 'rare', 'epic', 'legendary'].forEach(function(r) {
@@ -2480,6 +2506,7 @@
                     rarity: d.rarity || 'common',
                     progress_metric: d.progress_metric || null,
                     progress_target: d.progress_target != null ? d.progress_target : null,
+                    mn2_reward: d.mn2_reward != null ? d.mn2_reward : null,
                     unlocked: earned.has(String(d.id))
                 };
             }).filter(Boolean);
@@ -2590,14 +2617,10 @@
             tbody.innerHTML = filtered.map(t => {
                 const disp = displayTrophy(t);
                 const status = t.unlocked ? '<span class="badge unlocked">Unlocked</span>' : '<span class="badge locked">Locked</span>';
-                let reqHtml = esc(disp.requirement);
-                const prog = trophyProgress(t);
-                if (!t.unlocked && !t.hidden && prog.ratio != null) {
-                    const pct = Math.round(prog.ratio * 100);
-                    reqHtml += '<div class="trophy-progress">' +
-                        '<div class="trophy-progress-bar"><div class="trophy-progress-fill" style="width:' + pct + '%"></div></div>' +
-                        '<div class="trophy-progress-text">' + prog.current.toLocaleString() + ' / ' + prog.target.toLocaleString() + '</div></div>';
-                }
+                const reqHtml = esc(disp.requirement);
+                const mn2 = trophyMn2Amount(t);
+                const rewardCell = (t.unlocked ? '+' : '') + safe(t.reward, 0) +
+                    (mn2 > 0 ? '<div style="font-size:0.8em;color:var(--trophy-success);">+' + formatMn2(mn2) + ' MN2</div>' : '');
                 const aria = (t.unlocked ? 'Unlocked' : 'Locked') + ' trophy ' + esc(safe(disp.name, '')) + '. Activate for details.';
                 return '<tr data-trophy-id="' + esc(t.id || '') + '" tabindex="0" role="button" aria-label="' + aria + '">' +
                     check(t.unlocked) +
@@ -2605,7 +2628,7 @@
                     '<td class="col-name">' + esc(safe(disp.name, '—')) + '</td>' +
                     '<td>' + esc(safe(t.category, '—')) + '</td>' +
                     '<td>' + status + '</td>' +
-                    '<td>' + (t.unlocked ? '+' : '') + safe(t.reward, 0) + '</td>' +
+                    '<td>' + rewardCell + '</td>' +
                     '<td>' + reqHtml + '</td>' +
                     '<td class="' + rarityCls(t.rarity) + '">' + safe(rarityClass(t.rarity), 'common') + '</td>' +
                     '</tr>';
@@ -2746,12 +2769,21 @@
     document.addEventListener('DOMContentLoaded', function() {
         var ww2 = document.getElementById('trophy-theme-ww2');
         var gold = document.getElementById('trophy-theme-gold');
-        function setTrophyPageTheme(name) {
+        function setTrophyPageTheme(name, fromUser) {
             document.body.classList.remove('trophy-theme-ww2', 'trophy-theme-gold');
             document.body.classList.add(name === 'gold' ? 'trophy-theme-gold' : 'trophy-theme-ww2');
             if (ww2) ww2.classList.toggle('active', name !== 'gold');
             if (gold) gold.classList.toggle('active', name === 'gold');
             try { localStorage.setItem('trophy_page_theme', name); } catch (e) {}
+            if (fromUser && typeof bumpThemeMetric === 'function') {
+                bumpThemeMetric(name === 'gold' ? 'theme_gold' : 'theme_ww2', 1);
+                bumpThemeMetric('theme_switches', 1);
+                if (typeof syncTrophies === 'function') {
+                    syncTrophies().then(function() {
+                        if (typeof loadTrophies === 'function') loadTrophies();
+                    });
+                }
+            }
         }
         try {
             var saved = localStorage.getItem('trophy_page_theme');
@@ -2760,8 +2792,27 @@
         } catch (e) {
             setTrophyPageTheme('gold');
         }
-        if (ww2) ww2.addEventListener('click', function() { setTrophyPageTheme('ww2'); });
-        if (gold) gold.addEventListener('click', function() { setTrophyPageTheme('gold'); });
+        if (ww2) ww2.addEventListener('click', function() { setTrophyPageTheme('ww2', true); });
+        if (gold) gold.addEventListener('click', function() { setTrophyPageTheme('gold', true); });
+        try {
+            if (typeof bumpThemeMetric === 'function') {
+                bumpThemeMetric('trophy_page_visits', 1);
+                var tabsRoot = document.getElementById('trophies-tabs');
+                if (tabsRoot) {
+                    tabsRoot.addEventListener('click', function(ev) {
+                        var btn = ev.target && ev.target.closest ? ev.target.closest('button.tab[data-tab]') : null;
+                        if (!btn) return;
+                        var seen = {};
+                        try { seen = JSON.parse(localStorage.getItem('trophyThemeTabsSeen') || '{}') || {}; } catch (_) {}
+                        seen[btn.getAttribute('data-tab')] = true;
+                        try { localStorage.setItem('trophyThemeTabsSeen', JSON.stringify(seen)); } catch (_) {}
+                        var m = bumpThemeMetric('theme_pages', 0);
+                        m.theme_pages = Math.max(Number(m.theme_pages) || 0, Object.keys(seen).length);
+                        try { localStorage.setItem('trophyThemeMetrics', JSON.stringify(m)); } catch (_) {}
+                    });
+                }
+            }
+        } catch (e) {}
         if (document.getElementById('intelligence-panels') && window.IntelligenceWidget) {
             window.IntelligenceWidget.load({ panelsSelector: 'intelligence-panels', loadingSelector: '.intel-loading' });
         }

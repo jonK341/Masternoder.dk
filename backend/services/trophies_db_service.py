@@ -2,6 +2,8 @@
 Trophies Database Service
 Read/write trophy_definitions and user_trophy_unlocks. Safe when migration not run.
 """
+import json
+import os
 from typing import List, Dict, Any, Optional
 from sqlalchemy import text, inspect
 
@@ -9,6 +11,21 @@ from sqlalchemy import text, inspect
 def _get_db():
     from src.db.models import db
     return db
+
+
+def _definition_for_id(trophy_id: str) -> Dict[str, Any]:
+    """Load one trophy definition from the JSON source of truth (no route import)."""
+    try:
+        base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        path = os.path.join(base, 'data', 'trophy_definitions.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        for t in (data.get('trophies') or []):
+            if str(t.get('id')) == str(trophy_id):
+                return dict(t)
+    except Exception:
+        pass
+    return {'id': trophy_id}
 
 
 def trophies_tables_exist() -> bool:
@@ -36,7 +53,11 @@ def get_trophy_definitions() -> List[Dict[str, Any]]:
 
 
 def get_user_trophies(user_id: str) -> List[Dict[str, Any]]:
-    """Trophies unlocked by user (with definition joined)."""
+    """Trophies unlocked by user (with definition joined when available).
+
+    Falls back to unlock rows alone when ``trophy_definitions`` is empty so JSON-only
+    definitions still count as owned for sync/eligibility.
+    """
     if not trophies_tables_exist():
         return []
     try:
@@ -51,20 +72,42 @@ def get_user_trophies(user_id: str) -> List[Dict[str, Any]]:
             """),
             {'user_id': user_id}
         ).fetchall()
-        return [
-            {
-                'id': r.id, 'name': r.name, 'description': r.description or '', 'category': r.category or '',
-                'icon': r.icon or '🏆', 'rarity': r.rarity or 'common',
+        if rows:
+            return [
+                {
+                    'id': r.id, 'name': r.name, 'description': r.description or '', 'category': r.category or '',
+                    'icon': r.icon or '🏆', 'rarity': r.rarity or 'common',
+                    'unlocked_at': r.unlocked_at.isoformat() if hasattr(r.unlocked_at, 'isoformat') else str(r.unlocked_at),
+                }
+                for r in rows
+            ]
+        # No join hits (definitions table empty) — still return unlock ids from JSON metadata.
+        unlock_rows = db.session.execute(
+            text("""
+                SELECT trophy_id, unlocked_at FROM user_trophy_unlocks
+                WHERE user_id = :user_id ORDER BY unlocked_at DESC
+            """),
+            {'user_id': user_id}
+        ).fetchall()
+        out = []
+        for r in unlock_rows:
+            defn = _definition_for_id(str(r.trophy_id))
+            out.append({
+                'id': r.trophy_id,
+                'name': defn.get('name') or r.trophy_id,
+                'description': defn.get('description') or '',
+                'category': defn.get('category') or '',
+                'icon': defn.get('icon') or '🏆',
+                'rarity': defn.get('rarity') or 'common',
                 'unlocked_at': r.unlocked_at.isoformat() if hasattr(r.unlocked_at, 'isoformat') else str(r.unlocked_at),
-            }
-            for r in rows
-        ]
+            })
+        return out
     except Exception:
         return []
 
 
 def award_trophy(user_id: str, trophy_id: str, reward: Optional[float] = None) -> bool:
-    """Record trophy unlock and add trophy_points to unified points DB. Returns True if recorded or already owned."""
+    """Record trophy unlock and add trophy_points / MN2. Returns True only on a new unlock."""
     if not trophies_tables_exist():
         return False
     try:
@@ -90,6 +133,15 @@ def award_trophy(user_id: str, trophy_id: str, reward: Optional[float] = None) -
                     )
             except Exception:
                 pass
+            # Tough trophies (epic/legendary, or explicit mn2_reward) pay MasterNoder2 coins.
+            try:
+                from backend.services.trophy_level_service import credit_trophy_unlock_mn2
+                defn = _definition_for_id(str(trophy_id))
+                if reward is not None and 'reward' not in defn:
+                    defn['reward'] = reward
+                credit_trophy_unlock_mn2(user_id, defn, str(trophy_id))
+            except Exception:
+                pass
             try:
                 from backend.services.user_engagement import on_trophy_unlocked
                 on_trophy_unlocked(user_id)
@@ -100,7 +152,7 @@ def award_trophy(user_id: str, trophy_id: str, reward: Optional[float] = None) -
             unified_points_sync_device.record_domain_sync('trophies')
         except Exception:
             pass
-        return True
+        return newly_unlocked
     except Exception:
         try:
             _get_db().session.rollback()

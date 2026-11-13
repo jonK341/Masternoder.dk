@@ -328,11 +328,19 @@ def collect_income(user_id: str) -> Dict[str, Any]:
 
 
 def trophy_unlock_mn2_amount(user_id: str, defn: Dict[str, Any]) -> float:
-    """MN2 for a trophy unlock: explicit mn2_reward, else rarity table × collector bonus."""
+    """MN2 for a trophy unlock: explicit mn2_reward, else rarity table × collector bonus.
+
+    Tough trophies (epic / legendary) are the intended MN2 coin rewards. Easy / theme
+    trophies stay on trophy_points unless they set an explicit mn2_reward.
+    """
     explicit = defn.get('mn2_reward')
     if explicit is not None:
         base = float(explicit or 0)
     else:
+        rarity = str(defn.get('rarity') or 'common').lower()
+        # Common/rare theme & starter trophies do not mint MN2 by default.
+        if rarity in ('common', 'rare') and str(defn.get('category') or '').lower() == 'theme':
+            return 0.0
         base = unlock_mn2_for_rarity(defn.get('rarity'))
     if base <= 0:
         return 0.0

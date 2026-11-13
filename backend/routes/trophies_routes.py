@@ -127,25 +127,91 @@ def _admin_authorized() -> bool:
 def compute_user_metrics(user_id: str) -> dict:
     """Server-side progress metrics from the unified points DB (mirrors the frontend).
 
-    Best-effort: only metrics we can reliably derive are populated.
+    Best-effort: populate as many trophy ``progress_metric`` keys as we can derive so
+    sync can auto-award easier milestone trophies without waiting on sparse event hooks.
     """
-    metrics = {'generation_points': 0, 'total_points': 0, 'videos': 0,
-               'level': 0, 'trophies': 0, 'achievements': 0}
+    metrics = {
+        'generation_points': 0, 'total_points': 0, 'videos': 0, 'clips': 0,
+        'ai_clips': 0, 'long_videos': 0, 'magic_generate': 0, 'categories': 0,
+        'images': 0, 'audio': 0, 'templates': 0,
+        'level': 0, 'trophies': 0, 'achievements': 0,
+        'battles': 0, 'victories': 0, 'win_streak': 0,
+        'friends': 0, 'followers': 0, 'messages': 0, 'groups': 0,
+        'logins': 0, 'login_streak': 0, 'suggestions': 0, 'helped_users': 0,
+    }
     try:
         from backend.services.unified_points_database import unified_points_db
         if unified_points_db and hasattr(unified_points_db, 'get_all_points'):
             res = unified_points_db.get_all_points(user_id) or {}
             points = res.get('points', res) if isinstance(res, dict) else {}
-            num = lambda k: float(points.get(k, 0) or 0)
+            systems = points.get('systems') if isinstance(points.get('systems'), dict) else {}
+
+            def num(*keys):
+                best = 0.0
+                for k in keys:
+                    try:
+                        best = max(best, float(points.get(k, 0) or 0))
+                        best = max(best, float(systems.get(k, 0) or 0))
+                    except (TypeError, ValueError):
+                        continue
+                return best
+
             gen = num('generation_points')
-            buckets = ['generation_points', 'activity_points', 'battle_points', 'quest_points',
-                       'game_points', 'social_points', 'knowledge_points', 'crypto_points']
+            buckets = [
+                'generation_points', 'activity_points', 'battle_points', 'quest_points',
+                'game_points', 'social_points', 'knowledge_points', 'crypto_points',
+            ]
+            battle_pts = num('battle_points')
+            social_pts = num('social_points')
             metrics['generation_points'] = gen
             metrics['total_points'] = sum(num(b) for b in buckets)
-            metrics['videos'] = int(gen / 25)
+            # Generation proxies (same ratios the page historically used)
+            metrics['videos'] = max(int(gen / 25), int(num('videos', 'video_count')))
+            metrics['clips'] = max(int(gen / 10), int(num('clips', 'clip_count')))
+            metrics['ai_clips'] = max(int(gen / 20), int(num('ai_clips')))
+            metrics['long_videos'] = max(int(gen / 100), int(num('long_videos')))
+            metrics['magic_generate'] = max(int(gen / 50), int(num('magic_generate')))
+            metrics['categories'] = max(min(5, int(gen / 200) or (1 if gen > 0 else 0)), int(num('categories')))
+            metrics['images'] = max(int(gen / 15), int(num('images', 'image_count')))
+            metrics['audio'] = max(int(gen / 30), int(num('audio', 'audio_count')))
+            metrics['templates'] = max(int(gen / 40), int(num('templates', 'template_uses')))
             metrics['level'] = num('level')
-            metrics['achievements'] = num('achievements_earned')
-            metrics['trophies'] = num('trophies_collected')
+            metrics['achievements'] = num('achievements_earned', 'achievements')
+            metrics['trophies'] = num('trophies_collected', 'trophies')
+            # Battle / social proxies from point buckets + explicit counters when present
+            victories = max(int(num('battle_wins', 'victories')), int(battle_pts / 50))
+            metrics['victories'] = victories
+            metrics['battles'] = max(int(num('battles', 'battle_count')), victories, int(battle_pts / 25))
+            metrics['win_streak'] = int(num('win_streak', 'battle_streak'))
+            metrics['friends'] = max(int(num('friends', 'friends_count')), int(social_pts / 25))
+            metrics['followers'] = max(int(num('followers', 'follower_count')), int(social_pts / 40))
+            metrics['messages'] = max(int(num('messages', 'message_count')), int(social_pts / 5))
+            metrics['groups'] = int(num('groups', 'group_count'))
+            metrics['logins'] = max(int(num('logins', 'login_count')), 1 if metrics['total_points'] > 0 else 0)
+            metrics['login_streak'] = int(num('login_streak', 'daily_streak'))
+            metrics['suggestions'] = int(num('suggestions'))
+            metrics['helped_users'] = int(num('helped_users'))
+    except Exception:
+        pass
+    # Live social counts when the social service is available
+    try:
+        from backend.services.social_system import social_system
+        if social_system and hasattr(social_system, 'get_social_stats'):
+            stats = social_system.get_social_stats(user_id) or {}
+            metrics['friends'] = max(int(metrics.get('friends', 0) or 0), int(stats.get('friends_count') or 0))
+            metrics['followers'] = max(int(metrics.get('followers', 0) or 0), int(stats.get('followers_count') or 0))
+            metrics['messages'] = max(int(metrics.get('messages', 0) or 0), int(stats.get('messages_count') or 0))
+            metrics['groups'] = max(int(metrics.get('groups', 0) or 0), int(stats.get('groups_count') or 0))
+    except Exception:
+        pass
+    # Live battle wins when quick-battle stats exist
+    try:
+        from backend.services.quick_battle_system import quick_battle_system
+        if quick_battle_system and hasattr(quick_battle_system, 'get_user_battle_stats'):
+            bstats = quick_battle_system.get_user_battle_stats(user_id) or {}
+            metrics['victories'] = max(int(metrics.get('victories', 0) or 0), int(bstats.get('wins') or bstats.get('victories') or 0))
+            metrics['battles'] = max(int(metrics.get('battles', 0) or 0), int(bstats.get('battles') or bstats.get('total') or 0))
+            metrics['win_streak'] = max(int(metrics.get('win_streak', 0) or 0), int(bstats.get('win_streak') or bstats.get('streak') or 0))
     except Exception:
         pass
     # Trophy count from DB unlocks (authoritative when available)
@@ -457,10 +523,28 @@ def sync_trophies_api():
     trophies that have met their target (and are currently available), and returns the
     newly unlocked trophies plus the current metrics. Idempotent: re-running awards nothing
     new. Replaces client-side guessing about what should be unlocked.
+
+    Optional JSON body ``client_metrics`` merges soft theme/page counters (whitelisted)
+    so easy theme trophies can unlock from simple UI actions.
     """
     try:
         user_id = _resolve_uid()
         metrics = compute_user_metrics(user_id)
+        data = request.get_json(silent=True) or {}
+        client_metrics = data.get('client_metrics') if isinstance(data, dict) else None
+        if isinstance(client_metrics, dict):
+            allowed = {
+                'trophy_page_visits', 'theme_gold', 'theme_ww2',
+                'theme_switches', 'theme_trophies', 'theme_pages',
+            }
+            for key, raw in client_metrics.items():
+                if key not in allowed:
+                    continue
+                try:
+                    val = float(raw or 0)
+                except (TypeError, ValueError):
+                    continue
+                metrics[key] = max(float(metrics.get(key, 0) or 0), val)
         # Currently unlocked ids (DB)
         already = set()
         try:
@@ -470,18 +554,41 @@ def sync_trophies_api():
             pass
         defs = _definitions_by_id()
         newly = []
-        for tid in eligible_trophy_ids(metrics, already):
-            reward = defs.get(tid, {}).get('reward')
-            recorded = False
-            try:
-                from backend.services.trophies_db_service import award_trophy
-                recorded = award_trophy(user_id, tid, reward=reward)
-            except Exception:
-                pass
-            if recorded:
-                newly.append({'id': tid, 'name': defs.get(tid, {}).get('name', tid), 'reward': reward,
-                              'rarity': defs.get(tid, {}).get('rarity', 'common'),
-                              'icon': defs.get(tid, {}).get('icon', '🏆')})
+
+        def _award_eligible(owned):
+            added = []
+            for tid in eligible_trophy_ids(metrics, owned):
+                defn = defs.get(tid, {}) or {}
+                reward = defn.get('reward')
+                recorded = False
+                try:
+                    from backend.services.trophies_db_service import award_trophy
+                    recorded = award_trophy(user_id, tid, reward=reward)
+                except Exception:
+                    pass
+                if recorded:
+                    owned.add(tid)
+                    entry = {
+                        'id': tid,
+                        'name': defn.get('name', tid),
+                        'reward': reward,
+                        'rarity': defn.get('rarity', 'common'),
+                        'icon': defn.get('icon', '🏆'),
+                        'category': defn.get('category'),
+                    }
+                    try:
+                        from backend.services.trophy_level_service import trophy_unlock_mn2_amount
+                        entry['mn2_reward'] = trophy_unlock_mn2_amount(user_id, defn)
+                    except Exception:
+                        entry['mn2_reward'] = float(defn.get('mn2_reward') or 0)
+                    added.append(entry)
+            return added
+
+        newly.extend(_award_eligible(already))
+        # Theme curator depends on other theme unlocks — refresh count and pass again.
+        theme_owned = sum(1 for tid in already if (defs.get(tid) or {}).get('category') == 'theme')
+        metrics['theme_trophies'] = max(float(metrics.get('theme_trophies', 0) or 0), float(theme_owned))
+        newly.extend(_award_eligible(already))
         return jsonify({
             'success': True,
             'user_id': user_id,
@@ -528,6 +635,14 @@ def claim_trophy_api():
             recorded = award_trophy(user_id, trophy_id, reward=reward)
         except Exception:
             pass
+        mn2_info = {'mn2_reward': 0, 'credited_mn2': False, 'crypto_currency': 'MN2'}
+        try:
+            from backend.services.trophy_level_service import trophy_unlock_mn2_amount
+            # MN2 is credited inside award_trophy on first unlock; report the amount for UI.
+            mn2_info['mn2_reward'] = trophy_unlock_mn2_amount(user_id, defn)
+            mn2_info['credited_mn2'] = bool(recorded and not already_owned and mn2_info['mn2_reward'] > 0)
+        except Exception:
+            mn2_info['mn2_reward'] = float(defn.get('mn2_reward') or 0)
         return jsonify({
             'success': True,
             'user_id': user_id,
@@ -535,7 +650,34 @@ def claim_trophy_api():
             'reward': reward,
             'recorded': recorded,
             'already_owned': already_owned,
+            **mn2_info,
         }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@trophies_bp.route('/api/trophies/level')
+@trophies_bp.route('/api/trophie/level')
+def trophy_level_api():
+    """Collector level + pending trophy_points/MN2 income for the Income tab."""
+    try:
+        user_id = _resolve_uid()
+        from backend.services.trophy_level_service import get_level_status
+        status = get_level_status(user_id)
+        return jsonify({'success': True, **status}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@trophies_bp.route('/api/trophies/level/collect', methods=['POST'])
+@trophies_bp.route('/api/trophie/level/collect', methods=['POST'])
+def trophy_level_collect_api():
+    """Collect accrued collector income (trophy_points + MN2)."""
+    try:
+        user_id = _resolve_uid()
+        from backend.services.trophy_level_service import collect_income
+        result = collect_income(user_id)
+        return jsonify(result if isinstance(result, dict) else {'success': True, 'result': result}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -543,65 +685,43 @@ def claim_trophy_api():
 @trophies_bp.route('/api/trophies/quests')
 @trophies_bp.route('/api/trophie/quests')
 def trophy_quests_api():
-    """Daily and weekly trophy quests (Feature 10).
+    """Daily/weekly trophy quests (Feature 10) via trophy_quest_service.
 
-    Deterministically picks objectives from trophy categories seeded by the date so all
-    users see the same rotation, and marks completion against the user's unlocked trophies.
+    Includes mn2_reward + claimed flags so the Quests tab claim button works.
     """
     try:
-        import hashlib
-        from datetime import date, timedelta
         user_id = _resolve_uid()
-        defs = _definitions_by_id()
-        # Group non-seasonal, non-hidden trophies by category
-        by_cat = {}
-        for tid, d in defs.items():
-            if d.get('hidden') or d.get('category') == 'seasonal':
-                continue
-            by_cat.setdefault(d.get('category', 'special'), []).append(tid)
-        cats = sorted(by_cat.keys())
+        from backend.services.trophy_quest_service import get_unified_quests
+        payload = get_unified_quests(user_id)
+        if not isinstance(payload, dict):
+            payload = {'success': True, 'quests': []}
+        # Prefer trophy-scoped quests for this page; fall back to full unified list.
+        quests = payload.get('trophy_quests') or payload.get('quests') or []
+        return jsonify({
+            'success': True,
+            'user_id': user_id,
+            'quests': quests,
+            'date': payload.get('date'),
+            'claim_streak': payload.get('claim_streak'),
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-        already = set()
-        try:
-            from backend.services.trophies_db_service import get_user_trophies
-            already = {str(t.get('id')) for t in (get_user_trophies(user_id) or [])}
-        except Exception:
-            pass
 
-        def seeded_index(seed_str, modulo):
-            h = int(hashlib.sha256(seed_str.encode('utf-8')).hexdigest(), 16)
-            return h % max(1, modulo)
-
-        def make_quest(seed_str, scope, expires_iso):
-            if not cats:
-                return None
-            cat = cats[seeded_index(seed_str + ':cat', len(cats))]
-            members = sorted(by_cat[cat])
-            completed = sum(1 for m in members if m in already)
-            return {
-                'id': scope + '_' + seed_str,
-                'scope': scope,
-                'category': cat,
-                'title': ('Daily' if scope == 'daily' else 'Weekly') + ': unlock a ' + cat + ' trophy',
-                'target': 1 if scope == 'daily' else 3,
-                'progress': completed,
-                'complete': completed >= (1 if scope == 'daily' else 3),
-                'reward': 100 if scope == 'daily' else 500,
-                'expires': expires_iso,
-            }
-
-        today = date.today()
-        # Weekly window starts Monday
-        week_start = today - timedelta(days=today.weekday())
-        week_end = week_start + timedelta(days=7)
-        quests = []
-        dq = make_quest(today.isoformat(), 'daily', (today + timedelta(days=1)).isoformat())
-        wq = make_quest(week_start.isoformat(), 'weekly', week_end.isoformat())
-        if dq:
-            quests.append(dq)
-        if wq:
-            quests.append(wq)
-        return jsonify({'success': True, 'user_id': user_id, 'quests': quests, 'date': today.isoformat()}), 200
+@trophies_bp.route('/api/trophies/quests/claim', methods=['POST'])
+@trophies_bp.route('/api/trophie/quests/claim', methods=['POST'])
+def trophy_quests_claim_api():
+    """Claim a completed trophy quest (trophy_points + MN2)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_uid()
+        quest_id = str(data.get('quest_id') or request.args.get('quest_id') or '').strip()
+        if not quest_id:
+            return jsonify({'success': False, 'error': 'quest_id is required'}), 400
+        from backend.services.trophy_quest_service import claim_quest
+        result = claim_quest(user_id, quest_id)
+        status = 200 if (isinstance(result, dict) and result.get('success')) else 400
+        return jsonify(result if isinstance(result, dict) else {'success': False}), status
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

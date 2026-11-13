@@ -5,10 +5,10 @@
   "max_accrual_hours": 72,
   "crypto_currency": "MN2",
   "unlock_mn2_by_rarity": {
-    "common": 0.0001,
-    "rare": 0.0005,
-    "epic": 0.002,
-    "legendary": 0.01
+    "common": 0,
+    "rare": 0,
+    "epic": 0.05,
+    "legendary": 0.25
   },
   "levels": [
     {"level": 1, "name": "Novice Collector", "icon": "🥉", "min_score": 0, "daily_income": 5, "daily_income_mn2": 0.0001, "unlock_bonus_pct": 0},
