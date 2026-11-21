@@ -23,10 +23,17 @@
     var timer = setTimeout(function () {
       ctrl.abort();
     }, opts.timeout || TIMEOUT_MS);
+    var method = opts.method || 'GET';
+    var headers = Object.assign({}, opts.headers || {});
+    // Only set JSON Content-Type when sending a body. A GET with
+    // Content-Type: application/json triggers middleware Bad Request.
+    if (opts.body != null) {
+      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+    }
     return fetch(url, {
-      method: opts.method || 'GET',
+      method: method,
       credentials: 'same-origin',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {}),
+      headers: headers,
       body: opts.body ? JSON.stringify(opts.body) : undefined,
       signal: ctrl.signal,
     })

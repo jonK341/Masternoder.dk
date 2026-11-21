@@ -20,25 +20,27 @@ def _path_correction_enabled():
 
 def process_invoke_in_request():
     """Process INVOKE messages in incoming requests"""
-    # Check request body for INVOKE messages
+    # Check request body for INVOKE messages.
+    # Use silent=True: browsers often send Content-Type: application/json on GET
+    # with no body (e.g. profile wallet). Non-silent get_json() raises 400 Bad Request.
     if request.is_json:
-        data = request.get_json() or {}
-        
+        data = request.get_json(silent=True) or {}
+
         # Check for INVOKE in message field
         message = data.get('message', '')
         if message and 'INVOKE' in message.upper():
             try:
                 from backend.services.signal_collector import signal_collector
                 signal = signal_collector.process_invoke_message(message)
-                
+
                 # Add signal info to request context
                 if not hasattr(request, 'signal_info'):
                     request.signal_info = {}
                 request.signal_info['invoke_signal'] = signal
-                
+
             except Exception as e:
                 print(f"Error processing INVOKE message: {e}")
-    
+
     # Check query parameters for INVOKE
     if request.args:
         for key, value in request.args.items():
@@ -46,11 +48,11 @@ def process_invoke_in_request():
                 try:
                     from backend.services.signal_collector import signal_collector
                     signal = signal_collector.process_invoke_message(value)
-                    
+
                     if not hasattr(request, 'signal_info'):
                         request.signal_info = {}
                     request.signal_info['invoke_signal'] = signal
-                    
+
                 except Exception as e:
                     print(f"Error processing INVOKE in query: {e}")
 
