@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
-    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20261001c">
+    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20261121nav">
     <link rel="stylesheet" href="/static/css/shop.css?v=20261001">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
@@ -762,7 +762,7 @@
     </style>
     <link rel="stylesheet" href="/static/css/agent-skill-sets.css">
 </head>
-<body class="layout-standard mn-no-hypnotic profile-frontpage-match">
+<body class="layout-standard mn-no-hypnotic profile-frontpage-match" data-page-length="unlimited">
     <div class="frontpage-bg" aria-hidden="true"></div>
     <div class="profile-page">
         <main class="profile-container profile-shell fp-main profile-fp-main">
@@ -799,33 +799,29 @@
 
             <section class="fp-game-hub fp-section-compact profile-hub-tabs-wrap" aria-label="Profile sections">
                 <div class="fp-game-hub-head">
-                    <p class="fp-kicker"><span>Sections</span><span id="profile-hub-status">Pick one focus</span></p>
-                    <h2 class="profile-hub-tabs-title">Where do you want to go?</h2>
+                    <p class="fp-kicker"><span>Navigate</span><span id="profile-hub-status">Home</span></p>
+                    <h2 class="profile-hub-tabs-title">Five places — pick one</h2>
                 </div>
-                <nav class="gh-tabs gh-tabs--compact" id="profile-hub-nav" aria-label="Profile hub sections" role="tablist">
-                    <button type="button" class="gh-tab is-active" data-hub-scroll="overview" role="tab" aria-selected="true"><span class="gh-tab-icon" aria-hidden="true">📊</span><span class="gh-tab-label">Overview</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="avatar" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">👤</span><span class="gh-tab-label">Avatar</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="pictures" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🖼️</span><span class="gh-tab-label">Pictures</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="account" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🔐</span><span class="gh-tab-label">Account</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="wallet" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">💠</span><span class="gh-tab-label">Wallet</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="shop" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🛒</span><span class="gh-tab-label">Shop</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="points" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">💎</span><span class="gh-tab-label">Points</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="agents" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🤖</span><span class="gh-tab-label">Agents</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="security" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🛡️</span><span class="gh-tab-label">Security</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="skills" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">⚡</span><span class="gh-tab-label">Skills</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="trophies" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🏆</span><span class="gh-tab-label">Trophies</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="leaderboard" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🥇</span><span class="gh-tab-label">Rank</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="activity" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">📡</span><span class="gh-tab-label">Activity</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="lab" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🔬</span><span class="gh-tab-label">Lab</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="battle" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">⚔️</span><span class="gh-tab-label">Battle</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="progress" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">📈</span><span class="gh-tab-label">Progress</span></button>
-                    <button type="button" class="gh-tab" data-hub-scroll="settings" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">⚙️</span><span class="gh-tab-label">Settings</span></button>
+                <nav class="gh-tabs gh-tabs--compact profile-hub-primary" id="profile-hub-nav" aria-label="Profile destinations" role="tablist">
+                    <button type="button" class="gh-tab is-active" data-hub-group="home" role="tab" aria-selected="true"><span class="gh-tab-icon" aria-hidden="true">🏠</span><span class="gh-tab-label">Home</span></button>
+                    <button type="button" class="gh-tab" data-hub-group="wallet" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">💠</span><span class="gh-tab-label">Wallet</span></button>
+                    <button type="button" class="gh-tab" data-hub-group="account" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">👤</span><span class="gh-tab-label">Account</span></button>
+                    <button type="button" class="gh-tab" data-hub-group="progress" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">📈</span><span class="gh-tab-label">Progress</span></button>
+                    <button type="button" class="gh-tab" data-hub-group="play" role="tab" aria-selected="false"><span class="gh-tab-icon" aria-hidden="true">🎮</span><span class="gh-tab-label">Play</span></button>
                 </nav>
+                <nav id="profile-hub-jump" class="profile-hub-jump" aria-label="Jump within section" hidden></nav>
             </section>
-            <div id="profile-route-note" class="profile-route-note">One section per tab — green pill = you are here.</div>
+            <div id="profile-route-note" class="profile-route-note">Home · Wallet · Account · Progress · Play — use the jump chips for a specific card.</div>
+            <nav class="profile-hub-dock" id="profile-hub-dock" aria-label="Profile quick nav">
+                <button type="button" class="profile-hub-dock-btn is-active" data-hub-group="home"><span aria-hidden="true">🏠</span><span>Home</span></button>
+                <button type="button" class="profile-hub-dock-btn" data-hub-group="wallet"><span aria-hidden="true">💠</span><span>Wallet</span></button>
+                <button type="button" class="profile-hub-dock-btn" data-hub-group="account"><span aria-hidden="true">👤</span><span>Account</span></button>
+                <button type="button" class="profile-hub-dock-btn" data-hub-group="progress"><span aria-hidden="true">📈</span><span>Progress</span></button>
+                <button type="button" class="profile-hub-dock-btn" data-hub-group="play"><span aria-hidden="true">🎮</span><span>Play</span></button>
+            </nav>
 
             <!-- Account & Login first so it works even when profile is loading -->
-            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="account" style="margin-bottom: 20px;">
+            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="account overview" style="margin-bottom: 20px;">
                 <h2 class="section-title">Account &amp; Login</h2>
                 <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 12px;">Create an account or sign in. Your user ID is stored in this browser until you clear it.</p>
                 <div class="account-row">
@@ -985,10 +981,10 @@
                 <h2 class="section-title">Unified overview</h2>
                 <p style="font-size:0.9rem;opacity:0.85;margin-bottom:8px;">Points, shop, and rankings for this profile ID (same data as Shop and Game).</p>
                 <div class="fp-agent-grid profile-overview-shortcuts" aria-label="Quick navigation">
-                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="account"><span>🔐</span>Account</button>
                     <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="wallet"><span>💠</span>Wallet</button>
-                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="shop"><span>🛒</span>Shop</button>
-                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="security"><span>🛡️</span>Security</button>
+                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="account"><span>👤</span>Account</button>
+                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="progress"><span>📈</span>Progress</button>
+                    <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="play"><span>🎮</span>Play</button>
                 </div>
                 <div id="profile-hub-summary">Loading…</div>
                 <div id="profile-completeness-card" class="profile-completeness-card">Loading profile setup checklist…</div>
@@ -4250,7 +4246,7 @@
             }
         }
     </script>
-    <script src="/static/js/profile-hub.js?v=20261001c"></script>
+    <script src="/static/js/profile-hub.js?v=20261121nav"></script>
     <script src="/static/js/profile-profiler-pictures.js?v=20261029a"></script>
 
     <script>

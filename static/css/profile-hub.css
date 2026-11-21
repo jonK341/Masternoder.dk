@@ -223,6 +223,110 @@
     color: rgba(255, 255, 255, 0.82);
 }
 
+.profile-hub-primary.gh-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    flex-wrap: nowrap;
+}
+
+.profile-hub-primary .gh-tab {
+    justify-content: center;
+    min-width: 0;
+    padding: 10px 6px;
+}
+
+.profile-hub-primary .gh-tab-label {
+    font-size: 0.78rem;
+}
+
+.profile-hub-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.profile-hub-jump[hidden] {
+    display: none !important;
+}
+
+.profile-hub-jump-chip {
+    border: 1px solid rgba(0, 212, 255, 0.35);
+    background: rgba(0, 212, 255, 0.1);
+    color: #9fe9ff;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.profile-hub-jump-chip:hover,
+.profile-hub-jump-chip:focus-visible {
+    border-color: rgba(0, 255, 136, 0.55);
+    color: #00ff88;
+    outline: none;
+}
+
+.profile-hub-dock {
+    display: none;
+}
+
+@media (max-width: 720px) {
+    .profile-hub-primary .gh-tab-icon {
+        font-size: 1.05rem;
+    }
+
+    .profile-hub-primary .gh-tab-label {
+        font-size: 0.68rem;
+    }
+
+    .profile-hub-dock {
+        position: fixed;
+        left: 50%;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        z-index: 70;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 4px;
+        width: min(460px, calc(100vw - 20px));
+        padding: 8px;
+        border-radius: 18px;
+        border: 1px solid rgba(0, 255, 136, 0.28);
+        background: rgba(8, 10, 18, 0.94);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    }
+
+    .profile-hub-dock-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        border: 0;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 0.62rem;
+        font-weight: 700;
+        padding: 6px 2px;
+        border-radius: 12px;
+        cursor: pointer;
+    }
+
+    .profile-hub-dock-btn.is-active,
+    .profile-hub-dock-btn.active {
+        color: #00ff88;
+        background: rgba(0, 255, 136, 0.12);
+    }
+
+    .profile-fp-main {
+        padding-bottom: 108px;
+    }
+}
+
 .profile-overview-shortcuts {
     margin: 0 0 16px;
 }

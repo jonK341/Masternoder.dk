@@ -99,24 +99,67 @@
     requestAnimationFrame(frame);
   }
 
-  var ROUTE_LABELS = {
-    overview: 'Overview',
-    avatar: 'Avatar',
-    account: 'Account',
-    skills: 'Skills',
-    trophies: 'Trophies',
-    points: 'Points',
-    leaderboard: 'Leaderboard',
-    shop: 'Shop',
-    wallet: 'Wallet',
-    security: 'Security',
-    settings: 'Settings',
-    agents: 'Agents',
-    activity: 'Activity',
-    lab: 'Lab',
-    battle: 'Battle',
-    progress: 'Progress',
+  var HUB_GROUPS = {
+    home: {
+      label: 'Home',
+      routes: ['overview', 'leaderboard', 'avatar', 'pictures'],
+      scroll: 'profile-hub-overview',
+    },
+    wallet: {
+      label: 'Wallet',
+      routes: ['wallet'],
+      scroll: 'mn2-wallet',
+    },
+    account: {
+      label: 'Account',
+      routes: ['account', 'security', 'settings'],
+      scroll: 'profile-section-account',
+    },
+    progress: {
+      label: 'Progress',
+      routes: ['points', 'trophies', 'activity', 'skills', 'progress'],
+      scroll: 'profile-section-points',
+    },
+    play: {
+      label: 'Play',
+      routes: ['shop', 'agents', 'lab', 'battle'],
+      scroll: 'profile-section-shop',
+    },
   };
+
+  var ROUTE_TO_GROUP = {};
+  Object.keys(HUB_GROUPS).forEach(function (group) {
+    HUB_GROUPS[group].routes.forEach(function (route) {
+      ROUTE_TO_GROUP[route] = group;
+    });
+  });
+
+  var TAB_ALIASES = {
+    overview: 'home',
+    dashboard: 'home',
+    home: 'home',
+    leaderboard: 'home',
+    avatar: 'home',
+    pictures: 'home',
+    wallet: 'wallet',
+    account: 'account',
+    user: 'account',
+    security: 'account',
+    settings: 'account',
+    progress: 'progress',
+    points: 'progress',
+    trophies: 'progress',
+    activity: 'progress',
+    skills: 'progress',
+    play: 'play',
+    shop: 'play',
+    inventory: 'play',
+    agents: 'play',
+    lab: 'play',
+    battle: 'play',
+  };
+
+  var state = { group: 'home' };
 
   var SUMMARY_STATS = [
     { key: 'level', label: 'Level' },
@@ -240,95 +283,138 @@
       });
   };
 
-  global.applyFocusedProfileRoute = function (route) {
-    var activeRoute = route || 'overview';
-    document.body.classList.add('profile-route-focused');
+  function resolveGroup(key) {
+    if (!key) return 'home';
+    key = String(key).toLowerCase();
+    if (HUB_GROUPS[key]) return key;
+    if (TAB_ALIASES[key]) return TAB_ALIASES[key];
+    if (ROUTE_TO_GROUP[key]) return ROUTE_TO_GROUP[key];
+    return 'home';
+  }
+
+  function syncGroupButtons(group) {
+    document.querySelectorAll('#profile-hub-nav [data-hub-group], #profile-hub-dock [data-hub-group]').forEach(function (btn) {
+      var on = btn.getAttribute('data-hub-group') === group;
+      btn.classList.toggle('is-active', on);
+      btn.classList.toggle('active', on);
+      if (btn.getAttribute('role') === 'tab') btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+  }
+
+  function buildJumpChips(group) {
+    var jump = document.getElementById('profile-hub-jump');
+    if (!jump) return;
+    var meta = HUB_GROUPS[group];
+    if (!meta) {
+      jump.hidden = true;
+      jump.innerHTML = '';
+      return;
+    }
+    var chips = [];
     document.querySelectorAll('[data-profile-route]').forEach(function (el) {
+      if (el.hidden || !el.id) return;
       var routes = (el.getAttribute('data-profile-route') || '').split(/\s+/).filter(Boolean);
-      el.hidden = routes.indexOf(activeRoute) === -1;
+      var match = routes.some(function (r) { return meta.routes.indexOf(r) !== -1; });
+      if (!match) return;
+      var titleEl = el.querySelector('.section-title, h2, h3');
+      var label = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim() : el.id;
+      if (label.length > 28) label = label.slice(0, 26) + '…';
+      if (!label) return;
+      chips.push({ id: el.id, label: label });
     });
-    var note = document.getElementById('profile-route-note');
-    if (note) {
-      note.textContent =
-        'Viewing: ' +
-        (ROUTE_LABELS[activeRoute] || activeRoute) +
-        '. Switch tabs above to browse other sections.';
+    if (chips.length < 2) {
+      jump.hidden = true;
+      jump.innerHTML = '';
+      return;
     }
-    document.querySelectorAll('#profile-hub-nav [data-hub-scroll]').forEach(function (x) {
-      var on = x.getAttribute('data-hub-scroll') === activeRoute;
-      x.classList.toggle('is-active', on);
-      x.classList.toggle('active', on);
-      x.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-    var hubStatus = document.getElementById('profile-hub-status');
-    if (hubStatus) {
-      hubStatus.textContent = ROUTE_LABELS[activeRoute] || activeRoute;
-    }
-    if (activeRoute === 'wallet' && global.ProfileMn2Wallet && typeof global.ProfileMn2Wallet.load === 'function') {
+    jump.hidden = false;
+    jump.innerHTML = chips
+      .map(function (c) {
+        return (
+          '<button type="button" class="profile-hub-jump-chip" data-hub-jump="' +
+          escapeHtml(c.id) +
+          '">' +
+          escapeHtml(c.label) +
+          '</button>'
+        );
+      })
+      .join('');
+  }
+
+  function runGroupSideEffects(group) {
+    if (group === 'wallet' && global.ProfileMn2Wallet && typeof global.ProfileMn2Wallet.load === 'function') {
       global.ProfileMn2Wallet.load();
     }
-    if (activeRoute === 'shop' && global.profileManager && typeof global.profileManager.loadShopInventoryV9 === 'function') {
+    if (group === 'play' && global.profileManager && typeof global.profileManager.loadShopInventoryV9 === 'function') {
       global.profileManager.loadShopInventoryV9();
     }
-    if (activeRoute === 'security') {
-      if (global.profileManager) {
-        if (typeof global.profileManager.loadPasswordProtection === 'function') {
-          global.profileManager.loadPasswordProtection();
-        }
-        if (typeof global.profileManager.loadAccountSecurity === 'function') {
-          global.profileManager.loadAccountSecurity();
-        }
+    if (group === 'account' && global.profileManager) {
+      if (typeof global.profileManager.loadPasswordProtection === 'function') {
+        global.profileManager.loadPasswordProtection();
+      }
+      if (typeof global.profileManager.loadAccountSecurity === 'function') {
+        global.profileManager.loadAccountSecurity();
       }
       if (global.Mn2WithdrawalSecurity && typeof global.Mn2WithdrawalSecurity.refresh === 'function') {
         global.Mn2WithdrawalSecurity.refresh();
       }
     }
+  }
+
+  global.applyFocusedProfileRoute = function (routeOrGroup) {
+    var group = resolveGroup(routeOrGroup);
+    var meta = HUB_GROUPS[group] || HUB_GROUPS.home;
+    state.group = group;
+    document.body.classList.add('profile-route-focused', 'profile-route-ready');
+    document.body.setAttribute('data-profile-group', group);
+    document.querySelectorAll('[data-profile-route]').forEach(function (el) {
+      var routes = (el.getAttribute('data-profile-route') || '').split(/\s+/).filter(Boolean);
+      el.hidden = !routes.some(function (r) { return meta.routes.indexOf(r) !== -1; });
+    });
+    var note = document.getElementById('profile-route-note');
+    if (note) {
+      note.textContent =
+        meta.label +
+        ' — jump chips scroll to a card. Bottom bar works on phone.';
+    }
+    syncGroupButtons(group);
+    var hubStatus = document.getElementById('profile-hub-status');
+    if (hubStatus) hubStatus.textContent = meta.label;
+    buildJumpChips(group);
+    runGroupSideEffects(group);
   };
 
   function navigateHubTab(key, scroll) {
-    global.applyFocusedProfileRoute(key);
+    var group = resolveGroup(key);
+    global.applyFocusedProfileRoute(group);
     try {
       var url = new URL(global.location.href);
-      if (key === 'overview') url.searchParams.delete('tab');
-      else url.searchParams.set('tab', key);
+      if (group === 'home') url.searchParams.delete('tab');
+      else url.searchParams.set('tab', group);
       global.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
     } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'profile-hub.js', context: 'catch' }); }
       /* ignore */
     }
     if (scroll !== false) {
-      var id = SCROLL_MAP[key] || 'profile-hub-overview';
+      var meta = HUB_GROUPS[group] || HUB_GROUPS.home;
+      var id = meta.scroll || 'profile-hub-overview';
       var el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else {
+        var wrap = document.querySelector('.profile-hub-tabs-wrap');
+        if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   }
 
   function resolveInitialTab() {
     var tab = new URLSearchParams(global.location.search).get('tab');
     var hashRoute = (global.location.hash || '').replace(/^#/, '').toLowerCase();
-    if (!tab && (hashRoute === 'mn2-wallet' || hashRoute === 'profile-mn2-wallet-card')) {
+    if (!tab && (hashRoute === 'mn2-wallet' || hashRoute === 'profile-mn2-wallet-card' || hashRoute === 'wallet')) {
       tab = 'wallet';
     }
-    if (!tab) return 'overview';
-    var btnKey = {
-      account: 'account',
-      user: 'account',
-      avatar: 'avatar',
-      skills: 'skills',
-      trophies: 'trophies',
-      progress: 'progress',
-      points: 'points',
-      leaderboard: 'leaderboard',
-      activity: 'activity',
-      shop: 'shop',
-      inventory: 'shop',
-      wallet: 'wallet',
-      security: 'security',
-      settings: 'settings',
-      agents: 'agents',
-      lab: 'lab',
-      battle: 'battle',
-    };
-    return btnKey[tab] || (SCROLL_MAP[tab] ? tab : 'overview');
+    if (!tab) return 'home';
+    return resolveGroup(tab);
   }
 
   function wireHeroRefresh() {
@@ -357,34 +443,46 @@
       btn.addEventListener('click', function () {
         var key = btn.getAttribute('data-profile-go-tab');
         if (!key) return;
-        var navBtn = document.querySelector('#profile-hub-nav [data-hub-scroll="' + key + '"]');
-        if (navBtn) navBtn.click();
-        else navigateHubTab(key);
+        navigateHubTab(key);
       });
     });
   }
 
-  function initProfileHub() {
-    var uid = hubUserId();
+  function wireHubNavigation() {
+    function onGroupClick(ev) {
+      var b = ev.target.closest('[data-hub-group]');
+      if (!b) return;
+      navigateHubTab(b.getAttribute('data-hub-group'));
+    }
     var nav = document.getElementById('profile-hub-nav');
     if (nav && !nav._hubNavBound) {
       nav._hubNavBound = true;
-      nav.addEventListener('click', function (ev) {
-        var b = ev.target.closest('[data-hub-scroll]');
-        if (!b) return;
-        navigateHubTab(b.getAttribute('data-hub-scroll'));
+      nav.addEventListener('click', onGroupClick);
+    }
+    var dock = document.getElementById('profile-hub-dock');
+    if (dock && !dock._hubDockBound) {
+      dock._hubDockBound = true;
+      dock.addEventListener('click', onGroupClick);
+    }
+    var jump = document.getElementById('profile-hub-jump');
+    if (jump && !jump._hubJumpBound) {
+      jump._hubJumpBound = true;
+      jump.addEventListener('click', function (ev) {
+        var chip = ev.target.closest('[data-hub-jump]');
+        if (!chip) return;
+        var el = document.getElementById(chip.getAttribute('data-hub-jump'));
+        if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
+  }
+
+  function initProfileHub() {
+    var uid = hubUserId();
+    wireHubNavigation();
     if (uid) global.refreshProfileHubSummary(uid);
     var initial = resolveInitialTab();
     setTimeout(function () {
-      if (initial === 'overview') {
-        global.applyFocusedProfileRoute('overview');
-      } else {
-        var btn = document.querySelector('#profile-hub-nav [data-hub-scroll="' + initial + '"]');
-        if (btn) btn.click();
-        else global.applyFocusedProfileRoute(initial);
-      }
+      navigateHubTab(initial, initial !== 'home');
     }, 300);
     wireHeroRefresh();
     wireOverviewShortcuts();
