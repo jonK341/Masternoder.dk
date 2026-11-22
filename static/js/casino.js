@@ -11,6 +11,10 @@
     let paypalEnabled = false;
     let mn2Limits = { min: 0.05, max: 5 };
     let usdLimits = { min: 0.5, max: 25 };
+    let exchangeLimits = {};
+    let stakeCurrencies = [];
+    let exchangeBalances = {};
+    let pendingGameFrameScroll = '';
     let disclaimers = { coins: '', mn2: '', paypal: '' };
     let securityToken = localStorage.getItem('casino_security_token') || '';
     let securityExpires = localStorage.getItem('casino_security_expires') || '';
@@ -65,7 +69,7 @@
 
     function betPayload(extra) {
         const body = Object.assign({ user_id: userId, currency: activeCurrency }, extra || {});
-        if ((activeCurrency === 'mn2' || activeCurrency === 'usd') && securityTokenValid()) {
+        if (activeCurrency !== 'coins' && securityTokenValid()) {
             body.verification_token = securityToken;
         }
         if (document.querySelector('.podcast-portal-strip')) {
@@ -75,10 +79,58 @@
     }
 
     function currencyLabel(cur) {
-        const c = cur || activeCurrency;
-        if (c === 'mn2') return 'MN2';
+        var c = String(cur || activeCurrency || 'coins').toLowerCase();
+        if (c === 'coins') return 'coins';
         if (c === 'usd') return 'USD';
-        return 'coins';
+        var row = stakeCurrencies.find(function (r) { return r.id === c; });
+        if (row && row.label) return row.label;
+        return c.toUpperCase();
+    }
+
+    function isExchangeCurrency(cur) {
+        var c = String(cur || activeCurrency || 'coins').toLowerCase();
+        return c !== 'coins' && c !== 'usd';
+    }
+
+    function stakeMeta(cur) {
+        var c = String(cur || activeCurrency || 'coins').toLowerCase();
+        return stakeCurrencies.find(function (r) { return r.id === c; }) || null;
+    }
+
+    function renderStakeCurrencyChips() {
+        var host = $('casino-currency-chips');
+        if (!host) return;
+        var rows = stakeCurrencies.slice();
+        if (!rows.length) {
+            rows = [
+                { id: 'coins', label: 'Coins', enabled: true },
+                { id: 'mn2', label: 'MN2', enabled: realMoneyEnabled },
+                { id: 'usd', label: 'USD', enabled: paypalEnabled },
+            ];
+        }
+        host.innerHTML = '';
+        rows.forEach(function (row) {
+            var id = String(row.id || '').toLowerCase();
+            if (!id) return;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'casino-currency-btn' + (id === activeCurrency ? ' active' : '');
+            btn.setAttribute('data-currency', id);
+            btn.setAttribute('role', 'option');
+            btn.setAttribute('aria-selected', id === activeCurrency ? 'true' : 'false');
+            if (id === 'mn2') btn.id = 'casino-mn2-toggle';
+            if (id === 'usd') btn.id = 'casino-usd-toggle';
+            btn.textContent = row.label || id.toUpperCase();
+            btn.title = row.name || btn.textContent;
+            var enabled = row.enabled !== false;
+            if (id === 'usd') enabled = enabled && paypalEnabled;
+            if (id !== 'coins' && id !== 'usd') enabled = enabled && realMoneyEnabled;
+            btn.disabled = !enabled;
+            btn.addEventListener('click', function () {
+                setActiveCurrency(id);
+            });
+            host.appendChild(btn);
+        });
     }
 
     function apiPathWithCurrency(path) {
@@ -182,12 +234,20 @@
 
     function applyCurrencyUi() {
         document.querySelectorAll('.casino-currency-btn').forEach(function (btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-currency') === activeCurrency);
+            var on = btn.getAttribute('data-currency') === activeCurrency;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
         });
         const mn2Btn = $('casino-mn2-toggle');
         const usdBtn = $('casino-usd-toggle');
         if (mn2Btn) mn2Btn.disabled = !realMoneyEnabled;
         if (usdBtn) usdBtn.disabled = !paypalEnabled;
+        document.querySelectorAll('#casino-currency-chips .casino-currency-btn').forEach(function (btn) {
+            var id = (btn.getAttribute('data-currency') || '').toLowerCase();
+            if (id === 'coins') btn.disabled = false;
+            else if (id === 'usd') btn.disabled = !paypalEnabled;
+            else btn.disabled = !realMoneyEnabled;
+        });
         const paypalRail = $('casino-fund-rail-paypal');
         const mn2Rail = $('casino-fund-rail-mn2');
         if (paypalRail) paypalRail.disabled = !paypalEnabled;
@@ -198,8 +258,7 @@
                 ? document.querySelector('.casino-fund-rail-btn.active').getAttribute('data-fund-rail')
                 : 'paypal';
             const needsSec = (
-                activeCurrency === 'mn2' ||
-                activeCurrency === 'usd' ||
+                activeCurrency !== 'coins' ||
                 fundRail === 'paypal' ||
                 fundRail === 'mn2'
             ) && !securityTokenValid();
@@ -207,6 +266,7 @@
         }
         const isMn2 = activeCurrency === 'mn2';
         const isUsd = activeCurrency === 'usd';
+        const meta = stakeMeta(activeCurrency);
         document.querySelectorAll('.casino-controls input[type="number"]').forEach(function (input) {
             if (isMn2) {
                 input.min = String(mn2Limits.min);
@@ -218,6 +278,11 @@
                 input.max = String(usdLimits.max);
                 input.step = '0.01';
                 if (parseFloat(input.value) > usdLimits.max) input.value = String(usdLimits.min);
+            } else if (isExchangeCurrency(activeCurrency) && meta) {
+                input.min = String(meta.min_bet || 0.001);
+                input.max = String(meta.max_bet || 1);
+                input.step = meta.decimals > 4 ? '0.0001' : '0.01';
+                if (parseFloat(input.value) > Number(meta.max_bet || 1)) input.value = String(meta.min_bet || 0.001);
             } else {
                 input.min = '5';
                 input.max = '500';
@@ -228,16 +293,21 @@
         if (disclaimer) {
             if (activeCurrency === 'usd' && disclaimers.paypal) disclaimer.textContent = disclaimers.paypal;
             else if (activeCurrency === 'mn2' && disclaimers.mn2) disclaimer.textContent = disclaimers.mn2;
-            else if (disclaimers.coins) disclaimer.textContent = disclaimers.coins;
+            else if (isExchangeCurrency(activeCurrency)) {
+                disclaimer.textContent = 'Staking ' + currencyLabel() + ' from your exchange wallet. Virtual coin bets stay separate.';
+            } else if (disclaimers.coins) disclaimer.textContent = disclaimers.coins;
         }
     }
 
     function setActiveCurrency(currency) {
-        if (currency === 'mn2' && !realMoneyEnabled) return;
-        if (currency === 'usd' && !paypalEnabled) return;
-        if (currency === 'mn2') activeCurrency = 'mn2';
-        else if (currency === 'usd') activeCurrency = 'usd';
-        else activeCurrency = 'coins';
+        var next = String(currency || 'coins').toLowerCase();
+        if (next === 'usd' && !paypalEnabled) return;
+        if (next !== 'coins' && next !== 'usd' && !realMoneyEnabled) return;
+        if (next !== 'coins' && next !== 'usd' && next !== 'mn2') {
+            var known = stakeCurrencies.some(function (r) { return r.id === next; });
+            if (stakeCurrencies.length && !known) return;
+        }
+        activeCurrency = next || 'coins';
         localStorage.setItem('casino_currency', activeCurrency);
         applyCurrencyUi();
         refreshBalance();
@@ -468,6 +538,11 @@
             panel.classList.toggle('active', match);
             panel.hidden = !match;
         });
+        if ((activeMainTab === 'all-games' || activeMainTab === 'slots' || activeMainTab === 'small-games') && pendingGameFrameScroll) {
+            var gid = pendingGameFrameScroll;
+            pendingGameFrameScroll = '';
+            setTimeout(function () { scrollToGameFrame(gid); }, 40);
+        }
         if (activeMainTab === 'leaderboard') {
             safeRefresh('leaderboard', refreshLeaderboard);
         } else if (activeMainTab === 'activity') {
@@ -548,18 +623,60 @@
         });
     }
 
+    function scrollToGameFrame(gameId) {
+        var frame = document.getElementById('casino-frame-' + gameId);
+        if (!frame) return false;
+        try {
+            frame.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        } catch (e) {
+            frame.scrollIntoView();
+        }
+        return true;
+    }
+
+    function roomForGame(gameId, card) {
+        var room = (card && card.getAttribute('data-casino-room')) || '';
+        if (room) return room;
+        var row = (window.__casinoGameCatalog || []).find(function (r) { return r.id === gameId; });
+        if (row && row.room) return row.room;
+        if (gameId === 'slots') return 'slots';
+        var small = {
+            'free-flip': 1, 'coin-flip': 1, dice: 1, rps: 1, mystery: 1,
+            scratch: 1, 'counter-pick': 1, 'rps-meta': 1, 'battle-outcome': 1, 'pvp-duel': 1
+        };
+        if (small[gameId]) return 'small';
+        return 'floor';
+    }
+
+    function tabForRoom(room) {
+        if (room === 'slots') return 'slots';
+        if (room === 'small') return 'small-games';
+        if (room === 'free') return 'free-play';
+        return 'all-games';
+    }
+
     function openGameTable(gameId) {
         if (!gameId) return;
+        var frame = document.getElementById('casino-frame-' + gameId);
+        var room = roomForGame(gameId, frame && frame.querySelector('.casino-card'));
+        var tab = tabForRoom(room);
+        if (frame) {
+            pendingGameFrameScroll = gameId;
+            switchMainTab(tab);
+            setTimeout(function () { scrollToGameFrame(gameId); }, 60);
+            return;
+        }
         if (document.getElementById('casino-tab-' + gameId)) {
             switchMainTab(gameId);
             return;
         }
-        switchMainTab('all-games');
+        switchMainTab(tab);
     }
 
     function renderCatalogGrids() {
         var catalog = window.__casinoGameCatalog || [];
         var allGrid = $('casino-all-games-grid');
+        var smallGrid = $('casino-small-games-grid');
         var freeGrid = $('casino-free-play-grid');
         function paint(grid, rows, emptyMsg) {
             if (!grid) return;
@@ -576,16 +693,19 @@
                 card.className = 'casino-catalog-card';
                 card.innerHTML =
                     '<span class="casino-catalog-label">' + row.label + '</span>' +
-                    '<span class="casino-catalog-cat">' + (row.category === 'free' ? 'Free play' : 'Money') + '</span>';
+                    '<span class="casino-catalog-cat">' +
+                    (row.room === 'slots' ? 'Slots' : row.room === 'small' ? 'Small' : (row.category === 'free' ? 'Free play' : 'Floor')) +
+                    '</span>';
                 card.addEventListener('click', function () { openGameTable(row.id); });
                 grid.appendChild(card);
             });
             grid.setAttribute('data-built', '1');
         }
-        paint(allGrid, catalog, 'No games available.');
+        paint(allGrid, catalog.filter(function (r) { return (r.room || 'floor') === 'floor'; }), 'No floor tables available.');
+        paint(smallGrid, catalog.filter(function (r) { return r.room === 'small'; }), 'No small games available.');
         paint(
             freeGrid,
-            catalog.filter(function (r) { return r.category === 'free' || HOT_TABLE_IDS.indexOf(r.id) >= 0; }),
+            catalog.filter(function (r) { return r.category === 'free' || r.room === 'small'; }),
             'No free-play games right now.'
         );
     }
@@ -612,30 +732,73 @@
 
         nav.innerHTML = '';
         addTabBtn('home', 'Hot tables', activeMainTab === 'home');
-        addTabBtn('all-games', 'All games', activeMainTab === 'all-games');
+        addTabBtn('all-games', 'Floor', activeMainTab === 'all-games');
+        addTabBtn('slots', 'Slots', activeMainTab === 'slots');
+        addTabBtn('small-games', 'Small games', activeMainTab === 'small-games');
         addTabBtn('free-play', 'Free play', activeMainTab === 'free-play');
 
         var catalog = [];
         if (grid) {
             var cards = grid.querySelectorAll('.casino-card[data-casino-game]');
-            var insertBefore = $('casino-tab-leaderboard') || $('casino-tab-lounge');
+            var strips = {
+                floor: { panel: $('casino-tab-all-games'), hostId: 'casino-game-strip-floor', label: 'Floor table frames' },
+                slots: { panel: $('casino-tab-slots'), hostId: 'casino-game-strip-slots', label: 'Slots room frames' },
+                small: { panel: $('casino-tab-small-games'), hostId: 'casino-game-strip-small', label: 'Small game frames' },
+            };
+            Object.keys(strips).forEach(function (room) {
+                var hint = document.createElement('p');
+                hint.className = 'casino-game-strip-hint';
+                hint.textContent = room === 'slots'
+                    ? 'Slots room — swipe cabinets sideways.'
+                    : (room === 'small'
+                        ? 'Small games room — one quick game per frame.'
+                        : 'Floor tables — swipe sideways, one frame each.');
+                var strip = document.createElement('div');
+                strip.id = strips[room].hostId;
+                strip.className = 'casino-game-strip';
+                strip.setAttribute('aria-label', strips[room].label);
+                strips[room].hint = hint;
+                strips[room].strip = strip;
+            });
             cards.forEach(function (card) {
                 var gameId = card.getAttribute('data-casino-game');
                 var label = card.getAttribute('data-casino-label') || gameId;
                 var category = card.getAttribute('data-casino-category') || 'money';
-                catalog.push({ id: gameId, label: label, category: category });
-                var panel = document.createElement('section');
-                panel.className = 'casino-tab-panel';
-                panel.id = 'casino-tab-' + gameId;
-                panel.setAttribute('role', 'tabpanel');
-                panel.hidden = true;
-                panel.appendChild(card);
-                if (insertBefore) panelsRoot.insertBefore(panel, insertBefore);
-                else panelsRoot.appendChild(panel);
+                var room = card.getAttribute('data-casino-room') || roomForGame(gameId, card);
+                catalog.push({ id: gameId, label: label, category: category, room: room });
+                var frame = document.createElement('div');
+                frame.className = 'casino-game-frame' + (room === 'slots' ? ' casino-game-frame--slots' : '');
+                frame.id = 'casino-frame-' + gameId;
+                frame.setAttribute('data-casino-game', gameId);
+                frame.setAttribute('data-casino-room', room);
+                frame.appendChild(card);
+                var bucket = strips[room] || strips.floor;
+                bucket.strip.appendChild(frame);
+            });
+            Object.keys(strips).forEach(function (room) {
+                var meta = strips[room];
+                if (!meta.panel || !meta.strip.childNodes.length) return;
+                if (room === 'slots') {
+                    var slotsHost = $('casino-slots-room-host');
+                    if (slotsHost) {
+                        slotsHost.appendChild(meta.hint);
+                        slotsHost.appendChild(meta.strip);
+                        return;
+                    }
+                }
+                var catalogGrid = meta.panel.querySelector('.casino-catalog-grid');
+                if (catalogGrid && catalogGrid.parentNode) {
+                    catalogGrid.parentNode.insertBefore(meta.hint, catalogGrid.nextSibling);
+                    catalogGrid.parentNode.insertBefore(meta.strip, meta.hint.nextSibling);
+                } else {
+                    meta.panel.appendChild(meta.hint);
+                    meta.panel.appendChild(meta.strip);
+                }
             });
             grid.remove();
         }
         window.__casinoGameCatalog = catalog;
+        try { renderCatalogGrids(); } catch (e) { /* optional */ }
 
         addTabBtn('compete', 'Contests', activeMainTab === 'compete');
         addTabBtn('leaderboard', 'Leaderboard', activeMainTab === 'leaderboard');
@@ -983,13 +1146,26 @@
         const el = $('casino-balance');
         if (el) {
             if (data.success) {
+                exchangeBalances = data.exchange_balances || {};
+                stakeCurrencies = data.stake_currencies || (data.real_money && data.real_money.stake_currencies) || stakeCurrencies;
+                var stakeBal = '';
+                if (activeCurrency === 'coins') {
+                    stakeBal = Math.round(data.balance) + ' coins';
+                } else if (activeCurrency === 'usd') {
+                    stakeBal = '$' + Number(data.fiat_balance || 0).toFixed(2);
+                } else if (activeCurrency === 'mn2') {
+                    stakeBal = Number(data.mn2_balance || 0).toFixed(4) + ' MN2';
+                } else {
+                    stakeBal = Number(exchangeBalances[activeCurrency] || 0).toFixed(6) + ' ' + currencyLabel();
+                }
                 el.textContent =
-                    'Coins: ' + Math.round(data.balance) +
+                    'Stake: ' + stakeBal +
+                    ' · Coins: ' + Math.round(data.balance) +
                     ' · MN2: ' + Number(data.mn2_balance || 0).toFixed(4) +
                     ' · USD: $' + Number(data.fiat_balance || 0).toFixed(2) +
-                    ' · Bets today: ' + data.bets_today + '/' + data.max_bets_per_day +
-                    ' · Staking: ' + currencyLabel();
+                    ' · Bets today: ' + data.bets_today + '/' + data.max_bets_per_day;
                 updateFundBalances(data);
+                try { renderStakeCurrencyChips(); } catch (chipErr) { /* optional */ }
             } else {
                 el.textContent = data.error || 'Could not load balance';
             }
@@ -1806,6 +1982,7 @@
         }
     }
 
+    async function shareCasinoSite() {
         var text = shareNetworks.default_share_text || 'Play at MasterNoder Casino — coins, MN2, and USD rails.';
         var url = (shareNetworks.share_base_url || baseUrl) + '/casino/';
         try {
@@ -2374,6 +2551,8 @@
             await refreshBalance();
         }
     }
+
+    function setupFairnessExportLink() {
         var link = $('casino-fairness-export-link');
         if (!link) return;
         link.href = '/api/casino/fairness/export?user_id=' + encodeURIComponent(userId) + '&limit=100';
@@ -4680,7 +4859,7 @@
     }
 
     async function joinTournament(id) {
-        if ((activeCurrency === 'mn2' || activeCurrency === 'usd') && !securityTokenValid()) {
+        if (activeCurrency !== 'coins' && !securityTokenValid()) {
             alert('Verify your account (password) before joining a real-money tournament.');
             return;
         }
@@ -4835,6 +5014,7 @@
         safeRefresh('vpLadder', refreshVideoPokerLadder);
         safeRefresh('paypalReturn', handlePayPalReturn);
         safeRefresh('activityFeed', refreshActivityFeed);
+        safeRefresh('activityMonitor', refreshActivityMonitor);
         safeRefresh('jackpotMeter', refreshJackpotMeter);
         safeRefresh('tournaments', refreshTournaments);
         safeRefresh('progression', refreshProgression);

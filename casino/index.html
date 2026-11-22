@@ -32,18 +32,23 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
-    <link rel="stylesheet" href="/static/css/casino.css?v=20261122play">
+    <link rel="stylesheet" href="/static/css/casino.css?v=20261122rooms">
     <link rel="stylesheet" href="/static/css/casino-mobile.css?v=20260625b">
     <link rel="stylesheet" href="/static/css/casino-twa-shell.css?v=20260625b">
 </head>
-<body>
+<body data-page-length="unlimited">
     <div class="casino-page">
         <header class="casino-header">
             <div class="casino-hero-banner" aria-hidden="false">
-                <picture>
-                    <source srcset="/static/img/casino/banner-masternoder2-casino.svg" type="image/svg+xml">
-                    <img src="/static/img/casino/banner-masternoder2-casino.png" width="1200" height="630" alt="MasterNoder2 Casino — neon lounge with crash, slots, plinko, and jackpots" loading="eager" decoding="async">
-                </picture>
+                <img
+                    src="/static/img/casino/banner-masternoder2-casino.svg"
+                    width="1200"
+                    height="630"
+                    alt="MasterNoder2 Casino — neon lounge with crash, slots, plinko, and jackpots"
+                    loading="eager"
+                    decoding="async"
+                    onerror="this.onerror=null;this.src='/static/img/casino/banner-masternoder2-casino.png';"
+                >
             </div>
             <h1>MasterNoder2 Casino</h1>
             <p class="casino-tagline">Ride the rocket. Hit the jackpot. Own the lounge.</p>
@@ -93,9 +98,11 @@
             </div>
             <div id="casino-currency-bar" class="casino-currency-bar">
                 <span class="casino-currency-label">Stake with:</span>
-                <button type="button" class="casino-currency-btn active" data-currency="coins">Coins</button>
-                <button type="button" class="casino-currency-btn" data-currency="mn2" id="casino-mn2-toggle">MN2</button>
-                <button type="button" class="casino-currency-btn" data-currency="usd" id="casino-usd-toggle">USD</button>
+                <div id="casino-currency-chips" class="casino-currency-chips" role="listbox" aria-label="Stake currency">
+                    <button type="button" class="casino-currency-btn active" data-currency="coins" role="option" aria-selected="true">Coins</button>
+                    <button type="button" class="casino-currency-btn" data-currency="mn2" id="casino-mn2-toggle" role="option" aria-selected="false">MN2</button>
+                    <button type="button" class="casino-currency-btn" data-currency="usd" id="casino-usd-toggle" role="option" aria-selected="false">USD</button>
+                </div>
                 <button type="button" class="casino-sound-toggle" id="casino-sound-toggle" aria-pressed="false" title="Toggle sound">🔇 Sound off</button>
             </div>
             <div id="casino-balance" class="casino-balance">Loading balance…</div>
@@ -126,10 +133,26 @@
 
             <section id="casino-tab-all-games" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-all-games" hidden>
                 <div class="casino-catalog-hero">
-                    <h2>All games</h2>
-                    <p>Every table and arcade title — stake with your active currency.</p>
+                    <h2>Floor tables</h2>
+                    <p>Crash, plinko, cards, and live tables — swipe one frame at a time.</p>
                 </div>
                 <div id="casino-all-games-grid" class="casino-catalog-grid" aria-live="polite"></div>
+            </section>
+
+            <section id="casino-tab-slots" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-slots" hidden>
+                <div class="casino-catalog-hero">
+                    <h2>Slots room</h2>
+                    <p>Dedicated cabinet floor — every machine in its own frame.</p>
+                </div>
+                <div id="casino-slots-room-host" class="casino-room-host" aria-live="polite"></div>
+            </section>
+
+            <section id="casino-tab-small-games" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-small-games" hidden>
+                <div class="casino-catalog-hero">
+                    <h2>Small games room</h2>
+                    <p>Quick flips, dice, RPS, scratch, and battle side-bets — one small frame each.</p>
+                </div>
+                <div id="casino-small-games-grid" class="casino-catalog-grid" aria-live="polite"></div>
             </section>
 
             <section id="casino-tab-free-play" class="casino-tab-panel" role="tabpanel" aria-labelledby="casino-tab-btn-free-play" hidden>
@@ -382,7 +405,7 @@
                 <div id="vp-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card" data-casino-game="pvp-duel" data-casino-category="money" data-casino-lobby="arcade" data-casino-label="⚔️ PvP Duel">
+            <article class="casino-card" data-casino-game="pvp-duel" data-casino-category="money" data-casino-lobby="arcade" data-casino-room="small" data-casino-label="⚔️ PvP Duel">
                 <h2>⚔️ PvP Duel</h2>
                 <p>Challenge another player — coin flip, dice, or RPS. Winner takes the pot minus rake.</p>
                 <div class="casino-controls">
@@ -401,7 +424,7 @@
                 <div id="casino-tournaments" class="casino-tournaments">Loading tournaments…</div>
             </article>
 
-            <article class="casino-card" data-casino-game="free-flip" data-casino-category="free" data-casino-label="Free flip">
+            <article class="casino-card" data-casino-game="free-flip" data-casino-category="free" data-casino-room="small" data-casino-label="Free flip">
                 <h2>Free daily flip</h2>
                 <p>One free 5-coin flip per day. Counts for quests, not leaderboard net.</p>
                 <div id="free-bet-status" class="casino-free-status">Checking…</div>
@@ -415,7 +438,7 @@
                 <div id="free-bet-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card" data-casino-game="coin-flip" data-casino-category="money" data-casino-label="Coin flip">
+            <article class="casino-card" data-casino-game="coin-flip" data-casino-category="money" data-casino-room="small" data-casino-label="Coin flip">
                 <h2>Coin flip</h2>
                 <p>Pick heads or tails. Win pays 1.9× your stake.</p>
                 <div class="casino-controls">
@@ -429,7 +452,7 @@
                 <div id="coin-flip-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card" data-casino-game="dice" data-casino-category="money" data-casino-label="Lucky dice">
+            <article class="casino-card" data-casino-game="dice" data-casino-category="money" data-casino-room="small" data-casino-label="Lucky dice">
                 <h2>Lucky dice</h2>
                 <p>Guess 1–6. Correct roll pays 4× your stake.</p>
                 <div class="casino-controls">
@@ -440,7 +463,7 @@
                 <div id="dice-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card" data-casino-game="rps" data-casino-category="money" data-casino-label="RPS wager">
+            <article class="casino-card" data-casino-game="rps" data-casino-category="money" data-casino-room="small" data-casino-label="RPS wager">
                 <h2>RPS wager</h2>
                 <p>Rock / paper / scissors vs the house. Win pays 2×; draw refunds stake.</p>
                 <div class="casino-controls">
@@ -455,7 +478,7 @@
                 <div id="rps-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card" data-casino-game="mystery" data-casino-category="money" data-casino-label="Mystery flip">
+            <article class="casino-card" data-casino-game="mystery" data-casino-category="money" data-casino-room="small" data-casino-label="Mystery flip">
                 <h2>Mystery multiplier flip</h2>
                 <p>Same coin flip — but your multiplier rolls between 1.5× and 3× before the reveal.</p>
                 <div class="casino-controls">
@@ -469,13 +492,13 @@
                 <div id="mystery-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card casino-card-wide casino-slots-section" data-casino-game="slots" data-casino-category="money" data-casino-label="🎰 Slots">
+            <article class="casino-card casino-card-wide casino-slots-section" data-casino-game="slots" data-casino-category="money" data-casino-room="slots" data-casino-label="🎰 Slots">
                 <h2>🎰 Slot machines</h2>
                 <p>Premium slot lineup — wilds, scatters, jackpots, staggered reel stops, and themed cabinets. RTP and volatility shown per machine.</p>
                 <div id="casino-slots-grid" class="casino-slots-grid" aria-live="polite">Loading slot machines…</div>
             </article>
 
-            <article class="casino-card" data-casino-game="scratch" data-casino-category="money" data-casino-label="Pick-3 scratch">
+            <article class="casino-card" data-casino-game="scratch" data-casino-category="money" data-casino-room="small" data-casino-label="Pick-3 scratch">
                 <h2>Pick-3 scratch</h2>
                 <p>Reveal 3 symbols. Match 2 pays 1.5×; match 3 pays 8×.</p>
                 <div class="casino-controls">
@@ -486,7 +509,7 @@
                 <div id="scratch-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card casino-card-wide" data-casino-game="counter-pick" data-casino-category="money" data-casino-label="Counter-pick RPS">
+            <article class="casino-card casino-card-wide" data-casino-game="counter-pick" data-casino-category="money" data-casino-room="small" data-casino-label="Counter-pick RPS">
                 <h2>Counter-pick RPS</h2>
                 <p>Pick the move that beats the most common AI opener — then duel the house using live battle stats.</p>
                 <div id="counter-pick-hint" class="casino-distribution-stats">Loading counter hint…</div>
@@ -502,7 +525,7 @@
                 <div id="counter-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card casino-card-wide" data-casino-game="rps-meta" data-casino-category="money" data-casino-label="Battle RPS meta">
+            <article class="casino-card casino-card-wide" data-casino-game="rps-meta" data-casino-category="money" data-casino-room="small" data-casino-label="Battle RPS meta">
                 <h2>Battle RPS meta</h2>
                 <p>Predict the house move using live battle arena AI opener stats. Pick a difficulty lane and optional player opener for dual-signal odds.</p>
                 <div class="casino-meta-filters">
@@ -536,7 +559,7 @@
                 <div id="rps-dist-result" class="casino-result"></div>
             </article>
 
-            <article class="casino-card casino-card-wide" data-casino-game="battle-outcome" data-casino-category="money" data-casino-label="Battle outcome">
+            <article class="casino-card casino-card-wide" data-casino-game="battle-outcome" data-casino-category="money" data-casino-room="small" data-casino-label="Battle outcome">
                 <h2>Battle outcome bet</h2>
                 <p>Predict win, draw, or loss from recent quick battles. Rarer outcomes pay more.</p>
                 <div class="casino-meta-filters">
@@ -871,8 +894,8 @@
 <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
     <script src="/static/js/casino-mobile.js?v=20260625b" defer></script>
     <script src="/static/js/casino-twa-shell.js?v=20260625b" defer></script>
-    <script src="/static/js/casino.js?v=20261122fix" defer></script>
-    <script src="/static/js/casino-cockpit.js?v=20261122ops" defer></script>
+    <script src="/static/js/casino.js?v=20261122rooms" defer></script>
+    <script src="/static/js/casino-cockpit.js?v=20261122mon" defer></script>
     <script>
     (function () {
         if (window.__casinoBootstrapped) return;

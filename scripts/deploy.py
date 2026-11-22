@@ -1900,6 +1900,14 @@ def main():
             manifest_names=code_manifests,
             server_pass=server_pass,
         )
+    elif files and not want_media:
+        # --files path: no named manifest, still upload the explicit file list
+        ok = run(
+            files,
+            upload_only=upload_only,
+            restart_services=restart_services,
+            server_pass=server_pass,
+        )
     if ok and want_media:
         ok = run_camgirls_media(server_pass=server_pass, upload_only=upload_only)
     sys.exit(0 if ok else 1)

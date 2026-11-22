@@ -15,7 +15,8 @@
         '.casino-v12-panel:not(.hidden)',
         '.casino-v13-panel:not(.hidden)',
         '.casino-v14-multiplay:not(.hidden)',
-        '.casino-grid',
+        // Do not cap .casino-grid — it sits mid-page under hero/fund; capping it
+        // locks html/body and leaves the casino frontpage unable to scroll.
         '.tab-panel.active',
         '.tab-content.active',
         '.page-panel.active',
@@ -124,7 +125,10 @@
     }
 
     function scan() {
-        if (isExempt()) return;
+        if (isExempt()) {
+            document.documentElement.classList.remove('page-length-root-locked');
+            return;
+        }
         var seen = new Set();
         var anyCapped = false;
 

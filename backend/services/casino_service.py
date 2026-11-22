@@ -164,15 +164,37 @@ def _paypal_enabled() -> bool:
     return pay["enabled"] and "paypal" in pay["rails"]
 
 
+def _exchange_stake_map() -> Dict[str, Dict[str, Any]]:
+    """symbol(lower) -> stake meta from exchange catalog."""
+    try:
+        from backend.services.crypto_exchange_service import list_casino_stake_assets
+
+        return {
+            str(a.get("symbol") or "").strip().lower(): a
+            for a in (list_casino_stake_assets() or [])
+            if str(a.get("symbol") or "").strip()
+        }
+    except Exception:
+        return {"mn2": {"symbol": "mn2", "label": "MN2", "min_bet": 0.05, "max_bet": 5.0, "decimals": 8}}
+
+
 def _normalize_currency(currency: Optional[str]) -> str:
     c = (currency or "coins").strip().lower()
     pay = _payment_config()
     if c in ("usd", "paypal", "fiat"):
         if pay["enabled"] and "paypal" in pay["rails"]:
             return "usd"
-    if c == "mn2":
-        if pay["enabled"] and "mn2" in pay["rails"]:
-            return "mn2"
+        return "coins"
+    if c == "coins":
+        return "coins"
+    if not pay["enabled"]:
+        return "coins"
+    # Exchange catalog coins (mn2, btc, eth, usdt, …) as stake rails
+    if c in _exchange_stake_map():
+        if c == "mn2" and "mn2" not in (pay.get("rails") or []):
+            # Keep MN2 gated on the classic rail when listed
+            return "coins"
+        return c
     return "coins"
 
 
@@ -190,11 +212,30 @@ def _user_fiat_balance(user_id: str) -> float:
 
 
 def _user_balance(user_id: str, currency: str) -> float:
-    if currency == "mn2":
-        return _user_mn2_balance(user_id)
+    if currency == "coins":
+        return _user_coins(user_id)
     if currency == "usd":
         return _user_fiat_balance(user_id)
-    return _user_coins(user_id)
+    if currency == "mn2":
+        return _user_mn2_balance(user_id)
+    try:
+        from backend.services.crypto_exchange_service import get_symbol_balance
+
+        return float(get_symbol_balance(user_id, currency.upper()) or 0)
+    except Exception:
+        return 0.0
+
+
+def _asset_decimals(currency: str) -> int:
+    if currency == "usd":
+        return 2
+    if currency == "coins":
+        return 0
+    meta = _exchange_stake_map().get(currency) or {}
+    try:
+        return max(0, min(12, int(meta.get("decimals") or 8)))
+    except (TypeError, ValueError):
+        return 8
 
 
 def _parse_bet_amount(bet: Any, currency: str) -> Optional[float]:
@@ -202,27 +243,26 @@ def _parse_bet_amount(bet: Any, currency: str) -> Optional[float]:
         amount = float(bet)
     except (TypeError, ValueError):
         return None
-    if currency == "mn2":
-        return round(amount, 8)
-    if currency == "usd":
-        return round(amount, 2)
-    return float(int(amount))
+    if currency == "coins":
+        return float(int(amount))
+    return round(amount, _asset_decimals(currency))
 
 
 def _round_payout(amount: float, currency: str) -> float:
-    if currency == "mn2":
-        return round(amount, 8)
-    if currency == "usd":
-        return round(amount, 2)
-    return float(int(round(amount)))
+    if currency == "coins":
+        return float(int(round(amount)))
+    return round(amount, _asset_decimals(currency))
 
 
 def _currency_label(currency: str) -> str:
-    if currency == "mn2":
-        return "MN2"
+    if currency == "coins":
+        return "coins"
     if currency == "usd":
         return "USD"
-    return "coins"
+    meta = _exchange_stake_map().get(currency)
+    if meta and meta.get("label"):
+        return str(meta["label"])
+    return (currency or "").upper() or "coins"
 
 
 def _mn2_config() -> Dict[str, Any]:
@@ -328,6 +368,7 @@ def get_public_config() -> Dict[str, Any]:
     mn2_cfg = _mn2_config()
     featured = cfg.get("featured_games") if isinstance(cfg.get("featured_games"), list) else []
     social_links = cfg.get("social_links") if isinstance(cfg.get("social_links"), list) else []
+    stake_currencies = _stake_currency_catalog(pay)
     return {
         "currency": cfg.get("currency") or "coins",
         "disclaimer": pay["disclaimer_coins"] if not pay["enabled"] else pay["disclaimer_mn2"],
@@ -337,6 +378,7 @@ def get_public_config() -> Dict[str, Any]:
         "featured_games": featured,
         "social_links": social_links,
         "games": public_games,
+        "stake_currencies": stake_currencies,
         "real_money": {
             "enabled": pay["enabled"],
             "rails": pay["rails"],
@@ -348,8 +390,58 @@ def get_public_config() -> Dict[str, Any]:
             "paypal_deposit_packs": pay["paypal_deposit_packs"],
             "ticker": mn2_cfg.get("ticker") or "MN2",
             "coins_per_mn2": float(mn2_cfg.get("coins_per_mn2") or 100),
+            "stake_currencies": stake_currencies,
         },
     }
+
+
+def _stake_currency_catalog(pay: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Coins + USD + every exchange catalog coin for the casino stake bar."""
+    pay = pay or _payment_config()
+    raw = _load_config()
+    rows: List[Dict[str, Any]] = [
+        {
+            "id": "coins",
+            "label": "Coins",
+            "name": "Virtual coins",
+            "kind": "virtual",
+            "min_bet": float(raw.get("min_bet") or 1),
+            "max_bet": float(raw.get("max_bet") or 500),
+            "decimals": 0,
+            "enabled": True,
+        }
+    ]
+    if pay.get("enabled") and "paypal" in (pay.get("rails") or []):
+        rows.append({
+            "id": "usd",
+            "label": "USD",
+            "name": "PayPal USD balance",
+            "kind": "fiat",
+            "min_bet": float(pay.get("paypal_min_bet") or 0.5),
+            "max_bet": float(pay.get("paypal_max_bet") or 25),
+            "decimals": 2,
+            "enabled": True,
+        })
+    if pay.get("enabled"):
+        for asset in _exchange_stake_map().values():
+            sym = str(asset.get("symbol") or "").strip().lower()
+            if not sym or sym == "coins":
+                continue
+            if sym == "mn2" and "mn2" not in (pay.get("rails") or []):
+                continue
+            rows.append({
+                "id": sym,
+                "label": asset.get("label") or sym.upper(),
+                "name": asset.get("name") or sym.upper(),
+                "kind": "exchange",
+                "min_bet": float(asset.get("min_bet") or 0.001),
+                "max_bet": float(asset.get("max_bet") or 1),
+                "decimals": int(asset.get("decimals") or 8),
+                "price_usd": asset.get("price_usd"),
+                "category": asset.get("category") or "",
+                "enabled": True,
+            })
+    return rows
 
 
 def _user_coins(user_id: str) -> float:
@@ -366,6 +458,13 @@ def get_balance(user_id: str) -> Dict[str, Any]:
     try:
         cfg = get_public_config()
         pay = _payment_config()
+        stake_currencies = cfg.get("stake_currencies") or _stake_currency_catalog(pay)
+        exchange_balances: Dict[str, float] = {}
+        for row in stake_currencies:
+            rid = str(row.get("id") or "").strip().lower()
+            if not rid or rid in ("coins", "usd"):
+                continue
+            exchange_balances[rid] = round(_user_balance(user_id, rid), 12)
         return {
             "success": True,
             "user_id": user_id,
@@ -373,6 +472,8 @@ def get_balance(user_id: str) -> Dict[str, Any]:
             "balance": _user_coins(user_id),
             "mn2_balance": _user_mn2_balance(user_id),
             "fiat_balance": _user_fiat_balance(user_id),
+            "exchange_balances": exchange_balances,
+            "stake_currencies": stake_currencies,
             "real_money": {
                 "enabled": pay["enabled"],
                 "rails": pay["rails"],
@@ -384,6 +485,7 @@ def get_balance(user_id: str) -> Dict[str, Any]:
                 "disclaimer_mn2": pay["disclaimer_mn2"],
                 "disclaimer_paypal": pay["disclaimer_paypal"],
                 "disclaimer_coins": pay["disclaimer_coins"],
+                "stake_currencies": stake_currencies,
             },
             "active_currency": "coins",
             "bets_today": _count_bets_today(user_id),
@@ -475,11 +577,20 @@ def _validate_bet(user_id: str, bet: float, currency: str = "coins") -> Optional
             return f"Minimum bet is ${pay['paypal_min_bet']:.2f} USD"
         if amount > pay["paypal_max_bet"]:
             return f"Maximum bet is ${pay['paypal_max_bet']:.2f} USD"
-    else:
+    elif currency == "coins":
         if amount < cfg["min_bet"]:
             return f"Minimum bet is {cfg['min_bet']} coins"
         if amount > cfg["max_bet"]:
             return f"Maximum bet is {cfg['max_bet']} coins"
+    else:
+        meta = _exchange_stake_map().get(currency) or {}
+        min_bet = float(meta.get("min_bet") or 0.001)
+        max_bet = float(meta.get("max_bet") or (min_bet * 100))
+        label = _currency_label(currency)
+        if amount < min_bet:
+            return f"Minimum bet is {min_bet} {label}"
+        if amount > max_bet:
+            return f"Maximum bet is {max_bet} {label}"
     daily_cap = int(cfg["max_bets_per_day"])
     try:
         from backend.services.casino_responsible_gaming import profit_agent_daily_cap
@@ -519,9 +630,20 @@ def _apply_balance_delta(
     elif currency == "usd":
         point_type = "casino_fiat_balance"
         source = "casino_paypal"
-    else:
+    elif currency == "coins":
         point_type = "coins"
         source = "casino"
+    else:
+        from backend.services.crypto_exchange_service import adjust_symbol_balance
+
+        adjust_symbol_balance(
+            user_id,
+            currency.upper(),
+            float(delta),
+            source="casino_exchange",
+            meta={"game": game, "currency": currency, **meta},
+        )
+        return
     unified_points_db.add_points(
         user_id=user_id,
         point_type=point_type,

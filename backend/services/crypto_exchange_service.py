@@ -528,6 +528,54 @@ def _validate_paypal_capture(capture: Dict[str, Any], expected_usd: float, *, ex
     return None
 
 
+def list_casino_stake_assets() -> List[Dict[str, Any]]:
+    """Public catalog of exchange coins that can be used as casino stake currencies."""
+    cfg = load_config()
+    out: List[Dict[str, Any]] = []
+    for a in cfg.get("assets") or []:
+        if not isinstance(a, dict):
+            continue
+        sym = str(a.get("symbol") or "").strip().upper()
+        if not sym:
+            continue
+        decimals = int(a.get("decimals") or 8)
+        min_trade = float(a.get("min_trade") or 0.001)
+        price = float(_price_usd(sym, cfg) or 0)
+        # Cap single bet around ~$50 USD equivalent (floor at 100× min_trade).
+        max_by_usd = (50.0 / price) if price > 0 else min_trade * 100
+        max_bet = max(min_trade * 100, max_by_usd)
+        out.append({
+            "symbol": sym.lower(),
+            "label": sym,
+            "name": a.get("name") or sym,
+            "decimals": decimals,
+            "min_bet": round(min_trade, 12),
+            "max_bet": round(max_bet, 12),
+            "price_usd": round(price, 8),
+            "category": a.get("category") or "",
+        })
+    return out
+
+
+def get_symbol_balance(user_id: str, symbol: str) -> float:
+    """Public balance lookup (MN2 via points; other coins via custodial wallet)."""
+    return float(_get_symbol_balance(user_id, (symbol or "").strip().upper()) or 0)
+
+
+def adjust_symbol_balance(
+    user_id: str,
+    symbol: str,
+    delta: float,
+    *,
+    source: str = "casino_exchange",
+    meta: Optional[Dict[str, Any]] = None,
+) -> float:
+    """Public wallet adjustment for casino stakes/payouts on exchange assets."""
+    sym = (symbol or "").strip().upper()
+    _adjust_symbol_balance(user_id, sym, float(delta), source, meta or {})
+    return get_symbol_balance(user_id, sym)
+
+
 def get_catalog() -> Dict[str, Any]:
     cfg = load_config()
     assets = []

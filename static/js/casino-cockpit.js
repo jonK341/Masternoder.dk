@@ -50,6 +50,11 @@
       var house = res[0] || {};
       var health = res[1] || {};
       var trades = (res[2] && res[2].trades) || [];
+      if (!house.success && house.success !== undefined && !health.success) {
+        el.textContent = 'Income monitor unavailable — open Lounge again or refresh.';
+        if (fill) fill.style.width = '8%';
+        return;
+      }
       var wagered = Number(house.total_wagered || 0);
       var profit = Number(house.house_net || house.house_profit || house.net || 0);
       var fees = Number(health.treasury_fees_mn2 || 0);
@@ -59,6 +64,9 @@
         ' · Exchange trades: ' + trades.length +
         ' · Fees: ' + fmt(fees, 4) + ' MN2';
       if (fill) fill.style.width = score + '%';
+    }).catch(function () {
+      el.textContent = 'Income monitor unavailable — refresh the page.';
+      if (fill) fill.style.width = '8%';
     });
   }
 
@@ -126,7 +134,10 @@
 
   function init() {
     initTocShortcuts();
-    // Lounge/cockpit APIs hydrate when Lounge tab opens via __casinoHydrateCockpit.
+    // Prefetch monitors so the first lounge paint is not stuck on "Loading…"
+    loadIncomeMonitor();
+    loadCamgirls();
+    // Full hydrate (intervals) still starts when Lounge tab opens.
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

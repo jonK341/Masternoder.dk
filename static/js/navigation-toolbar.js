@@ -1034,7 +1034,7 @@
     (function loadPageLengthGuard() {
         if (document.querySelector('script[src*="page-length-guard"]')) return;
         var s = document.createElement('script');
-        s.src = '/static/js/page-length-guard.js?v=20261010';
+        s.src = '/static/js/page-length-guard.js?v=20261122';
         s.defer = true;
         document.body.appendChild(s);
     })();
