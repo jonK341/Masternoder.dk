@@ -44,3 +44,8 @@
     color: #81d4fa;
     border: 1px solid rgba(129, 212, 250, 0.45);
 }
+.podcast-portal-btn--casino {
+    background: linear-gradient(135deg, #7c3aed, #ff00aa);
+    color: #fff;
+    border: 1px solid rgba(255, 179, 230, 0.45);
+}

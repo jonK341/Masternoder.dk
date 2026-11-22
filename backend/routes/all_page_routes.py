@@ -50,7 +50,7 @@ PAGES = [
     'social-monitor', 'explorer', 'proof-of-reserves',
     'market', 'nft', 'exchange', 'casino', 'customers', 'camgirls', 'command-center', 'hosting',
     'profit',
-    'wallets', 'podcast', 'create-app', 'business-control',
+    'wallets', 'podcast', 'discord-play', 'create-app', 'business-control',
 ]
 
 # Legacy page aliases that no longer have standalone index.html files.
@@ -261,6 +261,20 @@ def casino_page():
     except Exception as exc:
         return f'Error loading casino page: {exc}', 500
     return 'Casino page not found', 404
+
+
+@all_page_bp.route('/casino/slots/', methods=['GET'])
+@all_page_bp.route('/casino/slots', methods=['GET'])
+def casino_slots_room_redirect():
+    """SEO / share deep-link into slots room."""
+    return redirect('/casino/?tab=slots&utm_source=seo&utm_medium=deep_link&utm_campaign=casino_traffic', code=302)
+
+
+@all_page_bp.route('/casino/small-games/', methods=['GET'])
+@all_page_bp.route('/casino/small-games', methods=['GET'])
+def casino_small_games_room_redirect():
+    """SEO / share deep-link into small-games room."""
+    return redirect('/casino/?tab=small-games&utm_source=seo&utm_medium=deep_link&utm_campaign=casino_traffic', code=302)
 
 
 @all_page_bp.route('/casino/manifest.webmanifest', methods=['GET'])
@@ -546,9 +560,14 @@ _SITEMAP_PATHS = (
     '/camgirls/',
     '/exchange/',
     '/casino/',
+    '/casino/slots/',
+    '/casino/small-games/',
+    '/discord-play/',
+    '/podcast/',
     '/hosting/',
     '/shop/',
     '/game/',
+    '/battle/',
     '/explorer/',
     '/compendium/',
     '/profile/',
@@ -577,10 +596,16 @@ def sitemap_xml():
     lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for path in _SITEMAP_PATHS:
         loc = base + (path if path != '/' else '/')
-        priority = '1.0' if path == '/' else ('0.9' if path in ('/hosting/', '/generator/', '/camgirls/', '/exchange/', '/casino/') else '0.7')
+        high = (
+            '/hosting/', '/generator/', '/camgirls/', '/exchange/', '/casino/',
+            '/casino/slots/', '/casino/small-games/', '/discord-play/', '/podcast/', '/shop/',
+        )
+        priority = '1.0' if path == '/' else ('0.9' if path in high else '0.7')
+        changefreq = 'daily' if path.startswith('/casino') or path == '/' else 'weekly'
+        loc = base + (path if path != '/' else '/')
         lines.append('  <url>')
         lines.append(f'    <loc>{loc}</loc>')
-        lines.append(f'    <changefreq>weekly</changefreq>')
+        lines.append(f'    <changefreq>{changefreq}</changefreq>')
         lines.append(f'    <priority>{priority}</priority>')
         lines.append('  </url>')
     try:

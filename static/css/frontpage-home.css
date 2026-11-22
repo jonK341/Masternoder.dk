@@ -1325,6 +1325,52 @@ body.mn-sound-active .theme-sound-toggle {
     background: rgba(0, 212, 255, 0.14);
 }
 
+.fp-mn2-link--hot {
+    border-color: rgba(255, 0, 170, 0.45);
+    color: #ff99dd;
+    background: rgba(255, 0, 170, 0.12);
+}
+
+.fp-mn2-link--hot:hover {
+    background: rgba(255, 0, 170, 0.2);
+}
+
+/* Casino traffic drive band */
+.fp-casino-drive {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 0;
+    padding: 16px 18px;
+    border: 1px solid rgba(255, 0, 170, 0.32);
+    border-radius: 20px;
+    background:
+        linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(0, 212, 255, 0.08)),
+        rgba(12, 8, 28, 0.78);
+}
+
+.fp-casino-drive-copy h2 {
+    margin: 0 0 6px;
+    font-size: 1.2rem;
+    color: #ffb3e6;
+}
+
+.fp-casino-drive-copy p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.74);
+    max-width: 540px;
+}
+
+.fp-casino-drive-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
 .fp-mn2-balance-pill {
     font-size: 0.82rem;
     color: rgba(255, 255, 255, 0.65);
@@ -1345,7 +1391,8 @@ body.mn-sound-active .theme-sound-toggle {
         padding-inline: 12px;
     }
 
-    .fp-mn2-band {
+    .fp-mn2-band,
+    .fp-casino-drive {
         flex-direction: column;
         align-items: flex-start;
     }

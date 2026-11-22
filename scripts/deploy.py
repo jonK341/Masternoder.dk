@@ -508,6 +508,7 @@ MANIFESTS = {
         "data/casino_trophies.json",
         "data/casino_achievements.json",
         "data/casino_marketing.json",
+        "data/casino_traffic_loadons.json",
         "data/casino_agents.json",
         "data/casino_agent_models.json",
         "data/social_networks.json",

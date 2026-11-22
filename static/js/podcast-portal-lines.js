@@ -44,6 +44,10 @@
             '<a href="/podcast" class="podcast-portal-link podcast-portal-btn">Open Podcast</a>' +
             '<a href="/podcast#news" class="podcast-portal-link podcast-portal-btn podcast-portal-btn--news">News &amp; komment</a>' +
             '<a href="/podcast#episodes" class="podcast-portal-link podcast-portal-btn podcast-portal-btn--ghost">Listen</a>' +
+            (siteId === 'casino'
+                ? ''
+                : '<a href="/casino/?utm_source=' + encodeURIComponent(siteId || 'podcast_strip') +
+                  '&utm_medium=portal_strip&utm_campaign=casino_traffic" class="podcast-portal-link podcast-portal-btn podcast-portal-btn--casino">Play Casino</a>') +
             '</div>';
 
         if (script && script.parentNode) {

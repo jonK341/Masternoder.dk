@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Discord Casino — MasterNoder</title>
-    <meta http-equiv="refresh" content="0;url=/casino/?tab=social">
+    <meta http-equiv="refresh" content="0;url=/casino/?tab=social&utm_source=discord_play&utm_medium=redirect&utm_campaign=casino_traffic">
+    <meta name="description" content="Play MasterNoder Casino in Discord or jump to the social lounge.">
+    <link rel="canonical" href="https://masternoder.dk/discord-play/">
     <link rel="stylesheet" href="/static/css/modern-design-system.css">
     <link rel="stylesheet" href="/static/css/page-shell.css">
     <style>
@@ -20,14 +22,19 @@
         <h1>Discord Casino</h1>
         <p>Play the full MasterNoder casino in Discord or open the social lounge in your browser.</p>
         <p>
-            <a class="dp-btn" href="/casino/?tab=social">Open casino social tab</a>
+            <a class="dp-btn" href="/casino/?tab=social&utm_source=discord_play&utm_medium=cta&utm_campaign=casino_traffic">Open casino social tab</a>
             <a class="dp-btn" href="https://discord.gg/masternoder" target="_blank" rel="noopener noreferrer">Join Discord</a>
         </p>
-        <p><a href="/casino/">← Casino home</a></p>
+        <p><a href="/casino/?utm_source=discord_play&utm_medium=footer&utm_campaign=casino_traffic">← Casino home</a></p>
     </main>
     <script>
         if (!window.location.search.includes('stay=1')) {
-            window.location.replace('/casino/?tab=social');
+            var q = window.location.search || '';
+            var dest = '/casino/?tab=social&utm_source=discord_play&utm_medium=redirect&utm_campaign=casino_traffic';
+            if (q && q.length > 1) {
+                dest += '&' + q.replace(/^\?/, '').replace(/stay=1&?/, '');
+            }
+            window.location.replace(dest.replace(/&&+/g, '&').replace(/[?&]$/, ''));
         }
     </script>
 </body>

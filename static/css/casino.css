@@ -87,6 +87,40 @@
     max-width: 36rem;
 }
 
+.casino-fund-referral {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin: 0 0 var(--spacing-md);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 213, 79, 0.28);
+    background: rgba(255, 213, 79, 0.06);
+}
+
+.casino-fund-referral-copy h3 {
+    margin: 0 0 0.2rem;
+    font-size: 0.95rem;
+    color: #ffd54f;
+}
+
+.casino-fund-referral-copy p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    max-width: 28rem;
+}
+
+.casino-fund-referral-row {
+    margin: 0;
+}
+
+.casino-fund-referral-code {
+    font-size: 0.85rem;
+}
+
 .casino-fund-balances {
     display: flex;
     flex-wrap: wrap;

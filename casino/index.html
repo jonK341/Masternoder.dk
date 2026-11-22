@@ -7,6 +7,8 @@
     <title>MasterNoder2 Casino — masternoder.dk</title>
     <meta name="description" content="MasterNoder2 Casino — crash, slots, plinko, mines, tournaments, and social big-win sharing. Virtual coins first.">
     <meta name="keywords" content="MasterNoder2 Casino, MN2 casino, social casino, crash game, plinko, slots, mines, provably fair, progressive jackpot, casino tournaments, virtual coins, masternoder.dk">
+    <link rel="canonical" href="https://masternoder.dk/casino/">
+    <meta name="robots" content="index,follow">
     <meta name="theme-color" content="#1A1035">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,7 +34,7 @@
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/page-layout-metrics.css">
-    <link rel="stylesheet" href="/static/css/casino.css?v=20261122rooms">
+    <link rel="stylesheet" href="/static/css/casino.css?v=20261122traffic">
     <link rel="stylesheet" href="/static/css/casino-mobile.css?v=20260625b">
     <link rel="stylesheet" href="/static/css/casino-twa-shell.css?v=20260625b">
 </head>
@@ -65,6 +67,17 @@
                     <span data-fund="coins">Coins …</span>
                     <span data-fund="mn2">MN2 …</span>
                     <span data-fund="usd">USD …</span>
+                </div>
+            </div>
+            <div id="casino-fund-referral" class="casino-fund-referral" aria-labelledby="casino-fund-referral-title">
+                <div class="casino-fund-referral-copy">
+                    <h3 id="casino-fund-referral-title">Invite friends — grow the lounge</h3>
+                    <p>Share your link. New players unlock referral quests for you (trophy tracking only).</p>
+                </div>
+                <div class="casino-referral-row casino-fund-referral-row">
+                    <code id="casino-fund-referral-code" class="casino-fund-referral-code">Sign in for code</code>
+                    <button type="button" id="casino-fund-copy-referral-link" class="casino-share-site-btn">Copy invite link</button>
+                    <a class="casino-fund-play-cta" href="#casino-tab-social" id="casino-fund-referral-more">Quests &amp; leaderboard</a>
                 </div>
             </div>
             <div class="casino-fund-rail-tabs" role="tablist" aria-label="Funding rail">
@@ -744,7 +757,7 @@
                     <label class="casino-discord-optin">
                         <input type="checkbox" id="casino-share-wins-toggle"> Share wins to Discord (opt-in)
                     </label>
-                    <a id="casino-discord-play-link" class="casino-discord-play-link" href="/discord-play/">Open Discord casino →</a>
+                    <a id="casino-discord-play-link" class="casino-discord-play-link" href="/discord-play/?utm_source=casino&utm_medium=social_tab&utm_campaign=casino_traffic">Open Discord casino →</a>
                     <a id="casino-discord-activity-link" class="casino-discord-activity-link hidden" href="https://discord.gg/masternoder" target="_blank" rel="noopener noreferrer">Join Discord Activity →</a>
                 </div>
                 <div id="casino-social-share-grid" class="casino-social-share-grid" aria-label="Share to social networks"></div>
@@ -894,7 +907,7 @@
 <script src="/static/js/navigation-toolbar.js?v=20260428a" defer></script>
     <script src="/static/js/casino-mobile.js?v=20260625b" defer></script>
     <script src="/static/js/casino-twa-shell.js?v=20260625b" defer></script>
-    <script src="/static/js/casino.js?v=20261122rooms" defer></script>
+    <script src="/static/js/casino.js?v=20261122traffic" defer></script>
     <script src="/static/js/casino-cockpit.js?v=20261122mon" defer></script>
     <script>
     (function () {

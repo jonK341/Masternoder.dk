@@ -1,0 +1,89 @@
+{
+  "version": "1",
+  "updated": "2026-11-22",
+  "hypothesis": "Traffic is not impossible — prove it by exhausting owned + SEO + social + paid rails until acquisition funnels show sessions.",
+  "shipped_this_wave": [
+    "Frontpage hero + casino drive band CTAs with UTM",
+    "Nav favorites: Casino first + Exchange",
+    "Exchange hero Play Casino + post-swap bridge pulse",
+    "Fund & Play above-fold referral invite",
+    "UTM/ref capture into session + Meta custom events",
+    "Sitemap room deep-links /casino/slots/ /casino/small-games/",
+    "Discord-play redirect preserves UTMs",
+    "Cross-promo: shop, profile, camgirls, podcast, portal strip"
+  ],
+  "next_features": [
+    {
+      "id": "meta-ads-pixel-live",
+      "title": "Set META_PIXEL_ID + run $5/day traffic test ads to /casino/",
+      "load_on": "env + Ads Manager",
+      "priority": 1
+    },
+    {
+      "id": "search-console-sitemap",
+      "title": "Submit https://masternoder.dk/sitemap.xml to Google/Bing Search Console",
+      "load_on": "ops checklist",
+      "priority": 1
+    },
+    {
+      "id": "discord-activity-embed",
+      "title": "Discord Activity / bot slash /casino with deep link + weekly win fanout",
+      "load_on": "casino_discord_fanout",
+      "priority": 2
+    },
+    {
+      "id": "share-card-og-refresh",
+      "title": "Per-room OG images (slots / crash / small games) for link previews",
+      "load_on": "static/img/casino",
+      "priority": 2
+    },
+    {
+      "id": "referral-landing",
+      "title": "Dedicated /r/<code> landing with auto-fund coins + CTA",
+      "load_on": "all_page_routes + casino social",
+      "priority": 2
+    },
+    {
+      "id": "email-win-digest",
+      "title": "Opt-in weekly big-win + referral quest digest",
+      "load_on": "notification service",
+      "priority": 3
+    },
+    {
+      "id": "pwa-push",
+      "title": "Casino PWA push for free daily flip + jackpot spikes",
+      "load_on": "service worker",
+      "priority": 3
+    },
+    {
+      "id": "tiktok-clip-export",
+      "title": "One-tap big-win vertical clip for TikTok/Reels",
+      "load_on": "share big-win SVG → mp4",
+      "priority": 3
+    },
+    {
+      "id": "partner-affiliates",
+      "title": "Tracked partner codes for streamers (UTM + ref)",
+      "load_on": "referral quests",
+      "priority": 3
+    },
+    {
+      "id": "localized-dk-landing",
+      "title": "da-DK casino landing for .dk SEO",
+      "load_on": "casino/index + hreflang",
+      "priority": 4
+    },
+    {
+      "id": "ab-hero-cta",
+      "title": "A/B frontpage primary CTA (Casino vs Generator) by UTM cohort",
+      "load_on": "frontpage JS",
+      "priority": 4
+    },
+    {
+      "id": "play-store-aso",
+      "title": "Casino TWA Play listing screenshots + keyword pack",
+      "load_on": "mobile/casino-twa",
+      "priority": 4
+    }
+  ]
+}

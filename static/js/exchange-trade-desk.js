@@ -423,6 +423,12 @@
         if (window.CexTradeDesk && window.CexTradeDesk.refreshWallet) {
           window.CexTradeDesk.refreshWallet();
         }
+        cexToast('Swap done — open Casino to stake', 'ok');
+        var bridge = document.getElementById('cex-casino-bridge');
+        if (bridge) {
+          bridge.classList.add('cex-casino-bridge--pulse');
+          try { bridge.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { /* optional */ }
+        }
       } else if (preview && res.failed_leg) {
         preview.textContent = 'Failed on leg ' + res.failed_leg + ': ' + (res.error || '');
       }

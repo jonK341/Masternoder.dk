@@ -62,13 +62,14 @@
             iconImg: APP_BASE + '/static/img/nav/brand.svg',
             url: APP_BASE + '/'
         },
-        favorites: ['generator', 'game', 'battle', 'trophies'], /* overridden by NavPortalTemplate */
+        favorites: ['casino', 'generator', 'game', 'battle', 'exchange'], /* overridden by NavPortalTemplate */
         links: [
             { name: 'Home', icon: '🏠', url: APP_BASE + '/', id: 'home' },
+            { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/?utm_source=nav&utm_medium=toolbar&utm_campaign=casino_traffic', id: 'casino', favorite: true, title: 'Crash, slots, small games — fund & play' },
             { name: 'Generator', icon: '🎬', url: APP_BASE + '/generator', id: 'generator', favorite: true },
             { name: 'Game', icon: '🎮', url: APP_BASE + '/game', id: 'game', favorite: true },
             { name: 'Battle', icon: '⚔️', url: APP_BASE + '/battle', id: 'battle', favorite: true },
-            { name: 'Trophies', icon: '🏆', url: APP_BASE + '/trophies', id: 'trophies', favorite: true },
+            { name: 'Trophies', icon: '🏆', url: APP_BASE + '/trophies', id: 'trophies' },
             { name: 'Quests', icon: '📜', url: APP_BASE + '/quests', id: 'quests' },
             { name: 'Shop', icon: '🛒', url: APP_BASE + '/shop', id: 'shop' },
             { name: 'Explorer', icon: '🔎', url: APP_BASE + '/explorer', id: 'explorer', title: 'MN2 Crypto Hub: explorer, staking, reserves, market' },
@@ -83,13 +84,12 @@
             { name: 'Debugger', icon: '🔧', url: APP_BASE + '/debugger', id: 'debugger' },
             { name: 'API Lab', icon: '🧪', url: APP_BASE + '/api-lab', id: 'api_lab', title: 'Browse API categories and try endpoints' },
             { name: 'Aggregator', icon: '📡', url: APP_BASE + '/aggregator', id: 'aggregator', title: '75 AI aggregators — catalog, top 25, control panel' },
-            { name: 'Casino', icon: '🎰', url: APP_BASE + '/casino/', id: 'casino' },
             { name: 'Battlegrounds', icon: '🗺️', url: APP_BASE + '/battlegrounds', id: 'battlegrounds' },
             { name: 'Star Map 25', icon: '🗺️', url: APP_BASE + '/starmap25', id: 'starmap25' },
             { name: 'Gallery', icon: '🖼️', url: APP_BASE + '/gallery', id: 'gallery' },
             { name: 'Social', icon: '👥', url: APP_BASE + '/social', id: 'social' },
             { name: 'Wallets', icon: '💾', url: APP_BASE + '/wallets', id: 'wallets', title: 'MN2 wallet portal: deposit, withdraw, trusted addresses, and downloads' },
-            { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange', id: 'exchange', title: '25-crypto exchange — swap, limits, staking, tax records' },
+            { name: 'Exchange', icon: '💱', url: APP_BASE + '/exchange?utm_source=nav&utm_medium=toolbar&utm_campaign=casino_traffic', id: 'exchange', favorite: true, title: '25-crypto exchange — swap, limits, staking, tax records' },
             { name: 'Market', icon: '📈', url: APP_BASE + '/market', id: 'market', title: 'NFT editions + P2P MN2 marketplace' },
             { name: 'NFT Hub', icon: '💎', url: APP_BASE + '/nft', id: 'nft', title: 'Numbered NFT editions — primary, resale, profile avatar' },
             { name: 'Staking Rank', icon: '🌱', url: APP_BASE + '/staking-leaderboard', id: 'staking_leaderboard', title: 'MN2 staking leaderboard' },

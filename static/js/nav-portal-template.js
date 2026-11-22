@@ -237,7 +237,7 @@
     if (activeTemplate && activeTemplate.favorites && activeTemplate.favorites.length) {
       return activeTemplate.favorites.slice();
     }
-    return ['generator', 'game', 'battle', 'trophies'];
+    return ['casino', 'generator', 'game', 'battle', 'exchange'];
   }
 
   function getLayout() {

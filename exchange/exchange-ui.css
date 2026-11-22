@@ -740,3 +740,48 @@
   cursor: help;
   border-bottom: 1px dotted rgba(0,255,136,0.35);
 }
+
+.cex-casino-bridge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 0, 170, 0.32);
+  background:
+    linear-gradient(135deg, rgba(124, 58, 237, 0.16), rgba(0, 212, 255, 0.08)),
+    rgba(8, 12, 28, 0.85);
+}
+
+.cex-casino-bridge-copy h2 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  color: #ffb3e6;
+}
+
+.cex-casino-bridge-copy p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.74);
+  max-width: 520px;
+}
+
+.cex-casino-bridge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.cex-casino-bridge--pulse {
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.45), 0 12px 36px rgba(255, 0, 170, 0.2);
+  animation: cex-casino-pulse 1.6s ease-in-out 2;
+}
+
+@keyframes cex-casino-pulse {
+  0%, 100% { border-color: rgba(255, 0, 170, 0.32); }
+  50% { border-color: rgba(0, 255, 136, 0.55); }
+}
