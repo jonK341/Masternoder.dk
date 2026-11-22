@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
     <link rel="stylesheet" href="/static/css/ptc-ad-rotator.css?v=20260429a">
+    <script src="/static/js/meta-pixel.js?v=20261122pixel2"></script>
 </head>
 <body class="mn-frontpage-v2 mn-no-hypnotic mn-minimal-chrome">
     <a href="#mainContent" class="skip-link">Spring til indhold</a>
@@ -87,6 +88,7 @@
                     <a class="fp-secondary-action" href="/casino/?tab=slots&utm_source=frontpage&utm_medium=drive_band&utm_campaign=casino_traffic">Slots room</a>
                     <a class="fp-secondary-action" href="/casino/?tab=small-games&utm_source=frontpage&utm_medium=drive_band&utm_campaign=casino_traffic">Small games</a>
                     <a class="fp-secondary-action" href="/discord-play/?utm_source=frontpage&utm_medium=drive_band&utm_campaign=casino_traffic">Discord play</a>
+                    <a class="fp-secondary-action" href="/r/?utm_source=frontpage&utm_medium=drive_band&utm_campaign=invite_party">Invite Party</a>
                 </div>
             </section>
 
@@ -366,5 +368,14 @@
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="home" defer></script>
     <link rel="stylesheet" href="/static/css/mobile-install.css?v=20260704a">
     <script src="/static/js/mobile-install.js?v=20260704a" defer></script>
+    <script>
+      if (window.MnMetaPixel) {
+        window.MnMetaPixel.fetchAndBoot('/api/casino/meta/pixel').then(function () {
+          if (window.MnMetaPixel.trackCustom) {
+            window.MnMetaPixel.trackCustom('CasinoTrafficLand', { page: 'home' });
+          }
+        });
+      }
+    </script>
 </body>
 </html>

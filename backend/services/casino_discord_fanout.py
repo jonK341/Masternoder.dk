@@ -21,6 +21,7 @@ _CASINO_EVENT_TYPES = frozenset({
     "casino_rg_reminder",
     "casino_discord_promo_created",
     "casino_agent_play",
+    "casino_referral_signup",
 })
 
 
@@ -233,6 +234,25 @@ def _embed_for_event(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                     f"[Watch the leaderboard]({casino_url})\n\n_{rg}_"
                 ),
                 "color": 0x00CED1,
+            }],
+        }
+
+    if et == "casino_referral_signup":
+        host = payload.get("referrer") or "A host"
+        code = payload.get("code") or ""
+        party_url = f"{base_url}/r/{code}" if code else f"{base_url}/r/"
+        return {
+            "embeds": [{
+                "title": "🎉 Invite Party — new guest",
+                "description": (
+                    f"**{host}** brought a friend into the lounge"
+                    + (f" with code `{code}`" if code else "")
+                    + ".\n\n"
+                    f"[Join the Invite Party]({party_url}) · [Play casino]({casino_url})\n\n"
+                    "Free practice coins only — no RTP perks.\n\n"
+                    f"_{rg}_"
+                ),
+                "color": 0xFF00AA,
             }],
         }
 

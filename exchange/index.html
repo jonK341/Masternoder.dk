@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="/static/css/exchange-frontpage.css?v=20261001b">
     <link rel="stylesheet" href="/static/css/exchange-hub-sync.css?v=20261121ex">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/static/js/meta-pixel.js?v=20261122pixel2"></script>
 </head>
 <body class="layout-standard mn-no-hypnotic cex-frontpage-match">
     <div class="frontpage-bg" aria-hidden="true"></div>
@@ -838,5 +839,14 @@
     <script src="/static/js/crypto-exchange.js?v=20261121ex"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
     <script src="/static/js/cex-nft-market.js?v=20261001a"></script>
+    <script>
+      if (window.MnMetaPixel) {
+        window.MnMetaPixel.fetchAndBoot('/api/casino/meta/pixel').then(function () {
+          if (window.MnMetaPixel.trackCustom) {
+            window.MnMetaPixel.trackCustom('CasinoTrafficLand', { page: 'exchange' });
+          }
+        });
+      }
+    </script>
 </body>
 </html>
