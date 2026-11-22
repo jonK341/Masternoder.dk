@@ -1,0 +1,167 @@
+.invite-party-body {
+    min-height: 100vh;
+    margin: 0;
+    color: #f4e9ff;
+    background:
+        radial-gradient(ellipse at 20% 10%, rgba(255, 0, 170, 0.22), transparent 45%),
+        radial-gradient(ellipse at 80% 0%, rgba(124, 58, 237, 0.35), transparent 40%),
+        linear-gradient(160deg, #12081f 0%, #1a1035 45%, #0b1224 100%);
+    font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.invite-party {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 72px 20px 48px;
+    text-align: center;
+}
+
+.invite-party-kicker {
+    margin: 0 0 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    color: #ffb3e6;
+}
+
+.invite-party h1 {
+    margin: 0 0 10px;
+    font-size: clamp(2rem, 6vw, 2.8rem);
+    line-height: 1.1;
+}
+
+.invite-party-tagline {
+    margin: 0 0 18px;
+    opacity: 0.85;
+}
+
+.invite-party-balloon {
+    font-size: 2rem;
+    margin-bottom: 14px;
+    animation: ip-float 2.8s ease-in-out infinite;
+}
+
+@keyframes ip-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.invite-party-card {
+    padding: 22px 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 179, 230, 0.35);
+    background: linear-gradient(165deg, rgba(40, 18, 70, 0.92), rgba(12, 18, 40, 0.9));
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.invite-party-host {
+    margin: 0 0 8px;
+    font-weight: 700;
+    color: #ffe08a;
+}
+
+.invite-party-gift {
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+}
+
+.invite-party-code-wrap {
+    margin: 0 0 16px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.invite-party-code-wrap code {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(0, 212, 255, 0.15);
+    color: #7ee8ff;
+    font-weight: 700;
+}
+
+.invite-party-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 220px;
+    padding: 14px 22px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 800;
+    color: #14081f;
+    background: linear-gradient(135deg, #ffd54f, #ff00aa 70%, #7c3aed);
+    box-shadow: 0 10px 30px rgba(255, 0, 170, 0.28);
+}
+
+.invite-party-cta:hover { filter: brightness(1.05); }
+
+.invite-party-fine {
+    margin: 14px 0 0;
+    font-size: 0.78rem;
+    opacity: 0.7;
+}
+
+.invite-party-fun {
+    margin: 18px 0 8px;
+    font-size: 0.92rem;
+    opacity: 0.8;
+}
+
+.invite-party-alt {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.invite-party-alt a { color: #81d4fa; }
+
+/* Casino Fund & Play party strip */
+.casino-fund-referral {
+    border-color: rgba(255, 213, 79, 0.35);
+}
+
+.casino-party-meter {
+    width: 100%;
+    height: 10px;
+    margin: 8px 0 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.casino-party-meter > span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #ffd54f, #ff00aa, #7c3aed);
+    transition: width 0.4s ease;
+}
+
+.casino-party-share-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.casino-party-level {
+    font-size: 0.85rem;
+    color: #ffd54f;
+    margin: 0;
+}
+
+.casino-party-toast-pop {
+    animation: ip-pop 0.55s ease;
+}
+
+@keyframes ip-pop {
+    0% { transform: scale(0.92); opacity: 0.4; }
+    60% { transform: scale(1.04); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .invite-party-balloon,
+    .casino-party-toast-pop { animation: none; }
+}

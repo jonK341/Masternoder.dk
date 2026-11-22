@@ -115,12 +115,34 @@
     "enabled": true,
     "max_bets_tracked": 10,
     "milestones": [
-      {"bets": 1, "referrer_coins": 10, "badge": "🌱", "label": "First bet"},
-      {"bets": 3, "referrer_coins": 25, "badge": "🎯", "label": "Warming up"},
-      {"bets": 5, "referrer_coins": 50, "badge": "🔥", "label": "Regular"},
-      {"bets": 10, "referrer_coins": 100, "badge": "👑", "label": "Dedicated"}
+      {"bets": 1, "referrer_coins": 25, "invitee_coins": 10, "badge": "🌱", "label": "First bet"},
+      {"bets": 3, "referrer_coins": 50, "invitee_coins": 15, "badge": "🎯", "label": "Warming up"},
+      {"bets": 5, "referrer_coins": 100, "invitee_coins": 25, "badge": "🔥", "label": "Regular"},
+      {"bets": 10, "referrer_coins": 250, "invitee_coins": 50, "badge": "👑", "label": "Dedicated"}
     ],
-    "note": "Referrer coin rewards only — no RTP or house-edge changes for referees."
+    "note": "Free coin party rewards only — no RTP or house-edge changes."
+  },
+  "referral_party": {
+    "enabled": true,
+    "brand": "Invite Party",
+    "tagline": "Free coins. Zero pressure. Friends only.",
+    "invitee_welcome_coins": 75,
+    "referrer_signup_coins": 40,
+    "daily_share_coins": 20,
+    "max_daily_share_claims": 1,
+    "party_levels": [
+      {"invites": 1, "label": "Spark", "badge": "✨", "bonus_coins": 30},
+      {"invites": 3, "label": "Crew", "badge": "🎉", "bonus_coins": 80},
+      {"invites": 5, "label": "Hype", "badge": "🚀", "bonus_coins": 150},
+      {"invites": 10, "label": "Legend", "badge": "👑", "bonus_coins": 400},
+      {"invites": 25, "label": "Mythic Host", "badge": "🌌", "bonus_coins": 1200}
+    ],
+    "weekly_prizes_coins": [300, 150, 75],
+    "fun_copy": [
+      "Drop your link. Friends land free practice coins.",
+      "No wallets needed to start — coins first, fun forever.",
+      "Beat the boring invite systems. This one parties."
+    ]
   },
   "vip_lounge": {
     "enabled": true,
@@ -294,7 +316,9 @@
     "og_title": "MasterNoder2 Casino — Social lounge",
     "og_description": "Ride the rocket. Hit the jackpot. Crash, slots, plinko, tournaments, and big-win sharing on masternoder.dk.",
     "og_image": "/static/img/casino/banner-masternoder2-casino.png",
-    "pixel_id_env": "META_PIXEL_ID"
+    "pixel_id_env": "META_PIXEL_ID",
+    "pixel_id": "",
+    "events": ["PageView", "ViewContent", "CompleteRegistration", "Lead", "Purchase", "CasinoBigWin", "CasinoPlay", "CasinoInviteParty"]
   },
   "marketing": {
     "banner_svg": "/static/img/casino/banner-masternoder2-casino.svg",

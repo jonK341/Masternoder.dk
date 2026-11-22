@@ -10,12 +10,14 @@
     "UTM/ref capture into session + Meta custom events",
     "Sitemap room deep-links /casino/slots/ /casino/small-games/",
     "Discord-play redirect preserves UTMs",
-    "Cross-promo: shop, profile, camgirls, podcast, portal strip"
+    "Cross-promo: shop, profile, camgirls, podcast, portal strip",
+    "Meta Pixel bootstrap API + meta-pixel.js + standard events",
+    "Invite Party: /r/<code>, welcome coins, party levels, daily share"
   ],
   "next_features": [
     {
       "id": "meta-ads-pixel-live",
-      "title": "Set META_PIXEL_ID + run $5/day traffic test ads to /casino/",
+      "title": "Paste real META_PIXEL_ID on server + run $5/day traffic test ads to /casino/",
       "load_on": "env + Ads Manager",
       "priority": 1
     },
@@ -35,12 +37,6 @@
       "id": "share-card-og-refresh",
       "title": "Per-room OG images (slots / crash / small games) for link previews",
       "load_on": "static/img/casino",
-      "priority": 2
-    },
-    {
-      "id": "referral-landing",
-      "title": "Dedicated /r/<code> landing with auto-fund coins + CTA",
-      "load_on": "all_page_routes + casino social",
       "priority": 2
     },
     {

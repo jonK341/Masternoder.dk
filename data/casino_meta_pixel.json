@@ -1,0 +1,25 @@
+{
+  "version": "1",
+  "description": "Meta Pixel for MasterNoder2 Casino. Pixel IDs are public in page HTML — prefer META_PIXEL_ID env in production; optional pixel_id here for quick local/dev wiring.",
+  "pixel_id": "",
+  "pixel_id_env": "META_PIXEL_ID",
+  "enabled": true,
+  "auto_page_view": true,
+  "advanced_matching": false,
+  "events": {
+    "PageView": { "standard": true },
+    "ViewContent": { "standard": true, "content_name": "MasterNoder2 Casino" },
+    "CompleteRegistration": { "standard": true, "when": "referral_register" },
+    "Lead": { "standard": true, "when": "invite_copy_or_share" },
+    "Purchase": { "standard": true, "when": "paypal_deposit_or_mn2_buyin", "currency": "USD" },
+    "CasinoBigWin": { "custom": true },
+    "CasinoPlay": { "custom": true },
+    "CasinoInviteParty": { "custom": true },
+    "CasinoTrafficLand": { "custom": true }
+  },
+  "setup": {
+    "ads_manager": "https://business.facebook.com/events_manager",
+    "ops_script": "python scripts/casino_ops_remote.py --meta-pixel-id YOUR_PIXEL_ID --reload",
+    "verify": "GET /api/casino/meta/pixel → configured=true"
+  }
+}

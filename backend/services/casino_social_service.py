@@ -8,6 +8,7 @@ import secrets
 import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote as url_quote
 
 _LOCK = threading.Lock()
 _BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -527,8 +528,7 @@ def get_social_links() -> Dict[str, Any]:
             pass
     base = social_cfg.get("share_base_url") or _base_url()
     mobile = get_mobile_config()
-    pixel_env = facebook_cfg.get("pixel_id_env") or "META_PIXEL_ID"
-    pixel_id = (os.environ.get(pixel_env) or "").strip()
+    pixel = get_meta_pixel_config()
     return {
         "success": True,
         "follow_links": links,
@@ -552,12 +552,58 @@ def get_social_links() -> Dict[str, Any]:
                 "Social casino lounge — virtual coins, big wins, and tournaments."
             ),
             "og_image": facebook_cfg.get("og_image") or "/static/img/casino/og-share.svg",
-            "pixel_id_env": pixel_env,
-            "pixel_id": pixel_id or None,
+            "pixel_id_env": pixel.get("pixel_id_env") or "META_PIXEL_ID",
+            "pixel_id": pixel.get("pixel_id"),
+            "pixel_configured": bool(pixel.get("configured")),
+            "events": pixel.get("events") or [],
         },
         "mobile": {
             "play_store_url": mobile.get("play_store_url"),
             "package_id": mobile.get("package_id"),
+        },
+    }
+
+
+def get_meta_pixel_config() -> Dict[str, Any]:
+    """Resolve Meta Pixel id from env, casino_config, or data/casino_meta_pixel.json."""
+    cfg = _load_casino_config()
+    facebook_cfg = cfg.get("facebook") if isinstance(cfg.get("facebook"), dict) else {}
+    meta_path = os.path.join(_BASE, "data", "casino_meta_pixel.json")
+    meta_file: Dict[str, Any] = {}
+    if os.path.isfile(meta_path):
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                meta_file = loaded
+        except Exception:
+            meta_file = {}
+    pixel_env = (
+        facebook_cfg.get("pixel_id_env")
+        or meta_file.get("pixel_id_env")
+        or "META_PIXEL_ID"
+    )
+    pixel_id = (
+        (os.environ.get(str(pixel_env)) or "").strip()
+        or str(facebook_cfg.get("pixel_id") or "").strip()
+        or str(meta_file.get("pixel_id") or "").strip()
+    )
+    enabled = meta_file.get("enabled", True) is not False
+    events = facebook_cfg.get("events")
+    if not isinstance(events, list):
+        events = list((meta_file.get("events") or {}).keys()) if isinstance(meta_file.get("events"), dict) else []
+    return {
+        "success": True,
+        "enabled": enabled,
+        "configured": bool(pixel_id) and enabled,
+        "pixel_id": pixel_id or None,
+        "pixel_id_env": pixel_env,
+        "auto_page_view": bool(meta_file.get("auto_page_view", True)),
+        "content_name": "MasterNoder2 Casino",
+        "events": events,
+        "setup": meta_file.get("setup") if isinstance(meta_file.get("setup"), dict) else {
+            "ops_script": "python scripts/casino_ops_remote.py --meta-pixel-id YOUR_PIXEL_ID --reload",
+            "verify": "GET /api/casino/meta/pixel",
         },
     }
 
@@ -727,12 +773,103 @@ def _referral_code_for_user(user_id: str) -> str:
     return f"MN-{digest}"
 
 
+def _empty_referral_store() -> Dict[str, Any]:
+    return {"codes": {}, "signups": [], "daily_shares": {}, "party_level_claims": {}}
+
+
+def _referral_party_config() -> Dict[str, Any]:
+    cfg = _load_casino_config()
+    party = cfg.get("referral_party") if isinstance(cfg.get("referral_party"), dict) else {}
+    levels = party.get("party_levels") if isinstance(party.get("party_levels"), list) else [
+        {"invites": 1, "label": "Spark", "badge": "✨", "bonus_coins": 30},
+        {"invites": 3, "label": "Crew", "badge": "🎉", "bonus_coins": 80},
+        {"invites": 5, "label": "Hype", "badge": "🚀", "bonus_coins": 150},
+        {"invites": 10, "label": "Legend", "badge": "👑", "bonus_coins": 400},
+        {"invites": 25, "label": "Mythic Host", "badge": "🌌", "bonus_coins": 1200},
+    ]
+    return {
+        "enabled": party.get("enabled", True),
+        "brand": party.get("brand") or "Invite Party",
+        "tagline": party.get("tagline") or "Free coins. Zero pressure. Friends only.",
+        "invitee_welcome_coins": int(party.get("invitee_welcome_coins") or 75),
+        "referrer_signup_coins": int(party.get("referrer_signup_coins") or 40),
+        "daily_share_coins": int(party.get("daily_share_coins") or 20),
+        "max_daily_share_claims": int(party.get("max_daily_share_claims") or 1),
+        "party_levels": sorted(
+            [lv for lv in levels if isinstance(lv, dict)],
+            key=lambda x: int(x.get("invites") or 0),
+        ),
+        "weekly_prizes_coins": list(party.get("weekly_prizes_coins") or [300, 150, 75]),
+        "fun_copy": list(party.get("fun_copy") or [
+            "Drop your link. Friends land free practice coins.",
+        ]),
+    }
+
+
+def _grant_party_coins(user_id: str, amount: int, reason: str, meta: Dict[str, Any]) -> bool:
+    if not user_id or amount <= 0:
+        return False
+    try:
+        from backend.services import casino_service
+
+        casino_service._apply_coin_delta(user_id, int(amount), reason, meta)
+        return True
+    except Exception:
+        return False
+
+
+def _party_level_for_invites(invite_count: int, levels: List[Dict[str, Any]]) -> Dict[str, Any]:
+    current = {"invites": 0, "label": "Starter", "badge": "🎈", "bonus_coins": 0}
+    next_level = None
+    for lv in levels:
+        need = int(lv.get("invites") or 0)
+        if invite_count >= need:
+            current = lv
+        elif next_level is None:
+            next_level = lv
+    return {
+        "current": current,
+        "next": next_level,
+        "invite_count": invite_count,
+        "progress_pct": (
+            100 if not next_level else min(
+                100,
+                int(100 * invite_count / max(1, int(next_level.get("invites") or 1))),
+            )
+        ),
+    }
+
+
+def _resolve_referrer_from_code(store: Dict[str, Any], code: str) -> Optional[str]:
+    codes = store.get("codes") if isinstance(store.get("codes"), dict) else {}
+    referrer_id = codes.get(code)
+    if referrer_id:
+        return str(referrer_id)
+    # Reverse lookup: stored value is user_id, key is code
+    for stored_code, uid in codes.items():
+        if str(stored_code).upper() == code and uid:
+            return str(uid)
+        if uid and _referral_code_for_user(str(uid)) == code:
+            return str(uid)
+    # Deterministic code still works even if store was wiped
+    # (cannot reverse MD5 — callers must have codes map)
+    return None
+
+
 def get_referral_invite(user_id: str) -> Dict[str, Any]:
-    """Casino referral code + invite link (cosmetic/trophy tracking only — no RTP perks)."""
+    """Invite Party card — short /r/ link, share kit, free-coin party status."""
     code = _referral_code_for_user(user_id)
     base = _base_url()
-    invite_url = f"{base}/casino/?ref={code}"
-    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    party = _referral_party_config()
+    invite_url = (
+        f"{base}/r/{code}"
+        f"?utm_source=referral&utm_medium=invite_party&utm_campaign=casino_traffic"
+    )
+    casino_url = (
+        f"{base}/casino/?ref={code}"
+        f"&utm_source=referral&utm_medium=invite_party&utm_campaign=casino_traffic"
+    )
+    store = _load_json_store(_CASINO_REFERRALS_PATH, _empty_referral_store())
     codes = store.setdefault("codes", {})
     codes[code] = user_id
     _save_json_store(_CASINO_REFERRALS_PATH, store)
@@ -740,24 +877,69 @@ def get_referral_invite(user_id: str) -> Dict[str, Any]:
         r for r in store.get("signups") or []
         if (r.get("referrer_user_id") or "").strip() == user_id
     ]
-    from urllib.parse import quote as url_quote
+    level = _party_level_for_invites(len(signups), party["party_levels"])
+    copy_text = (
+        f"🎉 Join my MasterNoder Invite Party!\n"
+        f"Free practice coins with code {code}\n{invite_url}"
+    )
     return {
         "success": True,
         "referral_code": code,
         "invite_url": invite_url,
-        "copy_text": f"Join me at MasterNoder Casino — use code {code}\n{invite_url}",
-        "whatsapp_url": (
-            "https://wa.me/?text="
-            + url_quote(f"Join me at MasterNoder Casino! Code: {code} {invite_url}", safe="")
-        ),
+        "casino_url": casino_url,
+        "short_path": f"/r/{code}",
+        "copy_text": copy_text,
+        "whatsapp_url": "https://wa.me/?text=" + url_quote(copy_text, safe=""),
+        "telegram_url": "https://t.me/share/url?url=" + url_quote(invite_url, safe="")
+        + "&text=" + url_quote(f"Invite Party code {code} — free casino coins!", safe=""),
+        "x_url": "https://twitter.com/intent/tweet?text=" + url_quote(copy_text, safe=""),
+        "discord_share_text": copy_text,
         "successful_invites": len(signups),
-        "note": "Referrals track social trophies only — no house-edge or RTP changes.",
+        "party": {
+            "brand": party["brand"],
+            "tagline": party["tagline"],
+            "enabled": party["enabled"],
+            "invitee_welcome_coins": party["invitee_welcome_coins"],
+            "referrer_signup_coins": party["referrer_signup_coins"],
+            "daily_share_coins": party["daily_share_coins"],
+            "level": level,
+            "fun_copy": party["fun_copy"],
+        },
+        "note": "Free coin Invite Party — no house-edge or RTP changes.",
+    }
+
+
+def get_referral_landing(code: str) -> Dict[str, Any]:
+    """Public Invite Party landing payload for /r/<code>."""
+    clean = (code or "").strip().upper()
+    party = _referral_party_config()
+    store = _load_json_store(_CASINO_REFERRALS_PATH, _empty_referral_store())
+    referrer_id = _resolve_referrer_from_code(store, clean) if clean else None
+    valid = bool(clean and (referrer_id or clean.startswith("MN-")))
+    return {
+        "success": True,
+        "valid": valid,
+        "referral_code": clean or None,
+        "referrer_display": anonymize_user(referrer_id) if referrer_id else ("Host" if valid else None),
+        "party": {
+            "brand": party["brand"],
+            "tagline": party["tagline"],
+            "invitee_welcome_coins": party["invitee_welcome_coins"],
+            "fun_copy": party["fun_copy"],
+        },
+        "cta_url": (
+            f"/casino/?ref={clean}&utm_source=referral&utm_medium=landing"
+            f"&utm_campaign=invite_party#casino-fund-play"
+            if clean else "/casino/?utm_source=referral&utm_medium=landing&utm_campaign=invite_party"
+        ),
+        "pixel": get_meta_pixel_config(),
     }
 
 
 def get_referral_leaderboard(limit: int = 10) -> Dict[str, Any]:
-    """Top referrers by successful casino signups (cosmetic/trophy tracking only)."""
-    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    """Top Invite Party hosts by successful signups (free coins / trophies only)."""
+    store = _load_json_store(_CASINO_REFERRALS_PATH, _empty_referral_store())
+    party = _referral_party_config()
     counts: Dict[str, int] = {}
     for row in store.get("signups") or []:
         if not isinstance(row, dict):
@@ -767,18 +949,25 @@ def get_referral_leaderboard(limit: int = 10) -> Dict[str, Any]:
             counts[referrer] = counts.get(referrer, 0) + 1
     ranked = sorted(counts.items(), key=lambda x: (-x[1], x[0]))[: max(1, min(int(limit or 10), 50))]
     board = []
+    prizes = party.get("weekly_prizes_coins") or []
     for idx, (uid, n) in enumerate(ranked, start=1):
+        level = _party_level_for_invites(n, party["party_levels"])
         board.append({
             "rank": idx,
             "user_id": uid,
+            "display": anonymize_user(uid),
             "referrals": n,
             "referral_code": _referral_code_for_user(uid),
+            "invite_path": f"/r/{_referral_code_for_user(uid)}",
+            "party_level": level.get("current"),
+            "weekly_prize_coins": prizes[idx - 1] if idx - 1 < len(prizes) else 0,
         })
     return {
         "success": True,
         "leaderboard": board,
         "count": len(board),
-        "note": "Referral leaderboard tracks invites only — no RTP or balance perks.",
+        "brand": party["brand"],
+        "note": "Invite Party leaderboard — free coin prizes only, no RTP perks.",
     }
 
 
@@ -786,25 +975,29 @@ def register_casino_referral(referred_user_id: str, referral_code: str) -> Dict[
     code = (referral_code or "").strip().upper()
     if not code:
         return {"success": False, "error": "referral_code required"}
-    store = _load_json_store(_CASINO_REFERRALS_PATH, {"codes": {}, "signups": []})
+    if not referred_user_id or referred_user_id in ("default_user", "guest", "anonymous"):
+        return {"success": False, "error": "sign_in_required"}
+    party = _referral_party_config()
+    store = _load_json_store(_CASINO_REFERRALS_PATH, _empty_referral_store())
     codes = store.setdefault("codes", {})
-    referrer_id = codes.get(code)
+    referrer_id = _resolve_referrer_from_code(store, code)
     if not referrer_id:
-        for uid, existing in codes.items():
-            if existing and _referral_code_for_user(str(existing)) == code:
-                referrer_id = existing
-                code = uid
-                break
-    if not referrer_id:
+        # Allow pristine deterministic codes: scan known users from codes values only
         return {"success": False, "error": "invalid_code"}
     if referrer_id == referred_user_id:
         return {"success": False, "error": "self_referral"}
+    codes[code] = referrer_id
     existing = next(
         (r for r in store.get("signups") or [] if r.get("referred_user_id") == referred_user_id),
         None,
     )
     if existing:
-        return {"success": True, "referral": existing, "message": "already_registered"}
+        return {
+            "success": True,
+            "referral": existing,
+            "message": "already_registered",
+            "party": party,
+        }
     row = {
         "id": secrets.token_hex(4),
         "referrer_user_id": referrer_id,
@@ -812,15 +1005,71 @@ def register_casino_referral(referred_user_id: str, referral_code: str) -> Dict[
         "referral_code": code,
         "registered_at": _iso(),
         "first_play_at": None,
+        "welcome_granted": False,
+        "referrer_signup_granted": False,
     }
+    rewards: Dict[str, Any] = {}
+    if party.get("enabled"):
+        welcome = int(party.get("invitee_welcome_coins") or 0)
+        if welcome > 0 and _grant_party_coins(
+            referred_user_id,
+            welcome,
+            "referral_party_welcome",
+            {"code": code, "referrer_user_id": referrer_id},
+        ):
+            row["welcome_granted"] = True
+            rewards["invitee_welcome_coins"] = welcome
+        signup_bonus = int(party.get("referrer_signup_coins") or 0)
+        if signup_bonus > 0 and _grant_party_coins(
+            referrer_id,
+            signup_bonus,
+            "referral_party_signup",
+            {"code": code, "referred_user_id": referred_user_id},
+        ):
+            row["referrer_signup_granted"] = True
+            rewards["referrer_signup_coins"] = signup_bonus
+        invite_count = 1 + sum(
+            1 for r in store.get("signups") or []
+            if str(r.get("referrer_user_id") or "").strip() == referrer_id
+        )
+        claims = store.setdefault("party_level_claims", {})
+        claimed = set(claims.get(referrer_id) or [])
+        level_rewards = []
+        for lv in party["party_levels"]:
+            need = int(lv.get("invites") or 0)
+            key = f"invites_{need}"
+            if invite_count >= need and key not in claimed:
+                bonus = int(lv.get("bonus_coins") or 0)
+                if bonus > 0:
+                    _grant_party_coins(
+                        referrer_id,
+                        bonus,
+                        "referral_party_level",
+                        {"level": lv.get("label"), "invites": need},
+                    )
+                claimed.add(key)
+                level_rewards.append(lv)
+        claims[referrer_id] = list(claimed)
+        if level_rewards:
+            rewards["party_levels_unlocked"] = level_rewards
     store.setdefault("signups", []).append(row)
     _save_json_store(_CASINO_REFERRALS_PATH, store)
     _emit(
         "casino_referral_signup",
         user_id=referred_user_id,
-        payload={"referrer": anonymize_user(referrer_id), "code": code},
+        payload={"referrer": anonymize_user(referrer_id), "code": code, "party": True},
     )
-    out = {"success": True, "referral": row}
+    out = {
+        "success": True,
+        "referral": row,
+        "rewards": rewards,
+        "party": {
+            "brand": party["brand"],
+            "tagline": party["tagline"],
+            "invitee_welcome_coins": party["invitee_welcome_coins"],
+        },
+        "message": "welcome_to_the_party",
+    }
     try:
         from backend.services.micro_tx_hooks import try_micro_tx_reward
 
@@ -828,7 +1077,7 @@ def register_casino_referral(referred_user_id: str, referral_code: str) -> Dict[
             referrer_id,
             "referral",
             idempotency_key=f"casino_referral:{row['id']}",
-            reason="Casino referral signup",
+            reason="Casino Invite Party signup",
             metadata={"referred_user_id": referred_user_id, "code": code},
         )
         if micro:
@@ -836,6 +1085,46 @@ def register_casino_referral(referred_user_id: str, referral_code: str) -> Dict[
     except Exception:
         pass
     return out
+
+
+def claim_daily_invite_share(user_id: str) -> Dict[str, Any]:
+    """Free daily coin for sharing your Invite Party link (once per UTC day)."""
+    party = _referral_party_config()
+    if not party.get("enabled"):
+        return {"success": False, "error": "party_disabled"}
+    if not user_id or user_id in ("default_user", "guest", "anonymous"):
+        return {"success": False, "error": "sign_in_required"}
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    store = _load_json_store(_CASINO_REFERRALS_PATH, _empty_referral_store())
+    daily = store.setdefault("daily_shares", {})
+    user_days = daily.setdefault(user_id, {})
+    claimed = int(user_days.get(day) or 0)
+    max_claims = int(party.get("max_daily_share_claims") or 1)
+    if claimed >= max_claims:
+        return {
+            "success": True,
+            "already_claimed": True,
+            "coins": 0,
+            "day": day,
+            "message": "Come back tomorrow for another free share bonus.",
+        }
+    coins = int(party.get("daily_share_coins") or 0)
+    ok = _grant_party_coins(
+        user_id,
+        coins,
+        "referral_party_daily_share",
+        {"day": day},
+    )
+    user_days[day] = claimed + 1
+    _save_json_store(_CASINO_REFERRALS_PATH, store)
+    _emit("casino_referral_daily_share", user_id=user_id, payload={"coins": coins, "day": day})
+    return {
+        "success": True,
+        "already_claimed": False,
+        "coins": coins if ok else 0,
+        "day": day,
+        "message": f"+{coins} free coins for sharing the party!",
+    }
 
 
 def track_referral_casino_play(user_id: str) -> None:
@@ -906,27 +1195,36 @@ def track_referral_bet(user_id: str) -> None:
         if new_count < need or tier_key in claimed:
             continue
         coins = int(milestone.get("referrer_coins") or 0)
+        invitee_coins = int(milestone.get("invitee_coins") or 0)
         if referrer_id and coins > 0:
-            try:
-                from backend.services import casino_service
-                casino_service._apply_coin_delta(
-                    referrer_id,
-                    coins,
-                    "referral_quest",
-                    {
-                        "milestone_bets": need,
-                        "referred_user_id": user_id,
-                        "tier": tier_key,
-                    },
-                )
-            except Exception:
-                pass
+            _grant_party_coins(
+                referrer_id,
+                coins,
+                "referral_quest",
+                {
+                    "milestone_bets": need,
+                    "referred_user_id": user_id,
+                    "tier": tier_key,
+                },
+            )
+        if invitee_coins > 0:
+            _grant_party_coins(
+                user_id,
+                invitee_coins,
+                "referral_quest_invitee",
+                {
+                    "milestone_bets": need,
+                    "referrer_user_id": referrer_id,
+                    "tier": tier_key,
+                },
+            )
         claimed.add(tier_key)
         target_row.setdefault("tiers_claimed", []).append(tier_key)
         rewards_granted.append({
             "tier": tier_key,
             "bets": need,
             "referrer_coins": coins,
+            "invitee_coins": invitee_coins,
             "badge": milestone.get("badge"),
             "label": milestone.get("label"),
         })
@@ -937,6 +1235,7 @@ def track_referral_bet(user_id: str) -> None:
                 "referred": anonymize_user(user_id),
                 "milestone_bets": need,
                 "referrer_coins": coins,
+                "invitee_coins": invitee_coins,
             },
         )
     _save_json_store(_CASINO_REFERRALS_PATH, store)
@@ -979,6 +1278,8 @@ def get_referral_quests(user_id: str) -> Dict[str, Any]:
             "first_play_at": ref.get("first_play_at"),
             "tiers": tier_status,
         })
+    party = _referral_party_config()
+    level = _party_level_for_invites(len(rows), party["party_levels"])
     return {
         "success": True,
         "user_id": user_id,
@@ -987,6 +1288,13 @@ def get_referral_quests(user_id: str) -> Dict[str, Any]:
         "referrals": rows,
         "referral_count": len(rows),
         "total_coins_earned": total_coins_earned,
+        "party": {
+            "brand": party["brand"],
+            "tagline": party["tagline"],
+            "level": level,
+            "daily_share_coins": party["daily_share_coins"],
+            "invitee_welcome_coins": party["invitee_welcome_coins"],
+        },
         "note": rq_cfg.get("note"),
     }
 

@@ -277,6 +277,31 @@ def casino_small_games_room_redirect():
     return redirect('/casino/?tab=small-games&utm_source=seo&utm_medium=deep_link&utm_campaign=casino_traffic', code=302)
 
 
+@all_page_bp.route('/r/', methods=['GET'])
+@all_page_bp.route('/r/<code>', methods=['GET'])
+def invite_party_landing(code: str = ''):
+    """Invite Party referral landing — free, fun, shareable /r/<code>."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'r')
+        if os.path.isfile(os.path.join(page_dir, 'index.html')):
+            resp = send_from_directory(page_dir, 'index.html', mimetype='text/html; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=120, stale-while-revalidate=60'
+            if code:
+                resp.headers['X-Invite-Code'] = str(code)[:32]
+            return resp
+    except Exception as exc:
+        return f'Error loading Invite Party: {exc}', 500
+    # Fallback deep-link into casino if landing page missing
+    clean = (code or '').strip()
+    if clean:
+        return redirect(
+            f'/casino/?ref={clean}&utm_source=referral&utm_medium=landing&utm_campaign=invite_party',
+            code=302,
+        )
+    return redirect('/casino/?utm_source=referral&utm_medium=landing&utm_campaign=invite_party', code=302)
+
+
 @all_page_bp.route('/casino/manifest.webmanifest', methods=['GET'])
 def casino_manifest():
     """PWA manifest for casino (Play TWA + installable web app)."""
@@ -562,6 +587,7 @@ _SITEMAP_PATHS = (
     '/casino/',
     '/casino/slots/',
     '/casino/small-games/',
+    '/r/',
     '/discord-play/',
     '/podcast/',
     '/hosting/',
@@ -598,7 +624,7 @@ def sitemap_xml():
         loc = base + (path if path != '/' else '/')
         high = (
             '/hosting/', '/generator/', '/camgirls/', '/exchange/', '/casino/',
-            '/casino/slots/', '/casino/small-games/', '/discord-play/', '/podcast/', '/shop/',
+            '/casino/slots/', '/casino/small-games/', '/r/', '/discord-play/', '/podcast/', '/shop/',
         )
         priority = '1.0' if path == '/' else ('0.9' if path in high else '0.7')
         changefreq = 'daily' if path.startswith('/casino') or path == '/' else 'weekly'

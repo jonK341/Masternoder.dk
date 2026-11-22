@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Invite Party — MasterNoder2 Casino</title>
+    <meta name="description" content="Free practice coins when you join a friend's Invite Party. No wallet needed to start.">
+    <meta name="robots" content="index,follow">
+    <meta property="og:title" content="You're invited to MasterNoder Invite Party">
+    <meta property="og:description" content="Grab free practice coins and jump into crash, slots, and small games.">
+    <meta property="og:image" content="https://masternoder.dk/static/img/casino/banner-masternoder2-casino.png">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#1A1035">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/casino-referral-party.css?v=20261122party">
+</head>
+<body class="invite-party-body">
+    <main class="invite-party" id="invite-party-root">
+        <p class="invite-party-kicker">MasterNoder2 · Invite Party</p>
+        <h1 id="ip-title">You're invited</h1>
+        <p class="invite-party-tagline" id="ip-tagline">Free coins. Zero pressure. Friends only.</p>
+        <div class="invite-party-balloon" aria-hidden="true">🎈🎉🚀</div>
+        <div class="invite-party-card" id="ip-card">
+            <p class="invite-party-host" id="ip-host">Loading party…</p>
+            <p class="invite-party-gift" id="ip-gift">Free practice coins waiting inside.</p>
+            <p class="invite-party-code-wrap">Code <code id="ip-code">—</code></p>
+            <a class="invite-party-cta" id="ip-cta" href="/casino/#casino-fund-play">Claim free coins &amp; play</a>
+            <p class="invite-party-fine">Coins only · no RTP perks · play free anytime</p>
+        </div>
+        <p class="invite-party-fun" id="ip-fun"></p>
+        <p class="invite-party-alt"><a href="/casino/">Skip to casino</a> · <a href="/">Home</a></p>
+    </main>
+    <script src="/static/js/meta-pixel.js?v=20261122party"></script>
+    <script>
+    (function () {
+        function codeFromPath() {
+            var parts = (location.pathname || '').split('/').filter(Boolean);
+            if (parts[0] === 'r' && parts[1]) return decodeURIComponent(parts[1]).toUpperCase();
+            var q = new URLSearchParams(location.search);
+            return (q.get('code') || q.get('ref') || '').toUpperCase();
+        }
+        var code = codeFromPath();
+        if (code) {
+            try { localStorage.setItem('casino_pending_ref', code); sessionStorage.setItem('casino_pending_ref', code); } catch (e) {}
+        }
+        function $(id) { return document.getElementById(id); }
+        fetch('/api/casino/social/referral/landing?code=' + encodeURIComponent(code || ''))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.success) return;
+                var party = data.party || {};
+                $('ip-tagline').textContent = party.tagline || $('ip-tagline').textContent;
+                $('ip-code').textContent = data.referral_code || 'PARTY';
+                if (data.referrer_display) {
+                    $('ip-host').textContent = data.referrer_display + ' threw this party for you';
+                } else if (data.valid) {
+                    $('ip-host').textContent = 'A friend invited you to the lounge';
+                } else {
+                    $('ip-host').textContent = 'Open Invite Party — grab free practice coins';
+                }
+                var gift = Number(party.invitee_welcome_coins || 0);
+                if (gift > 0) {
+                    $('ip-gift').textContent = '+' + gift + ' free practice coins when you join with this code';
+                }
+                if (data.cta_url) $('ip-cta').href = data.cta_url;
+                var lines = party.fun_copy || [];
+                if (lines.length) {
+                    $('ip-fun').textContent = lines[Math.floor(Math.random() * lines.length)];
+                }
+                if (window.MnMetaPixel) {
+                    window.MnMetaPixel.bootFromConfig(data.pixel || {});
+                    window.MnMetaPixel.trackCustom('CasinoInviteParty', {
+                        referral_code: data.referral_code || '',
+                        landing: true,
+                    });
+                }
+            })
+            .catch(function () {
+                $('ip-host').textContent = 'Party lobby is warming up — head to the casino';
+                if (code) $('ip-cta').href = '/casino/?ref=' + encodeURIComponent(code) + '#casino-fund-play';
+            });
+        if (window.MnMetaPixel) {
+            window.MnMetaPixel.fetchAndBoot('/api/casino/meta/pixel');
+        }
+    })();
+    </script>
+</body>
+</html>

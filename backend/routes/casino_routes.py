@@ -1616,12 +1616,32 @@ def casino_coupon_redeem():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/meta/pixel", methods=["GET"])
+def casino_meta_pixel():
+    """Public Meta Pixel bootstrap config (pixel id is not a secret)."""
+    try:
+        from backend.services import casino_social_service
+        return jsonify(casino_social_service.get_meta_pixel_config()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/social/referral", methods=["GET"])
 def casino_social_referral():
     try:
         from backend.services import casino_social_service
         user_id = _resolve_casino_user_id(from_body=False, from_query=True)
         return jsonify(casino_social_service.get_referral_invite(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral/landing", methods=["GET"])
+def casino_social_referral_landing():
+    try:
+        from backend.services import casino_social_service
+        code = (request.args.get("code") or request.args.get("ref") or "").strip()
+        return jsonify(casino_social_service.get_referral_landing(code)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
@@ -1657,6 +1677,17 @@ def casino_social_referral_quests():
         from backend.services import casino_social_service
         user_id = _resolve_casino_user_id(from_body=False, from_query=True)
         return jsonify(casino_social_service.get_referral_quests(user_id)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/social/referral/daily-share", methods=["POST"])
+def casino_social_referral_daily_share():
+    try:
+        from backend.services import casino_social_service
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = casino_social_service.claim_daily_invite_share(user_id)
+        return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

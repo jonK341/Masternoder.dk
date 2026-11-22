@@ -173,12 +173,37 @@ def test_casino_referral_invite_route(tmp_path, monkeypatch):
     assert resp.status_code == 200
     assert data["success"] is True
     assert data["referral_code"].startswith("MN-")
-    assert "ref=" in data["invite_url"]
+    assert "/r/" in data["invite_url"]
+    assert data["short_path"].startswith("/r/")
     assert "whatsapp_url" in data
+    assert data["party"]["brand"]
+
+
+def test_casino_meta_pixel_route(tmp_path, monkeypatch):
+    monkeypatch.delenv("META_PIXEL_ID", raising=False)
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        resp = client.get("/api/casino/meta/pixel")
+    data = resp.get_json()
+    assert resp.status_code == 200
+    assert data["success"] is True
+    assert data["pixel_id_env"] == "META_PIXEL_ID"
+    assert data["configured"] is False
+
+    monkeypatch.setenv("META_PIXEL_ID", "987654321098765")
+    with app.test_client() as client:
+        resp2 = client.get("/api/casino/meta/pixel")
+    data2 = resp2.get_json()
+    assert data2["configured"] is True
+    assert data2["pixel_id"] == "987654321098765"
 
 
 def test_casino_referral_register_route(tmp_path, monkeypatch):
     _patch_social_state(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        "backend.services.casino_social_service._grant_party_coins",
+        lambda *a, **k: True,
+    )
     app = _app(tmp_path, monkeypatch)
     with app.test_client() as client:
         inviter = client.get("/api/casino/social/referral?user_id=referrer-a").get_json()
@@ -187,10 +212,35 @@ def test_casino_referral_register_route(tmp_path, monkeypatch):
             "/api/casino/social/referral/register",
             json={"user_id": "new-player", "referral_code": code},
         )
+        land = client.get("/api/casino/social/referral/landing?code=" + code)
     data = reg.get_json()
     assert reg.status_code == 200
     assert data["success"] is True
     assert data["referral"]["referrer_user_id"] == "referrer-a"
+    assert data.get("message") == "welcome_to_the_party"
+    assert land.get_json()["valid"] is True
+
+
+def test_casino_referral_daily_share_route(tmp_path, monkeypatch):
+    _patch_social_state(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        "backend.services.casino_social_service._grant_party_coins",
+        lambda *a, **k: True,
+    )
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        first = client.post(
+            "/api/casino/social/referral/daily-share",
+            json={"user_id": "host-share"},
+        )
+        second = client.post(
+            "/api/casino/social/referral/daily-share",
+            json={"user_id": "host-share"},
+        )
+    assert first.status_code == 200
+    assert first.get_json()["success"] is True
+    assert first.get_json()["already_claimed"] is False
+    assert second.get_json()["already_claimed"] is True
 
 
 def test_casino_follow_player_route(tmp_path, monkeypatch):

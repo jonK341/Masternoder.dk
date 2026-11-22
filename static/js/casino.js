@@ -68,7 +68,18 @@
     }
 
     function initMetaPixel(pixelId) {
-        if (!pixelId || metaPixelId || window.fbq) return;
+        if (!pixelId) return;
+        if (window.MnMetaPixel) {
+            window.MnMetaPixel.bootFromConfig({
+                enabled: true,
+                pixel_id: pixelId,
+                auto_page_view: !metaPixelId,
+                content_name: 'MasterNoder2 Casino',
+            });
+            metaPixelId = window.MnMetaPixel.getPixelId() || String(pixelId);
+            return;
+        }
+        if (metaPixelId || window.fbq) return;
         metaPixelId = String(pixelId);
         (function (f, b, e, v) {
             if (f.fbq) return;
@@ -90,12 +101,34 @@
         window.fbq('track', 'PageView');
     }
 
+    function bootMetaPixelEarly() {
+        if (window.MnMetaPixel) {
+            window.MnMetaPixel.fetchAndBoot('/api/casino/meta/pixel').then(function (id) {
+                if (id) metaPixelId = id;
+            });
+        }
+    }
+
     function trackMetaEvent(name, params) {
+        var merged = Object.assign({}, trafficAttributionPayload().traffic || {}, params || {});
+        if (window.MnMetaPixel && window.MnMetaPixel.isReady()) {
+            window.MnMetaPixel.trackCustom(name, merged);
+            return;
+        }
         if (!metaPixelId || !window.fbq) return;
         try {
-            var merged = Object.assign({}, trafficAttributionPayload().traffic || {}, params || {});
             window.fbq('trackCustom', name, merged);
         } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional analytics */ }
+    }
+
+    function trackMetaStandard(name, params) {
+        var merged = Object.assign({}, trafficAttributionPayload().traffic || {}, params || {});
+        if (window.MnMetaPixel) {
+            window.MnMetaPixel.trackStandard(name, merged);
+            return;
+        }
+        if (!metaPixelId || !window.fbq) return;
+        try { window.fbq('track', name, merged); } catch (e) { /* optional */ }
     }
 
     function securityTokenValid() {
@@ -1170,6 +1203,11 @@
         });
         if (data.success) {
             showToast('PayPal deposit complete! USD balance: $' + Number(data.fiat_balance || 0).toFixed(2));
+            trackMetaStandard('Purchase', {
+                value: Number(data.amount_usd || data.credited_usd || 0) || undefined,
+                currency: 'USD',
+                content_name: 'CasinoPayPalDeposit',
+            });
             setActiveCurrency('usd');
             try {
                 sessionStorage.removeItem('casino_paypal_order');
@@ -1766,6 +1804,29 @@
         await refreshSocialActivityFeed();
     }
 
+    function applyPartyLevelUi(party) {
+        if (!party || !party.level) return;
+        var level = party.level;
+        var cur = level.current || {};
+        var label = (cur.badge || '🎈') + ' ' + (cur.label || 'Starter') +
+            ' · ' + (level.invite_count || 0) + ' invites';
+        var lvl = $('casino-party-level');
+        var lvlSocial = $('casino-party-level-social');
+        if (lvl) lvl.textContent = 'Party level: ' + label;
+        if (lvlSocial) lvlSocial.textContent = 'Party level: ' + label;
+        var fill = $('casino-party-meter-fill');
+        if (fill) fill.style.width = String(level.progress_pct || 0) + '%';
+    }
+
+    function wirePartyShareLinks(data) {
+        var wa = $('casino-party-whatsapp');
+        var tg = $('casino-party-telegram');
+        var x = $('casino-party-x');
+        if (wa && data.whatsapp_url) wa.href = data.whatsapp_url;
+        if (tg && data.telegram_url) tg.href = data.telegram_url;
+        if (x && data.x_url) x.href = data.x_url;
+    }
+
     async function refreshReferralInvite() {
         var codeEl = $('casino-referral-code');
         var fundCode = $('casino-fund-referral-code');
@@ -1777,10 +1838,13 @@
             return;
         }
         var code = data.referral_code || '—';
-        var invite = data.invite_url || '';
+        var invite = data.invite_url || data.short_path || '';
+        if (invite && invite.indexOf('http') !== 0 && invite.indexOf('/') === 0) {
+            invite = baseUrl + invite;
+        }
         if (invite && invite.indexOf('utm_') === -1) {
             invite += (invite.indexOf('?') >= 0 ? '&' : '?') +
-                'utm_source=referral&utm_medium=invite&utm_campaign=casino_traffic';
+                'utm_source=referral&utm_medium=invite_party&utm_campaign=casino_traffic';
         }
         [codeEl, fundCode].forEach(function (el) {
             if (!el) return;
@@ -1789,6 +1853,53 @@
             el.dataset.copyText = data.copy_text || '';
             el.dataset.whatsappUrl = data.whatsapp_url || '';
         });
+        applyPartyLevelUi(data.party);
+        wirePartyShareLinks(data);
+        var title = $('casino-fund-referral-title');
+        if (title && data.party && data.party.brand) {
+            title.textContent = '🎉 ' + data.party.brand;
+        }
+    }
+
+    async function claimDailyInviteShare() {
+        var data = await api('/api/casino/social/referral/daily-share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId }),
+        });
+        if (!data.success) {
+            showToast(data.error === 'sign_in_required' ? 'Sign in to claim daily share coins' : (data.error || 'Share bonus unavailable'));
+            return;
+        }
+        trackMetaStandard('Lead', { content_name: 'InvitePartyDailyShare' });
+        trackMetaEvent('CasinoInviteParty', { action: 'daily_share', coins: data.coins || 0 });
+        showToast(data.message || (data.already_claimed ? 'Already claimed today' : 'Share bonus claimed!'));
+        if (data.coins) refreshBalance();
+        // Also open native share / copy so the "share" is real
+        var codeEl = $('casino-referral-code') || $('casino-fund-referral-code');
+        var link = (codeEl && codeEl.dataset.inviteUrl) || (baseUrl + '/r/');
+        var text = (codeEl && codeEl.dataset.copyText) || ('Join my Invite Party: ' + link);
+        if (navigator.share) {
+            try { await navigator.share({ title: 'Invite Party', text: text, url: link }); } catch (e) { /* cancel ok */ }
+        } else {
+            copyReferralLink();
+        }
+    }
+
+    async function nativeShareInviteParty() {
+        var codeEl = $('casino-referral-code') || $('casino-fund-referral-code');
+        var link = (codeEl && codeEl.dataset.inviteUrl) || (baseUrl + '/casino/');
+        var text = (codeEl && codeEl.dataset.copyText) || ('Join Invite Party: ' + link);
+        trackMetaStandard('Lead', { content_name: 'InvitePartyShare' });
+        trackMetaEvent('CasinoInviteParty', { action: 'native_share' });
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'MasterNoder Invite Party', text: text, url: link });
+                showToast('Shared — party on!');
+                return;
+            } catch (e) { /* user cancel */ }
+        }
+        copyReferralLink();
     }
 
     function copyReferralCode() {
@@ -1797,6 +1908,7 @@
         navigator.clipboard.writeText(codeEl.textContent).then(function () {
             showToast('Referral code copied');
             trackMetaEvent('CasinoReferralCopy', { kind: 'code' });
+            trackMetaStandard('Lead', { content_name: 'InvitePartyCode' });
         }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino.js', context: 'catch' }); }
             showToast('Copy: ' + codeEl.textContent);
         });
@@ -1804,10 +1916,11 @@
 
     function copyReferralLink() {
         var codeEl = $('casino-referral-code') || $('casino-fund-referral-code');
-        var link = (codeEl && codeEl.dataset.inviteUrl) || (baseUrl + '/casino/?utm_source=referral&utm_medium=invite&utm_campaign=casino_traffic');
+        var link = (codeEl && codeEl.dataset.inviteUrl) || (baseUrl + '/r/?utm_source=referral&utm_medium=invite_party&utm_campaign=casino_traffic');
         navigator.clipboard.writeText(link).then(function () {
-            showToast('Invite link copied');
+            showToast('Invite Party link copied');
             trackMetaEvent('CasinoReferralCopy', { kind: 'link' });
+            trackMetaStandard('Lead', { content_name: 'InvitePartyLink' });
         }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'casino.js', context: 'catch' }); }
             showToast('Copy link: ' + link);
         });
@@ -1955,15 +2068,36 @@
     async function registerCasinoReferralFromUrl() {
         var traffic = captureTrafficParams();
         var params = new URLSearchParams(window.location.search);
-        var ref = params.get('ref') || (traffic && traffic.ref) || '';
-        if (!ref || !userId || userId === 'default_user') return;
+        var pending = '';
         try {
-            await api('/api/casino/social/referral/register', {
+            pending = sessionStorage.getItem('casino_pending_ref') || localStorage.getItem('casino_pending_ref') || '';
+        } catch (e) { pending = ''; }
+        var ref = params.get('ref') || (traffic && traffic.ref) || pending || '';
+        if (!ref) return;
+        try {
+            sessionStorage.setItem('casino_pending_ref', ref);
+            localStorage.setItem('casino_pending_ref', ref);
+        } catch (e) { /* optional */ }
+        if (!userId || userId === 'default_user') return;
+        try {
+            var res = await api('/api/casino/social/referral/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(Object.assign({ user_id: userId, referral_code: ref }, trafficAttributionPayload())),
             });
             trackMetaEvent('CasinoReferralLand', { ref: ref });
+            trackMetaStandard('CompleteRegistration', { content_name: 'InviteParty', status: true });
+            if (res && res.success && res.message === 'welcome_to_the_party') {
+                var gift = (res.rewards && res.rewards.invitee_welcome_coins) ||
+                    (res.party && res.party.invitee_welcome_coins) || 0;
+                showToast(gift ? ('Welcome to the party! +' + gift + ' free coins') : 'Welcome to the Invite Party!');
+                trackMetaEvent('CasinoInviteParty', { action: 'joined', gift: gift });
+                refreshBalance();
+            }
+            try {
+                sessionStorage.removeItem('casino_pending_ref');
+                localStorage.removeItem('casino_pending_ref');
+            } catch (e2) { /* optional */ }
         } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* best effort */ }
     }
 
@@ -2204,15 +2338,18 @@
             el.textContent = 'Referral quests unavailable.';
             return;
         }
+        applyPartyLevelUi(data.party);
         if (!(data.referrals || []).length) {
-            el.innerHTML = '<p>Share your invite link — earn coin trophies when friends complete their first 10 bets. No RTP perks.</p>';
+            el.innerHTML = '<p>Share your /r/ Invite Party link — you and friends earn free practice coins as they play. No RTP perks.</p>';
             return;
         }
         el.innerHTML = (data.referrals || []).map(function (r) {
             var tiers = (r.tiers || []).map(function (t) {
                 var mark = t.claimed ? '✓' : (t.completed ? '○' : '·');
+                var both = '+' + t.referrer_coins + ' you' +
+                    (t.invitee_coins ? (' / +' + t.invitee_coins + ' them') : '');
                 return mark + ' ' + (t.badge || '') + ' ' + (t.label || t.bets_required) +
-                    ' (' + t.bets_required + ' bets, +' + t.referrer_coins + ' coins)';
+                    ' (' + t.bets_required + ' bets, ' + both + ')';
             }).join('<br>');
             return '<div class="casino-ref-quest-row"><strong>' + (r.display || 'Friend') +
                 '</strong> · ' + r.bet_count + '/' + r.max_bets + ' bets<br>' + tiers + '</div>';
@@ -2769,7 +2906,9 @@
             return;
         }
         el.innerHTML = (data.leaderboard || []).map(function (r) {
-            return '<li>#' + r.rank + ' ' + shortUser(r.user_id) + ' · ' + r.referrals + ' invites</li>';
+            var lvl = (r.party_level && r.party_level.label) ? (' · ' + (r.party_level.badge || '') + ' ' + r.party_level.label) : '';
+            var prize = r.weekly_prize_coins ? (' · 🏆' + r.weekly_prize_coins) : '';
+            return '<li>#' + r.rank + ' ' + (r.display || shortUser(r.user_id)) + ' · ' + r.referrals + ' invites' + lvl + prize + '</li>';
         }).join('');
     }
 
@@ -5013,6 +5152,9 @@
         bindClick('casino-copy-referral-code', copyReferralCode);
         bindClick('casino-copy-referral-link', copyReferralLink);
         bindClick('casino-fund-copy-referral-link', copyReferralLink);
+        bindClick('casino-party-daily-share', claimDailyInviteShare);
+        bindClick('casino-party-daily-share-social', claimDailyInviteShare);
+        bindClick('casino-party-native-share', nativeShareInviteParty);
         bindChange('casino-share-wins-toggle', function () {
             toggleShareWins($('casino-share-wins-toggle').checked);
         });
@@ -5037,6 +5179,7 @@
         setTimeout(markStaleLoadingPanels, 15000);
 
         try { initMainTabNav(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } console.warn('[casino] tab nav failed:', e); }
+        try { bootMetaPixelEarly(); } catch (e) { /* optional */ }
         try { captureTrafficParams(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ }
         try { applyDeepLinks(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } console.warn('[casino] deep links failed:', e); }
         try { applyDuelDeepLink(); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } console.warn('[casino] duel deep link failed:', e); }
@@ -5074,6 +5217,7 @@
         safeRefresh('rgBanner', refreshResponsibleGamingBanner);
         safeRefresh('houseStats', refreshHouseStats);
         safeRefresh('socialBoard', refreshSocialBoard);
+        safeRefresh('referralInvite', refreshReferralInvite);
         safeRefresh('depositPacks', refreshDepositPacks);
         safeRefresh('mn2BuyinPacks', refreshMn2BuyinPacks);
         safeRefresh('vpLadder', refreshVideoPokerLadder);
