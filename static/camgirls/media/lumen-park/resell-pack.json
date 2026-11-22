@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave2_lumen_park",
+  "slug": "lumen-park",
+  "display_name": "Lumen Park",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/lumen-park/icon.webp",
+    "logo": "/static/camgirls/media/lumen-park/logo.svg",
+    "avatar_hd": "/static/camgirls/media/lumen-park/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/lumen-park/gallery-1.webp",
+      "/static/camgirls/media/lumen-park/gallery-2.webp",
+      "/static/camgirls/media/lumen-park/gallery-3.webp",
+      "/static/camgirls/media/lumen-park/gallery-4.webp"
+    ],
+    "preview_video": null,
+    "preview_poster": "/static/camgirls/media/lumen-park/gallery-1.webp"
+  },
+  "initials": "LP",
+  "brand_colors": [
+    "#a3e635",
+    "#3f6212"
+  ]
+}

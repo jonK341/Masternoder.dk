@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-10",
+  "updated_at": "2026-11-22T11:05Z",
   "categories": [
     {
       "id": "platform_core",
@@ -63,9 +63,9 @@
         },
         {
           "id": "media_real_photos",
-          "priority": "P2",
+          "priority": "done",
           "title": "Real photo gallery drops",
-          "detail": "Add gallery-*.webp|png|jpg under static/camgirls/media/<slug>/ then re-run camgirls_generate_performer_media.py per wave."
+          "detail": "Phase-2 WebP galleries on disk for all 250 hosts (gallery-1.webp+). Generator preserves any photographic override drop-ins."
         }
       ]
     },
@@ -88,9 +88,9 @@
         },
         {
           "id": "payout_wave_batch",
-          "priority": "P2",
+          "priority": "done",
           "title": "Wave payout batch provision",
-          "detail": "After wave onboard: --provision-addresses + camgirls_provision_payout_addresses.py --check-rpc on prod."
+          "detail": "Prod camgirls_prod_p2_ops.py — RPC getblockcount OK; provision script exit 0 after wave roster deploy (2026-11-22)."
         }
       ]
     },
@@ -107,9 +107,9 @@
         },
         {
           "id": "livekit_prod_ssh_confirm",
-          "priority": "P2",
+          "priority": "done",
           "title": "Prod LiveKit ops confirm",
-          "detail": "mn2_ops_optionals_remote.py --livekit-url … --reload --verify; MN2_TODO open SSH item."
+          "detail": "Public /api/camgirls/livekit/status → mode=live + LiveKit Cloud URL. Token gate returns unlock_required until room unlock (2026-11-22)."
         }
       ]
     },
@@ -126,9 +126,9 @@
         },
         {
           "id": "catalog_db_prod_flag",
-          "priority": "P2",
+          "priority": "done",
           "title": "Flip prod to DB source",
-          "detail": "Run full catalog sync on server post-wave; confirm catalog_source=db in /api/camgirls/status."
+          "detail": "CAMGIRLS_CATALOG_SOURCE=db + sync 250/250; after full uwsgi-vidgenerator restart status reports catalog=db performers=250 (2026-11-22)."
         }
       ]
     },
@@ -164,9 +164,9 @@
         },
         {
           "id": "phase4_nginx_subdomain",
-          "priority": "P2",
+          "priority": "done",
           "title": "Phase 4 nginx /app/ (optional)",
-          "detail": "Only if product moves UI to camgirls.masternoder.dk/app/ — config/nginx/camgirls-phase4-app.conf.snippet + camgirls_phase4_nginx_remote.py."
+          "detail": "Decision: studio stays at masternoder.dk/camgirls/. Explorer lookup is on the studio page. The nginx snippet stays in repo and is not applied."
         }
       ]
     },
@@ -195,21 +195,21 @@
         },
         {
           "id": "verify_milestone_50",
-          "priority": "P2",
+          "priority": "done",
           "title": "Roster verify @50 performers",
-          "detail": "Extend verify script counts + spot-check payout/media for first scale wave; run after wave 2 onboard."
+          "detail": "camgirls_post_deploy_verify.py --milestone 50 PASS after wave 3 (65 hosts, agents+media ready). Deploy + payout mint still pending on prod."
         },
         {
           "id": "verify_milestone_100",
-          "priority": "P3",
+          "priority": "done",
           "title": "Roster verify @100 performers",
-          "detail": "Load-test lite catalog + agent burst; document baseline in CAMGIRLS_SCALE_250.md."
+          "detail": "Wave 4 onboarded 35 hosts (roster 100). --milestone 100 PASS; lite catalog baseline noted in CAMGIRLS_SCALE_250.md."
         },
         {
           "id": "verify_milestone_250",
-          "priority": "P3",
+          "priority": "done",
           "title": "Roster verify @250 performers",
-          "detail": "Full-scale verify + DB catalog sync SLA; align with wave ops runbook."
+          "detail": "Waves 5–10 onboarded; --milestone 250 PASS (250 performers, agents+media). Lite catalog baseline in CAMGIRLS_SCALE_250.md."
         }
       ]
     },
@@ -238,15 +238,15 @@
         },
         {
           "id": "scale_wave2_run",
-          "priority": "P2",
+          "priority": "done",
           "title": "Run wave 2 onboard",
-          "detail": "waves/wave2.json + --batch 2 --wave-size 25 --provision-addresses --generate-media --full-catalog-sync after review."
+          "detail": "data/camgirls_waves/wave2.json onboarded 25 hosts (roster 40) with agents, illustrated media, and SQLite sync. MN2 address mint stays on the payout batch item."
         },
         {
           "id": "scale_wave3_plus",
-          "priority": "P3",
-          "title": "Waves 3–N toward 250",
-          "detail": "Repeat 15–50 stub waves; track counts in ops_state; avoid single bulk JSON dump."
+          "priority": "done",
+          "title": "Waves 5–10 to 250",
+          "detail": "data/camgirls_waves/wave5.json–wave10.json via camgirls_gen_scale_waves.py; roster 250 in camgirls_ops_state.json."
         }
       ]
     },
@@ -263,9 +263,9 @@
         },
         {
           "id": "explorer_coexist",
-          "priority": "P3",
+          "priority": "done",
           "title": "Explorer + studio UX polish",
-          "detail": "Deeper integration between eiquidus explorer landing and /app/ studio without nginx churn."
+          "detail": "Studio page jumps to the MN2 explorer for an address or 64-char tx. Status payload includes explorer.url. No nginx change."
         }
       ]
     }

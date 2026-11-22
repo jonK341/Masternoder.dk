@@ -25,6 +25,7 @@ Wave JSON fields: see data/camgirls_performers_wave.template.json
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -35,6 +36,29 @@ if BASE not in sys.path:
 sys.path.insert(0, os.path.join(BASE, "scripts"))
 
 from project_env import load_project_dotenv
+
+
+def _write_ops_state(wave: object, onboarded: int) -> None:
+    path = os.path.join(BASE, "data", "camgirls_ops_state.json")
+    performers_path = os.path.join(BASE, "data", "camgirls_performers.json")
+    roster_count = onboarded
+    try:
+        with open(performers_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        rows = data.get("performers") if isinstance(data, dict) else []
+        if isinstance(rows, list):
+            roster_count = len(rows)
+    except (OSError, json.JSONDecodeError):
+        pass
+    payload = {
+        "roster_count": roster_count,
+        "last_wave": wave,
+        "last_onboarded": onboarded,
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+        f.write("\n")
+    print(f"Ops state: roster={roster_count} last_wave={wave}")
 
 
 def main() -> int:
@@ -106,6 +130,7 @@ def main() -> int:
             print("[dry-run] would run camgirls_generate_performer_media.py")
         return 0 if not summary.get("errors") else 1
 
+    from backend.services.camgirls_agents_service import ensure_agent_for_performer
     from backend.services.camgirls_media_service import upsert_performer_media_meta
     from backend.services.camgirls_service import upsert_performer
 
@@ -123,9 +148,15 @@ def main() -> int:
                 extra = f" payout={result['payout_address']}"
             elif result.get("payout_warning"):
                 extra = f" (payout pending: {result['payout_warning']})"
+            agent = ensure_agent_for_performer(pid, str(row.get("display_name") or pid))
+            if not agent.get("success"):
+                print(f"Agent failed {pid}: {agent.get('error')}", file=sys.stderr)
             print(f"Upserted {pid}{extra}")
         else:
             print(f"Failed {pid}: {result.get('error')}", file=sys.stderr)
+
+    if ok:
+        _write_ops_state(summary.get("wave") or args.batch, ok)
 
     if args.full_catalog_sync and not args.no_sync_db:
         from backend.services.camgirls_catalog_sync_service import sync_json_catalog_to_db

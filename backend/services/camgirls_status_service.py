@@ -8,7 +8,11 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+from backend.services.camgirls_agents_service import agent_for_performer
 from backend.services.camgirls_livekit_service import public_status as livekit_status
+from backend.services.camgirls_media_service import get_performer_media_meta
+from backend.services.camgirls_payout_service import list_payout_addresses
+from backend.services.mn2_explorer_urls import explorer_base_url
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _NEXT_TODOS_FILE = os.path.join(_ROOT, "data", "camgirls_next_todos.json")
@@ -100,8 +104,6 @@ def studio_tech_for_performer(
     livekit: Dict[str, Any],
     paypal_on: bool,
 ) -> Dict[str, Any]:
-    from backend.services.camgirls_agents_service import agent_for_performer
-
     pid = str(performer_row.get("id") or "")
     agent = agent_for_performer(pid) or {}
     voice_mode = "live" if livekit.get("configured") else "stub"
@@ -145,6 +147,47 @@ def _load_performers() -> List[Dict[str, Any]]:
         except Exception:
             continue
     return []
+
+
+def roster_milestone(minimum: int) -> Dict[str, Any]:
+    """Local catalog check for the 50 / 100 / 250 roster verify todos."""
+    try:
+        floor = max(1, int(minimum))
+    except (TypeError, ValueError):
+        floor = 15
+    performers = _load_performers()
+    missing_media: List[str] = []
+    missing_agent: List[str] = []
+    for row in performers:
+        pid = str(row.get("id") or "")
+        if not pid:
+            continue
+        if not agent_for_performer(pid):
+            missing_agent.append(pid)
+        meta = get_performer_media_meta(pid)
+        if not meta or not meta.get("slug"):
+            missing_media.append(pid)
+    payout_ids = {
+        str(row.get("performer_id") or "")
+        for row in (list_payout_addresses().get("performers") or [])
+        if isinstance(row, dict) and row.get("payout_address")
+    }
+    performer_ids = [str(row.get("id") or "") for row in performers if row.get("id")]
+    missing_payout = [pid for pid in performer_ids if pid not in payout_ids]
+    count = len(performer_ids)
+    ok = count >= floor and not missing_media and not missing_agent
+    return {
+        "success": True,
+        "ok": ok,
+        "minimum": floor,
+        "performers": count,
+        "agents_linked": count - len(missing_agent),
+        "media_ready": count - len(missing_media),
+        "payout_addresses": count - len(missing_payout),
+        "missing_media": missing_media[:12],
+        "missing_agent": missing_agent[:12],
+        "missing_payout": missing_payout[:12],
+    }
 
 
 def platform_status() -> Dict[str, Any]:
@@ -209,6 +252,12 @@ def platform_status() -> Dict[str, Any]:
         "success": True,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "catalog_source": catalog_source,
+        "explorer": {
+            "url": explorer_base_url(),
+            "studio_path": "/camgirls/",
+            "app_mirror_path": "/app/",
+            "nginx_required": False,
+        },
         "studio_mode": "ai_always_on",
         "performers_count": len(roster),
         "performers_online": len(roster),

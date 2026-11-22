@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Live AI performers on MasterNoder — 15 studio hosts. Studio chat, gifts, fan club, tips via MN2 or PayPal. 18+ age gate.">
+    <meta name="description" content="Live AI performers on MasterNoder. Studio chat, gifts, fan club, tips via MN2 or PayPal. 18+ age gate.">
     <meta name="keywords" content="AI camgirls, live performers, MN2 tips, MasterNoder studio, fan club">
     <link rel="canonical" href="https://masternoder.dk/camgirls/">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://masternoder.dk/camgirls/">
     <meta property="og:title" content="Camgirls Studio — MasterNoder">
-    <meta property="og:description" content="Fifteen live AI performers — unlock rooms, tip with MN2 or PayPal, fan club and studio gifts.">
+    <meta property="og:description" content="Live AI performers — unlock rooms, tip with MN2 or PayPal, fan club and studio gifts.">
     <meta property="og:site_name" content="MasterNoder">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Camgirls Studio — MasterNoder">
@@ -112,6 +112,12 @@
         .cg-todo-cat-title { margin: 0 0 4px; font-size: 0.78rem; color: #00ff88; font-weight: 600; text-transform: none; letter-spacing: 0; }
         .cg-todo-cat-desc { margin: 0 0 6px; font-size: 0.75rem; opacity: 0.65; line-height: 1.35; }
         .cg-todo-pri { font-size: 0.68rem; padding: 1px 6px; border-radius: 4px; background: rgba(255,209,102,0.2); color: #ffd166; margin-right: 6px; }
+        .cg-todo-done { opacity: 0.62; }
+        .cg-todo-done .cg-todo-pri { background: rgba(0,255,136,0.15); color: #00ff88; }
+        .cg-todo-summary { margin: 0 0 8px; font-size: 0.8rem; color: #ffd166; }
+        .cg-explorer-bridge { margin: 10px 0 0; font-size: 0.85rem; }
+        .cg-explorer-bridge form { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+        .cg-explorer-bridge input { min-width: 220px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #161b22; color: #fff; }
         .cg-card .cg-infobar { margin-bottom: 10px; }
     </style>
 </head>
@@ -119,8 +125,14 @@
     <div class="cg-page">
         <div class="cg-header">
             <h1>Camgirls</h1>
-            <p style="opacity:0.75;">Browse performers · unlock with MN2 · tips & gifts · voice · music · dances · full studio stack</p>
-            <p style="font-size:0.85rem;opacity:0.6;">Explorer: <a href="https://camgirls.masternoder.dk/" target="_blank" rel="noopener">camgirls.masternoder.dk</a> · Studio mirror: <a href="https://camgirls.masternoder.dk/app/" target="_blank" rel="noopener">/app/</a> · Agents: <code>/api/camgirls/agent-tools</code></p>
+            <p style="opacity:0.75;">Browse <span id="cg-host-count">live</span> performers · unlock with MN2 · tips & gifts · voice · music · dances · full studio stack</p>
+            <div id="cg-explorer-bridge" class="cg-explorer-bridge" data-base="https://camgirls.masternoder.dk">
+                <p style="font-size:0.85rem;opacity:0.75;margin:0;">MN2 block explorer and this studio stay on separate URLs. Look up a chain address or transaction without moving the studio behind nginx.</p>
+                <form id="cg-explorer-jump">
+                    <input id="cg-explorer-query" type="text" placeholder="MN2 address or tx hash" autocomplete="off">
+                    <button type="submit" class="cg-studio-btn">Open on explorer</button>
+                </form>
+            </div>
         </div>
         <div id="cg-agents" class="cg-agents-strip" style="display:none;">
             <h2>🤖 AI companions</h2>
@@ -159,7 +171,7 @@
     <script src="/static/js/camgirls-livekit-voice.js?v=20261010p3"></script>
     <script src="/static/js/user-id.js?v=20261010b"></script>
     <script src="/static/js/camgirls-studio.js?v=20261010p3"></script>
-    <script src="/static/js/camgirls.js?v=20261011a"></script>
+    <script src="/static/js/camgirls.js?v=20261122a"></script>
     <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
     <script src="/static/js/camgirls-nav-fix.js?v=20261010"></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="camgirls" defer></script>

@@ -18,14 +18,20 @@ Usage:
     # Create App super encoder, instant MN2 click rewards, compact frontpage (PR #81).
     # Laptop deploy: merge PR #81, pull branch, run command above, then test_url_timing per DEPLOY_PREP.md.
   python scripts/deploy.py service_check_backend --upload-only   # leaderboard/agents/service_check files; no uwsgi restart
+  python scripts/deploy.py camgirls                 # code + data + UI (no 2k media files)
+  python scripts/deploy.py camgirls_media           # gallery/icon WebP via tar batches (recommended)
+  python scripts/deploy.py camgirls camgirls_media  # slim code deploy, then media batches
   python scripts/deploy.py --files path1 path2 ...
   python scripts/deploy.py --files debugger/index.html --upload-only   # upload only, no restart
 
 SSH password: set DEPLOY_PASS, or use --ask-pass to prompt fresh (ignores .env and
 environment), or run from an interactive terminal to be prompted once when DEPLOY_PASS is unset.
+Camgirls media batch size: CAMGIRLS_MEDIA_BATCH_SIZE (default 40 performer slugs per tar).
 """
 import os
 import sys
+import tarfile
+import tempfile
 import time
 from datetime import datetime
 
@@ -908,6 +914,17 @@ MANIFESTS = {
         "docs/CAMGIRLS_PHASE4_NGINX.md",
         "data/camgirls_next_todos.json",
         "data/camgirls_performers_wave.template.json",
+        "data/camgirls_waves/wave2.json",
+        "data/camgirls_waves/wave3.json",
+        "data/camgirls_waves/wave4.json",
+        "data/camgirls_waves/wave5.json",
+        "data/camgirls_waves/wave6.json",
+        "data/camgirls_waves/wave7.json",
+        "data/camgirls_waves/wave8.json",
+        "data/camgirls_waves/wave9.json",
+        "data/camgirls_waves/wave10.json",
+        "scripts/camgirls_gen_scale_waves.py",
+        "scripts/camgirls_prod_p2_ops.py",
         "data/camgirls_performer_media_meta.json",
         "docs/CAMGIRLS_SCALE_250.md",
         "backend/services/camgirls_wave_ops.py",
@@ -938,6 +955,8 @@ MANIFESTS = {
         "static/camgirls/avatar-venus.svg",
         "static/camgirls/preview-demo.svg",
     ],
+    # Gallery/media assets — NOT expanded into file lists. Uploaded as tar batches by run_camgirls_media().
+    "camgirls_media": [],
     # Reporter agent: knowledge-sharing ingredients cron (daily); set KNOWLEDGE_REPORT_SECRET in .env
     "knowledge_cron_env": [
         "cron/knowledge_sharing_report.sh",
@@ -982,6 +1001,48 @@ MANIFESTS = {
         "scripts/server_prune_remote.sh",
         "scripts/server_cleanup_scan.py",
     ],
+    # Live multi-wallet + venue-trading agents (code/config only — not local wallet JSON state)
+    "exchange": [
+        "backend/routes/crypto_exchange_routes.py",
+        "backend/services/crypto_exchange_service.py",
+        "backend/services/crypto_exchange_agent_service.py",
+        "backend/services/exchange_binance_withdraw_service.py",
+        "backend/services/exchange_multi_wallet_service.py",
+        "backend/services/exchange_stable_markets_service.py",
+        "backend/services/exchange_mn2_pool_service.py",
+        "backend/services/exchange_venue_api_service.py",
+        "backend/services/exchange_grid_bot_service.py",
+        "backend/services/exchange_user_venue_execution_service.py",
+        "backend/services/exchange_live_execution_service.py",
+        "backend/services/exchange_arbitrage_service.py",
+        "backend/services/exchange_sales_pool_service.py",
+        "backend/services/mn2_spork_service.py",
+        "data/crypto_exchange_config.json",
+        "data/exchange_mn2_pool_config.json",
+        "data/exchange_grid_bot_config.json",
+        "scripts/exchange_multi_wallet_daemon.py",
+        "scripts/exchange_master_daemon.py",
+        "scripts/exchange_price_battle_daemon.py",
+        "scripts/daemon_env.py",
+        "data/exchange_price_battle_config.json",
+        "backend/services/exchange_price_battle_service.py",
+        "tests/unit/test_exchange_price_battle.py",
+        "cron/exchange_master_tick.sh",
+        "exchange/index.html",
+        "profile/index.html",
+        "wallets/index.html",
+        "static/css/crypto-exchange.css",
+        "static/css/profile-hub.css",
+        "static/css/exchange-hub-sync.css",
+        "static/js/crypto-exchange.js",
+        "static/js/exchange-hub.js",
+        "static/js/profile-hub.js",
+        "static/js/profile-mn2-wallet.js",
+        "static/js/wallet-swoop-hub.js",
+        "tests/unit/test_exchange_multi_wallet.py",
+        "tests/unit/test_exchange_stable_markets.py",
+        "tests/unit/test_exchange_agent_venue_trading.py",
+    ],
 }
 
 # Built at import: every root */index.html + static/js|css|html|data (see _static_pages_manifest)
@@ -997,6 +1058,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "camgirls",
     "trophies",
     "nft_market",
+    "exchange",
     "compendium",
     "create_app_release",
     "game_hub",
@@ -1006,7 +1068,7 @@ RESTART_VIDGENERATOR_ONLY_FOR = frozenset({
     "service_check_backend",
 })
 # HTML/CSS/JS under /var/www/html — clear nginx cache + reload nginx only (no uwsgi/python-proxy)
-RESTART_NGINX_ONLY_FOR = frozenset({"static_pages", "well_known"})
+RESTART_NGINX_ONLY_FOR = frozenset({"static_pages", "well_known", "camgirls_media"})
 
 _WELL_KNOWN_PREFIX = "static/.well-known/"
 
@@ -1134,8 +1196,24 @@ def _hub_rollout_nav_svgs():
     return out
 
 
+def _camgirls_media_batch_size() -> int:
+    try:
+        return max(5, min(80, int(os.environ.get("CAMGIRLS_MEDIA_BATCH_SIZE") or "40")))
+    except (TypeError, ValueError):
+        return 40
+
+
+def _camgirls_media_slugs(root: str) -> list[str]:
+    media_root = os.path.join(root, "static", "camgirls", "media")
+    if not os.path.isdir(media_root):
+        return []
+    return sorted(
+        d for d in os.listdir(media_root) if os.path.isdir(os.path.join(media_root, d))
+    )
+
+
 def _camgirls_media_manifest():
-    """All generated performer gallery/icon/logo assets under static/camgirls/media/."""
+    """Legacy listing of every media file (for --list-files / diagnostics only)."""
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     media_root = os.path.join(root, "static", "camgirls", "media")
     out = []
@@ -1150,33 +1228,150 @@ def _camgirls_media_manifest():
 
 
 def _merge_manifest_files(manifest_names):
-    """Merge file lists from multiple manifests, preserving order and deduplicating."""
+    """Merge file lists from multiple manifests, preserving order and deduplicating.
+
+    ``camgirls`` is slim (code/data/UI). Media (~2k files) is uploaded separately via
+    the ``camgirls_media`` manifest as tar batches — do not expand into this list.
+    """
     files = []
     seen = set()
     for name in manifest_names:
+        if name == "camgirls_media":
+            continue
         for path in MANIFESTS[name]:
             if path not in seen:
                 seen.add(path)
                 files.append(path)
-    if "camgirls" in manifest_names:
-        for path in _camgirls_media_manifest():
-            if path not in seen:
-                seen.add(path)
-                files.append(path)
-        zip_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "content",
-            "digital_goods",
-            "camgirls",
-        )
-        if os.path.isdir(zip_dir):
-            for fn in sorted(os.listdir(zip_dir)):
-                if fn.endswith(".zip"):
-                    rel = f"content/digital_goods/camgirls/{fn}"
-                    if rel not in seen:
-                        seen.add(rel)
-                        files.append(rel)
     return files
+
+
+def run_camgirls_media(*, server_pass=None, upload_only: bool = False) -> bool:
+    """Upload static/camgirls/media (+ brand-pack zips) as tar.gz batches over SFTP."""
+    if not server_pass:
+        server_pass = require_deploy_pass()
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(base)
+    slugs = _camgirls_media_slugs(base)
+    batch_size = _camgirls_media_batch_size()
+    zip_dir = os.path.join(base, "content", "digital_goods", "camgirls")
+    zip_names = (
+        sorted(fn for fn in os.listdir(zip_dir) if fn.endswith(".zip"))
+        if os.path.isdir(zip_dir)
+        else []
+    )
+
+    print("=" * 60)
+    print("DEPLOY: camgirls_media (tar batches)")
+    print(f"  slugs={len(slugs)} batch_size={batch_size} brand_zips={len(zip_names)}")
+    print("=" * 60)
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    print()
+
+    ssh = None
+    sftp = None
+    try:
+        print("[1/3] Connecting...")
+        ssh, auth_method, _ = connect_deploy_ssh(server_pass)
+        sftp = ssh.open_sftp()
+        print(f"  [OK] Connected ({auth_method})")
+        print()
+
+        remote_tmp = "/tmp/camgirls_media_batches"
+        ssh.exec_command(f"mkdir -p {remote_tmp} '{REMOTE_BASE}/static/camgirls/media' "
+                         f"'{REMOTE_BASE}/content/digital_goods/camgirls'", timeout=15)
+        time.sleep(0.3)
+
+        print("[2/3] Uploading media batches...")
+        batches = [slugs[i : i + batch_size] for i in range(0, len(slugs), batch_size)] or [[]]
+        for idx, batch in enumerate(batches, start=1):
+            if not batch:
+                print("  [SKIP] no media slugs locally")
+                break
+            local_tar = os.path.join(tempfile.gettempdir(), f"camgirls_media_{idx:02d}.tar.gz")
+            media_root = os.path.join(base, "static", "camgirls", "media")
+            with tarfile.open(local_tar, "w:gz") as tar:
+                for slug in batch:
+                    slug_path = os.path.join(media_root, slug)
+                    tar.add(slug_path, arcname=slug)
+            remote_tar = f"{remote_tmp}/batch_{idx:02d}.tar.gz"
+            size_mb = os.path.getsize(local_tar) / (1024 * 1024)
+            print(f"  [{idx}/{len(batches)}] {len(batch)} slugs ({size_mb:.1f} MiB) → {remote_tar}")
+            sftp.put(local_tar, remote_tar)
+            extract_cmd = (
+                f"tar -xzf {remote_tar} -C {REMOTE_BASE}/static/camgirls/media && "
+                f"rm -f {remote_tar} && echo OK_BATCH_{idx}"
+            )
+            _, stdout, stderr = ssh.exec_command(extract_cmd, timeout=180)
+            stdout.channel.settimeout(180)
+            out = (stdout.read() or b"").decode(errors="replace").strip()
+            err = (stderr.read() or b"").decode(errors="replace").strip()
+            try:
+                os.remove(local_tar)
+            except OSError:
+                pass
+            if "OK_BATCH_" not in out:
+                print(f"  [ERROR] extract batch {idx}: {out or err}"[:300])
+                return False
+            print(f"  [OK] batch {idx}/{len(batches)}")
+
+        if zip_names:
+            print()
+            print("  Brand-pack zips...")
+            zip_batches = [zip_names[i : i + batch_size] for i in range(0, len(zip_names), batch_size)]
+            for idx, batch in enumerate(zip_batches, start=1):
+                local_tar = os.path.join(tempfile.gettempdir(), f"camgirls_zips_{idx:02d}.tar.gz")
+                with tarfile.open(local_tar, "w:gz") as tar:
+                    for fn in batch:
+                        tar.add(os.path.join(zip_dir, fn), arcname=fn)
+                remote_tar = f"{remote_tmp}/zips_{idx:02d}.tar.gz"
+                size_mb = os.path.getsize(local_tar) / (1024 * 1024)
+                print(f"  [zip {idx}/{len(zip_batches)}] {len(batch)} files ({size_mb:.1f} MiB)")
+                sftp.put(local_tar, remote_tar)
+                extract_cmd = (
+                    f"tar -xzf {remote_tar} -C {REMOTE_BASE}/content/digital_goods/camgirls && "
+                    f"rm -f {remote_tar} && echo OK_ZIP_{idx}"
+                )
+                _, stdout, stderr = ssh.exec_command(extract_cmd, timeout=180)
+                stdout.channel.settimeout(180)
+                out = (stdout.read() or b"").decode(errors="replace").strip()
+                err = (stderr.read() or b"").decode(errors="replace").strip()
+                try:
+                    os.remove(local_tar)
+                except OSError:
+                    pass
+                if "OK_ZIP_" not in out:
+                    print(f"  [ERROR] extract zips {idx}: {out or err}"[:300])
+                    return False
+                print(f"  [OK] zip batch {idx}/{len(zip_batches)}")
+
+        print()
+        if upload_only:
+            print("=" * 60)
+            print("UPLOAD COMPLETE (camgirls_media, no nginx reload)")
+            print("=" * 60)
+        else:
+            print("[3/3] Reloading nginx (static assets)...")
+            ssh.exec_command("nginx -t 2>&1 || true", timeout=10)
+            ssh.exec_command(
+                "systemctl reload nginx 2>&1 || systemctl restart nginx 2>&1 || true",
+                timeout=15,
+            )
+            print("  [OK] Nginx reloaded")
+            print("=" * 60)
+            print("DEPLOY COMPLETE (camgirls_media)")
+            print("=" * 60)
+        ssh.close()
+        return True
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        if ssh:
+            try:
+                ssh.close()
+            except Exception:
+                pass
+        return False
 
 
 def _resolve_restart_services(manifest_names, upload_only):
@@ -1473,30 +1668,48 @@ def run(files, upload_only=False, restart_services=None, manifest_name=None, man
                 print(f"  [WARN] pip install requests: {err[:200]}")
             else:
                 print("  [OK] .venv requests (MN2 payout RPC)")
+            # Catalog sync is fast; media generation for a large roster can exceed SSH
+            # channel timeouts — media ships via the camgirls media manifest instead.
             sync_cmd = (
                 f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
-                "scripts/camgirls_sync_catalog_db.py 2>&1 | tail -3"
+                "scripts/camgirls_sync_catalog_db.py 2>&1 | tail -5"
             )
-            _, sync_out, _ = ssh.exec_command(sync_cmd, timeout=120)
-            sync_text = (sync_out.read() or b"").decode(errors="replace").strip()
+            _, sync_out, sync_err = ssh.exec_command(sync_cmd, timeout=180)
+            sync_out.channel.settimeout(180)
+            try:
+                sync_text = (sync_out.read() or b"").decode(errors="replace").strip()
+            except Exception as exc:
+                sync_text = f"(sync read failed: {exc})"
             if sync_text:
-                print(f"  [catalog-db] {sync_text.split(chr(10))[-1][:120]}")
-            gen_cmd = (
-                f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
-                "scripts/camgirls_generate_performer_media.py 2>&1 | tail -5"
-            )
-            _, gen_out, _ = ssh.exec_command(gen_cmd, timeout=120)
-            gen_text = (gen_out.read() or b"").decode(errors="replace").strip()
-            if gen_text:
-                print(f"  [media] {gen_text.split(chr(10))[-1][:100]}")
+                print(f"  [catalog-db] {sync_text.split(chr(10))[-1][:160]}")
+            gen_mode = (os.environ.get("CAMGIRLS_DEPLOY_GENERATE_MEDIA") or "").strip().lower()
+            if gen_mode in ("1", "true", "yes"):
+                gen_cmd = (
+                    f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
+                    "scripts/camgirls_generate_performer_media.py --skip-preview 2>&1 | tail -5"
+                )
+                _, gen_out, _ = ssh.exec_command(gen_cmd, timeout=900)
+                gen_out.channel.settimeout(900)
+                try:
+                    gen_text = (gen_out.read() or b"").decode(errors="replace").strip()
+                except Exception as exc:
+                    gen_text = f"(media read failed: {exc})"
+                if gen_text:
+                    print(f"  [media] {gen_text.split(chr(10))[-1][:120]}")
+            else:
+                print("  [media] skipped (set CAMGIRLS_DEPLOY_GENERATE_MEDIA=1 to run on server)")
             provision_cmd = (
                 f"cd {REMOTE_BASE} && bash scripts/camgirls_py.sh "
                 "scripts/camgirls_provision_payout_addresses.py 2>&1 | tail -12"
             )
-            _, prov_out, _ = ssh.exec_command(provision_cmd, timeout=180)
-            prov_text = (prov_out.read() or b"").decode(errors="replace").strip()
+            _, prov_out, _ = ssh.exec_command(provision_cmd, timeout=300)
+            prov_out.channel.settimeout(300)
+            try:
+                prov_text = (prov_out.read() or b"").decode(errors="replace").strip()
+            except Exception as exc:
+                prov_text = f"(payout read failed: {exc})"
             if prov_text:
-                print(f"  [payout] {prov_text.split(chr(10))[-1][:120]}")
+                print(f"  [payout] {prov_text.split(chr(10))[-1][:160]}")
             print()
 
         if upload_only:
@@ -1649,21 +1862,40 @@ def main():
                     seen.add(path)
                     files.append(path)
             print("(hub_rollout: merged static_pages + trophies + nft_market + fix_404 + nav assets)")
-        restart_services = _resolve_restart_services(manifest_names, upload_only)
+        restart_services = _resolve_restart_services(
+            [n for n in manifest_names if n != "camgirls_media"],
+            upload_only,
+        )
     if list_files:
         _print_file_list(files, manifest_names)
+        if manifest_names and "camgirls_media" in manifest_names:
+            root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            slugs = _camgirls_media_slugs(root)
+            bs = _camgirls_media_batch_size()
+            n_batches = (len(slugs) + bs - 1) // bs if slugs else 0
+            print(
+                f"camgirls_media: {len(slugs)} slugs → {n_batches} tar batches "
+                f"(batch_size={bs}); not expanded into per-file SFTP list"
+            )
         sys.exit(0)
     server_pass = require_deploy_pass(force_prompt=ask_pass)
     if args and args[0].lower() == "server_prune":
         ok = run_server_prune(server_pass=server_pass, with_disk=with_disk)
         sys.exit(0 if ok else 1)
-    ok = run(
-        files,
-        upload_only=upload_only,
-        restart_services=restart_services,
-        manifest_names=manifest_names,
-        server_pass=server_pass,
-    )
+
+    want_media = bool(manifest_names and "camgirls_media" in manifest_names)
+    code_manifests = [n for n in (manifest_names or []) if n != "camgirls_media"]
+    ok = True
+    if code_manifests:
+        ok = run(
+            files,
+            upload_only=upload_only,
+            restart_services=restart_services,
+            manifest_names=code_manifests,
+            server_pass=server_pass,
+        )
+    if ok and want_media:
+        ok = run_camgirls_media(server_pass=server_pass, upload_only=upload_only)
     sys.exit(0 if ok else 1)
 
 

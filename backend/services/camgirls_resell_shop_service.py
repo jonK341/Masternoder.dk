@@ -41,11 +41,12 @@ def list_resell_digital_goods() -> List[Dict[str, Any]]:
                 "tags_extra": ["camgirls", "brand_pack", performer_id],
             }
         )
+    host_count = len(goods)
     goods.append(
         {
             "id": "dg-camgirls-brand-all-15",
             "line": "B",
-            "name": "Camgirls brand mega pack (all 15 hosts)",
+            "name": f"Camgirls brand mega pack (all {host_count} hosts)",
             "description": "All performer brand ZIPs in one download — icons, logos, galleries, manifests.",
             "payment_rails": ["paypal", "mn2", "credits"],
             "price_usd": 49.99,

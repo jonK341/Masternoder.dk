@@ -51,6 +51,35 @@ def agent_for_performer(performer_id: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+_TASK_CYCLE = ("creative", "free", "default", "speed")
+
+
+def ensure_agent_for_performer(performer_id: str, display_name: str = "") -> Dict[str, Any]:
+    """Create a studio agent row when a wave performer has none yet."""
+    pid = (performer_id or "").strip()
+    if not pid:
+        return {"success": False, "error": "performer_id_required"}
+    existing = agent_for_performer(pid)
+    if existing:
+        return {"success": True, "created": False, "agent": existing}
+    models = _load_models()
+    name = (display_name or pid).strip() or pid
+    slug = pid.replace("performer_", "", 1) or "studio"
+    agent = {
+        "agent_id": f"camgirl_agent_{slug}",
+        "performer_id": pid,
+        "display_name": f"{name} Agent",
+        "task_kind": _TASK_CYCLE[len(models) % len(_TASK_CYCLE)],
+        "casino_skill_set": ["welcome_host", "gift_recommendation"],
+        "description": f"Studio agent for {name}.",
+    }
+    models.append(agent)
+    with open(_MODELS_FILE, "w", encoding="utf-8") as f:
+        json.dump({"agents": models}, f, indent=2)
+        f.write("\n")
+    return {"success": True, "created": True, "agent": agent}
+
+
 def persona_system_prompt(row: Dict[str, Any]) -> Tuple[str, str]:
     name = row.get("display_name") or row.get("id") or "Performer"
     bio = row.get("bio") or ""

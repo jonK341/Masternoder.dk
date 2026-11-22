@@ -1,4 +1,1415 @@
 {
-  "performers": {},
-  "updated_at": null
+  "performers": {
+    "performer_wave2_cora_vale": {
+      "slug": "cora-vale",
+      "initials": "CV",
+      "c1": "#f472b6",
+      "c2": "#9d174d"
+    },
+    "performer_wave2_nia_sol": {
+      "slug": "nia-sol",
+      "initials": "NS",
+      "c1": "#fb7185",
+      "c2": "#881337"
+    },
+    "performer_wave2_rhea_quinn": {
+      "slug": "rhea-quinn",
+      "initials": "RQ",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave2_willa_north": {
+      "slug": "willa-north",
+      "initials": "WN",
+      "c1": "#67e8f9",
+      "c2": "#155e75"
+    },
+    "performer_wave2_sable_frost": {
+      "slug": "sable-frost",
+      "initials": "SF",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave2_indie_marr": {
+      "slug": "indie-marr",
+      "initials": "IM",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave2_petra_gold": {
+      "slug": "petra-gold",
+      "initials": "PG",
+      "c1": "#facc15",
+      "c2": "#a16207"
+    },
+    "performer_wave2_lumen_park": {
+      "slug": "lumen-park",
+      "initials": "LP",
+      "c1": "#a3e635",
+      "c2": "#3f6212"
+    },
+    "performer_wave2_vesper_lane": {
+      "slug": "vesper-lane",
+      "initials": "VL",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave2_orla_finch": {
+      "slug": "orla-finch",
+      "initials": "OF",
+      "c1": "#34d399",
+      "c2": "#065f46"
+    },
+    "performer_wave2_kira_bloom": {
+      "slug": "kira-bloom",
+      "initials": "KB",
+      "c1": "#f9a8d4",
+      "c2": "#9d174d"
+    },
+    "performer_wave2_tess_harbor": {
+      "slug": "tess-harbor",
+      "initials": "TH",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave2_maren_cole": {
+      "slug": "maren-cole",
+      "initials": "MC",
+      "c1": "#fdba74",
+      "c2": "#9a3412"
+    },
+    "performer_wave2_juno_west": {
+      "slug": "juno-west",
+      "initials": "JW",
+      "c1": "#e879f9",
+      "c2": "#86198f"
+    },
+    "performer_wave2_sienna_page": {
+      "slug": "sienna-page",
+      "initials": "SP",
+      "c1": "#fb923c",
+      "c2": "#9a3412"
+    },
+    "performer_wave2_asha_reed": {
+      "slug": "asha-reed",
+      "initials": "AR",
+      "c1": "#4ade80",
+      "c2": "#14532d"
+    },
+    "performer_wave2_lyra_moon": {
+      "slug": "lyra-moon",
+      "initials": "LM",
+      "c1": "#a78bfa",
+      "c2": "#4c1d95"
+    },
+    "performer_wave2_della_hart": {
+      "slug": "della-hart",
+      "initials": "DH",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave2_priya_shore": {
+      "slug": "priya-shore",
+      "initials": "PS",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave2_noelle_voss": {
+      "slug": "noelle-voss",
+      "initials": "NV",
+      "c1": "#93c5fd",
+      "c2": "#1e3a8a"
+    },
+    "performer_wave2_hana_bright": {
+      "slug": "hana-bright",
+      "initials": "HB",
+      "c1": "#fde047",
+      "c2": "#854d0e"
+    },
+    "performer_wave2_esme_calder": {
+      "slug": "esme-calder",
+      "initials": "EC",
+      "c1": "#86efac",
+      "c2": "#166534"
+    },
+    "performer_wave2_tova_glen": {
+      "slug": "tova-glen",
+      "initials": "TG",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave2_yara_peck": {
+      "slug": "yara-peck",
+      "initials": "YP",
+      "c1": "#f0abfc",
+      "c2": "#a21caf"
+    },
+    "performer_wave2_cleo_march": {
+      "slug": "cleo-march",
+      "initials": "CM",
+      "c1": "#fda4af",
+      "c2": "#be123c"
+    },
+    "performer_wave3_elina_brook": {
+      "slug": "elina-brook",
+      "initials": "EB",
+      "c1": "#fda4af",
+      "c2": "#9f1239"
+    },
+    "performer_wave3_mira_feld": {
+      "slug": "mira-feld",
+      "initials": "MF",
+      "c1": "#f9a8d4",
+      "c2": "#be185d"
+    },
+    "performer_wave3_opal_rine": {
+      "slug": "opal-rine",
+      "initials": "OR",
+      "c1": "#c4b5fd",
+      "c2": "#5b21b6"
+    },
+    "performer_wave3_quina_dale": {
+      "slug": "quina-dale",
+      "initials": "QD",
+      "c1": "#93c5fd",
+      "c2": "#1d4ed8"
+    },
+    "performer_wave3_sori_vale": {
+      "slug": "sori-vale",
+      "initials": "SV",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave3_tally_moss": {
+      "slug": "tally-moss",
+      "initials": "TM",
+      "c1": "#86efac",
+      "c2": "#166534"
+    },
+    "performer_wave3_uma_crest": {
+      "slug": "uma-crest",
+      "initials": "UC",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave3_vera_quill": {
+      "slug": "vera-quill",
+      "initials": "VQ",
+      "c1": "#a7f3d0",
+      "c2": "#065f46"
+    },
+    "performer_wave3_wynn_aster": {
+      "slug": "wynn-aster",
+      "initials": "WA",
+      "c1": "#f0abfc",
+      "c2": "#86198f"
+    },
+    "performer_wave3_xena_holt": {
+      "slug": "xena-holt",
+      "initials": "XH",
+      "c1": "#fb7185",
+      "c2": "#9f1239"
+    },
+    "performer_wave3_yuli_park": {
+      "slug": "yuli-park",
+      "initials": "YP",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave3_zara_mead": {
+      "slug": "zara-mead",
+      "initials": "ZM",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave3_aimee_ross": {
+      "slug": "aimee-ross",
+      "initials": "AR",
+      "c1": "#f9a8d4",
+      "c2": "#9d174d"
+    },
+    "performer_wave3_blair_kent": {
+      "slug": "blair-kent",
+      "initials": "BK",
+      "c1": "#7dd3fc",
+      "c2": "#0369a1"
+    },
+    "performer_wave3_cara_lynn": {
+      "slug": "cara-lynn",
+      "initials": "CL",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave3_dana_whit": {
+      "slug": "dana-whit",
+      "initials": "DW",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave3_eva_norr": {
+      "slug": "eva-norr",
+      "initials": "EN",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave3_faye_orin": {
+      "slug": "faye-orin",
+      "initials": "FO",
+      "c1": "#4ade80",
+      "c2": "#15803d"
+    },
+    "performer_wave3_gia_thorne": {
+      "slug": "gia-thorne",
+      "initials": "GT",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave3_heidi_lane": {
+      "slug": "heidi-lane",
+      "initials": "HL",
+      "c1": "#fcd34d",
+      "c2": "#b45309"
+    },
+    "performer_wave3_isla_fern": {
+      "slug": "isla-fern",
+      "initials": "IF",
+      "c1": "#6ee7b7",
+      "c2": "#047857"
+    },
+    "performer_wave3_joss_rain": {
+      "slug": "joss-rain",
+      "initials": "JR",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave3_kate_bloom": {
+      "slug": "kate-bloom",
+      "initials": "KB",
+      "c1": "#fb7185",
+      "c2": "#be123c"
+    },
+    "performer_wave3_lexi_moss": {
+      "slug": "lexi-moss",
+      "initials": "LM",
+      "c1": "#84cc16",
+      "c2": "#3f6212"
+    },
+    "performer_wave3_nora_quill": {
+      "slug": "nora-quill",
+      "initials": "NQ",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave4_ada_quill": {
+      "slug": "ada-quill",
+      "initials": "AQ",
+      "c1": "#f472b6",
+      "c2": "#9d174d"
+    },
+    "performer_wave4_bree_holt": {
+      "slug": "bree-holt",
+      "initials": "BH",
+      "c1": "#fb7185",
+      "c2": "#be123c"
+    },
+    "performer_wave4_cyra_moss": {
+      "slug": "cyra-moss",
+      "initials": "CM",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave4_dove_lane": {
+      "slug": "dove-lane",
+      "initials": "DL",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave4_eden_park": {
+      "slug": "eden-park",
+      "initials": "EP",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave4_fern_cole": {
+      "slug": "fern-cole",
+      "initials": "FC",
+      "c1": "#86efac",
+      "c2": "#065f46"
+    },
+    "performer_wave4_gwen_ross": {
+      "slug": "gwen-ross",
+      "initials": "GR",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave4_haze_vale": {
+      "slug": "haze-vale",
+      "initials": "HV",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave4_iris_dawn": {
+      "slug": "iris-dawn",
+      "initials": "ID",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave4_jule_north": {
+      "slug": "jule-north",
+      "initials": "JN",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave4_kira_wren": {
+      "slug": "kira-wren",
+      "initials": "KW",
+      "c1": "#f9a8d4",
+      "c2": "#9d174d"
+    },
+    "performer_wave4_lark_reed": {
+      "slug": "lark-reed",
+      "initials": "LR",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave4_muse_glen": {
+      "slug": "muse-glen",
+      "initials": "MG",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave4_nyx_pearl": {
+      "slug": "nyx-pearl",
+      "initials": "NP",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave4_onyx_ray": {
+      "slug": "onyx-ray",
+      "initials": "OX",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave4_piper_ash": {
+      "slug": "piper-ash",
+      "initials": "PA",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave4_quinn_bell": {
+      "slug": "quinn-bell",
+      "initials": "QB",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave4_rue_cinder": {
+      "slug": "rue-cinder",
+      "initials": "RC",
+      "c1": "#fb923c",
+      "c2": "#9a3412"
+    },
+    "performer_wave4_sage_dusk": {
+      "slug": "sage-dusk",
+      "initials": "SD",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave4_true_ember": {
+      "slug": "true-ember",
+      "initials": "TE",
+      "c1": "#f97316",
+      "c2": "#9a3412"
+    },
+    "performer_wave4_ursa_flame": {
+      "slug": "ursa-flame",
+      "initials": "UF",
+      "c1": "#ef4444",
+      "c2": "#991b1b"
+    },
+    "performer_wave4_vivid_sky": {
+      "slug": "vivid-sky",
+      "initials": "VS",
+      "c1": "#0ea5e9",
+      "c2": "#075985"
+    },
+    "performer_wave4_wren_tide": {
+      "slug": "wren-tide",
+      "initials": "WT",
+      "c1": "#14b8a6",
+      "c2": "#0f766e"
+    },
+    "performer_wave4_xiom_jade": {
+      "slug": "xiom-jade",
+      "initials": "XJ",
+      "c1": "#22c55e",
+      "c2": "#166534"
+    },
+    "performer_wave4_yale_rose": {
+      "slug": "yale-rose",
+      "initials": "YR",
+      "c1": "#ec4899",
+      "c2": "#9d174d"
+    },
+    "performer_wave4_zeta_bloom": {
+      "slug": "zeta-bloom",
+      "initials": "ZB",
+      "c1": "#d946ef",
+      "c2": "#86198f"
+    },
+    "performer_wave4_aria_fox": {
+      "slug": "aria-fox",
+      "initials": "AF",
+      "c1": "#f59e0b",
+      "c2": "#b45309"
+    },
+    "performer_wave4_belle_koi": {
+      "slug": "belle-koi",
+      "initials": "BK",
+      "c1": "#06b6d4",
+      "c2": "#0e7490"
+    },
+    "performer_wave4_cleo_ink": {
+      "slug": "cleo-ink",
+      "initials": "CI",
+      "c1": "#8b5cf6",
+      "c2": "#5b21b6"
+    },
+    "performer_wave4_dawn_lily": {
+      "slug": "dawn-lily",
+      "initials": "DY",
+      "c1": "#84cc16",
+      "c2": "#3f6212"
+    },
+    "performer_wave4_echo_mint": {
+      "slug": "echo-mint",
+      "initials": "EM",
+      "c1": "#10b981",
+      "c2": "#047857"
+    },
+    "performer_wave4_flora_nix": {
+      "slug": "flora-nix",
+      "initials": "FN",
+      "c1": "#f472b6",
+      "c2": "#be185d"
+    },
+    "performer_wave4_gala_orb": {
+      "slug": "gala-orb",
+      "initials": "GO",
+      "c1": "#6366f1",
+      "c2": "#312e81"
+    },
+    "performer_wave4_halo_pix": {
+      "slug": "halo-pix",
+      "initials": "HP",
+      "c1": "#a855f7",
+      "c2": "#6b21a8"
+    },
+    "performer_wave4_indy_quartz": {
+      "slug": "indy-quartz",
+      "initials": "IQ",
+      "c1": "#64748b",
+      "c2": "#0f172a"
+    },
+    "performer_wave5_w5_faye_cove_01": {
+      "slug": "w5-faye-cove-01",
+      "initials": "FC",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave5_w5_gia_fox_02": {
+      "slug": "w5-gia-fox-02",
+      "initials": "GF",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave5_w5_hera_bloom_03": {
+      "slug": "w5-hera-bloom-03",
+      "initials": "HB",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave5_w5_ines_echo_04": {
+      "slug": "w5-ines-echo-04",
+      "initials": "IE",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave5_w5_joss_hart_05": {
+      "slug": "w5-joss-hart-05",
+      "initials": "JH",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave5_w5_kira_knot_06": {
+      "slug": "w5-kira-knot-06",
+      "initials": "KK",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave5_w5_lana_north_07": {
+      "slug": "w5-lana-north-07",
+      "initials": "LN",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave5_w5_mira_quill_08": {
+      "slug": "w5-mira-quill-08",
+      "initials": "MQ",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave5_w5_nia_tide_09": {
+      "slug": "w5-nia-tide-09",
+      "initials": "NT",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave5_w5_orla_yarn_10": {
+      "slug": "w5-orla-yarn-10",
+      "initials": "OY",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave5_w5_pia_cove_11": {
+      "slug": "w5-pia-cove-11",
+      "initials": "PC",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave5_w5_quinn_fox_12": {
+      "slug": "w5-quinn-fox-12",
+      "initials": "QF",
+      "c1": "#f97316",
+      "c2": "#9a3412"
+    },
+    "performer_wave5_w5_rae_bloom_13": {
+      "slug": "w5-rae-bloom-13",
+      "initials": "RB",
+      "c1": "#0ea5e9",
+      "c2": "#075985"
+    },
+    "performer_wave5_w5_sia_echo_14": {
+      "slug": "w5-sia-echo-14",
+      "initials": "SE",
+      "c1": "#f472b6",
+      "c2": "#9d174d"
+    },
+    "performer_wave5_w5_tess_hart_15": {
+      "slug": "w5-tess-hart-15",
+      "initials": "TH",
+      "c1": "#fb7185",
+      "c2": "#be123c"
+    },
+    "performer_wave5_w5_uma_knot_16": {
+      "slug": "w5-uma-knot-16",
+      "initials": "UK",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave5_w5_vera_north_17": {
+      "slug": "w5-vera-north-17",
+      "initials": "VN",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave5_w5_willa_quill_18": {
+      "slug": "w5-willa-quill-18",
+      "initials": "WQ",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave5_w5_xena_tide_19": {
+      "slug": "w5-xena-tide-19",
+      "initials": "XT",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave5_w5_yara_yarn_20": {
+      "slug": "w5-yara-yarn-20",
+      "initials": "YY",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave5_w5_zara_cove_21": {
+      "slug": "w5-zara-cove-21",
+      "initials": "ZC",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave5_w5_ada_fox_22": {
+      "slug": "w5-ada-fox-22",
+      "initials": "AF",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave5_w5_blair_bloom_23": {
+      "slug": "w5-blair-bloom-23",
+      "initials": "BB",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave5_w5_cora_echo_24": {
+      "slug": "w5-cora-echo-24",
+      "initials": "CE",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave5_w5_dove_hart_25": {
+      "slug": "w5-dove-hart-25",
+      "initials": "DH",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave6_w6_mira_glen_01": {
+      "slug": "w6-mira-glen-01",
+      "initials": "MG",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave6_w6_nia_jade_02": {
+      "slug": "w6-nia-jade-02",
+      "initials": "NJ",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave6_w6_orla_moss_03": {
+      "slug": "w6-orla-moss-03",
+      "initials": "OM",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave6_w6_pia_park_04": {
+      "slug": "w6-pia-park-04",
+      "initials": "PP",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave6_w6_quinn_shore_05": {
+      "slug": "w6-quinn-shore-05",
+      "initials": "QS",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave6_w6_rae_west_06": {
+      "slug": "w6-rae-west-06",
+      "initials": "RW",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave6_w6_sia_birch_07": {
+      "slug": "w6-sia-birch-07",
+      "initials": "SB",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave6_w6_tess_elm_08": {
+      "slug": "w6-tess-elm-08",
+      "initials": "TE",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave6_w6_uma_ash_09": {
+      "slug": "w6-uma-ash-09",
+      "initials": "UA",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave6_w6_vera_dale_10": {
+      "slug": "w6-vera-dale-10",
+      "initials": "VD",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave6_w6_willa_glen_11": {
+      "slug": "w6-willa-glen-11",
+      "initials": "WG",
+      "c1": "#f97316",
+      "c2": "#9a3412"
+    },
+    "performer_wave6_w6_xena_jade_12": {
+      "slug": "w6-xena-jade-12",
+      "initials": "XJ",
+      "c1": "#0ea5e9",
+      "c2": "#075985"
+    },
+    "performer_wave6_w6_yara_moss_13": {
+      "slug": "w6-yara-moss-13",
+      "initials": "YM",
+      "c1": "#f472b6",
+      "c2": "#9d174d"
+    },
+    "performer_wave6_w6_zara_park_14": {
+      "slug": "w6-zara-park-14",
+      "initials": "ZP",
+      "c1": "#fb7185",
+      "c2": "#be123c"
+    },
+    "performer_wave6_w6_ada_shore_15": {
+      "slug": "w6-ada-shore-15",
+      "initials": "AS",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave6_w6_blair_west_16": {
+      "slug": "w6-blair-west-16",
+      "initials": "BW",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave6_w6_cora_birch_17": {
+      "slug": "w6-cora-birch-17",
+      "initials": "CB",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave6_w6_dove_elm_18": {
+      "slug": "w6-dove-elm-18",
+      "initials": "DE",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave6_w6_ava_ash_19": {
+      "slug": "w6-ava-ash-19",
+      "initials": "AA",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave6_w6_bea_dale_20": {
+      "slug": "w6-bea-dale-20",
+      "initials": "BD",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave6_w6_cleo_glen_21": {
+      "slug": "w6-cleo-glen-21",
+      "initials": "CG",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave6_w6_dina_jade_22": {
+      "slug": "w6-dina-jade-22",
+      "initials": "DJ",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave6_w6_elle_moss_23": {
+      "slug": "w6-elle-moss-23",
+      "initials": "EM",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave6_w6_faye_park_24": {
+      "slug": "w6-faye-park-24",
+      "initials": "FP",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave6_w6_gia_shore_25": {
+      "slug": "w6-gia-shore-25",
+      "initials": "GS",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave7_w7_tess_reed_01": {
+      "slug": "w7-tess-reed-01",
+      "initials": "TR",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave7_w7_uma_vale_02": {
+      "slug": "w7-uma-vale-02",
+      "initials": "UV",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave7_w7_vera_zeal_03": {
+      "slug": "w7-vera-zeal-03",
+      "initials": "VZ",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave7_w7_willa_dusk_04": {
+      "slug": "w7-willa-dusk-04",
+      "initials": "WD",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave7_w7_xena_grove_05": {
+      "slug": "w7-xena-grove-05",
+      "initials": "XG",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave7_w7_yara_crest_06": {
+      "slug": "w7-yara-crest-06",
+      "initials": "YC",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave7_w7_zara_frost_07": {
+      "slug": "w7-zara-frost-07",
+      "initials": "ZF",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave7_w7_ada_iris_08": {
+      "slug": "w7-ada-iris-08",
+      "initials": "AI",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave7_w7_blair_lake_09": {
+      "slug": "w7-blair-lake-09",
+      "initials": "BL",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave7_w7_cora_opal_10": {
+      "slug": "w7-cora-opal-10",
+      "initials": "CO",
+      "c1": "#f97316",
+      "c2": "#9a3412"
+    },
+    "performer_wave7_w7_dove_reed_11": {
+      "slug": "w7-dove-reed-11",
+      "initials": "DR",
+      "c1": "#0ea5e9",
+      "c2": "#075985"
+    },
+    "performer_wave7_w7_ava_vale_12": {
+      "slug": "w7-ava-vale-12",
+      "initials": "AV",
+      "c1": "#f472b6",
+      "c2": "#9d174d"
+    },
+    "performer_wave7_w7_bea_zeal_13": {
+      "slug": "w7-bea-zeal-13",
+      "initials": "BZ",
+      "c1": "#fb7185",
+      "c2": "#be123c"
+    },
+    "performer_wave7_w7_cleo_dusk_14": {
+      "slug": "w7-cleo-dusk-14",
+      "initials": "CD",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave7_w7_dina_grove_15": {
+      "slug": "w7-dina-grove-15",
+      "initials": "DG",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave7_w7_elle_crest_16": {
+      "slug": "w7-elle-crest-16",
+      "initials": "EC",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave7_w7_faye_frost_17": {
+      "slug": "w7-faye-frost-17",
+      "initials": "FF",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave7_w7_gia_iris_18": {
+      "slug": "w7-gia-iris-18",
+      "initials": "GI",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave7_w7_hera_lake_19": {
+      "slug": "w7-hera-lake-19",
+      "initials": "HL",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave7_w7_ines_opal_20": {
+      "slug": "w7-ines-opal-20",
+      "initials": "IO",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave7_w7_joss_reed_21": {
+      "slug": "w7-joss-reed-21",
+      "initials": "JR",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave7_w7_kira_vale_22": {
+      "slug": "w7-kira-vale-22",
+      "initials": "KV",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave7_w7_lana_zeal_23": {
+      "slug": "w7-lana-zeal-23",
+      "initials": "LZ",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave7_w7_mira_dusk_24": {
+      "slug": "w7-mira-dusk-24",
+      "initials": "MD",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave7_w7_nia_grove_25": {
+      "slug": "w7-nia-grove-25",
+      "initials": "NG",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave8_w8_ada_fox_01": {
+      "slug": "w8-ada-fox-01",
+      "initials": "AF",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave8_w8_blair_bloom_02": {
+      "slug": "w8-blair-bloom-02",
+      "initials": "BB",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave8_w8_cora_echo_03": {
+      "slug": "w8-cora-echo-03",
+      "initials": "CE",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave8_w8_dove_hart_04": {
+      "slug": "w8-dove-hart-04",
+      "initials": "DH",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave8_w8_ava_knot_05": {
+      "slug": "w8-ava-knot-05",
+      "initials": "AK",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave8_w8_bea_north_06": {
+      "slug": "w8-bea-north-06",
+      "initials": "BN",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave8_w8_cleo_quill_07": {
+      "slug": "w8-cleo-quill-07",
+      "initials": "CQ",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave8_w8_dina_tide_08": {
+      "slug": "w8-dina-tide-08",
+      "initials": "DT",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave8_w8_elle_yarn_09": {
+      "slug": "w8-elle-yarn-09",
+      "initials": "EY",
+      "c1": "#f97316",
+      "c2": "#9a3412"
+    },
+    "performer_wave8_w8_faye_cove_10": {
+      "slug": "w8-faye-cove-10",
+      "initials": "FC",
+      "c1": "#0ea5e9",
+      "c2": "#075985"
+    },
+    "performer_wave8_w8_gia_fox_11": {
+      "slug": "w8-gia-fox-11",
+      "initials": "GF",
+      "c1": "#f472b6",
+      "c2": "#9d174d"
+    },
+    "performer_wave8_w8_hera_bloom_12": {
+      "slug": "w8-hera-bloom-12",
+      "initials": "HB",
+      "c1": "#fb7185",
+      "c2": "#be123c"
+    },
+    "performer_wave8_w8_ines_echo_13": {
+      "slug": "w8-ines-echo-13",
+      "initials": "IE",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave8_w8_joss_hart_14": {
+      "slug": "w8-joss-hart-14",
+      "initials": "JH",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave8_w8_kira_knot_15": {
+      "slug": "w8-kira-knot-15",
+      "initials": "KK",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave8_w8_lana_north_16": {
+      "slug": "w8-lana-north-16",
+      "initials": "LN",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave8_w8_mira_quill_17": {
+      "slug": "w8-mira-quill-17",
+      "initials": "MQ",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave8_w8_nia_tide_18": {
+      "slug": "w8-nia-tide-18",
+      "initials": "NT",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave8_w8_orla_yarn_19": {
+      "slug": "w8-orla-yarn-19",
+      "initials": "OY",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave8_w8_pia_cove_20": {
+      "slug": "w8-pia-cove-20",
+      "initials": "PC",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave8_w8_quinn_fox_21": {
+      "slug": "w8-quinn-fox-21",
+      "initials": "QF",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave8_w8_rae_bloom_22": {
+      "slug": "w8-rae-bloom-22",
+      "initials": "RB",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave8_w8_sia_echo_23": {
+      "slug": "w8-sia-echo-23",
+      "initials": "SE",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave8_w8_tess_hart_24": {
+      "slug": "w8-tess-hart-24",
+      "initials": "TH",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave8_w8_uma_knot_25": {
+      "slug": "w8-uma-knot-25",
+      "initials": "UK",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave9_w9_dina_jade_01": {
+      "slug": "w9-dina-jade-01",
+      "initials": "DJ",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave9_w9_elle_moss_02": {
+      "slug": "w9-elle-moss-02",
+      "initials": "EM",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave9_w9_faye_park_03": {
+      "slug": "w9-faye-park-03",
+      "initials": "FP",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave9_w9_gia_shore_04": {
+      "slug": "w9-gia-shore-04",
+      "initials": "GS",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave9_w9_hera_west_05": {
+      "slug": "w9-hera-west-05",
+      "initials": "HW",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave9_w9_ines_birch_06": {
+      "slug": "w9-ines-birch-06",
+      "initials": "IB",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave9_w9_joss_elm_07": {
+      "slug": "w9-joss-elm-07",
+      "initials": "JE",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave9_w9_kira_ash_08": {
+      "slug": "w9-kira-ash-08",
+      "initials": "KA",
+      "c1": "#f97316",
+      "c2": "#9a3412"
+    },
+    "performer_wave9_w9_lana_dale_09": {
+      "slug": "w9-lana-dale-09",
+      "initials": "LD",
+      "c1": "#0ea5e9",
+      "c2": "#075985"
+    },
+    "performer_wave9_w9_mira_glen_10": {
+      "slug": "w9-mira-glen-10",
+      "initials": "MG",
+      "c1": "#f472b6",
+      "c2": "#9d174d"
+    },
+    "performer_wave9_w9_nia_jade_11": {
+      "slug": "w9-nia-jade-11",
+      "initials": "NJ",
+      "c1": "#fb7185",
+      "c2": "#be123c"
+    },
+    "performer_wave9_w9_orla_moss_12": {
+      "slug": "w9-orla-moss-12",
+      "initials": "OM",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave9_w9_pia_park_13": {
+      "slug": "w9-pia-park-13",
+      "initials": "PP",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave9_w9_quinn_shore_14": {
+      "slug": "w9-quinn-shore-14",
+      "initials": "QS",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave9_w9_rae_west_15": {
+      "slug": "w9-rae-west-15",
+      "initials": "RW",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave9_w9_sia_birch_16": {
+      "slug": "w9-sia-birch-16",
+      "initials": "SB",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave9_w9_tess_elm_17": {
+      "slug": "w9-tess-elm-17",
+      "initials": "TE",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave9_w9_uma_ash_18": {
+      "slug": "w9-uma-ash-18",
+      "initials": "UA",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave9_w9_vera_dale_19": {
+      "slug": "w9-vera-dale-19",
+      "initials": "VD",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave9_w9_willa_glen_20": {
+      "slug": "w9-willa-glen-20",
+      "initials": "WG",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave9_w9_xena_jade_21": {
+      "slug": "w9-xena-jade-21",
+      "initials": "XJ",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave9_w9_yara_moss_22": {
+      "slug": "w9-yara-moss-22",
+      "initials": "YM",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave9_w9_zara_park_23": {
+      "slug": "w9-zara-park-23",
+      "initials": "ZP",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave9_w9_ada_shore_24": {
+      "slug": "w9-ada-shore-24",
+      "initials": "AS",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave9_w9_blair_west_25": {
+      "slug": "w9-blair-west-25",
+      "initials": "BW",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave10_w10_kira_vale_01": {
+      "slug": "w10-kira-vale-01",
+      "initials": "KV",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave10_w10_lana_zeal_02": {
+      "slug": "w10-lana-zeal-02",
+      "initials": "LZ",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave10_w10_mira_dusk_03": {
+      "slug": "w10-mira-dusk-03",
+      "initials": "MD",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave10_w10_nia_grove_04": {
+      "slug": "w10-nia-grove-04",
+      "initials": "NG",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave10_w10_orla_crest_05": {
+      "slug": "w10-orla-crest-05",
+      "initials": "OC",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave10_w10_pia_frost_06": {
+      "slug": "w10-pia-frost-06",
+      "initials": "PF",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave10_w10_quinn_iris_07": {
+      "slug": "w10-quinn-iris-07",
+      "initials": "QI",
+      "c1": "#f97316",
+      "c2": "#9a3412"
+    },
+    "performer_wave10_w10_rae_lake_08": {
+      "slug": "w10-rae-lake-08",
+      "initials": "RL",
+      "c1": "#0ea5e9",
+      "c2": "#075985"
+    },
+    "performer_wave10_w10_sia_opal_09": {
+      "slug": "w10-sia-opal-09",
+      "initials": "SO",
+      "c1": "#f472b6",
+      "c2": "#9d174d"
+    },
+    "performer_wave10_w10_tess_reed_10": {
+      "slug": "w10-tess-reed-10",
+      "initials": "TR",
+      "c1": "#fb7185",
+      "c2": "#be123c"
+    },
+    "performer_wave10_w10_uma_vale_11": {
+      "slug": "w10-uma-vale-11",
+      "initials": "UV",
+      "c1": "#c084fc",
+      "c2": "#6b21a8"
+    },
+    "performer_wave10_w10_vera_zeal_12": {
+      "slug": "w10-vera-zeal-12",
+      "initials": "VZ",
+      "c1": "#67e8f9",
+      "c2": "#0e7490"
+    },
+    "performer_wave10_w10_willa_dusk_13": {
+      "slug": "w10-willa-dusk-13",
+      "initials": "WD",
+      "c1": "#4ade80",
+      "c2": "#166534"
+    },
+    "performer_wave10_w10_xena_grove_14": {
+      "slug": "w10-xena-grove-14",
+      "initials": "XG",
+      "c1": "#fbbf24",
+      "c2": "#92400e"
+    },
+    "performer_wave10_w10_yara_crest_15": {
+      "slug": "w10-yara-crest-15",
+      "initials": "YC",
+      "c1": "#94a3b8",
+      "c2": "#1e293b"
+    },
+    "performer_wave10_w10_zara_frost_16": {
+      "slug": "w10-zara-frost-16",
+      "initials": "ZF",
+      "c1": "#a78bfa",
+      "c2": "#5b21b6"
+    },
+    "performer_wave10_w10_ada_iris_17": {
+      "slug": "w10-ada-iris-17",
+      "initials": "AI",
+      "c1": "#38bdf8",
+      "c2": "#075985"
+    },
+    "performer_wave10_w10_blair_lake_18": {
+      "slug": "w10-blair-lake-18",
+      "initials": "BL",
+      "c1": "#fdba74",
+      "c2": "#c2410c"
+    },
+    "performer_wave10_w10_cora_opal_19": {
+      "slug": "w10-cora-opal-19",
+      "initials": "CO",
+      "c1": "#34d399",
+      "c2": "#047857"
+    },
+    "performer_wave10_w10_dove_reed_20": {
+      "slug": "w10-dove-reed-20",
+      "initials": "DR",
+      "c1": "#e879f9",
+      "c2": "#a21caf"
+    },
+    "performer_wave10_w10_ava_vale_21": {
+      "slug": "w10-ava-vale-21",
+      "initials": "AV",
+      "c1": "#818cf8",
+      "c2": "#3730a3"
+    },
+    "performer_wave10_w10_bea_zeal_22": {
+      "slug": "w10-bea-zeal-22",
+      "initials": "BZ",
+      "c1": "#f43f5e",
+      "c2": "#9f1239"
+    },
+    "performer_wave10_w10_cleo_dusk_23": {
+      "slug": "w10-cleo-dusk-23",
+      "initials": "CD",
+      "c1": "#fde047",
+      "c2": "#a16207"
+    },
+    "performer_wave10_w10_dina_grove_24": {
+      "slug": "w10-dina-grove-24",
+      "initials": "DG",
+      "c1": "#2dd4bf",
+      "c2": "#115e59"
+    },
+    "performer_wave10_w10_elle_crest_25": {
+      "slug": "w10-elle-crest-25",
+      "initials": "EC",
+      "c1": "#f97316",
+      "c2": "#9a3412"
+    }
+  },
+  "updated_at": "2026-11-22T09:16:10Z"
 }

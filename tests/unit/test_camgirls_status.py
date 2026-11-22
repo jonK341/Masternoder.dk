@@ -1,5 +1,5 @@
 """Camgirls platform status and info-bar payload."""
-from backend.services.camgirls_status_service import platform_status, studio_tech_for_performer
+from backend.services.camgirls_status_service import platform_status, roster_milestone, studio_tech_for_performer
 
 
 def test_platform_status_includes_tech_and_todos():
@@ -17,6 +17,13 @@ def test_platform_status_includes_tech_and_todos():
         len(c.get("items") or []) for c in by_cat
     )
     assert "platform_tech" in out
+    explorer = out.get("explorer") or {}
+    assert explorer.get("url")
+    assert explorer.get("studio_path") == "/camgirls/"
+    assert explorer.get("nginx_required") is False
+    milestone = roster_milestone(15)
+    assert milestone.get("performers", 0) >= 15
+    assert milestone.get("ok") is True
     roster = out.get("performers") or []
     assert roster
     first = roster[0]

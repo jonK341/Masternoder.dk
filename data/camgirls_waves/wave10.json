@@ -1,0 +1,332 @@
+{
+  "wave": 10,
+  "id_prefix": "performer_wave10_",
+  "notes": "Wave 10 auto stubs toward 250-scale roster.",
+  "performers": [
+    {
+      "slug": "w10-kira-vale-01",
+      "display_name": "Kira Vale",
+      "bio": "Kira Vale \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w10-kira-vale-01",
+        "initials": "KV",
+        "c1": "#34d399",
+        "c2": "#047857"
+      }
+    },
+    {
+      "slug": "w10-lana-zeal-02",
+      "display_name": "Lana Zeal",
+      "bio": "Lana Zeal \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w10-lana-zeal-02",
+        "initials": "LZ",
+        "c1": "#e879f9",
+        "c2": "#a21caf"
+      }
+    },
+    {
+      "slug": "w10-mira-dusk-03",
+      "display_name": "Mira Dusk",
+      "bio": "Mira Dusk \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w10-mira-dusk-03",
+        "initials": "MD",
+        "c1": "#818cf8",
+        "c2": "#3730a3"
+      }
+    },
+    {
+      "slug": "w10-nia-grove-04",
+      "display_name": "Nia Grove",
+      "bio": "Nia Grove \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w10-nia-grove-04",
+        "initials": "NG",
+        "c1": "#f43f5e",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "w10-orla-crest-05",
+      "display_name": "Orla Crest",
+      "bio": "Orla Crest \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w10-orla-crest-05",
+        "initials": "OC",
+        "c1": "#fde047",
+        "c2": "#a16207"
+      }
+    },
+    {
+      "slug": "w10-pia-frost-06",
+      "display_name": "Pia Frost",
+      "bio": "Pia Frost \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w10-pia-frost-06",
+        "initials": "PF",
+        "c1": "#2dd4bf",
+        "c2": "#115e59"
+      }
+    },
+    {
+      "slug": "w10-quinn-iris-07",
+      "display_name": "Quinn Iris",
+      "bio": "Quinn Iris \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w10-quinn-iris-07",
+        "initials": "QI",
+        "c1": "#f97316",
+        "c2": "#9a3412"
+      }
+    },
+    {
+      "slug": "w10-rae-lake-08",
+      "display_name": "Rae Lake",
+      "bio": "Rae Lake \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w10-rae-lake-08",
+        "initials": "RL",
+        "c1": "#0ea5e9",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "w10-sia-opal-09",
+      "display_name": "Sia Opal",
+      "bio": "Sia Opal \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w10-sia-opal-09",
+        "initials": "SO",
+        "c1": "#f472b6",
+        "c2": "#9d174d"
+      }
+    },
+    {
+      "slug": "w10-tess-reed-10",
+      "display_name": "Tess Reed",
+      "bio": "Tess Reed \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w10-tess-reed-10",
+        "initials": "TR",
+        "c1": "#fb7185",
+        "c2": "#be123c"
+      }
+    },
+    {
+      "slug": "w10-uma-vale-11",
+      "display_name": "Uma Vale",
+      "bio": "Uma Vale \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w10-uma-vale-11",
+        "initials": "UV",
+        "c1": "#c084fc",
+        "c2": "#6b21a8"
+      }
+    },
+    {
+      "slug": "w10-vera-zeal-12",
+      "display_name": "Vera Zeal",
+      "bio": "Vera Zeal \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w10-vera-zeal-12",
+        "initials": "VZ",
+        "c1": "#67e8f9",
+        "c2": "#0e7490"
+      }
+    },
+    {
+      "slug": "w10-willa-dusk-13",
+      "display_name": "Willa Dusk",
+      "bio": "Willa Dusk \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w10-willa-dusk-13",
+        "initials": "WD",
+        "c1": "#4ade80",
+        "c2": "#166534"
+      }
+    },
+    {
+      "slug": "w10-xena-grove-14",
+      "display_name": "Xena Grove",
+      "bio": "Xena Grove \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w10-xena-grove-14",
+        "initials": "XG",
+        "c1": "#fbbf24",
+        "c2": "#92400e"
+      }
+    },
+    {
+      "slug": "w10-yara-crest-15",
+      "display_name": "Yara Crest",
+      "bio": "Yara Crest \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w10-yara-crest-15",
+        "initials": "YC",
+        "c1": "#94a3b8",
+        "c2": "#1e293b"
+      }
+    },
+    {
+      "slug": "w10-zara-frost-16",
+      "display_name": "Zara Frost",
+      "bio": "Zara Frost \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w10-zara-frost-16",
+        "initials": "ZF",
+        "c1": "#a78bfa",
+        "c2": "#5b21b6"
+      }
+    },
+    {
+      "slug": "w10-ada-iris-17",
+      "display_name": "Ada Iris",
+      "bio": "Ada Iris \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w10-ada-iris-17",
+        "initials": "AI",
+        "c1": "#38bdf8",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "w10-blair-lake-18",
+      "display_name": "Blair Lake",
+      "bio": "Blair Lake \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w10-blair-lake-18",
+        "initials": "BL",
+        "c1": "#fdba74",
+        "c2": "#c2410c"
+      }
+    },
+    {
+      "slug": "w10-cora-opal-19",
+      "display_name": "Cora Opal",
+      "bio": "Cora Opal \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w10-cora-opal-19",
+        "initials": "CO",
+        "c1": "#34d399",
+        "c2": "#047857"
+      }
+    },
+    {
+      "slug": "w10-dove-reed-20",
+      "display_name": "Dove Reed",
+      "bio": "Dove Reed \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w10-dove-reed-20",
+        "initials": "DR",
+        "c1": "#e879f9",
+        "c2": "#a21caf"
+      }
+    },
+    {
+      "slug": "w10-ava-vale-21",
+      "display_name": "Ava Vale",
+      "bio": "Ava Vale \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w10-ava-vale-21",
+        "initials": "AV",
+        "c1": "#818cf8",
+        "c2": "#3730a3"
+      }
+    },
+    {
+      "slug": "w10-bea-zeal-22",
+      "display_name": "Bea Zeal",
+      "bio": "Bea Zeal \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w10-bea-zeal-22",
+        "initials": "BZ",
+        "c1": "#f43f5e",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "w10-cleo-dusk-23",
+      "display_name": "Cleo Dusk",
+      "bio": "Cleo Dusk \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w10-cleo-dusk-23",
+        "initials": "CD",
+        "c1": "#fde047",
+        "c2": "#a16207"
+      }
+    },
+    {
+      "slug": "w10-dina-grove-24",
+      "display_name": "Dina Grove",
+      "bio": "Dina Grove \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w10-dina-grove-24",
+        "initials": "DG",
+        "c1": "#2dd4bf",
+        "c2": "#115e59"
+      }
+    },
+    {
+      "slug": "w10-elle-crest-25",
+      "display_name": "Elle Crest",
+      "bio": "Elle Crest \u2014 MN2 camgirls studio host for wave 10.",
+      "tagline": "Live AI \u00b7 wave 10",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w10-elle-crest-25",
+        "initials": "EC",
+        "c1": "#f97316",
+        "c2": "#9a3412"
+      }
+    }
+  ]
+}

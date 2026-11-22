@@ -1,0 +1,462 @@
+{
+  "wave": 4,
+  "id_prefix": "performer_wave4_",
+  "notes": "Wave 4 \u2014 35 hosts to the 100-performer verify milestone.",
+  "performers": [
+    {
+      "slug": "ada-quill",
+      "display_name": "Ada Quill",
+      "bio": "Ada Quill \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "ada-quill",
+        "initials": "AQ",
+        "c1": "#f472b6",
+        "c2": "#9d174d"
+      }
+    },
+    {
+      "slug": "bree-holt",
+      "display_name": "Bree Holt",
+      "bio": "Bree Holt \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "bree-holt",
+        "initials": "BH",
+        "c1": "#fb7185",
+        "c2": "#be123c"
+      }
+    },
+    {
+      "slug": "cyra-moss",
+      "display_name": "Cyra Moss",
+      "bio": "Cyra Moss \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "cyra-moss",
+        "initials": "CM",
+        "c1": "#c084fc",
+        "c2": "#6b21a8"
+      }
+    },
+    {
+      "slug": "dove-lane",
+      "display_name": "Dove Lane",
+      "bio": "Dove Lane \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "dove-lane",
+        "initials": "DL",
+        "c1": "#67e8f9",
+        "c2": "#0e7490"
+      }
+    },
+    {
+      "slug": "eden-park",
+      "display_name": "Eden Park",
+      "bio": "Eden Park \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "eden-park",
+        "initials": "EP",
+        "c1": "#4ade80",
+        "c2": "#166534"
+      }
+    },
+    {
+      "slug": "fern-cole",
+      "display_name": "Fern Cole",
+      "bio": "Fern Cole \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "fern-cole",
+        "initials": "FC",
+        "c1": "#86efac",
+        "c2": "#065f46"
+      }
+    },
+    {
+      "slug": "gwen-ross",
+      "display_name": "Gwen Ross",
+      "bio": "Gwen Ross \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "gwen-ross",
+        "initials": "GR",
+        "c1": "#fbbf24",
+        "c2": "#92400e"
+      }
+    },
+    {
+      "slug": "haze-vale",
+      "display_name": "Haze Vale",
+      "bio": "Haze Vale \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "haze-vale",
+        "initials": "HV",
+        "c1": "#94a3b8",
+        "c2": "#1e293b"
+      }
+    },
+    {
+      "slug": "iris-dawn",
+      "display_name": "Iris Dawn",
+      "bio": "Iris Dawn \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "iris-dawn",
+        "initials": "ID",
+        "c1": "#a78bfa",
+        "c2": "#5b21b6"
+      }
+    },
+    {
+      "slug": "jule-north",
+      "display_name": "Jule North",
+      "bio": "Jule North \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "jule-north",
+        "initials": "JN",
+        "c1": "#38bdf8",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "kira-wren",
+      "display_name": "Kira Wren",
+      "bio": "Kira Wren \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "kira-wren",
+        "initials": "KW",
+        "c1": "#f9a8d4",
+        "c2": "#9d174d"
+      }
+    },
+    {
+      "slug": "lark-reed",
+      "display_name": "Lark Reed",
+      "bio": "Lark Reed \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "lark-reed",
+        "initials": "LR",
+        "c1": "#fdba74",
+        "c2": "#c2410c"
+      }
+    },
+    {
+      "slug": "muse-glen",
+      "display_name": "Muse Glen",
+      "bio": "Muse Glen \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "muse-glen",
+        "initials": "MG",
+        "c1": "#34d399",
+        "c2": "#047857"
+      }
+    },
+    {
+      "slug": "nyx-pearl",
+      "display_name": "Nyx Pearl",
+      "bio": "Nyx Pearl \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "nyx-pearl",
+        "initials": "NP",
+        "c1": "#e879f9",
+        "c2": "#a21caf"
+      }
+    },
+    {
+      "slug": "onyx-ray",
+      "display_name": "Onyx Ray",
+      "bio": "Onyx Ray \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "onyx-ray",
+        "initials": "OX",
+        "c1": "#818cf8",
+        "c2": "#3730a3"
+      }
+    },
+    {
+      "slug": "piper-ash",
+      "display_name": "Piper Ash",
+      "bio": "Piper Ash \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "piper-ash",
+        "initials": "PA",
+        "c1": "#f43f5e",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "quinn-bell",
+      "display_name": "Quinn Bell",
+      "bio": "Quinn Bell \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "quinn-bell",
+        "initials": "QB",
+        "c1": "#fde047",
+        "c2": "#a16207"
+      }
+    },
+    {
+      "slug": "rue-cinder",
+      "display_name": "Rue Cinder",
+      "bio": "Rue Cinder \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "rue-cinder",
+        "initials": "RC",
+        "c1": "#fb923c",
+        "c2": "#9a3412"
+      }
+    },
+    {
+      "slug": "sage-dusk",
+      "display_name": "Sage Dusk",
+      "bio": "Sage Dusk \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "sage-dusk",
+        "initials": "SD",
+        "c1": "#2dd4bf",
+        "c2": "#115e59"
+      }
+    },
+    {
+      "slug": "true-ember",
+      "display_name": "True Ember",
+      "bio": "True Ember \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "true-ember",
+        "initials": "TE",
+        "c1": "#f97316",
+        "c2": "#9a3412"
+      }
+    },
+    {
+      "slug": "ursa-flame",
+      "display_name": "Ursa Flame",
+      "bio": "Ursa Flame \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "ursa-flame",
+        "initials": "UF",
+        "c1": "#ef4444",
+        "c2": "#991b1b"
+      }
+    },
+    {
+      "slug": "vivid-sky",
+      "display_name": "Vivid Sky",
+      "bio": "Vivid Sky \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "vivid-sky",
+        "initials": "VS",
+        "c1": "#0ea5e9",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "wren-tide",
+      "display_name": "Wren Tide",
+      "bio": "Wren Tide \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "wren-tide",
+        "initials": "WT",
+        "c1": "#14b8a6",
+        "c2": "#0f766e"
+      }
+    },
+    {
+      "slug": "xiom-jade",
+      "display_name": "Xiom Jade",
+      "bio": "Xiom Jade \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "xiom-jade",
+        "initials": "XJ",
+        "c1": "#22c55e",
+        "c2": "#166534"
+      }
+    },
+    {
+      "slug": "yale-rose",
+      "display_name": "Yale Rose",
+      "bio": "Yale Rose \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "yale-rose",
+        "initials": "YR",
+        "c1": "#ec4899",
+        "c2": "#9d174d"
+      }
+    },
+    {
+      "slug": "zeta-bloom",
+      "display_name": "Zeta Bloom",
+      "bio": "Zeta Bloom \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "zeta-bloom",
+        "initials": "ZB",
+        "c1": "#d946ef",
+        "c2": "#86198f"
+      }
+    },
+    {
+      "slug": "aria-fox",
+      "display_name": "Aria Fox",
+      "bio": "Aria Fox \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "aria-fox",
+        "initials": "AF",
+        "c1": "#f59e0b",
+        "c2": "#b45309"
+      }
+    },
+    {
+      "slug": "belle-koi",
+      "display_name": "Belle Koi",
+      "bio": "Belle Koi \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "belle-koi",
+        "initials": "BK",
+        "c1": "#06b6d4",
+        "c2": "#0e7490"
+      }
+    },
+    {
+      "slug": "cleo-ink",
+      "display_name": "Cleo Ink",
+      "bio": "Cleo Ink \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "cleo-ink",
+        "initials": "CI",
+        "c1": "#8b5cf6",
+        "c2": "#5b21b6"
+      }
+    },
+    {
+      "slug": "dawn-lily",
+      "display_name": "Dawn Lily",
+      "bio": "Dawn Lily \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "dawn-lily",
+        "initials": "DY",
+        "c1": "#84cc16",
+        "c2": "#3f6212"
+      }
+    },
+    {
+      "slug": "echo-mint",
+      "display_name": "Echo Mint",
+      "bio": "Echo Mint \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "echo-mint",
+        "initials": "EM",
+        "c1": "#10b981",
+        "c2": "#047857"
+      }
+    },
+    {
+      "slug": "flora-nix",
+      "display_name": "Flora Nix",
+      "bio": "Flora Nix \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "flora-nix",
+        "initials": "FN",
+        "c1": "#f472b6",
+        "c2": "#be185d"
+      }
+    },
+    {
+      "slug": "gala-orb",
+      "display_name": "Gala Orb",
+      "bio": "Gala Orb \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "gala-orb",
+        "initials": "GO",
+        "c1": "#6366f1",
+        "c2": "#312e81"
+      }
+    },
+    {
+      "slug": "halo-pix",
+      "display_name": "Halo Pix",
+      "bio": "Halo Pix \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "halo-pix",
+        "initials": "HP",
+        "c1": "#a855f7",
+        "c2": "#6b21a8"
+      }
+    },
+    {
+      "slug": "indy-quartz",
+      "display_name": "Indy Quartz",
+      "bio": "Indy Quartz \u2014 MN2 camgirls studio host for wave 4.",
+      "tagline": "Live AI \u00b7 wave 4",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "indy-quartz",
+        "initials": "IQ",
+        "c1": "#64748b",
+        "c2": "#0f172a"
+      }
+    }
+  ]
+}

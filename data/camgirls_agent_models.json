@@ -5,7 +5,11 @@
       "performer_id": "performer_nova",
       "display_name": "Nova Star Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["welcome_host", "odds_explainer", "exchange_onramp_nudge"],
+      "casino_skill_set": [
+        "welcome_host",
+        "odds_explainer",
+        "exchange_onramp_nudge"
+      ],
       "description": "Cosmic casino host for onboarding, MN2 wallet prompts, and playful retention."
     },
     {
@@ -13,7 +17,11 @@
       "performer_id": "performer_luna",
       "display_name": "Luna Eclipse Agent",
       "task_kind": "free",
-      "casino_skill_set": ["night_shift_host", "responsible_play_soft_nudge", "social_invite"],
+      "casino_skill_set": [
+        "night_shift_host",
+        "responsible_play_soft_nudge",
+        "social_invite"
+      ],
       "description": "Late-night lounge host focused on calm play, social containment, and low-pressure guidance."
     },
     {
@@ -21,7 +29,11 @@
       "performer_id": "performer_sage",
       "display_name": "Sage Willow Agent",
       "task_kind": "default",
-      "casino_skill_set": ["risk_sentinel", "mindful_breaks", "tax_record_explainer"],
+      "casino_skill_set": [
+        "risk_sentinel",
+        "mindful_breaks",
+        "tax_record_explainer"
+      ],
       "description": "Mindful responsible-play persona for risk notices, breaks, and exchange tax-record explanations."
     },
     {
@@ -29,7 +41,11 @@
       "performer_id": "performer_ember",
       "display_name": "Ember Blaze Agent",
       "task_kind": "speed",
-      "casino_skill_set": ["vip_host", "tournament_hype", "big_win_reactivation"],
+      "casino_skill_set": [
+        "vip_host",
+        "tournament_hype",
+        "big_win_reactivation"
+      ],
       "description": "High-energy VIP and contest host for tournaments, leaderboard pushes, and comeback offers."
     },
     {
@@ -37,7 +53,11 @@
       "performer_id": "performer_iris",
       "display_name": "Iris Prism Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["fan_club_goal", "gift_recommendation", "cross_sell_casino_exchange"],
+      "casino_skill_set": [
+        "fan_club_goal",
+        "gift_recommendation",
+        "cross_sell_casino_exchange"
+      ],
       "description": "Fan-club and studio gift concierge that connects performer goals, casino events, and exchange balances."
     },
     {
@@ -45,7 +65,11 @@
       "performer_id": "performer_aurora",
       "display_name": "Aurora Frost Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["welcome_host", "winter_promo", "exchange_onramp_nudge"],
+      "casino_skill_set": [
+        "welcome_host",
+        "winter_promo",
+        "exchange_onramp_nudge"
+      ],
       "description": "Cool-headed host for seasonal promos and wallet top-ups."
     },
     {
@@ -53,7 +77,11 @@
       "performer_id": "performer_jade",
       "display_name": "Jade Lotus Agent",
       "task_kind": "default",
-      "casino_skill_set": ["mindful_breaks", "gift_recommendation", "social_invite"],
+      "casino_skill_set": [
+        "mindful_breaks",
+        "gift_recommendation",
+        "social_invite"
+      ],
       "description": "Calm concierge for gifts, breaks, and social retention."
     },
     {
@@ -61,7 +89,11 @@
       "performer_id": "performer_velvet",
       "display_name": "Velvet Noir Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["vip_host", "private_show_upsell", "fan_club_goal"],
+      "casino_skill_set": [
+        "vip_host",
+        "private_show_upsell",
+        "fan_club_goal"
+      ],
       "description": "After-dark VIP host focused on fan club and private sessions."
     },
     {
@@ -69,7 +101,11 @@
       "performer_id": "performer_skylar",
       "display_name": "Skylar Chase Agent",
       "task_kind": "speed",
-      "casino_skill_set": ["tournament_hype", "odds_explainer", "big_win_reactivation"],
+      "casino_skill_set": [
+        "tournament_hype",
+        "odds_explainer",
+        "big_win_reactivation"
+      ],
       "description": "Upbeat contest host for tournaments and comeback offers."
     },
     {
@@ -77,7 +113,11 @@
       "performer_id": "performer_rio",
       "display_name": "Rio Sands Agent",
       "task_kind": "free",
-      "casino_skill_set": ["welcome_host", "cross_sell_casino_exchange", "social_invite"],
+      "casino_skill_set": [
+        "welcome_host",
+        "cross_sell_casino_exchange",
+        "social_invite"
+      ],
       "description": "Festival-style host bridging casino events and exchange balances."
     },
     {
@@ -85,7 +125,11 @@
       "performer_id": "performer_mist",
       "display_name": "Mist Serene Agent",
       "task_kind": "free",
-      "casino_skill_set": ["responsible_play_soft_nudge", "mindful_breaks", "risk_sentinel"],
+      "casino_skill_set": [
+        "responsible_play_soft_nudge",
+        "mindful_breaks",
+        "risk_sentinel"
+      ],
       "description": "Soft-voice guide for responsible play and calm sessions."
     },
     {
@@ -93,7 +137,11 @@
       "performer_id": "performer_honey",
       "display_name": "Honey Gold Agent",
       "task_kind": "default",
-      "casino_skill_set": ["gift_recommendation", "fan_club_goal", "welcome_host"],
+      "casino_skill_set": [
+        "gift_recommendation",
+        "fan_club_goal",
+        "welcome_host"
+      ],
       "description": "Warm upsell host for gifts, goals, and first-time unlocks."
     },
     {
@@ -101,7 +149,11 @@
       "performer_id": "performer_storm",
       "display_name": "Storm Vega Agent",
       "task_kind": "speed",
-      "casino_skill_set": ["vip_host", "tournament_hype", "leaderboard_push"],
+      "casino_skill_set": [
+        "vip_host",
+        "tournament_hype",
+        "leaderboard_push"
+      ],
       "description": "High-energy host for leaderboards and competitive events."
     },
     {
@@ -109,7 +161,11 @@
       "performer_id": "performer_pixie",
       "display_name": "Pixie Glitch Agent",
       "task_kind": "creative",
-      "casino_skill_set": ["meme_engagement", "wheel_hype", "social_invite"],
+      "casino_skill_set": [
+        "meme_engagement",
+        "wheel_hype",
+        "social_invite"
+      ],
       "description": "Chaotic engagement host for wheels, memes, and viral loops."
     },
     {
@@ -117,8 +173,2597 @@
       "performer_id": "performer_venus",
       "display_name": "Venus Orbit Agent",
       "task_kind": "default",
-      "casino_skill_set": ["private_show_upsell", "tax_record_explainer", "exchange_onramp_nudge"],
+      "casino_skill_set": [
+        "private_show_upsell",
+        "tax_record_explainer",
+        "exchange_onramp_nudge"
+      ],
       "description": "Sci-fi concierge for private shows, records, and on-ramps."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_cora_vale",
+      "performer_id": "performer_wave2_cora_vale",
+      "display_name": "Cora Vale Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cora Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_nia_sol",
+      "performer_id": "performer_wave2_nia_sol",
+      "display_name": "Nia Sol Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nia Sol."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_rhea_quinn",
+      "performer_id": "performer_wave2_rhea_quinn",
+      "display_name": "Rhea Quinn Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Rhea Quinn."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_willa_north",
+      "performer_id": "performer_wave2_willa_north",
+      "display_name": "Willa North Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Willa North."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_sable_frost",
+      "performer_id": "performer_wave2_sable_frost",
+      "display_name": "Sable Frost Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sable Frost."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_indie_marr",
+      "performer_id": "performer_wave2_indie_marr",
+      "display_name": "Indie Marr Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Indie Marr."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_petra_gold",
+      "performer_id": "performer_wave2_petra_gold",
+      "display_name": "Petra Gold Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Petra Gold."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_lumen_park",
+      "performer_id": "performer_wave2_lumen_park",
+      "display_name": "Lumen Park Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lumen Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_vesper_lane",
+      "performer_id": "performer_wave2_vesper_lane",
+      "display_name": "Vesper Lane Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Vesper Lane."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_orla_finch",
+      "performer_id": "performer_wave2_orla_finch",
+      "display_name": "Orla Finch Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Orla Finch."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_kira_bloom",
+      "performer_id": "performer_wave2_kira_bloom",
+      "display_name": "Kira Bloom Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Kira Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_tess_harbor",
+      "performer_id": "performer_wave2_tess_harbor",
+      "display_name": "Tess Harbor Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tess Harbor."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_maren_cole",
+      "performer_id": "performer_wave2_maren_cole",
+      "display_name": "Maren Cole Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Maren Cole."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_juno_west",
+      "performer_id": "performer_wave2_juno_west",
+      "display_name": "Juno West Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Juno West."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_sienna_page",
+      "performer_id": "performer_wave2_sienna_page",
+      "display_name": "Sienna Page Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sienna Page."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_asha_reed",
+      "performer_id": "performer_wave2_asha_reed",
+      "display_name": "Asha Reed Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Asha Reed."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_lyra_moon",
+      "performer_id": "performer_wave2_lyra_moon",
+      "display_name": "Lyra Moon Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lyra Moon."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_della_hart",
+      "performer_id": "performer_wave2_della_hart",
+      "display_name": "Della Hart Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Della Hart."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_priya_shore",
+      "performer_id": "performer_wave2_priya_shore",
+      "display_name": "Priya Shore Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Priya Shore."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_noelle_voss",
+      "performer_id": "performer_wave2_noelle_voss",
+      "display_name": "Noelle Voss Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Noelle Voss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_hana_bright",
+      "performer_id": "performer_wave2_hana_bright",
+      "display_name": "Hana Bright Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Hana Bright."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_esme_calder",
+      "performer_id": "performer_wave2_esme_calder",
+      "display_name": "Esme Calder Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Esme Calder."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_tova_glen",
+      "performer_id": "performer_wave2_tova_glen",
+      "display_name": "Tova Glen Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tova Glen."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_yara_peck",
+      "performer_id": "performer_wave2_yara_peck",
+      "display_name": "Yara Peck Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Yara Peck."
+    },
+    {
+      "agent_id": "camgirl_agent_wave2_cleo_march",
+      "performer_id": "performer_wave2_cleo_march",
+      "display_name": "Cleo March Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cleo March."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_elina_brook",
+      "performer_id": "performer_wave3_elina_brook",
+      "display_name": "Elina Brook Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Elina Brook."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_mira_feld",
+      "performer_id": "performer_wave3_mira_feld",
+      "display_name": "Mira Feld Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Mira Feld."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_opal_rine",
+      "performer_id": "performer_wave3_opal_rine",
+      "display_name": "Opal Rine Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Opal Rine."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_quina_dale",
+      "performer_id": "performer_wave3_quina_dale",
+      "display_name": "Quina Dale Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Quina Dale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_sori_vale",
+      "performer_id": "performer_wave3_sori_vale",
+      "display_name": "Sori Vale Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sori Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_tally_moss",
+      "performer_id": "performer_wave3_tally_moss",
+      "display_name": "Tally Moss Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tally Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_uma_crest",
+      "performer_id": "performer_wave3_uma_crest",
+      "display_name": "Uma Crest Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Uma Crest."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_vera_quill",
+      "performer_id": "performer_wave3_vera_quill",
+      "display_name": "Vera Quill Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Vera Quill."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_wynn_aster",
+      "performer_id": "performer_wave3_wynn_aster",
+      "display_name": "Wynn Aster Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Wynn Aster."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_xena_holt",
+      "performer_id": "performer_wave3_xena_holt",
+      "display_name": "Xena Holt Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Xena Holt."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_yuli_park",
+      "performer_id": "performer_wave3_yuli_park",
+      "display_name": "Yuli Park Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Yuli Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_zara_mead",
+      "performer_id": "performer_wave3_zara_mead",
+      "display_name": "Zara Mead Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Zara Mead."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_aimee_ross",
+      "performer_id": "performer_wave3_aimee_ross",
+      "display_name": "Aimee Ross Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Aimee Ross."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_blair_kent",
+      "performer_id": "performer_wave3_blair_kent",
+      "display_name": "Blair Kent Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Blair Kent."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_cara_lynn",
+      "performer_id": "performer_wave3_cara_lynn",
+      "display_name": "Cara Lynn Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cara Lynn."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_dana_whit",
+      "performer_id": "performer_wave3_dana_whit",
+      "display_name": "Dana Whit Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dana Whit."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_eva_norr",
+      "performer_id": "performer_wave3_eva_norr",
+      "display_name": "Eva Norr Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Eva Norr."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_faye_orin",
+      "performer_id": "performer_wave3_faye_orin",
+      "display_name": "Faye Orin Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Faye Orin."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_gia_thorne",
+      "performer_id": "performer_wave3_gia_thorne",
+      "display_name": "Gia Thorne Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Gia Thorne."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_heidi_lane",
+      "performer_id": "performer_wave3_heidi_lane",
+      "display_name": "Heidi Lane Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Heidi Lane."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_isla_fern",
+      "performer_id": "performer_wave3_isla_fern",
+      "display_name": "Isla Fern Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Isla Fern."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_joss_rain",
+      "performer_id": "performer_wave3_joss_rain",
+      "display_name": "Joss Rain Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Joss Rain."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_kate_bloom",
+      "performer_id": "performer_wave3_kate_bloom",
+      "display_name": "Kate Bloom Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Kate Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_lexi_moss",
+      "performer_id": "performer_wave3_lexi_moss",
+      "display_name": "Lexi Moss Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lexi Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave3_nora_quill",
+      "performer_id": "performer_wave3_nora_quill",
+      "display_name": "Nora Quill Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nora Quill."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_ada_quill",
+      "performer_id": "performer_wave4_ada_quill",
+      "display_name": "Ada Quill Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ada Quill."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_bree_holt",
+      "performer_id": "performer_wave4_bree_holt",
+      "display_name": "Bree Holt Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Bree Holt."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_cyra_moss",
+      "performer_id": "performer_wave4_cyra_moss",
+      "display_name": "Cyra Moss Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cyra Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_dove_lane",
+      "performer_id": "performer_wave4_dove_lane",
+      "display_name": "Dove Lane Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dove Lane."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_eden_park",
+      "performer_id": "performer_wave4_eden_park",
+      "display_name": "Eden Park Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Eden Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_fern_cole",
+      "performer_id": "performer_wave4_fern_cole",
+      "display_name": "Fern Cole Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Fern Cole."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_gwen_ross",
+      "performer_id": "performer_wave4_gwen_ross",
+      "display_name": "Gwen Ross Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Gwen Ross."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_haze_vale",
+      "performer_id": "performer_wave4_haze_vale",
+      "display_name": "Haze Vale Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Haze Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_iris_dawn",
+      "performer_id": "performer_wave4_iris_dawn",
+      "display_name": "Iris Dawn Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Iris Dawn."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_jule_north",
+      "performer_id": "performer_wave4_jule_north",
+      "display_name": "Jule North Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Jule North."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_kira_wren",
+      "performer_id": "performer_wave4_kira_wren",
+      "display_name": "Kira Wren Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Kira Wren."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_lark_reed",
+      "performer_id": "performer_wave4_lark_reed",
+      "display_name": "Lark Reed Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lark Reed."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_muse_glen",
+      "performer_id": "performer_wave4_muse_glen",
+      "display_name": "Muse Glen Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Muse Glen."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_nyx_pearl",
+      "performer_id": "performer_wave4_nyx_pearl",
+      "display_name": "Nyx Pearl Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nyx Pearl."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_onyx_ray",
+      "performer_id": "performer_wave4_onyx_ray",
+      "display_name": "Onyx Ray Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Onyx Ray."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_piper_ash",
+      "performer_id": "performer_wave4_piper_ash",
+      "display_name": "Piper Ash Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Piper Ash."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_quinn_bell",
+      "performer_id": "performer_wave4_quinn_bell",
+      "display_name": "Quinn Bell Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Quinn Bell."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_rue_cinder",
+      "performer_id": "performer_wave4_rue_cinder",
+      "display_name": "Rue Cinder Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Rue Cinder."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_sage_dusk",
+      "performer_id": "performer_wave4_sage_dusk",
+      "display_name": "Sage Dusk Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sage Dusk."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_true_ember",
+      "performer_id": "performer_wave4_true_ember",
+      "display_name": "True Ember Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for True Ember."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_ursa_flame",
+      "performer_id": "performer_wave4_ursa_flame",
+      "display_name": "Ursa Flame Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ursa Flame."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_vivid_sky",
+      "performer_id": "performer_wave4_vivid_sky",
+      "display_name": "Vivid Sky Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Vivid Sky."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_wren_tide",
+      "performer_id": "performer_wave4_wren_tide",
+      "display_name": "Wren Tide Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Wren Tide."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_xiom_jade",
+      "performer_id": "performer_wave4_xiom_jade",
+      "display_name": "Xiom Jade Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Xiom Jade."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_yale_rose",
+      "performer_id": "performer_wave4_yale_rose",
+      "display_name": "Yale Rose Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Yale Rose."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_zeta_bloom",
+      "performer_id": "performer_wave4_zeta_bloom",
+      "display_name": "Zeta Bloom Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Zeta Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_aria_fox",
+      "performer_id": "performer_wave4_aria_fox",
+      "display_name": "Aria Fox Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Aria Fox."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_belle_koi",
+      "performer_id": "performer_wave4_belle_koi",
+      "display_name": "Belle Koi Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Belle Koi."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_cleo_ink",
+      "performer_id": "performer_wave4_cleo_ink",
+      "display_name": "Cleo Ink Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cleo Ink."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_dawn_lily",
+      "performer_id": "performer_wave4_dawn_lily",
+      "display_name": "Dawn Lily Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dawn Lily."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_echo_mint",
+      "performer_id": "performer_wave4_echo_mint",
+      "display_name": "Echo Mint Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Echo Mint."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_flora_nix",
+      "performer_id": "performer_wave4_flora_nix",
+      "display_name": "Flora Nix Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Flora Nix."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_gala_orb",
+      "performer_id": "performer_wave4_gala_orb",
+      "display_name": "Gala Orb Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Gala Orb."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_halo_pix",
+      "performer_id": "performer_wave4_halo_pix",
+      "display_name": "Halo Pix Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Halo Pix."
+    },
+    {
+      "agent_id": "camgirl_agent_wave4_indy_quartz",
+      "performer_id": "performer_wave4_indy_quartz",
+      "display_name": "Indy Quartz Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Indy Quartz."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_faye_cove_01",
+      "performer_id": "performer_wave5_w5_faye_cove_01",
+      "display_name": "Faye Cove Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Faye Cove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_gia_fox_02",
+      "performer_id": "performer_wave5_w5_gia_fox_02",
+      "display_name": "Gia Fox Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Gia Fox."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_hera_bloom_03",
+      "performer_id": "performer_wave5_w5_hera_bloom_03",
+      "display_name": "Hera Bloom Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Hera Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_ines_echo_04",
+      "performer_id": "performer_wave5_w5_ines_echo_04",
+      "display_name": "Ines Echo Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ines Echo."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_joss_hart_05",
+      "performer_id": "performer_wave5_w5_joss_hart_05",
+      "display_name": "Joss Hart Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Joss Hart."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_kira_knot_06",
+      "performer_id": "performer_wave5_w5_kira_knot_06",
+      "display_name": "Kira Knot Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Kira Knot."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_lana_north_07",
+      "performer_id": "performer_wave5_w5_lana_north_07",
+      "display_name": "Lana North Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lana North."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_mira_quill_08",
+      "performer_id": "performer_wave5_w5_mira_quill_08",
+      "display_name": "Mira Quill Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Mira Quill."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_nia_tide_09",
+      "performer_id": "performer_wave5_w5_nia_tide_09",
+      "display_name": "Nia Tide Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nia Tide."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_orla_yarn_10",
+      "performer_id": "performer_wave5_w5_orla_yarn_10",
+      "display_name": "Orla Yarn Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Orla Yarn."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_pia_cove_11",
+      "performer_id": "performer_wave5_w5_pia_cove_11",
+      "display_name": "Pia Cove Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Pia Cove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_quinn_fox_12",
+      "performer_id": "performer_wave5_w5_quinn_fox_12",
+      "display_name": "Quinn Fox Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Quinn Fox."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_rae_bloom_13",
+      "performer_id": "performer_wave5_w5_rae_bloom_13",
+      "display_name": "Rae Bloom Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Rae Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_sia_echo_14",
+      "performer_id": "performer_wave5_w5_sia_echo_14",
+      "display_name": "Sia Echo Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sia Echo."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_tess_hart_15",
+      "performer_id": "performer_wave5_w5_tess_hart_15",
+      "display_name": "Tess Hart Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tess Hart."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_uma_knot_16",
+      "performer_id": "performer_wave5_w5_uma_knot_16",
+      "display_name": "Uma Knot Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Uma Knot."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_vera_north_17",
+      "performer_id": "performer_wave5_w5_vera_north_17",
+      "display_name": "Vera North Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Vera North."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_willa_quill_18",
+      "performer_id": "performer_wave5_w5_willa_quill_18",
+      "display_name": "Willa Quill Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Willa Quill."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_xena_tide_19",
+      "performer_id": "performer_wave5_w5_xena_tide_19",
+      "display_name": "Xena Tide Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Xena Tide."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_yara_yarn_20",
+      "performer_id": "performer_wave5_w5_yara_yarn_20",
+      "display_name": "Yara Yarn Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Yara Yarn."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_zara_cove_21",
+      "performer_id": "performer_wave5_w5_zara_cove_21",
+      "display_name": "Zara Cove Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Zara Cove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_ada_fox_22",
+      "performer_id": "performer_wave5_w5_ada_fox_22",
+      "display_name": "Ada Fox Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ada Fox."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_blair_bloom_23",
+      "performer_id": "performer_wave5_w5_blair_bloom_23",
+      "display_name": "Blair Bloom Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Blair Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_cora_echo_24",
+      "performer_id": "performer_wave5_w5_cora_echo_24",
+      "display_name": "Cora Echo Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cora Echo."
+    },
+    {
+      "agent_id": "camgirl_agent_wave5_w5_dove_hart_25",
+      "performer_id": "performer_wave5_w5_dove_hart_25",
+      "display_name": "Dove Hart Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dove Hart."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_mira_glen_01",
+      "performer_id": "performer_wave6_w6_mira_glen_01",
+      "display_name": "Mira Glen Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Mira Glen."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_nia_jade_02",
+      "performer_id": "performer_wave6_w6_nia_jade_02",
+      "display_name": "Nia Jade Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nia Jade."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_orla_moss_03",
+      "performer_id": "performer_wave6_w6_orla_moss_03",
+      "display_name": "Orla Moss Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Orla Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_pia_park_04",
+      "performer_id": "performer_wave6_w6_pia_park_04",
+      "display_name": "Pia Park Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Pia Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_quinn_shore_05",
+      "performer_id": "performer_wave6_w6_quinn_shore_05",
+      "display_name": "Quinn Shore Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Quinn Shore."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_rae_west_06",
+      "performer_id": "performer_wave6_w6_rae_west_06",
+      "display_name": "Rae West Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Rae West."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_sia_birch_07",
+      "performer_id": "performer_wave6_w6_sia_birch_07",
+      "display_name": "Sia Birch Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sia Birch."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_tess_elm_08",
+      "performer_id": "performer_wave6_w6_tess_elm_08",
+      "display_name": "Tess Elm Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tess Elm."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_uma_ash_09",
+      "performer_id": "performer_wave6_w6_uma_ash_09",
+      "display_name": "Uma Ash Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Uma Ash."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_vera_dale_10",
+      "performer_id": "performer_wave6_w6_vera_dale_10",
+      "display_name": "Vera Dale Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Vera Dale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_willa_glen_11",
+      "performer_id": "performer_wave6_w6_willa_glen_11",
+      "display_name": "Willa Glen Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Willa Glen."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_xena_jade_12",
+      "performer_id": "performer_wave6_w6_xena_jade_12",
+      "display_name": "Xena Jade Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Xena Jade."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_yara_moss_13",
+      "performer_id": "performer_wave6_w6_yara_moss_13",
+      "display_name": "Yara Moss Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Yara Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_zara_park_14",
+      "performer_id": "performer_wave6_w6_zara_park_14",
+      "display_name": "Zara Park Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Zara Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_ada_shore_15",
+      "performer_id": "performer_wave6_w6_ada_shore_15",
+      "display_name": "Ada Shore Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ada Shore."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_blair_west_16",
+      "performer_id": "performer_wave6_w6_blair_west_16",
+      "display_name": "Blair West Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Blair West."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_cora_birch_17",
+      "performer_id": "performer_wave6_w6_cora_birch_17",
+      "display_name": "Cora Birch Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cora Birch."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_dove_elm_18",
+      "performer_id": "performer_wave6_w6_dove_elm_18",
+      "display_name": "Dove Elm Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dove Elm."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_ava_ash_19",
+      "performer_id": "performer_wave6_w6_ava_ash_19",
+      "display_name": "Ava Ash Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ava Ash."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_bea_dale_20",
+      "performer_id": "performer_wave6_w6_bea_dale_20",
+      "display_name": "Bea Dale Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Bea Dale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_cleo_glen_21",
+      "performer_id": "performer_wave6_w6_cleo_glen_21",
+      "display_name": "Cleo Glen Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cleo Glen."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_dina_jade_22",
+      "performer_id": "performer_wave6_w6_dina_jade_22",
+      "display_name": "Dina Jade Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dina Jade."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_elle_moss_23",
+      "performer_id": "performer_wave6_w6_elle_moss_23",
+      "display_name": "Elle Moss Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Elle Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_faye_park_24",
+      "performer_id": "performer_wave6_w6_faye_park_24",
+      "display_name": "Faye Park Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Faye Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave6_w6_gia_shore_25",
+      "performer_id": "performer_wave6_w6_gia_shore_25",
+      "display_name": "Gia Shore Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Gia Shore."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_tess_reed_01",
+      "performer_id": "performer_wave7_w7_tess_reed_01",
+      "display_name": "Tess Reed Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tess Reed."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_uma_vale_02",
+      "performer_id": "performer_wave7_w7_uma_vale_02",
+      "display_name": "Uma Vale Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Uma Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_vera_zeal_03",
+      "performer_id": "performer_wave7_w7_vera_zeal_03",
+      "display_name": "Vera Zeal Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Vera Zeal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_willa_dusk_04",
+      "performer_id": "performer_wave7_w7_willa_dusk_04",
+      "display_name": "Willa Dusk Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Willa Dusk."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_xena_grove_05",
+      "performer_id": "performer_wave7_w7_xena_grove_05",
+      "display_name": "Xena Grove Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Xena Grove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_yara_crest_06",
+      "performer_id": "performer_wave7_w7_yara_crest_06",
+      "display_name": "Yara Crest Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Yara Crest."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_zara_frost_07",
+      "performer_id": "performer_wave7_w7_zara_frost_07",
+      "display_name": "Zara Frost Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Zara Frost."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_ada_iris_08",
+      "performer_id": "performer_wave7_w7_ada_iris_08",
+      "display_name": "Ada Iris Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ada Iris."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_blair_lake_09",
+      "performer_id": "performer_wave7_w7_blair_lake_09",
+      "display_name": "Blair Lake Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Blair Lake."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_cora_opal_10",
+      "performer_id": "performer_wave7_w7_cora_opal_10",
+      "display_name": "Cora Opal Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cora Opal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_dove_reed_11",
+      "performer_id": "performer_wave7_w7_dove_reed_11",
+      "display_name": "Dove Reed Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dove Reed."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_ava_vale_12",
+      "performer_id": "performer_wave7_w7_ava_vale_12",
+      "display_name": "Ava Vale Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ava Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_bea_zeal_13",
+      "performer_id": "performer_wave7_w7_bea_zeal_13",
+      "display_name": "Bea Zeal Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Bea Zeal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_cleo_dusk_14",
+      "performer_id": "performer_wave7_w7_cleo_dusk_14",
+      "display_name": "Cleo Dusk Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cleo Dusk."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_dina_grove_15",
+      "performer_id": "performer_wave7_w7_dina_grove_15",
+      "display_name": "Dina Grove Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dina Grove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_elle_crest_16",
+      "performer_id": "performer_wave7_w7_elle_crest_16",
+      "display_name": "Elle Crest Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Elle Crest."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_faye_frost_17",
+      "performer_id": "performer_wave7_w7_faye_frost_17",
+      "display_name": "Faye Frost Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Faye Frost."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_gia_iris_18",
+      "performer_id": "performer_wave7_w7_gia_iris_18",
+      "display_name": "Gia Iris Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Gia Iris."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_hera_lake_19",
+      "performer_id": "performer_wave7_w7_hera_lake_19",
+      "display_name": "Hera Lake Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Hera Lake."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_ines_opal_20",
+      "performer_id": "performer_wave7_w7_ines_opal_20",
+      "display_name": "Ines Opal Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ines Opal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_joss_reed_21",
+      "performer_id": "performer_wave7_w7_joss_reed_21",
+      "display_name": "Joss Reed Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Joss Reed."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_kira_vale_22",
+      "performer_id": "performer_wave7_w7_kira_vale_22",
+      "display_name": "Kira Vale Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Kira Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_lana_zeal_23",
+      "performer_id": "performer_wave7_w7_lana_zeal_23",
+      "display_name": "Lana Zeal Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lana Zeal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_mira_dusk_24",
+      "performer_id": "performer_wave7_w7_mira_dusk_24",
+      "display_name": "Mira Dusk Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Mira Dusk."
+    },
+    {
+      "agent_id": "camgirl_agent_wave7_w7_nia_grove_25",
+      "performer_id": "performer_wave7_w7_nia_grove_25",
+      "display_name": "Nia Grove Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nia Grove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_ada_fox_01",
+      "performer_id": "performer_wave8_w8_ada_fox_01",
+      "display_name": "Ada Fox Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ada Fox."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_blair_bloom_02",
+      "performer_id": "performer_wave8_w8_blair_bloom_02",
+      "display_name": "Blair Bloom Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Blair Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_cora_echo_03",
+      "performer_id": "performer_wave8_w8_cora_echo_03",
+      "display_name": "Cora Echo Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cora Echo."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_dove_hart_04",
+      "performer_id": "performer_wave8_w8_dove_hart_04",
+      "display_name": "Dove Hart Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dove Hart."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_ava_knot_05",
+      "performer_id": "performer_wave8_w8_ava_knot_05",
+      "display_name": "Ava Knot Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ava Knot."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_bea_north_06",
+      "performer_id": "performer_wave8_w8_bea_north_06",
+      "display_name": "Bea North Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Bea North."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_cleo_quill_07",
+      "performer_id": "performer_wave8_w8_cleo_quill_07",
+      "display_name": "Cleo Quill Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cleo Quill."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_dina_tide_08",
+      "performer_id": "performer_wave8_w8_dina_tide_08",
+      "display_name": "Dina Tide Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dina Tide."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_elle_yarn_09",
+      "performer_id": "performer_wave8_w8_elle_yarn_09",
+      "display_name": "Elle Yarn Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Elle Yarn."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_faye_cove_10",
+      "performer_id": "performer_wave8_w8_faye_cove_10",
+      "display_name": "Faye Cove Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Faye Cove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_gia_fox_11",
+      "performer_id": "performer_wave8_w8_gia_fox_11",
+      "display_name": "Gia Fox Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Gia Fox."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_hera_bloom_12",
+      "performer_id": "performer_wave8_w8_hera_bloom_12",
+      "display_name": "Hera Bloom Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Hera Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_ines_echo_13",
+      "performer_id": "performer_wave8_w8_ines_echo_13",
+      "display_name": "Ines Echo Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ines Echo."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_joss_hart_14",
+      "performer_id": "performer_wave8_w8_joss_hart_14",
+      "display_name": "Joss Hart Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Joss Hart."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_kira_knot_15",
+      "performer_id": "performer_wave8_w8_kira_knot_15",
+      "display_name": "Kira Knot Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Kira Knot."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_lana_north_16",
+      "performer_id": "performer_wave8_w8_lana_north_16",
+      "display_name": "Lana North Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lana North."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_mira_quill_17",
+      "performer_id": "performer_wave8_w8_mira_quill_17",
+      "display_name": "Mira Quill Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Mira Quill."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_nia_tide_18",
+      "performer_id": "performer_wave8_w8_nia_tide_18",
+      "display_name": "Nia Tide Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nia Tide."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_orla_yarn_19",
+      "performer_id": "performer_wave8_w8_orla_yarn_19",
+      "display_name": "Orla Yarn Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Orla Yarn."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_pia_cove_20",
+      "performer_id": "performer_wave8_w8_pia_cove_20",
+      "display_name": "Pia Cove Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Pia Cove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_quinn_fox_21",
+      "performer_id": "performer_wave8_w8_quinn_fox_21",
+      "display_name": "Quinn Fox Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Quinn Fox."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_rae_bloom_22",
+      "performer_id": "performer_wave8_w8_rae_bloom_22",
+      "display_name": "Rae Bloom Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Rae Bloom."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_sia_echo_23",
+      "performer_id": "performer_wave8_w8_sia_echo_23",
+      "display_name": "Sia Echo Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sia Echo."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_tess_hart_24",
+      "performer_id": "performer_wave8_w8_tess_hart_24",
+      "display_name": "Tess Hart Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tess Hart."
+    },
+    {
+      "agent_id": "camgirl_agent_wave8_w8_uma_knot_25",
+      "performer_id": "performer_wave8_w8_uma_knot_25",
+      "display_name": "Uma Knot Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Uma Knot."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_dina_jade_01",
+      "performer_id": "performer_wave9_w9_dina_jade_01",
+      "display_name": "Dina Jade Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dina Jade."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_elle_moss_02",
+      "performer_id": "performer_wave9_w9_elle_moss_02",
+      "display_name": "Elle Moss Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Elle Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_faye_park_03",
+      "performer_id": "performer_wave9_w9_faye_park_03",
+      "display_name": "Faye Park Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Faye Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_gia_shore_04",
+      "performer_id": "performer_wave9_w9_gia_shore_04",
+      "display_name": "Gia Shore Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Gia Shore."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_hera_west_05",
+      "performer_id": "performer_wave9_w9_hera_west_05",
+      "display_name": "Hera West Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Hera West."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_ines_birch_06",
+      "performer_id": "performer_wave9_w9_ines_birch_06",
+      "display_name": "Ines Birch Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ines Birch."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_joss_elm_07",
+      "performer_id": "performer_wave9_w9_joss_elm_07",
+      "display_name": "Joss Elm Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Joss Elm."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_kira_ash_08",
+      "performer_id": "performer_wave9_w9_kira_ash_08",
+      "display_name": "Kira Ash Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Kira Ash."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_lana_dale_09",
+      "performer_id": "performer_wave9_w9_lana_dale_09",
+      "display_name": "Lana Dale Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lana Dale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_mira_glen_10",
+      "performer_id": "performer_wave9_w9_mira_glen_10",
+      "display_name": "Mira Glen Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Mira Glen."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_nia_jade_11",
+      "performer_id": "performer_wave9_w9_nia_jade_11",
+      "display_name": "Nia Jade Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nia Jade."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_orla_moss_12",
+      "performer_id": "performer_wave9_w9_orla_moss_12",
+      "display_name": "Orla Moss Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Orla Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_pia_park_13",
+      "performer_id": "performer_wave9_w9_pia_park_13",
+      "display_name": "Pia Park Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Pia Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_quinn_shore_14",
+      "performer_id": "performer_wave9_w9_quinn_shore_14",
+      "display_name": "Quinn Shore Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Quinn Shore."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_rae_west_15",
+      "performer_id": "performer_wave9_w9_rae_west_15",
+      "display_name": "Rae West Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Rae West."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_sia_birch_16",
+      "performer_id": "performer_wave9_w9_sia_birch_16",
+      "display_name": "Sia Birch Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sia Birch."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_tess_elm_17",
+      "performer_id": "performer_wave9_w9_tess_elm_17",
+      "display_name": "Tess Elm Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tess Elm."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_uma_ash_18",
+      "performer_id": "performer_wave9_w9_uma_ash_18",
+      "display_name": "Uma Ash Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Uma Ash."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_vera_dale_19",
+      "performer_id": "performer_wave9_w9_vera_dale_19",
+      "display_name": "Vera Dale Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Vera Dale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_willa_glen_20",
+      "performer_id": "performer_wave9_w9_willa_glen_20",
+      "display_name": "Willa Glen Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Willa Glen."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_xena_jade_21",
+      "performer_id": "performer_wave9_w9_xena_jade_21",
+      "display_name": "Xena Jade Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Xena Jade."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_yara_moss_22",
+      "performer_id": "performer_wave9_w9_yara_moss_22",
+      "display_name": "Yara Moss Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Yara Moss."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_zara_park_23",
+      "performer_id": "performer_wave9_w9_zara_park_23",
+      "display_name": "Zara Park Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Zara Park."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_ada_shore_24",
+      "performer_id": "performer_wave9_w9_ada_shore_24",
+      "display_name": "Ada Shore Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ada Shore."
+    },
+    {
+      "agent_id": "camgirl_agent_wave9_w9_blair_west_25",
+      "performer_id": "performer_wave9_w9_blair_west_25",
+      "display_name": "Blair West Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Blair West."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_kira_vale_01",
+      "performer_id": "performer_wave10_w10_kira_vale_01",
+      "display_name": "Kira Vale Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Kira Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_lana_zeal_02",
+      "performer_id": "performer_wave10_w10_lana_zeal_02",
+      "display_name": "Lana Zeal Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Lana Zeal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_mira_dusk_03",
+      "performer_id": "performer_wave10_w10_mira_dusk_03",
+      "display_name": "Mira Dusk Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Mira Dusk."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_nia_grove_04",
+      "performer_id": "performer_wave10_w10_nia_grove_04",
+      "display_name": "Nia Grove Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Nia Grove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_orla_crest_05",
+      "performer_id": "performer_wave10_w10_orla_crest_05",
+      "display_name": "Orla Crest Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Orla Crest."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_pia_frost_06",
+      "performer_id": "performer_wave10_w10_pia_frost_06",
+      "display_name": "Pia Frost Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Pia Frost."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_quinn_iris_07",
+      "performer_id": "performer_wave10_w10_quinn_iris_07",
+      "display_name": "Quinn Iris Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Quinn Iris."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_rae_lake_08",
+      "performer_id": "performer_wave10_w10_rae_lake_08",
+      "display_name": "Rae Lake Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Rae Lake."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_sia_opal_09",
+      "performer_id": "performer_wave10_w10_sia_opal_09",
+      "display_name": "Sia Opal Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Sia Opal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_tess_reed_10",
+      "performer_id": "performer_wave10_w10_tess_reed_10",
+      "display_name": "Tess Reed Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Tess Reed."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_uma_vale_11",
+      "performer_id": "performer_wave10_w10_uma_vale_11",
+      "display_name": "Uma Vale Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Uma Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_vera_zeal_12",
+      "performer_id": "performer_wave10_w10_vera_zeal_12",
+      "display_name": "Vera Zeal Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Vera Zeal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_willa_dusk_13",
+      "performer_id": "performer_wave10_w10_willa_dusk_13",
+      "display_name": "Willa Dusk Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Willa Dusk."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_xena_grove_14",
+      "performer_id": "performer_wave10_w10_xena_grove_14",
+      "display_name": "Xena Grove Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Xena Grove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_yara_crest_15",
+      "performer_id": "performer_wave10_w10_yara_crest_15",
+      "display_name": "Yara Crest Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Yara Crest."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_zara_frost_16",
+      "performer_id": "performer_wave10_w10_zara_frost_16",
+      "display_name": "Zara Frost Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Zara Frost."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_ada_iris_17",
+      "performer_id": "performer_wave10_w10_ada_iris_17",
+      "display_name": "Ada Iris Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ada Iris."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_blair_lake_18",
+      "performer_id": "performer_wave10_w10_blair_lake_18",
+      "display_name": "Blair Lake Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Blair Lake."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_cora_opal_19",
+      "performer_id": "performer_wave10_w10_cora_opal_19",
+      "display_name": "Cora Opal Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cora Opal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_dove_reed_20",
+      "performer_id": "performer_wave10_w10_dove_reed_20",
+      "display_name": "Dove Reed Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dove Reed."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_ava_vale_21",
+      "performer_id": "performer_wave10_w10_ava_vale_21",
+      "display_name": "Ava Vale Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Ava Vale."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_bea_zeal_22",
+      "performer_id": "performer_wave10_w10_bea_zeal_22",
+      "display_name": "Bea Zeal Agent",
+      "task_kind": "default",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Bea Zeal."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_cleo_dusk_23",
+      "performer_id": "performer_wave10_w10_cleo_dusk_23",
+      "display_name": "Cleo Dusk Agent",
+      "task_kind": "speed",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Cleo Dusk."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_dina_grove_24",
+      "performer_id": "performer_wave10_w10_dina_grove_24",
+      "display_name": "Dina Grove Agent",
+      "task_kind": "creative",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Dina Grove."
+    },
+    {
+      "agent_id": "camgirl_agent_wave10_w10_elle_crest_25",
+      "performer_id": "performer_wave10_w10_elle_crest_25",
+      "display_name": "Elle Crest Agent",
+      "task_kind": "free",
+      "casino_skill_set": [
+        "welcome_host",
+        "gift_recommendation"
+      ],
+      "description": "Studio agent for Elle Crest."
     }
   ]
 }

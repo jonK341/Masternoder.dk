@@ -269,13 +269,37 @@ def verify_remote(*, force_prompt: bool = False) -> int:
     return 0 if passed == total else 1
 
 
+def verify_local_milestone(minimum: int) -> int:
+    from backend.services.camgirls_status_service import roster_milestone
+
+    report = roster_milestone(minimum)
+    print(json.dumps({k: report.get(k) for k in (
+        "ok", "minimum", "performers", "agents_linked", "media_ready", "payout_addresses",
+        "missing_media", "missing_agent", "missing_payout",
+    )}, indent=2))
+    if report.get("ok"):
+        print(f"Milestone {minimum}: roster ready")
+        return 0
+    print(f"Milestone {minimum}: not reached", file=sys.stderr)
+    return 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify camgirls deploy")
     parser.add_argument("--base-url", default=_default_base(), help="API origin (auto 127.0.0.1:5000 on server)")
     parser.add_argument("--remote", action="store_true", help="SSH curl checks on server :5000")
     parser.add_argument("--remote-only", action="store_true", help="Skip public HTTPS checks")
     parser.add_argument("--ask-pass", action="store_true", help="Prompt for SSH password (remote checks)")
+    parser.add_argument(
+        "--milestone",
+        type=int,
+        choices=(50, 100, 250),
+        help="Local roster check (count, agents, media). Does not call production.",
+    )
     args = parser.parse_args()
+
+    if args.milestone:
+        return verify_local_milestone(args.milestone)
 
     codes = []
     if not args.remote_only:

@@ -277,21 +277,26 @@ def main() -> int:
         zip_dir = os.path.join(ROOT, "content", "digital_goods", "camgirls")
         os.makedirs(zip_dir, exist_ok=True)
         zip_path = os.path.join(zip_dir, f"{slug}-brand-pack.zip")
-        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-            for fn in os.listdir(out_dir):
-                full = os.path.join(out_dir, fn)
-                if fn.endswith(".webm") and os.path.getsize(full) < 100:
-                    continue
-                if fn.endswith(".mp4") and os.path.getsize(full) < 100:
-                    continue
-                zf.write(full, arcname=fn)
-            readme = (
-                f"# {name} brand pack\n\n"
-                "Includes icon, logo, gallery stills (WebP), preview clip, resell-pack.json.\n"
-                "Drop your own gallery-*.webp|png|jpg in this folder and re-run the generator.\n"
-                "Affiliate use requires disclosure per MasterNoder camgirls license.\n"
-            )
-            zf.writestr("README.md", readme)
+        try:
+            with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                for fn in os.listdir(out_dir):
+                    full = os.path.join(out_dir, fn)
+                    if not os.path.isfile(full):
+                        continue
+                    if fn.endswith(".webm") and os.path.getsize(full) < 100:
+                        continue
+                    if fn.endswith(".mp4") and os.path.getsize(full) < 100:
+                        continue
+                    zf.write(full, arcname=fn)
+                readme = (
+                    f"# {name} brand pack\n\n"
+                    "Includes icon, logo, gallery stills (WebP), preview clip, resell-pack.json.\n"
+                    "Drop your own gallery-*.webp|png|jpg in this folder and re-run the generator.\n"
+                    "Affiliate use requires disclosure per MasterNoder camgirls license.\n"
+                )
+                zf.writestr("README.md", readme)
+        except OSError as exc:
+            print(f"  WARN zip skipped {slug}: {exc}", file=sys.stderr)
         made += 1
         print(f"  OK {slug} ({pid})")
     _write_mega_zip(ROOT, made)

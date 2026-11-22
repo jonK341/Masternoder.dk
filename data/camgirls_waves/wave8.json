@@ -1,0 +1,332 @@
+{
+  "wave": 8,
+  "id_prefix": "performer_wave8_",
+  "notes": "Wave 8 auto stubs toward 250-scale roster.",
+  "performers": [
+    {
+      "slug": "w8-ada-fox-01",
+      "display_name": "Ada Fox",
+      "bio": "Ada Fox \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w8-ada-fox-01",
+        "initials": "AF",
+        "c1": "#38bdf8",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "w8-blair-bloom-02",
+      "display_name": "Blair Bloom",
+      "bio": "Blair Bloom \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w8-blair-bloom-02",
+        "initials": "BB",
+        "c1": "#fdba74",
+        "c2": "#c2410c"
+      }
+    },
+    {
+      "slug": "w8-cora-echo-03",
+      "display_name": "Cora Echo",
+      "bio": "Cora Echo \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w8-cora-echo-03",
+        "initials": "CE",
+        "c1": "#34d399",
+        "c2": "#047857"
+      }
+    },
+    {
+      "slug": "w8-dove-hart-04",
+      "display_name": "Dove Hart",
+      "bio": "Dove Hart \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w8-dove-hart-04",
+        "initials": "DH",
+        "c1": "#e879f9",
+        "c2": "#a21caf"
+      }
+    },
+    {
+      "slug": "w8-ava-knot-05",
+      "display_name": "Ava Knot",
+      "bio": "Ava Knot \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w8-ava-knot-05",
+        "initials": "AK",
+        "c1": "#818cf8",
+        "c2": "#3730a3"
+      }
+    },
+    {
+      "slug": "w8-bea-north-06",
+      "display_name": "Bea North",
+      "bio": "Bea North \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w8-bea-north-06",
+        "initials": "BN",
+        "c1": "#f43f5e",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "w8-cleo-quill-07",
+      "display_name": "Cleo Quill",
+      "bio": "Cleo Quill \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w8-cleo-quill-07",
+        "initials": "CQ",
+        "c1": "#fde047",
+        "c2": "#a16207"
+      }
+    },
+    {
+      "slug": "w8-dina-tide-08",
+      "display_name": "Dina Tide",
+      "bio": "Dina Tide \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w8-dina-tide-08",
+        "initials": "DT",
+        "c1": "#2dd4bf",
+        "c2": "#115e59"
+      }
+    },
+    {
+      "slug": "w8-elle-yarn-09",
+      "display_name": "Elle Yarn",
+      "bio": "Elle Yarn \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w8-elle-yarn-09",
+        "initials": "EY",
+        "c1": "#f97316",
+        "c2": "#9a3412"
+      }
+    },
+    {
+      "slug": "w8-faye-cove-10",
+      "display_name": "Faye Cove",
+      "bio": "Faye Cove \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w8-faye-cove-10",
+        "initials": "FC",
+        "c1": "#0ea5e9",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "w8-gia-fox-11",
+      "display_name": "Gia Fox",
+      "bio": "Gia Fox \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w8-gia-fox-11",
+        "initials": "GF",
+        "c1": "#f472b6",
+        "c2": "#9d174d"
+      }
+    },
+    {
+      "slug": "w8-hera-bloom-12",
+      "display_name": "Hera Bloom",
+      "bio": "Hera Bloom \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w8-hera-bloom-12",
+        "initials": "HB",
+        "c1": "#fb7185",
+        "c2": "#be123c"
+      }
+    },
+    {
+      "slug": "w8-ines-echo-13",
+      "display_name": "Ines Echo",
+      "bio": "Ines Echo \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w8-ines-echo-13",
+        "initials": "IE",
+        "c1": "#c084fc",
+        "c2": "#6b21a8"
+      }
+    },
+    {
+      "slug": "w8-joss-hart-14",
+      "display_name": "Joss Hart",
+      "bio": "Joss Hart \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w8-joss-hart-14",
+        "initials": "JH",
+        "c1": "#67e8f9",
+        "c2": "#0e7490"
+      }
+    },
+    {
+      "slug": "w8-kira-knot-15",
+      "display_name": "Kira Knot",
+      "bio": "Kira Knot \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w8-kira-knot-15",
+        "initials": "KK",
+        "c1": "#4ade80",
+        "c2": "#166534"
+      }
+    },
+    {
+      "slug": "w8-lana-north-16",
+      "display_name": "Lana North",
+      "bio": "Lana North \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w8-lana-north-16",
+        "initials": "LN",
+        "c1": "#fbbf24",
+        "c2": "#92400e"
+      }
+    },
+    {
+      "slug": "w8-mira-quill-17",
+      "display_name": "Mira Quill",
+      "bio": "Mira Quill \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w8-mira-quill-17",
+        "initials": "MQ",
+        "c1": "#94a3b8",
+        "c2": "#1e293b"
+      }
+    },
+    {
+      "slug": "w8-nia-tide-18",
+      "display_name": "Nia Tide",
+      "bio": "Nia Tide \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w8-nia-tide-18",
+        "initials": "NT",
+        "c1": "#a78bfa",
+        "c2": "#5b21b6"
+      }
+    },
+    {
+      "slug": "w8-orla-yarn-19",
+      "display_name": "Orla Yarn",
+      "bio": "Orla Yarn \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w8-orla-yarn-19",
+        "initials": "OY",
+        "c1": "#38bdf8",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "w8-pia-cove-20",
+      "display_name": "Pia Cove",
+      "bio": "Pia Cove \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w8-pia-cove-20",
+        "initials": "PC",
+        "c1": "#fdba74",
+        "c2": "#c2410c"
+      }
+    },
+    {
+      "slug": "w8-quinn-fox-21",
+      "display_name": "Quinn Fox",
+      "bio": "Quinn Fox \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w8-quinn-fox-21",
+        "initials": "QF",
+        "c1": "#34d399",
+        "c2": "#047857"
+      }
+    },
+    {
+      "slug": "w8-rae-bloom-22",
+      "display_name": "Rae Bloom",
+      "bio": "Rae Bloom \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w8-rae-bloom-22",
+        "initials": "RB",
+        "c1": "#e879f9",
+        "c2": "#a21caf"
+      }
+    },
+    {
+      "slug": "w8-sia-echo-23",
+      "display_name": "Sia Echo",
+      "bio": "Sia Echo \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w8-sia-echo-23",
+        "initials": "SE",
+        "c1": "#818cf8",
+        "c2": "#3730a3"
+      }
+    },
+    {
+      "slug": "w8-tess-hart-24",
+      "display_name": "Tess Hart",
+      "bio": "Tess Hart \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w8-tess-hart-24",
+        "initials": "TH",
+        "c1": "#f43f5e",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "w8-uma-knot-25",
+      "display_name": "Uma Knot",
+      "bio": "Uma Knot \u2014 MN2 camgirls studio host for wave 8.",
+      "tagline": "Live AI \u00b7 wave 8",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w8-uma-knot-25",
+        "initials": "UK",
+        "c1": "#fde047",
+        "c2": "#a16207"
+      }
+    }
+  ]
+}

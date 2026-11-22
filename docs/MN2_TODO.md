@@ -21,7 +21,7 @@ Honest status only — **in repo** ≠ **verified on prod** unless noted elsewhe
 | **Create App / encoder** | Create App + Super Encoder release handoff documented; deploy is laptop/SSH, not “done by docs alone”. | [DEPLOY_CREATE_APP_RELEASE.md](DEPLOY_CREATE_APP_RELEASE.md) |
 | **Google Play vision** | Tracked as distribution / casino mobile shell. **Play Console ship is not claimed done** — follow [CASINO_PLAY_STORE_TUESDAY.md](CASINO_PLAY_STORE_TUESDAY.md) (assetlinks SHA, $25 account). Podcast/app vision remains deferred in [PLATFORM_TODO.md](PLATFORM_TODO.md) / [PODCAST.md](PODCAST.md). | E4 below · Play Store checklist |
 
-**Open ops that still need SSH / binary work (do not mark done from this snapshot):** [#99](https://github.com/jonK341/Masternoder.dk/issues/99) `platform_enabled_on_chain` / vin-allocate on shared ping addr (app deploy for `sync-ping-targets`), SMTP for revenue-pulse emails, Facebook casino Meta tokens (E3 paused), LiveKit camgirls e2e confirm.
+**Open ops that still need SSH / binary work (do not mark done from this snapshot):** [#99](https://github.com/jonK341/Masternoder.dk/issues/99) `platform_enabled_on_chain` / vin-allocate on shared ping addr (app deploy for `sync-ping-targets`), SMTP for revenue-pulse emails, Facebook casino Meta tokens (E3 paused). LiveKit camgirls e2e confirmed live 2026-11-22.
 
 ### Issues ranked (from MN2 system report 2026-09-30)
 
@@ -461,7 +461,7 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Live Pro subscription (P2)** — `PAYPAL_SUBSCRIPTION_PLAN_PRO` on server (2026-06-28) · plan live on prod · shop subscribe enabled
 - [x] **Tier enforcement (P2)** — `MONETIZATION_TIER_ENFORCEMENT=1` on server (2026-06-28) · copy assist **403 pro_required** for non-Pro
 - [ ] **SMTP + admin email** — `NOTIFY_ADMIN_EMAIL` + `NOTIFY_SMTP_*` (blocks weekly pulse/margin emails)
-- [ ] **LiveKit** — `LIVEKIT_*` on server (camgirls voice currently `mode=stub`)
+- [x] **LiveKit** — prod `/api/camgirls/livekit/status` → `mode=live` (2026-11-22); token gate returns `unlock_required` until unlock
 - [x] **Discord #market** — webhook URL set; fan-out cron installed
 
 ---
@@ -478,7 +478,7 @@ Applied + post-verify PASS (systemd active, v1.2.3.0-61caddb, mnsync synced, get
 - [x] **Discord spotlight — platform news** — partner-spotlight API published news item 2026-06-18
 - [x] **Discord spotlight — webhook fan-out** — re-posted to `#market` 2026-06-20 (webhook URL fixed)
 - [x] **Catalog perf deploy** — public `/api/camgirls/performers` ~3.6s with `lite=1` (2026-06-20)
-- [ ] **Phase 3 — LiveKit voice** — optionals smoke shows `mode=live`; confirm camgirls token flow end-to-end (not P0 — no duplicate deploy/verify items)
+- [x] **Phase 3 — LiveKit voice** — prod `mode=live`; token flow gated on unlock (`unlock_required` without room unlock, 2026-11-22)
 
 ---
 

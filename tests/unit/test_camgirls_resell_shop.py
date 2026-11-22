@@ -1,4 +1,5 @@
 """Camgirls brand pack shop SKUs."""
+from backend.services.camgirls_media_service import all_performer_media_meta
 from backend.services.camgirls_resell_shop_service import (
     list_resell_digital_goods,
     shop_item_id_for_performer,
@@ -13,8 +14,9 @@ def test_shop_sku_per_performer():
 
 def test_resell_goods_count():
     goods = list_resell_digital_goods()
-    assert len(goods) == 16
+    assert len(goods) == len(all_performer_media_meta()) + 1
     assert any(g["id"] == "dg-camgirls-brand-all-15" for g in goods)
+    assert any(g["id"] == "dg-camgirls-brand-cora-vale" for g in goods)
 
 
 def test_merged_into_digital_goods():

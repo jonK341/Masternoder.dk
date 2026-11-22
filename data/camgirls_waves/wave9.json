@@ -1,0 +1,332 @@
+{
+  "wave": 9,
+  "id_prefix": "performer_wave9_",
+  "notes": "Wave 9 auto stubs toward 250-scale roster.",
+  "performers": [
+    {
+      "slug": "w9-dina-jade-01",
+      "display_name": "Dina Jade",
+      "bio": "Dina Jade \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w9-dina-jade-01",
+        "initials": "DJ",
+        "c1": "#fdba74",
+        "c2": "#c2410c"
+      }
+    },
+    {
+      "slug": "w9-elle-moss-02",
+      "display_name": "Elle Moss",
+      "bio": "Elle Moss \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w9-elle-moss-02",
+        "initials": "EM",
+        "c1": "#34d399",
+        "c2": "#047857"
+      }
+    },
+    {
+      "slug": "w9-faye-park-03",
+      "display_name": "Faye Park",
+      "bio": "Faye Park \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w9-faye-park-03",
+        "initials": "FP",
+        "c1": "#e879f9",
+        "c2": "#a21caf"
+      }
+    },
+    {
+      "slug": "w9-gia-shore-04",
+      "display_name": "Gia Shore",
+      "bio": "Gia Shore \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w9-gia-shore-04",
+        "initials": "GS",
+        "c1": "#818cf8",
+        "c2": "#3730a3"
+      }
+    },
+    {
+      "slug": "w9-hera-west-05",
+      "display_name": "Hera West",
+      "bio": "Hera West \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w9-hera-west-05",
+        "initials": "HW",
+        "c1": "#f43f5e",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "w9-ines-birch-06",
+      "display_name": "Ines Birch",
+      "bio": "Ines Birch \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w9-ines-birch-06",
+        "initials": "IB",
+        "c1": "#fde047",
+        "c2": "#a16207"
+      }
+    },
+    {
+      "slug": "w9-joss-elm-07",
+      "display_name": "Joss Elm",
+      "bio": "Joss Elm \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w9-joss-elm-07",
+        "initials": "JE",
+        "c1": "#2dd4bf",
+        "c2": "#115e59"
+      }
+    },
+    {
+      "slug": "w9-kira-ash-08",
+      "display_name": "Kira Ash",
+      "bio": "Kira Ash \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w9-kira-ash-08",
+        "initials": "KA",
+        "c1": "#f97316",
+        "c2": "#9a3412"
+      }
+    },
+    {
+      "slug": "w9-lana-dale-09",
+      "display_name": "Lana Dale",
+      "bio": "Lana Dale \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w9-lana-dale-09",
+        "initials": "LD",
+        "c1": "#0ea5e9",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "w9-mira-glen-10",
+      "display_name": "Mira Glen",
+      "bio": "Mira Glen \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w9-mira-glen-10",
+        "initials": "MG",
+        "c1": "#f472b6",
+        "c2": "#9d174d"
+      }
+    },
+    {
+      "slug": "w9-nia-jade-11",
+      "display_name": "Nia Jade",
+      "bio": "Nia Jade \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w9-nia-jade-11",
+        "initials": "NJ",
+        "c1": "#fb7185",
+        "c2": "#be123c"
+      }
+    },
+    {
+      "slug": "w9-orla-moss-12",
+      "display_name": "Orla Moss",
+      "bio": "Orla Moss \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w9-orla-moss-12",
+        "initials": "OM",
+        "c1": "#c084fc",
+        "c2": "#6b21a8"
+      }
+    },
+    {
+      "slug": "w9-pia-park-13",
+      "display_name": "Pia Park",
+      "bio": "Pia Park \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w9-pia-park-13",
+        "initials": "PP",
+        "c1": "#67e8f9",
+        "c2": "#0e7490"
+      }
+    },
+    {
+      "slug": "w9-quinn-shore-14",
+      "display_name": "Quinn Shore",
+      "bio": "Quinn Shore \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w9-quinn-shore-14",
+        "initials": "QS",
+        "c1": "#4ade80",
+        "c2": "#166534"
+      }
+    },
+    {
+      "slug": "w9-rae-west-15",
+      "display_name": "Rae West",
+      "bio": "Rae West \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w9-rae-west-15",
+        "initials": "RW",
+        "c1": "#fbbf24",
+        "c2": "#92400e"
+      }
+    },
+    {
+      "slug": "w9-sia-birch-16",
+      "display_name": "Sia Birch",
+      "bio": "Sia Birch \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w9-sia-birch-16",
+        "initials": "SB",
+        "c1": "#94a3b8",
+        "c2": "#1e293b"
+      }
+    },
+    {
+      "slug": "w9-tess-elm-17",
+      "display_name": "Tess Elm",
+      "bio": "Tess Elm \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w9-tess-elm-17",
+        "initials": "TE",
+        "c1": "#a78bfa",
+        "c2": "#5b21b6"
+      }
+    },
+    {
+      "slug": "w9-uma-ash-18",
+      "display_name": "Uma Ash",
+      "bio": "Uma Ash \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 12,
+      "media": {
+        "slug": "w9-uma-ash-18",
+        "initials": "UA",
+        "c1": "#38bdf8",
+        "c2": "#075985"
+      }
+    },
+    {
+      "slug": "w9-vera-dale-19",
+      "display_name": "Vera Dale",
+      "bio": "Vera Dale \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 13,
+      "media": {
+        "slug": "w9-vera-dale-19",
+        "initials": "VD",
+        "c1": "#fdba74",
+        "c2": "#c2410c"
+      }
+    },
+    {
+      "slug": "w9-willa-glen-20",
+      "display_name": "Willa Glen",
+      "bio": "Willa Glen \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 14,
+      "media": {
+        "slug": "w9-willa-glen-20",
+        "initials": "WG",
+        "c1": "#34d399",
+        "c2": "#047857"
+      }
+    },
+    {
+      "slug": "w9-xena-jade-21",
+      "display_name": "Xena Jade",
+      "bio": "Xena Jade \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 15,
+      "media": {
+        "slug": "w9-xena-jade-21",
+        "initials": "XJ",
+        "c1": "#e879f9",
+        "c2": "#a21caf"
+      }
+    },
+    {
+      "slug": "w9-yara-moss-22",
+      "display_name": "Yara Moss",
+      "bio": "Yara Moss \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 16,
+      "media": {
+        "slug": "w9-yara-moss-22",
+        "initials": "YM",
+        "c1": "#818cf8",
+        "c2": "#3730a3"
+      }
+    },
+    {
+      "slug": "w9-zara-park-23",
+      "display_name": "Zara Park",
+      "bio": "Zara Park \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 17,
+      "media": {
+        "slug": "w9-zara-park-23",
+        "initials": "ZP",
+        "c1": "#f43f5e",
+        "c2": "#9f1239"
+      }
+    },
+    {
+      "slug": "w9-ada-shore-24",
+      "display_name": "Ada Shore",
+      "bio": "Ada Shore \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 10,
+      "media": {
+        "slug": "w9-ada-shore-24",
+        "initials": "AS",
+        "c1": "#fde047",
+        "c2": "#a16207"
+      }
+    },
+    {
+      "slug": "w9-blair-west-25",
+      "display_name": "Blair West",
+      "bio": "Blair West \u2014 MN2 camgirls studio host for wave 9.",
+      "tagline": "Live AI \u00b7 wave 9",
+      "unlock_price_mn2": 11,
+      "media": {
+        "slug": "w9-blair-west-25",
+        "initials": "BW",
+        "c1": "#2dd4bf",
+        "c2": "#115e59"
+      }
+    }
+  ]
+}

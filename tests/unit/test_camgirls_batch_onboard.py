@@ -64,6 +64,39 @@ def test_build_wave_batch_csv():
         os.unlink(path)
 
 
+def test_wave2_file_has_twenty_five_hosts():
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    path = os.path.join(root, "data", "camgirls_waves", "wave2.json")
+    performers, media, summary = build_wave_batch(path, batch=2, wave_size=25)
+    assert summary["errors"] == []
+    assert summary["id_prefix"] == "performer_wave2_"
+    assert len(performers) == 25
+    assert len(media) == 25
+    assert len({p["id"] for p in performers}) == 25
+
+
+def test_wave3_file_has_twenty_five_hosts():
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    path = os.path.join(root, "data", "camgirls_waves", "wave3.json")
+    performers, media, summary = build_wave_batch(path, batch=3, wave_size=25)
+    assert summary["errors"] == []
+    assert summary["id_prefix"] == "performer_wave3_"
+    assert len(performers) == 25
+    assert len(media) == 25
+    assert len({p["id"] for p in performers}) == 25
+
+
+def test_wave4_file_has_thirty_five_hosts():
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    path = os.path.join(root, "data", "camgirls_waves", "wave4.json")
+    performers, media, summary = build_wave_batch(path, batch=4, wave_size=35)
+    assert summary["errors"] == []
+    assert summary["id_prefix"] == "performer_wave4_"
+    assert len(performers) == 35
+    assert len(media) == 35
+    assert len({p["id"] for p in performers}) == 35
+
+
 def test_example_row_raises_when_not_skipped():
     with pytest.raises(ValueError, match="_example"):
         normalize_wave_stub({"_example": True, "display_name": "X"}, index=1, id_prefix="p_")

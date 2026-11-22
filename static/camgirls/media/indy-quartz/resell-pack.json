@@ -1,0 +1,24 @@
+{
+  "performer_id": "performer_wave4_indy_quartz",
+  "slug": "indy-quartz",
+  "display_name": "Indy Quartz",
+  "license": "MN2 studio affiliate \u2014 resale allowed with disclosure on masternoder.dk",
+  "assets": {
+    "icon": "/static/camgirls/media/indy-quartz/icon.webp",
+    "logo": "/static/camgirls/media/indy-quartz/logo.svg",
+    "avatar_hd": "/static/camgirls/media/indy-quartz/gallery-2.webp",
+    "gallery": [
+      "/static/camgirls/media/indy-quartz/gallery-1.webp",
+      "/static/camgirls/media/indy-quartz/gallery-2.webp",
+      "/static/camgirls/media/indy-quartz/gallery-3.webp",
+      "/static/camgirls/media/indy-quartz/gallery-4.webp"
+    ],
+    "preview_video": null,
+    "preview_poster": "/static/camgirls/media/indy-quartz/gallery-1.webp"
+  },
+  "initials": "IQ",
+  "brand_colors": [
+    "#64748b",
+    "#0f172a"
+  ]
+}

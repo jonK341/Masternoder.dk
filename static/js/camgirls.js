@@ -368,6 +368,24 @@
     );
   }
 
+  function bindExplorerJump() {
+    var form = document.getElementById('cg-explorer-jump');
+    if (!form || form.getAttribute('data-bound') === '1') return;
+    form.setAttribute('data-bound', '1');
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var bridge = document.getElementById('cg-explorer-bridge');
+      var base = ((bridge && bridge.getAttribute('data-base')) || 'https://camgirls.masternoder.dk').replace(/\/$/, '');
+      var input = document.getElementById('cg-explorer-query');
+      var query = (input && input.value ? input.value : '').trim();
+      var path = '/';
+      if (query) {
+        path = /^[a-fA-F0-9]{64}$/.test(query) ? '/tx/' + encodeURIComponent(query) : '/address/' + encodeURIComponent(query);
+      }
+      window.open(base + path, '_blank', 'noopener');
+    });
+  }
+
   function loadStatus() {
     fetch(apiUrl('/api/camgirls/status'))
       .then(function (r) {
@@ -392,8 +410,9 @@
         text.textContent = d.note || 'AI studio ready';
         if (todos) {
           function todoLi(item) {
+            var done = String(item.priority || '').toLowerCase() === 'done';
             return (
-              '<li><span class="cg-todo-pri">' +
+              '<li class="' + (done ? 'cg-todo-done' : 'cg-todo-open') + '"><span class="cg-todo-pri">' +
               esc(item.priority || '—') +
               '</span><strong>' +
               esc(item.title || '') +
@@ -402,9 +421,26 @@
               '</li>'
             );
           }
+          function countOpen(items) {
+            return (items || []).filter(function (item) {
+              return String(item.priority || '').toLowerCase() !== 'done';
+            }).length;
+          }
           var byCat = d.next_todos_by_category || [];
+          var explorer = d.explorer || {};
+          var bridge = document.getElementById('cg-explorer-bridge');
+          if (bridge && explorer.url) {
+            bridge.setAttribute('data-base', String(explorer.url).replace(/\/$/, ''));
+          }
+          var hostCount = document.getElementById('cg-host-count');
+          if (hostCount && d.performers_count) {
+            hostCount.textContent = String(d.performers_count);
+          }
           if (byCat.length) {
-            todos.innerHTML = byCat
+            var openTotal = byCat.reduce(function (sum, cat) {
+              return sum + countOpen(cat.items || []);
+            }, 0);
+            todos.innerHTML = '<p class="cg-todo-summary">' + openTotal + ' open</p>' + byCat
               .map(function (cat) {
                 var catItems = cat.items || [];
                 if (!catItems.length) return '';
@@ -871,6 +907,7 @@
       });
     });
     applyAppExpandLayout();
+    bindExplorerJump();
     loadAgents();
     loadStatus();
     handlePayPalReturn();
