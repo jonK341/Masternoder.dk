@@ -774,7 +774,13 @@ def _referral_code_for_user(user_id: str) -> str:
 
 
 def _empty_referral_store() -> Dict[str, Any]:
-    return {"codes": {}, "signups": [], "daily_shares": {}, "party_level_claims": {}}
+    return {
+        "codes": {},
+        "signups": [],
+        "daily_shares": {},
+        "party_level_claims": {},
+        "weekly_prize_payouts": {},
+    }
 
 
 def _referral_party_config() -> Dict[str, Any]:
@@ -1124,6 +1130,85 @@ def claim_daily_invite_share(user_id: str) -> Dict[str, Any]:
         "coins": coins if ok else 0,
         "day": day,
         "message": f"+{coins} free coins for sharing the party!",
+    }
+
+
+def _iso_week_key(dt: Optional[datetime] = None) -> str:
+    when = dt or datetime.now(timezone.utc)
+    iso = when.isocalendar()
+    return f"{iso.year}-W{iso.week:02d}"
+
+
+def payout_weekly_invite_party_prizes(*, dry_run: bool = False) -> Dict[str, Any]:
+    """Pay top Invite Party hosts free coins for the current ISO week (idempotent)."""
+    party = _referral_party_config()
+    if not party.get("enabled"):
+        return {"success": False, "error": "party_disabled"}
+    prizes = [int(x) for x in (party.get("weekly_prizes_coins") or [300, 150, 75])]
+    week = _iso_week_key()
+    store = _load_json_store(_CASINO_REFERRALS_PATH, _empty_referral_store())
+    paid_weeks = store.setdefault("weekly_prize_payouts", {})
+    if week in paid_weeks and not dry_run:
+        return {
+            "success": True,
+            "already_paid": True,
+            "week": week,
+            "winners": paid_weeks.get(week) or [],
+        }
+
+    # Count invites registered this ISO week
+    counts: Dict[str, int] = {}
+    for row in store.get("signups") or []:
+        if not isinstance(row, dict):
+            continue
+        registered = str(row.get("registered_at") or "")
+        try:
+            ts = datetime.fromisoformat(registered.replace("Z", "+00:00"))
+        except Exception:
+            continue
+        if _iso_week_key(ts) != week:
+            continue
+        referrer = str(row.get("referrer_user_id") or "").strip()
+        if referrer:
+            counts[referrer] = counts.get(referrer, 0) + 1
+
+    ranked = sorted(counts.items(), key=lambda x: (-x[1], x[0]))[: len(prizes)]
+    winners = []
+    for idx, (uid, n) in enumerate(ranked):
+        coins = prizes[idx] if idx < len(prizes) else 0
+        granted = False
+        if coins > 0 and not dry_run:
+            granted = _grant_party_coins(
+                uid,
+                coins,
+                "referral_party_weekly",
+                {"week": week, "rank": idx + 1, "invites": n},
+            )
+            _emit(
+                "casino_referral_weekly_prize",
+                user_id=uid,
+                payload={"week": week, "rank": idx + 1, "coins": coins, "invites": n},
+            )
+        winners.append({
+            "rank": idx + 1,
+            "user_id": uid,
+            "display": anonymize_user(uid),
+            "invites": n,
+            "coins": coins,
+            "granted": granted if not dry_run else False,
+        })
+
+    if not dry_run:
+        paid_weeks[week] = winners
+        _save_json_store(_CASINO_REFERRALS_PATH, store)
+
+    return {
+        "success": True,
+        "already_paid": False,
+        "week": week,
+        "dry_run": dry_run,
+        "winners": winners,
+        "note": "Free coin weekly party prizes — no RTP changes.",
     }
 
 

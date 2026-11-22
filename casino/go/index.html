@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Play MasterNoder2 Casino</title>
+    <meta name="description" content="Fund & play crash, slots, and small games. Free practice coins or stake MN2/USD. Invite friends for free coin parties.">
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="https://masternoder.dk/casino/go/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MasterNoder">
+    <meta property="og:title" content="MasterNoder2 Casino — Play now">
+    <meta property="og:description" content="Crash · slots · small games. Free coins to start. Same wallet as the exchange.">
+    <meta property="og:url" content="https://masternoder.dk/casino/go/">
+    <meta property="og:image" content="https://masternoder.dk/static/img/casino/banner-masternoder2-casino.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MasterNoder2 Casino">
+    <meta name="twitter:description" content="Play free with coins — or fund and stake.">
+    <meta name="twitter:image" content="https://masternoder.dk/static/img/casino/banner-masternoder2-casino.png">
+    <meta name="theme-color" content="#1A1035">
+    <link rel="stylesheet" href="/static/css/modern-design-system.css">
+    <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
+    <link rel="stylesheet" href="/static/css/casino-referral-party.css?v=20261122party">
+    <script src="/static/js/meta-pixel.js?v=20261122pixel2"></script>
+    <noscript><img height="1" width="1" style="display:none" alt=""
+        src="https://www.facebook.com/tr?id=1446065114390866&ev=PageView&noscript=1"/></noscript>
+    <style>
+      .go-page { max-width: 560px; margin: 0 auto; padding: 72px 20px 48px; text-align: center; color: #f4e9ff; }
+      .go-page h1 { margin: 0 0 10px; font-size: clamp(2rem, 6vw, 2.6rem); }
+      .go-hero-img { width: 100%; max-width: 520px; border-radius: 16px; margin: 16px 0 22px; display: block; margin-inline: auto; }
+      .go-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+      .go-actions a {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 140px; padding: 12px 18px; border-radius: 999px; text-decoration: none; font-weight: 800;
+      }
+      .go-primary { color: #14081f; background: linear-gradient(135deg, #ffd54f, #ff00aa 70%, #7c3aed); }
+      .go-secondary { color: #7ee8ff; border: 1px solid rgba(0,212,255,0.4); background: rgba(0,212,255,0.1); }
+      .go-note { margin-top: 18px; font-size: 0.85rem; opacity: 0.75; }
+    </style>
+</head>
+<body class="invite-party-body">
+    <main class="go-page">
+        <p class="invite-party-kicker">MasterNoder2 Casino</p>
+        <h1>Play now</h1>
+        <p class="invite-party-tagline">Crash · slots · small games — free coins to start, or fund with MN2 / PayPal.</p>
+        <img class="go-hero-img" src="/static/img/casino/banner-masternoder2-casino.png" width="1200" height="630" alt="MasterNoder2 Casino" loading="eager">
+        <div class="go-actions">
+            <a class="go-primary" id="go-play" href="/casino/?utm_source=meta&utm_medium=ads&utm_campaign=casino_traffic#casino-fund-play">Fund &amp; Play</a>
+            <a class="go-secondary" href="/casino/?tab=slots&utm_source=meta&utm_medium=ads&utm_campaign=casino_traffic">Slots</a>
+            <a class="go-secondary" href="/casino/?tab=small-games&utm_source=meta&utm_medium=ads&utm_campaign=casino_traffic">Small games</a>
+            <a class="go-secondary" href="/r/?utm_source=meta&utm_medium=ads&utm_campaign=invite_party">Invite Party</a>
+        </div>
+        <p class="go-note">18+ where required · practice coins are free · responsible play</p>
+    </main>
+    <script>
+      (function () {
+        var q = window.location.search || '';
+        if (q && q.length > 1) {
+          var play = document.getElementById('go-play');
+          if (play) {
+            var href = play.getAttribute('href') || '/casino/';
+            play.setAttribute('href', href + (href.indexOf('?') >= 0 ? '&' : '?') + q.replace(/^\?/, ''));
+          }
+        }
+        if (window.MnMetaPixel) {
+          window.MnMetaPixel.fetchAndBoot('/api/casino/meta/pixel').then(function () {
+            window.MnMetaPixel.trackCustom('CasinoTrafficLand', { page: 'casino_go', source: 'meta_ads' });
+            window.MnMetaPixel.trackStandard('ViewContent', { content_name: 'Casino Ads Landing', content_category: 'casino' });
+          });
+        }
+      })();
+    </script>
+</body>
+</html>

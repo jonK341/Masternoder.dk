@@ -12,19 +12,22 @@
     "Discord-play redirect preserves UTMs",
     "Cross-promo: shop, profile, camgirls, podcast, portal strip",
     "Meta Pixel bootstrap API + meta-pixel.js + standard events",
-    "Invite Party: /r/<code>, welcome coins, party levels, daily share"
+    "Invite Party: /r/<code>, welcome coins, party levels, daily share",
+    "Meta Pixel live (1446065114390866) sitewide + noscript",
+    "Ads landing /casino/go + room OG pages slots/small-games/crash",
+    "SEO ping API /api/seo/ping-sitemap + weekly Invite Party prize job"
   ],
   "next_features": [
     {
       "id": "meta-ads-pixel-live",
-      "title": "Paste real META_PIXEL_ID on server + run $5/day traffic test ads to /casino/",
-      "load_on": "env + Ads Manager",
+      "title": "Run $5/day Meta traffic test ads to https://masternoder.dk/casino/go/",
+      "load_on": "Ads Manager (pixel already live)",
       "priority": 1
     },
     {
       "id": "search-console-sitemap",
-      "title": "Submit https://masternoder.dk/sitemap.xml to Google/Bing Search Console",
-      "load_on": "ops checklist",
+      "title": "Submit https://masternoder.dk/sitemap.xml in Google/Bing Search Console (API ping ready)",
+      "load_on": "ops checklist + GET /api/seo/ping-sitemap",
       "priority": 1
     },
     {

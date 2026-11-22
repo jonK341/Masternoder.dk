@@ -243,6 +243,28 @@ def test_casino_referral_daily_share_route(tmp_path, monkeypatch):
     assert second.get_json()["already_claimed"] is True
 
 
+def test_casino_referral_weekly_payout_dry_run(tmp_path, monkeypatch):
+    _patch_social_state(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        "backend.services.casino_social_service._grant_party_coins",
+        lambda *a, **k: True,
+    )
+    app = _app(tmp_path, monkeypatch)
+    with app.test_client() as client:
+        inviter = client.get("/api/casino/social/referral?user_id=weekly-host").get_json()
+        code = inviter["referral_code"]
+        client.post(
+            "/api/casino/social/referral/register",
+            json={"user_id": "weekly-guest", "referral_code": code},
+        )
+        preview = client.get("/api/casino/social/referral/weekly-payout?dry_run=1")
+    data = preview.get_json()
+    assert preview.status_code == 200
+    assert data["success"] is True
+    assert data.get("dry_run") is True
+    assert "week" in data
+
+
 def test_casino_follow_player_route(tmp_path, monkeypatch):
     _patch_social_state(tmp_path, monkeypatch)
     app = _app(tmp_path, monkeypatch)

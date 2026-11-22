@@ -2,8 +2,11 @@
 All Page Routes
 Generic routes for serving HTML pages from project root (static/, index.html, generator/, etc.)
 """
-from flask import Blueprint, send_from_directory, redirect, request, render_template, make_response
+from flask import Blueprint, send_from_directory, redirect, request, render_template, make_response, jsonify
+import json
 import os
+import urllib.parse
+import urllib.request
 
 all_page_bp = Blueprint('all_pages', __name__)
 
@@ -263,18 +266,58 @@ def casino_page():
     return 'Casino page not found', 404
 
 
+def _serve_casino_subdir(subdir: str, fallback_redirect: str):
+    """Serve OG-friendly room/landing HTML under casino/<subdir>/."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'casino', subdir)
+        if os.path.isfile(os.path.join(page_dir, 'index.html')):
+            resp = send_from_directory(page_dir, 'index.html', mimetype='text/html; charset=utf-8')
+            resp.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=60'
+            return resp
+    except Exception as exc:
+        return f'Error loading casino/{subdir}: {exc}', 500
+    return redirect(fallback_redirect, code=302)
+
+
+@all_page_bp.route('/casino/go/', methods=['GET'])
+@all_page_bp.route('/casino/go', methods=['GET'])
+def casino_ads_landing():
+    """Meta ads / paid traffic landing — pixel + Fund & Play CTAs."""
+    return _serve_casino_subdir(
+        'go',
+        '/casino/?utm_source=meta&utm_medium=ads&utm_campaign=casino_traffic#casino-fund-play',
+    )
+
+
 @all_page_bp.route('/casino/slots/', methods=['GET'])
 @all_page_bp.route('/casino/slots', methods=['GET'])
 def casino_slots_room_redirect():
-    """SEO / share deep-link into slots room."""
-    return redirect('/casino/?tab=slots&utm_source=seo&utm_medium=deep_link&utm_campaign=casino_traffic', code=302)
+    """SEO / share deep-link into slots room (OG HTML then client jump)."""
+    return _serve_casino_subdir(
+        'slots',
+        '/casino/?tab=slots&utm_source=seo&utm_medium=deep_link&utm_campaign=casino_traffic',
+    )
 
 
 @all_page_bp.route('/casino/small-games/', methods=['GET'])
 @all_page_bp.route('/casino/small-games', methods=['GET'])
 def casino_small_games_room_redirect():
-    """SEO / share deep-link into small-games room."""
-    return redirect('/casino/?tab=small-games&utm_source=seo&utm_medium=deep_link&utm_campaign=casino_traffic', code=302)
+    """SEO / share deep-link into small-games room (OG HTML then client jump)."""
+    return _serve_casino_subdir(
+        'small-games',
+        '/casino/?tab=small-games&utm_source=seo&utm_medium=deep_link&utm_campaign=casino_traffic',
+    )
+
+
+@all_page_bp.route('/casino/crash/', methods=['GET'])
+@all_page_bp.route('/casino/crash', methods=['GET'])
+def casino_crash_room_redirect():
+    """SEO / share deep-link into crash (OG HTML then client jump)."""
+    return _serve_casino_subdir(
+        'crash',
+        '/casino/?tab=home&utm_source=seo&utm_medium=deep_link&utm_campaign=casino_traffic#casino-crash',
+    )
 
 
 @all_page_bp.route('/r/', methods=['GET'])
@@ -585,8 +628,10 @@ _SITEMAP_PATHS = (
     '/camgirls/',
     '/exchange/',
     '/casino/',
+    '/casino/go/',
     '/casino/slots/',
     '/casino/small-games/',
+    '/casino/crash/',
     '/r/',
     '/discord-play/',
     '/podcast/',
@@ -624,7 +669,8 @@ def sitemap_xml():
         loc = base + (path if path != '/' else '/')
         high = (
             '/hosting/', '/generator/', '/camgirls/', '/exchange/', '/casino/',
-            '/casino/slots/', '/casino/small-games/', '/r/', '/discord-play/', '/podcast/', '/shop/',
+            '/casino/go/', '/casino/slots/', '/casino/small-games/', '/casino/crash/',
+            '/r/', '/discord-play/', '/podcast/', '/shop/',
         )
         priority = '1.0' if path == '/' else ('0.9' if path in high else '0.7')
         changefreq = 'daily' if path.startswith('/casino') or path == '/' else 'weekly'
@@ -658,6 +704,49 @@ def sitemap_xml():
     resp.headers['Content-Type'] = 'application/xml; charset=utf-8'
     resp.headers['Cache-Control'] = 'public, max-age=86400'
     return resp
+
+
+@all_page_bp.route('/api/seo/ping-sitemap', methods=['POST', 'GET'])
+def seo_ping_sitemap():
+    """Ping Google/Bing sitemap endpoints + optional IndexNow (ops helper)."""
+    base = (os.environ.get('BASE_URL') or 'https://masternoder.dk').rstrip('/')
+    sitemap = f'{base}/sitemap.xml'
+    results = []
+    for name, ping_tmpl in (
+        ('google', 'https://www.google.com/ping?sitemap={sitemap}'),
+        ('bing', 'https://www.bing.com/ping?sitemap={sitemap}'),
+    ):
+        try:
+            ping_url = ping_tmpl.format(sitemap=urllib.parse.quote(sitemap, safe=''))
+            req = urllib.request.Request(ping_url, method='GET')
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                results.append({'engine': name, 'status': getattr(resp, 'status', 200), 'ok': True})
+        except Exception as exc:
+            results.append({'engine': name, 'ok': False, 'error': str(exc)[:200]})
+
+    indexnow_key = (os.environ.get('INDEXNOW_KEY') or '').strip()
+    if indexnow_key:
+        try:
+            payload = json.dumps({
+                'host': urllib.parse.urlparse(base).hostname or 'masternoder.dk',
+                'key': indexnow_key,
+                'keyLocation': f'{base}/{indexnow_key}.txt',
+                'urlList': [base + p for p in _SITEMAP_PATHS[:12]],
+            }).encode('utf-8')
+            req = urllib.request.Request(
+                'https://api.indexnow.org/indexnow',
+                data=payload,
+                headers={'Content-Type': 'application/json; charset=utf-8'},
+                method='POST',
+            )
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                results.append({'engine': 'indexnow', 'status': getattr(resp, 'status', 200), 'ok': True})
+        except Exception as exc:
+            results.append({'engine': 'indexnow', 'ok': False, 'error': str(exc)[:200]})
+    else:
+        results.append({'engine': 'indexnow', 'ok': False, 'skipped': 'INDEXNOW_KEY not set'})
+
+    return jsonify({'success': True, 'sitemap': sitemap, 'results': results})
 
 
 # --- /vidgenerator redirects (301 to root) ---

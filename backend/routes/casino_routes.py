@@ -1692,6 +1692,25 @@ def casino_social_referral_daily_share():
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
+@casino_bp.route("/api/casino/social/referral/weekly-payout", methods=["POST", "GET"])
+def casino_social_referral_weekly_payout():
+    """Pay / preview weekly Invite Party host prizes (ops or cron)."""
+    try:
+        from backend.services import casino_social_service
+        ops = (os.environ.get("DISCORD_OPS_SECRET") or os.environ.get("ADMIN_OPS_SECRET") or "").strip()
+        provided = (request.headers.get("X-Ops-Secret") or request.args.get("ops_secret") or "").strip()
+        dry_run = request.args.get("dry_run", "0") in ("1", "true", "yes") or (
+            (request.get_json(silent=True) or {}).get("dry_run") is True
+        )
+        if request.method == "POST" and not dry_run:
+            if not ops or provided != ops:
+                return jsonify({"success": False, "error": "ops_secret_required"}), 403
+        result = casino_social_service.payout_weekly_invite_party_prizes(dry_run=dry_run or request.method == "GET")
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @casino_bp.route("/api/casino/social/follow", methods=["GET", "POST", "DELETE"])
 def casino_social_follow():
     try:
