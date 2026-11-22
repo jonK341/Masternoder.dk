@@ -132,6 +132,7 @@
 
   function applyTab(tabId) {
     if (!TAB_LABELS[tabId]) tabId = 'trade';
+    document.body.setAttribute('data-cex-tab', tabId);
     document.querySelectorAll('.cex-tab-shell[data-cex-tab]').forEach(function (el) {
       var on = el.getAttribute('data-cex-tab') === tabId;
       el.hidden = !on;
@@ -145,8 +146,6 @@
         btn.setAttribute('aria-selected', on ? 'true' : 'false');
       });
     }
-    var note = q('cex-route-note');
-    if (note) note.textContent = 'Viewing: ' + (TAB_LABELS[tabId] || tabId) + '. Data loads when you open each tab.';
     var hubLabel = q('cex-hub-tab-label');
     if (hubLabel) hubLabel.textContent = TAB_LABELS[tabId] || tabId;
     try {

@@ -1,181 +1,243 @@
 {
-  "tick_count": 1870,
+  "tick_count": 1874,
   "agents": {
     "exchange_agent_stable_router": {
       "last_action": {
         "agent_id": "exchange_agent_stable_router",
         "agent_name": "Stable Router",
         "strategy": "stable_rebalance",
-        "symbol": "USDC",
+        "symbol": "USDT",
         "side": "buy",
-        "amount": 12.9178433685,
-        "success": true,
-        "error": null,
-        "trade": {
-          "ts": "2026-07-04T18:35:18.355532Z",
-          "trade_id": "ex-swap:8f27aab4c2564c8b:4b883997",
-          "user_id": "exchange_agent_stable_router",
-          "type": "swap",
-          "symbol": "USDC",
-          "side": "buy",
-          "amount": 12.9178433685,
-          "quote": "MN2",
-          "usd_value": 12.9178,
-          "fee_bps": 55
-        }
+        "amount": 12.30999171675,
+        "success": false,
+        "error": "insufficient_pool_liquidity",
+        "trade": null
       },
-      "last_tick": "2026-07-04T18:35:18.418593Z"
+      "last_tick": "2026-11-21T17:32:56.218496Z"
     },
     "exchange_agent_layer1_scout": {
       "last_action": {
         "agent_id": "exchange_agent_layer1_scout",
         "agent_name": "Layer-1 Scout",
         "strategy": "layer1_rotation",
-        "symbol": "BTC",
+        "symbol": "ETH",
         "side": "buy",
-        "amount": 0.000204673414,
-        "success": true,
-        "error": null,
-        "trade": {
-          "ts": "2026-07-04T18:35:18.488830Z",
-          "trade_id": "ex-swap:f31b213f2674404b:37945535",
-          "user_id": "exchange_agent_layer1_scout",
-          "type": "swap",
-          "symbol": "BTC",
-          "side": "buy",
-          "amount": 0.000204673414,
-          "quote": "MN2",
-          "usd_value": 12.9178,
-          "fee_bps": 55
-        }
+        "amount": 0.006858875027,
+        "success": false,
+        "error": "No module named 'sqlalchemy'",
+        "trade": null
       },
-      "last_tick": "2026-07-04T18:35:18.563479Z"
+      "last_tick": "2026-11-21T17:32:56.251767Z"
     },
     "exchange_agent_casino_liquidity": {
       "last_action": {
         "agent_id": "exchange_agent_casino_liquidity",
         "agent_name": "Casino Liquidity Bot",
         "strategy": "casino_liquidity",
-        "symbol": "USDC",
+        "symbol": "DASH",
         "side": "buy",
-        "amount": 12.9178433685,
-        "success": true,
-        "error": null,
-        "trade": {
-          "ts": "2026-07-04T18:35:18.600349Z",
-          "trade_id": "ex-swap:74f7248b54bc4e7e:216f2ee1",
-          "user_id": "exchange_agent_casino_liquidity",
-          "type": "swap",
-          "symbol": "USDC",
-          "side": "buy",
-          "amount": 12.9178433685,
-          "quote": "MN2",
-          "usd_value": 12.9178,
-          "fee_bps": 55
+        "success": false,
+        "error": "pair_not_supported:DASH on binance",
+        "mode": "live",
+        "venue_id": "binance",
+        "spec": {
+          "ok": false,
+          "error": "pair_not_supported:DASH on binance",
+          "venue_id": "binance",
+          "base": "DASH",
+          "quote": "USDC",
+          "market": "DASHUSDC"
         }
       },
-      "last_tick": "2026-07-04T18:35:18.672598Z"
+      "last_tick": "2026-11-21T17:36:02.025153Z"
     },
     "exchange_agent_meme_hunter": {
       "last_action": {
         "agent_id": "exchange_agent_meme_hunter",
         "agent_name": "Meme Hunter",
         "strategy": "meme_momentum",
-        "symbol": "DOGE",
+        "symbol": "SHIB",
         "side": "buy",
-        "amount": 163.415318551741,
-        "success": true,
-        "error": null,
-        "trade": {
-          "ts": "2026-07-04T18:35:18.702913Z",
-          "trade_id": "ex-swap:bf5e263557634a95:e16a2e35",
-          "user_id": "exchange_agent_meme_hunter",
-          "type": "swap",
-          "symbol": "DOGE",
+        "amount": 2203856.0,
+        "success": false,
+        "error": "Symbol not whitelisted for API key.",
+        "trade": null,
+        "order": {
+          "success": false,
+          "status_code": 400,
+          "body": {
+            "code": -2010,
+            "msg": "Symbol not whitelisted for API key."
+          },
+          "symbol": "SHIB",
           "side": "buy",
-          "amount": 163.415318551741,
-          "quote": "MN2",
-          "usd_value": 12.9178,
-          "fee_bps": 55
-        }
+          "quantity": 2203856.0,
+          "pair": "SHIBUSDC",
+          "market": "SHIBUSDC",
+          "quote": "USDC",
+          "error": "Symbol not whitelisted for API key."
+        },
+        "mode": "live",
+        "venue_id": "binance",
+        "notional_usd": 8.0
       },
-      "last_tick": "2026-07-04T18:35:18.766875Z"
+      "last_tick": "2026-11-21T17:36:52.756714Z"
     },
     "exchange_agent_defi_router": {
       "last_action": {
         "agent_id": "exchange_agent_defi_router",
         "agent_name": "DeFi Router",
         "strategy": "defi_rotation",
-        "symbol": "OP",
+        "symbol": "ADA",
         "side": "buy",
-        "amount": 7.828995980909,
+        "amount": 55.0,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:18.814624Z",
-          "trade_id": "ex-swap:563051a3c54f4500:1d6b5c3c",
+          "ts": "2026-11-21T17:38:18.530450Z",
+          "trade_id": "ex-venue:binance:966d135aa01a4e00:21513957",
           "user_id": "exchange_agent_defi_router",
-          "type": "swap",
-          "symbol": "OP",
+          "type": "venue_swap",
+          "venue_id": "binance",
+          "mode": "live",
+          "simulated": false,
+          "symbol": "ADA",
           "side": "buy",
-          "amount": 7.828995980909,
-          "quote": "MN2",
-          "usd_value": 12.9178,
-          "fee_bps": 55
-        }
+          "amount": 55.0,
+          "quote": "USDC",
+          "usd_value": 7.9915,
+          "fee_bps": 55,
+          "order_id": null
+        },
+        "order": {
+          "success": true,
+          "status_code": 200,
+          "body": {
+            "symbol": "ADAUSDC",
+            "orderId": 1703317650,
+            "orderListId": -1,
+            "clientOrderId": "zooPL3ceeppYamJVJSuuQp",
+            "transactTime": 1795282698056,
+            "price": "0.00000000",
+            "origQty": "55.00000000",
+            "executedQty": "55.00000000",
+            "origQuoteOrderQty": "0.00000000",
+            "cummulativeQuoteQty": "7.99150000",
+            "status": "FILLED",
+            "timeInForce": "GTC",
+            "type": "MARKET",
+            "side": "BUY",
+            "workingTime": 1795282698056,
+            "fills": [
+              {
+                "price": "0.14530000",
+                "qty": "55.00000000",
+                "commission": "0.05225000",
+                "commissionAsset": "ADA",
+                "tradeId": 60632580
+              }
+            ],
+            "selfTradePreventionMode": "EXPIRE_MAKER"
+          },
+          "symbol": "ADA",
+          "side": "buy",
+          "quantity": 55.0,
+          "pair": "ADAUSDC",
+          "market": "ADAUSDC",
+          "mode": "live",
+          "quote": "USDC"
+        },
+        "mode": "live",
+        "venue_id": "binance",
+        "notional_usd": 7.99
       },
-      "last_tick": "2026-07-04T18:35:18.874414Z"
+      "last_tick": "2026-11-21T17:38:25.712752Z"
     },
     "exchange_agent_payments_hub": {
       "last_action": {
         "agent_id": "exchange_agent_payments_hub",
         "agent_name": "Payments Hub",
         "strategy": "payments_routing",
-        "symbol": "XRP",
+        "symbol": "DOGE",
         "side": "buy",
-        "amount": 10.984156790901,
+        "amount": 145.0,
         "success": true,
         "error": null,
         "trade": {
-          "ts": "2026-07-04T18:35:18.921898Z",
-          "trade_id": "ex-swap:7a0ac68b4d23446b:07ca853f",
+          "ts": "2026-11-21T17:38:30.401625Z",
+          "trade_id": "ex-venue:binance:2fd5fa081d854b2d:f076d918",
           "user_id": "exchange_agent_payments_hub",
-          "type": "swap",
-          "symbol": "XRP",
+          "type": "venue_swap",
+          "venue_id": "binance",
+          "mode": "live",
+          "simulated": false,
+          "symbol": "DOGE",
           "side": "buy",
-          "amount": 10.984156790901,
-          "quote": "MN2",
-          "usd_value": 12.9178,
-          "fee_bps": 55
-        }
+          "amount": 145.0,
+          "quote": "USDC",
+          "usd_value": 7.9967,
+          "fee_bps": 55,
+          "order_id": null
+        },
+        "order": {
+          "success": true,
+          "status_code": 200,
+          "body": {
+            "symbol": "DOGEUSDC",
+            "orderId": 2547940699,
+            "orderListId": -1,
+            "clientOrderId": "w0Mjf5b3Jv2ao7BI6uqWIS",
+            "transactTime": 1795282710306,
+            "price": "0.00000000",
+            "origQty": "145.00000000",
+            "executedQty": "145.00000000",
+            "origQuoteOrderQty": "0.00000000",
+            "cummulativeQuoteQty": "7.99675000",
+            "status": "FILLED",
+            "timeInForce": "GTC",
+            "type": "MARKET",
+            "side": "BUY",
+            "workingTime": 1795282710306,
+            "fills": [
+              {
+                "price": "0.05515000",
+                "qty": "145.00000000",
+                "commission": "0.13775000",
+                "commissionAsset": "DOGE",
+                "tradeId": 68729063
+              }
+            ],
+            "selfTradePreventionMode": "EXPIRE_MAKER"
+          },
+          "symbol": "DOGE",
+          "side": "buy",
+          "quantity": 145.0,
+          "pair": "DOGEUSDC",
+          "market": "DOGEUSDC",
+          "mode": "live",
+          "quote": "USDC"
+        },
+        "mode": "live",
+        "venue_id": "binance",
+        "notional_usd": 8.0
       },
-      "last_tick": "2026-07-04T18:35:18.985028Z"
+      "last_tick": "2026-11-21T17:38:31.462144Z"
     },
     "exchange_agent_mn2_yield": {
       "last_action": {
         "agent_id": "exchange_agent_mn2_yield",
         "agent_name": "MN2 Yield Farmer",
         "strategy": "native_yield",
-        "symbol": "BNB",
+        "symbol": "DOT",
         "side": "buy",
-        "amount": 0.022404418131,
-        "success": true,
-        "error": null,
-        "trade": {
-          "ts": "2026-07-04T18:35:19.025434Z",
-          "trade_id": "ex-swap:45ec102108e04ece:7122d698",
-          "user_id": "exchange_agent_mn2_yield",
-          "type": "swap",
-          "symbol": "BNB",
-          "side": "buy",
-          "amount": 0.022404418131,
-          "quote": "MN2",
-          "usd_value": 12.9178,
-          "fee_bps": 55
-        }
+        "amount": 13.770617113058,
+        "success": false,
+        "error": "No module named 'sqlalchemy'",
+        "trade": null
       },
-      "last_tick": "2026-07-04T18:35:19.093918Z"
+      "last_tick": "2026-11-21T17:32:56.435136Z"
     }
   },
-  "last_tick": "2026-07-04T18:35:19.093918Z"
+  "last_tick": "2026-11-21T17:38:31.462144Z",
+  "last_mode": "live"
 }

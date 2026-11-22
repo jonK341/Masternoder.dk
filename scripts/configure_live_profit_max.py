@@ -201,8 +201,10 @@ def _tune_profit_path_and_pair_search() -> None:
     if os.path.isfile(path):
         with open(path, encoding="utf-8") as fh:
             cfg = json.load(fh)
-    cfg["rotation_live_enabled"] = True
-    cfg["rotation_auto_execute"] = True
+    # Path B lock: do NOT re-arm live rotation auto-buys (they spent NonKYC USDT on XRP/BNB).
+    cfg["rotation_live_enabled"] = False
+    cfg["rotation_auto_execute"] = False
+    cfg["rotation_auto_types"] = ["internal_stable_swap", "reduce_notional"]
     cfg["profit_pair_search"] = {
         "enabled": True,
         "top_n": 16,

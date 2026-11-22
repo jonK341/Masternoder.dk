@@ -1,0 +1,18 @@
+{
+  "open": [
+    {
+      "id": "pb_d6653e14621d",
+      "symbol": "DOGE",
+      "qty": 90.0,
+      "entry_price": 0.05513,
+      "cost_usd": 4.9617,
+      "target_profit_bps": 100.0,
+      "bought_at": "2026-11-22T00:58:19.776529Z",
+      "bought_at_unix": 1795309099.7765296,
+      "venue_id": "binance",
+      "quote": "USDC",
+      "mode": "paper",
+      "order_id": null
+    }
+  ]
+}

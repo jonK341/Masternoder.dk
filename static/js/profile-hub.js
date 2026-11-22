@@ -371,12 +371,6 @@
       var routes = (el.getAttribute('data-profile-route') || '').split(/\s+/).filter(Boolean);
       el.hidden = !routes.some(function (r) { return meta.routes.indexOf(r) !== -1; });
     });
-    var note = document.getElementById('profile-route-note');
-    if (note) {
-      note.textContent =
-        meta.label +
-        ' — jump chips scroll to a card. Bottom bar works on phone.';
-    }
     syncGroupButtons(group);
     var hubStatus = document.getElementById('profile-hub-status');
     if (hubStatus) hubStatus.textContent = meta.label;
@@ -470,8 +464,16 @@
       jump.addEventListener('click', function (ev) {
         var chip = ev.target.closest('[data-hub-jump]');
         if (!chip) return;
+        jump.querySelectorAll('.profile-hub-jump-chip').forEach(function (c) {
+          c.classList.toggle('is-active', c === chip);
+        });
         var el = document.getElementById(chip.getAttribute('data-hub-jump'));
-        if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (el && !el.hidden) {
+          el.classList.remove('profile-card-flash');
+          void el.offsetWidth;
+          el.classList.add('profile-card-flash');
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       });
     }
   }

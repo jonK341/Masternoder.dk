@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "pool_user_id": "exchange_sales_pool",
+  "agent_id": "exchange_agent_mn2_pool",
+  "reserve_user_id": "exchange_mn2_pool_reserve",
+  "paper_seed_on_empty": false,
+  "allow_non_withdrawable_seed": false,
+  "pool_swap_reserve_bps": 200,
+  "cron_interval_minutes": 3,
+  "tick_cooldown_seconds": 120,
+  "seed_mn2_per_tick": 250,
+  "stable_rebalance_threshold": 0.15,
+  "min_pool_by_asset": {
+    "MN2": 1000,
+    "USDT": 500,
+    "USDC": 500
+  }
+}

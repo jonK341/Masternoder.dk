@@ -424,6 +424,140 @@
     });
   }
 
+  function fmtCoin(n, d) {
+    var x = Number(n || 0);
+    if (!isFinite(x)) return '—';
+    if (x === 0) return '0';
+    if (x > 0 && x < 0.0001) return x.toExponential(3);
+    return x.toLocaleString(undefined, { maximumFractionDigits: d == null ? 6 : d });
+  }
+
+  function renderCoinGrid(el, wallet, opts) {
+    if (!el) return;
+    opts = opts || {};
+    if (!wallet || !wallet.success) {
+      el.innerHTML = '<p style="opacity:0.75;margin:0;">Exchange wallets unavailable.</p>';
+      return;
+    }
+    var rows = wallet.wallets || [];
+    if (!rows.length) {
+      var assets = wallet.assets || {};
+      rows = Object.keys(assets).sort().map(function (sym) {
+        return { symbol: sym, name: sym, balance: assets[sym], usd_value: 0 };
+      });
+      if (wallet.mn2_balance != null) {
+        rows.unshift({ symbol: 'MN2', name: 'MasterNoder2', balance: wallet.mn2_balance, usd_value: 0 });
+      }
+    }
+    if (opts.nonzeroOnly) {
+      rows = rows.filter(function (r) { return Number(r.balance || 0) > 0; });
+    }
+    if (!rows.length) {
+      el.innerHTML = '<p style="opacity:0.75;margin:0;">No coin balances yet.</p>';
+      return;
+    }
+    var limit = opts.limit || rows.length;
+    var shown = rows.slice(0, limit);
+    el.innerHTML = shown.map(function (r) {
+      var bal = Number(r.balance || 0);
+      var usd = Number(r.usd_value || 0);
+      var cls = bal > 0 ? 'profile-coin-chip is-funded' : 'profile-coin-chip';
+      return '<div class="' + cls + '" title="' + (r.name || r.symbol) + '">' +
+        '<span class="sym">' + (r.symbol || '?') + '</span>' +
+        '<strong>' + fmtCoin(bal, bal < 1 ? 6 : 4) + '</strong>' +
+        (usd > 0 ? '<span class="usd">$' + fmtCoin(usd, 2) + '</span>' : '<span class="usd">$0</span>') +
+        '</div>';
+    }).join('') +
+      (rows.length > limit
+        ? '<p style="grid-column:1/-1;margin:4px 0 0;font-size:0.78rem;opacity:0.75;">+' +
+          (rows.length - limit) + ' more on All coins · total ~$' + fmtCoin(wallet.total_usd, 2) + '</p>'
+        : '<p style="grid-column:1/-1;margin:4px 0 0;font-size:0.78rem;opacity:0.75;">' +
+          (wallet.wallet_count || rows.length) + ' wallets · ~$' + fmtCoin(wallet.total_usd, 2) + '</p>');
+  }
+
+  function renderAgentWallets(el, data) {
+    if (!el) return;
+    if (!data || !data.success || !(data.agents || []).length) {
+      el.innerHTML = '<p style="opacity:0.75;margin:0;">No exchange agents configured.</p>';
+      return;
+    }
+    el.innerHTML = data.agents.map(function (a) {
+      var w = a.wallet || {};
+      var rows = w.wallets || [];
+      var funded = rows.filter(function (r) { return Number(r.balance || 0) > 0; });
+      var chips = (funded.length ? funded : rows.slice(0, 8)).map(function (r) {
+        return '<span class="profile-agent-bal">' + r.symbol + ' ' + fmtCoin(r.balance, 4) + '</span>';
+      }).join(' ');
+      return '<div class="profile-agent-wallet-card">' +
+        '<div class="profile-agent-wallet-head"><strong>' + (a.name || a.id) + '</strong>' +
+        '<span>' + ((a.assets || []).join(', ') || 'all coins') + '</span></div>' +
+        '<div class="profile-agent-wallet-bals">' + (chips || 'All coin slots ready (0)') + '</div>' +
+        '<div class="profile-agent-wallet-meta">MN2 ' + fmtCoin(w.mn2_balance, 4) +
+        ' · ~$' + fmtCoin(w.total_usd, 2) + ' · ' + (w.wallet_count || 0) + ' wallets</div></div>';
+    }).join('');
+  }
+
+  function fillProfileMwAssets(wallet) {
+    var sel = document.getElementById('profile-mw-asset');
+    if (!sel) return;
+    var rows = (wallet && wallet.wallets) || [];
+    if (!rows.length) return;
+    var cur = sel.value;
+    sel.innerHTML = rows.map(function (r) {
+      return '<option value="' + r.symbol + '">' + r.symbol + '</option>';
+    }).join('');
+    if (cur) sel.value = cur;
+  }
+
+  function loadExchangeWallets() {
+    var user = encodeURIComponent(uid());
+    fetchJson(base() + '/api/exchange/wallet?user_id=' + user).then(function (res) {
+      var wallet = res.data || res;
+      renderCoinGrid(document.getElementById('profile-exchange-wallet-preview'), wallet, { nonzeroOnly: false, limit: 8 });
+      renderCoinGrid(document.getElementById('profile-exchange-wallet-all'), wallet, { nonzeroOnly: false });
+      fillProfileMwAssets(wallet);
+    });
+    fetchJson(base() + '/api/exchange/agents').then(function (res) {
+      renderAgentWallets(document.getElementById('profile-exchange-agent-wallets'), res.data || res);
+    });
+    fetchJson(base() + '/api/exchange/multi-wallet/daemon').then(function (res) {
+      var el = document.getElementById('profile-mw-daemon-status');
+      var d = res.data || res;
+      if (!el) return;
+      if (!d || !d.success) {
+        el.textContent = 'Multi-daemon status unavailable.';
+        return;
+      }
+      el.textContent = 'One multi-daemon for all coins · ticks=' + (d.tick_count || 0) +
+        (d.last_tick_at ? ' · last ' + String(d.last_tick_at).slice(0, 19) : '') +
+        ' · script ' + (d.daemon_script || 'exchange_multi_wallet_daemon.py');
+    });
+    var depBtn = document.getElementById('profile-mw-deposit-btn');
+    if (depBtn && !depBtn._mwWired) {
+      depBtn._mwWired = true;
+      depBtn.addEventListener('click', function () {
+        var asset = (document.getElementById('profile-mw-asset') || {}).value || 'USDT';
+        var amount = (document.getElementById('profile-mw-amount') || {}).value;
+        var info = document.getElementById('profile-mw-deposit-info');
+        var path = base() + '/api/exchange/deposit?asset=' + encodeURIComponent(asset) +
+          '&user_id=' + encodeURIComponent(uid()) +
+          (amount ? '&amount=' + encodeURIComponent(amount) : '');
+        fetchJson(path).then(function (res) {
+          var d = res.data || res;
+          if (!info) return;
+          if (!d || !d.success) {
+            info.textContent = (d && (d.message || d.error)) || 'Could not load deposit address.';
+            return;
+          }
+          info.innerHTML = '<strong>' + d.asset + '</strong> (' + (d.network || '') + ')<br><code>' +
+            (d.address || '—') + '</code>' +
+            (d.tag ? '<br>Memo: <code>' + d.tag + '</code>' : '') +
+            '<br><span style="opacity:0.8">' + (d.message || '') + '</span>';
+        });
+      });
+    }
+  }
+
   function load() {
     var user = uid();
     var q = encodeURIComponent(user);
@@ -457,6 +591,7 @@
     fetchJson(base() + '/api/nft/wallet?user_id=' + q).then(function (res) {
       renderNftWallet(res.data);
     });
+    loadExchangeWallets();
   }
 
   global.ProfileMn2Wallet = { load: load, requestDepositAddress: requestDepositAddress };

@@ -29,9 +29,9 @@
 <body class="layout-standard">
     <main class="wallet-page">
         <section class="wallet-hero">
-            <p class="wallet-muted">MN2 wallet portal</p>
+            <p class="wallet-muted">MN2 + exchange coin wallets</p>
             <h1>Wallets</h1>
-            <p class="wallet-muted">One place for wallet balance, deposits, withdrawals, trusted addresses, exchange wallet actions, and daemon downloads.</p>
+            <p class="wallet-muted">On-chain MN2 plus custodial balances for every tradeable exchange coin — profiles and agents each keep their own per-coin wallets.</p>
             <div class="wallet-actions">
                 <a class="wallet-btn" href="/profile#profile-mn2-wallet-card">Open profile wallet</a>
                 <a class="wallet-btn secondary" href="/exchange#cex-account-bridge">Open exchange hub</a>
@@ -39,6 +39,12 @@
             </div>
         </section>
         <section class="wallet-grid" aria-label="Wallet sections">
+            <article class="wallet-card">
+                <h2>Multi-wallet (all coins)</h2>
+                <p class="wallet-muted">Deposit and withdraw every exchange coin from one wallet. One multi-daemon runs balances, deposits, and withdraws for all coins — not one daemon per coin.</p>
+                <a class="wallet-btn" href="/profile?tab=wallet">Open profile wallets</a>
+                <a class="wallet-btn secondary" href="/exchange?tab=withdraw">Deposit / withdraw desk</a>
+            </article>
             <article class="wallet-card">
                 <h2>Deposit & withdraw</h2>
                 <p class="wallet-muted">Request a deposit address, submit withdrawals, manage trusted addresses, and review wallet transactions from the profile wallet card.</p>

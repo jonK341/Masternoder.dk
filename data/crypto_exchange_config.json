@@ -2,7 +2,30 @@
   "enabled": true,
   "name": "MasterNoder Exchange",
   "jurisdiction": "EU-DK",
-  "legal_notice": "Custodial simulated trading for platform credits. Not a licensed MiCA CASP. Tax records are informational — consult your tax advisor. Promotional bonuses require terms acceptance.",
+  "legal_notice": "Custodial exchange. MN2 settles on-chain via the platform wallet. USDT/USDC markets are live and transferable when backed by venue inventory — not paper inventing. Not a licensed MiCA CASP. Tax records are informational — consult your tax advisor. Promotional bonuses require terms acceptance.",
+  "stable_markets": {
+    "paper_mode": false,
+    "transferable": true,
+    "withdraw_enabled": true,
+    "default_networks": {"USDT": "TRC20", "USDC": "ETH"},
+    "min_withdraw": {"USDT": 10, "USDC": 10}
+  },
+  "multi_wallet": {
+    "enabled": true,
+    "one_daemon": true,
+    "daemon_script": "scripts/exchange_multi_wallet_daemon.py",
+    "default_networks": {
+      "USDT": "TRC20", "USDC": "ETH", "BTC": "BTC", "ETH": "ETH", "BNB": "BSC",
+      "SOL": "SOL", "XRP": "XRP", "ADA": "ADA", "DOGE": "DOGE", "DOT": "STATEMINT",
+      "POL": "MATIC", "LTC": "LTC", "AVAX": "AVAXC", "LINK": "ETH", "UNI": "ETH",
+      "ATOM": "ATOM", "XLM": "XLM", "ALGO": "ALGO", "TRX": "TRX", "NEAR": "NEAR",
+      "ARB": "ARBITRUM", "OP": "OPTIMISM", "SHIB": "ETH", "DASH": "DASH"
+    },
+    "min_withdraw": {
+      "USDT": 10, "USDC": 10, "BTC": 0.0002, "ETH": 0.002, "BNB": 0.01,
+      "SOL": 0.05, "XRP": 10, "ADA": 5, "DOGE": 50, "LTC": 0.02
+    }
+  },
   "quote_currencies": ["MN2", "COINS", "USDC", "USDT"],
   "default_quote": "MN2",
   "platform_fees": {
@@ -35,18 +58,23 @@
     "note": "Append-only hash-chained audit log for trades, fiat captures, agent actions, and risk denials."
   },
   "agent_trading": {
-    "enabled": true,
+    "enabled": false,
     "daemon_interval_sec": 300,
     "max_trade_mn2_per_tick": 2.5,
     "seed_mn2_per_agent": 25.0,
+    "live_venue_trading": false,
+    "venue_id": "binance",
+    "max_trade_usd_per_tick": 8,
+    "max_agents_per_tick": 2,
+    "min_venue_quote_reserve_usd": 20,
     "agents": [
-      {"id": "exchange_agent_stable_router", "name": "Stable Router", "strategy": "stable_rebalance", "assets": ["USDC", "USDT"], "enabled": true},
-      {"id": "exchange_agent_layer1_scout", "name": "Layer-1 Scout", "strategy": "layer1_rotation", "assets": ["BTC", "ETH", "SOL", "ADA", "AVAX"], "enabled": true},
-      {"id": "exchange_agent_casino_liquidity", "name": "Casino Liquidity Bot", "strategy": "casino_liquidity", "assets": ["MN2", "USDC", "DASH"], "enabled": true},
-      {"id": "exchange_agent_meme_hunter", "name": "Meme Hunter", "strategy": "meme_momentum", "assets": ["DOGE", "SHIB"], "enabled": true},
-      {"id": "exchange_agent_defi_router", "name": "DeFi Router", "strategy": "defi_rotation", "assets": ["LINK", "UNI", "ATOM", "ARB", "OP", "NEAR"], "enabled": true},
-      {"id": "exchange_agent_payments_hub", "name": "Payments Hub", "strategy": "payments_routing", "assets": ["XRP", "LTC", "XLM", "TRX", "DASH"], "enabled": true},
-      {"id": "exchange_agent_mn2_yield", "name": "MN2 Yield Farmer", "strategy": "native_yield", "assets": ["MN2", "BNB", "DOT"], "enabled": true}
+      {"id": "exchange_agent_stable_router", "name": "Stable Router", "strategy": "stable_rebalance", "assets": ["USDC", "USDT", "BTC", "ETH"], "enabled": true},
+      {"id": "exchange_agent_layer1_scout", "name": "Layer-1 Scout", "strategy": "layer1_rotation", "assets": ["BTC", "ETH", "SOL", "ADA", "XRP"], "enabled": true},
+      {"id": "exchange_agent_casino_liquidity", "name": "Casino Liquidity Bot", "strategy": "casino_liquidity", "assets": ["MN2", "USDC", "LTC", "XRP", "DOGE"], "enabled": true},
+      {"id": "exchange_agent_meme_hunter", "name": "Meme Hunter", "strategy": "meme_momentum", "assets": ["DOGE", "XRP", "SOL"], "enabled": true},
+      {"id": "exchange_agent_defi_router", "name": "DeFi Router", "strategy": "defi_rotation", "assets": ["ETH", "BTC", "SOL", "LINK", "ADA"], "enabled": true},
+      {"id": "exchange_agent_payments_hub", "name": "Payments Hub", "strategy": "payments_routing", "assets": ["XRP", "LTC", "DOGE", "BTC"], "enabled": true},
+      {"id": "exchange_agent_mn2_yield", "name": "MN2 Yield Farmer", "strategy": "native_yield", "assets": ["MN2", "BNB", "ETH", "BTC"], "enabled": true}
     ]
   },
   "tax": {

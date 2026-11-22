@@ -146,26 +146,114 @@ def _wallet_path(user_id: str) -> str:
     return os.path.join(_WALLETS_DIR, f"{safe}.json")
 
 
+def _ensure_catalog_asset_slots(assets: Dict[str, Any], cfg: Optional[Dict] = None) -> Tuple[Dict[str, float], bool]:
+    """Guarantee every tradeable catalog coin exists in the custodial wallet map."""
+    cfg = cfg or load_config()
+    out: Dict[str, float] = {}
+    changed = False
+    for raw_sym, raw_amt in (assets or {}).items():
+        sym = str(raw_sym or "").strip().upper()
+        if not sym:
+            continue
+        try:
+            out[sym] = round(float(raw_amt or 0), 12)
+        except (TypeError, ValueError):
+            out[sym] = 0.0
+            changed = True
+    for sym in _asset_map(cfg):
+        if sym == "MN2":
+            continue
+        if sym not in out:
+            out[sym] = 0.0
+            changed = True
+    for stable in _STABLE_QUOTES:
+        if stable not in out:
+            out[stable] = 0.0
+            changed = True
+    return out, changed
+
+
+def _wallet_rows(assets: Dict[str, float], mn2_balance: float, cfg: Optional[Dict] = None) -> List[Dict[str, Any]]:
+    """Ordered per-coin wallet rows for profiles, agents, and exchange UI."""
+    cfg = cfg or load_config()
+    rows: List[Dict[str, Any]] = []
+    for a in cfg.get("assets") or []:
+        if not isinstance(a, dict):
+            continue
+        sym = str(a.get("symbol") or "").strip().upper()
+        if not sym:
+            continue
+        bal = float(mn2_balance or 0) if sym == "MN2" else float(assets.get(sym) or 0)
+        price = float(_price_usd(sym, cfg) or 0)
+        rows.append({
+            "symbol": sym,
+            "name": a.get("name") or sym,
+            "type": a.get("type") or "crypto",
+            "category": a.get("category") or "",
+            "decimals": int(a.get("decimals") or 8),
+            "balance": round(bal, 12),
+            "price_usd": round(price, 8),
+            "usd_value": round(bal * price, 4),
+        })
+    return rows
+
+
 def get_wallet(user_id: str) -> Dict[str, Any]:
     uid = str(user_id or "").strip()
     if not uid:
         return {"success": False, "error": "user_id required"}
-    data = _read_json(_wallet_path(uid), {"assets": {}, "staking": {}, "bonus": {}, "volume_usd_30d": 0})
-    assets = data.get("assets") if isinstance(data.get("assets"), dict) else {}
-    for stable in _STABLE_QUOTES:
-        assets.setdefault(stable, 0.0)
-    mn2_balance = _get_quote_balance(uid, "MN2")
-    coins_balance = _get_quote_balance(uid, "COINS")
+    cfg = load_config()
+    path = _wallet_path(uid)
+    data = _read_json(path, {"assets": {}, "staking": {}, "bonus": {}, "volume_usd_30d": 0})
+    raw_assets = data.get("assets") if isinstance(data.get("assets"), dict) else {}
+    assets, changed = _ensure_catalog_asset_slots(raw_assets, cfg)
+    if changed:
+        data["assets"] = assets
+        _write_json(path, data)
+    try:
+        mn2_balance = _get_quote_balance(uid, "MN2")
+    except Exception:
+        mn2_balance = 0.0
+    try:
+        coins_balance = _get_quote_balance(uid, "COINS")
+    except Exception:
+        coins_balance = 0.0
+    wallets = _wallet_rows(assets, mn2_balance, cfg)
+    total_usd = round(sum(float(r.get("usd_value") or 0) for r in wallets), 4)
     return {
         "success": True,
         "user_id": uid,
         "assets": assets,
+        "wallets": wallets,
+        "wallet_count": len(wallets),
+        "total_usd": total_usd,
         "mn2_balance": round(mn2_balance, 8),
         "coins_balance": round(coins_balance, 8),
         "staking": data.get("staking") or {},
         "bonus": data.get("bonus") or {},
         "volume_usd_30d": float(data.get("volume_usd_30d") or 0),
     }
+
+
+def ensure_agent_wallets() -> Dict[str, Any]:
+    """Create/refresh custodial wallets for every exchange agent with all catalog coins."""
+    cfg = load_config()
+    agents_cfg = cfg.get("agent_trading") if isinstance(cfg.get("agent_trading"), dict) else {}
+    ensured: List[str] = []
+    for row in agents_cfg.get("agents") or []:
+        if not isinstance(row, dict):
+            continue
+        aid = str(row.get("id") or "").strip()
+        if not aid:
+            continue
+        get_wallet(aid)
+        ensured.append(aid)
+    # Sales / pool liquidity accounts also need full coin slots.
+    for extra in ("exchange_sales_pool", "platform_treasury", "exchange_mn2_pool_reserve"):
+        get_wallet(extra)
+        if extra not in ensured:
+            ensured.append(extra)
+    return {"success": True, "ensured": ensured, "count": len(ensured)}
 
 
 def _save_wallet(user_id: str, data: dict) -> None:
@@ -454,6 +542,12 @@ def get_catalog() -> Dict[str, Any]:
             "price_usdc": _price_in_quote(sym, "USDC", cfg),
         })
     quotes = _quote_currencies(cfg)
+    stable_markets = None
+    try:
+        from backend.services.exchange_stable_markets_service import stable_markets_status
+        stable_markets = stable_markets_status()
+    except Exception:
+        stable_markets = cfg.get("stable_markets")
     return {
         "success": True,
         "enabled": bool(cfg.get("enabled", True)),
@@ -469,6 +563,7 @@ def get_catalog() -> Dict[str, Any]:
         "assets": assets,
         "asset_count": len(assets),
         "mn2_usd": _mn2_usd(),
+        "stable_markets": stable_markets,
     }
 
 
@@ -1410,6 +1505,12 @@ def health() -> Dict[str, Any]:
         pool_summary = mn2_pool_status()
     except Exception:
         pass
+    stable_markets = None
+    try:
+        from backend.services.exchange_stable_markets_service import stable_markets_status
+        stable_markets = stable_markets_status()
+    except Exception:
+        pass
     return {
         "success": True,
         "service": "crypto_exchange",
@@ -1418,6 +1519,8 @@ def health() -> Dict[str, Any]:
         "quote_currencies": _quote_currencies(cfg),
         "treasury_fees_mn2": tre.get("total_fees_mn2"),
         "mn2_pool": pool_summary,
+        "stable_markets": stable_markets,
+        "paper_mode": bool((stable_markets or {}).get("paper_mode")) if isinstance(stable_markets, dict) else None,
         "timestamp": _iso(),
     }
 

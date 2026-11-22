@@ -66,6 +66,119 @@ def exchange_wallet():
     return jsonify(ex.get_wallet(_uid()))
 
 
+@crypto_exchange_bp.route("/api/exchange/wallets/ensure", methods=["POST"])
+def exchange_wallets_ensure():
+    """Ensure the caller (and optionally agents) have slots for every tradeable coin."""
+    data = request.get_json(silent=True) or {}
+    uid = _uid(from_body=True)
+    wallet = ex.get_wallet(uid) if uid else {"success": False, "error": "user_id required"}
+    agents = None
+    if data.get("agents") or data.get("include_agents"):
+        agents = ex.ensure_agent_wallets()
+    return jsonify({"success": bool(wallet.get("success")), "wallet": wallet, "agents": agents})
+
+
+@crypto_exchange_bp.route("/api/exchange/stable-markets", methods=["GET"])
+def exchange_stable_markets():
+    from backend.services.exchange_stable_markets_service import stable_markets_status
+    return jsonify(stable_markets_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/stable-markets/sync", methods=["POST"])
+def exchange_stable_markets_sync():
+    from backend.services.exchange_stable_markets_service import sync_sales_pool_stables_from_venue
+    data = request.get_json(silent=True) or {}
+    return jsonify(sync_sales_pool_stables_from_venue(dry_run=bool(data.get("dry_run"))))
+
+
+@crypto_exchange_bp.route("/api/exchange/withdraw/stable", methods=["POST"])
+def exchange_withdraw_stable():
+    from backend.services.exchange_stable_markets_service import withdraw_user_stable
+    data = request.get_json(silent=True) or {}
+    result = withdraw_user_stable(
+        _uid(from_body=True),
+        data.get("asset") or data.get("symbol") or "",
+        float(data.get("amount") or 0),
+        (data.get("address") or "").strip(),
+        data.get("network"),
+    )
+    code = 200 if result.get("success") else 400
+    return jsonify(result), code
+
+
+@crypto_exchange_bp.route("/api/exchange/multi-wallet", methods=["GET"])
+def exchange_multi_wallet():
+    from backend.services.exchange_multi_wallet_service import multi_wallet_overview
+    return jsonify(multi_wallet_overview(_uid()))
+
+
+@crypto_exchange_bp.route("/api/exchange/deposit", methods=["GET"])
+def exchange_deposit_info():
+    from backend.services.exchange_multi_wallet_service import get_deposit_instructions
+    amount = request.args.get("amount")
+    return jsonify(get_deposit_instructions(
+        _uid(),
+        (request.args.get("asset") or request.args.get("symbol") or "").strip(),
+        amount=float(amount) if amount not in (None, "") else None,
+        network=request.args.get("network"),
+    ))
+
+
+@crypto_exchange_bp.route("/api/exchange/deposit/intent", methods=["POST"])
+def exchange_deposit_intent():
+    from backend.services.exchange_multi_wallet_service import create_deposit_intent
+    data = request.get_json(silent=True) or {}
+    result = create_deposit_intent(
+        _uid(from_body=True),
+        data.get("asset") or data.get("symbol") or "",
+        float(data.get("amount") or 0),
+        network=data.get("network"),
+    )
+    return jsonify(result), (200 if result.get("success") else 400)
+
+
+@crypto_exchange_bp.route("/api/exchange/deposit/confirm", methods=["POST"])
+def exchange_deposit_confirm():
+    from backend.services.exchange_multi_wallet_service import confirm_deposit_txid
+    data = request.get_json(silent=True) or {}
+    amount = data.get("amount")
+    result = confirm_deposit_txid(
+        _uid(from_body=True),
+        data.get("asset") or data.get("symbol") or "",
+        (data.get("txid") or "").strip(),
+        amount=float(amount) if amount not in (None, "") else None,
+        intent_id=data.get("intent_id"),
+    )
+    return jsonify(result), (200 if result.get("success") else 400)
+
+
+@crypto_exchange_bp.route("/api/exchange/withdraw", methods=["POST"])
+def exchange_withdraw_any():
+    from backend.services.exchange_multi_wallet_service import withdraw_user_asset
+    data = request.get_json(silent=True) or {}
+    result = withdraw_user_asset(
+        _uid(from_body=True),
+        data.get("asset") or data.get("symbol") or "",
+        float(data.get("amount") or 0),
+        (data.get("address") or "").strip(),
+        data.get("network"),
+    )
+    return jsonify(result), (200 if result.get("success") else 400)
+
+
+@crypto_exchange_bp.route("/api/exchange/multi-wallet/daemon", methods=["GET"])
+def exchange_multi_wallet_daemon_status():
+    from backend.services.exchange_multi_wallet_service import daemon_status
+    return jsonify(daemon_status())
+
+
+@crypto_exchange_bp.route("/api/exchange/multi-wallet/tick", methods=["POST"])
+def exchange_multi_wallet_tick():
+    from backend.services.exchange_multi_wallet_service import run_multi_wallet_tick
+    data = request.get_json(silent=True) or {}
+    return jsonify(run_multi_wallet_tick(force=bool(data.get("force"))))
+
+
 @crypto_exchange_bp.route("/api/exchange/quote", methods=["POST"])
 def exchange_quote():
     data = request.get_json(silent=True) or {}

@@ -7,7 +7,9 @@
   var selected = 'BTC';
   var catalog = null;
   var lastQuote = null;
+  var lastWallet = null;
   var termsVersion = '2026-06-v1';
+  var quoteCurrencies = ['MN2', 'COINS', 'USDC', 'USDT'];
 
   function uid() {
     try { return localStorage.getItem('game_user_id') || (window.MnUserId ? window.MnUserId.read() : ''); }
@@ -16,7 +18,13 @@
 
   function q(id) { return document.getElementById(id); }
 
-  function msg(t) { var el = q('cex-msg'); if (el) el.textContent = t || ''; }
+  function msg(t, kind) {
+    var el = q('cex-msg');
+    if (!el) return;
+    el.textContent = t || '';
+    el.classList.remove('is-ok', 'is-err', 'is-info');
+    if (kind) el.classList.add(kind);
+  }
 
   function fmt(n, d) {
     var x = Number(n || 0);
@@ -76,23 +84,251 @@
     if (el) el.textContent = label;
     if (lim) lim.value = selected;
     if (q('cex-paypal-symbol')) q('cex-paypal-symbol').value = selected;
+    if (q('cex-swap-asset-label')) q('cex-swap-asset-label').value = selected;
+    lastQuote = null;
+    setConfirmEnabled(false);
+    var prev = q('cex-quote-preview');
+    if (prev) prev.innerHTML = '<span class="cex-quote-meta">Asset updated — get a fresh quote.</span>';
+  }
+
+  function setConfirmEnabled(on) {
+    var btn = q('cex-swap-confirm');
+    if (btn) btn.disabled = !on;
+  }
+
+  function fillQuoteSelect(list) {
+    var sel = q('cex-swap-quote');
+    if (!sel || !list || !list.length) return;
+    quoteCurrencies = list.slice();
+    var cur = sel.value || 'MN2';
+    sel.innerHTML = list.map(function (c) {
+      var label = c === 'COINS' ? 'Coins' : c;
+      return '<option value="' + c + '">' + label + '</option>';
+    }).join('');
+    if (list.indexOf(cur) >= 0) sel.value = cur;
+    else sel.value = list[0];
+  }
+
+  function renderSwapBalances(w) {
+    if (!w || !w.success) return;
+    var assets = w.assets || {};
+    function setBal(id, n) {
+      var el = q(id);
+      if (el) el.textContent = fmt(n, n != null && Math.abs(n) < 1 ? 4 : 2);
+    }
+    setBal('cex-swap-bal-mn2', w.mn2_balance);
+    setBal('cex-swap-bal-coins', w.coins_balance);
+    setBal('cex-swap-bal-usdc', assets.USDC);
+    setBal('cex-swap-bal-usdt', assets.USDT);
+    updateWithdrawAvailable();
+  }
+
+  function fillAssetSelects() {
+    var symbols = [];
+    if (catalog && catalog.assets) {
+      symbols = catalog.assets.map(function (a) { return a.symbol; }).filter(Boolean);
+    } else {
+      symbols = ['USDT', 'USDC', 'BTC', 'ETH'];
+    }
+    ['cex-wd-asset', 'cex-dep-asset'].forEach(function (id) {
+      var el = q(id);
+      if (!el) return;
+      var cur = el.value;
+      el.innerHTML = symbols.filter(function (s) { return s !== 'MN2'; }).map(function (s) {
+        return '<option value="' + s + '">' + s + '</option>';
+      }).join('') + '<option value="MN2">MN2 (profile/on-chain)</option>';
+      if (cur && symbols.indexOf(cur) >= 0) el.value = cur;
+      else if (symbols.indexOf('USDT') >= 0) el.value = 'USDT';
+    });
+    updateWithdrawAvailable();
+  }
+
+  function updateWithdrawAvailable() {
+    var assetEl = q('cex-wd-asset');
+    var availEl = q('cex-wd-available');
+    if (!assetEl || !availEl) return;
+    var sym = (assetEl.value || 'USDT').toUpperCase();
+    var bal = 0;
+    if (lastWallet && lastWallet.success) {
+      if (sym === 'MN2') bal = Number(lastWallet.mn2_balance || 0);
+      else bal = Number((lastWallet.assets || {})[sym] || 0);
+    }
+    availEl.value = fmt(bal, bal && bal < 1 ? 6 : 4);
+  }
+
+  function loadStableMarketsStatus() {
+    var el = q('cex-stable-status');
+    if (!el) return;
+    Promise.all([
+      getJson('/api/exchange/multi-wallet/daemon').catch(function () { return null; }),
+      getJson('/api/exchange/stable-markets').catch(function () { return null; }),
+    ]).then(function (res) {
+      var d = res[0] || res[1];
+      if (!d || !d.success) {
+        el.textContent = 'Could not load multi-wallet status.';
+        return;
+      }
+      if (d.one_daemon) {
+        el.textContent = 'One multi-daemon · ' + (d.tradeable_coins || []).length +
+          ' coins · withdraw ' + (d.withdraw_live ? 'live' : 'needs live gates') +
+          (d.venue_credentials ? '' : ' · Binance keys required') +
+          (d.last_tick_at ? ' · last tick ' + String(d.last_tick_at).slice(0, 19) : '');
+        return;
+      }
+      if (d.paper_mode) {
+        el.textContent = 'Paper mode is on — balances are not transferable.';
+        return;
+      }
+      el.textContent = 'Multi-wallet ready.';
+    }).catch(function () {
+      el.textContent = 'Could not load multi-wallet status.';
+    });
+  }
+
+  function doDepositAddress() {
+    if (!uid()) { msg('Sign in first.', 'is-err'); return; }
+    var asset = ((q('cex-dep-asset') || {}).value || 'USDT').toUpperCase();
+    var amount = (q('cex-dep-amount') || {}).value;
+    var path = '/api/exchange/deposit?asset=' + encodeURIComponent(asset) +
+      '&user_id=' + encodeURIComponent(uid()) +
+      (amount ? '&amount=' + encodeURIComponent(amount) : '');
+    getJson(path).then(function (res) {
+      var box = q('cex-dep-info');
+      if (!box) return;
+      if (!res || !res.success) {
+        box.innerHTML = '<span class="cex-quote-meta">' + ((res && (res.message || res.error)) || 'Failed') + '</span>';
+        return;
+      }
+      box.innerHTML =
+        '<div><strong>' + res.asset + '</strong> on ' + (res.network || '—') +
+        ' · rail ' + (res.rail || '') + '</div>' +
+        '<div style="word-break:break-all;margin-top:6px"><code>' + (res.address || '—') + '</code></div>' +
+        (res.tag ? '<div>Memo/tag: <code>' + res.tag + '</code></div>' : '') +
+        '<div class="cex-quote-meta" style="margin-top:6px">' + (res.message || '') + '</div>';
+      if (res.network && q('cex-wd-network') && asset === ((q('cex-wd-asset') || {}).value || '')) {
+        q('cex-wd-network').value = res.network;
+      }
+    });
+  }
+
+  function doDepositIntent() {
+    if (!uid()) { msg('Sign in first.', 'is-err'); return; }
+    var asset = ((q('cex-dep-asset') || {}).value || 'USDT').toUpperCase();
+    var amount = Number((q('cex-dep-amount') || {}).value || 0);
+    if (amount <= 0) { msg('Enter the exact deposit amount for the intent.', 'is-err'); return; }
+    postJson('/api/exchange/deposit/intent', { asset: asset, amount: amount }).then(function (res) {
+      if (res && res.success) {
+        msg('Deposit intent ' + (res.intent && res.intent.intent_id) + ' created for ' + amount + ' ' + asset, 'is-ok');
+        doDepositAddress();
+      } else {
+        msg((res && (res.message || res.error)) || 'Intent failed', 'is-err');
+      }
+    });
+  }
+
+  function doDepositConfirm() {
+    if (!uid()) { msg('Sign in first.', 'is-err'); return; }
+    var asset = ((q('cex-dep-asset') || {}).value || 'USDT').toUpperCase();
+    var txid = ((q('cex-dep-txid') || {}).value || '').trim();
+    var amount = Number((q('cex-dep-amount') || {}).value || 0);
+    if (!txid) { msg('Paste the deposit txid.', 'is-err'); return; }
+    postJson('/api/exchange/deposit/confirm', {
+      asset: asset, txid: txid, amount: amount || undefined
+    }).then(function (res) {
+      if (res && res.success) {
+        msg('Credited ' + fmt(res.credited && res.credited.amount, 6) + ' ' + asset, 'is-ok');
+        if (res.wallet) renderWallet(res.wallet);
+        else refresh();
+      } else {
+        msg((res && (res.message || res.error)) || 'Confirm failed', 'is-err');
+      }
+    });
+  }
+
+  function doStableWithdraw() {
+    if (!uid()) { msg('Sign in to withdraw.', 'is-err'); return; }
+    var asset = ((q('cex-wd-asset') || {}).value || 'USDT').toUpperCase();
+    if (asset === 'MN2') {
+      msg('Use Profile → Wallet → Withdraw for on-chain MN2.', 'is-info');
+      window.location.href = '/profile?tab=wallet';
+      return;
+    }
+    var amount = Number((q('cex-wd-amount') || {}).value || 0);
+    var address = ((q('cex-wd-address') || {}).value || '').trim();
+    var network = ((q('cex-wd-network') || {}).value || '').toUpperCase();
+    if (!address || amount <= 0) {
+      msg('Enter a destination address and amount.', 'is-err');
+      return;
+    }
+    msg('Submitting ' + asset + ' withdraw…', 'is-info');
+    postJson('/api/exchange/withdraw', {
+      asset: asset,
+      amount: amount,
+      address: address,
+      network: network || undefined
+    }).then(function (res) {
+      if (res && res.success) {
+        msg('Withdrawn ' + fmt(res.withdrawn && res.withdrawn.send_amount, 6) + ' ' + asset +
+          ' (id ' + ((res.withdrawn && res.withdrawn.withdraw_id) || 'pending') + ').', 'is-ok');
+        if (res.wallet) renderWallet(res.wallet);
+        else refresh();
+      } else {
+        msg((res && (res.message || res.error)) || 'Withdraw failed', 'is-err');
+      }
+    }).catch(function () {
+      msg('Withdraw request failed', 'is-err');
+    });
+  }
+
+  function quoteBalanceAvailable() {
+    var quote = ((q('cex-swap-quote') || {}).value || 'MN2').toUpperCase();
+    if (!lastWallet || !lastWallet.success) return 0;
+    if (quote === 'MN2') return Number(lastWallet.mn2_balance || 0);
+    if (quote === 'COINS') return Number(lastWallet.coins_balance || 0);
+    return Number((lastWallet.assets || {})[quote] || 0);
+  }
+
+  function assetBalanceAvailable() {
+    if (!lastWallet || !lastWallet.success) return 0;
+    return Number((lastWallet.assets || {})[selected] || 0);
   }
 
   function renderWallet(w) {
+    lastWallet = w;
     if (window.CexAccountBridge && window.CexAccountBridge.onExchangeWallet) {
       window.CexAccountBridge.onExchangeWallet(w);
     }
+    renderSwapBalances(w);
     var el = q('cex-wallet-balances');
     if (!el || !w || !w.success) return;
-    var assets = w.assets || {};
-    var keys = Object.keys(assets).filter(function (k) { return Number(assets[k]) > 0; });
-    if (!keys.length) {
-      el.innerHTML = '<p class="cex-muted">No exchange balances yet. Buy assets via swap.</p>';
+    var rows = w.wallets || [];
+    if (!rows.length) {
+      var assets = w.assets || {};
+      rows = Object.keys(assets).sort().map(function (k) {
+        return { symbol: k, balance: assets[k] };
+      });
+      if (w.mn2_balance != null) {
+        rows.unshift({ symbol: 'MN2', balance: w.mn2_balance });
+      }
+    }
+    var lines = rows.map(function (r) {
+      var bal = Number(r.balance || 0);
+      var cls = bal > 0 ? 'cex-wallet-row is-funded' : 'cex-wallet-row';
+      return '<div class="' + cls + '"><span>' + (r.symbol || '?') +
+        (r.name && r.name !== r.symbol ? ' <small class="cex-muted">' + r.name + '</small>' : '') +
+        '</span><strong>' + fmt(bal, bal && bal < 1 ? 6 : 4) + '</strong></div>';
+    });
+    if (Number(w.coins_balance || 0) > 0) {
+      lines.unshift('<div class="cex-wallet-row is-funded"><span>Coins (shop)</span><strong>' +
+        fmt(w.coins_balance, 2) + '</strong></div>');
+    }
+    if (!lines.length) {
+      el.innerHTML = '<p class="cex-muted">No coin wallets yet. Sign in to open all market wallets.</p>';
       return;
     }
-    el.innerHTML = keys.map(function (k) {
-      return '<div class="cex-wallet-row"><span>' + k + '</span><strong>' + fmt(assets[k], 8) + '</strong></div>';
-    }).join('');
+    el.innerHTML = '<p class="cex-muted" style="margin:0 0 8px">' +
+      (w.wallet_count || rows.length) + ' coin wallets · ~$' + fmt(w.total_usd, 2) +
+      '</p>' + lines.join('');
   }
 
   function renderRewards(r) {
@@ -188,8 +424,17 @@
     }
     list.innerHTML = agents.map(function (a) {
       var last = (a.state && a.state.last_action) || {};
+      var w = a.wallet || {};
+      var wallets = w.wallets || [];
+      var funded = wallets.filter(function (r) { return Number(r.balance || 0) > 0; });
+      var balLine = (funded.length ? funded : wallets.slice(0, 6)).map(function (r) {
+        return r.symbol + ' ' + fmt(r.balance, 4);
+      }).join(' · ');
       return '<div class="cex-agent-row"><strong>' + (a.name || a.id) + '</strong><br>' +
         (a.strategy || 'rotation') + ' · ' + ((a.assets || []).join(', ') || 'all') +
+        '<br><span class="cex-muted">' + (w.wallet_count || wallets.length) + ' wallets · MN2 ' +
+        fmt(w.mn2_balance, 4) + ' · ~$' + fmt(w.total_usd, 2) + '</span>' +
+        (balLine ? '<br>' + balLine : '') +
         (last.symbol ? '<br>Last: ' + last.side + ' ' + last.symbol + ' ' + fmt(last.amount, 6) : '') +
         '</div>';
     }).join('');
@@ -291,14 +536,17 @@
         if (catalog.lawful_bonus && q('cex-bonus-desc')) {
           q('cex-bonus-desc').textContent = catalog.lawful_bonus.terms_summary || q('cex-bonus-desc').textContent;
         }
+        var quotes = catalog.quote_currencies || catalog.quotes || quoteCurrencies;
+        fillQuoteSelect(quotes);
         renderAssets(catalog.assets);
         renderStaking(catalog.assets);
+        fillAssetSelects();
         updateSelected();
       }
       renderWallet(res[1]);
       renderRewards(res[2]);
       renderTrades(res[3]);
-    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); } msg('Could not load exchange data.'); });
+    }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'crypto-exchange.js', context: 'catch' }); } msg('Could not load exchange data.', 'is-err'); });
   }
 
   function loadMn2Packs() {
@@ -349,28 +597,59 @@
     });
   }
 
+  function renderQuoteCard(res) {
+    var prev = q('cex-quote-preview');
+    if (!prev) return;
+    var main = res.side === 'buy'
+      ? 'Pay ' + fmt(res.quote_cost, 6) + ' ' + res.quote_currency + ' → get ' + fmt(res.amount, 8) + ' ' + res.symbol
+      : 'Sell ' + fmt(res.amount, 8) + ' ' + res.symbol + ' → get ' + fmt(res.quote_received, 6) + ' ' + res.quote_currency;
+    var meta = 'Fee ' + fmt(res.fee_quote, 6) + ' ' + res.quote_currency +
+      ' · ' + res.fee_bps + ' bps · ~$' + fmt(res.usd_value, 2) +
+      (res.expires_at ? ' · expires ' + String(res.expires_at).slice(11, 19) + ' UTC' : '');
+    prev.innerHTML = '<div class="cex-quote-main">' + main + '</div><div class="cex-quote-meta">' + meta + '</div>';
+  }
+
   function doQuote() {
+    if (!uid()) {
+      msg('Set your profile user ID first (Profile → Account).', 'is-err');
+      return;
+    }
     var amount = parseFloat((q('cex-swap-amount') || {}).value || '0');
-    if (!amount) { msg('Enter amount'); return; }
+    var quote = ((q('cex-swap-quote') || {}).value || 'MN2').toUpperCase();
+    var side = (q('cex-swap-side') || {}).value || 'buy';
+    if (!amount || amount <= 0) { msg('Enter an amount greater than zero.', 'is-err'); return; }
+    if (selected === quote) { msg('Pick a different market asset than the quote currency.', 'is-err'); return; }
+    setConfirmEnabled(false);
+    msg('Fetching quote…', 'is-info');
     postJson('/api/exchange/quote', {
       symbol: selected,
-      side: (q('cex-swap-side') || {}).value || 'buy',
+      side: side,
       amount: amount,
-      quote: (q('cex-swap-quote') || {}).value || 'MN2',
+      quote: quote,
     }).then(function (res) {
-      if (!res.success) { msg(res.error || 'Quote failed'); return; }
+      if (!res.success) {
+        lastQuote = null;
+        msg(res.error || 'Quote failed', 'is-err');
+        return;
+      }
       lastQuote = res;
-      var prev = q('cex-quote-preview');
-      var line = res.side === 'buy'
-        ? 'Cost: ' + fmt(res.quote_cost, 6) + ' ' + res.quote_currency + ' · Fee: ' + fmt(res.fee_quote, 6)
-        : 'Receive: ' + fmt(res.quote_received, 6) + ' ' + res.quote_currency + ' · Fee: ' + fmt(res.fee_quote, 6);
-      if (prev) prev.textContent = line + ' · ' + res.fee_bps + ' bps · ~$' + fmt(res.usd_value, 2);
-      msg('Quote ready — confirm swap');
+      renderQuoteCard(res);
+      setConfirmEnabled(true);
+      msg('Quote ready — confirm to execute.', 'is-ok');
+    }).catch(function () {
+      lastQuote = null;
+      msg('Quote request failed.', 'is-err');
     });
   }
 
   function doSwap() {
     if (!lastQuote) { doQuote(); return; }
+    if (!uid()) {
+      msg('Set your profile user ID first (Profile → Account).', 'is-err');
+      return;
+    }
+    setConfirmEnabled(false);
+    msg('Executing swap…', 'is-info');
     postJson('/api/exchange/swap', {
       quote_id: lastQuote.quote_id,
       symbol: lastQuote.symbol,
@@ -379,14 +658,59 @@
       quote: lastQuote.quote_currency,
     }).then(function (res) {
       if (res.success) {
-        msg('Swap complete');
+        msg('Swap complete — balances updated.', 'is-ok');
         lastQuote = null;
-        q('cex-quote-preview').textContent = '';
+        var prev = q('cex-quote-preview');
+        if (prev) prev.innerHTML = '<span class="cex-quote-meta">Swap filled. Get another quote when ready.</span>';
+        if (q('cex-swap-amount')) q('cex-swap-amount').value = '';
         refresh();
       } else {
-        msg(res.error || 'Swap failed');
+        setConfirmEnabled(true);
+        msg(res.error || 'Swap failed', 'is-err');
       }
+    }).catch(function () {
+      setConfirmEnabled(true);
+      msg('Swap request failed.', 'is-err');
     });
+  }
+
+  function applyQuickPct(pct) {
+    var side = (q('cex-swap-side') || {}).value || 'buy';
+    var amountInput = q('cex-swap-amount');
+    if (!amountInput) return;
+    lastQuote = null;
+    setConfirmEnabled(false);
+    if (side === 'sell') {
+      var hold = assetBalanceAvailable();
+      if (hold <= 0) { msg('No ' + selected + ' balance to sell.', 'is-err'); return; }
+      amountInput.value = String(hold * (pct / 100));
+      msg('Amount set to ' + pct + '% of your ' + selected + '.', 'is-info');
+      return;
+    }
+    var quote = ((q('cex-swap-quote') || {}).value || 'MN2').toUpperCase();
+    var spend = quoteBalanceAvailable();
+    var asset = (catalog && catalog.assets || []).find(function (a) { return a.symbol === selected; });
+    var price = asset ? Number(asset['price_' + quote.toLowerCase()] || asset.price_mn2 || 0) : 0;
+    if (quote === 'COINS' && asset && asset.price_coins) price = Number(asset.price_coins);
+    if (quote === 'USDC' && asset && asset.price_usdc) price = Number(asset.price_usdc);
+    if (quote === 'USDT' && asset && asset.price_usdt) price = Number(asset.price_usdt);
+    if (!(spend > 0) || !(price > 0)) {
+      msg('Need a ' + quote + ' balance and a live price to size the buy.', 'is-err');
+      return;
+    }
+    var budget = spend * (pct / 100);
+    var approx = budget / price;
+    amountInput.value = String(Number(approx.toPrecision(6)));
+    msg('Buy size ~' + pct + '% of your ' + quote + ' balance.', 'is-info');
+  }
+
+  function flipSide() {
+    var side = q('cex-swap-side');
+    if (!side) return;
+    side.value = side.value === 'buy' ? 'sell' : 'buy';
+    lastQuote = null;
+    setConfirmEnabled(false);
+    msg(side.value === 'buy' ? 'Buy mode — spend quote for asset.' : 'Sell mode — sell asset for quote.', 'is-info');
   }
 
   function doLimit() {
@@ -582,18 +906,58 @@
 
   function init() {
     initTabs();
-    q('cex-swap-btn').addEventListener('click', doSwap);
-    q('cex-swap-amount').addEventListener('change', function () { lastQuote = null; });
-    q('cex-limit-btn').addEventListener('click', doLimit);
-    q('cex-bonus-btn').addEventListener('click', doBonus);
-    q('cex-tax-btn').addEventListener('click', doTax);
-    q('cex-paypal-crypto-btn').addEventListener('click', doPayPalCrypto);
+    if (q('cex-quote-btn')) q('cex-quote-btn').addEventListener('click', doQuote);
+    if (q('cex-swap-confirm')) q('cex-swap-confirm').addEventListener('click', doSwap);
+    if (q('cex-swap-btn')) q('cex-swap-btn').addEventListener('click', doSwap);
+    if (q('cex-swap-flip')) q('cex-swap-flip').addEventListener('click', flipSide);
+    ['cex-swap-amount', 'cex-swap-side', 'cex-swap-quote'].forEach(function (id) {
+      var el = q(id);
+      if (!el) return;
+      el.addEventListener('change', function () {
+        lastQuote = null;
+        setConfirmEnabled(false);
+      });
+      if (id === 'cex-swap-amount') {
+        el.addEventListener('input', function () {
+          lastQuote = null;
+          setConfirmEnabled(false);
+        });
+      }
+    });
+    var quick = q('cex-quick-amts');
+    if (quick) {
+      quick.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('[data-pct]');
+        if (!btn) return;
+        applyQuickPct(Number(btn.getAttribute('data-pct') || 0));
+      });
+    }
+    if (q('cex-limit-btn')) q('cex-limit-btn').addEventListener('click', doLimit);
+    if (q('cex-bonus-btn')) q('cex-bonus-btn').addEventListener('click', doBonus);
+    if (q('cex-tax-btn')) q('cex-tax-btn').addEventListener('click', doTax);
+    if (q('cex-paypal-crypto-btn')) q('cex-paypal-crypto-btn').addEventListener('click', doPayPalCrypto);
+    if (q('cex-wd-btn')) q('cex-wd-btn').addEventListener('click', doStableWithdraw);
+    if (q('cex-wd-asset')) q('cex-wd-asset').addEventListener('change', function () {
+      updateWithdrawAvailable();
+      var asset = (q('cex-wd-asset').value || '').toUpperCase();
+      getJson('/api/exchange/deposit?asset=' + encodeURIComponent(asset) + '&user_id=' + encodeURIComponent(uid() || 'anon'))
+        .then(function (res) {
+          if (res && res.network && q('cex-wd-network')) q('cex-wd-network').value = res.network;
+        }).catch(function () {});
+    });
+    if (q('cex-dep-addr-btn')) q('cex-dep-addr-btn').addEventListener('click', doDepositAddress);
+    if (q('cex-dep-intent-btn')) q('cex-dep-intent-btn').addEventListener('click', doDepositIntent);
+    if (q('cex-dep-confirm-btn')) q('cex-dep-confirm-btn').addEventListener('click', doDepositConfirm);
+    fillAssetSelects();
+    loadStableMarketsStatus();
     if (q('cex-agent-tick-btn') && !q('cex-agent-tick-btn').disabled) {
       q('cex-agent-tick-btn').addEventListener('click', runAgentTick);
     }
-    q('cex-asset-search').addEventListener('input', function () {
-      if (catalog && catalog.assets) renderAssets(catalog.assets);
-    });
+    if (q('cex-asset-search')) {
+      q('cex-asset-search').addEventListener('input', function () {
+        if (catalog && catalog.assets) renderAssets(catalog.assets);
+      });
+    }
     if (window.ExchangeHub) {
       window.ExchangeHub.onTab('trade', function () {
         return refreshCore().then(refreshTradeExtras);

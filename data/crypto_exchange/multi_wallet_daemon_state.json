@@ -1,0 +1,10 @@
+{
+  "last_tick_at": "2026-11-21T17:16:38.917381Z",
+  "tick_count": 6,
+  "last_result": {
+    "ensure_agents": 10,
+    "ensure_users": 11,
+    "scan_credited": 0,
+    "venue_assets": 24
+  }
+}

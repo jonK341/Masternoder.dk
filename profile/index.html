@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="/static/css/nav-portal-themes.css?v=20261002">
     <link rel="stylesheet" href="/static/css/page-shell.css?v=20260623">
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
-    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20261121nav">
+    <link rel="stylesheet" href="/static/css/profile-hub.css?v=20261121sync">
     <link rel="stylesheet" href="/static/css/shop.css?v=20261001">
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
     <link rel="stylesheet" href="/static/css/intelligence-widget.css?v=20260305100000">
@@ -778,8 +778,8 @@
                 <div class="fp-hero-copy">
                     <p class="fp-kicker"><span>Profile hub</span><span id="profile-hero-user-pill">Loading…</span></p>
                     <h1 id="profile-hero-title">Your control room</h1>
-                    <p class="fp-tagline">Account · wallet · shop · agents · progress</p>
-                    <p class="fp-hero-text">Same visual language as the start page — big numbers first, one tap to the task you need. Your ID works everywhere on MasterNoder.</p>
+                    <p class="fp-tagline">Home · Wallet · Account · Progress · Play</p>
+                    <p class="fp-hero-text">One hub, five destinations. Numbers up top — pick a section for the tools that used to live in separate layouts.</p>
                     <div class="fp-hero-actions" aria-label="Profile actions">
                         <button type="button" class="fp-primary-action" id="profile-hero-refresh">Refresh data</button>
                         <a class="fp-secondary-action" href="/shop#shop-profile">Shop profile</a>
@@ -800,7 +800,7 @@
             <section class="fp-game-hub fp-section-compact profile-hub-tabs-wrap" aria-label="Profile sections">
                 <div class="fp-game-hub-head">
                     <p class="fp-kicker"><span>Navigate</span><span id="profile-hub-status">Home</span></p>
-                    <h2 class="profile-hub-tabs-title">Five places — pick one</h2>
+                    <h2 class="profile-hub-tabs-title">One section at a time</h2>
                 </div>
                 <nav class="gh-tabs gh-tabs--compact profile-hub-primary" id="profile-hub-nav" aria-label="Profile destinations" role="tablist">
                     <button type="button" class="gh-tab is-active" data-hub-group="home" role="tab" aria-selected="true"><span class="gh-tab-icon" aria-hidden="true">🏠</span><span class="gh-tab-label">Home</span></button>
@@ -811,7 +811,7 @@
                 </nav>
                 <nav id="profile-hub-jump" class="profile-hub-jump" aria-label="Jump within section" hidden></nav>
             </section>
-            <div id="profile-route-note" class="profile-route-note">Home · Wallet · Account · Progress · Play — use the jump chips for a specific card.</div>
+            <div id="profile-route-note" class="profile-route-note" hidden aria-hidden="true"></div>
             <nav class="profile-hub-dock" id="profile-hub-dock" aria-label="Profile quick nav">
                 <button type="button" class="profile-hub-dock-btn is-active" data-hub-group="home"><span aria-hidden="true">🏠</span><span>Home</span></button>
                 <button type="button" class="profile-hub-dock-btn" data-hub-group="wallet"><span aria-hidden="true">💠</span><span>Wallet</span></button>
@@ -821,9 +821,9 @@
             </nav>
 
             <!-- Account & Login first so it works even when profile is loading -->
-            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="account overview" style="margin-bottom: 20px;">
+            <div class="section-card account-card-top" id="profile-section-account" data-profile-route="account">
                 <h2 class="section-title">Account &amp; Login</h2>
-                <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 12px;">Create an account or sign in. Your user ID is stored in this browser until you clear it.</p>
+                <p class="profile-lede">Create an account or sign in. Your user ID stays in this browser until you clear it.</p>
                 <div class="account-row">
                     <label style="font-weight: 600;">User ID:</label>
                     <input type="text" id="account-user-id" placeholder="default_user" class="account-input">
@@ -853,9 +853,9 @@
             </div>
 
             <!-- User account & identity: all user ID data and where progress is stored -->
-            <div class="section-card" id="user-identity-card" data-profile-route="account" style="margin-bottom: 20px;">
-                <h2 class="section-title">🔐 User account &amp; identity</h2>
-                <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Server view of your user ID, session, and where your progress is saved. Use <strong>Sync session</strong> so the server stores progress under this account.</p>
+            <div class="section-card" id="user-identity-card" data-profile-route="account">
+                <h2 class="section-title">User account &amp; identity</h2>
+                <p class="profile-lede">Server view of your user ID, session, and where progress is saved. Use <strong>Sync session</strong> so the server stores progress under this account.</p>
                 <div id="user-identity-content"><span class="loading-inline">Loading identity…</span></div>
                 <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
                     <button type="button" class="btn-primary" id="sync-session-btn">Sync session</button>
@@ -863,7 +863,7 @@
                 </div>
             </div>
 
-            <div class="section-card" id="discord-link-card" data-profile-route="account" style="margin-bottom: 20px;">
+            <div class="section-card" id="discord-link-card" data-profile-route="account">
                 <h2 class="section-title">Discord link</h2>
                 <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">
                     Use <strong>Sign in with Discord</strong> above for verified OAuth login, or paste your Discord user ID manually below for casino VIP checks and quest rewards.
@@ -880,7 +880,7 @@
                 <span id="discord-link-status" class="account-status"></span>
             </div>
 
-            <div class="section-card" id="account-privacy-card" data-profile-route="account settings" style="margin-bottom: 20px;">
+            <div class="section-card" id="account-privacy-card" data-profile-route="settings">
                 <h2 class="section-title">Account privacy &amp; profile settings</h2>
                 <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Control what your profile shows, how the account behaves, and review linked providers and active devices.</p>
                 <div class="account-settings-grid">
@@ -957,7 +957,7 @@
             <!-- Profile Header -->
             <div class="profile-header" id="profile-header"></div>
 
-            <div class="section-card" id="profile-section-avatar" data-profile-route="avatar overview">
+            <div class="section-card" id="profile-section-avatar" data-profile-route="avatar">
                 <h2 class="section-title">Avatar</h2>
                 <p style="font-size:0.9rem;opacity:0.85;margin-bottom:12px;">Choose a preset or paste an image URL. Same pattern as agent avatars on the platform.</p>
                 <div class="profile-avatar-panel">
@@ -979,7 +979,7 @@
 
             <div class="section-card" id="profile-hub-overview" data-profile-route="overview">
                 <h2 class="section-title">Unified overview</h2>
-                <p style="font-size:0.9rem;opacity:0.85;margin-bottom:8px;">Points, shop, and rankings for this profile ID (same data as Shop and Game).</p>
+                <p class="profile-lede">Points, shop, and rankings for this profile ID — same data as Shop and Game.</p>
                 <div class="fp-agent-grid profile-overview-shortcuts" aria-label="Quick navigation">
                     <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="wallet"><span>💠</span>Wallet</button>
                     <button type="button" class="fp-agent-card profile-overview-shortcut" data-profile-go-tab="account"><span>👤</span>Account</button>
@@ -990,7 +990,7 @@
                 <div id="profile-completeness-card" class="profile-completeness-card">Loading profile setup checklist…</div>
             </div>
             <div class="section-card" id="profile-section-leaderboard" data-profile-route="leaderboard">
-                <h2 class="section-title">🏅 Top players (XP)</h2>
+                <h2 class="section-title">Top players (XP)</h2>
                 <div id="profile-hub-leaderboard-snippet" style="font-size:0.95rem;">Loading…</div>
             </div>
 
@@ -1007,8 +1007,8 @@
                     </div>
 
                     <!-- Player profiler pictures -->
-                    <div class="section-card" id="profile-section-profiler-pictures" data-profile-route="pictures overview">
-                        <h2 class="section-title">🖼️ Player profiler pictures</h2>
+                    <div class="section-card" id="profile-section-profiler-pictures" data-profile-route="pictures">
+                        <h2 class="section-title">Profiler pictures</h2>
                         <p style="font-size:0.9rem;opacity:0.85;margin-bottom:12px;">Studio portraits from unlocked camgirl rooms sync here. Save URLs or set your profiler avatar.</p>
                         <div class="profiler-pictures-layout">
                             <img id="profiler-pictures-hero" class="profiler-pictures-hero" src="/static/img/default-avatar.png" alt="Profiler avatar">
@@ -1034,14 +1034,14 @@
                     </div>
 
                     <div class="section-card" id="profile-section-lab-logbook" data-profile-route="lab">
-                        <h2 class="section-title">🔬 Lab research logbook</h2>
+                        <h2 class="section-title">Lab research logbook</h2>
                         <p style="font-size:0.9rem;opacity:0.85;margin-bottom:10px;">Research progress, project cooldowns, lab point results, and latest lab events for this profile.</p>
                         <div id="profile-lab-logbook">Loading…</div>
                     </div>
 
                     <!-- Trophies progress -->
                     <div class="section-card" id="profile-trophies-card" data-profile-route="trophies">
-                        <h2 class="section-title">🏆 Trophies</h2>
+                        <h2 class="section-title">Trophies</h2>
                         <div id="profile-showcase" style="display:none; margin-bottom:14px;">
                             <h3 style="font-size:1rem; color:#FFD700; margin:0 0 10px;">📌 Showcase</h3>
                             <div id="profile-showcase-grid" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
@@ -1051,7 +1051,7 @@
                     </div>
                     <!-- Points system: connected Game, Shop, Star Map 25, Points -->
                     <div class="section-card" id="profile-section-points" data-profile-route="points">
-                        <h2 class="section-title">💎 Points system</h2>
+                        <h2 class="section-title">Points system</h2>
                         <p style="color: rgba(255,255,255,0.8); margin-bottom: 14px;">All progress uses the same profile and unified points. Earn game_points in Hunter Game and Star Map 25; spend in Shop.</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                             <a href="/game" class="stat-card" style="text-decoration: none; color: inherit; padding: 14px 18px; min-width: 140px;">
@@ -1085,22 +1085,24 @@
 
                     <!-- Shop v4 inventory (same API as /shop; merges local shadow backup from Shop) -->
                     <div class="section-card" id="profile-section-shop" data-profile-route="shop">
-                        <h2 class="section-title">🛒 Shop inventory</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 10px;">Same account as the <a href="/shop#shop-profile">shop profile manager</a> and <code>/api/shop/inventory</code>.</p>
+                        <h2 class="section-title">Shop inventory</h2>
+                        <p class="profile-lede">Same account as the <a href="/shop#shop-profile">shop profile manager</a> and <code>/api/shop/inventory</code>.</p>
                         <div id="profile-shop-v9-inventory">Loading…</div>
                         <p style="margin-top: 12px; font-size: 0.9rem;"><a href="/shop#shop-profile">Manage account in Shop</a> · <a href="/shop#shop-account">Stall, inventory, orders</a></p>
                     </div>
 
                     <!-- MN2 Wallet (Phase 6): balance, deposit, withdraw, transactions -->
-                    <div class="section-card profile-mn2-wallet-card" id="mn2-wallet" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.4); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
-                        <h2 class="section-title" style="color: #00d4ff;">MN2 Wallet</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Deposit MN2, spend in the <a href="/shop" style="color: #00d4ff;">Shop</a>, or withdraw to your own address. <strong>MN2-only showcase</strong> — no other coin balances shown here.</p>
-                        <div id="profile-mn2-showcase" style="margin-bottom:14px;padding:14px 18px;border-radius:12px;border:2px solid rgba(0,255,136,0.35);background:linear-gradient(135deg,rgba(0,255,136,0.12),rgba(0,212,255,0.08));text-align:center;">
-                            <div style="font-size:0.78rem;opacity:0.8;letter-spacing:0.06em;text-transform:uppercase;">MN2 balance showcase</div>
-                            <div id="profile-mn2-showcase-balance" style="font-size:1.8rem;font-weight:800;color:#00ff88;margin-top:4px;">—</div>
+                    <div class="section-card section-card--accent profile-mn2-wallet-card" id="mn2-wallet" data-profile-route="wallet">
+                        <h2 class="section-title">Wallets</h2>
+                        <p class="profile-lede">On-chain MN2 plus custodial balances for every coin on the <a href="/exchange">exchange</a>. Deposit/withdraw MN2 here; trade and move other coins on the exchange desk.</p>
+                        <div id="profile-mn2-showcase" class="profile-mn2-showcase">
+                            <div class="profile-mn2-showcase-label">MN2 balance</div>
+                            <div id="profile-mn2-showcase-balance" class="profile-mn2-showcase-value">—</div>
                         </div>
                         <nav id="profile-wallet-subnav" class="profile-wallet-subnav page-tabs" role="tablist" aria-label="Wallet sections">
                             <button type="button" class="tab-btn active" data-wallet-tab="overview" role="tab" aria-selected="true">Overview</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="coins" role="tab" aria-selected="false">All coins</button>
+                            <button type="button" class="tab-btn" data-wallet-tab="agents" role="tab" aria-selected="false">Agent wallets</button>
                             <button type="button" class="tab-btn" data-wallet-tab="deposit" role="tab" aria-selected="false">Deposit</button>
                             <button type="button" class="tab-btn" data-wallet-tab="withdraw" role="tab" aria-selected="false">Withdraw</button>
                             <button type="button" class="tab-btn" data-wallet-tab="trusted" role="tab" aria-selected="false">Trusted</button>
@@ -1117,11 +1119,33 @@
                             <label style="display:inline-flex; align-items:center; gap:6px; margin-left:12px; font-size:0.78rem; opacity:0.85; cursor:pointer;">
                                 <input type="checkbox" id="mn2-fiat-toggle"> Show USD
                             </label>
+                            <div id="profile-exchange-wallet-preview" class="profile-coin-wallet-grid" style="margin-top:14px;" aria-label="Exchange coin balances">Loading coin wallets…</div>
                             <div style="margin-top: 14px;">
                                 <strong style="color: #00d4ff;">5-day wallet monitor (UTC)</strong>
                                 <p style="font-size: 0.78rem; opacity: 0.78; margin: 4px 0 0;">From your MN2 ledger: <span style="color:#00ff88;">green</span> = deposits, <span style="color:#ffaa44;">orange</span> = shop + withdrawals.</p>
                                 <div id="profile-mn2-5d-chart" class="mn2-5d-chart" aria-label="MN2 activity last 5 days">Loading…</div>
                             </div>
+                        </div>
+                        <div data-wallet-panel="coins" style="margin-bottom: 14px; display:none;">
+                            <strong style="color:#00d4ff;">Multi-wallet (all tradeable coins)</strong>
+                            <p style="font-size:0.82rem;opacity:0.85;margin:6px 0 10px;">Deposit and withdraw every market coin from one wallet. MN2 is on-chain; other coins use Binance custody. One multi-daemon runs balances + deposits + withdraws for all coins.</p>
+                            <div id="profile-exchange-wallet-all" class="profile-coin-wallet-grid">Loading…</div>
+                            <div style="margin-top:14px;padding:12px;border-radius:12px;border:1px solid rgba(0,212,255,0.25);background:rgba(0,212,255,0.06);">
+                                <strong style="color:#00d4ff;">Quick deposit / withdraw</strong>
+                                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
+                                    <select id="profile-mw-asset" style="padding:6px 10px;border-radius:8px;background:#161b22;color:#fff;border:1px solid rgba(255,255,255,0.2);"></select>
+                                    <input id="profile-mw-amount" type="number" min="0" step="any" placeholder="amount" style="width:110px;padding:6px 10px;border-radius:8px;background:#161b22;color:#fff;border:1px solid rgba(255,255,255,0.2);">
+                                    <button type="button" id="profile-mw-deposit-btn" style="padding:6px 12px;border-radius:8px;border:1px solid #00ff88;background:rgba(0,255,136,0.15);color:#00ff88;cursor:pointer;">Deposit address</button>
+                                    <a href="/exchange?tab=withdraw" style="padding:6px 12px;border-radius:8px;border:1px solid #00d4ff;color:#00d4ff;text-decoration:none;">Full deposit/withdraw desk →</a>
+                                </div>
+                                <div id="profile-mw-deposit-info" style="margin-top:8px;font-size:0.8rem;opacity:0.9;word-break:break-all;"></div>
+                            </div>
+                            <p id="profile-mw-daemon-status" style="margin-top:10px;font-size:0.78rem;opacity:0.75;">Checking multi-daemon…</p>
+                        </div>
+                        <div data-wallet-panel="agents" style="margin-bottom: 14px; display:none;">
+                            <strong style="color:#00d4ff;">Exchange agent wallets</strong>
+                            <p style="font-size:0.82rem;opacity:0.85;margin:6px 0 10px;">Each trading agent keeps separate balances across all coins.</p>
+                            <div id="profile-exchange-agent-wallets">Loading…</div>
                         </div>
                         <div data-wallet-panel="deposit" style="margin-bottom: 14px; display:none;">
                         <div style="margin-bottom: 14px;">
@@ -1329,9 +1353,9 @@
                     </script>
 
                     <!-- MN2 Staking: stake/unstake, browser rig, longevity, calculator -->
-                    <div class="section-card" id="profile-mn2-staking-card" data-profile-route="wallet" style="border: 2px solid rgba(0,255,136,0.4); background: linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,212,255,0.04));">
-                        <h2 class="section-title" style="color: #00ff88;">⚡ MN2 Staking</h2>
-                        <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Stake your MN2 to earn rewards from realized pool yield. Run the optional browser <strong>staking rig</strong> on your own processor to boost your share. Unstake any time.</p>
+                    <div class="section-card section-card--accent" id="profile-mn2-staking-card" data-profile-route="wallet">
+                        <h2 class="section-title">MN2 Staking</h2>
+                        <p class="profile-lede">Stake MN2 to earn from pool yield. Optional browser staking rig boosts your share. Unstake any time.</p>
 
                         <!-- Buy MN2 with PayPal (on-ramp Model A) -->
                         <div id="mn2-onramp-panel" style="display:none; margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(0,112,186,0.10); border:1px solid rgba(0,112,186,0.4);">
@@ -1483,8 +1507,8 @@
                     </div>
 
                     <!-- Trader staking agents: follow for mirrored stake + reward share -->
-                    <div class="section-card" id="profile-trader-staking-card" data-profile-route="wallet" style="border: 2px solid rgba(0,212,255,0.35); background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(0,255,136,0.04));">
-                        <h2 class="section-title">🤖 Trader staking agents</h2>
+                    <div class="section-card section-card--accent" id="profile-trader-staking-card" data-profile-route="wallet">
+                        <h2 class="section-title">Trader staking agents</h2>
                         <p style="font-size:0.85rem; opacity:0.88; margin-bottom:12px;">Six treasury-funded trader agents stake ~25k MN2 each (±10k). Follow one to mirror stake changes and earn a proportional reward share when they earn.</p>
                         <div style="display:flex; flex-wrap:wrap; gap:14px; margin-bottom:12px;">
                             <div class="stat-card" style="padding:12px 16px; min-width:160px;"><div style="opacity:0.7; font-size:0.72rem;">Pool staked by traders</div><div style="font-size:1.15rem; font-weight:700;"><span id="trader-staking-pool-total">--</span> MN2</div></div>
@@ -1512,7 +1536,7 @@
                 <div class="sidebar">
                     <!-- Recent clip: 5 min download (loads in background, no spinner) -->
                     <div class="section-card" id="recent-clip-download-card" data-profile-route="activity">
-                        <h2 class="section-title">⬇️ Download din clip (5 min)</h2>
+                        <h2 class="section-title">Download clip (5 min)</h2>
                         <p style="font-size: 0.9rem; opacity: 0.85; margin-bottom: 12px;">Nye videoer slettes efter 5 min. Download her hvis linket på generator-siden ikke virker.</p>
                         <div id="recent-clip-download-list"></div>
                         <p id="recent-clip-no-videos" style="display:none; font-size: 0.9rem; opacity: 0.7;">Ingen videoer i download-vinduet lige nu.</p>
@@ -1520,7 +1544,7 @@
 
                     <!-- My Agents Section -->
                     <div class="section-card" id="my-agents-card" data-profile-route="agents">
-                        <h2 class="section-title">🤖 My Agents</h2>
+                        <h2 class="section-title">My Agents</h2>
                         <div id="profile-crypto-wallet-agents" style="font-size:0.82rem;opacity:0.88;margin-bottom:10px;padding:10px;border-radius:10px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);">
                             <strong style="color:#00d4ff;">Crypto wallet shoppers</strong>
                             <p style="margin:6px 0 0;opacity:0.85;">Headless agents can buy coin-priced items with MN2 balance via API when <code style="font-size:0.75rem;">AGENT_MN2_SHOP_SECRET</code> is set.</p>
@@ -1537,7 +1561,7 @@
 
                     <!-- Agent control: assign tasks from profile -->
                     <div class="section-card" id="agent-control-card" data-profile-route="agents">
-                        <h2 class="section-title">🎛️ Agent control</h2>
+                        <h2 class="section-title">Agent control</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Assign an agent to a task. Tasks award XP and activity points.</p>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;">
                             <label style="display:flex;align-items:center;gap:6px;">
@@ -1567,7 +1591,7 @@
 
                     <!-- Quick Battle (competition) -->
                     <div class="section-card" id="quick-battle-profile-card" data-profile-route="battle">
-                        <h2 class="section-title">⚔️ Quick Battle</h2>
+                        <h2 class="section-title">Quick Battle</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Fight vs AI: pick rock/paper/scissors for a skill duel, or Fight for a quick skirmish. Hunter XP on every outcome when the game DB is available.</p>
                         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;">
                             <button type="button" class="profile-rps" data-move="rock" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:#161b22;color:#fff;cursor:pointer;font-size:0.85rem;">🪨 Rock</button>
@@ -1594,8 +1618,8 @@
                     </div>
 
                     <!-- Pro plan + usage (PayPal subscription) -->
-                    <div class="section-card" id="profile-pro-plan-card" data-profile-route="wallet account">
-                        <h2 class="section-title">⭐ Pro plan &amp; usage</h2>
+                    <div class="section-card" id="profile-pro-plan-card" data-profile-route="account">
+                        <h2 class="section-title">Pro plan &amp; usage</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Your generation tier, monthly allowance, and PayPal Pro subscription status.</p>
                         <div id="profile-pro-plan-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
                         <div id="profile-pro-plan-usage" style="font-size:0.82rem;opacity:0.9;margin-bottom:10px;"></div>
@@ -1604,7 +1628,7 @@
 
                     <!-- Monetization 25: AI + agents hooked to make money -->
                     <div class="section-card" id="monetization-25-card" data-profile-route="agents">
-                        <h2 class="section-title">💰 Monetization 25</h2>
+                        <h2 class="section-title">Monetization 25</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">25 levers hooked to AI and agents to drive revenue. AI recommends levers; assign agents to work them.</p>
                         <div id="monetization-25-ai-recommendations" style="font-size:0.85rem;margin-bottom:10px;min-height:24px;">Loading…</div>
                         <div style="margin-bottom:8px;font-weight:600;font-size:0.85rem;">Assign agent to lever</div>
@@ -1625,7 +1649,7 @@
                     <!-- Password protection (reward for completing / earning points) -->
                     <!-- Layered security overview + account protections -->
                     <div class="section-card" id="profile-section-security-layer" data-profile-route="security">
-                        <h2 class="section-title">🛡️ Layered security</h2>
+                        <h2 class="section-title">Layered security</h2>
                         <p style="font-size:0.9rem;opacity:0.85;margin-bottom:8px;">Three layers protect your account and MN2: profile password, real-money account rules, and withdrawal 2FA / whitelist (Wallet tab → Withdraw 2FA).</p>
                         <div class="profile-layer-security-grid">
                             <div class="profile-layer-card">
@@ -1643,8 +1667,8 @@
                         </div>
                     </div>
 
-                    <div class="section-card" id="password-protection-card" data-profile-route="security account">
-                        <h2 class="section-title">🔐 Password protection</h2>
+                    <div class="section-card" id="password-protection-card" data-profile-route="security">
+                        <h2 class="section-title">Password protection</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Unlock by earning points or completing Star Map investigations; set a password and get a small reward.</p>
                         <div id="password-protection-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
                         <div id="password-protection-actions" style="display:flex;flex-direction:column;gap:8px;">
@@ -1659,8 +1683,8 @@
                         <p id="password-protection-policy" style="font-size:0.8rem;opacity:0.76;margin-top:10px;">Recovery policy: loading...</p>
                     </div>
 
-                    <div class="section-card" id="account-security-card" data-profile-route="security account">
-                        <h2 class="section-title">🛡️ Real-money security</h2>
+                    <div class="section-card" id="account-security-card" data-profile-route="security">
+                        <h2 class="section-title">Real-money security</h2>
                         <p style="font-size:0.85rem;opacity:0.85;margin-bottom:10px;">Protect accounts with MN2 or casino USD balance. Enable password-on-login and require verification before real-money casino bets.</p>
                         <div id="account-security-status" style="font-size:0.9rem;margin-bottom:10px;">Loading…</div>
                         <div id="account-security-recommendations" style="font-size:0.82rem;color:#fbbf24;margin-bottom:10px;"></div>
@@ -1709,7 +1733,7 @@
 
                     <!-- Communication Psychology (25 theories) -->
                     <div class="section-card comm-psych-profile-card" id="comm-psych-profile-card" data-profile-route="progress">
-                        <h2 class="section-title comm-psych-profile-title">🧠 Communication Psychology</h2>
+                        <h2 class="section-title comm-psych-profile-title">Communication Psychology</h2>
                         <div id="comm-psych-profile-content"></div>
                     </div>
 
@@ -1726,15 +1750,15 @@
                     </div>
 
                     <!-- Geo reference (GPS) -->
-                    <div class="section-card" id="profile-geo-ref-card" data-profile-route="account settings">
-                        <h2 class="section-title">📍 Geo Reference</h2>
+                    <div class="section-card" id="profile-geo-ref-card" data-profile-route="settings">
+                        <h2 class="section-title">Geo reference</h2>
                         <div id="profile-geo-ref" style="font-size: 0.9rem; opacity: 0.9;">—</div>
                         <button type="button" class="btn-primary" id="profile-geo-ref-btn" style="margin-top: 10px; padding: 6px 12px; font-size: 0.85rem;">Update location</button>
                     </div>
 
                     <!-- PayPal Conversion Control Panel (loads in background) -->
                     <div class="section-card" id="paypal-control-panel-card" data-profile-route="wallet">
-                        <h2 class="section-title">💰 PayPal Conversion Control</h2>
+                        <h2 class="section-title">PayPal conversion control</h2>
                         <div id="paypal-control-panel-content"></div>
                     </div>
                 </div>
@@ -1777,7 +1801,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
         <script src="/static/js/user-id.js?v=20261010b"></script>
         <script src="/static/js/mn2-wallet.js?v=20261121"></script>
-        <script src="/static/js/profile-mn2-wallet.js?v=20261121"></script>
+        <script src="/static/js/profile-mn2-wallet.js?v=20261121c"></script>
         <script src="/static/js/mn2-withdrawal-security.js?v=20260618a"></script>
         <script src="/static/js/load-time-measurement.js?v=20260227100000" defer></script>
         <script src="/static/js/error-manager.js"></script>
@@ -4246,7 +4270,7 @@
             }
         }
     </script>
-    <script src="/static/js/profile-hub.js?v=20261121nav"></script>
+    <script src="/static/js/profile-hub.js?v=20261121sync"></script>
     <script src="/static/js/profile-profiler-pictures.js?v=20261029a"></script>
 
     <script>

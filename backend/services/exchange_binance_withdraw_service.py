@@ -27,9 +27,150 @@ _NETWORK_MAP = {
     "TRX": "TRX",
     "ETH": "ETH",
     "BSC": "BSC",
+    "BTC": "BTC",
+    "LTC": "LTC",
+    "DOGE": "DOGE",
+    "DASH": "DASH",
+    "SOL": "SOL",
+    "XRP": "XRP",
+    "XLM": "XLM",
+    "ADA": "ADA",
+    "DOT": "DOT",
+    "STATEMINT": "STATEMINT",
+    "ASSETHUB": "STATEMINT",
+    "ATOM": "ATOM",
+    "ALGO": "ALGO",
+    "NEAR": "NEAR",
+    "AVAXC": "AVAXC",
+    "AVAX": "AVAXC",
+    "MATIC": "MATIC",
+    "POLYGON": "MATIC",
+    "ARBITRUM": "ARBITRUM",
+    "OPTIMISM": "OPTIMISM",
+}
+
+# Default deposit/withdraw network per exchange catalog coin.
+# USDC: TRC20 is often disabled / missing on EU Binance — use ERC20.
+# DOT: relay-chain deposits are disabled — use Asset Hub (STATEMINT).
+_ASSET_DEFAULT_NETWORK = {
+    "USDT": "TRC20",
+    "USDC": "ETH",
+    "BTC": "BTC",
+    "ETH": "ETH",
+    "BNB": "BSC",
+    "SOL": "SOL",
+    "XRP": "XRP",
+    "ADA": "ADA",
+    "DOGE": "DOGE",
+    "DOT": "STATEMINT",
+    "POL": "MATIC",
+    "LTC": "LTC",
+    "AVAX": "AVAXC",
+    "LINK": "ETH",
+    "UNI": "ETH",
+    "ATOM": "ATOM",
+    "XLM": "XLM",
+    "ALGO": "ALGO",
+    "TRX": "TRX",
+    "NEAR": "NEAR",
+    "ARB": "ARBITRUM",
+    "OP": "OPTIMISM",
+    "SHIB": "ETH",
+    "DASH": "DASH",
 }
 
 _DEFAULT_TRC20_FEE_USDT = 1.5
+
+
+def deposit_network_for_asset(asset: str) -> str:
+    """Human network label used by the multi-wallet UI (TRC20 / ETH / BTC / …)."""
+    sym = str(asset or "").strip().upper()
+    env_key = f"BINANCE_DEPOSIT_NETWORK_{sym}"
+    env = (os.environ.get(env_key) or "").strip().upper()
+    if env:
+        return env
+    return _ASSET_DEFAULT_NETWORK.get(sym, "ETH")
+
+
+def stable_deposit_network(asset: str = "USDT") -> str:
+    """Back-compat alias used by payout stable sync."""
+    return deposit_network_for_asset(asset)
+
+
+def get_deposit_address(coin: str, network: str, *, dry_run: Optional[bool] = None,
+                        skip_live_gate: bool = True) -> Dict[str, Any]:
+    """GET /sapi/v1/capital/deposit/address — platform hot-wallet deposit address."""
+    coin_u = str(coin or "").strip().upper()
+    if not coin_u:
+        return {"success": False, "error": "missing_coin"}
+    net_raw = (network or deposit_network_for_asset(coin_u)).strip().upper()
+    net = binance_network_code(net_raw)
+    res = _signed_sapi_request(
+        "GET",
+        "/sapi/v1/capital/deposit/address",
+        {"coin": coin_u, "network": net},
+        dry_run=dry_run,
+        skip_live_gate=skip_live_gate,
+    )
+    if res.get("simulated"):
+        # Deterministic paper address so UI/daemon flows stay testable offline.
+        fake = f"paper-{coin_u.lower()}-{net.lower()}-deposit"
+        res["address"] = fake
+        res["tag"] = ""
+        res["coin"] = coin_u
+        res["network"] = net_raw
+        res["binance_network"] = net
+        return res
+    if not res.get("success"):
+        res.setdefault("coin", coin_u)
+        res.setdefault("network", net_raw)
+        return res
+    body = res.get("body") if isinstance(res.get("body"), dict) else {}
+    res["address"] = str(body.get("address") or "").strip()
+    res["tag"] = str(body.get("tag") or body.get("memo") or "").strip()
+    res["url"] = body.get("url")
+    res["coin"] = coin_u
+    res["network"] = net_raw
+    res["binance_network"] = net
+    if not res["address"]:
+        res["success"] = False
+        res.setdefault("error", "empty_deposit_address")
+    return res
+
+
+def list_deposit_history(coin: Optional[str] = None, *,
+                         status: Optional[int] = None,
+                         start_ms: Optional[int] = None,
+                         end_ms: Optional[int] = None,
+                         limit: int = 100,
+                         dry_run: Optional[bool] = None,
+                         skip_live_gate: bool = True) -> Dict[str, Any]:
+    """GET /sapi/v1/capital/deposit/hisrec — recent deposits into the Binance API account."""
+    params: Dict[str, Any] = {"limit": max(1, min(int(limit or 100), 1000))}
+    if coin:
+        params["coin"] = str(coin).strip().upper()
+    if status is not None:
+        params["status"] = int(status)
+    if start_ms is not None:
+        params["startTime"] = int(start_ms)
+    if end_ms is not None:
+        params["endTime"] = int(end_ms)
+    res = _signed_sapi_request(
+        "GET", "/sapi/v1/capital/deposit/hisrec", params,
+        dry_run=dry_run, skip_live_gate=skip_live_gate,
+    )
+    if res.get("simulated"):
+        res["deposits"] = []
+        return res
+    if not res.get("success"):
+        res.setdefault("deposits", [])
+        return res
+    body = res.get("body")
+    rows: List[Dict[str, Any]] = []
+    if isinstance(body, list):
+        rows = [r for r in body if isinstance(r, dict)]
+    res["deposits"] = rows
+    return res
 
 
 def _iso() -> str:
@@ -58,23 +199,29 @@ def binance_credentials() -> Dict[str, Optional[str]]:
     return {"api_key": key, "api_secret": secret}
 
 
-def binance_withdraw_live_enabled() -> bool:
-    if os.environ.get("EXCHANGE_PAYOUT_BINANCE_LIVE", "").strip() not in ("1", "true", "yes"):
-        return False
-    try:
-        from backend.services.exchange_arbitrage_service import live_enabled
-        if not live_enabled():
-            return False
-    except Exception:
-        return False
+def binance_withdraw_live_gate_reason() -> str:
+    """Human reason why withdraw live is off (empty string when live-ready)."""
+    payout_env = os.environ.get("EXCHANGE_PAYOUT_BINANCE_LIVE", "").strip().lower()
+    if payout_env not in ("1", "true", "yes"):
+        return "set EXCHANGE_PAYOUT_BINANCE_LIVE=1"
+    arb_env = os.environ.get("EXCHANGE_ARBITRAGE_LIVE", "").strip()
+    if arb_env != "1":
+        return "set EXCHANGE_ARBITRAGE_LIVE=1"
     try:
         from backend.services import mn2_spork_service as spork
-        ok, _reason = spork.payout_live_spork_ok()
+        ok, reason = spork.exchange_live_spork_ok()
         if not ok:
-            return False
-    except Exception:
-        pass
-    return True
+            return reason or "spork_exchange_live_off"
+        ok, reason = spork.payout_live_spork_ok()
+        if not ok:
+            return reason or "spork_payout_live_off"
+    except Exception as exc:
+        return f"spork_check_failed:{exc}"
+    return ""
+
+
+def binance_withdraw_live_enabled() -> bool:
+    return not binance_withdraw_live_gate_reason()
 
 
 def _sign_binance(params: Dict[str, Any], secret: str) -> str:

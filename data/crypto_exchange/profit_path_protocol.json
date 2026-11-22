@@ -12,14 +12,12 @@
   "export_default_limit": 200,
   "skill_stack_usd_step": 0.25,
   "rotation_lookback_hours": 24,
-  "rotation_live_enabled": true,
-  "rotation_auto_execute": true,
+  "rotation_live_enabled": false,
+  "rotation_auto_execute": false,
   "rotation_auto_max_usd_per_tick": 100,
   "min_sell_leg_usd": 25,
   "rotation_auto_types": [
     "internal_stable_swap",
-    "external_market_buy",
-    "external_market_sell",
     "reduce_notional"
   ],
   "profit_pair_search": {
@@ -39,5 +37,5 @@
     "agent_id": "arb_winnable_pairs",
     "refresh_search_each_tick": true
   },
-  "note": "Local profit-max defaults: rotation_auto_execute + rotation_live_enabled true. Production should set both false unless opted in. Env override: EXCHANGE_ROTATION_AUTO=1, EXCHANGE_ROTATION_LIVE=1."
+  "note": "Path B lock 2026-11-15: rotation live/auto OFF so hot-pair prefund cannot spend NonKYC quote. Keep EXCHANGE_ROTATION_LIVE=0 and EXCHANGE_ROTATION_AUTO=0 on server. Opt in only after spatial arb is proven."
 }

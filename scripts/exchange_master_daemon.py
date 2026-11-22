@@ -111,6 +111,12 @@ def run_once(auto_sweep: bool = False) -> dict:
     except Exception as exc:
         out["arb_rebalance"] = {"success": False, "error": str(exc)}
 
+    try:
+        from backend.services.exchange_multi_wallet_service import run_multi_wallet_tick
+        out["multi_wallet"] = run_multi_wallet_tick()
+    except Exception as exc:
+        out["multi_wallet"] = {"success": False, "error": str(exc)}
+
     return out
 
 

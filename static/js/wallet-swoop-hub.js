@@ -56,14 +56,22 @@
       el.innerHTML = '<p class="wallet-muted">Exchange wallet unavailable.</p>';
       return;
     }
-    var assets = wallet.assets || {};
-    var rows = [
-      { sym: 'MN2', val: wallet.mn2_balance },
-      { sym: 'USDT', val: assets.USDT },
-      { sym: 'USDC', val: assets.USDC },
-    ];
-    el.innerHTML = rows.map(function (row) {
-      return '<div class="wallet-balance-row"><span>' + row.sym + '</span><strong>' + fmt(row.val, 6) + '</strong></div>';
+    var rows = wallet.wallets || [];
+    if (!rows.length) {
+      var assets = wallet.assets || {};
+      rows = [
+        { symbol: 'MN2', balance: wallet.mn2_balance },
+        { symbol: 'USDT', balance: assets.USDT },
+        { symbol: 'USDC', balance: assets.USDC },
+      ].concat(Object.keys(assets).filter(function (k) {
+        return k !== 'USDT' && k !== 'USDC';
+      }).sort().map(function (k) { return { symbol: k, balance: assets[k] }; }));
+    }
+    el.innerHTML = '<p class="wallet-muted" style="margin:0 0 8px">' +
+      (wallet.wallet_count || rows.length) + ' coin wallets · ~$' + fmt(wallet.total_usd, 2) +
+      '</p>' + rows.map(function (row) {
+      return '<div class="wallet-balance-row"><span>' + (row.symbol || row.sym) +
+        '</span><strong>' + fmt(row.balance != null ? row.balance : row.val, 6) + '</strong></div>';
     }).join('');
   }
 

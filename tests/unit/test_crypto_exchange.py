@@ -65,6 +65,32 @@ def test_catalog_has_25_assets(ex_env):
     assert "BTC" in symbols and "MN2" in symbols and "ETH" in symbols
 
 
+def test_get_wallet_has_all_catalog_coin_slots(ex_env, monkeypatch):
+    monkeypatch.setattr(ex_env, "_get_quote_balance", lambda uid, quote: 0.0)
+    w = ex_env.get_wallet("fresh_trader")
+    assert w["success"] is True
+    catalog_syms = {a["symbol"] for a in ex_env.get_catalog()["assets"]}
+    wallet_syms = {row["symbol"] for row in w["wallets"]}
+    assert catalog_syms == wallet_syms
+    assert w["wallet_count"] == 25
+    assert "BTC" in w["assets"] and float(w["assets"]["BTC"]) == 0.0
+    assert "ETH" in w["assets"] and "SOL" in w["assets"] and "DASH" in w["assets"]
+    # Persisted so subsequent reads keep the full coin map.
+    disk = json.loads(open(ex_env._wallet_path("fresh_trader"), encoding="utf-8").read())
+    assert "BTC" in disk["assets"] and "USDT" in disk["assets"]
+
+
+def test_ensure_agent_wallets_covers_all_coins(ex_env, monkeypatch):
+    monkeypatch.setattr(ex_env, "_get_quote_balance", lambda uid, quote: 0.0)
+    res = ex_env.ensure_agent_wallets()
+    assert res["success"] is True
+    assert res["count"] >= 1
+    sample = res["ensured"][0]
+    w = ex_env.get_wallet(sample)
+    assert w["wallet_count"] == 25
+    assert set(w["assets"]).issuperset({"BTC", "ETH", "USDC", "USDT"})
+
+
 def test_quote_swap_buy(ex_env):
     q = ex_env.quote_swap("u1", "BTC", "buy", 0.001, "MN2")
     assert q["success"] is True

@@ -1250,13 +1250,24 @@ def autoselect_profit_pairs(*, min_score: float = 3.0, top_n: Optional[int] = No
 
 def grid_targets(cfg: Optional[Dict[str, Any]] = None) -> List[tuple]:
     """Resolve the full (venue, asset) set to trade, merging the legacy single-venue
-    ``venue``+``assets`` with the optional multi-venue ``venues`` map. De-duplicated."""
+    ``venue``+``assets`` with the optional multi-venue ``venues`` map. De-duplicated.
+
+    ``disabled_venues`` (config list) drops those venues entirely — use this to stop a
+    losing exchange (e.g. Binance dense MM) without killing profitable venues.
+    """
     cfg = cfg or load_config()
     targets: List[tuple] = []
     seen = set()
+    disabled = {
+        str(v).lower()
+        for v in (cfg.get("disabled_venues") or [])
+        if str(v).strip()
+    }
 
     def _add(venue: Any, asset: Any) -> None:
         v = str(venue or "binance").lower()
+        if v in disabled:
+            return
         a = str(asset).upper().strip()
         if a and (v, a) not in seen:
             seen.add((v, a))

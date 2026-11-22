@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="/static/css/frontpage-home.css?v=20260909b">
     <link rel="stylesheet" href="/static/css/crypto-exchange.css?v=20261001a">
     <link rel="stylesheet" href="/static/css/exchange-frontpage.css?v=20261001b">
+    <link rel="stylesheet" href="/static/css/exchange-hub-sync.css?v=20261121ex">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="layout-standard mn-no-hypnotic cex-frontpage-match">
@@ -28,15 +29,15 @@
             </div>
             <div class="fp-hero-copy">
                 <p class="fp-kicker"><span>MasterNoder finance</span><span id="cex-hero-user-pill">Guest trader</span></p>
-                <h1 id="cex-hero-title"><i class="fas fa-chart-line"></i> Exchange</h1>
-                <p class="fp-tagline">25 cryptocurrencies · swap · PayPal · bots · treasury</p>
-                <p class="fp-hero-text">Same wallet as Shop and Casino — trade, stake, rent agents, and track profit-path research from one hub.</p>
+                <h1 id="cex-hero-title">Exchange</h1>
+                <p class="fp-tagline">Swap coins · MN2 · live transferable USDC/USDT · 25 markets</p>
+                <p class="fp-hero-text">Pick a market, choose what you pay with, get a live quote, confirm the swap. Same balances as Profile and Shop.</p>
                 <div class="fp-hero-actions">
                     <button type="button" class="fp-primary-action" id="cex-hero-refresh">Refresh markets</button>
+                    <a class="fp-secondary-action" href="#cex-trading-desk">Open swap desk</a>
+                    <a class="fp-secondary-action" href="/profile?tab=wallet">Profile wallet</a>
+                    <a class="fp-secondary-action" href="/shop">Shop coins</a>
                     <button type="button" class="fp-secondary-action" id="cex-onboard-start">Site tour</button>
-                    <a class="fp-secondary-action" href="/wallets">Wallets</a>
-                    <a class="fp-secondary-action" href="/profit/">Profit monitor</a>
-                    <a class="fp-secondary-action" href="/nft">NFT hub</a>
                 </div>
                 <p id="cex-hero-status" class="cex-hero-status" aria-live="polite">Loading exchange status…</p>
             </div>
@@ -96,9 +97,251 @@
             <p id="cex-account-sync-status" class="cex-account-sync" aria-live="polite">Connecting profile, MN2, and exchange wallet…</p>
         </section>
 
+        <section class="fp-game-hub cex-hub-wrap" aria-label="Exchange sections">
+            <div class="cex-hub-wrap-head">
+                <p class="fp-kicker" style="margin:0"><span>Navigate</span><span id="cex-hub-tab-label">Trade</span></p>
+                <h2>One desk at a time</h2>
+            </div>
+            <nav class="cex-hub-nav" id="cex-hub-nav" aria-label="Exchange sections" role="tablist">
+                <button type="button" class="cex-hub-tab active" data-cex-tab="trade" role="tab" aria-selected="true">Trade</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="overview" role="tab" aria-selected="false">Overview</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="bots" role="tab" aria-selected="false">Bots</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="liquidity" role="tab" aria-selected="false">Sales pool</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="treasury" role="tab" aria-selected="false">Treasury</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="marketplace" role="tab" aria-selected="false">Marketplace</button>
+                <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
+            </nav>
+            <p class="cex-route-note" id="cex-route-note" hidden aria-hidden="true"></p>
+        </section>
+
+        
+
+        <div class="cex-tab-shell active" data-cex-tab="trade" id="cex-shell-trade">
+        <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
+        <div class="cex-trade-frame">
+        <section class="cex-frame cex-frame--bold cex-mn2-linked-strip">
+        <section class="mn2-page-strip" data-mn2-auto data-balance-id="cex-mn2-balance" data-rate-id="cex-mn2-rate">
+            <h2>Platform wallet (MN2)</h2>
+            <p>Spend the same MN2 as Shop and Casino — swap quotes, bot rentals, and exchange shop boosts debit this balance.</p>
+            <div class="mn2-page-metrics">
+                <div class="mn2-page-metric"><span>MN2 balance</span><strong id="cex-mn2-balance">—</strong></div>
+                <div class="mn2-page-metric"><span>USD / MN2</span><strong id="cex-mn2-rate">—</strong></div>
+                <div class="mn2-page-metric"><span>Fee tier</span><strong id="cex-fee-tier">—</strong></div>
+                <div class="mn2-page-metric"><span>Profile</span><strong id="cex-mn2-profile-link"><a href="/profile" class="cex-mini-link">Account</a></strong></div>
+            </div>
+            <div class="mn2-page-actions">
+                <a href="/profile#profile-mn2-wallet-card">Profile wallet</a>
+                <a href="/wallets" class="secondary">Wallet portal</a>
+                <a href="/shop#shop-mn2" class="secondary">Shop MN2</a>
+                <a href="/explorer" class="secondary">Explorer</a>
+            </div>
+        </section>
+        </section>
+
+        <div class="cex-grid">
+            <aside class="cex-panel cex-assets">
+                <h2>Markets <span id="cex-asset-count" class="cex-badge">25</span></h2>
+                <input type="search" id="cex-asset-search" placeholder="Search BTC, ETH…" class="cex-input">
+                <div id="cex-asset-list" class="cex-asset-list">Loading…</div>
+            </aside>
+
+            <main class="cex-panel cex-trade" id="cex-trading-desk">
+                <div class="cex-tabs">
+                    <button type="button" class="cex-tab active" data-tab="swap">Instant swap</button>
+                    <button type="button" class="cex-tab" data-tab="withdraw">Deposit / Withdraw</button>
+                    <button type="button" class="cex-tab" data-tab="onramp">PayPal buy</button>
+                    <button type="button" class="cex-tab" data-tab="limit">Limit order</button>
+                    <button type="button" class="cex-tab" data-tab="staking">Staking</button>
+                    <button type="button" class="cex-tab" data-tab="tax">Tax report</button>
+                </div>
+
+                <div id="cex-tab-swap" class="cex-tab-panel active">
+                    <div class="cex-swap-desk" id="cex-swap-desk">
+                        <div class="cex-swap-desk-head">
+                            <div>
+                                <h2>Instant swap</h2>
+                                <p class="cex-lede" style="margin:6px 0 0">Buy or sell market assets with MN2, shop coins, USDC, or USDT.</p>
+                            </div>
+                            <div class="cex-swap-balances" aria-label="Spendable balances">
+                                <span class="cex-bal-chip">MN2 <strong id="cex-swap-bal-mn2">—</strong></span>
+                                <span class="cex-bal-chip">Coins <strong id="cex-swap-bal-coins">—</strong></span>
+                                <span class="cex-bal-chip">USDC <strong id="cex-swap-bal-usdc">—</strong></span>
+                                <span class="cex-bal-chip">USDT <strong id="cex-swap-bal-usdt">—</strong></span>
+                            </div>
+                        </div>
+                        <div class="cex-selected" id="cex-selected-asset">Select an asset</div>
+                        <div class="cex-swap-pair">
+                            <label>You pay / receive
+                                <select id="cex-swap-quote" class="cex-input">
+                                    <option value="MN2">MN2</option>
+                                    <option value="COINS">Coins</option>
+                                    <option value="USDC">USDC</option>
+                                    <option value="USDT">USDT</option>
+                                </select>
+                            </label>
+                            <button type="button" class="cex-swap-flip" id="cex-swap-flip" title="Flip buy/sell" aria-label="Flip buy and sell">⇅</button>
+                            <label>Market asset
+                                <input id="cex-swap-asset-label" class="cex-input" readonly value="BTC">
+                            </label>
+                        </div>
+                        <div class="cex-form-row">
+                            <label>Side
+                                <select id="cex-swap-side" class="cex-input">
+                                    <option value="buy">Buy asset (spend quote)</option>
+                                    <option value="sell">Sell asset (receive quote)</option>
+                                </select>
+                            </label>
+                            <label>Amount of asset
+                                <input type="number" id="cex-swap-amount" class="cex-input" min="0" step="any" placeholder="0.0">
+                            </label>
+                        </div>
+                        <div class="cex-quick-amts" id="cex-quick-amts">
+                            <button type="button" data-pct="25">25%</button>
+                            <button type="button" data-pct="50">50%</button>
+                            <button type="button" data-pct="75">75%</button>
+                            <button type="button" data-pct="100">Max</button>
+                        </div>
+                        <div id="cex-quote-preview" class="cex-quote-card cex-quote-preview"><span class="cex-quote-meta">Enter an amount and get a quote.</span></div>
+                        <div class="cex-swap-actions">
+                            <button type="button" id="cex-quote-btn" class="cex-btn cex-btn--ghost">Get quote</button>
+                            <button type="button" id="cex-swap-confirm" class="cex-btn cex-btn--primary" disabled>Confirm swap</button>
+                            <button type="button" id="cex-swap-btn" class="cex-btn cex-btn--ghost" hidden aria-hidden="true">Legacy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cex-tab-withdraw" class="cex-tab-panel">
+                    <div class="cex-onramp-head">
+                        <h2>Multi-wallet deposit &amp; withdraw</h2>
+                        <p class="cex-muted">Every tradeable coin shares one multi-wallet. MN2 uses the chain daemon; other coins use Binance custody. One multi-daemon covers balances, deposits, and withdraws — not one daemon per coin.</p>
+                        <p class="cex-muted" id="cex-stable-status">Checking multi-wallet status…</p>
+                    </div>
+                    <div class="cex-paypal-buy-box" style="margin-bottom:16px">
+                        <h3>Deposit</h3>
+                        <div class="cex-form-row">
+                            <label>Asset
+                                <select id="cex-dep-asset" class="cex-input"></select>
+                            </label>
+                            <label>Amount (for intent match)
+                                <input type="number" id="cex-dep-amount" class="cex-input" min="0" step="any" placeholder="optional">
+                            </label>
+                        </div>
+                        <div class="cex-swap-actions">
+                            <button type="button" id="cex-dep-addr-btn" class="cex-btn cex-btn--ghost">Get deposit address</button>
+                            <button type="button" id="cex-dep-intent-btn" class="cex-btn cex-btn--ghost">Create deposit intent</button>
+                        </div>
+                        <div id="cex-dep-info" class="cex-quote-preview" style="margin-top:10px"></div>
+                        <div class="cex-form-row" style="margin-top:10px">
+                            <label>Txid (after send)
+                                <input id="cex-dep-txid" class="cex-input" placeholder="paste txid">
+                            </label>
+                            <button type="button" id="cex-dep-confirm-btn" class="cex-btn cex-btn--primary">Confirm deposit</button>
+                        </div>
+                    </div>
+                    <div class="cex-paypal-buy-box">
+                        <h3>Withdraw</h3>
+                        <div class="cex-form-row">
+                            <label>Asset
+                                <select id="cex-wd-asset" class="cex-input"></select>
+                            </label>
+                            <label>Network
+                                <input id="cex-wd-network" class="cex-input" placeholder="TRC20 / BTC / ETH">
+                            </label>
+                        </div>
+                        <div class="cex-form-row">
+                            <label>Amount
+                                <input type="number" id="cex-wd-amount" class="cex-input" min="0" step="any" placeholder="0.0">
+                            </label>
+                            <label>Available
+                                <input id="cex-wd-available" class="cex-input" readonly value="—">
+                            </label>
+                        </div>
+                        <label>Destination address
+                            <input id="cex-wd-address" class="cex-input" placeholder="external address">
+                        </label>
+                        <div class="cex-swap-actions" style="margin-top:12px">
+                            <button type="button" id="cex-wd-btn" class="cex-btn cex-btn--primary">Withdraw</button>
+                        </div>
+                        <p class="cex-muted" style="margin-top:8px">MN2 withdraws stay on Profile → Wallet (on-chain). All other coins withdraw here.</p>
+                    </div>
+                </div>
+
+                <div id="cex-tab-onramp" class="cex-tab-panel">
+                    <div class="cex-onramp-head">
+                        <h2>Buy crypto with PayPal</h2>
+                        <p class="cex-muted">PayPal is the fiat redirect. Funds settle to the configured PayPal business account, then the selected crypto is credited to your custodial exchange wallet after capture.</p>
+                    </div>
+                    <div class="cex-paypal-buy-box">
+                        <h3>Direct PayPal crypto buy</h3>
+                        <div class="cex-form-row">
+                            <label>Asset
+                                <input id="cex-paypal-symbol" class="cex-input" readonly value="BTC">
+                            </label>
+                            <label>USD amount
+                                <input type="number" id="cex-paypal-usd" class="cex-input" min="5" step="0.01" value="25">
+                            </label>
+                        </div>
+                        <div id="cex-paypal-crypto-preview" class="cex-quote-preview"></div>
+                        <button type="button" id="cex-paypal-crypto-btn" class="cex-btn cex-btn--primary">Buy selected crypto with PayPal</button>
+                    </div>
+                    <hr class="cex-divider">
+                    <h3>MN2 PayPal packs</h3>
+                    <div id="cex-paypal-mn2-packs" class="cex-pack-grid">Loading PayPal MN2 packs…</div>
+                    <div class="cex-flow-note">
+                        <strong>Flow:</strong> PayPal checkout -> business PayPal account -> custodial exchange wallet credit -> exchange/casino/camgirls spend.
+                    </div>
+                </div>
+
+                <div id="cex-tab-limit" class="cex-tab-panel">
+                    <div class="cex-form-row">
+                        <label>Asset<input id="cex-limit-symbol" class="cex-input" readonly></label>
+                        <label>Side<select id="cex-limit-side" class="cex-input"><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
+                        <label>Amount<input type="number" id="cex-limit-amount" class="cex-input" min="0" step="any"></label>
+                        <label>Limit price<input type="number" id="cex-limit-price" class="cex-input" min="0" step="any"></label>
+                    </div>
+                    <button type="button" id="cex-limit-btn" class="cex-btn">Place limit order</button>
+                    <div id="cex-open-orders" class="cex-orders"></div>
+                </div>
+
+                <div id="cex-tab-staking" class="cex-tab-panel">
+                    <p class="cex-muted">Daily staking rewards on idle exchange balances (APY varies by asset).</p>
+                    <div id="cex-staking-list"></div>
+                </div>
+
+                <div id="cex-tab-tax" class="cex-tab-panel">
+                    <p class="cex-muted">Informational DAC8-style trade log for Denmark/EU. Not tax advice.</p>
+                    <button type="button" id="cex-tax-btn" class="cex-btn cex-btn--ghost">Load tax report</button>
+                    <pre id="cex-tax-report" class="cex-tax-pre"></pre>
+                </div>
+
+                <p id="cex-msg" class="cex-msg"></p>
+            </main>
+
+            <aside class="cex-panel cex-wallet cex-frame cex-frame--bold" id="cex-exchange-wallet-panel">
+                <h2><strong>Exchange wallets</strong></h2>
+                <p class="cex-muted" style="margin:0 0 10px">Every tradeable coin has its own custodial balance (zeros shown). <a href="/profile?tab=wallet" class="cex-mini-link">Profile wallets</a> · <a href="/wallets" class="cex-mini-link">Wallets</a></p>
+                <div id="cex-wallet-balances" class="cex-wallet-list">—</div>
+
+                <div class="cex-bonus-card" id="cex-bonus-card">
+                    <h3>Welcome bonus</h3>
+                    <p id="cex-bonus-desc">One-time lawful promotional MN2 credit (terms apply).</p>
+                    <label class="cex-check"><input type="checkbox" id="cex-bonus-accept"> I accept the promotional terms (18+, no guaranteed returns)</label>
+                    <button type="button" id="cex-bonus-btn" class="cex-btn cex-btn--accent">Claim bonus</button>
+                </div>
+
+                <h3>Recent trades</h3>
+                <div id="cex-recent-trades" class="cex-trades">—</div>
+            </aside>
+        </div>
+        </div>
+        </div>
+
+        
+        <details class="cex-explore-more" id="cex-explore-more">
+            <summary>More tools — agents, arb, NFT, profit map</summary>
         <section class="cex-hotshots" aria-labelledby="cex-hotshots-title">
             <h2 id="cex-hotshots-title" class="cex-hotshots-title"><strong>Hot spots</strong></h2>
-            <p class="cex-map-lead">Bold frames for the flows traders hit first — jump straight in.</p>
+            <p class="cex-map-lead">Optional shortcuts — swap desk is above.</p>
             <div class="cex-hotshots-grid">
                 <article class="cex-frame cex-frame--bold cex-hotshot">
                     <header class="cex-frame-head">
@@ -193,154 +436,7 @@
             <a href="#cex-rental-hub" class="cex-mini-link" data-cex-goto="marketplace">Rent bots</a>
             <a href="#cex-exchange-shop" class="cex-mini-link" data-cex-goto="marketplace">Exchange shop</a>
         </nav>
-
-        <section class="fp-game-hub cex-hub-wrap" aria-label="Exchange sections">
-            <div class="cex-hub-wrap-head">
-                <p class="fp-kicker" style="margin:0"><span>Sections</span><span id="cex-hub-tab-label">Trade</span></p>
-                <h2>Hub navigation</h2>
-            </div>
-            <nav class="cex-hub-nav" id="cex-hub-nav" aria-label="Exchange sections" role="tablist">
-                <button type="button" class="cex-hub-tab active" data-cex-tab="trade" role="tab" aria-selected="true">Trade</button>
-                <button type="button" class="cex-hub-tab" data-cex-tab="overview" role="tab" aria-selected="false">Overview</button>
-                <button type="button" class="cex-hub-tab" data-cex-tab="bots" role="tab" aria-selected="false">Bots</button>
-                <button type="button" class="cex-hub-tab" data-cex-tab="liquidity" role="tab" aria-selected="false">Sales pool</button>
-                <button type="button" class="cex-hub-tab" data-cex-tab="treasury" role="tab" aria-selected="false">Treasury</button>
-                <button type="button" class="cex-hub-tab" data-cex-tab="marketplace" role="tab" aria-selected="false">Marketplace</button>
-                <button type="button" class="cex-hub-tab" data-cex-tab="venues" role="tab" aria-selected="false">Venues</button>
-            </nav>
-            <p class="cex-route-note" id="cex-route-note">Viewing: Trade. Data loads when you open each tab.</p>
-        </section>
-
-        <div class="cex-tab-shell active" data-cex-tab="trade" id="cex-shell-trade">
-        <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
-        <div class="cex-trade-frame">
-        <section class="cex-frame cex-frame--bold cex-mn2-linked-strip">
-        <section class="mn2-page-strip" data-mn2-auto data-balance-id="cex-mn2-balance" data-rate-id="cex-mn2-rate">
-            <h2>Platform wallet (MN2)</h2>
-            <p>Spend the same MN2 as Shop and Casino — swap quotes, bot rentals, and exchange shop boosts debit this balance.</p>
-            <div class="mn2-page-metrics">
-                <div class="mn2-page-metric"><span>MN2 balance</span><strong id="cex-mn2-balance">—</strong></div>
-                <div class="mn2-page-metric"><span>USD / MN2</span><strong id="cex-mn2-rate">—</strong></div>
-                <div class="mn2-page-metric"><span>Fee tier</span><strong id="cex-fee-tier">—</strong></div>
-                <div class="mn2-page-metric"><span>Profile</span><strong id="cex-mn2-profile-link"><a href="/profile" class="cex-mini-link">Account</a></strong></div>
-            </div>
-            <div class="mn2-page-actions">
-                <a href="/profile#profile-mn2-wallet-card">Profile wallet</a>
-                <a href="/wallets" class="secondary">Wallet portal</a>
-                <a href="/shop#shop-mn2" class="secondary">Shop MN2</a>
-                <a href="/explorer" class="secondary">Explorer</a>
-            </div>
-        </section>
-        </section>
-
-        <div class="cex-grid">
-            <aside class="cex-panel cex-assets">
-                <h2>Markets <span id="cex-asset-count" class="cex-badge">25</span></h2>
-                <input type="search" id="cex-asset-search" placeholder="Search BTC, ETH…" class="cex-input">
-                <div id="cex-asset-list" class="cex-asset-list">Loading…</div>
-            </aside>
-
-            <main class="cex-panel cex-trade" id="cex-trading-desk">
-                <div class="cex-tabs">
-                    <button type="button" class="cex-tab active" data-tab="swap">Instant swap</button>
-                    <button type="button" class="cex-tab" data-tab="onramp">PayPal buy</button>
-                    <button type="button" class="cex-tab" data-tab="limit">Limit order</button>
-                    <button type="button" class="cex-tab" data-tab="staking">Staking</button>
-                    <button type="button" class="cex-tab" data-tab="tax">Tax report</button>
-                </div>
-
-                <div id="cex-tab-swap" class="cex-tab-panel active">
-                    <div class="cex-selected" id="cex-selected-asset">Select an asset</div>
-                    <div class="cex-form-row">
-                        <label>Side
-                            <select id="cex-swap-side" class="cex-input">
-                                <option value="buy">Buy</option>
-                                <option value="sell">Sell</option>
-                            </select>
-                        </label>
-                        <label>Amount
-                            <input type="number" id="cex-swap-amount" class="cex-input" min="0" step="any" placeholder="0.0">
-                        </label>
-                        <label>Quote
-                            <select id="cex-swap-quote" class="cex-input">
-                                <option value="MN2">MN2</option>
-                                <option value="COINS">Coins</option>
-                            </select>
-                        </label>
-                    </div>
-                    <div id="cex-quote-preview" class="cex-quote-preview"></div>
-                    <button type="button" id="cex-swap-btn" class="cex-btn cex-btn--primary">Get quote &amp; swap</button>
-                </div>
-
-                <div id="cex-tab-onramp" class="cex-tab-panel">
-                    <div class="cex-onramp-head">
-                        <h2>Buy crypto with PayPal</h2>
-                        <p class="cex-muted">PayPal is the fiat redirect. Funds settle to the configured PayPal business account, then the selected crypto is credited to your custodial exchange wallet after capture.</p>
-                    </div>
-                    <div class="cex-paypal-buy-box">
-                        <h3>Direct PayPal crypto buy</h3>
-                        <div class="cex-form-row">
-                            <label>Asset
-                                <input id="cex-paypal-symbol" class="cex-input" readonly value="BTC">
-                            </label>
-                            <label>USD amount
-                                <input type="number" id="cex-paypal-usd" class="cex-input" min="5" step="0.01" value="25">
-                            </label>
-                        </div>
-                        <div id="cex-paypal-crypto-preview" class="cex-quote-preview"></div>
-                        <button type="button" id="cex-paypal-crypto-btn" class="cex-btn cex-btn--primary">Buy selected crypto with PayPal</button>
-                    </div>
-                    <hr class="cex-divider">
-                    <h3>MN2 PayPal packs</h3>
-                    <div id="cex-paypal-mn2-packs" class="cex-pack-grid">Loading PayPal MN2 packs…</div>
-                    <div class="cex-flow-note">
-                        <strong>Flow:</strong> PayPal checkout -> business PayPal account -> custodial exchange wallet credit -> exchange/casino/camgirls spend.
-                    </div>
-                </div>
-
-                <div id="cex-tab-limit" class="cex-tab-panel">
-                    <div class="cex-form-row">
-                        <label>Asset<input id="cex-limit-symbol" class="cex-input" readonly></label>
-                        <label>Side<select id="cex-limit-side" class="cex-input"><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
-                        <label>Amount<input type="number" id="cex-limit-amount" class="cex-input" min="0" step="any"></label>
-                        <label>Limit price<input type="number" id="cex-limit-price" class="cex-input" min="0" step="any"></label>
-                    </div>
-                    <button type="button" id="cex-limit-btn" class="cex-btn">Place limit order</button>
-                    <div id="cex-open-orders" class="cex-orders"></div>
-                </div>
-
-                <div id="cex-tab-staking" class="cex-tab-panel">
-                    <p class="cex-muted">Daily staking rewards on idle exchange balances (APY varies by asset).</p>
-                    <div id="cex-staking-list"></div>
-                </div>
-
-                <div id="cex-tab-tax" class="cex-tab-panel">
-                    <p class="cex-muted">Informational DAC8-style trade log for Denmark/EU. Not tax advice.</p>
-                    <button type="button" id="cex-tax-btn" class="cex-btn cex-btn--ghost">Load tax report</button>
-                    <pre id="cex-tax-report" class="cex-tax-pre"></pre>
-                </div>
-
-                <p id="cex-msg" class="cex-msg"></p>
-            </main>
-
-            <aside class="cex-panel cex-wallet cex-frame cex-frame--bold" id="cex-exchange-wallet-panel">
-                <h2><strong>Exchange wallet</strong></h2>
-                <p class="cex-muted" style="margin:0 0 10px">Custodial crypto book (separate from chain MN2). <a href="/profile#profile-mn2-wallet-card" class="cex-mini-link">Platform MN2</a> · <a href="/wallets" class="cex-mini-link">Wallets</a></p>
-                <div id="cex-wallet-balances" class="cex-wallet-list">—</div>
-
-                <div class="cex-bonus-card" id="cex-bonus-card">
-                    <h3>Welcome bonus</h3>
-                    <p id="cex-bonus-desc">One-time lawful promotional MN2 credit (terms apply).</p>
-                    <label class="cex-check"><input type="checkbox" id="cex-bonus-accept"> I accept the promotional terms (18+, no guaranteed returns)</label>
-                    <button type="button" id="cex-bonus-btn" class="cex-btn cex-btn--accent">Claim bonus</button>
-                </div>
-
-                <h3>Recent trades</h3>
-                <div id="cex-recent-trades" class="cex-trades">—</div>
-            </aside>
-        </div>
-        </div>
-        </div>
+        </details>
 
         <div class="cex-tab-shell" data-cex-tab="overview" id="cex-shell-overview" hidden>
             <div class="cex-tab-load-slot" hidden aria-live="polite"></div>
@@ -722,10 +818,10 @@
     <script src="/static/js/navigation-toolbar.js"></script>
     <script src="/static/js/mn2-site-bridge.js?v=20260626"></script>
     <script src="/static/js/mn2-page-strip-init.js?v=20260626"></script>
-    <script src="/static/js/exchange-hub.js?v=20261010a"></script>
+    <script src="/static/js/exchange-hub.js?v=20261121ex"></script>
     <script src="/static/js/exchange-onboard.js?v=20261001b"></script>
     <script src="/static/js/exchange-account-bridge.js?v=20261001b"></script>
-    <script src="/static/js/crypto-exchange.js?v=20261010a"></script>
+    <script src="/static/js/crypto-exchange.js?v=20261121ex"></script>
     <script src="/static/js/agent-marketplace.js?v=20260702c"></script>
     <script src="/static/js/cex-nft-market.js?v=20261001a"></script>
 </body>

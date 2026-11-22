@@ -250,9 +250,12 @@ def venue_api_request(
         query = urllib.parse.urlencode(params)
         url = f"{api_base}{path}?{query}"
         headers = {"X-MBX-APIKEY": api_key}
-        if method == "POST":
-            return _http_request("POST", url, headers=headers, timeout=timeout)
-        return _http_request("GET", url, headers=headers, timeout=timeout)
+        # Binance spot signs query-string for GET/POST/DELETE (cancel_order is DELETE).
+        # Previously non-POST fell through to GET, so cancels queried the order (status NEW)
+        # instead of cancelling it — resting grid sells kept filling.
+        if method not in ("GET", "POST", "DELETE", "PUT"):
+            method = "GET"
+        return _http_request(method, url, headers=headers, timeout=timeout)
 
     if auth == "okx_hmac":
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"

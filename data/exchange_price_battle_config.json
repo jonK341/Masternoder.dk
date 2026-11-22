@@ -1,0 +1,18 @@
+{
+  "enabled": false,
+  "venue_id": "binance",
+  "quote": "USDC",
+  "position_usd": 5.0,
+  "max_open_positions": 3,
+  "min_venue_quote_reserve_usd": 10.0,
+  "min_profit_bps": 50,
+  "fee_buffer_bps": 20,
+  "min_hold_sec": 60,
+  "max_hold_sec": 7200,
+  "buy_dip_only": true,
+  "dip_bps": 25,
+  "symbols": ["XRP", "ADA", "DOGE", "TRX", "SOL", "LTC"],
+  "daemon_interval_sec": 120,
+  "paused_reason": "Paused so spot inventory could be converted to USDC for withdrawal.",
+  "note": "Paused. Set enabled back to true to resume $5 dip buys. EXCHANGE_PRICE_BATTLE_LIVE=1 for real orders."
+}

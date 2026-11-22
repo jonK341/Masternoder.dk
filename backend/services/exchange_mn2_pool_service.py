@@ -255,12 +255,24 @@ def _pool_payout(symbol: str, side: str, quote: str, quote_payload: Dict[str, An
 def check_pool_liquidity(symbol: str, side: str, quote: str, quote_payload: Dict[str, Any]) -> Optional[str]:
     if not pool_enabled() or not is_pool_swap(symbol, quote):
         return None
-    ensure_paper_seed()
+    try:
+        from backend.services.exchange_stable_markets_service import (
+            paper_mode_enabled,
+            venue_backed_available,
+        )
+        if paper_mode_enabled():
+            ensure_paper_seed()
+    except ImportError:
+        paper_mode_enabled = None  # type: ignore
+        venue_backed_available = None  # type: ignore
+        ensure_paper_seed()
     payout_sym, payout_amt = _pool_payout(symbol, side, quote, quote_payload)
     if payout_amt <= 0:
         return "invalid_pool_amount"
     uid = pool_user_id()
     available = _pool_asset_balance(uid, payout_sym)
+    if venue_backed_available is not None:
+        available = venue_backed_available(available, payout_sym)
     if available + 1e-12 < payout_amt:
         return "insufficient_pool_liquidity"
     return None
@@ -302,7 +314,14 @@ def apply_pool_leg(symbol: str, side: str, quote: str, quote_payload: Dict[str, 
 
 def ensure_paper_seed() -> Dict[str, Any]:
     cfg = load_config()
-    if cfg.get("paper_seed_on_empty") is False:
+    # Live transferable markets: paper inventing is off unless explicitly enabled.
+    try:
+        from backend.services.exchange_stable_markets_service import paper_mode_enabled
+        if not paper_mode_enabled():
+            return {"success": True, "skipped": True, "reason": "paper_mode_disabled"}
+    except ImportError:
+        pass
+    if cfg.get("paper_seed_on_empty") is not True:
         return {"success": True, "skipped": True, "reason": "paper_seed_disabled"}
     state = _read_state()
     if state.get("paper_seeded"):
@@ -352,7 +371,7 @@ def mn2_pool_status() -> Dict[str, Any]:
         }
     except Exception:
         health_block = {}
-    return {
+    out = {
         "success": True,
         "enabled": bool(cfg.get("enabled", True)),
         "pool_user_id": pool_user_id(),
@@ -369,10 +388,17 @@ def mn2_pool_status() -> Dict[str, Any]:
         "reserve_user_id": reserve_user_id(),
         "reserve_assets": reserve_balances(),
         "paper_seeded": bool(state.get("paper_seeded")),
+        "paper_seed_on_empty": bool(cfg.get("paper_seed_on_empty") is True),
         "last_tick_at": state.get("last_tick_at"),
         "tick_count": int(state.get("tick_count") or 0),
         "cron_interval_minutes": int(cfg.get("cron_interval_minutes") or 3),
     }
+    try:
+        from backend.services.exchange_stable_markets_service import stable_markets_status
+        out["stable_markets"] = stable_markets_status()
+    except Exception:
+        pass
+    return out
 
 
 def _cooldown_active(cfg: Dict[str, Any], *, force: bool) -> bool:
@@ -392,6 +418,14 @@ def _cooldown_active(cfg: Dict[str, Any], *, force: bool) -> bool:
 
 
 def _seed_pool_mn2(cfg: Dict[str, Any], gaps: Dict[str, float]) -> Dict[str, Any]:
+    try:
+        from backend.services.exchange_stable_markets_service import paper_mode_enabled
+        if not paper_mode_enabled():
+            return {"success": True, "skipped": True, "reason": "paper_mode_disabled"}
+    except ImportError:
+        pass
+    if cfg.get("allow_non_withdrawable_seed") is not True:
+        return {"success": True, "skipped": True, "reason": "non_withdrawable_seed_disabled"}
     gap = float(gaps.get("MN2") or 0)
     if gap <= 0:
         return {"success": True, "skipped": True, "reason": "mn2_sufficient"}
@@ -473,6 +507,17 @@ def run_mn2_pool_agent_tick(*, force: bool = False, light: bool = False) -> Dict
         except Exception as exc:
             sweep_result = {"success": False, "error": str(exc)}
 
+    sync_result: Dict[str, Any] = {"skipped": True, "reason": "paper_or_unavailable"}
+    try:
+        from backend.services.exchange_stable_markets_service import (
+            paper_mode_enabled,
+            sync_sales_pool_stables_from_venue,
+        )
+        if not paper_mode_enabled():
+            sync_result = sync_sales_pool_stables_from_venue()
+    except Exception as exc:
+        sync_result = {"success": False, "error": str(exc)}
+
     seed_result = _seed_pool_mn2(cfg, pool_gaps())
     rebalance_result = _rebalance_stables(cfg)
 
@@ -489,6 +534,7 @@ def run_mn2_pool_agent_tick(*, force: bool = False, light: bool = False) -> Dict
         "light": bool(light),
         "gaps_before": gaps_before,
         "sweep": sweep_result,
+        "venue_sync": sync_result,
         "seed": seed_result,
         "rebalance": rebalance_result,
         "status": status,
