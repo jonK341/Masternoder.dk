@@ -16,7 +16,8 @@
       { title: 'Generator', href: '/generator/', desc: 'Video & clips', reward: 'Gen MN2' },
       { title: 'Exchange', href: '/exchange/', desc: 'Buy MN2, trade 25 assets, tax logs', reward: 'Fees + rebates' },
       { title: 'Exchange Profit Oracle', href: '/exchange/#cex-profit-oracle', desc: 'Profit bot, P/L, fees, and projections', reward: 'Profit intelligence' },
-      { title: 'Casino cockpit', href: '/casino/#casino-cockpit', desc: 'Games, income monitor, contests', reward: 'House + engagement' },
+      { title: 'Casino Fund & Play', href: '/casino/#casino-fund-play', desc: 'PayPal / MN2 buy-in + Hot tables', reward: 'Conversion' },
+      { title: 'Casino cashflow (ops)', href: '/command-center#casino', desc: 'House edge, deposits, exchange bridge', reward: 'Ops income' },
       { title: 'Debugger Q&A', href: '/debugger/#quiz', desc: 'Top 50 quiz', reward: 'Up to 0.05 MN2' },
     ],
     battle: [
@@ -56,10 +57,12 @@
       { title: 'Profile wallet', href: '/profile#mn2-wallet', desc: 'Deposits, withdrawals, statements', reward: 'Retention' },
     ],
     casino: [
-      { title: 'Casino cockpit', href: '/casino/#casino-cockpit', desc: 'Table of contents + live monitors', reward: 'House income' },
-      { title: 'Contest table', href: '/casino/#casino-tab-leaderboard', desc: 'Leaderboards, tournaments, streak quests', reward: 'Competition' },
+      { title: 'Fund & Play', href: '/casino/#casino-fund-play', desc: 'PayPal packs + MN2 buy-in', reward: 'Deposits' },
+      { title: 'Hot tables', href: '/casino/#casino-tab-home', desc: 'Dice, Keno, Slots, Flip, Crash, Roulette', reward: 'House edge' },
+      { title: 'Lounge / cockpit', href: '/casino/?tab=lounge', desc: 'Quests, bridge, income monitor', reward: 'Retention' },
+      { title: 'Contest table', href: '/casino/?tab=compete', desc: 'Leaderboards, tournaments, streak quests', reward: 'Competition' },
       { title: 'Camgirls lounge', href: '/camgirls/', desc: 'PayPal or MN2 unlocks, tips, fan club, private', reward: 'Premium spend' },
-      { title: 'Social casino', href: '/casino/#casino-tab-social', desc: 'Share wins, referrals, Discord', reward: 'Viral loop' },
+      { title: 'Social casino', href: '/casino/?tab=social', desc: 'Share wins, referrals, Discord', reward: 'Viral loop' },
     ],
     agents: [
       { title: 'Agents control', href: '/agents/', desc: 'Assign agents', reward: 'Automation' },
@@ -188,18 +191,167 @@
     });
   }
 
-  function loadCasinoMonitor() {
+  function opsToken() {
+    try {
+      return sessionStorage.getItem('cc_ops_token') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function setOpsToken(value) {
+    try {
+      if (value) sessionStorage.setItem('cc_ops_token', value);
+      else sessionStorage.removeItem('cc_ops_token');
+    } catch (e) { /* session only */ }
+  }
+
+  function fmtRail(n, rail) {
+    var x = Number(n || 0);
+    if (rail === 'mn2') return x.toFixed(4);
+    if (rail === 'usd') return x.toFixed(2);
+    return String(Math.round(x));
+  }
+
+  function renderCashflow(d) {
     var el = document.getElementById('cc-casino-monitor');
+    var metrics = document.getElementById('cc-cashflow-metrics');
+    var rails = document.getElementById('cc-cashflow-rails');
+    var games = document.getElementById('cc-cashflow-games');
     if (!el) return;
+    if (!d || !d.success) {
+      el.textContent = (d && d.error) || 'Cashflow unavailable.';
+      if (metrics) metrics.hidden = true;
+      if (rails) rails.hidden = true;
+      if (games) games.hidden = true;
+      return;
+    }
+    var fin = d.financial_usd || {};
+    var cf = d.cashflow || {};
+    var paypal = cf.paypal_deposits || {};
+    var buyins = cf.mn2_buyins || {};
+    var bridge = cf.exchange_to_casino || {};
+    el.innerHTML =
+      '<strong>Ops cashflow</strong> · last ' + (d.since_hours || 24) + 'h' +
+      ' · net ops USD $' + Number(fin.net_ops_usd || 0).toFixed(2) +
+      ' · generated ' + (d.generated_at || '—');
+    if (metrics) {
+      metrics.hidden = false;
+      metrics.innerHTML =
+        '<div class="cc-cashflow-metric"><span>House edge USD</span><strong>$' + Number(fin.house_edge_usd || 0).toFixed(2) + '</strong></div>' +
+        '<div class="cc-cashflow-metric"><span>Rake USD</span><strong>$' + Number(fin.rake_usd || 0).toFixed(2) + '</strong></div>' +
+        '<div class="cc-cashflow-metric"><span>PayPal deposits</span><strong>$' + Number(paypal.amount_usd || 0).toFixed(2) + '</strong><span>' + (paypal.count || 0) + ' captures</span></div>' +
+        '<div class="cc-cashflow-metric"><span>MN2 buy-ins</span><strong>$' + Number(buyins.casino_usd_credit || 0).toFixed(2) + '</strong><span>' + Number(buyins.price_mn2 || 0).toFixed(2) + ' MN2 · ' + (buyins.count || 0) + '</span></div>' +
+        '<div class="cc-cashflow-metric"><span>Exchange → casino</span><strong>$' + Number(bridge.amount_usd || 0).toFixed(2) + '</strong><span>' + (bridge.casino_coins || 0) + ' coins · ' + (bridge.count || 0) + '</span></div>' +
+        '<div class="cc-cashflow-metric"><span>Rebates USD</span><strong>$' + Number(fin.rebates_usd || 0).toFixed(2) + '</strong></div>';
+    }
+    if (rails) {
+      var casino = d.casino || {};
+      var keys = Object.keys(casino);
+      if (!keys.length) {
+        rails.hidden = true;
+      } else {
+        rails.hidden = false;
+        rails.innerHTML = '<h3 style="margin:12px 0 6px;font-size:0.95rem;color:#7ee8ff;">House by rail</h3><table class="cc-cashflow-table"><thead><tr><th>Rail</th><th>Bets</th><th>Wagered</th><th>House</th><th>Rake</th></tr></thead><tbody>' +
+          keys.map(function (rail) {
+            var row = casino[rail] || {};
+            return '<tr><td>' + rail.toUpperCase() + '</td><td>' + (row.bets || 0) + '</td><td>' +
+              fmtRail(row.total_bet, rail) + '</td><td>' + fmtRail(row.house_edge, rail) + '</td><td>' +
+              fmtRail(row.rake, rail) + '</td></tr>';
+          }).join('') + '</tbody></table>';
+      }
+    }
+    if (games) {
+      var byGame = d.by_game || {};
+      var gids = Object.keys(byGame).slice(0, 12);
+      if (!gids.length) {
+        games.hidden = true;
+      } else {
+        games.hidden = false;
+        games.innerHTML = '<h3 style="margin:12px 0 6px;font-size:0.95rem;color:#7ee8ff;">Top games (all rails)</h3><table class="cc-cashflow-table"><thead><tr><th>Game</th><th>Rails</th><th>House (sum units)</th></tr></thead><tbody>' +
+          gids.map(function (gid) {
+            var railsMap = byGame[gid] || {};
+            var parts = Object.keys(railsMap).map(function (r) {
+              return r.toUpperCase() + ' ' + fmtRail((railsMap[r] || {}).house_edge, r);
+            });
+            return '<tr><td>' + gid + '</td><td>' + Object.keys(railsMap).join(', ') + '</td><td>' + parts.join(' · ') + '</td></tr>';
+          }).join('') + '</tbody></table>' +
+          '<p class="cc-cashflow-note">Per-rail house figures are not summed across coins/MN2/USD.</p>';
+      }
+    }
+  }
+
+  function loadCasinoCashflow() {
+    var el = document.getElementById('cc-casino-monitor');
+    var token = opsToken();
+    var input = document.getElementById('cc-ops-token');
+    if (input && token && !input.value) input.value = token;
+    if (!token) {
+      if (el) el.textContent = 'Enter ops token to load cashflow.';
+      return;
+    }
+    if (el) el.textContent = 'Loading cashflow…';
+    fetch('/api/casino/ops/income-summary?since_hours=24&venue=all', {
+      credentials: 'same-origin',
+      headers: { 'X-Ops-Token': token },
+    })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          d = d || {};
+          d._http = r.status;
+          return d;
+        });
+      })
+      .then(function (d) {
+        if (d._http === 403) {
+          renderCashflow({ success: false, error: 'Unauthorized — check ops token (MN2_OPS_SECRET).' });
+          return;
+        }
+        renderCashflow(d);
+      })
+      .catch(function () {
+        if (window.ErrorManager && window.ErrorManager.logJSError) {
+          window.ErrorManager.logJSError(new Error('caught'), { source: 'command-center-hub.js', context: 'catch' });
+        }
+        renderCashflow({ success: false, error: 'Cashflow request failed.' });
+      });
+  }
+
+  function loadCasinoMonitor() {
+    // Public today snapshot as a lightweight fallback line under cashflow auth.
+    var el = document.getElementById('cc-casino-monitor');
+    if (!el || opsToken()) return;
     fetch('/api/casino/house-stats?user_id=' + encodeURIComponent(uid()) + '&currency=coins')
       .then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (d) {
-        el.innerHTML = '<strong>Casino monitor</strong> · bets: ' + (d.total_bets || d.bets || '—') +
-          ' · wagered: ' + Number(d.total_wagered || 0).toFixed(2) +
-          ' · house net: ' + Number(d.house_profit || d.net || 0).toFixed(2);
-      }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'command-center-hub.js', context: 'catch' }); }
-        el.textContent = 'Casino monitor unavailable.';
+        if (!d || !d.success) return;
+        el.innerHTML = '<strong>Public today (coins)</strong> · games: ' + (d.games_played || 0) +
+          ' · wagered: ' + Number(d.total_wagered || 0).toFixed(0) +
+          ' · house net: ' + Number(d.house_net || 0).toFixed(0) +
+          ' · <em>enter ops token for full cashflow</em>';
+      }).catch(function () { /* optional */ });
+  }
+
+  function bindCashflowAuth() {
+    var loadBtn = document.getElementById('cc-ops-load');
+    var clearBtn = document.getElementById('cc-ops-clear');
+    var input = document.getElementById('cc-ops-token');
+    if (input && opsToken()) input.value = opsToken();
+    if (loadBtn) {
+      loadBtn.addEventListener('click', function () {
+        var value = (input && input.value) || '';
+        setOpsToken(value.trim());
+        loadCasinoCashflow();
       });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        setOpsToken('');
+        if (input) input.value = '';
+        renderCashflow({ success: false, error: 'Token cleared. Enter ops token to load cashflow.' });
+        loadCasinoMonitor();
+      });
+    }
   }
 
   function init() {
@@ -211,7 +363,9 @@
     loadPowerMonitor();
     loadAgents();
     loadExchangeMonitor();
-    loadCasinoMonitor();
+    bindCashflowAuth();
+    if (opsToken()) loadCasinoCashflow();
+    else loadCasinoMonitor();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

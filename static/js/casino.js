@@ -188,13 +188,21 @@
         const usdBtn = $('casino-usd-toggle');
         if (mn2Btn) mn2Btn.disabled = !realMoneyEnabled;
         if (usdBtn) usdBtn.disabled = !paypalEnabled;
-        const depositPanel = $('casino-paypal-deposit');
-        if (depositPanel) {
-            depositPanel.classList.toggle('hidden', activeCurrency !== 'usd' || !paypalEnabled);
-        }
+        const paypalRail = $('casino-fund-rail-paypal');
+        const mn2Rail = $('casino-fund-rail-mn2');
+        if (paypalRail) paypalRail.disabled = !paypalEnabled;
+        if (mn2Rail) mn2Rail.disabled = !realMoneyEnabled;
         const secBar = $('casino-security-bar');
         if (secBar) {
-            const needsSec = (activeCurrency === 'mn2' || activeCurrency === 'usd') && !securityTokenValid();
+            const fundRail = (document.querySelector('.casino-fund-rail-btn.active') || {}).getAttribute
+                ? document.querySelector('.casino-fund-rail-btn.active').getAttribute('data-fund-rail')
+                : 'paypal';
+            const needsSec = (
+                activeCurrency === 'mn2' ||
+                activeCurrency === 'usd' ||
+                fundRail === 'paypal' ||
+                fundRail === 'mn2'
+            ) && !securityTokenValid();
             secBar.classList.toggle('hidden', !needsSec);
         }
         const isMn2 = activeCurrency === 'mn2';
@@ -354,7 +362,21 @@
         return s.charAt(0).toUpperCase();
     }
 
-    var TAB_ALIASES = { lobby: 'home', walk: 'home', lounge: 'home', games: 'home' };
+    var TAB_ALIASES = {
+        lobby: 'home',
+        walk: 'home',
+        games: 'home',
+        featured: 'home',
+        hot: 'home',
+        'hot-tables': 'home',
+        catalog: 'all-games',
+        all: 'all-games',
+        free: 'free-play',
+        coins: 'free-play',
+        contests: 'compete',
+    };
+    var HOT_TABLE_IDS = ['dice', 'keno', 'slots', 'coin-flip', 'crash', 'roulette'];
+    var cockpitHydrated = false;
 
     function normalizeDeepLinkTab(tab) {
         if (!tab) return null;
@@ -431,8 +453,13 @@
     function switchMainTab(tabId) {
         activeMainTab = tabId || 'home';
         localStorage.setItem('casino_main_tab', activeMainTab);
+        var navHighlight = activeMainTab;
+        if (document.getElementById('casino-tab-' + activeMainTab) &&
+            !document.querySelector('.casino-main-tab[data-tab="' + activeMainTab + '"]')) {
+            navHighlight = HOT_TABLE_IDS.indexOf(activeMainTab) >= 0 ? 'home' : 'all-games';
+        }
         document.querySelectorAll('.casino-main-tab').forEach(function (btn) {
-            var on = btn.getAttribute('data-tab') === activeMainTab;
+            var on = btn.getAttribute('data-tab') === navHighlight;
             btn.classList.toggle('active', on);
             btn.setAttribute('aria-selected', on ? 'true' : 'false');
         });
@@ -450,8 +477,23 @@
             safeRefresh('socialTab', initSocialTab);
         } else if (activeMainTab === 'compete') {
             safeRefresh('competeTab', refreshCompeteTab);
-        } else if (activeMainTab === 'home') {
+        } else if (activeMainTab === 'lounge') {
             safeRefresh('agentSpectator', refreshAgentSpectator);
+            safeRefresh('quests', refreshQuests);
+            safeRefresh('progression', refreshProgression);
+            safeRefresh('personalBests', refreshPersonalBests);
+            safeRefresh('hallOfFame', refreshHallOfFame);
+            safeRefresh('bigWinHof', refreshBigWinHallOfFame);
+            safeRefresh('vipLounge', refreshVipLounge);
+            safeRefresh('homeAchievements', refreshHomeAchievements);
+            safeRefresh('socialBoard', refreshSocialBoard);
+            safeRefresh('newsTicker', refreshNewsTicker);
+            safeRefresh('houseStats', refreshHouseStats);
+            if (!cockpitHydrated && window.__casinoHydrateCockpit) {
+                try { window.__casinoHydrateCockpit(); cockpitHydrated = true; } catch (e) { /* optional */ }
+            }
+        } else if (activeMainTab === 'all-games' || activeMainTab === 'free-play') {
+            renderCatalogGrids();
         }
         try {
             if (history.replaceState) {
@@ -476,27 +518,76 @@
         var grid = $('casino-featured-grid');
         if (!grid) return;
         if (!featuredGames.length) {
-            grid.textContent = 'No featured games configured.';
+            grid.textContent = 'No hot tables configured.';
             return;
         }
         grid.innerHTML = '';
         featuredGames.forEach(function (fg) {
             var card = document.createElement('article');
-            card.className = 'casino-featured-card';
+            card.className = 'casino-featured-card casino-hot-card';
             card.setAttribute('data-game', fg.id);
+            var rails = (fg.rails || ['usd', 'mn2', 'coins']).map(function (r) {
+                return String(r).toUpperCase();
+            }).join(' · ');
             card.innerHTML =
                 '<div class="casino-featured-icon">' + (fg.icon || '🎮') + '</div>' +
                 (fg.tag ? '<span class="casino-featured-tag">' + fg.tag + '</span>' : '') +
                 '<div class="casino-featured-label">' + (fg.label || fg.id) + '</div>' +
                 '<div class="casino-featured-blurb">' + (fg.blurb || 'Play now') + '</div>' +
-                '<button type="button" class="casino-featured-play">Quick play</button>';
+                '<div class="casino-hot-meta">' +
+                '<span class="casino-hot-rails">' + rails + '</span>' +
+                (fg.edge_hint ? '<span class="casino-hot-edge">' + fg.edge_hint + '</span>' : '') +
+                '</div>' +
+                '<button type="button" class="casino-featured-play">Play now</button>';
             card.querySelector('.casino-featured-play').addEventListener('click', function (e) {
                 e.stopPropagation();
-                switchMainTab(fg.id);
+                openGameTable(fg.id);
             });
-            card.addEventListener('click', function () { switchMainTab(fg.id); });
+            card.addEventListener('click', function () { openGameTable(fg.id); });
             grid.appendChild(card);
         });
+    }
+
+    function openGameTable(gameId) {
+        if (!gameId) return;
+        if (document.getElementById('casino-tab-' + gameId)) {
+            switchMainTab(gameId);
+            return;
+        }
+        switchMainTab('all-games');
+    }
+
+    function renderCatalogGrids() {
+        var catalog = window.__casinoGameCatalog || [];
+        var allGrid = $('casino-all-games-grid');
+        var freeGrid = $('casino-free-play-grid');
+        function paint(grid, rows, emptyMsg) {
+            if (!grid) return;
+            if (grid.getAttribute('data-built') === '1') return;
+            grid.innerHTML = '';
+            if (!rows.length) {
+                grid.textContent = emptyMsg;
+                grid.setAttribute('data-built', '1');
+                return;
+            }
+            rows.forEach(function (row) {
+                var card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'casino-catalog-card';
+                card.innerHTML =
+                    '<span class="casino-catalog-label">' + row.label + '</span>' +
+                    '<span class="casino-catalog-cat">' + (row.category === 'free' ? 'Free play' : 'Money') + '</span>';
+                card.addEventListener('click', function () { openGameTable(row.id); });
+                grid.appendChild(card);
+            });
+            grid.setAttribute('data-built', '1');
+        }
+        paint(allGrid, catalog, 'No games available.');
+        paint(
+            freeGrid,
+            catalog.filter(function (r) { return r.category === 'free' || HOT_TABLE_IDS.indexOf(r.id) >= 0; }),
+            'No free-play games right now.'
+        );
     }
 
     function initMainTabNav() {
@@ -520,29 +611,43 @@
         }
 
         nav.innerHTML = '';
-        addTabBtn('home', '🏠 Home', activeMainTab === 'home');
+        addTabBtn('home', 'Hot tables', activeMainTab === 'home');
+        addTabBtn('all-games', 'All games', activeMainTab === 'all-games');
+        addTabBtn('free-play', 'Free play', activeMainTab === 'free-play');
 
+        var catalog = [];
         if (grid) {
             var cards = grid.querySelectorAll('.casino-card[data-casino-game]');
+            var insertBefore = $('casino-tab-leaderboard') || $('casino-tab-lounge');
             cards.forEach(function (card) {
                 var gameId = card.getAttribute('data-casino-game');
                 var label = card.getAttribute('data-casino-label') || gameId;
+                var category = card.getAttribute('data-casino-category') || 'money';
+                catalog.push({ id: gameId, label: label, category: category });
                 var panel = document.createElement('section');
                 panel.className = 'casino-tab-panel';
                 panel.id = 'casino-tab-' + gameId;
                 panel.setAttribute('role', 'tabpanel');
                 panel.hidden = true;
                 panel.appendChild(card);
-                panelsRoot.insertBefore(panel, $('casino-tab-leaderboard'));
-                addTabBtn(gameId, label, activeMainTab === gameId);
+                if (insertBefore) panelsRoot.insertBefore(panel, insertBefore);
+                else panelsRoot.appendChild(panel);
             });
             grid.remove();
         }
+        window.__casinoGameCatalog = catalog;
 
-        addTabBtn('leaderboard', '🏆 Leaderboard', activeMainTab === 'leaderboard');
-        addTabBtn('activity', '📊 Activity', activeMainTab === 'activity');
-        addTabBtn('compete', '⚔️ Compete', activeMainTab === 'compete');
-        addTabBtn('social', '🌐 Social', activeMainTab === 'social');
+        addTabBtn('compete', 'Contests', activeMainTab === 'compete');
+        addTabBtn('leaderboard', 'Leaderboard', activeMainTab === 'leaderboard');
+        addTabBtn('activity', 'Activity', activeMainTab === 'activity');
+        addTabBtn('social', 'Social', activeMainTab === 'social');
+        addTabBtn('lounge', 'Lounge', activeMainTab === 'lounge');
+
+        document.querySelectorAll('[data-goto-tab]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                switchMainTab(el.getAttribute('data-goto-tab') || 'home');
+            });
+        });
 
         var deepTab = resolveDeepLinkTabFromUrl();
         if (deepTab) {
@@ -551,7 +656,15 @@
             var hash = (window.location.hash || '').replace(/^#tab-/, '');
             if (hash && document.getElementById('casino-tab-' + hash)) {
                 activeMainTab = hash;
+            } else if (activeMainTab && !document.getElementById('casino-tab-' + activeMainTab) &&
+                       !document.getElementById('casino-tab-btn-' + activeMainTab)) {
+                activeMainTab = 'home';
             }
+        }
+        // Prefer Hot tables for returning users who had a removed per-game top tab
+        if (activeMainTab && !document.querySelector('.casino-main-tab[data-tab="' + activeMainTab + '"]') &&
+            !document.getElementById('casino-tab-' + activeMainTab)) {
+            activeMainTab = 'home';
         }
         switchMainTab(activeMainTab);
         try {
@@ -662,9 +775,45 @@
         return Math.round(value);
     }
 
+    function updateFundBalances(data) {
+        const wrap = $('casino-fund-balances');
+        if (!wrap || !data) return;
+        const coins = wrap.querySelector('[data-fund="coins"]');
+        const mn2 = wrap.querySelector('[data-fund="mn2"]');
+        const usd = wrap.querySelector('[data-fund="usd"]');
+        if (coins) coins.textContent = 'Coins ' + Math.round(data.balance || 0);
+        if (mn2) mn2.textContent = 'MN2 ' + Number(data.mn2_balance || 0).toFixed(4);
+        if (usd) usd.textContent = 'USD $' + Number(data.fiat_balance || 0).toFixed(2);
+    }
+
+    function setFundRail(rail) {
+        const next = rail || 'paypal';
+        document.querySelectorAll('.casino-fund-rail-btn').forEach(function (btn) {
+            const on = btn.getAttribute('data-fund-rail') === next;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('.casino-fund-panel').forEach(function (panel) {
+            const match = panel.getAttribute('data-fund-panel') === next;
+            panel.classList.toggle('hidden', !match);
+        });
+        if (next === 'usd' || next === 'paypal') {
+            /* keep stake hint aligned when funding USD */
+        } else if (next === 'mn2' && realMoneyEnabled) {
+            /* MN2 buy-in credits USD; stake tip stays optional */
+        } else if (next === 'coins') {
+            setActiveCurrency('coins');
+        }
+        applyCurrencyUi();
+    }
+
     async function refreshDepositPacks() {
         const el = $('casino-deposit-packs');
         if (!el) return;
+        if (!paypalEnabled) {
+            el.textContent = 'PayPal deposits unavailable';
+            return;
+        }
         const data = await api('/api/casino/deposit/packs?user_id=' + encodeURIComponent(userId));
         if (!data.success || !(data.packs || []).length) {
             el.textContent = 'PayPal deposits unavailable';
@@ -696,6 +845,76 @@
         if (!el.children.length) {
             el.textContent = 'No deposit packs available right now.';
         }
+    }
+
+    async function refreshMn2BuyinPacks() {
+        const el = $('casino-mn2-buyin-packs');
+        if (!el) return;
+        if (!realMoneyEnabled) {
+            el.textContent = 'MN2 buy-in packs unavailable';
+            return;
+        }
+        const data = await api('/api/casino/mn2/buyin-packs?user_id=' + encodeURIComponent(userId));
+        if (!data.success || !(data.packs || []).length) {
+            el.textContent = data.error || 'MN2 buy-in packs unavailable';
+            return;
+        }
+        if (data.enabled === false) {
+            el.textContent = 'MN2 buy-in is disabled right now.';
+            return;
+        }
+        el.innerHTML = '';
+        (data.packs || []).forEach(function (pack) {
+            if (pack.available === false) return;
+            const card = document.createElement('article');
+            const canAfford = pack.can_afford !== false;
+            card.className = 'casino-deposit-pack-card' + (canAfford ? '' : ' is-disabled');
+            const credit = Number(pack.casino_usd_credit || 0);
+            card.innerHTML =
+                '<h4>' + (pack.label || pack.id) + '</h4>' +
+                '<p class="casino-deposit-pack-price">' + Number(pack.price_mn2 || 0).toFixed(2) + ' MN2</p>' +
+                '<p class="casino-deposit-pack-bonus">Credits $' + credit.toFixed(2) + ' USD play</p>' +
+                '<button type="button" class="casino-deposit-pack-btn"' +
+                (canAfford ? '' : ' disabled') + '>' +
+                (canAfford ? 'Buy in with MN2' : 'Need more MN2') + '</button>';
+            const btn = card.querySelector('.casino-deposit-pack-btn');
+            if (btn && canAfford) {
+                btn.addEventListener('click', function () {
+                    purchaseMn2Buyin(pack.id);
+                });
+            }
+            el.appendChild(card);
+        });
+        if (!el.children.length) {
+            el.textContent = 'No MN2 buy-in packs available right now.';
+        }
+    }
+
+    async function purchaseMn2Buyin(packId) {
+        const body = { user_id: userId, pack_id: packId };
+        if (securityTokenValid()) body.verification_token = securityToken;
+        const data = await api('/api/casino/mn2/buyin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (data.code === 'PASSWORD_VERIFICATION_REQUIRED' || data.code === 'SECURITY_VERIFICATION_REQUIRED') {
+            const secBar = $('casino-security-bar');
+            if (secBar) secBar.classList.remove('hidden');
+            alert(data.error || 'Verify your password before buying in.');
+            return;
+        }
+        if (!data.success) {
+            alert(data.error || 'MN2 buy-in failed');
+            return;
+        }
+        showToast(
+            'MN2 buy-in complete! USD $' + Number(data.fiat_balance || data.casino_usd_credited || 0).toFixed(2)
+        );
+        setActiveCurrency('usd');
+        setFundRail('paypal');
+        await refreshBalance();
+        await refreshMn2BuyinPacks();
     }
 
     async function startPayPalDeposit(packId) {
@@ -770,6 +989,7 @@
                     ' · USD: $' + Number(data.fiat_balance || 0).toFixed(2) +
                     ' · Bets today: ' + data.bets_today + '/' + data.max_bets_per_day +
                     ' · Staking: ' + currencyLabel();
+                updateFundBalances(data);
             } else {
                 el.textContent = data.error || 'Could not load balance';
             }
@@ -2116,7 +2336,7 @@
         var data = await api('/api/casino/duels/mines/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+            body: JSON.stringify(betPayload({ bet: bet })),
         });
         setResult($('mines-duel-result'), data);
         if (data.success && data.duel) {
@@ -2277,13 +2497,25 @@
             return;
         }
         var s = today.summary || {};
-        var coins = (today.by_currency || {}).coins || {};
+        var rails = today.house_edge_by_rail || s.house_edge_by_rail || {};
+        var byCur = today.by_currency || {};
+        function railHouse(rail) {
+            var n = rails[rail];
+            if (n == null && byCur[rail]) n = byCur[rail].house_edge_profit;
+            if (n == null) return '—';
+            if (rail === 'mn2') return Number(n).toFixed(4);
+            if (rail === 'usd') return '$' + Number(n).toFixed(2);
+            return String(Math.round(Number(n)));
+        }
         var html = [
-            '<div class="casino-revenue-stat"><span>House edge (all rails)</span><strong>' +
-                (today.house_edge_profit_total != null ? today.house_edge_profit_total : '—') + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>House coins</span><strong>' + railHouse('coins') + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>House MN2</span><strong>' + railHouse('mn2') + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>House USD</span><strong>' + railHouse('usd') + '</strong></div>',
             '<div class="casino-revenue-stat"><span>Big wins today</span><strong>' + (s.big_wins || 0) + '</strong></div>',
-            '<div class="casino-revenue-stat"><span>Coins bets today</span><strong>' + (coins.bets || 0) + '</strong></div>',
+            '<div class="casino-revenue-stat"><span>Coins bets today</span><strong>' + ((byCur.coins || {}).bets || 0) + '</strong></div>',
             '<div class="casino-revenue-stat"><span>Quest rewards granted</span><strong>' + (s.reward_coins_granted || 0) + ' coins</strong></div>',
+            '<div class="casino-revenue-stat"><span>Net house coins after rewards</span><strong>' +
+                (today.net_house_coins_after_rewards != null ? today.net_house_coins_after_rewards : '—') + '</strong></div>',
         ];
         if (recon.success) {
             html.push('<div class="casino-revenue-stat ' + (recon.ok ? 'ok' : 'warn') + '"><span>Ledger reconcile</span><strong>' +
@@ -3347,7 +3579,7 @@
         var data = await api('/api/casino/crash-crew/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+            body: JSON.stringify(betPayload({ bet: bet })),
         });
         setResult($('crash-crew-result'), data);
         if (data.success && data.room) {
@@ -3362,7 +3594,7 @@
     async function joinCrashCrewRoom(roomId) {
         if (!roomId) return;
         var autoVal = parseFloat(($('crash-crew-auto') || {}).value);
-        var body = { user_id: userId, room_id: roomId };
+        var body = betPayload({ room_id: roomId });
         if (autoVal >= 1.01) body.auto_cashout = autoVal;
         var data = await api('/api/casino/crash-crew/join', {
             method: 'POST',
@@ -4153,7 +4385,7 @@
         var data = await api('/api/casino/play/blackjack', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+            body: JSON.stringify(betPayload({ bet: bet })),
         });
         if (!data.success) { $('bj-result') && ($('bj-result').textContent = data.error || 'Failed'); return; }
         if (data.bet_id) { setResult($('bj-result'), data); await afterPlay(); return; }
@@ -4188,7 +4420,7 @@
         var data = await api('/api/casino/play/baccarat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, bet: bet, side: side, currency: activeCurrency }),
+            body: JSON.stringify(betPayload({ bet: bet, side: side })),
         });
         setResult($('baccarat-result'), data);
         if (data.success) { try { maybeCelebrate(data); } catch (e) { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(e instanceof Error ? e : new Error(String(e)), { source: 'casino.js', context: 'catch' }); } /* optional */ } await afterPlay(); }
@@ -4231,7 +4463,7 @@
         var data = await api('/api/casino/play/video-poker', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, bet: bet, currency: activeCurrency }),
+            body: JSON.stringify(betPayload({ bet: bet })),
         });
         if (!data.success) { setResult($('vp-result'), data); return; }
         vp.roundId = data.round_id;
@@ -4296,12 +4528,10 @@
             var pb = await api('/api/casino/duels/plinko-battle/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: userId,
+                body: JSON.stringify(betPayload({
                     bet: parseFloat(($('duel-bet') || {}).value || 25),
                     risk: risk,
-                    currency: activeCurrency,
-                }),
+                })),
             });
             setResult($('duel-result'), pb);
             if (pb.success) await refreshDuels();
@@ -4315,7 +4545,11 @@
         var data = await api('/api/casino/duels/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, bet: parseFloat(($('duel-bet') || {}).value || 25), game: game, choice: choice, currency: activeCurrency }),
+            body: JSON.stringify(betPayload({
+                bet: parseFloat(($('duel-bet') || {}).value || 25),
+                game: game,
+                choice: choice,
+            })),
         });
         setResult($('duel-result'), data);
         if (data.success) await refreshDuels();
@@ -4525,6 +4759,12 @@
                 setActiveCurrency(btn.getAttribute('data-currency') || 'coins');
             });
         });
+        document.querySelectorAll('.casino-fund-rail-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                setFundRail(btn.getAttribute('data-fund-rail') || 'paypal');
+            });
+        });
+        setFundRail('paypal');
         bindChange('rps-dist-lane', refreshDistribution);
         bindChange('rps-dist-context', refreshDistribution);
         bindChange('outcome-dist-lane', refreshOutcomeDistribution);
@@ -4591,6 +4831,7 @@
         safeRefresh('houseStats', refreshHouseStats);
         safeRefresh('socialBoard', refreshSocialBoard);
         safeRefresh('depositPacks', refreshDepositPacks);
+        safeRefresh('mn2BuyinPacks', refreshMn2BuyinPacks);
         safeRefresh('vpLadder', refreshVideoPokerLadder);
         safeRefresh('paypalReturn', handlePayPalReturn);
         safeRefresh('activityFeed', refreshActivityFeed);

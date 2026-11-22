@@ -1,8 +1,17 @@
 # Casino master TODO — Masternoder.dk
 
-Branch: `feat/casino-mega-expansion` · Updated: **2026-07-01**
+Branch: `feat/casino-mega-expansion` · Updated: **2026-11-22**
 
 Progress table: [CASINO_OPS_PROGRESS.md](CASINO_OPS_PROGRESS.md)
+
+---
+
+## Income redesign (2026-11-22)
+
+- [x] **Fund path** — `/casino/` first viewport is **Fund & Play** (PayPal packs + MN2 buy-in + free coins). MN2 packs wired in `casino.js`; capture bound to pending order pack/amount; tests in `tests/unit/test_casino_fund_path.py`
+- [x] **Play path** — **Hot tables** (Dice, Keno, Slots, Coin flip, Crash, Roulette) after Fund; top nav is Hot / All / Free / Contests / …; 23 per-game tabs removed; lounge+cockpit demoted
+- [x] **Operator path** — Command Center **Casino cashflow** board (`/api/casino/ops/income-summary` fail-closed + per-rail house/rake, PayPal, MN2 buy-ins, exchange→casino); tests in `test_casino_ops_cashflow.py`
+- [x] **Leftover fixes** — revenue report per-rail (no mixed totals) + `at` timestamps; BJ/Baccarat/VP/Crash crew/PvP use `betPayload` verification token
 
 ---
 

@@ -138,46 +138,58 @@
   },
   "featured_games": [
     {
-      "id": "crash",
-      "label": "Crash",
-      "icon": "🚀",
+      "id": "dice",
+      "label": "Lucky dice",
+      "icon": "🎲",
       "tag": "Hot",
-      "blurb": "Ride the multiplier — cash out before the bust."
+      "blurb": "Pick a face — quick stakes, high house edge.",
+      "rails": ["usd", "mn2", "coins"],
+      "edge_hint": "~33% edge"
     },
     {
-      "id": "plinko",
-      "label": "Plinko",
-      "icon": "🟡",
-      "tag": "Trending",
-      "blurb": "Drop the ball through pegs for edge multipliers."
-    },
-    {
-      "id": "mines",
-      "label": "Mines",
-      "icon": "💣",
-      "tag": "Classic",
-      "blurb": "Reveal gems, dodge mines, cash out anytime."
-    },
-    {
-      "id": "wheel",
-      "label": "Wheel",
-      "icon": "🎡",
-      "tag": "Spin",
-      "blurb": "Weighted wheel segments — low, medium, or high risk."
+      "id": "keno",
+      "label": "Keno",
+      "icon": "🔢",
+      "tag": "Quick",
+      "blurb": "Spot picks with published ~94% RTP.",
+      "rails": ["usd", "mn2", "coins"],
+      "edge_hint": "~6% edge"
     },
     {
       "id": "slots",
       "label": "Slots",
       "icon": "🎰",
       "tag": "Jackpots",
-      "blurb": "35 themed machines with progressive jackpot hits."
+      "blurb": "Themed machines — lead with Mega 777.",
+      "rails": ["usd", "mn2", "coins"],
+      "edge_hint": "Jackpot rail"
     },
     {
       "id": "coin-flip",
       "label": "Coin flip",
       "icon": "🪙",
-      "tag": "Quick",
-      "blurb": "Heads or tails — instant 1.9× payout."
+      "tag": "Classic",
+      "blurb": "Heads or tails — instant 1.9× payout.",
+      "rails": ["usd", "mn2", "coins"],
+      "edge_hint": "~5% edge"
+    },
+    {
+      "id": "crash",
+      "label": "Crash",
+      "icon": "🚀",
+      "tag": "Live",
+      "blurb": "Ride the multiplier — cash out before the bust.",
+      "rails": ["usd", "mn2", "coins"],
+      "edge_hint": "3% edge"
+    },
+    {
+      "id": "roulette",
+      "label": "Roulette",
+      "icon": "🎯",
+      "tag": "Table",
+      "blurb": "Familiar wheel — stake USD or MN2.",
+      "rails": ["usd", "mn2", "coins"],
+      "edge_hint": "~2.7% edge"
     }
   ],
   "social_links": [

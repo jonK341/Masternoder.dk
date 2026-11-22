@@ -38,30 +38,44 @@ def _pack_index() -> Dict[str, Dict[str, Any]]:
     return merged
 
 
-def _user_purchased_pack_ids(user_id: str) -> Set[str]:
+def _user_pack_purchase_counts(user_id: str) -> Dict[str, int]:
+    """Count purchases per pack (list-backed; sets cannot enforce max_per_user > 1)."""
+    counts: Dict[str, int] = {}
     try:
         from backend.services.casino_service import _load_paypal_deposits
 
         data = _load_paypal_deposits()
-        ids: Set[str] = set()
         for row in (data.get("captured") or {}).values():
             if isinstance(row, dict) and row.get("user_id") == user_id and row.get("pack_id"):
-                ids.add(str(row["pack_id"]))
+                pid = str(row["pack_id"])
+                counts[pid] = counts.get(pid, 0) + 1
         extra = (data.get("pack_purchases") or {}).get(user_id) or []
         if isinstance(extra, list):
-            ids.update(str(x) for x in extra)
-        return ids
+            # Prefer explicit purchase log when present (avoids double-count with captured).
+            logged: Dict[str, int] = {}
+            for x in extra:
+                pid = str(x)
+                logged[pid] = logged.get(pid, 0) + 1
+            for pid, n in logged.items():
+                counts[pid] = max(counts.get(pid, 0), n)
     except Exception:
-        return set()
+        return {}
+    return counts
 
 
-def _pack_available(user_id: str, pack: Dict[str, Any], purchased: Set[str]) -> bool:
+def _user_purchased_pack_ids(user_id: str) -> Set[str]:
+    return set(_user_pack_purchase_counts(user_id))
+
+
+def _pack_available(user_id: str, pack: Dict[str, Any], purchased: Set[str], counts: Optional[Dict[str, int]] = None) -> bool:
     pid = str(pack.get("id") or "")
     if pack.get("starter_only") and pid in purchased:
         return False
     max_per = pack.get("max_per_user")
     if max_per is not None:
-        count = sum(1 for p in purchased if p == pid)
+        count = int((counts or {}).get(pid, 0))
+        if count <= 0 and pid in purchased:
+            count = 1
         if count >= int(max_per):
             return False
     expires = pack.get("expires") or pack.get("expires_at")
@@ -77,11 +91,16 @@ def _pack_available(user_id: str, pack: Dict[str, Any], purchased: Set[str]) -> 
     return True
 
 
-def _normalize_pack(row: Dict[str, Any], user_id: str, purchased: Set[str]) -> Dict[str, Any]:
+def _normalize_pack(
+    row: Dict[str, Any],
+    user_id: str,
+    purchased: Set[str],
+    counts: Optional[Dict[str, int]] = None,
+) -> Dict[str, Any]:
     amount = float(row.get("amount_usd") or 0)
     bonus_usd = float(row.get("bonus_usd") or 0)
     bonus_coins = int(row.get("bonus_coins") or 0)
-    available = _pack_available(user_id, row, purchased)
+    available = _pack_available(user_id, row, purchased, counts)
     return {
         "id": str(row["id"]),
         "label": row.get("label") or row["id"],
@@ -100,10 +119,11 @@ def _normalize_pack(row: Dict[str, Any], user_id: str, purchased: Set[str]) -> D
 
 def list_deposit_packs(user_id: str = "") -> Dict[str, Any]:
     cfg = _config()
-    purchased = _user_purchased_pack_ids(user_id) if user_id else set()
+    counts = _user_pack_purchase_counts(user_id) if user_id else {}
+    purchased = set(counts) if counts else (_user_purchased_pack_ids(user_id) if user_id else set())
     packs: List[Dict[str, Any]] = []
     for row in _pack_index().values():
-        packs.append(_normalize_pack(row, user_id, purchased))
+        packs.append(_normalize_pack(row, user_id, purchased, counts))
     packs.sort(key=lambda p: (not p.get("starter_only"), p.get("amount_usd") or 0))
     try:
         from backend.services.casino_service import _paypal_enabled

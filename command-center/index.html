@@ -24,6 +24,18 @@
         .cc-monitor-bar { height:8px; background:rgba(255,255,255,0.1); border-radius:8px; overflow:hidden; margin-top:8px; }
         .cc-monitor-fill { height:100%; width:0; background:linear-gradient(90deg,#00ff88,#00d4ff); transition:width 0.4s; }
         #cc-agent-status { font-size:0.85rem; opacity:0.85; min-height:1.2em; }
+        .cc-cashflow { border:1px solid rgba(0,212,255,0.3); border-radius:12px; padding:16px; margin-bottom:16px; background:rgba(0,212,255,0.06); }
+        .cc-cashflow h2 { margin:0 0 8px; font-size:1.15rem; color:#7ee8ff; }
+        .cc-cashflow-auth { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+        .cc-cashflow-auth input { flex:1 1 180px; min-width:140px; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.35); color:#fff; }
+        .cc-cashflow-auth button { padding:8px 12px; border-radius:8px; border:1px solid rgba(0,212,255,0.4); background:rgba(0,212,255,0.15); color:#7ee8ff; font-weight:700; cursor:pointer; }
+        .cc-cashflow-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin:12px 0; }
+        .cc-cashflow-metric { border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; background:rgba(0,0,0,0.25); }
+        .cc-cashflow-metric span { display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; opacity:0.7; }
+        .cc-cashflow-metric strong { font-size:1.05rem; color:#00ff88; }
+        .cc-cashflow-table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:8px; }
+        .cc-cashflow-table th, .cc-cashflow-table td { text-align:left; padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.08); }
+        .cc-cashflow-note { font-size:0.8rem; opacity:0.75; margin:8px 0 0; }
     </style>
     <link rel="stylesheet" href="/static/css/podcast-portal-strip.css?v=20260621">
 </head>
@@ -68,7 +80,19 @@
             <div class="cc-grid" id="cc-exchange-grid"></div>
         </div>
         <div id="cc-panel-casino" class="cc-panel">
-            <div class="cc-monitor" id="cc-casino-monitor">Casino monitor loading…</div>
+            <div class="cc-cashflow" id="cc-casino-cashflow">
+                <h2>Casino cashflow (ops)</h2>
+                <p class="cc-cashflow-note">House edge by rail, PayPal deposits, MN2 buy-ins, exchange→casino cash-outs. Requires ops token.</p>
+                <div class="cc-cashflow-auth">
+                    <input id="cc-ops-token" type="password" autocomplete="off" placeholder="Ops token (session only)" aria-label="Ops token">
+                    <button type="button" id="cc-ops-load">Load 24h</button>
+                    <button type="button" id="cc-ops-clear">Clear token</button>
+                </div>
+                <div id="cc-casino-monitor" class="cc-monitor">Enter ops token to load cashflow.</div>
+                <div id="cc-cashflow-metrics" class="cc-cashflow-grid" hidden></div>
+                <div id="cc-cashflow-rails" hidden></div>
+                <div id="cc-cashflow-games" hidden></div>
+            </div>
             <div class="cc-grid" id="cc-casino-grid"></div>
         </div>
         <div id="cc-panel-agents" class="cc-panel">
@@ -79,6 +103,6 @@
     <script src="/static/js/user-id.js?v=20261010b"></script>
 <script src="/static/js/navigation-toolbar.js?v=20260618a"></script>
     <script src="/static/js/podcast-portal-lines.js?v=20260621" data-site="command-center"></script>
-    <script src="/static/js/command-center-hub.js?v=20260621"></script>
+    <script src="/static/js/command-center-hub.js?v=20261122ops"></script>
 </body>
 </html>

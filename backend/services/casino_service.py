@@ -2992,20 +2992,36 @@ def get_deposit_packs(user_id: str = "") -> Dict[str, Any]:
     return get_paypal_deposit_packs(user_id)
 
 
-def get_mn2_buyin_packs() -> Dict[str, Any]:
+def get_mn2_buyin_packs(user_id: str = "") -> Dict[str, Any]:
     """B6 — MN2-priced packs that credit casino USD play balance."""
     pay = _payment_config()
+    uid = (user_id or "").strip()
+    mn2_bal = _user_mn2_balance(uid) if uid else 0.0
+    enabled = bool(pay.get("enabled")) and "mn2" in (pay.get("rails") or [])
     packs = []
     for row in pay.get("mn2_buyin_packs") or []:
         if not isinstance(row, dict) or not row.get("id"):
             continue
+        price = float(row.get("price_mn2") or 0)
+        credit = float(row.get("casino_usd_credit") or 0)
+        can_afford = bool(uid) and mn2_bal + 1e-9 >= price and price > 0
         packs.append({
             "id": str(row["id"]),
             "label": row.get("label") or row["id"],
-            "price_mn2": float(row.get("price_mn2") or 0),
-            "casino_usd_credit": float(row.get("casino_usd_credit") or 0),
+            "price_mn2": price,
+            "casino_usd_credit": credit,
+            "tag": row.get("tag"),
+            "can_afford": can_afford,
+            "available": price > 0 and credit > 0,
         })
-    return {"success": True, "packs": packs, "rail": "mn2"}
+    return {
+        "success": True,
+        "enabled": enabled,
+        "packs": packs,
+        "rail": "mn2",
+        "mn2_balance": round(mn2_bal, 8),
+        "fiat_balance": _user_fiat_balance(uid) if uid else 0.0,
+    }
 
 
 def _mn2_buyin_pack(pack_id: str) -> Optional[Dict[str, Any]]:
@@ -3043,11 +3059,25 @@ def purchase_mn2_buyin_pack(user_id: str, pack_id: str) -> Dict[str, Any]:
         )
     except Exception as e:
         return {"success": False, "error": str(e)}
+    try:
+        from backend.services.house_income_aggregator import append_cashflow_event
+
+        append_cashflow_event({
+            "type": "mn2_buyin",
+            "user_id": uid,
+            "pack_id": pack_id,
+            "price_mn2": price,
+            "casino_usd_credit": credit,
+        })
+    except Exception:
+        pass
     return {
         "success": True,
         "pack_id": pack_id,
         "price_mn2": price,
         "casino_usd_credited": credit,
+        "mn2_balance": _user_mn2_balance(uid),
+        "fiat_balance": _user_fiat_balance(uid),
     }
 
 
@@ -3156,16 +3186,23 @@ def capture_paypal_deposit(user_id: str, order_id: str, pack_id: Optional[str] =
             "amount_usd": captured.get("amount_usd"),
         }
     pending = (deposits.get("pending") or {}).get(order_id)
-    if pending:
-        pending_uid = str(pending.get("user_id") or "").strip()
-        req = str(user_id or "").strip()
-        if not req or req.lower() == "default_user":
-            user_id = pending_uid or req
-        elif pending_uid and pending_uid != req:
-            return {"success": False, "error": "Order does not belong to this user"}
-    pack = _deposit_pack((pack_id or (pending or {}).get("pack_id") or "").strip())
+    if not pending:
+        return {"success": False, "error": "Unknown or expired deposit order"}
+    pending_uid = str(pending.get("user_id") or "").strip()
+    req = str(user_id or "").strip()
+    if not req or req.lower() == "default_user":
+        user_id = pending_uid or req
+    elif pending_uid and pending_uid != req:
+        return {"success": False, "error": "Order does not belong to this user"}
+    pending_pack_id = str(pending.get("pack_id") or "").strip()
+    req_pack = str(pack_id or "").strip()
+    if req_pack and pending_pack_id and req_pack != pending_pack_id:
+        return {"success": False, "error": "Pack does not match pending order"}
+    resolved_pack_id = pending_pack_id or req_pack
+    pack = _deposit_pack(resolved_pack_id)
     if not pack:
         return {"success": False, "error": "Unknown deposit pack"}
+    expected_amount = round(float(pending.get("amount_usd") or pack.get("amount_usd") or 0), 2)
     try:
         from backend.services.paypal_service import capture_order
 
@@ -3174,9 +3211,25 @@ def capture_paypal_deposit(user_id: str, order_id: str, pack_id: Optional[str] =
         return {"success": False, "error": str(exc)}
     if not result.get("success"):
         return {"success": False, "error": result.get("error", "Capture failed")}
-    amount = round(float(result.get("amount") or pack.get("amount_usd") or 0), 2)
+    amount = round(float(result.get("amount") or 0), 2)
     if amount <= 0:
         return {"success": False, "error": "Invalid captured amount"}
+    if expected_amount > 0 and abs(amount - expected_amount) > 0.01:
+        return {
+            "success": False,
+            "error": "Captured amount does not match deposit pack",
+            "code": "AMOUNT_MISMATCH",
+            "expected_usd": expected_amount,
+            "captured_usd": amount,
+        }
+    currency = str(result.get("currency") or "USD").upper()
+    expected_ccy = str(_payment_config().get("paypal_currency") or "USD").upper()
+    if currency and expected_ccy and currency != expected_ccy:
+        return {
+            "success": False,
+            "error": "Captured currency does not match deposit pack",
+            "code": "CURRENCY_MISMATCH",
+        }
     _apply_balance_delta(
         user_id,
         amount,

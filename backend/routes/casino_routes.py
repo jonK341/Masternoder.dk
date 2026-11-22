@@ -1272,7 +1272,8 @@ def casino_mobile_config():
 @casino_bp.route("/api/casino/mn2/buyin-packs", methods=["GET"])
 def casino_mn2_buyin_packs():
     try:
-        return jsonify(casino_service.get_mn2_buyin_packs()), 200
+        user_id = _resolve_casino_user_id(from_body=False, from_query=True)
+        return jsonify(casino_service.get_mn2_buyin_packs(user_id=user_id)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
@@ -1812,16 +1813,13 @@ def casino_paypal_capture():
 
 @casino_bp.route("/api/casino/ops/income-summary", methods=["GET"])
 def casino_ops_income_summary():
-    import os
-    secret = (os.environ.get("MN2_OPS_SECRET") or os.environ.get("MN2_SCAN_SECRET") or "").strip()
-    if secret:
-        token = (request.headers.get("X-Ops-Token") or request.args.get("token") or "").strip()
-        if token != secret:
-            return jsonify({"success": False, "error": "Unauthorized"}), 403
+    if not _casino_ops_ok():
+        return jsonify({"success": False, "error": "Unauthorized", "code": "OPS_AUTH_REQUIRED"}), 403
     try:
         from backend.services.house_income_aggregator import summarize
         hours = int(request.args.get("since_hours", 24))
-        return jsonify(summarize(since_hours=hours)), 200
+        venue = (request.args.get("venue") or "all").strip().lower()
+        return jsonify(summarize(since_hours=hours, venue=venue)), 200
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 

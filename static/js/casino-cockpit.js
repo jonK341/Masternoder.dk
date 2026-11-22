@@ -51,7 +51,7 @@
       var health = res[1] || {};
       var trades = (res[2] && res[2].trades) || [];
       var wagered = Number(house.total_wagered || 0);
-      var profit = Number(house.house_profit || house.net || 0);
+      var profit = Number(house.house_net || house.house_profit || house.net || 0);
       var fees = Number(health.treasury_fees_mn2 || 0);
       var score = Math.min(100, Math.max(8, trades.length * 4 + fees * 10 + Math.abs(profit) / 25));
       el.textContent = 'Casino wagered: ' + fmt(wagered, 0) +
@@ -65,7 +65,13 @@
   function initTocShortcuts() {
     document.querySelectorAll('.casino-toc a[href^="#"]').forEach(function (link) {
       link.addEventListener('click', function () {
-        var target = q((link.getAttribute('href') || '').slice(1));
+        var href = link.getAttribute('href') || '';
+        var id = href.slice(1);
+        if (id.indexOf('casino-tab-') === 0 && window.__casinoSwitchTab) {
+          window.__casinoSwitchTab(id.replace('casino-tab-', ''));
+          return;
+        }
+        var target = q(id);
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -100,15 +106,27 @@
     });
   }
 
-  function init() {
+  var timers = [];
+
+  function hydrateCockpit() {
     initTocShortcuts();
     loadCamgirls();
     loadIncomeMonitor();
     loadExchangeBridge();
     loadBridgeLeaderboard();
-    setInterval(loadIncomeMonitor, 60000);
-    setInterval(loadExchangeBridge, 45000);
-    setInterval(loadBridgeLeaderboard, 90000);
+    timers.forEach(function (id) { clearInterval(id); });
+    timers = [
+      setInterval(loadIncomeMonitor, 60000),
+      setInterval(loadExchangeBridge, 45000),
+      setInterval(loadBridgeLeaderboard, 90000),
+    ];
+  }
+
+  window.__casinoHydrateCockpit = hydrateCockpit;
+
+  function init() {
+    initTocShortcuts();
+    // Lounge/cockpit APIs hydrate when Lounge tab opens via __casinoHydrateCockpit.
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

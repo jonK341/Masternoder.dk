@@ -76,7 +76,8 @@ def test_revenue_daily_report(tmp_path, monkeypatch):
     assert report["success"] is True
     assert report["day"] == day
     assert report["by_currency"]["coins"]["bets"] >= 1
-    assert report["house_edge_profit_total"] <= 0  # player won in seed
+    assert report["house_edge_by_rail"]["coins"] <= 0  # player won in seed
+    assert "net_house_coins_after_rewards" in report
 
     multi = casino_revenue_report.daily_reports(days=3)
     assert multi["success"] is True
@@ -85,6 +86,36 @@ def test_revenue_daily_report(tmp_path, monkeypatch):
     today = casino_revenue_report.today_summary()
     assert today["success"] is True
     assert "summary" in today
+    assert "house_edge_by_rail" in today["summary"]
+
+
+def test_revenue_jackpot_and_tournament_use_at_field(tmp_path, monkeypatch):
+    log_dir = _tmp_logs(tmp_path, monkeypatch)
+    day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    with (log_dir / "casino_jackpot_ledger.jsonl").open("w", encoding="utf-8") as f:
+        f.write(json.dumps({
+            "type": "contribution", "currency": "usd", "amount": 1.25, "at": f"{day}T10:00:00Z",
+        }) + "\n")
+        f.write(json.dumps({
+            "type": "award", "currency": "usd", "amount": 50.0, "at": f"{day}T11:00:00Z",
+        }) + "\n")
+    with (log_dir / "casino_tournament_ledger.jsonl").open("w", encoding="utf-8") as f:
+        f.write(json.dumps({
+            "type": "buyin", "currency": "mn2", "amount": 2.5, "at": f"{day}T12:00:00Z",
+        }) + "\n")
+        f.write(json.dumps({
+            "type": "payout", "currency": "mn2", "amount": 5.0, "at": f"{day}T13:00:00Z",
+        }) + "\n")
+
+    from backend.services import casino_revenue_report
+
+    report = casino_revenue_report.daily_report(day)
+    jp = report["jackpots"]["by_currency"]["usd"]
+    assert jp["contributions"] == 1.25
+    assert jp["awards"] == 50.0
+    tn = report["tournaments"]["by_currency"]["mn2"]
+    assert tn["buyins"] == 2.5
+    assert tn["payouts"] == 5.0
 
 
 def test_global_and_revenue_routes(tmp_path, monkeypatch):

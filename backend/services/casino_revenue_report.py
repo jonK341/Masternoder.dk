@@ -181,16 +181,23 @@ def _ledger_day_stats(day: str) -> Dict[str, Dict[str, Any]]:
     return empty
 
 
+def _row_day(row: Dict[str, Any]) -> str:
+    """Accept created_at, at, or ts (jackpot/tournament ledgers use `at`)."""
+    for key in ("created_at", "at", "ts"):
+        raw = str(row.get(key) or "").strip()
+        if raw:
+            return raw[:10]
+    return ""
+
+
 def _jackpot_day_stats(day: str) -> Dict[str, Any]:
     path = os.path.join(_log_dir(), "casino_jackpot_ledger.jsonl")
-    contributions = 0.0
-    awards = 0.0
-    contrib_count = 0
-    award_count = 0
-    by_currency: Dict[str, Dict[str, float]] = {c: {"contributions": 0.0, "awards": 0.0} for c in _RAILS}
+    by_currency: Dict[str, Dict[str, float]] = {
+        c: {"contributions": 0.0, "awards": 0.0, "contrib_events": 0, "award_events": 0}
+        for c in _RAILS
+    }
     for row in _read_jsonl(path):
-        ts = str(row.get("created_at") or row.get("ts") or "")
-        if not ts.startswith(day):
+        if _row_day(row) != day:
             continue
         kind = str(row.get("type") or row.get("event") or "")
         amount = float(row.get("amount") or 0)
@@ -198,45 +205,59 @@ def _jackpot_day_stats(day: str) -> Dict[str, Any]:
         if c not in by_currency:
             continue
         if kind in ("contribution", "contrib"):
-            contributions += amount
-            contrib_count += 1
             by_currency[c]["contributions"] += amount
+            by_currency[c]["contrib_events"] += 1
         elif kind in ("award", "payout", "win"):
-            awards += amount
-            award_count += 1
             by_currency[c]["awards"] += amount
+            by_currency[c]["award_events"] += 1
+    for c in _RAILS:
+        by_currency[c]["contributions"] = round(by_currency[c]["contributions"], 8 if c == "mn2" else 4)
+        by_currency[c]["awards"] = round(by_currency[c]["awards"], 8 if c == "mn2" else 4)
+        by_currency[c]["contrib_events"] = int(by_currency[c]["contrib_events"])
+        by_currency[c]["award_events"] = int(by_currency[c]["award_events"])
+    coins = by_currency["coins"]
     return {
-        "jackpot_contributions": round(contributions, 4),
-        "jackpot_awards": round(awards, 4),
-        "jackpot_contrib_events": contrib_count,
-        "jackpot_award_events": award_count,
+        # Coins-rail totals kept for backward-compatible UI fields.
+        "jackpot_contributions": coins["contributions"],
+        "jackpot_awards": coins["awards"],
+        "jackpot_contrib_events": coins["contrib_events"],
+        "jackpot_award_events": coins["award_events"],
         "by_currency": by_currency,
     }
 
 
 def _tournament_day_stats(day: str) -> Dict[str, Any]:
     path = os.path.join(_log_dir(), "casino_tournament_ledger.jsonl")
-    buyins = 0.0
-    payouts = 0.0
-    buyin_count = 0
-    payout_count = 0
+    by_currency: Dict[str, Dict[str, float]] = {
+        c: {"buyins": 0.0, "payouts": 0.0, "buyin_events": 0, "payout_events": 0}
+        for c in _RAILS
+    }
     for row in _read_jsonl(path):
-        ts = str(row.get("created_at") or row.get("ts") or "")
-        if not ts.startswith(day):
+        if _row_day(row) != day:
             continue
         kind = str(row.get("type") or row.get("event") or "")
         amount = float(row.get("amount") or 0)
+        c = str(row.get("currency") or "coins").lower()
+        if c not in by_currency:
+            continue
         if kind in ("buyin", "buy_in", "entry"):
-            buyins += amount
-            buyin_count += 1
+            by_currency[c]["buyins"] += amount
+            by_currency[c]["buyin_events"] += 1
         elif kind in ("payout", "prize", "award"):
-            payouts += amount
-            payout_count += 1
+            by_currency[c]["payouts"] += amount
+            by_currency[c]["payout_events"] += 1
+    for c in _RAILS:
+        by_currency[c]["buyins"] = round(by_currency[c]["buyins"], 8 if c == "mn2" else 4)
+        by_currency[c]["payouts"] = round(by_currency[c]["payouts"], 8 if c == "mn2" else 4)
+        by_currency[c]["buyin_events"] = int(by_currency[c]["buyin_events"])
+        by_currency[c]["payout_events"] = int(by_currency[c]["payout_events"])
+    coins = by_currency["coins"]
     return {
-        "tournament_buyins": round(buyins, 4),
-        "tournament_payouts": round(payouts, 4),
-        "tournament_buyin_events": buyin_count,
-        "tournament_payout_events": payout_count,
+        "tournament_buyins": coins["buyins"],
+        "tournament_payouts": coins["payouts"],
+        "tournament_buyin_events": coins["buyin_events"],
+        "tournament_payout_events": coins["payout_events"],
+        "by_currency": by_currency,
     }
 
 
@@ -247,27 +268,32 @@ def daily_report(day: Optional[str] = None) -> Dict[str, Any]:
     jackpots = _jackpot_day_stats(day)
     tournaments = _tournament_day_stats(day)
 
-    summary_plus = sum(r["player_wins_net"] for r in rails.values())
-    summary_minus = sum(r["player_losses_net"] for r in rails.values())
-    summary_equals = sum(r["equals"] for r in rails.values())
-    house_total = sum(r["house_edge_profit"] for r in rails.values())
+    house_by_rail = {c: rails[c]["house_edge_profit"] for c in _RAILS}
+    coins_house = float(house_by_rail.get("coins") or 0)
+    reward_coins = float(rewards.get("reward_deductions_coins") or 0)
 
     return {
         "success": True,
         "day": day,
         "by_currency": rails,
-        "house_edge_profit_total": round(house_total, 4),
-        "player_plusses": round(summary_plus, 4),
-        "player_minuses": round(summary_minus, 4),
-        "push_equals": summary_equals,
+        "house_edge_by_rail": house_by_rail,
+        # Deprecated mixed-unit sum — kept for old clients; prefer house_edge_by_rail.
+        "house_edge_profit_total": round(sum(house_by_rail.values()), 4),
+        "house_edge_profit_total_deprecated_mixed": True,
+        "player_plusses_by_rail": {c: rails[c]["player_wins_net"] for c in _RAILS},
+        "player_minuses_by_rail": {c: rails[c]["player_losses_net"] for c in _RAILS},
+        "push_equals": sum(r["equals"] for r in rails.values()),
         "big_win_count": sum(r["big_win_count"] for r in rails.values()),
-        "big_win_total": round(sum(r["big_win_total"] for r in rails.values()), 4),
+        "big_win_by_rail": {c: {
+            "count": rails[c]["big_win_count"],
+            "total": rails[c]["big_win_total"],
+        } for c in _RAILS},
         "reward_deductions": rewards,
         "jackpots": jackpots,
         "tournaments": tournaments,
-        "net_house_after_rewards": round(
-            house_total - float(rewards.get("reward_deductions_coins") or 0), 4
-        ),
+        "net_house_coins_after_rewards": round(coins_house - reward_coins, 4),
+        # Deprecated: mixed house − coin rewards.
+        "net_house_after_rewards": round(coins_house - reward_coins, 4),
     }
 
 
@@ -283,12 +309,20 @@ def daily_reports(days: int = 7) -> Dict[str, Any]:
 
 def today_summary() -> Dict[str, Any]:
     report = daily_report(_utc_today())
+    by_rail = report.get("house_edge_by_rail") or {}
+    headline_parts = [
+        f"{rail.upper()} {by_rail.get(rail, 0)}"
+        for rail in _RAILS
+        if abs(float(by_rail.get(rail) or 0)) > 0
+    ] or ["no stakes yet"]
     report["summary"] = {
-        "headline": f"House edge {report['house_edge_profit_total']} (all rails, stakes−payouts)",
+        "headline": "House edge by rail: " + " · ".join(headline_parts),
         "big_wins": report["big_win_count"],
         "reward_coins_granted": (report.get("reward_deductions") or {}).get("reward_deductions_coins", 0),
         "jackpot_awards": (report.get("jackpots") or {}).get("jackpot_awards", 0),
         "tournament_payouts": (report.get("tournaments") or {}).get("tournament_payouts", 0),
+        "house_edge_by_rail": by_rail,
+        "net_house_coins_after_rewards": report.get("net_house_coins_after_rewards"),
     }
     return report
 
@@ -308,8 +342,7 @@ def _jsonl_bet_count_for_day(day: str) -> int:
                     row = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                ts = str(row.get("created_at") or row.get("ts") or "")
-                if ts.startswith(day):
+                if _row_day(row) == day:
                     count += 1
     except OSError:
         pass
