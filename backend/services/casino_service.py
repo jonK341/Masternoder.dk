@@ -1312,6 +1312,10 @@ def set_casino_social_preferences(
     *,
     share_wins: Optional[bool] = None,
     country_code: Optional[str] = None,
+    email_win_digest: Optional[bool] = None,
+    digest_email: Optional[str] = None,
+    push_free_daily: Optional[bool] = None,
+    push_jackpot: Optional[bool] = None,
 ) -> Dict[str, Any]:
     from backend.services import casino_social_service
 
@@ -1319,6 +1323,10 @@ def set_casino_social_preferences(
         user_id,
         share_wins=share_wins,
         country_code=country_code,
+        email_win_digest=email_win_digest,
+        digest_email=digest_email,
+        push_free_daily=push_free_daily,
+        push_jackpot=push_jackpot,
     )
 
 

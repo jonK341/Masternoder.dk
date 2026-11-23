@@ -42,21 +42,32 @@ def _prefs_path(user_id: str) -> str:
     return os.path.join(_PREFS_DIR, f"{safe}.json")
 
 
+_DEFAULT_PREFS = {
+    "share_wins": False,
+    "country_code": None,
+    "email_win_digest": False,
+    "digest_email": None,
+    "push_free_daily": False,
+    "push_jackpot": False,
+}
+
+
 def get_preferences(user_id: str) -> Dict[str, Any]:
     path = _prefs_path(user_id)
+    base = {"user_id": user_id, "updated_at": None, **_DEFAULT_PREFS}
     if not os.path.isfile(path):
-        return {
-            "user_id": user_id,
-            "share_wins": False,
-            "country_code": None,
-            "updated_at": None,
-        }
+        return dict(base)
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return data if isinstance(data, dict) else {"user_id": user_id, "share_wins": False}
+        if not isinstance(data, dict):
+            return dict(base)
+        merged = dict(base)
+        merged.update(data)
+        merged["user_id"] = user_id
+        return merged
     except Exception:
-        return {"user_id": user_id, "share_wins": False}
+        return dict(base)
 
 
 def set_preferences(
@@ -64,6 +75,10 @@ def set_preferences(
     *,
     share_wins: Optional[bool] = None,
     country_code: Optional[str] = None,
+    email_win_digest: Optional[bool] = None,
+    digest_email: Optional[str] = None,
+    push_free_daily: Optional[bool] = None,
+    push_jackpot: Optional[bool] = None,
 ) -> Dict[str, Any]:
     os.makedirs(_PREFS_DIR, exist_ok=True)
     prefs = get_preferences(user_id)
@@ -71,6 +86,15 @@ def set_preferences(
         prefs["share_wins"] = bool(share_wins)
     if country_code is not None:
         prefs["country_code"] = (country_code or "").strip().upper() or None
+    if email_win_digest is not None:
+        prefs["email_win_digest"] = bool(email_win_digest)
+    if digest_email is not None:
+        em = (digest_email or "").strip()
+        prefs["digest_email"] = em if em and "@" in em else None
+    if push_free_daily is not None:
+        prefs["push_free_daily"] = bool(push_free_daily)
+    if push_jackpot is not None:
+        prefs["push_jackpot"] = bool(push_jackpot)
     prefs["user_id"] = user_id
     prefs["updated_at"] = _iso()
     with _LOCK:
@@ -176,6 +200,17 @@ def on_jackpot_win(
             "anonymized": anonymize_user(user_id),
         },
     )
+    try:
+        from backend.services.casino_push_service import on_jackpot_push_hook
+
+        on_jackpot_push_hook(
+            user_id=user_id,
+            currency=currency,
+            amount=float(amount or 0),
+            reason=reason or "jackpot",
+        )
+    except Exception:
+        pass
 
 
 def on_big_win(
@@ -691,8 +726,9 @@ def build_big_win_svg(
     currency: Optional[str] = None,
     multiplier: Optional[float] = None,
     handle: Optional[str] = None,
+    aspect: str = "landscape",
 ) -> str:
-    """Render a shareable SVG clip card (Wave 3)."""
+    """Render a shareable SVG clip card (landscape 1200×630 or vertical 1080×1920)."""
     game_label = (game or "casino").replace("_", " ").replace("-", " ").title()
     cur = (currency or "coins").lower()
     win_net = float(net or 0)
@@ -707,6 +743,33 @@ def build_big_win_svg(
         .replace(">", "&gt;")
         .replace('"', "&quot;")
     )
+    vertical = str(aspect or "").lower() in ("vertical", "tiktok", "reels", "9:16", "portrait")
+    if vertical:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920" role="img">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1020"/>
+      <stop offset="55%" stop-color="#141a33"/>
+      <stop offset="100%" stop-color="#1a0f2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#21d07a"/>
+      <stop offset="100%" stop-color="#7c5cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#bg)"/>
+  <rect x="48" y="48" width="984" height="1824" rx="36" fill="none" stroke="url(#accent)" stroke-width="6" opacity="0.9"/>
+  <text x="80" y="220" fill="#8ea0c8" font-family="Segoe UI, Arial, sans-serif" font-size="36">BIG WIN CLIP</text>
+  <text x="80" y="300" fill="#7c5cff" font-family="Segoe UI, Arial, sans-serif" font-size="32">TIKTOK / REELS</text>
+  <text x="80" y="520" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="72" font-weight="700">{esc(player)}</text>
+  <text x="80" y="680" fill="#21d07a" font-family="Segoe UI, Arial, sans-serif" font-size="64" font-weight="700">{esc(amount)}</text>
+  <text x="80" y="820" fill="#c8d4ff" font-family="Segoe UI, Arial, sans-serif" font-size="42">{esc(game_label)} · {esc(mult_line)}</text>
+  <circle cx="780" cy="1200" r="160" fill="url(#accent)" opacity="0.22"/>
+  <text x="780" y="1230" text-anchor="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="96">7×</text>
+  <text x="80" y="1680" fill="#8ea0c8" font-family="Segoe UI, Arial, sans-serif" font-size="36">masternoder.dk/casino</text>
+  <text x="80" y="1760" fill="#64748B" font-family="Segoe UI, Arial, sans-serif" font-size="28">virtual coins · entertainment only</text>
+</svg>"""
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img">
   <defs>
@@ -728,7 +791,7 @@ def build_big_win_svg(
   <text x="80" y="380" fill="#c8d4ff" font-family="Segoe UI, Arial, sans-serif" font-size="36">{esc(game_label)} · {esc(mult_line)}</text>
   <text x="80" y="520" fill="#8ea0c8" font-family="Segoe UI, Arial, sans-serif" font-size="24">masternoder.dk/casino · virtual coins · entertainment only</text>
   <circle cx="980" cy="315" r="120" fill="url(#accent)" opacity="0.18"/>
-  <text x="980" y="340" text-anchor="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="72">🎰</text>
+  <text x="980" y="340" text-anchor="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="72">7×</text>
 </svg>"""
 
 
@@ -857,6 +920,14 @@ def _resolve_referrer_from_code(store: Dict[str, Any], code: str) -> Optional[st
             return str(uid)
         if uid and _referral_code_for_user(str(uid)) == code:
             return str(uid)
+    try:
+        from backend.services.casino_partner_affiliate_service import get_partner
+
+        partner = get_partner(code)
+        if partner and partner.get("referrer_user_id"):
+            return str(partner["referrer_user_id"])
+    except Exception:
+        pass
     # Deterministic code still works even if store was wiped
     # (cannot reverse MD5 — callers must have codes map)
     return None
@@ -922,7 +993,7 @@ def get_referral_landing(code: str) -> Dict[str, Any]:
     store = _load_json_store(_CASINO_REFERRALS_PATH, _empty_referral_store())
     referrer_id = _resolve_referrer_from_code(store, clean) if clean else None
     valid = bool(clean and (referrer_id or clean.startswith("MN-")))
-    return {
+    payload = {
         "success": True,
         "valid": valid,
         "referral_code": clean or None,
@@ -940,6 +1011,12 @@ def get_referral_landing(code: str) -> Dict[str, Any]:
         ),
         "pixel": get_meta_pixel_config(),
     }
+    try:
+        from backend.services.casino_partner_affiliate_service import enrich_referral_landing
+
+        return enrich_referral_landing(payload, clean)
+    except Exception:
+        return payload
 
 
 def get_referral_leaderboard(limit: int = 10) -> Dict[str, Any]:
@@ -1065,6 +1142,14 @@ def register_casino_referral(referred_user_id: str, referral_code: str) -> Dict[
         user_id=referred_user_id,
         payload={"referrer": anonymize_user(referrer_id), "code": code, "party": True},
     )
+    try:
+        from backend.services.casino_partner_affiliate_service import get_partner, track_signup
+
+        if get_partner(code):
+            track_signup(code, referred_user_id=referred_user_id)
+            row["partner_code"] = code
+    except Exception:
+        pass
     out = {
         "success": True,
         "referral": row,

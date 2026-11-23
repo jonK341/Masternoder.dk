@@ -15,7 +15,11 @@
     "Invite Party: /r/<code>, welcome coins, party levels, daily share",
     "Meta Pixel live (1446065114390866) sitewide + noscript",
     "Ads landing /casino/go + room OG pages slots/small-games/crash",
-    "SEO ping API /api/seo/ping-sitemap + weekly Invite Party prize job"
+    "SEO ping API /api/seo/ping-sitemap + weekly Invite Party prize job",
+    "Opt-in weekly win/referral email digest + cron",
+    "Casino PWA push (sw.js + VAPID subscribe + jackpot/daily hooks)",
+    "TikTok/Reels 9:16 big-win clip export (PNG/MP4)",
+    "Partner/streamer affiliate codes on /r/ + ops CRUD"
   ],
   "next_features": [
     {
@@ -41,30 +45,6 @@
       "title": "Per-room OG images (slots / crash / small games) for link previews",
       "load_on": "static/img/casino",
       "priority": 2
-    },
-    {
-      "id": "email-win-digest",
-      "title": "Opt-in weekly big-win + referral quest digest",
-      "load_on": "notification service",
-      "priority": 3
-    },
-    {
-      "id": "pwa-push",
-      "title": "Casino PWA push for free daily flip + jackpot spikes",
-      "load_on": "service worker",
-      "priority": 3
-    },
-    {
-      "id": "tiktok-clip-export",
-      "title": "One-tap big-win vertical clip for TikTok/Reels",
-      "load_on": "share big-win SVG → mp4",
-      "priority": 3
-    },
-    {
-      "id": "partner-affiliates",
-      "title": "Tracked partner codes for streamers (UTM + ref)",
-      "load_on": "referral quests",
-      "priority": 3
     },
     {
       "id": "localized-dk-landing",

@@ -364,6 +364,22 @@ def casino_manifest():
     return 'Manifest not found', 404
 
 
+@all_page_bp.route('/casino/sw.js', methods=['GET'])
+def casino_service_worker():
+    """Casino PWA service worker (push + notificationclick)."""
+    try:
+        base_path = _base_path()
+        page_dir = os.path.join(base_path, 'casino')
+        if os.path.isfile(os.path.join(page_dir, 'sw.js')):
+            resp = send_from_directory(page_dir, 'sw.js', mimetype='application/javascript; charset=utf-8')
+            resp.headers['Cache-Control'] = 'no-cache'
+            resp.headers['Service-Worker-Allowed'] = '/casino/'
+            return resp
+    except Exception:
+        pass
+    return 'Service worker not found', 404
+
+
 @all_page_bp.route('/.well-known/assetlinks.json', methods=['GET'])
 def well_known_assetlinks():
     """Android Digital Asset Links for TWA / App Links."""

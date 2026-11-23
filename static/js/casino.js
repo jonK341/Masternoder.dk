@@ -1781,6 +1781,14 @@
         if (toggle && prefs.success && prefs.preferences) {
             toggle.checked = !!prefs.preferences.share_wins;
         }
+        if (prefs.success && prefs.preferences) {
+            var emailToggle = $('casino-email-digest-toggle');
+            if (emailToggle) emailToggle.checked = !!prefs.preferences.email_win_digest;
+            var pushDaily = $('casino-push-daily-toggle');
+            if (pushDaily) pushDaily.checked = !!prefs.preferences.push_free_daily;
+            var pushJackpot = $('casino-push-jackpot-toggle');
+            if (pushJackpot) pushJackpot.checked = !!prefs.preferences.push_jackpot;
+        }
         var discordLink = $('casino-discord-play-link');
         if (discordLink) {
             if (prefs.discord_earn_href) discordLink.href = prefs.discord_earn_href;
@@ -1796,6 +1804,7 @@
             }
         }
         initMobileInstall();
+        registerCasinoServiceWorker();
         await refreshReferralInvite();
         await refreshReferralLeaderboard();
         await refreshReferralQuests();
@@ -2140,17 +2149,106 @@
 
     async function openBigWinClipCard() {
         if (!lastBigWin) {
-            showToast('Win something big first (3× or more), then open the clip card.');
+            showToast('Win something big first (3× or more), then export a clip.');
             return;
         }
-        var params = new URLSearchParams({
+        showToast('Encoding TikTok / Reels clip…');
+        var payload = {
             user_id: userId,
             game: lastBigWin.game || 'casino',
-            net: String(lastBigWin.net || 0),
+            net: lastBigWin.net || 0,
             currency: lastBigWin.currency || activeCurrency,
+            multiplier: lastBigWin.multiple,
+            format: 'tiktok',
+        };
+        var data = await api('/api/casino/share/big-win/clip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
         });
-        if (lastBigWin.multiple >= 1) params.set('mult', String(lastBigWin.multiple));
-        window.open('/api/casino/share/big-win/card.svg?' + params.toString(), '_blank', 'noopener');
+        if (!data || !data.success) {
+            showToast((data && data.error) || 'Clip export failed');
+            return;
+        }
+        var url = data.mp4_url || data.poster_url || data.svg_url;
+        if (url) {
+            window.open(url, '_blank', 'noopener');
+            showToast(data.encoded ? 'MP4 ready — share to TikTok / Reels' : 'Poster ready (ffmpeg offline — PNG/SVG)');
+        }
+        trackMetaEvent('CasinoBigWinClip', { game: payload.game, encoded: !!data.encoded });
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+        var padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        var raw = atob(base64);
+        var out = new Uint8Array(raw.length);
+        for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+        return out;
+    }
+
+    function registerCasinoServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+        navigator.serviceWorker.register('/casino/sw.js', { scope: '/casino/' }).catch(function () { /* ignore */ });
+    }
+
+    async function enableCasinoPush() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            showToast('Push not supported in this browser');
+            return;
+        }
+        try {
+            var permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                showToast('Notification permission denied');
+                return;
+            }
+            var reg = await navigator.serviceWorker.register('/casino/sw.js', { scope: '/casino/' });
+            await navigator.serviceWorker.ready;
+            var keyResp = await api('/api/casino/push/vapid-public-key');
+            if (!keyResp || !keyResp.public_key) {
+                showToast('Push keys unavailable');
+                return;
+            }
+            var sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(keyResp.public_key),
+            });
+            var result = await api('/api/casino/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, subscription: sub.toJSON() }),
+            });
+            if (result && result.success) {
+                await api('/api/casino/social/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        push_free_daily: true,
+                        push_jackpot: true,
+                    }),
+                });
+                var d = $('casino-push-daily-toggle');
+                var j = $('casino-push-jackpot-toggle');
+                if (d) d.checked = true;
+                if (j) j.checked = true;
+                showToast('Browser push enabled');
+            } else {
+                showToast((result && result.error) || 'Subscribe failed');
+            }
+        } catch (e) {
+            showToast('Push setup failed');
+        }
+    }
+
+    async function saveGrowthPref(partial) {
+        var body = Object.assign({ user_id: userId }, partial || {});
+        await api('/api/casino/social/preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
     }
 
     async function redeemLabCoupon() {
@@ -5155,8 +5253,20 @@
         bindClick('casino-party-daily-share', claimDailyInviteShare);
         bindClick('casino-party-daily-share-social', claimDailyInviteShare);
         bindClick('casino-party-native-share', nativeShareInviteParty);
+        bindClick('casino-enable-push-btn', enableCasinoPush);
         bindChange('casino-share-wins-toggle', function () {
             toggleShareWins($('casino-share-wins-toggle').checked);
+        });
+        bindChange('casino-email-digest-toggle', function () {
+            var on = !!($('casino-email-digest-toggle') || {}).checked;
+            saveGrowthPref({ email_win_digest: on });
+            showToast(on ? 'Weekly email digest on' : 'Weekly email digest off');
+        });
+        bindChange('casino-push-daily-toggle', function () {
+            saveGrowthPref({ push_free_daily: !!($('casino-push-daily-toggle') || {}).checked });
+        });
+        bindChange('casino-push-jackpot-toggle', function () {
+            saveGrowthPref({ push_jackpot: !!($('casino-push-jackpot-toggle') || {}).checked });
         });
         document.querySelectorAll('.casino-lb-period-tabs .casino-tab').forEach(function (tab) {
             tab.addEventListener('click', function () {

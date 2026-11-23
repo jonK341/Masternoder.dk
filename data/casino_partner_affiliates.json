@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "updated_at": null,
+  "partners": [
+    {
+      "code": "DEMO-STREAM",
+      "partner_id": "demo_stream",
+      "display_name": "Demo Streamer",
+      "referrer_user_id": "demo_partner_host",
+      "utm_source": "partner",
+      "utm_medium": "streamer",
+      "utm_campaign": "casino_traffic",
+      "active": true,
+      "notes": "Example partner code — replace referrer_user_id with a real host account before promos.",
+      "created_at": "2026-11-22T00:00:00Z"
+    }
+  ]
+}

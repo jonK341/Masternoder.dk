@@ -1214,6 +1214,10 @@ def casino_social_preferences():
             user_id,
             share_wins=data.get("share_wins"),
             country_code=data.get("country_code"),
+            email_win_digest=data.get("email_win_digest"),
+            digest_email=data.get("digest_email"),
+            push_free_daily=data.get("push_free_daily"),
+            push_jackpot=data.get("push_jackpot"),
         )
         return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
@@ -1351,8 +1355,167 @@ def casino_share_big_win_card_svg():
             currency=(request.args.get("currency") or "").strip() or None,
             multiplier=float(mult) if mult is not None else None,
             handle=casino_social_service.anonymize_user(user_id) if user_id else "Player",
+            aspect=(request.args.get("aspect") or "landscape").strip(),
         )
         return Response(svg, mimetype="image/svg+xml")
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/share/big-win/clip", methods=["POST"])
+def casino_share_big_win_clip():
+    """Encode a 9:16 TikTok/Reels clip from the last big-win card."""
+    try:
+        from backend.services.casino_clip_export_service import export_big_win_clip
+        from backend.services import casino_social_service
+
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        mult = data.get("multiplier")
+        result = export_big_win_clip(
+            user_id=user_id,
+            game=(data.get("game") or "").strip() or None,
+            net=float(data.get("net") or 0),
+            currency=(data.get("currency") or "coins").strip() or "coins",
+            multiplier=float(mult) if mult is not None else None,
+            handle=casino_social_service.anonymize_user(user_id) if user_id else "Player",
+            duration_sec=float(data.get("duration_sec") or 4),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/share/big-win/clip/file/<path:filename>", methods=["GET"])
+def casino_share_big_win_clip_file(filename: str):
+    try:
+        from flask import send_file
+        from backend.services.casino_clip_export_service import resolve_clip_file
+
+        path, mime = resolve_clip_file(filename)
+        if not path:
+            return jsonify({"success": False, "error": "not_found"}), 404
+        return send_file(path, mimetype=mime, as_attachment=False, download_name=os.path.basename(path))
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/push/vapid-public-key", methods=["GET"])
+def casino_push_vapid_public_key():
+    try:
+        from backend.services.casino_push_service import get_vapid_public_key
+
+        return jsonify(get_vapid_public_key()), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/push/subscribe", methods=["POST"])
+def casino_push_subscribe():
+    try:
+        from backend.services.casino_push_service import subscribe
+
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = subscribe(user_id, data.get("subscription") or data)
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/push/unsubscribe", methods=["POST", "DELETE"])
+def casino_push_unsubscribe():
+    try:
+        from backend.services.casino_push_service import unsubscribe
+
+        data = request.get_json(silent=True) or {}
+        user_id = _resolve_casino_user_id(from_body=True, from_query=True)
+        result = unsubscribe(user_id, (data.get("endpoint") or request.args.get("endpoint") or "").strip() or None)
+        return jsonify(result), 200 if result.get("success") else 400
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/ops/push-broadcast", methods=["POST"])
+def casino_ops_push_broadcast():
+    if not _casino_ops_ok():
+        return jsonify({"success": False, "error": "ops_secret_required"}), 403
+    try:
+        from backend.services.casino_push_service import broadcast, notify_free_daily_available
+
+        data = request.get_json(silent=True) or {}
+        kind = (data.get("kind") or request.args.get("kind") or "").strip().lower()
+        if kind in ("free_daily", "daily", "flip"):
+            return jsonify(notify_free_daily_available()), 200
+        result = broadcast(
+            title=(data.get("title") or "MasterNoder Casino").strip(),
+            body=(data.get("body") or "Open the lounge").strip(),
+            url=(data.get("url") or "/casino/").strip(),
+            tag=(data.get("tag") or "casino").strip(),
+            prefer_pref=(data.get("prefer_pref") or None),
+        )
+        return jsonify(result), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/ops/weekly-win-digest", methods=["POST"])
+def casino_ops_weekly_win_digest():
+    if not _casino_ops_ok():
+        return jsonify({"success": False, "error": "ops_secret_required"}), 403
+    try:
+        from backend.services.casino_win_digest_service import run_weekly_win_digest
+
+        force = request.args.get("force", "0") in ("1", "true", "yes") or (
+            (request.get_json(silent=True) or {}).get("force") is True
+        )
+        return jsonify(run_weekly_win_digest(force=force)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/partner/<code>/stats", methods=["GET"])
+def casino_partner_stats(code: str):
+    try:
+        from backend.services.casino_partner_affiliate_service import partner_stats
+
+        return jsonify(partner_stats(code)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/partner/resolve/<code>", methods=["GET"])
+def casino_partner_resolve(code: str):
+    try:
+        from backend.services.casino_partner_affiliate_service import resolve_code
+
+        return jsonify(resolve_code(code)), 200
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+@casino_bp.route("/api/casino/ops/partners", methods=["GET", "POST"])
+def casino_ops_partners():
+    try:
+        from backend.services.casino_partner_affiliate_service import list_partners, upsert_partner
+
+        if request.method == "GET":
+            return jsonify(list_partners(include_inactive=request.args.get("all") == "1")), 200
+        if not _casino_ops_ok():
+            return jsonify({"success": False, "error": "ops_secret_required"}), 403
+        data = request.get_json(silent=True) or {}
+        result = upsert_partner(
+            code=(data.get("code") or "").strip(),
+            partner_id=(data.get("partner_id") or "").strip(),
+            display_name=(data.get("display_name") or "").strip(),
+            referrer_user_id=(data.get("referrer_user_id") or "").strip(),
+            utm_source=(data.get("utm_source") or "partner").strip(),
+            utm_medium=(data.get("utm_medium") or "streamer").strip(),
+            utm_campaign=(data.get("utm_campaign") or "casino_traffic").strip(),
+            active=bool(data.get("active", True)),
+            notes=(data.get("notes") or "").strip(),
+        )
+        return jsonify(result), 200 if result.get("success") else 400
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
 
