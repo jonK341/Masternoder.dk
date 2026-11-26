@@ -42,21 +42,27 @@
         var balanceId = strip.getAttribute('data-balance-id');
         var rateId = strip.getAttribute('data-rate-id');
 
-        bridge.loadBalance().then(function (d) {
-            var bal = (d && (d.balance != null ? d.balance : d.mn2_balance)) || 0;
+        function applyBalance(d) {
+            var bal = bridge.pickLedgerBalance ? bridge.pickLedgerBalance(d) : Number((d && d.mn2_balance) || 0);
             if (balanceId) {
                 var el = global.document.getElementById(balanceId);
                 if (el) el.textContent = fmt(bal) + ' MN2';
             }
-        }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-page-strip-init.js', context: 'catch' }); }
+        }
+        bridge.loadBalance().then(applyBalance).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'mn2-page-strip-init.js', context: 'catch' }); }
             if (balanceId) {
                 var el = global.document.getElementById(balanceId);
                 if (el) el.textContent = '—';
             }
         });
+        global.document.addEventListener('mn2-balance-updated', function (ev) {
+            if (ev && ev.detail) applyBalance(ev.detail);
+            else bridge.loadBalance().then(applyBalance).catch(function () {});
+        });
 
         bridge.loadPrice().then(function (d) {
-            var p = d && (d.price_usd != null ? d.price_usd : d.usd);
+            var p = bridge.pickUsdPrice ? bridge.pickUsdPrice(d)
+                : (d && (d.mn2_usd_price != null ? d.mn2_usd_price : d.price_usd));
             if (rateId) {
                 var el = global.document.getElementById(rateId);
                 if (el) el.textContent = p != null ? ('$' + Number(p).toFixed(4) + ' / MN2') : '—';

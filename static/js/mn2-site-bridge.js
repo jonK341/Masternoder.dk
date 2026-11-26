@@ -35,10 +35,34 @@
         return v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: d });
     }
 
+    /** Prefer ledger field; never treat casino/coins `balance` as MN2. */
+    function pickLedgerBalance(d) {
+        if (!d || typeof d !== 'object') return 0;
+        if (d.mn2_balance != null && d.mn2_balance !== '') return Number(d.mn2_balance) || 0;
+        if (d.liquid_mn2 != null && d.liquid_mn2 !== '') return Number(d.liquid_mn2) || 0;
+        if (d.available != null && d.available !== '') return Number(d.available) || 0;
+        // Last resort only when response is clearly an MN2-only payload (no coins currency).
+        if (d.balance != null && d.currency !== 'coins' && d.active_currency !== 'coins') {
+            return Number(d.balance) || 0;
+        }
+        return 0;
+    }
+
+    function pickUsdPrice(d) {
+        if (!d || typeof d !== 'object') return null;
+        var p = d.mn2_usd_price != null ? d.mn2_usd_price
+            : (d.price_usd != null ? d.price_usd : d.usd);
+        if (p == null || p === '') return null;
+        var n = Number(p);
+        return isFinite(n) ? n : null;
+    }
+
     global.Mn2SiteBridge = {
         BASE: BASE,
         uid: uid,
         fmtMn2: fmtMn2,
+        pickLedgerBalance: pickLedgerBalance,
+        pickUsdPrice: pickUsdPrice,
         loadBalance: function () {
             return fetchJson(BASE + '/api/mn2/balance?user_id=' + encodeURIComponent(uid()));
         },

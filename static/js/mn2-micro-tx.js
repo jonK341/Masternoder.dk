@@ -19,8 +19,14 @@
     return fetchJson('/api/mn2/micro-tx/stats' + q);
   }
 
-  async function refreshBalance() {
-    const bal = await fetchJson('/api/mn2/balance');
+  async function refreshBalance(userId) {
+    const uid = userId
+      || (global.Mn2SiteBridge && global.Mn2SiteBridge.uid && global.Mn2SiteBridge.uid())
+      || localStorage.getItem('game_user_id')
+      || localStorage.getItem('user_id')
+      || '';
+    const q = uid && uid !== 'default_user' ? ('?user_id=' + encodeURIComponent(uid)) : '';
+    const bal = await fetchJson('/api/mn2/balance' + q);
     if (bal && bal.success && global.dispatchEvent) {
       global.dispatchEvent(new CustomEvent('mn2-balance-updated', { detail: bal }));
     }

@@ -58,13 +58,14 @@
     }
     var assets = wallet.assets || {};
     var rows = [
-      { sym: 'MN2', val: wallet.mn2_balance },
-      { sym: 'USDT', val: assets.USDT },
-      { sym: 'USDC', val: assets.USDC },
+      { sym: 'MN2 (profile ledger)', val: wallet.mn2_balance },
+      { sym: 'USDT (exchange book)', val: assets.USDT },
+      { sym: 'USDC (exchange book)', val: assets.USDC },
     ];
-    el.innerHTML = rows.map(function (row) {
-      return '<div class="wallet-balance-row"><span>' + row.sym + '</span><strong>' + fmt(row.val, 6) + '</strong></div>';
-    }).join('');
+    el.innerHTML = '<p class="wallet-muted" style="margin:0 0 8px">MN2 is the same profile ledger as game claims and shop spends. USDT/USDC are the exchange custodial book.</p>' +
+      rows.map(function (row) {
+        return '<div class="wallet-balance-row"><span>' + row.sym + '</span><strong>' + fmt(row.val, 6) + '</strong></div>';
+      }).join('');
   }
 
   function renderPool(el, pool) {

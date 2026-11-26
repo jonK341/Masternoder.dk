@@ -108,6 +108,23 @@
     }
     var showcase = document.getElementById('profile-mn2-showcase-balance');
     if (showcase) showcase.textContent = balNum.toFixed(4) + ' MN2';
+    var heldNum = balData.held_mn2 != null ? Number(balData.held_mn2) : null;
+    var liquidNum = balData.liquid_mn2 != null ? Number(balData.liquid_mn2) : null;
+    var withdrawableNum = balData.withdrawable_mn2 != null ? Number(balData.withdrawable_mn2) : null;
+    var holdHint = document.getElementById('profile-mn2-hold-breakdown');
+    if (holdHint) {
+      if (heldNum != null && heldNum > 0) {
+        holdHint.style.display = '';
+        holdHint.textContent =
+          'Liquid ' + (liquidNum != null ? liquidNum.toFixed(4) : '—') +
+          ' · Held ' + heldNum.toFixed(4) +
+          (withdrawableNum != null ? (' · Withdrawable ' + withdrawableNum.toFixed(4)) : '') +
+          ' MN2';
+      } else {
+        holdHint.style.display = 'none';
+        holdHint.textContent = '';
+      }
+    }
     if (fiatEl && localStorage.getItem('mn2_fiat_display') === '1') {
       var usd = balData.mn2_usd_price;
       if (usd != null) {
