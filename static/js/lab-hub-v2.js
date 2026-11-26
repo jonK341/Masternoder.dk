@@ -208,7 +208,7 @@
                 }).join('') : '<p class="lab-muted">No lab trophies defined.</p>';
             }
             if (mn2El) {
-                const bal = mn2R.balance != null ? mn2R.balance : (mn2R.available || '—');
+                const bal = (mn2R.mn2_balance != null ? mn2R.mn2_balance : (mn2R.available != null ? mn2R.available : (mn2R.balance != null ? mn2R.balance : '—')));
                 mn2El.innerHTML = '<div class="lab-mini-card"><strong>' + esc(String(bal)) + ' MN2</strong><span>Wallet balance</span></div>' +
                     '<p class="lab-muted">Crypto rewards are display + shop-grant only from Lab — no auto-spend.</p>';
             }

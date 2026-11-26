@@ -137,7 +137,7 @@
                 <div>
                     <span class="champion-eyebrow">MN2 earning</span>
                     <h2 id="crypto-earn-title">Crypto Relay</h2>
-                    <p id="crypto-earn-summary">Loading Star Map earning routes, cooldowns, claim history, and wallet-safe in-game MN2 balance...</p>
+                    <p id="crypto-earn-summary">Loading Star Map earning routes, cooldowns, claim history, and your profile MN2 ledger balance...</p>
                 </div>
                 <div class="crypto-balance-card">
                     <span>MN2 balance</span>
@@ -1077,7 +1077,7 @@
                 <div class="game-level-crypto-head">
                     <div>
                         <h3 id="game-level-crypto-title">Level MN2 Rewards</h3>
-                        <p class="game-level-crypto-meta" id="game-level-crypto-summary">One-time MN2 bonus for each hunter level you reach. Claim here — adds to your in-game MN2 balance.</p>
+                        <p class="game-level-crypto-meta" id="game-level-crypto-summary">One-time MN2 bonus for each hunter level you reach. Claim here — credits your profile MN2 wallet.</p>
                     </div>
                     <a href="/profile#mn2-wallet" style="color:#00d4ff;font-size:0.85rem;">Open wallet →</a>
                 </div>
@@ -1377,7 +1377,7 @@
                         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Detect your social network presence and sync it into your profile automatically.</p>
                         <div id="social-appearance-panel" style="padding:12px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);border-radius:10px;margin-bottom:20px;">Loading…</div>
                         <h4 style="color: #00d4ff; margin-top: 20px; margin-bottom: 10px;">MN2 social rewards</h4>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Claim internal MN2 balance for signup, friend progress, crew membership, chat, and referrals.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Claim MN2 for signup, friend progress, crew membership, chat, and referrals — same profile ledger as deposit/withdraw.</p>
                         <div id="social-earn-coach-panel" style="padding:12px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:10px;margin-bottom:12px;">Loading earn coach…</div>
                         <button type="button" id="social-refresh-coach-btn" style="padding:6px 12px;border-radius:7px;border:1px solid rgba(0,212,255,0.35);background:rgba(0,212,255,0.1);color:#00d4ff;cursor:pointer;margin-bottom:12px;">Refresh coach</button>
                         <div id="social-rewards-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:20px;">Loading…</div>
@@ -1596,7 +1596,7 @@
             setChampionText('crypto-total-earned', 'Earned here: ' + formatCryptoAmount(data.total_mn2_earned));
             setChampionText(
                 'crypto-earn-summary',
-                'Earn MN2 from Star Map progress. Claims stay in the internal game balance and use cooldowns to keep earning paced.'
+                'Earn MN2 from Star Map progress. Claims credit your profile MN2 wallet and use cooldowns to keep earning paced.'
             );
 
             if (progressGrid) {
@@ -1673,6 +1673,11 @@
                 const data = await res.json();
                 if (data && data.success && data.crypto) {
                     renderCryptoExperience(data.crypto);
+                    try {
+                        document.dispatchEvent(new CustomEvent('mn2-balance-updated', {
+                            detail: { success: true, mn2_balance: data.crypto.mn2_balance, user_id: userId }
+                        }));
+                    } catch (e) { /* ignore */ }
                     if (window.gameNotifications && typeof window.gameNotifications.showNotification === 'function') {
                         window.gameNotifications.showNotification('MN2 claimed: +' + formatCryptoAmount(data.claim.amount_mn2), 'success');
                     }

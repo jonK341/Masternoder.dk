@@ -78,7 +78,7 @@
     function refreshBalance() {
         if (!bridge) return Promise.resolve();
         return bridge.loadBalance().then(function (d) {
-            var bal = (d && (d.balance != null ? d.balance : d.mn2_balance)) || 0;
+            var bal = (bridge && bridge.pickLedgerBalance) ? bridge.pickLedgerBalance(d) : Number((d && d.mn2_balance) || 0);
             setText('bg-mn2-balance', fmt(bal) + ' MN2');
         }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'battlegrounds-mn2.js', context: 'catch' }); } setText('bg-mn2-balance', '—'); });
     }
@@ -98,7 +98,7 @@
         loadArenaConfig();
         if (bridge) {
             bridge.loadPrice().then(function (d) {
-                var p = d && (d.price_usd != null ? d.price_usd : d.usd);
+                var p = (bridge && bridge.pickUsdPrice) ? bridge.pickUsdPrice(d) : (d && (d.mn2_usd_price != null ? d.mn2_usd_price : d.price_usd));
                 setText('bg-mn2-rate', p != null ? ('$' + Number(p).toFixed(4) + ' / MN2') : '—');
             }).catch(function () { if (window.ErrorManager && window.ErrorManager.logJSError) { window.ErrorManager.logJSError(new Error('caught'), { source: 'battlegrounds-mn2.js', context: 'catch' }); } setText('bg-mn2-rate', '—'); });
         }
