@@ -14,8 +14,8 @@
   var APP_BASE = global.APP_BASE || '';
   var STORAGE_TEMPLATE = 'mn_nav_template';
   var STORAGE_THEME = 'mn_nav_theme';
-  var MANIFEST_URL = APP_BASE + '/static/data/nav_portal_manifest.json';
-  var THEMES_CSS = APP_BASE + '/static/css/nav-portal-themes.css?v=20261001';
+  var MANIFEST_URL = APP_BASE + '/static/data/nav_portal_manifest.json?v=20261128portal';
+  var THEMES_CSS = APP_BASE + '/static/css/nav-portal-themes.css?v=20261128portal';
 
   var manifest = null;
   var activeTemplate = null;
@@ -196,9 +196,7 @@
     activeTheme = themes[themeId] || themes[manifest.defaultTheme];
     if (activeTheme) activeTheme.id = themeId || manifest.defaultTheme;
 
-    if (activeTemplate && activeTemplate.layout === 'portal_void') {
-      global.MN_NAV_PORTAL_VOID = true;
-    }
+    global.MN_NAV_PORTAL_VOID = !!(activeTemplate && activeTemplate.layout === 'portal_void');
 
     applyTheme(activeTheme);
   }
@@ -241,7 +239,7 @@
   }
 
   function getLayout() {
-    return (activeTemplate && activeTemplate.layout) || 'categorized';
+    return (activeTemplate && activeTemplate.layout) || 'portal_void';
   }
 
   function isPortalVoid() {

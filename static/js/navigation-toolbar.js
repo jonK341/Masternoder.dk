@@ -7,7 +7,7 @@
     'use strict';
 
     const APP_BASE = (typeof window !== 'undefined' && window.APP_BASE !== undefined) ? window.APP_BASE : '';
-    const NAV_PORTAL_ASSET_V = '20261002';
+    const NAV_PORTAL_ASSET_V = '20261128nolaunch';
 
     /** Every page with the toolbar gets tema CSS before first paint when possible. */
     (function ensureNavPortalThemesCss() {
@@ -374,11 +374,11 @@
     }
 
     /**
-     * Initialize navigation toolbar
+     * Wire interactions onto an already-mounted toolbar (static HTML or reinit).
      */
-    function mountToolbar() {
-        const toolbarHTML = createToolbarHTML();
-        document.body.insertAdjacentHTML('afterbegin', toolbarHTML);
+    function wireToolbar() {
+        if (window.__MN_NAV_TOOLBAR_WIRED__) return;
+        window.__MN_NAV_TOOLBAR_WIRED__ = true;
         highlightActiveLink();
         setupMobileMenu();
         setupCategoryMenus();
@@ -388,8 +388,39 @@
         ensureGlobalSystems();
     }
 
+    /**
+     * Initialize navigation toolbar
+     */
+    function mountToolbar() {
+        if (!document.getElementById('navToolbar')) {
+            const toolbarHTML = createToolbarHTML();
+            document.body.insertAdjacentHTML('afterbegin', toolbarHTML);
+        }
+        window.__MN_NAV_TOOLBAR_WIRED__ = false;
+        wireToolbar();
+    }
+
+    function hydrateStaticToolbar() {
+        window.MN_NAV_PORTAL_VOID = true;
+        window.MN_PORTAL_TOPNAV_STATIC = true;
+        ensurePortalTemplate(function () {
+            syncFromPortalTemplate();
+            if (!document.getElementById('navToolbar')) {
+                mountToolbar();
+                return;
+            }
+            window.__MN_NAV_TOOLBAR_WIRED__ = false;
+            wireToolbar();
+        });
+    }
+
     function initToolbar() {
-        if (document.getElementById('navToolbar')) {
+        var existing = document.getElementById('navToolbar');
+        if (existing && (window.MN_PORTAL_TOPNAV_STATIC || existing.getAttribute('data-mn-portal-static') === '1')) {
+            hydrateStaticToolbar();
+            return;
+        }
+        if (existing) {
             return;
         }
         ensurePortalTemplate(function () {
@@ -410,7 +441,19 @@
     function reinitToolbar() {
         var el = document.getElementById('navToolbar');
         if (el) el.remove();
+        window.__MN_NAV_TOOLBAR_WIRED__ = false;
         syncFromPortalTemplate();
+        if (window.MN_PORTAL_TOPNAV_STATIC) {
+            // Prefer reloading the static fragment so all pages stay identical.
+            var mountScript = document.querySelector('script[src*="mn-portal-topnav.js"]');
+            if (mountScript) {
+                window.__MN_PORTAL_TOPNAV_BOOTED__ = false;
+                var s = document.createElement('script');
+                s.src = mountScript.src;
+                document.head.appendChild(s);
+                return;
+            }
+        }
         mountToolbar();
     }
 
@@ -715,17 +758,21 @@
         loadCurrency();
     }
 
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initToolbar);
-    } else {
-        initToolbar();
+    // Initialize when DOM is ready.
+    // When mn-portal-topnav.js owns the mount, it calls hydrateStatic after injecting HTML.
+    if (!window.MN_PORTAL_TOPNAV_STATIC) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initToolbar);
+        } else {
+            initToolbar();
+        }
     }
 
     // Expose API
     window.NavigationToolbar = {
         init: initToolbar,
         reinit: reinitToolbar,
+        hydrateStatic: hydrateStaticToolbar,
         refresh: refreshNavigation,
         updateCurrency: updateCurrency,
         updateBadge: updateBadge,
@@ -892,10 +939,11 @@
         const dropdown = document.createElement('div');
         dropdown.innerHTML = menuHTML;
         dropdown.className = 'nav-toolbar-dropdown';
-        dropdown.style.position = 'absolute';
-        dropdown.style.top = button.offsetTop + button.offsetHeight + 'px';
-        dropdown.style.right = '10px';
-        dropdown.style.zIndex = '1000';
+        const rect = button.getBoundingClientRect();
+        dropdown.style.position = 'fixed';
+        dropdown.style.top = (rect.bottom + 6) + 'px';
+        dropdown.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
+        dropdown.style.zIndex = '20060';
         
         document.body.appendChild(dropdown);
         
@@ -1018,14 +1066,14 @@
         });
     })();
 
-    // Calm library launcher on non-compendium pages; full reader shell on /compendium/*
+    // Calm reader shell only on /compendium/* — floating left Library progress launcher removed site-wide.
     (function loadCalmReader() {
         var path = window.location.pathname || '';
         var onComp = /\/compendium(\/|$)/.test(path);
-        var src = onComp ? 'calm-reader.js?v=20260617' : 'reader-launcher.js?v=20260617';
-        if (document.querySelector('script[src*="' + src.split('?')[0] + '"]')) return;
+        if (!onComp) return;
+        if (document.querySelector('script[src*="calm-reader.js"]')) return;
         var s = document.createElement('script');
-        s.src = '/static/js/' + src;
+        s.src = '/static/js/calm-reader.js?v=20261128nolaunch';
         s.defer = true;
         document.body.appendChild(s);
     })();

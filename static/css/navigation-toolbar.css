@@ -9,7 +9,7 @@
     top: 0;
     left: 0;
     right: 0;
-    z-index: 10000;
+    z-index: 20050;
     background: linear-gradient(135deg, #2d1b4e 0%, #1a0a2e 50%, #3d2463 100%);
     backdrop-filter: blur(20px);
     border-bottom: 2px solid rgba(0, 255, 136, 0.4);
@@ -693,7 +693,7 @@ body {
     top: 48px;
     max-height: min(78vh, 640px);
     overflow-y: auto;
-    z-index: 9998;
+    z-index: 20040;
     background: linear-gradient(180deg, rgba(12, 6, 22, 0.98) 0%, rgba(18, 10, 32, 0.97) 100%);
     border-bottom: 2px solid rgba(57, 255, 20, 0.35);
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);

@@ -236,7 +236,6 @@ def trophies_index():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trophies - MasterNoder</title>
     <link rel="stylesheet" href="/vidgenerator/static/css/modern-design-system.css">
-    <link rel="stylesheet" href="/vidgenerator/static/css/navigation-toolbar.css">
     <style>
         body { 
             padding: 100px 20px 60px; 
@@ -291,7 +290,7 @@ def trophies_index():
             <p>Loading trophies...</p>
         </div>
     </div>
-    <script src="/vidgenerator/static/js/navigation-toolbar.js"></script>
+    <script src="/static/js/mn-portal-topnav.js?v=20261128static" defer></script>
     <script>
         // Load trophies
         fetch('/api/trophies/list')

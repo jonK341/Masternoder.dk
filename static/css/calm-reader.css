@@ -1,4 +1,14 @@
-/* Calm reader launcher shared by the navigation toolbar. */
+/* Floating left Library / reading-progress launcher removed site-wide. */
+.cr-launcher,
+#cr-launcher {
+    display: none !important;
+}
+
+.cr-launcher-retired {
+    display: none !important;
+}
+
+/* Legacy launcher styles kept inert (hidden above). */
 .cr-launcher {
     position: fixed;
     left: 18px;

@@ -26,8 +26,10 @@
     <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='img/og-image.png', _external=True) }}{% endblock %}">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
+    <link rel="icon" type="image/gif" sizes="64x64" href="{{ url_for('static', filename='img/favicon.gif') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" sizes="any">
     
     <title>{% block title %}Documentary Generator{% endblock %}</title>
     <!-- Critical CSS - Inline for faster first paint -->

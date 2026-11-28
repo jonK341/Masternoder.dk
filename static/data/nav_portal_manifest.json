@@ -1,23 +1,23 @@
 {
   "version": "1",
-  "defaultTemplate": "categorized_portals_v1",
+  "defaultTemplate": "home_portal_void_v1",
   "defaultTheme": "neon_masternoder",
   "pathTemplates": [
-    { "prefix": "/exchange", "template": "exchange_focus_v1", "theme": "exchange_ice" },
-    { "prefix": "/shop", "template": "categorized_portals_v1", "theme": "shop_gold" },
-    { "prefix": "/market", "template": "exchange_focus_v1", "theme": "exchange_ice" },
-    { "prefix": "/wallets", "template": "exchange_focus_v1", "theme": "exchange_ice" },
-    { "prefix": "/profit", "template": "exchange_focus_v1", "theme": "exchange_ice" },
-    { "prefix": "/nft", "template": "exchange_focus_v1", "theme": "exchange_ice" },
-    { "prefix": "/trophies", "template": "categorized_portals_v1", "theme": "shop_gold" },
-    { "prefix": "/profile", "template": "categorized_portals_v1", "theme": "shop_gold" },
-    { "prefix": "/explorer", "template": "exchange_focus_v1", "theme": "exchange_ice" }
+    { "prefix": "/exchange", "template": "home_portal_void_v1", "theme": "exchange_ice" },
+    { "prefix": "/shop", "template": "home_portal_void_v1", "theme": "shop_gold" },
+    { "prefix": "/market", "template": "home_portal_void_v1", "theme": "exchange_ice" },
+    { "prefix": "/wallets", "template": "home_portal_void_v1", "theme": "exchange_ice" },
+    { "prefix": "/profit", "template": "home_portal_void_v1", "theme": "exchange_ice" },
+    { "prefix": "/nft", "template": "home_portal_void_v1", "theme": "exchange_ice" },
+    { "prefix": "/trophies", "template": "home_portal_void_v1", "theme": "shop_gold" },
+    { "prefix": "/profile", "template": "home_portal_void_v1", "theme": "shop_gold" },
+    { "prefix": "/explorer", "template": "home_portal_void_v1", "theme": "exchange_ice" }
   ],
   "templates": {
     "categorized_portals_v1": {
       "label": "Categorized portals",
-      "description": "Quick favorites + category dropdowns with GIF headers (site default).",
-      "layout": "categorized",
+      "description": "Portals button with the full categorized panel.",
+      "layout": "portal_void",
       "theme": "neon_masternoder",
       "favorites": ["casino", "generator", "game", "battle", "exchange"],
       "categories": [
@@ -31,7 +31,7 @@
     },
     "home_portal_void_v1": {
       "label": "Home portal void",
-      "description": "Single Portals button with full categorized panel (front page).",
+      "description": "Single Portals button with the full categorized panel. Site-wide top menu.",
       "layout": "portal_void",
       "theme": "neon_masternoder",
       "favorites": [],
@@ -46,8 +46,8 @@
     },
     "exchange_focus_v1": {
       "label": "Exchange focus",
-      "description": "Finance-first quick links for trading hubs.",
-      "layout": "categorized",
+      "description": "Portals button with finance sections first.",
+      "layout": "portal_void",
       "theme": "exchange_ice",
       "favorites": ["exchange", "casino", "wallets", "profit", "shop"],
       "categories": [
